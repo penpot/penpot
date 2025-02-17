@@ -96,6 +96,8 @@
                   "var(--color-accent-tertiary)")
                 "#8f9da3") ;; TODO: Set this color on the DS
 
+        blocked? (:blocked frame)
+
         on-pointer-down
         (mf/use-fn
          (mf/deps (:id frame) on-frame-select workspace-read-only?)
@@ -145,9 +147,10 @@
 
         start-edit
         (mf/use-fn
-         (mf/deps frame-id edition?)
+         (mf/deps frame-id edition? blocked? workspace-read-only?)
          (fn []
-           (when-not (-> @st/state :workspace-global :read-only?)
+           (when (and (not blocked?)
+                      (not workspace-read-only?))
              (if (not edition?)
                (reset! edition* true)
                (st/emit! (dw/start-rename-shape frame-id))))))

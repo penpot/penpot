@@ -219,7 +219,7 @@
              plugin-url    (some-> params :plugin)
              template-url  (some-> params :template)]
          [:?
-          #_[:& app.main.ui.releases/release-notes-modal {:version "2.4"}]
+          #_[:& app.main.ui.releases/release-notes-modal {:version "2.5"}]
           #_[:& app.main.ui.onboarding/onboarding-templates-modal]
           #_[:& app.main.ui.onboarding/onboarding-modal]
           #_[:& app.main.ui.onboarding.team-choice/onboarding-team-modal]

@@ -55,7 +55,6 @@
           (dissoc state :current-project-id)
           state)))))
 
-
 (defn- files-fetched
   [project-id files]
   (ptk/reify ::files-fetched
@@ -67,14 +66,14 @@
                                                      (assoc project :count (count files))))))))
 
 (defn fetch-files
-  [project-id]
-  (assert (uuid? project-id) "expected valid uuid for `project-id`")
-  (ptk/reify ::fetch-files
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :get-project-files {:project-id project-id})
-           (rx/map (partial files-fetched project-id))))))
-
+  ([] (fetch-files nil))
+  ([project-id]
+   (ptk/reify ::fetch-files
+     ptk/WatchEvent
+     (watch [_ state _]
+       (when-let [project-id (or project-id (:current-project-id state))]
+         (->> (rp/cmd! :get-project-files {:project-id project-id})
+              (rx/map (partial files-fetched project-id))))))))
 
 
 

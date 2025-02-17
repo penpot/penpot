@@ -61,7 +61,7 @@
 
                [:validation :email-as-password]
                (swap! form assoc-in [:errors :password]
-                      {:code "errors.email-as-password"})
+                      {:message (tr "errors.email-as-password")})
 
                (st/emit! (ntf/error (tr "errors.generic")))))))
 

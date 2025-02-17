@@ -80,6 +80,7 @@ is a number of cores)
 - Fix problem opening url when page-id didn't exist [Taiga #10157](https://tree.taiga.io/project/penpot/issue/10157)
 - Fix problem with onboarding to a team [Taiga #10143](https://tree.taiga.io/project/penpot/issue/10143)
 - Fix problem with grid layout crashing [Taiga #10127](https://tree.taiga.io/project/penpot/issue/10127)
+- Fix rename locked boards [Taiga #10174](https://tree.taiga.io/project/penpot/issue/10174)
 
 ## 2.4.3
 

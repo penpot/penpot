@@ -10,43 +10,78 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
-   [app.util.i18n :refer [tr]]
+   [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
    [malli.core :as m]
    [rumext.v2 :as mf]))
 
 ;; --- Handlers Helpers
 
+(defn- translate-code
+  [code]
+  (if (vector? code)
+    (tr (nth code 0) (i18n/c (nth code 1)))
+    (tr code)))
+
+(defn- handle-error-fn
+  [props problem]
+  (let [v-fn   (:error/fn props)
+        result (v-fn problem)]
+    (if (string? result)
+      {:message result}
+      {:message (or (some-> (get result :code)
+                            (translate-code))
+                    (get result :message)
+                    (tr "errors.invalid-data"))})))
+
+(defn- handle-error-message
+  [props]
+  {:message (get props :error/message)})
+
+(defn- handle-error-code
+  [props]
+  (let [code (get props :error/code)]
+    {:message (translate-code code)}))
+
 (defn- interpret-schema-problem
-  [acc {:keys [schema in value] :as problem}]
-  (let [props (merge (m/type-properties schema)
-                     (m/properties schema))
-        field (or (first in) (:error/field props))]
+  [acc {:keys [schema in value type] :as problem}]
+  (let [props  (m/properties schema)
+        tprops (m/type-properties schema)
+        field  (or (first in)
+                   (:error/field props))]
 
     (if (contains? acc field)
       acc
       (cond
-        (nil? value)
-        (assoc acc field {:code "errors.field-missing"})
+        (nil? field)
+        acc
 
-        (contains? props :error/code)
-        (assoc acc field {:code (:error/code props)})
+        (or (= type :malli.core/missing-key)
+            (nil? value))
+        (assoc acc field {:message (tr "errors.field-missing")})
+
+        ;; --- CHECK on schema props
+        (contains? props :error/fn)
+        (assoc acc field (handle-error-fn props problem))
 
         (contains? props :error/message)
-        (assoc acc field {:code (:error/message props)})
+        (assoc acc field (handle-error-message props))
 
-        (contains? props :error/fn)
-        (let [v-fn (:error/fn props)
-              code (v-fn problem)]
-          (assoc acc field {:code code}))
+        (contains? props :error/code)
+        (assoc acc field (handle-error-code props))
 
-        (contains? props :error/validators)
-        (let [validators (:error/validators props)
-              props      (reduce #(%2 %1 value) props validators)]
-          (assoc acc field {:code (d/nilv (:error/code props) "errors.invalid-data")}))
+        ;; --- CHECK on type props
+        (contains? tprops :error/fn)
+        (assoc acc field (handle-error-fn tprops problem))
+
+        (contains? tprops :error/message)
+        (assoc acc field (handle-error-message tprops))
+
+        (contains? tprops :error/code)
+        (assoc acc field (handle-error-code tprops))
 
         :else
-        (assoc acc field {:code "errors.invalid-data"})))))
+        (assoc acc field {:message (tr "errors.invalid-data")})))))
 
 (defn- use-rerender-fn
   []
@@ -176,21 +211,6 @@
         (swap! form assoc-in [:touched field] true)))))
 
 ;; --- Helper Components
-
-(mf/defc field-error
-  [{:keys [form field type]
-    :as props}]
-  (let [{:keys [message] :as error} (dm/get-in form [:errors field])
-        touched? (dm/get-in form [:touched field])
-        show? (and touched? error message
-                   (cond
-                     (nil? type) true
-                     (keyword? type) (= (:type error) type)
-                     (ifn? type) (type (:type error))
-                     :else false))]
-    (when show?
-      [:ul
-       [:li {:key (:code error)} (tr (:message error))]])))
 
 (defn error-class
   [form field]

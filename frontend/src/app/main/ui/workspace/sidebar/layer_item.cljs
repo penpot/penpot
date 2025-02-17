@@ -120,16 +120,17 @@
        [:& layer-name {:ref name-ref
                        :shape-id id
                        :shape-name name
-                       :shape-touched? touched?
+                       :is-shape-touched touched?
                        :disabled-double-click read-only?
                        :on-start-edit on-disable-drag
                        :on-stop-edit on-enable-drag
                        :depth depth
+                       :is-blocked blocked?
                        :parent-size parent-size
-                       :selected? selected?
+                       :is-selected selected?
                        :type-comp component-tree?
                        :type-frame (cfh/frame-shape? item)
-                       :hidden? hidden?}]
+                       :is-hidden hidden?}]
 
        (when (not read-only?)
          [:div {:class (stl/css-case

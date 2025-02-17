@@ -197,8 +197,8 @@
       (watch [_ state _]
         (let [route    (:route state)
               qparams  (:query-params route)
-              index    (:index qparams)
-              frame-id (:frame-id qparams)]
+              index    (some-> (:index qparams) parse-long)
+              frame-id (some-> (:frame-id qparams) uuid/parse)]
           (rx/merge
            (rx/of (case (:zoom qparams)
                     "fit" zoom-to-fit
@@ -520,8 +520,8 @@
      (update [_ state]
        (let [route   (:route state)
              qparams (:query-params route)
-             page-id (:page-id qparams)
-             index   (:index qparams)
+             page-id (some-> (:page-id qparams) uuid/parse)
+             index   (some-> (:index qparams) parse-long)
              frames  (get-in state [:viewer :pages page-id :frames])
              frame   (get frames index)]
          (cond-> state
@@ -538,7 +538,7 @@
      (watch [_ state _]
        (let [route   (:route state)
              qparams (:query-params route)
-             page-id (:page-id qparams)
+             page-id (some-> (:page-id qparams) uuid/parse)
              frames  (get-in state [:viewer :pages page-id :frames])
              index   (d/index-of-pred frames #(= (:id %) frame-id))]
          (rx/of (go-to-frame-by-index (or index 0))))))))
@@ -550,7 +550,7 @@
     (watch [_ state _]
       (let [route   (:route state)
             qparams (:query-params route)
-            page-id (:page-id qparams)
+            page-id (some-> (:page-id qparams) uuid/parse)
             flows   (get-in state [:viewer :pages page-id :options :flows])]
         (if (seq flows)
           (let [frame-id (:starting-frame (first flows))]
@@ -622,7 +622,7 @@
     (update [_ state]
       (let [route    (:route state)
             qparams  (:query-params route)
-            page-id  (:page-id qparams)
+            page-id  (some-> (:page-id qparams) uuid/parse)
             frames   (dm/get-in state [:viewer :pages page-id :all-frames])
             frame    (d/seek #(= (:id %) frame-id) frames)
             overlays (:viewer-overlays state)]
@@ -654,7 +654,7 @@
     (update [_ state]
       (let [route    (:route state)
             qparams  (:query-params route)
-            page-id  (:page-id qparams)
+            page-id  (some-> (:page-id qparams) uuid/parse)
             frames   (get-in state [:viewer :pages page-id :all-frames])
             frame    (d/seek #(= (:id %) frame-id) frames)
             overlays (:viewer-overlays state)]
@@ -718,7 +718,7 @@
     (update [_ state]
       (let [route     (:route state)
             qparams   (:query-params route)
-            page-id   (:page-id qparams)
+            page-id   (some-> (:page-id qparams) uuid/parse)
             objects   (get-in state [:viewer :pages page-id :objects])
             selection (-> state
                           (get-in [:viewer-local :selected] #{})
@@ -734,8 +734,8 @@
     (update [_ state]
       (let [route     (:route state)
             qparams   (:query-params route)
-            page-id   (:page-id qparams)
-            index     (:index qparams)
+            page-id   (some-> (:page-id qparams) uuid/parse)
+            index     (some-> (:index qparams) parse-long)
             objects   (get-in state [:viewer :pages page-id :objects])
             frame-id  (get-in state [:viewer :pages page-id :frames index :id])
 
