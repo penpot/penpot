@@ -19,7 +19,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
-   [app.main.ui.notifications.context-notification :refer [context-notification]]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.tokens.changes :as wtch]
@@ -498,9 +498,8 @@
 
        (when (and warning-name-change? (= action "edit"))
          [:div {:class (stl/css :warning-name-change-notification-wrapper)}
-          [:> context-notification
-           {:level :warning
-            :content (tr "workspace.token.warning-name-change")}]])]
+          [:> context-notification*
+           {:level :warning :appearance :ghost} (tr "workspace.token.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
        [:> input-tokens*
