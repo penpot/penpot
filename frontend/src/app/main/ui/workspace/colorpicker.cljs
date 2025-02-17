@@ -111,7 +111,8 @@
                                      :radial :radial-gradient)
                                    :color))
         active-color-tab       (mf/use-state #(dc/get-active-color-tab))
-        drag?                  (mf/use-state false)
+        drag?*                 (mf/use-state false)
+        drag?                  (deref drag?*)
 
         type                   (if (= @active-color-tab "hsva") :hsv :rgb)
 
@@ -134,7 +135,7 @@
            (st/emit! (dc/update-colorpicker-color
                       {:image (-> (select-keys image [:id :width :height :mtype :name])
                                   (assoc :keep-aspect-ratio true))}
-                      (not @drag?)))))
+                      (not drag?)))))
 
         on-fill-image-click
         (mf/use-fn #(dom/click (mf/ref-val fill-image-ref)))
@@ -151,7 +152,6 @@
            (let [keep-aspect-ratio? (-> current-color :image :keep-aspect-ratio not)
                  image              (-> (:image current-color)
                                         (assoc :keep-aspect-ratio keep-aspect-ratio?))]
-
 
              (st/emit!
               (dc/update-colorpicker-color {:image image} true)
@@ -176,16 +176,11 @@
 
         handle-change-color
         (mf/use-fn
-         (mf/deps current-color @drag?)
+         (mf/deps current-color drag?)
          (fn [color]
-           (when (or (not= (str/lower (:hex color)) (str/lower (:hex current-color)))
-                     (not= (:h color) (:h current-color))
-                     (not= (:s color) (:s current-color))
-                     (not= (:v color) (:v current-color))
-                     (not= (:alpha color) (:alpha current-color)))
-             (let [recent-color (merge current-color color)
-                   recent-color (dc/materialize-color-components recent-color)]
-               (st/emit! (dc/update-colorpicker-color recent-color (not @drag?)))))))
+           (let [color (merge current-color color)
+                 color (dc/materialize-color-components color)]
+             (st/emit! (dc/update-colorpicker-color color (not drag?))))))
 
         handle-click-picker
         (mf/use-fn
@@ -217,18 +212,18 @@
 
         on-start-drag
         (mf/use-fn
-         (mf/deps drag? node-ref)
+         (mf/deps drag?* node-ref)
          (fn []
            (reset! should-update? false)
-           (reset! drag? true)
+           (reset! drag?* true)
            (st/emit! (dwu/start-undo-transaction (mf/ref-val node-ref)))))
 
         on-finish-drag
         (mf/use-fn
-         (mf/deps drag? node-ref)
+         (mf/deps drag?* node-ref)
          (fn []
            (reset! should-update? true)
-           (reset! drag? false)
+           (reset! drag?* false)
            (st/emit! (dwu/commit-undo-transaction (mf/ref-val node-ref)))))
 
         on-color-accept
