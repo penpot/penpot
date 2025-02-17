@@ -28,3 +28,8 @@
   padding: var(--actionable-padding);
   padding-inline-start: var(--sp-l);
 }
+
+.notification-message {
+  display: flex;
+  align-items: center;
+}
