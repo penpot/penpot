@@ -419,7 +419,7 @@
          on-lost-pointer-capture-pages :on-lost-pointer-capture
          on-pointer-move-pages :on-pointer-move
          size-pages-opened :size}
-        (use-resize-hook :tokens 200 38 400 :y false nil)
+        (use-resize-hook :tokens 200 38 "0.6" :y false nil)
 
         tokens-lib
         (mf/deref refs/tokens-lib)]
