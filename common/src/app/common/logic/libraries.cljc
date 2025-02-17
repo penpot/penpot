@@ -12,7 +12,6 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.logging :as log]
    [app.common.logic.shapes :as cls]
    [app.common.spec :as us]
@@ -226,18 +225,19 @@
          changes
          (if (ctl/grid-layout? objects (:parent-id first-shape))
            (let [target-cell (-> position meta :cell)
+
                  [row column]
-                 (if (some? target-cell)
-                   [(:row target-cell) (:column target-cell)]
-                   (gslg/get-drop-cell (:parent-id first-shape) objects position))]
+                 (when (some? target-cell)
+                   [(:row target-cell) (:column target-cell)])]
              (-> changes
                  (pcb/update-shapes
                   [(:parent-id first-shape)]
                   (fn [shape objects]
                     (-> shape
                         (ctl/assign-cells objects)
-                        (ctl/push-into-cell [(:id first-shape)] row column)
-                        (ctl/assign-cells objects)))
+                        (cond-> (and (some? row) (some? column))
+                          (-> (ctl/push-into-cell [(:id first-shape)] row column)
+                              (ctl/assign-cells objects)))))
                   {:with-objects? true})
                  (pcb/reorder-grid-children [(:parent-id first-shape)])))
            changes)
