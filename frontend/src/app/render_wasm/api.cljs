@@ -982,7 +982,8 @@
   #js {:antialias false
        :depth true
        :stencil true
-       :alpha true})
+       :alpha true
+       "preserveDrawingBuffer" true})
 
 (defn resize-viewbox
   [width height]

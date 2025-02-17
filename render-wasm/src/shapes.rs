@@ -510,6 +510,32 @@ impl Shape {
         self.selrect
     }
 
+    pub fn extrect(&self) -> math::Rect {
+        let mut rect = self.selrect.clone();
+        for shadow in self.shadows.iter() {
+            let (x, y) = shadow.offset;
+            let mut shadow_rect = self.selrect.clone();
+            shadow_rect.left += x;
+            shadow_rect.right += x;
+            shadow_rect.top += y;
+            shadow_rect.bottom += y;
+
+            shadow_rect.left -= shadow.blur;
+            shadow_rect.top -= shadow.blur;
+            shadow_rect.right += shadow.blur;
+            shadow_rect.bottom += shadow.blur;
+
+            rect.join(shadow_rect);
+        }
+        if self.blur.blur_type != blurs::BlurType::None {
+            rect.left -= self.blur.value;
+            rect.top -= self.blur.value;
+            rect.right += self.blur.value;
+            rect.bottom += self.blur.value;
+        }
+        rect
+    }
+
     pub fn center(&self) -> Point {
         self.selrect.center()
     }

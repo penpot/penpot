@@ -1,6 +1,7 @@
 use skia_safe as skia;
 
 mod debug;
+mod emscripten;
 mod math;
 mod mem;
 mod render;
@@ -17,12 +18,6 @@ use crate::utils::uuid_from_u32_quartet;
 use state::State;
 
 pub(crate) static mut STATE: Option<Box<State>> = None;
-
-extern "C" {
-    fn emscripten_GetProcAddress(
-        name: *const ::std::os::raw::c_char,
-    ) -> *const ::std::os::raw::c_void;
-}
 
 #[macro_export]
 macro_rules! with_state {
@@ -50,15 +45,6 @@ macro_rules! with_current_shape {
     };
 }
 
-fn init_gl() {
-    unsafe {
-        gl::load_with(|addr| {
-            let addr = std::ffi::CString::new(addr).unwrap();
-            emscripten_GetProcAddress(addr.into_raw() as *const _) as *const _
-        });
-    }
-}
-
 /// This is called from JS after the WebGL context has been created.
 #[no_mangle]
 pub extern "C" fn init(width: i32, height: i32) {
@@ -77,8 +63,7 @@ pub extern "C" fn clean_up() {
 #[no_mangle]
 pub extern "C" fn clear_cache() {
     with_state!(state, {
-        let render_state = state.render_state();
-        render_state.clear_cache();
+        state.rebuild_tiles();
     });
 }
 
@@ -103,13 +88,6 @@ pub extern "C" fn set_canvas_background(raw_color: u32) {
 pub extern "C" fn render(timestamp: i32) {
     with_state!(state, {
         state.start_render_loop(timestamp).expect("Error rendering");
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn render_from_cache() {
-    with_state!(state, {
-        state.render_from_cache();
     });
 }
 
@@ -140,22 +118,13 @@ pub extern "C" fn resize_viewbox(width: i32, height: i32) {
 pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     with_state!(state, {
         let render_state = state.render_state();
-        render_state.invalidate_cache_if_needed();
+        let zoom_changed = zoom != render_state.viewbox.zoom;
         render_state.viewbox.set_all(zoom, x, y);
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn set_view_zoom(zoom: f32) {
-    with_state!(state, {
-        state.render_state().viewbox.set_zoom(zoom);
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn set_view_xy(x: f32, y: f32) {
-    with_state!(state, {
-        state.render_state().viewbox.set_pan_xy(x, y);
+        if zoom_changed {
+            with_state!(state, {
+                state.rebuild_tiles();
+            });
+        }
     });
 }
 
@@ -190,8 +159,8 @@ pub unsafe extern "C" fn set_shape_type(shape_type: u8) {
 
 #[no_mangle]
 pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.set_selrect(left, top, right, bottom);
+    with_state!(state, {
+        state.set_selrect_for_current_shape(left, top, right, bottom);
     });
 }
 
@@ -612,7 +581,6 @@ pub extern "C" fn set_modifiers() {
         for entry in entries {
             state.modifiers.insert(entry.id, entry.transform);
         }
-        state.render_state().clear_cache();
     });
 }
 
@@ -735,5 +703,5 @@ pub extern "C" fn add_grid_track() {}
 pub extern "C" fn set_grid_cell() {}
 
 fn main() {
-    init_gl();
+    init_gl!();
 }
