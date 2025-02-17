@@ -270,6 +270,16 @@
         (rx/of (dws/select-shapes frames-id)
                dwz/zoom-to-selected-shape)))))
 
+(defn- select-frame-tool
+  [page-id file-id]
+  (ptk/reify ::select-frame-tool
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects          (dsh/lookup-page-objects state file-id page-id)
+            is-page-empty?   (= (count objects) 1)]
+        (when is-page-empty?
+          (rx/of (dwd/select-for-drawing :frame)))))))
+
 (defn- fetch-bundle
   "Multi-stage file bundle fetch coordinator"
   [file-id]
@@ -463,7 +473,9 @@
       (if-let [page (dsh/lookup-page state file-id page-id)]
         (rx/of (initialize-page* file-id page-id page)
                (dwth/watch-state-changes file-id page-id)
-               (dwl/watch-component-changes))
+               (dwl/watch-component-changes)
+               (when (cf/external-feature-flag "boards-02" "test")
+                 (select-frame-tool page-id file-id)))
         (rx/of (dcm/go-to-workspace :file-id file-id ::rt/replace true))))))
 
 (defn finalize-page
