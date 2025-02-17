@@ -1,4 +1,4 @@
-use skia_safe::{self as skia, textlayout, FontMgr};
+use skia_safe::{self as skia, textlayout, Font};
 
 use crate::shapes::FontFamily;
 
@@ -11,6 +11,7 @@ pub struct FontStore {
     // TODO: we should probably have just one of those
     font_provider: textlayout::TypefaceFontProvider,
     font_collection: textlayout::FontCollection,
+    debug_font: Font,
 }
 
 impl FontStore {
@@ -30,12 +31,19 @@ impl FontStore {
         font_provider.register_typeface(emoji_font, DEFAULT_EMOJI_FONT);
 
         let mut font_collection = skia::textlayout::FontCollection::new();
-        font_collection.set_default_font_manager(FontMgr::default(), None);
-        font_collection.set_dynamic_font_manager(FontMgr::from(font_provider.clone()));
+        font_collection.set_default_font_manager(Some(font_provider.clone().into()), None);
+        font_collection.set_dynamic_font_manager(Some(font_provider.clone().into()));
+
+        let debug_typeface = font_provider
+            .match_family_style("robotomono-regular", skia::FontStyle::default())
+            .unwrap();
+
+        let debug_font = skia::Font::new(debug_typeface, 10.0);
 
         Self {
             font_provider,
             font_collection,
+            debug_font,
         }
     }
 
@@ -45,6 +53,10 @@ impl FontStore {
 
     pub fn font_collection(&self) -> &textlayout::FontCollection {
         &self.font_collection
+    }
+
+    pub fn debug_font(&self) -> &Font {
+        &self.debug_font
     }
 
     pub fn add(&mut self, family: FontFamily, font_data: &[u8]) -> Result<(), String> {
@@ -60,21 +72,11 @@ impl FontStore {
         self.font_provider
             .register_typeface(typeface, alias.as_str());
 
-        self.refresh_font_collection();
-
         Ok(())
     }
 
     pub fn has_family(&self, family: &FontFamily) -> bool {
         let serialized = format!("{}", family);
         self.font_provider.family_names().any(|x| x == serialized)
-    }
-
-    fn refresh_font_collection(&mut self) {
-        self.font_collection = skia::textlayout::FontCollection::new();
-        self.font_collection
-            .set_default_font_manager(FontMgr::default(), None);
-        self.font_collection
-            .set_dynamic_font_manager(FontMgr::from(self.font_provider.clone()));
     }
 }

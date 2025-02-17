@@ -531,6 +531,33 @@ impl Shape {
         self.selrect
     }
 
+    pub fn extrect(&self) -> math::Rect {
+        let mut rect = self.bounds().to_rect();
+        for shadow in self.shadows.iter() {
+            let (x, y) = shadow.offset;
+            let mut shadow_rect = rect.clone();
+            shadow_rect.left += x;
+            shadow_rect.right += x;
+            shadow_rect.top += y;
+            shadow_rect.bottom += y;
+
+            shadow_rect.left -= shadow.blur;
+            shadow_rect.top -= shadow.blur;
+            shadow_rect.right += shadow.blur;
+            shadow_rect.bottom += shadow.blur;
+
+            rect.join(shadow_rect);
+        }
+        if self.blur.blur_type != blurs::BlurType::None {
+            rect.left -= self.blur.value;
+            rect.top -= self.blur.value;
+            rect.right += self.blur.value;
+            rect.bottom += self.blur.value;
+        }
+
+        rect
+    }
+
     pub fn center(&self) -> Point {
         self.selrect.center()
     }
@@ -574,7 +601,9 @@ impl Shape {
     }
 
     pub fn is_recursive(&self) -> bool {
-        !matches!(self.shape_type, Type::SVGRaw(_))
+        matches!(self.shape_type, Type::Frame(_))
+            || matches!(self.shape_type, Type::Group(_))
+            || matches!(self.shape_type, Type::Bool(_))
     }
 
     pub fn add_shadow(&mut self, shadow: Shadow) {
@@ -671,12 +700,13 @@ impl Shape {
         let width = bounds.width();
         let height = bounds.height();
 
-        self.selrect = math::Rect::from_xywh(
+        let new_selrect = math::Rect::from_xywh(
             center.x - width / 2.0,
             center.y - height / 2.0,
             width,
             height,
         );
+        self.selrect = new_selrect;
     }
 
     pub fn apply_transform(&mut self, transform: &Matrix) {

@@ -280,6 +280,14 @@ impl Bounds {
         let m = self.transform_matrix().unwrap_or(Matrix::default());
         m.scale_y() < 0.0
     }
+
+    pub fn to_rect(&self) -> Rect {
+        let minx = self.nw.x.min(self.ne.x).min(self.sw.x).min(self.se.x);
+        let miny = self.nw.y.min(self.ne.y).min(self.sw.y).min(self.se.y);
+        let maxx = self.nw.x.max(self.ne.x).max(self.sw.x).max(self.se.x);
+        let maxy = self.nw.y.max(self.ne.y).max(self.sw.y).max(self.se.y);
+        Rect::from_ltrb(minx, miny, maxx, maxy)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
