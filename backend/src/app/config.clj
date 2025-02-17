@@ -228,19 +228,9 @@
     [:objects-storage-s3-endpoint {:optional true} ::sm/uri]
     [:objects-storage-s3-io-threads {:optional true} ::sm/int]]))
 
-(def default-flags
-  [:enable-backend-api-doc
-   :enable-backend-openapi-doc
-   :enable-backend-worker
-   :enable-secure-session-cookies
-   :enable-email-verification
-   :enable-v2-migration])
-
 (defn- parse-flags
   [config]
-  (flags/parse flags/default
-               default-flags
-               (:flags config)))
+  (flags/parse flags/default (:flags config)))
 
 (defn read-env
   [prefix]

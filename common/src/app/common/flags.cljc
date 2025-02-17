@@ -132,12 +132,20 @@
 (def default
   "Flags with default configuration"
   [:enable-registration
-   :enable-export-file-v3
    :enable-login-with-password
-   :enable-backend-svgo
+   :enable-export-file-v3
    :enable-frontend-svgo
    :enable-exporter-svgo
-   ])
+   :enable-backend-svgo
+   :enable-backend-api-doc
+   :enable-backend-openapi-doc
+   :enable-backend-worker
+   :enable-secure-session-cookies
+   :enable-email-verification
+   :enable-onboarding
+   :enable-dashboard-templates-section
+   :enable-google-fonts-provider
+   :enable-component-thumbnails])
 
 (defn parse
   [& flags]
