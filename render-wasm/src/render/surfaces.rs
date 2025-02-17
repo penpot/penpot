@@ -14,7 +14,8 @@ pub enum SurfaceId {
 
 pub struct Surfaces {
     // is the final destination surface, the one that it is represented in the canvas element.
-    target: skia::Surface,
+    // TODO FIX remove pub
+    pub target: skia::Surface,
     // keeps the current render
     current: skia::Surface,
     // keeps the current shape's fills
@@ -82,6 +83,20 @@ impl Surfaces {
             .draw(self.canvas(to), (0.0, 0.0), sampling_options, paint);
     }
 
+    pub fn clip_into(
+        &mut self,
+        from: SurfaceId,
+        to: SurfaceId,
+        paint: Option<&skia::Paint>,
+        rect: skia::Rect,
+    ) {
+        self.canvas(to).save();
+        self.canvas(to)
+            .clip_rect(rect, skia_safe::ClipOp::Intersect, true);
+        self.draw_into(from, to, paint);
+        self.canvas(to).restore();
+    }
+
     pub fn apply_mut(&mut self, ids: &[SurfaceId], mut f: impl FnMut(&mut skia::Surface) -> ()) {
         for id in ids {
             let surface = self.get_mut(*id);
@@ -109,5 +124,83 @@ impl Surfaces {
         self.shadow = self.target.new_surface_with_dimensions(dim).unwrap();
         self.shape_fills = self.target.new_surface_with_dimensions(dim).unwrap();
         self.debug = self.target.new_surface_with_dimensions(dim).unwrap();
+    }
+
+    pub fn reset(&mut self, color: skia::Color) {
+        self.canvas(SurfaceId::Target).clear(color);
+        self.canvas(SurfaceId::Fills).restore_to_count(1);
+        self.canvas(SurfaceId::Strokes).restore_to_count(1);
+        self.canvas(SurfaceId::Current).restore_to_count(1);
+
+        self.apply_mut(
+            &[
+                SurfaceId::Fills,
+                SurfaceId::Strokes,
+                SurfaceId::Current,
+                SurfaceId::Shadow,
+                SurfaceId::Overlay,
+            ],
+            |s| {
+                s.canvas().clear(color).reset_matrix();
+            },
+        );
+
+        self.canvas(SurfaceId::Debug)
+            .clear(skia::Color::TRANSPARENT)
+            .reset_matrix();
+    }
+}
+
+pub struct SurfaceRef {
+    pub in_use: bool,
+    pub surface: skia::Surface,
+}
+
+pub struct SurfacePool {
+    pub surfaces: Vec<SurfaceRef>,
+    pub index: usize,
+}
+
+impl SurfaceRef {
+    pub fn allocated(&mut self) {
+        self.in_use = true;
+    }
+
+    pub fn deallocated(&mut self) {
+        self.in_use = false;
+    }
+}
+
+impl SurfacePool {
+    pub fn new(surface: &mut skia::Surface, dims: skia::ISize) -> Self {
+        let mut surfaces = Vec::new();
+        for _ in 0..32 {
+            surfaces.push(surface.new_surface_with_dimensions(dims).unwrap())
+        }
+
+        SurfacePool {
+            index: 0,
+            surfaces: surfaces
+                .into_iter()
+                .map(|surface| SurfaceRef {
+                    surface: surface,
+                    in_use: false,
+                })
+                .collect(),
+        }
+    }
+
+    pub fn allocate(&mut self) -> Result<skia::Surface, String> {
+        let start = self.index;
+        let len = self.surfaces.len();
+        loop {
+            self.index = (self.index + 1) % len;
+            if self.index == start {
+                return Err("Not enough surfaces in the pool".into());
+            }
+            if let Some(surface_ref) = self.surfaces.get(self.index) {
+                return Ok(surface_ref.surface.clone());
+            }
+        }
     }
 }
