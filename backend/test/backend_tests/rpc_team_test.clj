@@ -101,6 +101,106 @@
           (t/is (= :validation (:type edata)))
           (t/is (= :member-is-muted (:code edata))))))))
 
+(t/deftest create-team-invitations-with-request-access
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [profile1  (th/create-profile* 1 {:is-active true})
+          requester (th/create-profile* 2 {:is-active true :email "requester@example.com"})
+
+          team      (th/create-team* 1 {:profile-id (:id profile1)})
+          proj      (th/create-project* 1 {:profile-id (:id profile1)
+                                           :team-id (:id team)})
+          file      (th/create-file* 1 {:profile-id (:id profile1)
+                                        :project-id (:id proj)})]
+      (let [data {::th/type :create-team-access-request
+                  ::rpc/profile-id (:id requester)
+                  :file-id (:id file)}
+            out  (th/command! data)]
+        (t/is (th/success? out))
+        (t/is (= 1 (:call-count @mock))))
+
+      (th/reset-mock! mock)
+
+      (let [data {::th/type :create-team-invitations
+                  ::rpc/profile-id (:id profile1)
+                  :team-id (:id team)
+                  :role :editor
+                  :emails ["requester@example.com"]}
+            out  (th/command! data)]
+        (t/is (th/success? out))
+        (t/is (= 1 (:call-count @mock)))
+
+        ;; Check that request is properly removed
+        (let [requests (th/db-query :team-access-request
+                                    {:requester-id (:id requester)})]
+          (t/is (= 0 (count requests))))
+
+        (let [rows (th/db-query :team-profile-rel {:team-id (:id team)})]
+          (t/is (= 2 (count rows))))))))
+
+
+(t/deftest create-team-invitations-with-request-access-2
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [profile1   (th/create-profile* 1 {:is-active true})
+          requester  (th/create-profile* 2 {:is-active true
+                                            :email "requester@example.com"})
+
+          team       (th/create-team* 1 {:profile-id (:id profile1)})
+          proj       (th/create-project* 1 {:profile-id (:id profile1)
+                                            :team-id (:id team)})
+          file       (th/create-file* 1 {:profile-id (:id profile1)
+                                         :project-id (:id proj)})]
+
+      ;; Create the first access request
+      (let [data {::th/type :create-team-access-request
+                  ::rpc/profile-id (:id requester)
+                  :file-id (:id file)}
+            out  (th/command! data)]
+        (t/is (th/success? out))
+        (t/is (= 1 (:call-count @mock))))
+
+      (th/reset-mock! mock)
+
+      ;; Proceed to delete the requester user
+      (th/db-update! :profile
+                     {:deleted-at (dt/in-past "1h")}
+                     {:id (:id requester)})
+
+      ;; Create a new profile with the same email
+      (let [requester' (th/create-profile* 3 {:is-active true :email "requester@example.com"})]
+
+        ;; Create a request access with new requester
+        (let [data {::th/type :create-team-access-request
+                    ::rpc/profile-id (:id requester')
+                    :file-id (:id file)}
+              out  (th/command! data)]
+          (t/is (th/success? out))
+          (t/is (= 1 (:call-count @mock))))
+
+        (th/reset-mock! mock)
+
+        ;; Create an invitation for the requester email
+        (let [data {::th/type :create-team-invitations
+                    ::rpc/profile-id (:id profile1)
+                    :team-id (:id team)
+                    :role :editor
+                    :emails ["requester@example.com"]}
+              out  (th/command! data)]
+          (t/is (th/success? out))
+          (t/is (= 1 (:call-count @mock))))
+
+        ;; Check that request is properly removed
+        (let [requests (th/db-query :team-access-request
+                                    {:requester-id (:id requester')})]
+          (t/is (= 0 (count requests))))
+
+        (let [[r1 r2 :as rows] (th/db-query :team-profile-rel
+                                            {:team-id (:id team)}
+                                            {:order-by [:created-at]})]
+          (t/is (= 2 (count rows)))
+          (t/is (= (:profile-id r1) (:id profile1)))
+          (t/is (= (:profile-id r2) (:id requester'))))))))
+
+
 (t/deftest invitation-tokens
   (with-mocks [mock {:target 'app.email/send! :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
