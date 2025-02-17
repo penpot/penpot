@@ -553,7 +553,7 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Deves carregar tipos de letra que possuas or tenhas licença para utilizar "
 "no Penpot. Sabe mais na secção de Direitos de Conteúdos dos [Termos de "
-"serviço do Penpot](https://penpot.app/terms.html). Podes também ler mais "
+"serviço do Penpot](%s). Podes também ler mais "
 "sobre [licenciamento de fontes](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206

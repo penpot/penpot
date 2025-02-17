@@ -610,7 +610,7 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Du bör endast ladda upp teckensnitt som du äger eller har licens att "
 "använda i Penpot. Läs mer i avsnittet om innehållsrättigheter i [Penpots "
-"användarvillkor](https://penpot.app/terms.html). Du kanske också vill läsa "
+"användarvillkor](%s). Du kanske också vill läsa "
 "om [licensiering av teckensnitt](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206

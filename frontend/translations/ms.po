@@ -501,7 +501,7 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Anda hanya perlu memuat naik fon yang anda miliki atau mempunyai lesen "
 "untuk digunakan dalam Penpot. Ketahui lebih lanjut dalam bahagian Hak "
-"kandungan [Syarat Perkhidmatan Penpot](https://penpot.app/terms.html). Anda "
+"kandungan [Syarat Perkhidmatan Penpot](%s). Anda "
 "juga mungkin ingin membaca tentang [pelesenan "
 "fon](https://www.typography.com/faq)."
 

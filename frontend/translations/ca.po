@@ -458,7 +458,7 @@ msgstr ""
 "Només podeu pujar tipografies de la vostra propietat o de les que tingueu "
 "una llicència que us permeti utilitzar-los al Penpot. Teniu més informació "
 "a la secció de drets de contingut de les [Condicions del servei del "
-"Penpot](https://penpot.app/terms.html). També podeu llegir sobre les "
+"Penpot](%s). També podeu llegir sobre les "
 "[llicències de les tipografies](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206

@@ -437,7 +437,7 @@ msgstr ""
 "Powinieneś przesyłać tylko czcionki, których jesteś właścicielem lub "
 "posiadasz licencję na używanie w Penpot. Dowiedz się więcej w sekcji "
 "dotyczącej praw do treści w [Warunkach świadczenia usług Penpot] "
-"(https://penpot.app/terms.html). Możesz też przeczytać o [licencjonowaniu "
+"(%s). Możesz też przeczytać o [licencjonowaniu "
 "czcionek](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206

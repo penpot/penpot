@@ -549,7 +549,7 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "شما فقط باید فونت‌هایی را که مالک آنها هستید یا مجوز استفاده از آنها را در "
 "Penpot دارید آپلود کنید. در بخش حقوق محتوا [شرایط خدمات Penpot] "
-"(https://penpot.app/terms.html) اطلاعات بیشتری کسب کنید. همچنین ممکن است "
+"(%s) اطلاعات بیشتری کسب کنید. همچنین ممکن است "
 "بخواهید درباره [مجوز فونت] (https://www.typography.com/faq) مطالعه کنید."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206

@@ -589,7 +589,7 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "עליך להעלות גופנים בבעלותך או שיש לך רישיון להשתמש בהם ב־Penpot. ניתן למצוא "
 "על כך מידע נוסף בסעיף זכויות התוכן של [תנאי השירות של "
-"Penpot](https://penpot.app/terms.html). אפשר גם לקרוא גם על [רישוי "
+"Penpot](%s). אפשר גם לקרוא גם על [רישוי "
 "גופנים](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206

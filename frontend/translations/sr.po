@@ -553,7 +553,7 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Требало би да отпремате само фонтове које поседујете или за које имате "
 "лиценцу за коришћење у Penpot-у. Сазнајте више у одељку о правима садржаја "
-"у [Условима коришћења Penpot-а](https://penpot.app/terms.html). Такође, "
+"у [Условима коришћења Penpot-а](%s). Такође, "
 "можете прочитати о [лиценцирању фонтовa](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206

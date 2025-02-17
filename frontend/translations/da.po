@@ -189,7 +189,7 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Du bør kun uploade skrifttyper som du ejer eller har licens til at bruge i "
 "Penpot. Find ud af mere i sektionen om indholdsrettigheder i [Penpot's "
-"Terms of Service] (https://penpot.app/terms.html). Du kan også læse om "
+"Terms of Service] (%s). Du kan også læse om "
 "[font licensing](2)."
 
 #: src/app/main/ui/dashboard/team.cljs:116

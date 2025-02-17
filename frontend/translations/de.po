@@ -606,7 +606,7 @@ msgstr ""
 "Sie sollten nur Schriftarten hochladen, die Sie besitzen oder für die Sie "
 "eine Lizenz zur Verwendung in Penpot verfügen. Weitere Informationen finden "
 "Sie im Abschnitt über Inhaltsrechte in den [Nutzungsbedingungen von "
-"Penpot](https://penpot.app/terms.html). Mehr über die [Lizenzierung von "
+"Penpot](%s). Mehr über die [Lizenzierung von "
 "Schriftarten erfahren Sie hier](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206
