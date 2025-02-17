@@ -18,6 +18,7 @@
    [app.main.data.common :as dcm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.interactions :as dwi]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -131,9 +132,11 @@
            (on-frame-leave (:id frame))))
 
         main-instance? (ctk/main-instance? frame)
+        variants?      (features/use-feature "variants/v1")
+        is-variant?    (when variants? (:is-variant-container frame))
 
         text-width (* (:width frame) zoom)
-        show-icon? (and (or (:use-for-thumbnail frame) grid-edition? main-instance?)
+        show-icon? (and (or (:use-for-thumbnail frame) grid-edition? main-instance? is-variant?)
                         (not (<= text-width 15)))
         text-pos-x (if show-icon? 15 0)
 
@@ -196,7 +199,8 @@
           (cond
             (:use-for-thumbnail frame) [:use {:href "#icon-boards-thumbnail"}]
             grid-edition? [:use {:href "#icon-grid"}]
-            main-instance? [:use {:href "#icon-component"}])])
+            main-instance? [:use {:href "#icon-component"}]
+            is-variant?  [:use {:href "#icon-component"}])])
 
        (if ^boolean edition?
            ;; Case when edition? is true

@@ -29,7 +29,7 @@
    ::mf/forward-ref true}
   [{:keys [shape-id shape-name is-shape-touched disabled-double-click
            on-start-edit on-stop-edit depth parent-size is-selected
-           type-comp type-frame is-hidden is-blocked]} external-ref]
+           type-comp type-frame variant-name is-hidden is-blocked]} external-ref]
   (let [edition*         (mf/use-state false)
         edition?         (deref edition*)
 
@@ -37,6 +37,8 @@
         ref              (d/nilv external-ref local-ref)
 
         shape-for-rename (mf/deref lens:shape-for-rename)
+
+        shape-name       (d/nilv variant-name shape-name)
 
         has-path?        (str/includes? shape-name "/")
 

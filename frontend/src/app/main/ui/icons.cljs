@@ -257,6 +257,7 @@
 (def ^:icon v2-icon-2 (icon-xref :v2-icon-2))
 (def ^:icon v2-icon-3 (icon-xref :v2-icon-3))
 (def ^:icon v2-icon-4 (icon-xref :v2-icon-4))
+(def ^:icon variant (icon-xref :variant))
 (def ^:icon vertical-align-items-center (icon-xref :vertical-align-items-center))
 (def ^:icon vertical-align-items-end (icon-xref :vertical-align-items-end))
 (def ^:icon vertical-align-items-start (icon-xref :vertical-align-items-start))

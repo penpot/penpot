@@ -152,7 +152,7 @@
 
 (defn generate-duplicate-component
   "Create a new component copied from the one with the given id."
-  [changes library component-id components-v2]
+  [changes library component-id new-component-id components-v2]
   (let [component          (ctkl/get-component (:data library) component-id)
         new-name           (:name component)
 
@@ -160,7 +160,7 @@
                              (ctf/get-component-page (:data library) component))
 
         new-component-id   (when components-v2
-                             (uuid/next))
+                             new-component-id)
 
         [new-component-shape new-component-shapes  ; <- null in components-v2
          new-main-instance-shape new-main-instance-shapes]
@@ -180,6 +180,7 @@
                            (:id new-main-instance-shape)
                            (:id main-instance-page)
                            (:annotation component)))))
+
 
 (defn generate-instantiate-component
   "Generate changes to create a new instance from a component."

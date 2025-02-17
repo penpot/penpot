@@ -406,7 +406,7 @@
              (cond-> new-shape
                :always
                (-> (gsh/move delta)
-                   (dissoc :touched))
+                   (dissoc :touched :variant-id :variant-name))
 
                (and main-instance? root?)
                (assoc :main-instance true)
