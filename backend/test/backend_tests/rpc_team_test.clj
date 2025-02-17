@@ -37,18 +37,17 @@
                     :role :editor}]
 
       ;; invite external user without complaints
-      (let [data       (assoc data :emails ["foo@bar.com"])
-            out        (th/command! data)
+      (let [data        (assoc data :emails ["foo@bar.com"])
+            out         (th/command! data)
             ;; retrieve the value from the database and check its content
-            invitation (db/exec-one!
-                        th/*pool*
-                        ["select count(*) as num from team_invitation where team_id = ? and email_to = ?"
-                         (:team-id data) "foo@bar.com"])]
+            invitations (th/db-query :team-invitation
+                                     {:team-id (:team-id data)
+                                      :email-to "foo@bar.com"})]
 
         ;; (th/print-result! out)
         (t/is (th/success? out))
         (t/is (= 1 (:call-count (deref mock))))
-        (t/is (= 1 (:num invitation))))
+        (t/is (= 1 (count invitations))))
 
       ;; invite internal user without complaints
       (th/reset-mock! mock)
@@ -101,7 +100,6 @@
         (let [edata (-> out :error ex-data)]
           (t/is (= :validation (:type edata)))
           (t/is (= :member-is-muted (:code edata))))))))
-
 
 (t/deftest invitation-tokens
   (with-mocks [mock {:target 'app.email/send! :return nil}]
@@ -486,14 +484,12 @@
       ;; request success
       (let [out        (th/command! data)
             ;; retrieve the value from the database and check its content
-            request    (db/exec-one!
-                        th/*pool*
-                        ["select count(*) as num from team_access_request where team_id = ? and requester_id = ?"
-                         (:id team) (:id requester)])]
-
+            requests   (th/db-query :team-access-request
+                                    {:team-id (:id team)
+                                     :requester-id (:id requester)})]
         (t/is (th/success? out))
         (t/is (= 1 (:call-count @mock)))
-        (t/is (= 1 (:num request))))
+        (t/is (= 1 (count requests))))
 
       ;; request again fails
       (th/reset-mock! mock)
@@ -509,10 +505,10 @@
       ;; request again when is expired success
       (th/reset-mock! mock)
 
-      (db/exec-one!
-       th/*pool*
-       ["update team_access_request set valid_until = ? where team_id = ? and requester_id = ?"
-        (dt/in-past "1h") (:id team) (:id requester)])
+      (th/db-update! :team-access-request
+                     {:valid-until (dt/in-past "1h")}
+                     {:team-id (:id team)
+                      :requester-id (:id requester)})
 
       (t/is (th/success? (th/command! data)))
       (t/is (= 1 (:call-count @mock))))))
