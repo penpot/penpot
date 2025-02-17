@@ -18,6 +18,7 @@
    [app.main.ui.components.button-link :as bl]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
@@ -158,10 +159,8 @@
 
     [:*
      (when-let [message @error]
-       [:& context-notification
-        {:level :error
-         :content message
-         :role "alert"}])
+       [:> context-notification*
+        {:level :error} message])
 
      [:& fm/form {:on-submit on-submit
                   :class (stl/css :login-form)

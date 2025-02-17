@@ -21,8 +21,8 @@
   []
   (let [notification (mf/deref ref:notification)
         on-close     (mf/use-fn #(st/emit! (ntf/hide)))
-        context?     (and (nil? (:timeout notification))
-                          (nil? (:actions notification)))
+        actionable?     (and (nil? (:timeout notification))
+                             (nil? (:actions notification)))
         inline?      (or (= :inline (:type notification))
                          (= :floating (:position notification)))
         toast?       (or (= :toast (:type notification))
@@ -44,7 +44,8 @@
           :links (:links notification)
           :content (:content notification)}]
 
-        context?
+        ;; This should be substited with the actionable-notification* component
+        actionable?
         [:& context-notification
          {:level (or (:level notification) :info)
           :links (:links notification)
