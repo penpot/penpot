@@ -50,10 +50,6 @@ impl<'a> State<'a> {
         Ok(())
     }
 
-    pub fn render_from_cache(&mut self) {
-        let _ = self.render_state.render_from_cache();
-    }
-
     pub fn use_shape(&'a mut self, id: Uuid) {
         if !self.shapes.contains_key(&id) {
             let new_shape = Shape::new(id);
@@ -69,5 +65,23 @@ impl<'a> State<'a> {
 
     pub fn set_background_color(&mut self, color: skia::Color) {
         self.render_state.set_background_color(color);
+    }
+
+    pub fn set_selrect_for_current_shape(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
+        match self.current_shape.as_mut() {
+            Some(shape) => {
+                shape.set_selrect(left, top, right, bottom);
+                // We don't need to update the tile for the root shape.
+                if !shape.id.is_nil() {
+                    self.render_state.update_tile_for(&shape);
+                }
+            }
+            None => panic!("Invalid current shape"),
+        }
+    }
+
+    pub fn rebuild_tiles(&mut self) {
+        self.render_state
+            .rebuild_tiles(&mut self.shapes, &self.modifiers);
     }
 }

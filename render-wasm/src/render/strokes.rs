@@ -69,8 +69,10 @@ fn draw_stroke_on_path(
     match stroke.render_kind(is_open) {
         // For inner stroke we draw a center stroke (with double width) and clip to the original path (that way the extra outer stroke is removed)
         StrokeKind::InnerStroke => {
+            canvas.save(); // As we are using clear for surfaces we use save and restore here to still be able to clean the full surface
             canvas.clip_path(&skia_path, skia::ClipOp::Intersect, true);
             canvas.draw_path(&skia_path, &paint_stroke);
+            canvas.restore();
         }
         // For center stroke we don't need to do anything extra
         StrokeKind::CenterStroke => {
@@ -381,9 +383,9 @@ fn draw_image_stroke_in_container(
                 let is_open = p.is_open();
                 let mut paint = stroke.to_stroked_paint(is_open, &outer_rect, svg_attrs, dpr_scale);
                 canvas.draw_path(&path, &paint);
-                canvas.restore();
                 if stroke.render_kind(is_open) == StrokeKind::OuterStroke {
-                    // Small extra inner stroke to overlap with the fill and avoid unnecesary artifacts
+                    // Small extra inner stroke to overlap with the fill
+                    // and avoid unnecesary artifacts.
                     paint.set_stroke_width(1. / dpr_scale);
                     canvas.draw_path(&path, &paint);
                 }
@@ -396,13 +398,16 @@ fn draw_image_stroke_in_container(
                     svg_attrs,
                     dpr_scale,
                 );
+                canvas.restore();
             }
         }
 
         _ => unreachable!("This shape should not have strokes"),
     }
 
-    // Draw the image. We are using now the SrcIn blend mode, so the rendered piece of image will the area of the stroke over the image.
+    // Draw the image. We are using now the SrcIn blend mode,
+    // so the rendered piece of image will the area of the
+    // stroke over the image.
     let mut image_paint = skia::Paint::default();
     image_paint.set_blend_mode(skia::BlendMode::SrcIn);
     image_paint.set_anti_alias(true);
