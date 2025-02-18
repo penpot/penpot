@@ -195,7 +195,6 @@ If you want to stop running Penpot, just type
 docker compose -p penpot -f docker-compose.yaml down
 ```
 
-
 ### Configure Penpot with Docker
 
 The configuration is defined using flags and environment variables in the <code class="language-bash">docker-compose.yaml</code>
