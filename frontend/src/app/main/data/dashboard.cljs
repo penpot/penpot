@@ -469,10 +469,11 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (assoc-in [:files id] file)
-          (assoc-in [:recent-files id] file)
-          (update-in [:projects project-id :count] inc)))))
+      (let [file (dissoc file :data)]
+        (-> state
+            (assoc-in [:files id] file)
+            (assoc-in [:recent-files id] file)
+            (update-in [:projects project-id :count] inc))))))
 
 (defn create-file
   [{:keys [project-id name] :as params}]

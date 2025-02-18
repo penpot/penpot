@@ -13,10 +13,14 @@
   width: auto;
   padding: var(--sp-m);
   width: $sz-284;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .colorpicker {
   border-radius: $br-8;
+  overflow: auto;
 }
 
 .colorpicker-tabs {

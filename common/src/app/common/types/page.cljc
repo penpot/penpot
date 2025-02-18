@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.types.page
+  (:refer-clojure :exclude [empty?])
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as-alias gpt]
@@ -98,3 +99,8 @@
 (defn get-frame-flow
   [flows frame-id]
   (d/seek #(= (:starting-frame %) frame-id) (vals flows)))
+
+(defn is-empty?
+  "Check if page is empty or contains shapes"
+  [page]
+  (= 1 (count (:objects page))))
