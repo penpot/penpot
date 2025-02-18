@@ -94,7 +94,7 @@
     ;; We need to separate blur from shadows because the blur is applied to the strokes
     ;; while the shadows have to be placed *under* the stroke (for example, the inner shadows)
     ;; and the shadows needs to be applied only to the content (without the stroke)
-    [:g {:filter filter-str-blur}
+    [:g {:filter filter-str-blur :opacity opacity}
      [:defs
       [:& filters/filters {:shape (dissoc shape :blur) :filter-id filter-id-shadows}]
       [:& filters/filters {:shape (assoc shape :shadow []) :filter-id filter-id-blur}]]
@@ -107,8 +107,8 @@
            ;; transparent). It may have been changed to default black
            ;; if a shape coming from an imported SVG file is
            ;; rendered. See main.ui.shapes.attrs/add-style-attrs.
-           :fill "none"
-           :opacity opacity}
+           :opacity "1"
+           :fill "none"}
 
        [:& shape-fills {:shape shape}
         (if ^boolean path?
