@@ -63,17 +63,11 @@
     :browser
     :webworker))
 
-(def default-flags
-  [:enable-onboarding
-   :enable-dashboard-templates-section
-   :enable-google-fonts-provider
-   :enable-component-thumbnails])
-
 (defn- parse-flags
   [global]
   (let [flags (obj/get global "penpotFlags" "")
         flags (sequence (map keyword) (str/words flags))]
-    (flags/parse flags/default default-flags flags)))
+    (flags/parse flags/default flags)))
 
 (defn- parse-version
   [global]

@@ -141,7 +141,7 @@
   (keep flag->feature))
 
 (defn get-enabled-features
-  "Get the globally enabled fratures set."
+  "Get the globally enabled features set."
   [flags]
   (into default-features xf-flag-to-feature flags))
 
