@@ -57,6 +57,14 @@
                                         :main-instance-page (:id page)
                                         :shapes updated-shapes))))))))
 
+(defn update-component
+  [file component-label & {:keys [] :as params}]
+  (let [component-id  (thi/id component-label)]
+    (ctf/update-file-data
+     file
+     (fn [file-data]
+       (ctkl/update-component file-data component-id #(merge % params))))))
+
 (defn get-component
   [file label & {:keys [include-deleted?] :or {include-deleted? false}}]
   (ctkl/get-component (:data file) (thi/id label) include-deleted?))

@@ -881,6 +881,7 @@
     (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (dsh/lookup-page-objects state page-id)
+            data     (dsh/lookup-file-data state)
 
             ;; Ignore any shape whose parent is also intended to be moved
             ids      (cfh/clean-loops objects ids)
@@ -890,13 +891,15 @@
 
             all-parents (into #{parent-id} (map #(cfh/get-parent-id objects %)) ids)
 
-            changes (cls/generate-relocate (pcb/empty-changes it)
-                                           objects
-                                           parent-id
-                                           page-id
-                                           to-index
-                                           ids
-                                           :ignore-parents? ignore-parents?)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-page-id page-id)
+                        (pcb/with-objects objects)
+                        (pcb/with-library-data data)
+                        (cls/generate-relocate
+                         parent-id
+                         to-index
+                         ids
+                         :ignore-parents? ignore-parents?))
             undo-id (js/Symbol)]
 
         (rx/of (dwu/start-undo-transaction undo-id)

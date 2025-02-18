@@ -254,11 +254,11 @@
          (mf/deps related-components)
          (fn [prop-name]
            (->> related-components
-                (mapcat (fn [item]
-                          (map :value (filter (fn [prop] (= (:name prop) prop-name))
-                                              (:variant-properties item)))))
-                (filter some?)
+                (mapcat (fn [component]
+                          (map :value (filter #(= (:name %) prop-name)
+                                              (:variant-properties component)))))
                 distinct
+                (map #(if (str/empty? %) "--" %))
                 (map (fn [val] {:label val :id val})))))
 
         filter-matching
@@ -278,8 +278,7 @@
         (mf/use-fn
          (mf/deps id-component)
          (fn [pos value]
-           (when-not (str/empty? value)
-             (st/emit! (dwv/update-property-value id-component pos value)))))
+           (st/emit! (dwv/update-property-value id-component pos value))))
 
         switch-component
         (mf/use-fn
@@ -293,7 +292,7 @@
         (if (ctk/main-instance? shape)
           [:*
            [:span {:class (stl/css :variant-property-name :variant-property-name-bg)} (:name prop)]
-           [:> combobox* {:default-selected (str (or (:value prop) ""))
+           [:> combobox* {:default-selected (if (str/empty? (:value prop)) "--" (:value prop))
                           :options (clj->js (get-options (:name prop)))
                           :on-change (partial change-property-value pos)}]]
 
@@ -760,7 +759,10 @@
         properties         (->> (dwv/find-related-components data objects variant-id)
                                 (mapcat :variant-properties)
                                 (group-by :name)
-                                (map (fn [[k v]] {:name k :values (map :value v)})))
+                                (map (fn [[k v]]
+                                       {:name k
+                                        :values (distinct
+                                                 (map #(if (str/empty? (:value %)) "--" (:value %)) v))})))
 
         menu-open*         (mf/use-state false)
         menu-open?         (deref menu-open*)

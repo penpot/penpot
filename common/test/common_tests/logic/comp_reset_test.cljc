@@ -136,10 +136,10 @@
 
         ;; IMPORTANT: as modifying copies structure is now forbidden, this action
         ;; will not have any effect, and so the parent shape won't also be touched.
-        changes (cls/generate-relocate (pcb/empty-changes)
-                                       (:objects page)
+        changes (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                           (pcb/with-page-id (:id page))
+                                           (pcb/with-objects (:objects page)))
                                        (thi/id :copy-root)      ; parent-id
-                                       (:id page)               ; page-id
                                        0                        ; to-index
                                        #{(thi/id :free-shape)}) ; ids
 
@@ -231,10 +231,10 @@
 
         ;; IMPORTANT: as modifying copies structure is now forbidden, this action
         ;; will not have any effect, and so the parent shape won't also be touched.
-        changes (cls/generate-relocate (pcb/empty-changes)
-                                       (:objects page)
+        changes (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                           (pcb/with-page-id (:id page))
+                                           (pcb/with-objects (:objects page)))
                                        (thi/id :copy-root)      ; parent-id
-                                       (:id page)               ; page-id
                                        2                        ; to-index
                                        #{(:id copy-child1)})     ; ids
 

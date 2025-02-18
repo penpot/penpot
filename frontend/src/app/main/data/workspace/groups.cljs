@@ -232,7 +232,8 @@
             ids (->> ids
                      (remove #(ctn/has-any-copy-parent? objects (get objects %)))
                      ;; components can't be ungrouped
-                     (remove #(ctk/instance-head? (get objects %))))
+                     (remove #(ctk/instance-head? (get objects %)))
+                     (remove #(ctk/is-variant-container? (get objects %))))
 
             changes-list (sequence (keep prepare) ids)
 
