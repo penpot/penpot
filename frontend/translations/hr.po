@@ -433,7 +433,7 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Možeš učitavati samo fontove koje posjeduješ ili imaš licencu za korištenje "
 "u Penpotu. Saznaj više u odjeljku Prava na sadržaj [Penpotovih uvjeta "
-"pružanja usluge](https://penpot.app/terms.html). Također možeš pročitati o "
+"pružanja usluge](%s). Također možeš pročitati o "
 "[licenciranju fontova](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206

@@ -605,7 +605,7 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Měli byste nahrávat pouze písma, která vlastníte nebo máte licenci k "
 "použití v Penpotu. Další informace najdete v části Obsahová práva "
-"[smluvních podmínek společnosti Penpot](https://penpot.app/terms.html). "
+"[smluvních podmínek společnosti Penpot](%s). "
 "Můžete si také přečíst o [licencování "
 "písem](https://www.typography.com/faq)."
 

@@ -620,7 +620,7 @@ msgstr ""
 "Sólo deberías cargar fuentes que te pertenecen o de las que tienes una "
 "licencia que te permita usarlas en Penpot. Encuentra más información en la "
 "sección de Derechos de Contenido: [Penpot's Terms of "
-"Service](https://penpot.app/terms.html). También te puede interesar leer "
+"Service](%s). También te puede interesar leer "
 "más sobre licencias tipográficas: [font "
 "licensing](https://www.typography.com/faq)."
 

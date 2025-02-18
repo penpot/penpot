@@ -610,7 +610,7 @@ msgstr ""
 "Anda seharusnya hanya mengunggah fon yang Anda miliki atau memiliki izin "
 "untuk menggunakannya dalam Penpot. Ketahui lebih lanjut dalam bagian Hak "
 "konten (Content rights) dari [Ketentuan Layanan "
-"Penpot](https://penpot.app/terms.html). Anda mungkin juga ingin membaca "
+"Penpot](%s). Anda mungkin juga ingin membaca "
 "tentang [lisensi fon](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206

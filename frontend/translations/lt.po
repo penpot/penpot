@@ -412,7 +412,7 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Turėtumėte įkelti tik tuos šriftus, kurie jums priklauso arba kuriuos "
 "turite licenciją naudoti \"Penpot\". Daugiau informacijos rasite "
-"[Penpot'paslaugų teikimo sąlygų](https://penpot.app/terms.html) skyriuje "
+"[Penpot'paslaugų teikimo sąlygų](%s) skyriuje "
 "\"Turinio teisės\". Taip pat galite paskaityti apie [šriftų "
 "licencijavimą](https://www.typography.com/faq)."
 

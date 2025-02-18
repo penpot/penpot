@@ -432,7 +432,7 @@ msgstr ""
 "Zureak diren edo Penpoten erabiltzeko lizentzia duzun letra-tipoak bakarrik "
 "kargatu ditzakezu. Informazio gehiago lortzeko irakurri Edukiaren "
 "eskubideen atala: [Penpoten erabilpen "
-"baldintzak](https://penpot.app/terms.html). Letra-tipoen lizentzien "
+"baldintzak](%s). Letra-tipoen lizentzien "
 "inguruan irakurtzea ere interesgarria izan daiteke: [letra-tipoen "
 "lizentziak](https://www.typography.com/faq)."
 

@@ -435,7 +435,7 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Envie somente fontes que você possui os direitos ou tem licença para usar "
 "no Penpot. Descubra mais na seção de Direitos de conteúdo nos [Termos de "
-"Serviço do Penpot](https://penpot.app/terms.html). Caso queira saber mais, "
+"Serviço do Penpot](%s). Caso queira saber mais, "
 "veja esta leitura sobre [licenciamento de "
 "fontes](https://www.typography.com/faq)."
 

@@ -618,7 +618,7 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Ви повинні завантажувати лише ті шрифти, якими ви володієте або маєте "
 "ліцензію на використання в Penpot. Дізнайтеся більше в розділі \"Content "
-"Rights\" в [Умовах користування Penpot](https://penpot.app/terms.html). Ви "
+"Rights\" в [Умовах користування Penpot](%s). Ви "
 "також можете прочитати про [ліцензування "
 "шрифтів](https://www.typography.com/faq)."
 

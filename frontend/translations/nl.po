@@ -612,7 +612,7 @@ msgstr ""
 "Je mag alleen lettertypen uploaden waarvan je de eigenaar bent of waarvoor "
 "je een licentie hebt om te gebruiken in Penpot. Lees meer in de sectie "
 "Inhoudsrechten van [Penpot's "
-"Servicevoorwaarden](https://penpot.app/terms.html). Misschien wil je ook "
+"Servicevoorwaarden](%s). Misschien wil je ook "
 "meer lezen over [lettertypelicenties](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206
