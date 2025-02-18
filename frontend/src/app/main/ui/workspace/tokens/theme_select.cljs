@@ -117,6 +117,7 @@
            :aria-haspopup "listbox"
            :tab-index "0"
            :role "combobox"
+           :data-testid "theme-select"
            :class (stl/css-case :custom-select true
                                 :disabled-select (not can-edit?))}
      [:> text* {:as "span" :typography "body-small" :class (stl/css :current-label)}
