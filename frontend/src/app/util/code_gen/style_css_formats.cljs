@@ -54,7 +54,7 @@
 
 (defn format-color
   [value options]
-  (let [format (or (:format options) :hex)]
+  (let [format (get options :format :hex)]
     (cond
       (:image value)
       (let [image-url (cfg/resolve-file-media (:image value))
@@ -75,7 +75,7 @@
 
 (defmethod format-value :color
   [_ value options]
-  (let [format (or (:format options) :hex)]
+  (let [format (get options :format :hex)]
     (format-color value (assoc options :format format))))
 
 (defmethod format-value :color-array
