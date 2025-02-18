@@ -1307,9 +1307,9 @@
   "Push the shapes into the row/column cell and moves the rest"
   [parent shape-ids row column]
 
-  (let [cells (vec (get-cells parent {:sort? true}))
+  (let [parent (-> parent (free-cell-shapes shape-ids))
+        cells (vec (get-cells parent {:sort? true}))
         [start-index start-cell] (seek-indexed-cell cells row column)]
-
     (if (some? start-cell)
       (let [;; start-index => to-index is the range where the shapes inserted will be added
             to-index (min (+ start-index (count shape-ids)) (dec (count cells)))]
