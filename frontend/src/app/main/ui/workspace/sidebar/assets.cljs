@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.components-list :as ctkl]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.assets :as dwa]
@@ -90,6 +91,8 @@
         ordering       (:ordering filters)
         reverse-sort?  (= :desc ordering)
         num-libs       (count (mf/deref refs/libraries))
+        file           (mf/deref refs/file)
+        components     (ctkl/components (:data file))
 
         toggle-ordering
         (mf/use-fn
@@ -159,7 +162,7 @@
     [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
-        (if (= num-libs 1)
+        (if (and (= num-libs 1) (empty? components))
           [:button {:class (stl/css :add-library-button)
                     :on-click show-libraries-dialog
                     :data-testid "libraries"}
@@ -168,9 +171,7 @@
           [:button {:class (stl/css :libraries-button)
                     :on-click show-libraries-dialog
                     :data-testid "libraries"}
-           [:span {:class (stl/css :libraries-icon)}
-            i/library]
-           (tr "workspace.assets.libraries")]))
+           (tr "workspace.assets.manage-library")]))
 
 
       [:div {:class (stl/css :search-wrapper)}
