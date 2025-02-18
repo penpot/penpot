@@ -59,7 +59,7 @@ There are different ways of registration and authentication in Penpot:
 You can choose one of them or combine several methods, depending on your needs.
 By default, the email/password registration is enabled and the rest are disabled.
 
-## Penpot
+### Penpot
 
 This method of registration and authentication is enabled by default. For a production environment,
 it should be configured next to the SMTP settings, so there is a proper registration and verification
@@ -93,7 +93,7 @@ PENPOT_FLAGS: [...] disable-registration
 
 This option is only recommended for demo instances, not for production environments.
 
-## Authentication Providers
+### Authentication Providers
 
 To configure the authentication with third-party auth providers you will need to
 configure Penpot and set the correct callback of your Penpot instance in the auth-provider
@@ -112,7 +112,7 @@ This is how it looks with Gitlab provider:
 https://<your_domain>/api/auth/oauth/gitlab/callback
 ```
 
-### Google
+#### Google
 
 Allows integrating with Google as OAuth provider:
 
@@ -124,7 +124,7 @@ PENPOT_GOOGLE_CLIENT_ID: <client-id>
 PENPOT_GOOGLE_CLIENT_SECRET: <client-secret>
 ```
 
-### GitLab
+#### GitLab
 
 Allows integrating with GitLab as OAuth provider:
 
@@ -137,7 +137,7 @@ PENPOT_GITLAB_CLIENT_ID: <client-id>
 PENPOT_GITLAB_CLIENT_SECRET: <client-secret>
 ```
 
-### GitHub
+#### GitHub
 
 Allows integrating with GitHub as OAuth provider:
 
@@ -149,7 +149,7 @@ PENPOT_GITHUB_CLIENT_ID: <client-id>
 PENPOT_GITHUB_CLIENT_SECRET: <client-secret>
 ```
 
-### OpenID Connect
+#### OpenID Connect
 
 **NOTE:** Since version 1.5.0
 
@@ -237,8 +237,7 @@ register with another method.
 PENPOT_FLAGS: [...] enable-oidc-registration
 ```
 
-
-### Azure Active Directory using OpenID Connect
+#### Azure Active Directory using OpenID Connect
 
 Allows integrating with Azure Active Directory as authentication provider:
 
@@ -251,7 +250,7 @@ PENPOT_OIDC_BASE_URI: https://login.microsoftonline.com/<tenant-id>/v2.0/
 PENPOT_OIDC_CLIENT_SECRET: <client-secret>
 ```
 
-## LDAP
+### LDAP
 
 Penpot comes with support for *Lightweight Directory Access Protocol* (LDAP). This is the
 example configuration we use internally for testing this authentication backend.
