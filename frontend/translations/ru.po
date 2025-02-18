@@ -553,7 +553,7 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Вам следует загружать только собственные шрифты, или у которых есть "
 "лицензия на использование в Penpot. Больше информации в разделе \"Content "
-"rights\" в [Условиях использования Penpot](https://penpot.app/terms.html). "
+"rights\" в [Условиях использования Penpot](%s). "
 "Также можете прочитать о [лицензированием "
 "шрифтов](https://www.typography.com/faq) в целом."
 

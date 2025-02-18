@@ -615,7 +615,7 @@ msgstr ""
 "È consigliabile caricare unicamente font di cui si è proprietari o dei "
 "quali si possiede la licenza d'uso in Penpot. Ulteriori informazioni sui "
 "diritti dei contenuti sono disponibili nella sezione [Termini di Servizio "
-"di Penpot](https://penpot.app/terms.html). Potresti anche voler "
+"di Penpot](%s). Potresti anche voler "
 "approfondire le [licenze per i font](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206

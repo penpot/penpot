@@ -564,7 +564,7 @@ msgstr ""
 "Ne téléchargez que des polices que vous possédez ou dont la license vous "
 "permet de les utiliser dans Penpot. Vous trouverez plus d'informations dans "
 "la section Propriété des Contenus des [conditions générales d'utilisation "
-"de Penpot](https://penpot.app/terms.html). Vous pouvez également vous "
+"de Penpot](%s). Vous pouvez également vous "
 "renseigner sur les [licenses de polices](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206

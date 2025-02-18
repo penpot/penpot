@@ -16,7 +16,8 @@
    [rumext.v2 :as mf]))
 
 (mf/defc value-saturation-selector [{:keys [saturation value on-change on-start-drag on-finish-drag]}]
-  (let [dragging? (mf/use-state false)
+  (let [dragging?* (mf/use-state false)
+        dragging? (deref dragging?*)
         calculate-pos
         (fn [ev]
           (let [{:keys [left right top bottom]} (-> ev dom/get-target dom/get-bounding-rect)
@@ -26,27 +27,36 @@
             (on-change px py)))
 
         handle-start-drag
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-start-drag)
          (fn [event]
            (dom/capture-pointer event)
-           (reset! dragging? true)
+           (reset! dragging?* true)
            (on-start-drag)))
 
         handle-stop-drag
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-finish-drag)
          (fn [event]
            (dom/release-pointer event)
-           (reset! dragging? false)
-           (on-finish-drag)))]
+           (reset! dragging?* false)
+           (on-finish-drag)))
+
+        handle-change-pointer-move
+        (mf/use-fn
+         (mf/deps calculate-pos dragging?)
+         (fn [event]
+           (when dragging?
+             (calculate-pos event))))]
+
     [:div {:class (stl/css :value-saturation-selector)
+           :data-testid "value-saturation-selector"
            :on-pointer-down handle-start-drag
            :on-pointer-up handle-stop-drag
-           :on-lost-pointer-capture handle-stop-drag
            :on-click calculate-pos
-           :on-pointer-move #(when @dragging? (calculate-pos %))}
+           :on-pointer-move handle-change-pointer-move}
      [:div {:class (stl/css :handler)
+            :data-testid "ramp-handler"
             :style {:pointer-events "none"
                     :left (str (* 100 saturation) "%")
                     :top (str (* 100 (- 1 (/ value 255))) "%")}}]]))

@@ -609,7 +609,7 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Vajadzētu augšupielādēt tikai sev piederošus fontus vai tos, kuriem ir "
 "licence to izmantošanai Penpot. Vairāk var uzzināt [Penpot pakalpojuma "
-"sniegšanas noteikumos](https://penpot.app/terms.html). Varētu būt noderīgi "
+"sniegšanas noteikumos](%s). Varētu būt noderīgi "
 "izlasīt arī par [fontu licencēšanu](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206
