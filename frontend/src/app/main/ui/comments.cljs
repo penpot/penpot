@@ -90,22 +90,26 @@
       (dom/set-data! "fullname" fullname)
       (obj/set! "textContent" fullname)))
 
+(defn- current-text-node*
+  "Retrieves the text node and the offset that the cursor is positioned on"
+  [node anchor-node]
+  (when (.contains node anchor-node)
+    (let [span-node (if (instance? js/Text anchor-node)
+                      (dom/get-parent anchor-node)
+                      anchor-node)
+          container (dom/get-parent span-node)]
+      (when (= node container)
+        span-node))))
+
 (defn- current-text-node
   "Retrieves the text node and the offset that the cursor is positioned on"
-  [node]
-
-  (let [selection     (wapi/get-selection)
-        range         (wapi/get-range selection 0)
-        anchor-node   (wapi/range-start-container range)
-        anchor-offset (wapi/range-start-offset range)]
-    (when (and node (.contains node anchor-node))
-      (let [span-node
-            (if (instance? js/Text anchor-node)
-              (dom/get-parent anchor-node)
-              anchor-node)
-            container   (dom/get-parent span-node)]
-        (when (= node container)
-          [span-node anchor-offset])))))
+  ([node] (current-text-node node (wapi/get-selection)))
+  ([node selection]
+   (when (and node selection)
+     (let [range         (wapi/get-range selection 0)
+           anchor-node   (wapi/range-start-container range)
+           anchor-offset (wapi/range-start-offset range)]
+       [(current-text-node* node anchor-node) anchor-offset]))))
 
 (defn- absolute-offset
   [node child offset]
@@ -156,7 +160,8 @@
         mentions-s     (mf/use-ctx mentions-context)
         cur-mention    (mf/use-var nil)
 
-        prev-selection (mf/use-var nil)
+        prev-selection-ref
+        (mf/use-ref)
 
         init-input
         (mf/use-fn
@@ -203,58 +208,59 @@
         handle-select
         (mf/use-fn
          (fn []
-           (let [node          (mf/ref-val local-ref)
-                 selection     (wapi/get-selection)
-                 range         (wapi/get-range selection 0)
-                 anchor-node   (wapi/range-start-container range)]
-             (when (and (= node anchor-node) (.-collapsed range))
-               (wapi/set-cursor-after! anchor-node)))
+           (when-let [node (mf/ref-val local-ref)]
+             (when-let [selection (wapi/get-selection)]
+               (let [range       (wapi/get-range selection 0)
+                     anchor-node (wapi/range-start-container range)
+                     offset      (wapi/range-start-offset range)]
 
-           (let [node (mf/ref-val local-ref)
-                 [span-node offset] (current-text-node node)
-                 [prev-span prev-offset] @prev-selection]
+                 (when (and (= node anchor-node) (.-collapsed ^js range))
+                   (wapi/set-cursor-after! anchor-node))
 
-             (reset! prev-selection #js [span-node offset])
+                 (when-let [span-node (current-text-node* node anchor-node)]
+                   (let [[prev-span prev-offset]
+                         (mf/ref-val prev-selection-ref)
 
-             (when (= (dom/get-data span-node "type") "mention")
-               (let [from-offset (absolute-offset node prev-span prev-offset)
-                     to-offset (absolute-offset node span-node offset)
+                         node-text
+                         (subs (dom/get-text span-node) 0 offset)
 
-                     [_ prev next]
-                     (->> node
-                          (dom/seq-nodes)
-                          (d/with-prev-next)
-                          (filter (fn [[elem _ _]] (= elem span-node)))
-                          (first))]
+                         current-at-symbol
+                         (str/last-index-of (subs node-text 0 offset) "@")
 
-                 (if (> from-offset to-offset)
-                   (wapi/set-cursor-after! prev)
-                   (wapi/set-cursor-before! next))))
+                         mention-text
+                         (subs node-text current-at-symbol)
 
-             (when span-node
-               (let [node-text (subs (dom/get-text span-node) 0 offset)
+                         at-symbol-inside-word?
+                         (and (> current-at-symbol 0)
+                              (str/word? (str/slice node-text (- current-at-symbol 1) current-at-symbol)))]
 
-                     current-at-symbol
-                     (str/last-index-of (subs node-text 0 offset) "@")
+                     (mf/set-ref-val! prev-selection-ref #js [span-node offset])
 
-                     mention-text
-                     (subs node-text current-at-symbol)
+                     (when (= (dom/get-data span-node "type") "mention")
+                       (let [from-offset (absolute-offset node prev-span prev-offset)
+                             to-offset   (absolute-offset node span-node offset)
 
-                     at-symbol-inside-word?
-                     (and (> current-at-symbol 0)
-                          (str/word? (str/slice node-text (- current-at-symbol 1) current-at-symbol)))]
+                             [_ prev next]
+                             (->> node
+                                  (dom/seq-nodes)
+                                  (d/with-prev-next)
+                                  (filter (fn [[elem _ _]] (= elem span-node)))
+                                  (first))]
+                         (if (> from-offset to-offset)
+                           (wapi/set-cursor-after! prev)
+                           (wapi/set-cursor-before! next))))
 
-                 (if (and (not at-symbol-inside-word?)
-                          (re-matches #"@\w*" mention-text))
-                   (do
-                     (reset! cur-mention mention-text)
-                     (rx/push! mentions-s {:type :display-mentions})
-                     (let [mention (subs mention-text 1)]
-                       (when (d/not-empty? mention)
-                         (rx/push! mentions-s {:type :filter-mentions :data mention}))))
-                   (do
-                     (reset! cur-mention nil)
-                     (rx/push! mentions-s {:type :hide-mentions}))))))))
+                     (if (and (not at-symbol-inside-word?)
+                              (re-matches #"@\w*" mention-text))
+                       (do
+                         (reset! cur-mention mention-text)
+                         (rx/push! mentions-s {:type :display-mentions})
+                         (let [mention (subs mention-text 1)]
+                           (when (d/not-empty? mention)
+                             (rx/push! mentions-s {:type :filter-mentions :data mention}))))
+                       (do
+                         (reset! cur-mention nil)
+                         (rx/push! mentions-s {:type :hide-mentions}))))))))))
 
         handle-focus
         (mf/use-fn
@@ -314,7 +320,8 @@
         handle-insert-at-symbol
         (mf/use-fn
          (fn []
-           (let [node (mf/ref-val local-ref) [span-node] (current-text-node node)]
+           (let [node (mf/ref-val local-ref)
+                 [span-node] (current-text-node node)]
              (when span-node
                (let [node-text (dom/get-text span-node)
                      at-symbol (if (blank-content? node-text) "@" " @")]
