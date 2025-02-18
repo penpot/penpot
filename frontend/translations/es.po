@@ -6567,9 +6567,22 @@ msgstr "La agrupación de sets aun no está soportada."
 msgid "workspace.token.label.group"
 msgstr "Grupo"
 
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
+msgid "workspace.token.label.group-optional"
+msgstr "Opcional"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:191
+msgid "workspace.token.label.group-placeholder"
+msgstr "Añade un grupo (p. ej. Modo)"
+
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
 msgid "workspace.token.label.theme"
 msgstr "Tema"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:200
+msgid "workspace.token.label.theme-placeholder"
+msgstr "Añade un Tema (p. ej. Claro)"
+
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
 msgid "workspace.token.new-theme"
