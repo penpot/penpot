@@ -103,13 +103,16 @@
 
 (defn- current-text-node
   "Retrieves the text node and the offset that the cursor is positioned on"
-  ([node] (current-text-node node (wapi/get-selection)))
-  ([node selection]
-   (when (and node selection)
-     (let [range         (wapi/get-range selection 0)
-           anchor-node   (wapi/range-start-container range)
-           anchor-offset (wapi/range-start-offset range)]
-       [(current-text-node* node anchor-node) anchor-offset]))))
+  [node]
+  (assert (some? node) "expected valid node")
+
+  (when-let [selection (wapi/get-selection)]
+    (let [range       (wapi/get-range selection 0)
+          anchor-node (wapi/range-start-container range)
+          offset      (wapi/range-start-offset range)
+          span-node   (current-text-node* node anchor-node)]
+      (when span-node
+        [span-node offset]))))
 
 (defn- absolute-offset
   [node child offset]
@@ -285,9 +288,8 @@
         (mf/use-fn
          (mf/deps on-change)
          (fn [data]
-           (let [node (mf/ref-val local-ref)
-                 [span-node offset] (current-text-node node)]
-             (when span-node
+           (when-let [node (mf/ref-val local-ref)]
+             (when-let [[span-node offset] (current-text-node node)]
                (let [node-text
                      (dom/get-text span-node)
 
@@ -320,9 +322,8 @@
         handle-insert-at-symbol
         (mf/use-fn
          (fn []
-           (let [node (mf/ref-val local-ref)
-                 [span-node] (current-text-node node)]
-             (when span-node
+           (when-let [node (mf/ref-val local-ref)]
+             (when-let [[span-node] (current-text-node node)]
                (let [node-text (dom/get-text span-node)
                      at-symbol (if (blank-content? node-text) "@" " @")]
 
@@ -334,66 +335,62 @@
          (mf/deps on-esc on-ctrl-enter handle-select handle-input)
          (fn [event]
            (handle-select event)
+           (when-let [node (mf/ref-val local-ref)]
+             (when-let [[span-node offset] (current-text-node node)]
+               (cond
+                 (and @cur-mention (kbd/enter? event))
+                 (do (dom/prevent-default event)
+                     (dom/stop-propagation event)
+                     (rx/push! mentions-s {:type :insert-selected-mention}))
 
-           (let [node (mf/ref-val local-ref)
-                 [span-node offset] (current-text-node node)]
+                 (and @cur-mention (kbd/down-arrow? event))
+                 (do (dom/prevent-default event)
+                     (dom/stop-propagation event)
+                     (rx/push! mentions-s {:type :insert-next-mention}))
 
-             (cond
-               (and @cur-mention (kbd/enter? event))
-               (do (dom/prevent-default event)
-                   (dom/stop-propagation event)
-                   (rx/push! mentions-s {:type :insert-selected-mention}))
+                 (and @cur-mention (kbd/up-arrow? event))
+                 (do (dom/prevent-default event)
+                     (dom/stop-propagation event)
+                     (rx/push! mentions-s {:type :insert-prev-mention}))
 
-               (and @cur-mention (kbd/down-arrow? event))
-               (do (dom/prevent-default event)
-                   (dom/stop-propagation event)
-                   (rx/push! mentions-s {:type :insert-next-mention}))
+                 (and @cur-mention (kbd/esc? event))
+                 (do (dom/prevent-default event)
+                     (dom/stop-propagation event)
+                     (rx/push! mentions-s {:type :hide-mentions}))
 
-               (and @cur-mention (kbd/up-arrow? event))
-               (do (dom/prevent-default event)
-                   (dom/stop-propagation event)
-                   (rx/push! mentions-s {:type :insert-prev-mention}))
+                 (and (kbd/esc? event) (fn? on-esc))
+                 (on-esc event)
 
-               (and @cur-mention (kbd/esc? event))
-               (do (dom/prevent-default event)
-                   (dom/stop-propagation event)
-                   (rx/push! mentions-s {:type :hide-mentions}))
+                 (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
+                 (on-ctrl-enter event)
 
-               (and (kbd/esc? event) (fn? on-esc))
-               (on-esc event)
-
-               (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
-               (on-ctrl-enter event)
-
-               (kbd/enter? event)
-               (let [sel (wapi/get-selection)
-                     range (.getRangeAt sel 0)]
-                 (dom/prevent-default event)
-                 (dom/stop-propagation event)
-                 (let [[span-node offset] (current-text-node node)]
-                   (.deleteContents range)
-                   (handle-input)
-
-                   (when span-node
-                     (let [txt (.-textContent span-node)]
-                       (dom/set-html! span-node (dm/str (subs txt 0 offset) "\n" zero-width-space (subs txt offset)))
-                       (wapi/set-cursor! span-node (inc offset))
-                       (handle-input)))))
-
-               (kbd/backspace? event)
-               (let [prev-node (get-prev-node node span-node)]
-                 (when (and (some? prev-node)
-                            (= "mention" (dom/get-data prev-node "type"))
-                            (= offset 1))
+                 (kbd/enter? event)
+                 (let [sel (wapi/get-selection)
+                       range (.getRangeAt sel 0)]
                    (dom/prevent-default event)
                    (dom/stop-propagation event)
-                   (.remove prev-node)))))))]
+                   (let [[span-node offset] (current-text-node node)]
+                     (.deleteContents range)
+                     (handle-input)
 
-    (mf/use-layout-effect
-     (mf/deps autofocus)
-     (fn []
-       (when autofocus
-         (dom/focus! (mf/ref-val local-ref)))))
+                     (when span-node
+                       (let [txt (.-textContent span-node)]
+                         (dom/set-html! span-node (dm/str (subs txt 0 offset) "\n" zero-width-space (subs txt offset)))
+                         (wapi/set-cursor! span-node (inc offset))
+                         (handle-input)))))
+
+                 (kbd/backspace? event)
+                 (let [prev-node (get-prev-node node span-node)]
+                   (when (and (some? prev-node)
+                              (= "mention" (dom/get-data prev-node "type"))
+                              (= offset 1))
+                     (dom/prevent-default event)
+                     (dom/stop-propagation event)
+                     (.remove prev-node))))))))]
+
+    (mf/with-layout-effect [autofocus]
+      (when ^boolean autofocus
+        (dom/focus! (mf/ref-val local-ref))))
 
     ;; Creates the handlers for selection
     (mf/with-effect [handle-select]
@@ -417,12 +414,12 @@
 
     ;; Auto resize input to display the comment
     (mf/with-layout-effect nil
-      (let [^js node (mf/ref-val local-ref)]
+      (when-let [^js node (mf/ref-val local-ref)]
         (set! (.-height (.-style node)) "0")
         (set! (.-height (.-style node)) (str (+ 2 (.-scrollHeight node)) "px"))))
 
     (mf/with-effect [value prev-value]
-      (let [node (mf/ref-val local-ref)]
+      (when-let [node (mf/ref-val local-ref)]
         (cond
           (and (d/not-empty? prev-value) (empty? value))
           (do (dom/set-html! node "")
