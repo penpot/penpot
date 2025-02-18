@@ -184,7 +184,8 @@
                    (when (deref open*)
                      (dom/prevent-default event)
                      (handle-selection focused* selected* open*)
-                     (when (fn? on-change)
+                     (when (and (fn? on-change)
+                                (some? focused))
                        (on-change focused)))
 
                    (kbd/esc? event)
