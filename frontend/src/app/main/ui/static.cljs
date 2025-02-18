@@ -463,14 +463,13 @@
   (let [type       (:type data)
         path       (:path route)
 
-        query-params (:query-params route)
-        path-params  (:path-params route)
+        params     (:query-params route)
 
         workspace? (str/includes? path "workspace")
         dashboard? (str/includes? path "dashboard")
         view?      (str/includes? path "view")
 
-        ;; We stora the request access info int this state
+        ;; We store the request access info int this state
         info*      (mf/use-state nil)
         info       (deref info*)
 
@@ -478,22 +477,22 @@
 
         request-access?
         (and
-         (or (= (:type data) :not-found) (= (:type data) :authentication))
+         (or (= (:type data) :not-found)
+             (= (:type data) :authentication))
          (or workspace? dashboard? view?)
          (or (:file-id info)
              (:team-id info)))]
 
-    (mf/with-effect [type path query-params path-params]
-      (let [query-params (u/map->query-string query-params)
-            event-params {::ev/name "exception-page"
-                          :type type
-                          :path path
-                          :query-params query-params}]
-        (st/emit! (ptk/event ::ev/event event-params))))
+    (mf/with-effect [type path params]
+      (st/emit! (ptk/data-event ::ev/event
+                                {::ev/name "exception-page"
+                                 :type type
+                                 :path path
+                                 :params (u/map->query-string params)})))
 
-    (mf/with-effect [path-params info]
+    (mf/with-effect [params info]
       (when-not (:loaded info)
-        (->> (load-info path-params)
+        (->> (load-info params)
              (rx/subs! (partial reset! info*)))))
 
     (when loaded?
