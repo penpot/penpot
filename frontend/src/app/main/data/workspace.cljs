@@ -29,6 +29,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -271,13 +272,12 @@
                dwz/zoom-to-selected-shape)))))
 
 (defn- select-frame-tool
-  [page-id file-id]
+  [file-id page-id]
   (ptk/reify ::select-frame-tool
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects          (dsh/lookup-page-objects state file-id page-id)
-            is-page-empty?   (= (count objects) 1)]
-        (when is-page-empty?
+      (let [page (dsh/lookup-page state file-id page-id)]
+        (when (ctp/is-empty? page)
           (rx/of (dwd/select-for-drawing :frame)))))))
 
 (defn- fetch-bundle
@@ -475,7 +475,7 @@
                (dwth/watch-state-changes file-id page-id)
                (dwl/watch-component-changes)
                (when (cf/external-feature-flag "boards-02" "test")
-                 (select-frame-tool page-id file-id)))
+                 (select-frame-tool file-id page-id)))
         (rx/of (dcm/go-to-workspace :file-id file-id ::rt/replace true))))))
 
 (defn finalize-page
