@@ -621,9 +621,10 @@
     [:> comment-content* {:content (:content item)}]]
 
    [:div {:class (stl/css :replies)}
-    (let [total-comments (:count-comments item 1)
-          total-replies  (dec total-comments)
-          unread-replies (:count-unread-comments item 0)]
+    (let [total-comments  (:count-comments item)
+          unread-comments (:count-unread-comments item)
+          total-replies   (dec total-comments)
+          unread-replies  (if (= unread-comments total-comments) (dec unread-comments) unread-comments)]
       [:*
        (when (> total-replies 0)
          (if (= total-replies 1)
