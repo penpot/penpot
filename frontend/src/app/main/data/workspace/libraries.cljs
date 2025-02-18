@@ -713,8 +713,10 @@
 
 (defn go-to-component-file
   [file-id component]
-  (dm/assert! (uuid? file-id))
-  (dm/assert! (some? component))
+
+  (assert (uuid? file-id) "expected an uuid for `file-id`")
+  (assert (ctk/check-component component) "expected a valid component")
+
   (ptk/reify ::nav-to-component-file
     ptk/WatchEvent
     (watch [_ state _]
@@ -722,8 +724,7 @@
                        (assoc :file-id file-id)
                        (assoc :page-id (:main-instance-page component))
                        (assoc :component-id (:id component)))]
-        (rx/of (rt/nav :workspace params :new-window? true))))))
-
+        (rx/of (rt/nav :workspace params ::rt/new-window true))))))
 
 (defn go-to-local-component
   [& {:keys [id] :as options}]
