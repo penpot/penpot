@@ -32,3 +32,37 @@ test("Bug 9042 - Measurement unit dropdowns for columns are cut off in grid layo
   await rowsContainer.getByText("FR").nth(2).click();
   await expect(rowsContainer.getByText("%")).toBeInViewport();
 });
+
+test("[Taiga #9116] Copy CSS background color in the selected format in the INSPECT tab", async ({
+  page,
+  context,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.goToWorkspace();
+
+  await workspacePage.rectShapeButton.click();
+  await workspacePage.clickWithDragViewportAt(128, 128, 200, 100);
+  await workspacePage.clickLeafLayer("Rectangle");
+
+  const inspectButton = workspacePage.page.locator("#inspect");
+  await inspectButton.click();
+
+  const colorDropdown = workspacePage.page
+    .locator(".main_ui_inspect_attributes_common__format-wrapper")
+    .nth(0);
+  await colorDropdown.click();
+
+  const rgbaFormatButton = workspacePage.page.locator('[data-value=":rgba"]');
+  await rgbaFormatButton.click();
+
+  const copyColorButton = workspacePage.page
+    .locator("button.main_ui_inspect_attributes_common__color-row-copy-btn")
+    .nth(0);
+  await copyColorButton.click();
+
+  const rgbaColorText = await page.evaluate(() =>
+    navigator.clipboard.readText(),
+  );
+  expect(rgbaColorText).toContain("background: rgba(");
+});

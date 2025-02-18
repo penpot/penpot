@@ -34,6 +34,8 @@ export default defineConfig({
     trace: "on-first-retry",
 
     locale: "en-US",
+
+    permissions: ["clipboard-write", "clipboard-read"],
   },
 
   /* Configure projects for major browsers */
