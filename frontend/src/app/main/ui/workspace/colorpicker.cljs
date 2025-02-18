@@ -403,7 +403,8 @@
                                 :h h :s s :v v
                                 :alpha (/ alpha 255)}))))
 
-    [[:div {:class (stl/css :colorpicker)
+    [:*
+     [:div {:class (stl/css :colorpicker)
             :ref node-ref
             :style {:touch-action "none"}}
       [:div {:class (stl/css :top-actions)}
