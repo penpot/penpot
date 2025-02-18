@@ -4210,6 +4210,9 @@ msgstr "Align top (%s)"
 msgid "workspace.assets.add-library"
 msgstr "Add library"
 
+msgid "workspace.assets.manage-library"
+msgstr "Manage library"
+
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 #, unused
 msgid "workspace.assets.assets"
@@ -4278,10 +4281,6 @@ msgstr "Group"
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:137
 msgid "workspace.assets.group-name"
 msgstr "Group name"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Libraries"
 
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
 msgid "workspace.assets.list-view"
