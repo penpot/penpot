@@ -301,7 +301,6 @@
 
       (when show-comments?
         [:> comments/comments-layer* {:vbox vbox
-                                      :page-id page-id
                                       :file-id file-id
                                       :vport vport
                                       :zoom zoom
