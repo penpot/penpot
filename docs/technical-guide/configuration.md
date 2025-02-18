@@ -308,6 +308,12 @@ PENPOT_SMTP_PASSWORD: <password>
 PENPOT_SMTP_TLS: true
 ```
 
+If you are not using SMTP configuration and want to log the emails in the console, you should use the following flag:
+
+```bash
+PENPOT_FLAGS: [...] enable-log-emails
+```
+
 ## Demo environment
 
 Penpot comes with facilities to create a demo environment so you can test the system quickly.
@@ -394,11 +400,9 @@ have an appropriate account on AWS cloud and have the credentials, region and th
 This is how configuration looks for S3 backend:
 
 ```bash
-# AWS Credentials
+# Backend
 AWS_ACCESS_KEY_ID: <you-access-key-id-here>
 AWS_SECRET_ACCESS_KEY: <your-secret-access-key-here>
-
-# Backend configuration
 PENPOT_ASSETS_STORAGE_BACKEND: assets-s3
 PENPOT_STORAGE_ASSETS_S3_REGION: <aws-region>
 PENPOT_STORAGE_ASSETS_S3_BUCKET: <bucket-name>
@@ -431,6 +435,7 @@ variable in case you go to serve Penpot to the users; it should point to public 
 where users will access the application:
 
 ```bash
+# Backend
 PENPOT_PUBLIC_URI: http://localhost:9001
 ```
 
@@ -439,8 +444,6 @@ PENPOT_PUBLIC_URI: http://localhost:9001
     you need to disable the `secure` flag on cookies, with the `disable-secure-session-cookies` flag.
     This is a configuration NOT recommended for production environments.
 </p>
-
-Check all the [flags](#other-flags) to fully customize your instance.
 
 ## Frontend
 
@@ -466,38 +469,34 @@ These variables are used for generate correct nginx.conf file on container start
 
 ## Other flags
 
+There are other flags that are useful for a more customized Penpot experience. This section has the list of the flags meant
+for the user:
+
 - <code class="language-bash">enable-cors</code>: Enables the default cors cofiguration that allows all domains
   (this configuration is designed only for dev purposes right now)
 - <code class="language-bash">enable-backend-api-doc</code>: Enables the <code class="language-bash">/api/doc</code>
   endpoint that lists all rpc methods available on backend
-- <code class="language-bash">disable-secure-session-cookies</code>: By default, Penpot uses the
-  <code class="language-bash">secure</code> flag on cookies, this flag disables it;
-  it is useful if you plan to serve Penpot under different
-  domain than <code class="language-bash">localhost</code> without HTTPS
 - <code class="language-bash">disable-login-with-password</code>: allows disable password based login form
-- <code class="language-bash">disable-registration</code>: disables registration (still enabled for invitations only).
 - <code class="language-bash">enable-prepl-server</code>: enables PREPL server, used by manage.py and other additional
-  tools for communicate internally with Penpot backend
+  tools for communicate internally with Penpot backend. Check the [CLI section][5] to get more detail.
 
 __Since version 1.13.0__
 
 - <code class="language-bash">enable-log-invitation-tokens</code>: for cases where you don't have email configured, this
-  will log to console the invitation tokens
-- <code class="language-bash">enable-log-emails</code>: if you want to log in console send emails. This only works if smtp
-  is not configured
+  will log to console the invitation tokens.
 
 __Since version 2.0.0__
 
-- <code class="language-bash">disable-onboarding-team</code>: for disable onboarding team creation modal
-- <code class="language-bash">disable-onboarding-newsletter</code>: for disable onboarding newsletter modal
-- <code class="language-bash">disable-onboarding-questions</code>: for disable onboarding survey
-- <code class="language-bash">disable-onboarding</code>: for disable onboarding modal
-- <code class="language-bash">disable-dashboard-templates-section</code>: for hide the templates section from dashboard
-- <code class="language-bash">enable-webhooks</code>: for enable webhooks
-- <code class="language-bash">enable-access-tokens</code>: for enable access tokens
-- <code class="language-bash">disable-google-fonts-provider</code>: disables the google fonts provider (frontend)
+- <code class="language-bash">disable-onboarding</code>: disables the onboarding modals.
+- <code class="language-bash">disable-dashboard-templates-section</code>: hides the templates section from dashboard.
+- <code class="language-bash">enable-webhooks</code>: enables webhooks. More detail about this configuration in [webhooks section][6].
+- <code class="language-bash">enable-access-tokens</code>: enables access tokens. More detail about this configuration in [access tokens section][7].
+- <code class="language-bash">disable-google-fonts-provider</code>: disables the google fonts provider.
 
 [1]: /technical-guide/getting-started#configure-penpot-with-elestio
 [2]: /technical-guide/getting-started#configure-penpot-with-docker
 [3]: /technical-guide/developer/common#dev-environment
 [4]: https://github.com/penpot/penpot/blob/main/docker/images/files/nginx.conf
+[5]: /technical-guide/getting-started/#using-the-cli-for-administrative-tasks
+[6]: /technical-guide/integration/#webhooks
+[7]: /technical-guide/integration/#access-tokens
