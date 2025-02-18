@@ -181,8 +181,11 @@
 
     [:div {:class (stl/css :edit-theme-inputs-wrapper)}
      [:div {:class (stl/css :group-input-wrapper)}
-      [:label {:for "groups-dropdown" :class (stl/css :label)} (tr "workspace.token.label.group")]
+      [:label {:for "groups-dropdown" :class (stl/css :label)}
+       [:span (tr "workspace.token.label.group")]
+       [:span {:class (stl/css :label-optional)} (dm/str "(" "" (tr "workspace.token.label.group-optional") "" ")")]]
       [:> combobox* {:id (dm/str "groups-dropdown")
+                     :placeholder (tr "workspace.token.label.group-placeholder")
                      :default-selected (:group theme)
                      :options (clj->js options)
                      :on-change on-update-group}]]
@@ -191,6 +194,7 @@
       [:> input-tokens* {:id "theme-input"
                          :label (tr "workspace.token.label.theme")
                          :type "text"
+                         :placeholder (tr "workspace.token.label.theme-placeholder")
                          :on-change on-update-name
                          :value (mf/ref-val theme-name-ref)
                          :auto-focus true}]]]))

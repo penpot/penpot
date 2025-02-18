@@ -70,6 +70,11 @@
   inline-size: 100%;
   padding-inline-start: var(--sp-xxs);
   color: var(--combobox-fg-color);
+
+  &::placeholder {
+    color: var(--input-placeholder-color);
+    text-overflow: ellipsis;
+  }
 }
 
 .header-icon {

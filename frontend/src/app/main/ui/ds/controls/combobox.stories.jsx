@@ -23,6 +23,7 @@ export default {
   args: {
     disabled: false,
     hasError: false,
+    placeholder: "Select a month",
     options: [
       { id: "January", label: "January" },
       { id: "February", label: "February" },

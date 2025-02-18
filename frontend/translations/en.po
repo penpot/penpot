@@ -6556,9 +6556,21 @@ msgstr "Add set to this group"
 msgid "workspace.token.label.group"
 msgstr "Group"
 
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
+msgid "workspace.token.label.group-optional"
+msgstr "Optional"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:191
+msgid "workspace.token.label.group-placeholder"
+msgstr "Add group (i.e. Mode)"
+
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
 msgid "workspace.token.label.theme"
 msgstr "Theme"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:200
+msgid "workspace.token.label.theme-placeholder"
+msgstr "Add a theme (i.e. Light)"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
 msgid "workspace.token.new-theme"

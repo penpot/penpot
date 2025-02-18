@@ -202,3 +202,8 @@
   @include textEllipsis;
   color: var(--color-foreground-primary);
 }
+
+.label-optional {
+  margin-inline-start: 1ex;
+  color: var(--color-foreground-secondary);
+}
