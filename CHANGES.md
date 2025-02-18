@@ -66,6 +66,7 @@ is a number of cores)
 - Fix problem with onboarding to a team [Taiga #10143](https://tree.taiga.io/project/penpot/issue/10143)
 - Fix problem with grid layout crashing [Taiga #10127](https://tree.taiga.io/project/penpot/issue/10127)
 - Fix rename locked boards [Taiga #10174](https://tree.taiga.io/project/penpot/issue/10174)
+- Fix incorrect handling of team access requests with deleted/recreated users
 
 ## 2.4.3
 
