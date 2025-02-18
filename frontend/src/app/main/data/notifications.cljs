@@ -51,15 +51,12 @@
       [:label :string]
       [:callback ::sm/fn]]]]])
 
-(def ^:private valid-notification?
-  (sm/validator schema:notification))
+(def ^:private check-notification
+  (sm/check-fn schema:notification))
 
 (defn show
   [data]
-
-  (dm/assert!
-   "expected valid notification map"
-   (valid-notification? data))
+  (assert (check-notification data) "expected valid notification map")
 
   (ptk/reify ::show
     ptk/UpdateEvent
