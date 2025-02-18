@@ -160,7 +160,8 @@
 
 (defonce form-token-cache-atom (atom nil))
 
-(defn hex->value
+;; FIXME: this function has confusing name
+(defn- hex->value
   [hex]
   (when-let [tc (tinycolor/valid-color hex)]
     (let [hex (tinycolor/->hex-string tc)
@@ -183,7 +184,11 @@
         on-finish-drag
         (mf/use-fn #(mf/set-ref-val! dragging-ref false))
 
-        internal-color* (mf/use-state (hex->value color))
+        internal-color*
+        (mf/use-state #(hex->value color))
+
+        internal-color
+        (deref internal-color*)
 
         on-change'
         (mf/use-fn
@@ -194,10 +199,10 @@
                (reset! internal-color* selector-color)
                (on-change hex alpha)))))]
 
-    (colorpicker/use-color-picker-css-variables! wrapper-node-ref @internal-color*)
+    (colorpicker/use-color-picker-css-variables! wrapper-node-ref internal-color)
     [:div {:ref wrapper-node-ref}
      [:> ramp-selector*
-      {:color @internal-color*
+      {:color internal-color
        :on-start-drag on-start-drag
        :on-finish-drag on-finish-drag
        :on-change on-change'}]]))
