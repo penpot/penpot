@@ -185,7 +185,6 @@
             (d/close! task)))
 
         (fdm/use-dynamic-modifiers objects (mf/ref-val content-ref) modifiers)
-
         [:& shape-container {:shape shape}
          [:g.frame-container
           {:id (dm/str "frame-container-" frame-id)
