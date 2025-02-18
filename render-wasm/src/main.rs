@@ -662,6 +662,7 @@ pub extern "C" fn set_modifiers() {
     for entry in entries {
         state.modifiers.insert(entry.id, entry.transform);
     }
+    state.render_state.clear_cache();
 }
 
 #[no_mangle]
