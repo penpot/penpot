@@ -49,7 +49,7 @@ pub fn render_debug_shape(render_state: &mut RenderState, element: &Shape, inter
     });
     paint.set_stroke_width(1.);
 
-    let mut scaled_rect = element.bounds();
+    let mut scaled_rect = element.selrect();
     let x = 100. + scaled_rect.x() * 0.2;
     let y = 100. + scaled_rect.y() * 0.2;
     let width = scaled_rect.width() * 0.2;

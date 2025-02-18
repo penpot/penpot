@@ -106,8 +106,22 @@
   [clip-content]
   (h/call internal-module "_set_shape_clip_content" clip-content))
 
+(defn- translate-shape-type
+  [type]
+  (case type
+    :frame   0
+    :group   1
+    :bool    2
+    :rect    3
+    :path    4
+    :text    5
+    :circle  6
+    :svg-raw 7
+    :image   8))
+
 (defn set-shape-type
   [type {:keys [masked]}]
+  (h/call internal-module "_set_shape_type" (translate-shape-type type))
   (cond
     (= type :circle)
     (h/call internal-module "_set_shape_kind_circle")
@@ -541,6 +555,8 @@
                   type         (dm/get-prop shape :type)
                   masked       (dm/get-prop shape :masked-group)
                   selrect      (dm/get-prop shape :selrect)
+                  constraint-h (dm/get-prop shape :constraints-h)
+                  constraint-v (dm/get-prop shape :constraints-v)
                   clip-content (if (= type :frame)
                                  (not (dm/get-prop shape :show-content))
                                  false)
@@ -569,6 +585,8 @@
               (set-shape-type type {:masked masked})
               (set-shape-clip-content clip-content)
               (set-shape-selrect selrect)
+              (set-constraints-h constraint-h)
+              (set-constraints-v constraint-v)
               (set-shape-rotation rotation)
               (set-shape-transform transform)
               (set-shape-blend-mode blend-mode)

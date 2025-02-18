@@ -1,6 +1,5 @@
-use crate::math;
 use crate::shapes::fills::Fill;
-use skia_safe as skia;
+use skia_safe::{self as skia, Rect};
 use std::collections::HashMap;
 
 use super::Corners;
@@ -122,18 +121,18 @@ impl Stroke {
         }
     }
 
-    pub fn outer_rect(&self, rect: &math::Rect) -> math::Rect {
+    pub fn outer_rect(&self, rect: &Rect) -> Rect {
         match self.kind {
-            StrokeKind::InnerStroke => math::Rect::from_xywh(
+            StrokeKind::InnerStroke => Rect::from_xywh(
                 rect.left + (self.width / 2.),
                 rect.top + (self.width / 2.),
                 rect.width() - self.width,
                 rect.height() - self.width,
             ),
             StrokeKind::CenterStroke => {
-                math::Rect::from_xywh(rect.left, rect.top, rect.width(), rect.height())
+                Rect::from_xywh(rect.left, rect.top, rect.width(), rect.height())
             }
-            StrokeKind::OuterStroke => math::Rect::from_xywh(
+            StrokeKind::OuterStroke => Rect::from_xywh(
                 rect.left - (self.width / 2.),
                 rect.top - (self.width / 2.),
                 rect.width() + self.width,
@@ -158,7 +157,7 @@ impl Stroke {
 
     pub fn to_paint(
         &self,
-        rect: &math::Rect,
+        rect: &Rect,
         svg_attrs: &HashMap<String, String>,
         scale: f32,
     ) -> skia::Paint {
@@ -223,7 +222,7 @@ impl Stroke {
     pub fn to_stroked_paint(
         &self,
         is_open: bool,
-        rect: &math::Rect,
+        rect: &Rect,
         svg_attrs: &HashMap<String, String>,
         scale: f32,
     ) -> skia::Paint {

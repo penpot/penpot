@@ -1,10 +1,9 @@
-use crate::math;
-use skia_safe as skia;
+use skia_safe::{self as skia, Matrix, Point, Rect};
+
 use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::render::BlendMode;
-use skia::Matrix;
 
 mod blurs;
 mod bools;
@@ -28,13 +27,45 @@ pub use strokes::*;
 pub use svgraw::*;
 pub use transform::*;
 
-pub type CornerRadius = skia::Point;
+use crate::math::Bounds;
+
+pub type CornerRadius = Point;
 pub type Corners = [CornerRadius; 4];
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum Type {
+    Frame,
+    Group,
+    Bool,
+    Rect,
+    Path,
+    Text,
+    Circle,
+    SvgRaw,
+    Image,
+}
+
+impl Type {
+    pub fn from(value: u8) -> Self {
+        match value {
+            0 => Type::Frame,
+            1 => Type::Group,
+            2 => Type::Bool,
+            3 => Type::Rect,
+            4 => Type::Path,
+            5 => Type::Text,
+            6 => Type::Circle,
+            7 => Type::SvgRaw,
+            8 => Type::Image,
+            _ => Type::Rect,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
-    Rect(math::Rect, Option<Corners>),
-    Circle(math::Rect),
+    Rect(Rect, Option<Corners>),
+    Circle(Rect),
     Path(Path),
     Bool(BoolType, Path),
     SVGRaw(SVGRaw),
@@ -91,9 +122,10 @@ pub type Color = skia::Color;
 #[allow(dead_code)]
 pub struct Shape {
     pub id: Uuid,
+    pub shape_type: Type,
     pub children: Vec<Uuid>,
     pub kind: Kind,
-    pub selrect: math::Rect,
+    pub selrect: Rect,
     pub transform: Matrix,
     pub rotation: f32,
     pub constraint_h: Option<ConstraintH>,
@@ -114,9 +146,10 @@ impl Shape {
     pub fn new(id: Uuid) -> Self {
         Self {
             id,
+            shape_type: Type::Rect,
             children: Vec::<Uuid>::new(),
-            kind: Kind::Rect(math::Rect::new_empty(), None),
-            selrect: math::Rect::new_empty(),
+            kind: Kind::Rect(Rect::new_empty(), None),
+            selrect: Rect::new_empty(),
             transform: Matrix::default(),
             rotation: 0.,
             constraint_h: None,
@@ -134,8 +167,12 @@ impl Shape {
         }
     }
 
-    pub fn kind(&self) -> Kind {
-        self.kind.clone()
+    pub fn set_shape_type(&mut self, shape_type: Type) {
+        self.shape_type = shape_type;
+    }
+
+    pub fn is_frame(&self) -> bool {
+        self.shape_type == Type::Frame
     }
 
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
@@ -153,6 +190,10 @@ impl Shape {
 
     pub fn set_kind(&mut self, kind: Kind) {
         self.kind = kind;
+    }
+
+    pub fn kind(&self) -> Kind {
+        self.kind.clone()
     }
 
     pub fn set_clip(&mut self, value: bool) {
@@ -175,8 +216,16 @@ impl Shape {
         self.constraint_h = constraint;
     }
 
+    pub fn constraint_h(&self, default: ConstraintH) -> ConstraintH {
+        self.constraint_h.clone().unwrap_or(default)
+    }
+
     pub fn set_constraint_v(&mut self, constraint: Option<ConstraintV>) {
         self.constraint_v = constraint;
+    }
+
+    pub fn constraint_v(&self, default: ConstraintV) -> ConstraintV {
+        self.constraint_v.clone().unwrap_or(default)
     }
 
     pub fn set_hidden(&mut self, value: bool) {
@@ -339,8 +388,34 @@ impl Shape {
         self.hidden
     }
 
-    pub fn bounds(&self) -> math::Rect {
+    // TODO: Maybe store this inside the shape
+    pub fn bounds(&self) -> Bounds {
+        let mut bounds = Bounds::new(
+            Point::new(self.selrect.x(), self.selrect.y()),
+            Point::new(self.selrect.x() + self.selrect.width(), self.selrect.y()),
+            Point::new(
+                self.selrect.x() + self.selrect.width(),
+                self.selrect.y() + self.selrect.height(),
+            ),
+            Point::new(self.selrect.x(), self.selrect.y() + self.selrect.height()),
+        );
+
+        let center = self.center();
+        let mut matrix = self.transform.clone();
+        matrix.post_translate(center);
+        matrix.pre_translate(-center);
+
+        bounds.transform_mut(&matrix);
+
+        bounds
+    }
+
+    pub fn selrect(&self) -> Rect {
         self.selrect
+    }
+
+    pub fn center(&self) -> Point {
+        self.selrect.center()
     }
 
     pub fn clip(&self) -> bool {
@@ -405,11 +480,11 @@ impl Shape {
             .filter(|shadow| shadow.style() == ShadowStyle::Inner)
     }
 
-    pub fn to_path_transform(&self) -> Option<skia::Matrix> {
+    pub fn to_path_transform(&self) -> Option<Matrix> {
         match self.kind {
             Kind::Path(_) | Kind::Bool(_, _) => {
-                let center = self.bounds().center();
-                let mut matrix = skia::Matrix::new_identity();
+                let center = self.center();
+                let mut matrix = Matrix::new_identity();
                 matrix.pre_translate(center);
                 matrix.pre_concat(&self.transform.invert()?);
                 matrix.pre_translate(-center);
