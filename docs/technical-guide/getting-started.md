@@ -198,20 +198,21 @@ docker compose -p penpot -f docker-compose.yaml down
 
 ### Configure Penpot with Docker
 
-The configuration is defined using environment variables in the <code class="language-bash">docker-compose.yaml</code>
-file. The default downloaded file already comes with the essential variables already set,
+The configuration is defined using flags and environment variables in the <code class="language-bash">docker-compose.yaml</code>
+file. The default downloaded file already comes with the essential flags and variables already set,
 and other ones commented out with some explanations.
 
-#### Create users using CLI
+You can find all configuration options in the [Configuration][1] section.
 
-By default (or when <code class="language-bash">disable-email-verification</code> flag is used), the email verification process
-is completely disabled for new registrations but it is highly recommended enabling email
-verification or disabling registration if you are going to expose your penpot instance to
-the internet.
+### Using the CLI for administrative tasks
 
+Penpot provides a script (`manage.py`) with some administrative tasks to perform in the server.
 
-If you have registration disabled, you can create additional profiles using the
-command line interface:
+**NOTE**: this script will only work with the <code class="language-bash">enable-prepl-server</code>
+flag set docker-compose.yaml file. For older versions of docker-compose.yaml file,
+this flag is set in the backend service.
+
+For instance, if  the registration is disabled, the only way to create a new user is with this script:
 
 ```bash
 docker exec -ti penpot-penpot-backend-1 python3 manage.py create-profile
@@ -220,12 +221,6 @@ docker exec -ti penpot-penpot-backend-1 python3 manage.py create-profile
 **NOTE:** the exact container name depends on your docker version and platform.
 For example it could be <code class="language-bash">penpot-penpot-backend-1</code> or <code class="language-bash">penpot_penpot-backend-1</code>.
 You can check the correct name executing <code class="language-bash">docker ps</code>.
-
-**NOTE:** This script only will works when you properly have the <code class="language-bash">enable-prepl-server</code>
-flag set on backend (is set by default on the latest docker-compose.yaml file)
-
-You can find all configuration options in the [Configuration][1] section.
-
 
 ### Update Penpot
 
