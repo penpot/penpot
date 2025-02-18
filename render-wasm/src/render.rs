@@ -406,7 +406,7 @@ impl RenderState {
 
         // self.render_in_progress can have changed
         if self.render_in_progress {
-            if self.cached_surface_image.is_some() {
+            if self.cached_surface_image.is_some() && modifiers.is_empty() {
                 self.render_from_cache()?;
             }
             return Ok(());
