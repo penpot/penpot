@@ -1,3 +1,4 @@
+use skia::Rect;
 use skia_safe as skia;
 
 mod debug;
@@ -10,7 +11,7 @@ mod utils;
 mod view;
 
 use crate::mem::SerializableResult;
-use crate::shapes::{BoolType, ConstraintH, ConstraintV, Group, Kind, Path, TransformEntry};
+use crate::shapes::{BoolType, ConstraintH, ConstraintV, Group, Kind, Path, TransformEntry, Type};
 
 use crate::state::State;
 use crate::utils::uuid_from_u32_quartet;
@@ -142,7 +143,7 @@ pub extern "C" fn set_shape_kind_circle() {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
 
     if let Some(shape) = state.current_shape() {
-        shape.set_kind(Kind::Circle(math::Rect::new_empty()));
+        shape.set_kind(Kind::Circle(Rect::new_empty()));
     }
 }
 
@@ -153,7 +154,7 @@ pub extern "C" fn set_shape_kind_rect() {
     if let Some(shape) = state.current_shape() {
         match shape.kind() {
             Kind::Rect(_, _) => {}
-            _ => shape.set_kind(Kind::Rect(math::Rect::new_empty(), None)),
+            _ => shape.set_kind(Kind::Rect(Rect::new_empty(), None)),
         }
     }
 }
@@ -182,6 +183,15 @@ pub extern "C" fn set_shape_bool_type(raw_bool_type: u8) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.set_bool_type(BoolType::from(raw_bool_type))
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn set_shape_type(shape_type: u8) {
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+
+    if let Some(shape) = state.current_shape() {
+        shape.set_shape_type(Type::from(shape_type));
     }
 }
 

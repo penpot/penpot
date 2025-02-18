@@ -1,7 +1,6 @@
-use skia_safe as skia;
+use skia_safe::{self as skia, Rect};
 
 use super::Color;
-use crate::math;
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -44,7 +43,7 @@ impl Gradient {
         self.offsets.push(offset);
     }
 
-    fn to_linear_shader(&self, rect: &math::Rect) -> Option<skia::Shader> {
+    fn to_linear_shader(&self, rect: &Rect) -> Option<skia::Shader> {
         let start = (
             rect.left + self.start.0 * rect.width(),
             rect.top + self.start.1 * rect.height(),
@@ -63,7 +62,7 @@ impl Gradient {
         )
     }
 
-    fn to_radial_shader(&self, rect: &math::Rect) -> Option<skia::Shader> {
+    fn to_radial_shader(&self, rect: &Rect) -> Option<skia::Shader> {
         let center = skia::Point::new(
             rect.left + self.start.0 * rect.width(),
             rect.top + self.start.1 * rect.height(),
@@ -159,7 +158,7 @@ impl Fill {
         })
     }
 
-    pub fn to_paint(&self, rect: &math::Rect) -> skia::Paint {
+    pub fn to_paint(&self, rect: &Rect) -> skia::Paint {
         match self {
             Self::Solid(color) => {
                 let mut p = skia::Paint::default();

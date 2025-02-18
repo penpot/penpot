@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use crate::math::{self, Rect};
 use crate::shapes::{Corners, Fill, ImageFill, Kind, Path, Shape, Stroke, StrokeCap, StrokeKind};
+use skia::Rect;
 use skia_safe::{self as skia, RRect};
 
 use super::RenderState;
@@ -297,7 +297,7 @@ fn draw_triangle_cap(
     canvas.draw_path(&path, paint);
 }
 
-fn calculate_scaled_rect(size: (i32, i32), container: &math::Rect, delta: f32) -> math::Rect {
+fn calculate_scaled_rect(size: (i32, i32), container: &Rect, delta: f32) -> Rect {
     let (width, height) = (size.0 as f32, size.1 as f32);
     let image_aspect_ratio = width / height;
 
@@ -315,7 +315,7 @@ fn calculate_scaled_rect(size: (i32, i32), container: &math::Rect, delta: f32) -
     let scaled_width = width * scale;
     let scaled_height = height * scale;
 
-    math::Rect::from_xywh(
+    Rect::from_xywh(
         container.left - delta - (scaled_width - container_width) / 2.0,
         container.top - delta - (scaled_height - container_height) / 2.0,
         scaled_width + (2. * delta) + (scaled_width - container_width),

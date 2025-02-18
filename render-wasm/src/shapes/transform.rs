@@ -12,6 +12,12 @@ pub struct TransformEntry {
     pub transform: Matrix,
 }
 
+impl TransformEntry {
+    pub fn new(id: Uuid, transform: Matrix) -> Self {
+        TransformEntry { id, transform }
+    }
+}
+
 impl SerializableResult for TransformEntry {
     type BytesType = [u8; 40];
 

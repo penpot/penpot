@@ -1,7 +1,7 @@
 use skia_safe as skia;
 use std::array::TryFromSliceError;
 
-use crate::math::Point;
+type Point = (f32, f32);
 
 fn stringify_slice_err(_: TryFromSliceError) -> String {
     format!("Error deserializing path")
