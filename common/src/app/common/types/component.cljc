@@ -29,7 +29,7 @@
 
 (sm/register! ::component schema:component)
 
-(def check-component!
+(def check-component
   (sm/check-fn schema:component))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
