@@ -190,8 +190,8 @@
                   libraries)]
 
         (when needs-check?
-          (rx/concat (rx/timer 1000)
-                     (rx/of (dwl/notify-sync-file file-id))))))))
+          (->> (rx/of (dwl/notify-sync-file file-id))
+               (rx/delay 1000)))))))
 
 (defn- fetch-libraries
   [file-id]
