@@ -2,27 +2,56 @@
 title: 2. Penpot Configuration
 ---
 
-# Penpot Configuration #
+# Penpot Configuration
 
-This section intends to explain all available configuration options, when you
-are self-hosting Penpot or also if you are using the Penpot developer setup.
+This section explains the configuration options, both for self-hosting and developer setup.
 
-Penpot is configured using environment variables. All variables start with <code class="language-bash">PENPOT_</code>
-prefix.
+<p class="advice">
+Penpot is configured using environment variables and flags.
+</p>
 
-Variables are initialized in the <code class="language-bash">docker-compose.yaml</code> file, as explained in the
-Self-hosting guide with [Elestio][1] or [Docker][2].
+## How the configuration works
 
-Additionally, if you are using the developer environment, you may override their values in
-the startup scripts, as explained in the [Developer Guide][3].
+Penpot is configured using environment variables and flags. **Environment variables** start
+with <code class="language-bash">PENPOT_</code>. **Flags** use the format
+<code class="language-bash"><enable|disable>-<flag-name></code>.
 
-**NOTE**: All the examples that have values represent the **default** values, and the
-examples that do not have values are optional, and inactive by default.
+Flags are used to enable/disable a feature or behaviour (registration, feedback),
+while environment variables are used to configure the settings (auth, smtp, etc).
+Flags and evironment variables are also used together; for example:
 
+```bash
+# This flag enables the use of SMTP email
+PENPOT_FLAGS: enable-smtp
 
-## Common ##
+# This environment variables configure the specific SMPT service
+# Backend
+PENPOT_SMTP_HOST: <host>
+PENPOT_SMTP_PORT: 587
+```
 
-This section will list all common configuration between backend and frontend.
+**Flags** are configured in a single list, no matter they affect the backend, the frontend,
+the exporter, or all of them; on the other hand, **environment variables** are configured for
+each specific service. For example:
+
+```bash
+PENPOT_FLAGS: enable-login-with-google
+
+# Backend
+PENPOT_GOOGLE_CLIENT_ID: <client-id>
+PENPOT_GOOGLE_CLIENT_SECRET: <client-secret>
+```
+
+Check the configuration guide for [Elestio][1] or [Docker][2]. Additionally, if you are using
+the developer environment, you may override its values in the startup scripts,
+as explained in the [Developer Guide][3].
+
+**NOTE**: All the examples that have value represent the **default** value, and the
+examples that do not have value are optional, and inactive or disabled by default.
+
+## Common configuration
+
+This section list all common configuration between backend and frontend.
 
 There are two types of configuration: options (properties that require some value) and
 flags (that just enables or disables something). All flags are set in a single
@@ -33,7 +62,7 @@ format: <code class="language-bash"><enable|disable>-\<flag-name></code>. For ex
 PENPOT_FLAGS: enable-smtp disable-registration disable-email-verification
 ```
 
-### Registration ###
+### Registration
 
 Penpot comes with an option to completely disable the registration process;
 for this, use the following variable:
@@ -57,7 +86,7 @@ enabled with <code class="language-bash">enable-email-whitelist</code> flag. For
 autoenable it when <code class="language-bash">PENPOT_REGISTRATION_DOMAIN_WHITELIST</code> is set with
 not-empty content.
 
-### Demo users ###
+### Demo users
 
 Penpot comes with facilities for fast creation of demo users without the need of a
 registration process. The demo users by default have an expiration time of 7 days, and
@@ -245,7 +274,7 @@ PENPOT_OIDC_BASE_URI: https://login.microsoftonline.com/<tenant-id>/v2.0/
 PENPOT_OIDC_CLIENT_SECRET: <client-secret>
 ```
 
-### LDAP ###
+### LDAP
 
 Penpot comes with support for *Lightweight Directory Access Protocol* (LDAP). This is the
 example configuration we use internally for testing this authentication backend.
@@ -271,7 +300,7 @@ PENPOT_LDAP_ATTRS_PHOTO: jpegPhoto
 If you miss something, please open an issue and we discuss it.
 
 
-## Backend ##
+## Backend
 
 This section enumerates the backend only configuration variables.
 
@@ -341,7 +370,7 @@ Storage refers to storage used for store the user uploaded assets.
 Assets storage is implemented using "plugable" backends. Currently there are three
 backends available: <code class="language-bash">fs</code> and <code class="language-bash">s3</code> (for AWS S3).
 
-#### FS Backend (default) ####
+#### FS Backend (default)
 
 This is the default backend when you use the official docker images and the default
 configuration looks like this:
@@ -361,7 +390,7 @@ In case you want understand how it internally works, you can take a look on the 
 configuration file][4] used in the docker images.
 
 
-#### AWS S3 Backend ####
+#### AWS S3 Backend
 
 This backend uses AWS S3 bucket for store the user uploaded assets. For use it you should
 have an appropriate account on AWS cloud and have the credentials, region and the bucket.
@@ -413,7 +442,7 @@ PENPOT_PUBLIC_URI: http://localhost:9001
 
 Check all the [flags](#other-flags) to fully customize your instance.
 
-## Frontend ##
+## Frontend
 
 In comparison with backend, frontend only has a small number of runtime configuration
 options, and they are located in the <code class="language-bash">\<dist>/js/config.js</code> file.
@@ -439,7 +468,7 @@ PENPOT_EXPORTER_URI: http://your-penpot-exporter:6061
 These variables are used for generate correct nginx.conf file on container startup.
 
 
-### Demo warning ###
+### Demo warning
 
 If you want to show a warning in the register and login page saying that this is a
 demonstration purpose instance (no backups, periodical data wipe, ...), set the following
@@ -488,4 +517,3 @@ __Since version 2.0.0__
 [2]: /technical-guide/getting-started#configure-penpot-with-docker
 [3]: /technical-guide/developer/common#dev-environment
 [4]: https://github.com/penpot/penpot/blob/main/docker/images/files/nginx.conf
-
