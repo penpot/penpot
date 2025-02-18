@@ -65,12 +65,16 @@
         (assoc state :notification notification)))
 
     ptk/WatchEvent
-    (watch [_ _ stream]
+    (watch [_ state stream]
       (rx/merge
-       (let [stopper (rx/filter (ptk/type? ::hide) stream)]
+       (let [stopper  (rx/filter (ptk/type? ::hide) stream)
+             route-id (dm/get-in state [:route :data :name])]
+
          (->> stream
               (rx/filter (ptk/type? :app.main.router/navigate))
-              (rx/map (fn [_] (hide)))
+              (rx/map deref)
+              (rx/filter #(not= route-id (:id %)))
+              (rx/map hide)
               (rx/take-until stopper)))
        (when (:timeout data)
          (let [stopper (rx/filter (ptk/type? ::show) stream)]
