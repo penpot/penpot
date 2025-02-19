@@ -49,6 +49,15 @@ as explained in the [Developer Guide][3].
 **NOTE**: All the examples that have value represent the **default** value, and the
 examples that do not have value are optional, and inactive or disabled by default.
 
+## Telemetries
+
+Penpot uses anonymous telemetries from the self-hosted instances to improve the platform experience.
+Consider sharing these anonymous telemetries enabling the corresponding flag:
+
+```bash
+PENPOT_FLAGS: enable-telemetries
+```
+
 ## Registration and authentication
 
 There are different ways of registration and authentication in Penpot:
@@ -442,7 +451,9 @@ PENPOT_PUBLIC_URI: http://localhost:9001
 <p class="advice">
     If you plan to serve Penpot under different domain than `localhost` without HTTPS,
     you need to disable the `secure` flag on cookies, with the `disable-secure-session-cookies` flag.
-    This is a configuration NOT recommended for production environments.
+    This is a configuration NOT recommended for production environments; as some browser APIs do
+    not work properly under non-https environments, this unsecure configuration
+    may limit the usage of Penpot; as an example, the clipboard does not work with HTTP.
 </p>
 
 ## Frontend
