@@ -74,7 +74,7 @@
 (mf/defc assets-toolbox
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
-  [{:keys [size]}]
+  [{:keys [size file-id]}]
   (let [components-v2  (mf/use-ctx ctx/components-v2)
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
         filters*       (mf/use-state
@@ -90,9 +90,10 @@
         section        (:section filters)
         ordering       (:ordering filters)
         reverse-sort?  (= :desc ordering)
-        num-libs       (count (mf/deref refs/libraries))
-        file           (mf/deref refs/file)
-        components     (ctkl/components (:data file))
+        libs           (mf/deref refs/libraries)
+        num-libs       (count libs)
+        file           (get libs (:id file-id))
+        components     (mf/with-memo [file] ctkl/components (:data file))
 
         toggle-ordering
         (mf/use-fn
