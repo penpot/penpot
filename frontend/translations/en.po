@@ -3602,10 +3602,6 @@ msgstr "Export shapes"
 msgid "shortcuts.fit-all"
 msgstr "Zoom to fit all"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:590
-msgid "shortcuts.fit-content-selected"
-msgstr "Resize board to fit content"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:113
 msgid "shortcuts.flip-horizontal"
 msgstr "Flip horizontally"
