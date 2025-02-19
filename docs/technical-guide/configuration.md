@@ -88,7 +88,9 @@ PENPOT_EMAIL_DOMAIN_WHITELIST: path/to/whitelist.txt
 PENPOT_EMAIL_DOMAIN_BLACKLIST: path/to/blacklist.txt
 ```
 
-**NOTE**: Since version 2.1, email whitelisting should be explicitly
+__Since version 2.1__
+
+Email whitelisting should be explicitly
 enabled with <code class="language-bash">enable-email-whitelist</code> flag. For backward compatibility, we
 autoenable it when <code class="language-bash">PENPOT_REGISTRATION_DOMAIN_WHITELIST</code> is set with
 not-empty content.
@@ -160,7 +162,7 @@ PENPOT_GITHUB_CLIENT_SECRET: <client-secret>
 
 #### OpenID Connect
 
-**NOTE:** Since version 1.5.0
+__Since version 1.5.0__
 
 Allows integrating with a generic authentication provider that implements the OIDC
 protocol (usually used for SSO).
@@ -282,6 +284,33 @@ PENPOT_LDAP_ATTRS_FULLNAME: cn
 PENPOT_LDAP_ATTRS_PHOTO: jpegPhoto
 ```
 
+### Penpot URI
+
+You will need to set the <code class="language-bash">PENPOT_PUBLIC_URI</code> environment variable in case you go to serve Penpot to the users;
+it should point to public URI where users will access the application:
+
+```bash
+# Backend
+PENPOT_PUBLIC_URI: https://penpot.mycompany.com
+
+# Frontend
+PENPOT_PUBLIC_URI: https://penpot.mycompany.com
+
+# Exporter
+PENPOT_PUBLIC_URI: https://penpot.mycompany.com
+```
+
+If you're using the official <code class="language-bash">docker-compose.yml</code> you only need to configure the
+<code class="language-bash">PENPOT_PUBLIC_URI</code> envvar in the top of the file.
+
+<p class="advice">
+    If you plan to serve Penpot under different domain than `localhost` without HTTPS,
+    you need to disable the `secure` flag on cookies, with the `disable-secure-session-cookies` flag.
+    This is a configuration NOT recommended for production environments; as some browser APIs do
+    not work properly under non-https environments, this unsecure configuration
+    may limit the usage of Penpot; as an example, the clipboard does not work with HTTP.
+</p>
+
 ## Email configuration
 
 By default, <code class="language-bash">smpt</code> flag is disabled, the email will be
@@ -323,6 +352,21 @@ If you are not using SMTP configuration and want to log the emails in the consol
 PENPOT_FLAGS: [...] enable-log-emails
 ```
 
+## Redis
+
+The Redis configuration is very simple, just provide with a valid redis URI. Redis is used
+mainly for websocket notifications coordination.
+
+```bash
+# Backend
+PENPOT_REDIS_URI: redis://localhost/0
+
+# Exporter
+PENPOT_REDIS_URI: redis://localhost/0
+```
+
+If you are using the official docker compose file, this is already configurRed.
+
 ## Demo environment
 
 Penpot comes with facilities to create a demo environment so you can test the system quickly.
@@ -350,6 +394,27 @@ PENPOT_FLAGS: disable-email-verification enable-demo-warning
 ## Backend
 
 This section enumerates the backend only configuration variables.
+
+### Secret key
+
+The <code class="language-bash">PENPOT_SECRET_KEY</code> envvar serves a master key from which other keys
+for subsystems (eg http sessions, or invitations) are derived.
+
+If you don't use it, all created sessions and invitations will become invalid on container restart
+or service restart.
+
+To use it, we recommend to use a trully randomly generated 512 bits base64 encoded string here.
+You can generate one with:
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(64))"
+```
+
+And configure it:
+```bash
+# Backend
+PENPOT_SECRET_KEY: my-super-secure-key
+```
 
 ### Database
 
@@ -422,38 +487,6 @@ PENPOT_STORAGE_ASSETS_S3_ENDPOINT: <endpoint-uri>
 
 <p class="advice">
 These settings are equally useful if you have a Minio storage system.
-</p>
-
-### Redis
-
-The redis configuration is very simple, just provide with a valid redis URI. Redis is used
-mainly for websocket notifications coordination.
-
-```bash
-# Backend
-PENPOT_REDIS_URI: redis://localhost/0
-```
-
-If you are using the official docker compose file, this is already configured.
-
-
-### HTTP
-
-You will need to set the <code class="language-bash">PENPOT_PUBLIC_URI</code> environment
-variable in case you go to serve Penpot to the users; it should point to public URI
-where users will access the application:
-
-```bash
-# Backend
-PENPOT_PUBLIC_URI: http://localhost:9001
-```
-
-<p class="advice">
-    If you plan to serve Penpot under different domain than `localhost` without HTTPS,
-    you need to disable the `secure` flag on cookies, with the `disable-secure-session-cookies` flag.
-    This is a configuration NOT recommended for production environments; as some browser APIs do
-    not work properly under non-https environments, this unsecure configuration
-    may limit the usage of Penpot; as an example, the clipboard does not work with HTTP.
 </p>
 
 ## Frontend
