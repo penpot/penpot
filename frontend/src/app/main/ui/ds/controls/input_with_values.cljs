@@ -44,6 +44,11 @@
              (reset! editing* false)
              (when on-blur
                (on-blur new-name)))))
+        on-focus
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (dom/select-text! (dom/get-target event))))
 
         handle-key-down
         (mf/use-fn
@@ -61,6 +66,7 @@
          :class (stl/css :input-with-values-editing)
          :default-value name
          :auto-focus true
+         :on-focus on-focus
          :on-blur on-stop-edit
          :on-key-down handle-key-down}]]
       [:div {:class (stl/css :input-with-values-container :input-with-values-grid)
