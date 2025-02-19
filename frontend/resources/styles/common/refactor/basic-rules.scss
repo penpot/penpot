@@ -873,7 +873,7 @@
   top: $s-32;
   left: 0;
   width: 100%;
-  max-height: $s-300;
+  max-height: var(--menu-max-height, $s-300);
   padding: $s-2;
   margin: 0;
   margin-top: $s-1;

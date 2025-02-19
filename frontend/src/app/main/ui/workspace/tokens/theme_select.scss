@@ -11,7 +11,6 @@
   --custom-select-bg-color: var(--menu-background-color);
   --custom-select-icon-color: var(--color-foreground-secondary);
   --custom-select-text-color: var(--menu-foreground-color);
-  @extend .new-scrollbar;
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
@@ -124,5 +123,8 @@
 }
 
 .dropdown-portal {
+  --menu-max-height: #{$s-400};
+  @extend .new-scrollbar;
+
   position: absolute;
 }
