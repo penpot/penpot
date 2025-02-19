@@ -116,7 +116,7 @@
 
 
         assets-tab
-        (mf/html [:& assets-toolbox {:size (- size 58)}])
+        (mf/html [:& assets-toolbox {:size (- size 58) :file-id file}])
 
         tokens-tab
         (when design-tokens?

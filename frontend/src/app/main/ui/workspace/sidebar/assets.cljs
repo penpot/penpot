@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.components-list :as ctkl]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.assets :as dwa]
@@ -73,7 +74,7 @@
 (mf/defc assets-toolbox
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
-  [{:keys [size]}]
+  [{:keys [size file-id]}]
   (let [components-v2  (mf/use-ctx ctx/components-v2)
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
         filters*       (mf/use-state
@@ -89,7 +90,10 @@
         section        (:section filters)
         ordering       (:ordering filters)
         reverse-sort?  (= :desc ordering)
-        num-libs       (count (mf/deref refs/libraries))
+        libs           (mf/deref refs/libraries)
+        num-libs       (count libs)
+        file           (get libs (:id file-id))
+        components     (mf/with-memo [file] (ctkl/components (:data file)))
 
         toggle-ordering
         (mf/use-fn
@@ -159,7 +163,7 @@
     [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
-        (if (= num-libs 1)
+        (if (and (= num-libs 1) (empty? components))
           [:button {:class (stl/css :add-library-button)
                     :on-click show-libraries-dialog
                     :data-testid "libraries"}
@@ -168,9 +172,7 @@
           [:button {:class (stl/css :libraries-button)
                     :on-click show-libraries-dialog
                     :data-testid "libraries"}
-           [:span {:class (stl/css :libraries-icon)}
-            i/library]
-           (tr "workspace.assets.libraries")]))
+           (tr "workspace.assets.manage-library")]))
 
 
       [:div {:class (stl/css :search-wrapper)}
