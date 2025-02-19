@@ -1807,6 +1807,14 @@ msgstr "You can continue with a Penpot account"
 msgid "labels.copy-invitation-link"
 msgstr "Copy link"
 
+#: src/app/main/ui/components/copy_button.cljs:42
+msgid "labels.copy"
+msgstr "Copy"
+
+#: src/app/main/ui/inspect/attributes/common.cljs:120
+msgid "labels.copy-color"
+msgstr "Copy color"
+
 #: src/app/main/ui/static.cljs:62
 msgid "labels.copyright"
 msgstr "Kaleidos @2024"
