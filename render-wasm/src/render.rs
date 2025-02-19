@@ -279,14 +279,13 @@ impl RenderState {
                 .canvas()
                 .clip_rect(bounds, skia::ClipOp::Intersect, true);
 
-            // Uncomment this to debug the bounds for the clip
-            /*
-            let mut paint = skia::Paint::default();
-            paint.set_style(skia::PaintStyle::Stroke);
-            paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
-            paint.set_stroke_width(4.);
-            self.drawing_surface.canvas().draw_rect(bounds, &paint);
-            */
+            if self.options.is_debug_visible() {
+                let mut paint = skia::Paint::default();
+                paint.set_style(skia::PaintStyle::Stroke);
+                paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
+                paint.set_stroke_width(4.);
+                self.drawing_surface.canvas().draw_rect(bounds, &paint);
+            }
 
             self.drawing_surface
                 .canvas()

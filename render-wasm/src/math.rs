@@ -195,13 +195,6 @@ impl Ray {
         Self { origin, direction }
     }
 
-    // pub fn new_points(from: Point, to: Point) -> Self {
-    //     Self {
-    //         origin: from,
-    //         direction: Vector::new(to.x - from.x, to.y - from.y),
-    //     }
-    // }
-
     pub fn t(&self, t: f32) -> Point {
         self.origin + self.direction * t
     }

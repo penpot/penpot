@@ -1,5 +1,51 @@
 # Serialization
 
+## Shape Type
+
+Shape types are serialized as `u8`:
+
+| Value | Field      |
+| ----- | ---------- |
+| 0     | Frame      |
+| 1     | Group      |
+| 2     | Bool       |
+| 3     | Rect       |
+| 4     | Path       |
+| 5     | Text       |
+| 6     | Circle     |
+| 7     | SvgRaw     |
+| 8     | Image      |
+| \_    | Rect       |
+
+
+## Horizontal Constraint
+
+Horizontal constraints are serialized as `u8`:
+
+| Value | Field     |
+| ----- | --------- |
+| 0     | Left      |
+| 1     | Right     |
+| 2     | LeftRight |
+| 3     | Center    |
+| 4     | Scale     |
+| \_    | None      |
+
+
+## Vertical Constraint
+
+Vertical constraints are serialized as `u8`:
+
+| Value | Field     |
+| ----- | --------- |
+| 0     | Top       |
+| 1     | Bottom    |
+| 2     | TopBottom |
+| 3     | Center    |
+| 4     | Scale     |
+| \_    | None      |
+
+
 ## Paths
 
 Paths are made of segments of **28 bytes** each. The layout (assuming positions in a `Uint8Array`) is the following:
