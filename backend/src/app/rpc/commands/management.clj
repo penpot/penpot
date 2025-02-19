@@ -406,12 +406,16 @@
                                                       :prefix "penpot.template."
                                                       :suffix ""
                                                       :min-age "30m")
-                          format   (bfc/parse-file-format template)
 
+                          format   (bfc/parse-file-format template)
+                          team     (teams/get-team conn
+                                                   :profile-id profile-id
+                                                   :project-id project-id)
                           cfg      (-> cfg
                                        (assoc ::bfc/project-id project-id)
                                        (assoc ::bfc/profile-id profile-id)
-                                       (assoc ::bfc/input template))
+                                       (assoc ::bfc/input template)
+                                       (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team)))
 
                           result   (if (= format :binfile-v3)
                                      (px/invoke! executor (partial bf.v3/import-files! cfg))
