@@ -45,7 +45,7 @@
       {:color color
        :format format
        :on-change-format on-change
-       :copy-data (css/get-shape-properties-css objects {:fills [shape]} properties)}]]))
+       :copy-data (css/get-shape-properties-css objects {:fills [shape]} properties {:format format})}]]))
 
 (mf/defc fill-panel
   {::mf/wrap-props false}

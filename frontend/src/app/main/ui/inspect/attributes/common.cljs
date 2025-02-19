@@ -117,6 +117,7 @@
           [:div {:class (stl/css :format-info)} "rgba"])]
 
        [:& copy-button {:data copy-data
+                        :aria-label (tr "labels.copy-color")
                         :class (stl/css-case :color-row-copy-btn true
                                              :one-line (not color-library-name)
                                              :two-line (some? color-library-name))}
