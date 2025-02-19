@@ -93,7 +93,7 @@
         libs           (mf/deref refs/libraries)
         num-libs       (count libs)
         file           (get libs (:id file-id))
-        components     (mf/with-memo [file] ctkl/components (:data file))
+        components     (mf/with-memo [file] (ctkl/components (:data file)))
 
         toggle-ordering
         (mf/use-fn
