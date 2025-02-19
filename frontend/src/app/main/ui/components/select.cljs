@@ -103,7 +103,6 @@
           current-icon-ref (i/key->icon current-icon)]
       [:div {:on-click open-dropdown
              :role "combobox"
-             :aria-activedescendent current-value
              :class (dm/str (stl/css-case :custom-select true
                                           :disabled disabled
                                           :icon (some? current-icon-ref))
