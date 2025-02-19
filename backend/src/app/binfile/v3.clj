@@ -875,14 +875,17 @@
                 :manifest manifest))
 
     ;; Check if all files referenced on manifest are present
-    (doseq [{file-id :id} (:files manifest)]
+    (doseq [{file-id :id features :features} (:files manifest)]
       (let [path (str "files/" file-id ".json")]
+
         (when-not (get-zip-entry input path)
           (ex/raise :type :validation
                     :code :invalid-binfile-v3
                     :hint "some files referenced on manifest not found"
                     :path path
-                    :file-id file-id))))
+                    :file-id file-id))
+
+        (cfeat/check-supported-features! features)))
 
     (events/tap :progress {:section :manifest})
 

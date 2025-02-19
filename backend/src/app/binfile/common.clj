@@ -513,12 +513,11 @@
                  (assoc :ignore-sync-until (dt/plus timestamp (dt/duration {:seconds 5})))
                  (update :features
                          (fn [features]
-                           (let [features (cfeat/check-supported-features! features)]
-                             (-> (::features cfg #{})
-                                 (set/union features)
-                                 ;; We never want to store
-                                 ;; frontend-only features on file
-                                 (set/difference cfeat/frontend-only-features))))))]
+                           (-> (::features cfg #{})
+                               (set/union features)
+                               ;; We never want to store
+                               ;; frontend-only features on file
+                               (set/difference cfeat/frontend-only-features)))))]
 
     (when (contains? cf/flags :file-schema-validation)
       (fval/validate-file-schema! file))
