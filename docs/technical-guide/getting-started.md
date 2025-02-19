@@ -329,6 +329,18 @@ server {
 }
 ```
 
+#### Example with CADDY SERVER
+
+```bash
+penpot.mycompany.com {
+        reverse_proxy :9001
+        tls /path/to/fullchain.pem /path/to/privkey.pem
+        log {
+            output file /path/to/penpot.log
+        }
+}
+```
+
 ### Troubleshooting
 
 Knowing how to do Penpot troubleshooting can be very useful; on the one hand, it helps to create issues easier to resolve, since they include relevant information from the beginning which also makes them get solved faster; on the other hand, many times troubleshooting gives the necessary information to resolve a problem autonomously, without even creating an issue.
