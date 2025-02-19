@@ -12,6 +12,7 @@
    [app.binfile.v3 :as bf.v3]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.features :as cfeat]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.uuid :as uuid]
@@ -21,6 +22,7 @@
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files-create :refer [create-file]]
    [app.rpc.commands.profile :as profile]
+   [app.rpc.commands.teams :as teams]
    [app.setup :as-alias setup]
    [app.srepl.helpers :as srepl]
    [app.storage :as-alias sto]
@@ -317,7 +319,10 @@
               :hint "missing upload file"))
 
   (let [profile    (profile/get-profile pool profile-id)
-        project-id (:default-project-id profile)]
+        project-id (:default-project-id profile)
+        team       (teams/get-team pool
+                                   :profile-id profile-id
+                                   :project-id project-id)]
 
     (when-not project-id
       (ex/raise :type :validation
@@ -329,7 +334,8 @@
           cfg    (assoc cfg
                         ::bfc/profile-id profile-id
                         ::bfc/project-id project-id
-                        ::bfc/input path)]
+                        ::bfc/input path
+                        ::bfc/features (cfeat/get-team-enabled-features cf/flags team))]
 
       (if (= format :binfile-v3)
         (bf.v3/import-files! cfg)
