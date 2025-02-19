@@ -89,13 +89,15 @@
        [:div {:class (stl/css :header)}
         [:h3 {:class (stl/css :header-title)} (tr "dashboard.notifications")]
         (when (seq tgroups)
-          [:> icon-button* {:variant "ghost"
+          [:> icon-button* {:class (stl/css :mark-all-as-read-button :notifications-button)
+                            :variant "action"
                             :tab-index (if show? "0" "-1")
                             :aria-label (tr "label.mark-all-as-read")
                             :on-click on-read-all
                             :icon "tick"}])
 
-        [:> icon-button* {:variant "ghost"
+        [:> icon-button* {:class (stl/css :notifications-button)
+                          :variant "action"
                           :tab-index (if show? "0" "-1")
                           :aria-label (tr "labels.close")
                           :on-click on-hide-comments
