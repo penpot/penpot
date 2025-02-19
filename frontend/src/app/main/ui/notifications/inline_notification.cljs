@@ -21,10 +21,10 @@
   [{:keys [content accept cancel links] :as props}]
 
   [:> actionable* {:class (stl/css :new-inline)
-                   :cancelLabel (:label cancel)
-                   :onCancel (:callback cancel)
-                   :acceptLabel (:label accept)
-                   :onAccept (:callback accept)}
+                   :cancel-label (:label cancel)
+                   :on-cancel (:callback cancel)
+                   :accept-label (:label accept)
+                   :on-accept (:callback accept)}
    content
 
    (when (some? links)

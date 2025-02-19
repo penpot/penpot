@@ -715,8 +715,10 @@
 
 (defn go-to-component-file
   [file-id component]
-  (dm/assert! (uuid? file-id))
-  (dm/assert! (some? component))
+
+  (assert (uuid? file-id) "expected an uuid for `file-id`")
+  (assert (ctk/check-component component) "expected a valid component")
+
   (ptk/reify ::nav-to-component-file
     ptk/WatchEvent
     (watch [_ state _]
@@ -724,8 +726,7 @@
                        (assoc :file-id file-id)
                        (assoc :page-id (:main-instance-page component))
                        (assoc :component-id (:id component)))]
-        (rx/of (rt/nav :workspace params :new-window? true))))))
-
+        (rx/of (rt/nav :workspace params ::rt/new-window true))))))
 
 (defn go-to-local-component
   [& {:keys [id] :as options}]
@@ -1192,12 +1193,11 @@
   (ptk/reify ::notify-sync-file
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file         (dm/get-in state [:files file-id])
+      (let [file         (dsh/lookup-file state file-id)
+
             file-data    (get file :data)
             ignore-until (get file :ignore-sync-until)
 
-
-            ;; FIXME: syntax of this can be improved
             libraries-need-sync
             (filter #(seq (assets-need-sync % file-data ignore-until))
                     (vals (get state :files)))
@@ -1213,8 +1213,7 @@
                  (st/emit! (ntf/hide)))
 
             do-dismiss
-            #(do (st/emit! ignore-sync)
-                 (st/emit! (ntf/hide)))]
+            #(st/emit! ignore-sync (ntf/hide))]
 
         (when (seq libraries-need-sync)
           (rx/of (ntf/dialog
