@@ -1,10 +1,8 @@
-use skia_safe as skia;
+use skia_safe::{self as skia, Contains, Matrix, Rect};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::math;
 use crate::view::Viewbox;
-use skia::{Contains, Matrix};
 
 mod blend;
 mod cache;
@@ -45,7 +43,7 @@ pub struct NodeRenderState {
     // We use this bool to keep that we've traversed all the children inside this node.
     pub visited_children: bool,
     // This is used to clip the content of frames.
-    pub clip_bounds: Option<math::Rect>,
+    pub clip_bounds: Option<(Rect, Matrix)>,
     // This is a flag to indicate that we've already drawn the mask of a masked group.
     pub visited_mask: bool,
     // This bool indicates that we're drawing the mask shape.
@@ -273,26 +271,38 @@ impl RenderState {
         &mut self,
         shape: &mut Shape,
         modifiers: Option<&Matrix>,
-        clip_bounds: Option<skia::Rect>,
+        clip_bounds: Option<(Rect, Matrix)>,
     ) {
-        if let Some(modifiers) = modifiers {
-            self.drawing_surface.canvas().concat(&modifiers);
-        }
+        if let Some((bounds, transform)) = clip_bounds {
+            self.drawing_surface.canvas().concat(&transform);
+            self.drawing_surface
+                .canvas()
+                .clip_rect(bounds, skia::ClipOp::Intersect, true);
 
-        let center = shape.bounds().center();
+            if self.options.is_debug_visible() {
+                let mut paint = skia::Paint::default();
+                paint.set_style(skia::PaintStyle::Stroke);
+                paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
+                paint.set_stroke_width(4.);
+                self.drawing_surface.canvas().draw_rect(bounds, &paint);
+            }
+
+            self.drawing_surface
+                .canvas()
+                .concat(&transform.invert().unwrap());
+        }
+        let center = shape.center();
 
         // Transform the shape in the center
         let mut matrix = shape.transform.clone();
         matrix.post_translate(center);
         matrix.pre_translate(-center);
 
-        self.drawing_surface.canvas().concat(&matrix);
-
-        if let Some(bounds) = clip_bounds {
-            self.drawing_surface
-                .canvas()
-                .clip_rect(bounds, skia::ClipOp::Intersect, true);
+        if let Some(modifiers) = modifiers {
+            matrix.post_concat(&modifiers);
         }
+
+        self.drawing_surface.canvas().concat(&matrix);
 
         match &shape.kind {
             Kind::SVGRaw(sr) => {
@@ -503,7 +513,7 @@ impl RenderState {
                     .to_string(),
             )?;
 
-            let render_complete = self.viewbox.area.contains(element.bounds());
+            let render_complete = self.viewbox.area.contains(element.selrect());
             if visited_children {
                 if !visited_mask {
                     match element.kind {
@@ -553,7 +563,7 @@ impl RenderState {
 
             // If we didn't visited_children this shape, then we need to do
             if !node_render_state.id.is_nil() {
-                if !element.bounds().intersects(self.viewbox.area) || element.hidden() {
+                if !element.selrect().intersects(self.viewbox.area) || element.hidden() {
                     debug::render_debug_shape(self, element, false);
                     self.render_complete = render_complete;
                     continue;
@@ -622,7 +632,16 @@ impl RenderState {
 
             if element.is_recursive() {
                 let children_clip_bounds =
-                    (!node_render_state.id.is_nil() & element.clip()).then(|| element.bounds());
+                    (!node_render_state.id.is_nil() & element.clip()).then(|| {
+                        let bounds = element.selrect();
+                        let mut transform = element.transform;
+                        transform.post_translate(bounds.center());
+                        transform.pre_translate(-bounds.center());
+                        if let Some(modifiers) = modifiers.get(&element.id) {
+                            transform.post_concat(&modifiers);
+                        }
+                        (bounds, transform)
+                    });
 
                 for child_id in element.children_ids().iter().rev() {
                     self.pending_nodes.push(NodeRenderState {

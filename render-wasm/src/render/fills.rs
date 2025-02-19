@@ -1,8 +1,5 @@
-use crate::{
-    math,
-    shapes::{Fill, ImageFill, Kind, Shape},
-};
-use skia_safe::{self as skia, RRect};
+use crate::shapes::{Fill, ImageFill, Kind, Shape};
+use skia_safe::{self as skia, RRect, Rect};
 
 use super::RenderState;
 
@@ -46,7 +43,7 @@ fn draw_image_fill_in_container(
     let scaled_width = width * scale;
     let scaled_height = height * scale;
 
-    let dest_rect = math::Rect::from_xywh(
+    let dest_rect = Rect::from_xywh(
         container.left - (scaled_width - container_width) / 2.0,
         container.top - (scaled_height - container_height) / 2.0,
         scaled_width,
