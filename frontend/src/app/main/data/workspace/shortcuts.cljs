@@ -587,11 +587,6 @@
                           :subsections [:shape]
                           :fn #(emit-when-no-readonly (dw/create-bool :exclude))}
 
-   :fit-content-selected {:tooltip (ds/meta-shift (ds/alt "R"))
-                          :command (ds/c-mod "shift+alt+r")
-                          :subsections [:shape]
-                          :fn #(emit-when-no-readonly (dwt/selected-fit-content))}
-
    ;; THEME
    :toggle-theme         {:tooltip (ds/alt "M")
                           :command (ds/a-mod "m")

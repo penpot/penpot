@@ -109,7 +109,11 @@
       ;; avoids some race conditions that causes unexpected redirects
       ;; on invitations workflows (and probably other cases).
       (->> (rp/cmd! :get-profile)
-           (rx/subs! (fn [{:keys [id] :as profile}]
+           (rx/mapcat (fn [profile]
+                        (->> (rp/cmd! :get-teams {})
+                             (rx/map (fn [teams]
+                                       (assoc profile ::teams (into #{} (map :id) teams)))))))
+           (rx/subs! (fn [{:keys [id ::teams] :as profile}]
                        (cond
                          (= id uuid/zero)
                          (do
@@ -117,10 +121,12 @@
                            (st/emit! (rt/nav :auth-login)))
 
                          empty-path?
-                         (let [team-id (or (dtm/get-last-team-id)
-                                           (:default-team-id profile))]
-                           (st/emit! (rt/nav :dashboard-recent
-                                             (assoc query-params :team-id team-id))))
+                         (let [team-id (dtm/get-last-team-id)]
+                           (if (contains? teams team-id)
+                             (st/emit! (rt/nav :dashboard-recent
+                                               (assoc query-params :team-id team-id)))
+                             (st/emit! (rt/nav :dashboard-recent
+                                               (assoc query-params :team-id (:default-team-id profile))))))
 
                          :else
                          (st/emit! (rt/assign-exception {:type :not-found})))))))))

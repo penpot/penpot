@@ -282,9 +282,12 @@
   (.selectAllChildren selection node))
 
 (defn get-selection
+  "Only returns valid selection"
   []
   (when-let [document globals/document]
-    (.getSelection document)))
+    (let [selection (.getSelection document)]
+      (when (not= (.-type selection) "None")
+        selection))))
 
 (defn get-anchor-node
   [^js selection]

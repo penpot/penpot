@@ -8,12 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
-   [app.main.data.changes :as dch]
    [app.main.data.comments :as dcmt]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
@@ -125,38 +123,32 @@
                                  {::ev/origin "workspace"}))))))))
 
 (defn update-comment-thread-position
-  ([thread  [new-x new-y]]
-   (update-comment-thread-position thread  [new-x new-y] nil))
+  ([thread [new-x new-y]]
+   (update-comment-thread-position thread [new-x new-y] nil))
 
-  ([thread  [new-x new-y] frame-id]
+  ([thread [new-x new-y] frame-id]
    (dm/assert!
     "expected valid comment thread"
     (dcmt/check-comment-thread! thread))
    (ptk/reify ::update-comment-thread-position
      ptk/WatchEvent
-     (watch [it state _]
+     (watch [_ state _]
        (let [page      (dsh/lookup-page state)
              page-id   (:id page)
              objects   (dsh/lookup-page-objects state page-id)
              frame-id  (if (nil? frame-id)
                          (ctst/get-frame-id-by-position objects (gpt/point new-x new-y))
                          (:frame-id thread))
-
              thread     (-> thread
                             (assoc :position (gpt/point new-x new-y))
                             (assoc :frame-id frame-id))
-
-             changes    (-> (pcb/empty-changes it)
-                            (pcb/with-page page)
-                            (pcb/set-comment-thread-position thread))]
+             thread-id  (:id thread)]
 
          (rx/concat
-          (rx/merge
-           (rx/of (dch/commit-changes changes))
-           (->> (rp/cmd! :update-comment-thread-position thread)
-                (rx/catch #(rx/throw {:type :update-comment-thread-position}))
-                (rx/ignore)))
-          (rx/of (dcmt/refresh-comment-thread thread))))))))
+          (rx/of #(update % :comment-threads assoc thread-id thread))
+          (->> (rp/cmd! :update-comment-thread-position thread)
+               (rx/catch #(rx/throw {:type :update-comment-thread-position}))
+               (rx/ignore))))))))
 
 ;; Move comment threads that are inside a frame when that frame is moved"
 (defmethod ptk/resolve ::move-frame-comment-threads

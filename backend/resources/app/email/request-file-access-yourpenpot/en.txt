@@ -19,7 +19,7 @@ Alternatively, you can create and share a view-only link to the file. This will 
 
 Click the link below to generate and send the link:
 
-{{ public-uri }}/#/view/{{file-id}}?page-id={{page-id}}&section=interactions&index=0&share=true
+{{ public-uri }}/#/view?file-id={{file-id}}&page-id={{page-id}}&section=interactions&index=0&share=true
 
 
 

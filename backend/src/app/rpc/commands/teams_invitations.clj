@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.teams-invitations
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
@@ -15,7 +16,6 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.db.sql :as sql]
    [app.email :as eml]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
@@ -168,19 +168,16 @@
 
         itoken))))
 
-(defn- add-user-to-team
-  [conn profile team role email]
+(defn- add-member-to-team
+  [conn profile team role member]
 
   (let [team-id (:id team)
-        member  (db/get* conn :profile
-                         {:email (str/lower email)}
-                         {::sql/columns [:id :email]})
         params  (merge
                  {:team-id team-id
                   :profile-id (:id member)}
                  (get types.team/permissions-for-role role))]
 
-      ;; Do not allow blocked users to join teams.
+    ;; Do not allow blocked users to join teams.
     (when (:is-blocked member)
       (ex/raise :type :restriction
                 :code :profile-blocked))
@@ -205,29 +202,33 @@
     (eml/send! {::eml/conn conn
                 ::eml/factory eml/join-team
                 :public-uri (cf/get :public-uri)
-                :to email
+                :to (:email member)
                 :invited-by (:fullname profile)
                 :team (:name team)
                 :team-id (:id team)})))
 
-(def sql:valid-requests-email
-  "SELECT p.email
+(def ^:private sql:valid-access-request-profiles
+  "SELECT p.id, p.email, p.is_blocked
      FROM team_access_request AS tr
      JOIN profile AS p ON (tr.requester_id = p.id)
     WHERE tr.team_id = ?
-      AND tr.auto_join_until > now()")
+      AND tr.auto_join_until > now()
+      AND (p.deleted_at IS NULL OR
+           p.deleted_at > now())")
 
-(defn- get-valid-requests-email
+(defn- get-valid-access-request-profiles
   [conn team-id]
-  (db/exec! conn [sql:valid-requests-email team-id]))
+  (db/exec! conn [sql:valid-access-request-profiles team-id]))
 
-(def ^:private xf:map-email
-  (map :email))
+(def ^:private xf:map-email (map :email))
 
 (defn- create-team-invitations
   [{:keys [::db/conn] :as cfg} {:keys [profile team role emails] :as params}]
-  (let [join-requests    (into #{} xf:map-email
-                               (get-valid-requests-email conn (:id team)))
+  (let [emails           (set emails)
+
+        join-requests    (->> (get-valid-access-request-profiles conn (:id team))
+                              (d/index-by :email))
+
         team-members     (into #{} xf:map-email
                                (teams/get-team-members conn (:id team)))
 
@@ -245,8 +246,10 @@
 
     ;; For requested invitations, do not send invitation emails, add
     ;; the user directly to the team
-    (->> (filter join-requests emails)
-         (run! (partial add-user-to-team conn profile team role)))
+    (->> join-requests
+         (filter #(contains? emails (key %)))
+         (map val)
+         (run! (partial add-member-to-team conn profile team role)))
 
     invitations))
 
@@ -572,5 +575,3 @@
 
       (with-meta {:request request}
         {::audit/props {:request 1}}))))
-
-

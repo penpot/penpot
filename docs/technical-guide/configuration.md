@@ -2,73 +2,107 @@
 title: 2. Penpot Configuration
 ---
 
-# Penpot Configuration #
+# Penpot Configuration
 
-This section intends to explain all available configuration options, when you
-are self-hosting Penpot or also if you are using the Penpot developer setup.
+This section explains the configuration options, both for self-hosting and developer setup.
 
-Penpot is configured using environment variables. All variables start with <code class="language-bash">PENPOT_</code>
-prefix.
+<p class="advice">
+Penpot is configured using environment variables and flags.
+</p>
 
-Variables are initialized in the <code class="language-bash">docker-compose.yaml</code> file, as explained in the
-Self-hosting guide with [Elestio][1] or [Docker][2].
+## How the configuration works
 
-Additionally, if you are using the developer environment, you may override their values in
-the startup scripts, as explained in the [Developer Guide][3].
+Penpot is configured using environment variables and flags. **Environment variables** start
+with <code class="language-bash">PENPOT_</code>. **Flags** use the format
+<code class="language-bash"><enable|disable>-<flag-name></code>.
 
-**NOTE**: All the examples that have values represent the **default** values, and the
-examples that do not have values are optional, and inactive by default.
-
-
-## Common ##
-
-This section will list all common configuration between backend and frontend.
-
-There are two types of configuration: options (properties that require some value) and
-flags (that just enables or disables something). All flags are set in a single
-<code class="language-bash">PENPOT_FLAGS</code> environment variable. The envvar is a list of strings using this
-format: <code class="language-bash"><enable|disable>-\<flag-name></code>. For example:
+Flags are used to enable/disable a feature or behaviour (registration, feedback),
+while environment variables are used to configure the settings (auth, smtp, etc).
+Flags and evironment variables are also used together; for example:
 
 ```bash
-PENPOT_FLAGS: enable-smtp disable-registration disable-email-verification
+# This flag enables the use of SMTP email
+PENPOT_FLAGS: enable-smtp
+
+# These environment variables configure the specific SMPT service
+# Backend
+PENPOT_SMTP_HOST: <host>
+PENPOT_SMTP_PORT: 587
 ```
 
-### Registration ###
+**Flags** are configured in a single list, no matter they affect the backend, the frontend,
+the exporter, or all of them; on the other hand, **environment variables** are configured for
+each specific service. For example:
 
-Penpot comes with an option to completely disable the registration process;
-for this, use the following variable:
+```bash
+PENPOT_FLAGS: enable-login-with-google
+
+# Backend
+PENPOT_GOOGLE_CLIENT_ID: <client-id>
+PENPOT_GOOGLE_CLIENT_SECRET: <client-secret>
+```
+
+Check the configuration guide for [Elestio][1] or [Docker][2]. Additionally, if you are using
+the developer environment, you may override its values in the startup scripts,
+as explained in the [Developer Guide][3].
+
+**NOTE**: All the examples that have value represent the **default** value, and the
+examples that do not have value are optional, and inactive or disabled by default.
+
+## Telemetries
+
+Penpot uses anonymous telemetries from the self-hosted instances to improve the platform experience.
+Consider sharing these anonymous telemetries enabling the corresponding flag:
+
+```bash
+PENPOT_FLAGS: enable-telemetries
+```
+
+## Registration and authentication
+
+There are different ways of registration and authentication in Penpot:
+- email/password
+- Authentication providers like Google, Github or GitLab
+- LDAP
+
+You can choose one of them or combine several methods, depending on your needs.
+By default, the email/password registration is enabled and the rest are disabled.
+
+### Penpot
+
+This method of registration and authentication is enabled by default. For a production environment,
+it should be configured next to the SMTP settings, so there is a proper registration and verification
+process.
+
+You may want to restrict the registrations to a closed list of domains,
+or exclude a specific list of domains:
+
+```bash
+# Backend
+# comma separated list of domains
+PENPOT_REGISTRATION_DOMAIN_WHITELIST:
+
+# Backend
+# or a file with a domain per line
+PENPOT_EMAIL_DOMAIN_WHITELIST: path/to/whitelist.txt
+PENPOT_EMAIL_DOMAIN_BLACKLIST: path/to/blacklist.txt
+```
+
+__Since version 2.1__
+
+Email whitelisting should be explicitly
+enabled with <code class="language-bash">enable-email-whitelist</code> flag. For backward compatibility, we
+autoenable it when <code class="language-bash">PENPOT_REGISTRATION_DOMAIN_WHITELIST</code> is set with
+not-empty content.
+
+Penpot also comes with an option to completely disable the registration process;
+for this, use the following flag:
 
 ```bash
 PENPOT_FLAGS: [...] disable-registration
 ```
 
-You may also want to restrict the registrations to a closed list of domains:
-
-```bash
-# comma separated list of domains (backend only)
-PENPOT_REGISTRATION_DOMAIN_WHITELIST:
-
-# OR (backend only)
-PENPOT_EMAIL_DOMAIN_WHITELIST: path/to/whitelist.txt
-```
-
-**NOTE**: Since version 2.1, email whitelisting should be explicitly
-enabled with <code class="language-bash">enable-email-whitelist</code> flag. For backward compatibility, we
-autoenable it when <code class="language-bash">PENPOT_REGISTRATION_DOMAIN_WHITELIST</code> is set with
-not-empty content.
-
-### Demo users ###
-
-Penpot comes with facilities for fast creation of demo users without the need of a
-registration process. The demo users by default have an expiration time of 7 days, and
-once expired they are completely deleted with all the generated content. Very useful for
-testing or demonstration purposes.
-
-You can enable demo users using the following variable:
-
-```bash
-PENPOT_FLAGS: [...] enable-demo-users
-```
+This option is only recommended for demo instances, not for production environments.
 
 ### Authentication Providers
 
@@ -82,29 +116,12 @@ The callback has the following format:
 https://<your_domain>/api/auth/oauth/<oauth_provider>/callback
 ```
 
-
 You will need to change <your_domain> and <oauth_provider> according to your setup.
 This is how it looks with Gitlab provider:
 
 ```html
 https://<your_domain>/api/auth/oauth/gitlab/callback
 ```
-
-#### Penpot
-
-Consists on registration and authentication via email / password. It is enabled by default,
-but login can be disabled with the following flags:
-
-```bash
-PENPOT_FLAGS: [...] disable-login-with-password
-```
-
-And the registration also can be disabled with:
-
-```bash
-PENPOT_FLAGS: [...] disable-registration
-```
-
 
 #### Google
 
@@ -145,7 +162,7 @@ PENPOT_GITHUB_CLIENT_SECRET: <client-secret>
 
 #### OpenID Connect
 
-**NOTE:** Since version 1.5.0
+__Since version 1.5.0__
 
 Allows integrating with a generic authentication provider that implements the OIDC
 protocol (usually used for SSO).
@@ -155,7 +172,7 @@ All the other options are backend only:
 ```bash
 PENPOT_FLAGS: [...] enable-login-with-oidc
 
-## Backend only
+# Backend
 PENPOT_OIDC_CLIENT_ID: <client-id>
 
 # Mainly used for auto discovery the openid endpoints
@@ -231,7 +248,6 @@ register with another method.
 PENPOT_FLAGS: [...] enable-oidc-registration
 ```
 
-
 #### Azure Active Directory using OpenID Connect
 
 Allows integrating with Azure Active Directory as authentication provider:
@@ -240,12 +256,12 @@ Allows integrating with Azure Active Directory as authentication provider:
 # Backend & Frontend
 PENPOT_OIDC_CLIENT_ID: <client-id>
 
-## Backend only
+# Backend
 PENPOT_OIDC_BASE_URI: https://login.microsoftonline.com/<tenant-id>/v2.0/
 PENPOT_OIDC_CLIENT_SECRET: <client-secret>
 ```
 
-### LDAP ###
+### LDAP
 
 Penpot comes with support for *Lightweight Directory Access Protocol* (LDAP). This is the
 example configuration we use internally for testing this authentication backend.
@@ -253,7 +269,7 @@ example configuration we use internally for testing this authentication backend.
 ```bash
 PENPOT_FLAGS: [...] enable-login-with-ldap
 
-## Backend only
+# Backend
 PENPOT_LDAP_HOST: ldap
 PENPOT_LDAP_PORT: 10389
 PENPOT_LDAP_SSL: false
@@ -268,39 +284,34 @@ PENPOT_LDAP_ATTRS_FULLNAME: cn
 PENPOT_LDAP_ATTRS_PHOTO: jpegPhoto
 ```
 
-If you miss something, please open an issue and we discuss it.
+## Penpot URI
 
-
-## Backend ##
-
-This section enumerates the backend only configuration variables.
-
-
-### Database
-
-We only support PostgreSQL and we highly recommend >=13 version. If you are using official
-docker images this is already solved for you.
-
-Essential database configuration:
+You will need to set the <code class="language-bash">PENPOT_PUBLIC_URI</code> environment variable in case you go to serve Penpot to the users;
+it should point to public URI where users will access the application:
 
 ```bash
 # Backend
-PENPOT_DATABASE_USERNAME: penpot
-PENPOT_DATABASE_PASSWORD: penpot
-PENPOT_DATABASE_URI: postgresql://127.0.0.1/penpot
+PENPOT_PUBLIC_URI: https://penpot.mycompany.com
+
+# Frontend
+PENPOT_PUBLIC_URI: https://penpot.mycompany.com
+
+# Exporter
+PENPOT_PUBLIC_URI: https://penpot.mycompany.com
 ```
 
-The username and password are optional. These settings should be compatible with the ones
-in the postgres configuration:
+If you're using the official <code class="language-bash">docker-compose.yml</code> you only need to configure the
+<code class="language-bash">PENPOT_PUBLIC_URI</code> envvar in the top of the file.
 
-```bash
-# Postgres
-POSTGRES_DATABASE: penpot
-POSTGRES_USER: penpot
-POSTGRES_PASSWORD: penpot
-```
+<p class="advice">
+    If you plan to serve Penpot under different domain than `localhost` without HTTPS,
+    you need to disable the `secure` flag on cookies, with the `disable-secure-session-cookies` flag.
+    This is a configuration NOT recommended for production environments; as some browser APIs do
+    not work properly under non-https environments, this unsecure configuration
+    may limit the usage of Penpot; as an example, the clipboard does not work with HTTP.
+</p>
 
-### Email (SMTP)
+## Email configuration
 
 By default, <code class="language-bash">smpt</code> flag is disabled, the email will be
 printed to the console, which means that the emails will be shown in the stdout.
@@ -326,6 +337,7 @@ Enable SMTP:
 
 ```bash
 PENPOT_FLAGS: [...] enable-smtp
+
 # Backend
 PENPOT_SMTP_HOST: <host>
 PENPOT_SMTP_PORT: 587
@@ -334,14 +346,108 @@ PENPOT_SMTP_PASSWORD: <password>
 PENPOT_SMTP_TLS: true
 ```
 
+If you are not using SMTP configuration and want to log the emails in the console, you should use the following flag:
+
+```bash
+PENPOT_FLAGS: [...] enable-log-emails
+```
+
+## Redis
+
+The Redis configuration is very simple, just provide a valid redis URI. Redis is used
+mainly for websocket notifications coordination.
+
+```bash
+# Backend
+PENPOT_REDIS_URI: redis://localhost/0
+
+# Exporter
+PENPOT_REDIS_URI: redis://localhost/0
+```
+
+If you are using the official docker compose file, this is already configurRed.
+
+## Demo environment
+
+Penpot comes with facilities to create a demo environment so you can test the system quickly.
+This is an example of a demo configuration:
+
+```bash
+PENPOT_FLAGS: disable-registration enable-demo-users enable-demo-warning
+```
+
+**disable-registration** prevents any user from registering in the platform.
+**enable-demo-users** creates users with a default expiration time of 7 days, and
+once expired they are completely deleted with all the generated content.
+From the registration page, there is a link with a `Create demo account` which creates one of these
+users and logs in automatically.
+**enable-demo-warning** is a modal in the registration and login page saying that the
+environment is a testing one and the data may be wiped without notice.
+
+Another way to work in a demo environment is allowing users to register but removing the
+verification process:
+
+```bash
+PENPOT_FLAGS: disable-email-verification enable-demo-warning
+```
+
+## Backend
+
+This section enumerates the backend only configuration variables.
+
+### Secret key
+
+The <code class="language-bash">PENPOT_SECRET_KEY</code> envvar serves a master key from which other keys
+for subsystems (eg http sessions, or invitations) are derived.
+
+If you don't use it, all created sessions and invitations will become invalid on container restart
+or service restart.
+
+To use it, we recommend using a truly randomly generated 512 bits base64 encoded string here.
+You can generate one with:
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(64))"
+```
+
+And configure it:
+```bash
+# Backend
+PENPOT_SECRET_KEY: my-super-secure-key
+```
+
+### Database
+
+Penpot only supports PostgreSQL and we highly recommend >=13 version. If you are using official
+docker images this is already solved for you.
+
+Essential database configuration:
+
+```bash
+# Backend
+PENPOT_DATABASE_USERNAME: penpot
+PENPOT_DATABASE_PASSWORD: penpot
+PENPOT_DATABASE_URI: postgresql://127.0.0.1/penpot
+```
+
+The username and password are optional. These settings should be compatible with the ones
+in the postgres configuration:
+
+```bash
+# Postgres
+POSTGRES_DATABASE: penpot
+POSTGRES_USER: penpot
+POSTGRES_PASSWORD: penpot
+```
+
 ### Storage
 
-Storage refers to storage used for store the user uploaded assets.
+Storage refers to storing the user uploaded assets.
 
-Assets storage is implemented using "plugable" backends. Currently there are three
+Assets storage is implemented using "plugable" backends. Currently there are two
 backends available: <code class="language-bash">fs</code> and <code class="language-bash">s3</code> (for AWS S3).
 
-#### FS Backend (default) ####
+#### FS Backend (default)
 
 This is the default backend when you use the official docker images and the default
 configuration looks like this:
@@ -360,8 +466,7 @@ configure the nginx yourself.
 In case you want understand how it internally works, you can take a look on the [nginx
 configuration file][4] used in the docker images.
 
-
-#### AWS S3 Backend ####
+#### AWS S3 Backend
 
 This backend uses AWS S3 bucket for store the user uploaded assets. For use it you should
 have an appropriate account on AWS cloud and have the credentials, region and the bucket.
@@ -369,11 +474,9 @@ have an appropriate account on AWS cloud and have the credentials, region and th
 This is how configuration looks for S3 backend:
 
 ```bash
-# AWS Credentials
+# Backend
 AWS_ACCESS_KEY_ID: <you-access-key-id-here>
 AWS_SECRET_ACCESS_KEY: <your-secret-access-key-here>
-
-# Backend configuration
 PENPOT_ASSETS_STORAGE_BACKEND: assets-s3
 PENPOT_STORAGE_ASSETS_S3_REGION: <aws-region>
 PENPOT_STORAGE_ASSETS_S3_BUCKET: <bucket-name>
@@ -382,38 +485,11 @@ PENPOT_STORAGE_ASSETS_S3_BUCKET: <bucket-name>
 PENPOT_STORAGE_ASSETS_S3_ENDPOINT: <endpoint-uri>
 ```
 
-### Redis
-
-The redis configuration is very simple, just provide with a valid redis URI. Redis is used
-mainly for websocket notifications coordination.
-
-```bash
-# Backend
-PENPOT_REDIS_URI: redis://localhost/0
-```
-
-If you are using the official docker compose file, this is already configured.
-
-
-### HTTP
-
-You will need to set the <code class="language-bash">PENPOT_PUBLIC_URI</code> environment
-variable in case you go to serve Penpot to the users; it should point to public URI
-where users will access the application:
-
-```bash
-PENPOT_PUBLIC_URI: http://localhost:9001
-```
-
 <p class="advice">
-    If you plan to serve Penpot under different domain than `localhost` without HTTPS,
-    you need to disable the `secure` flag on cookies, with the `disable-secure-session-cookies` flag.
-    This is a configuration NOT recommended for production environments.
+These settings are equally useful if you have a Minio storage system.
 </p>
 
-Check all the [flags](#other-flags) to fully customize your instance.
-
-## Frontend ##
+## Frontend
 
 In comparison with backend, frontend only has a small number of runtime configuration
 options, and they are located in the <code class="language-bash">\<dist>/js/config.js</code> file.
@@ -422,10 +498,7 @@ If you are using the official docker images, the best approach to set any config
 using environment variables, and the image automatically generates the <code class="language-bash">config.js</code> from
 them.
 
-**NOTE**: many frontend related configuration variables are explained in the
-[Common](#common) section, this section explains **frontend only** options.
-
-But in case you have a custom setup you probably need setup the following environment
+In case you have a custom setup, you probably need to configure the following environment
 variables on the frontend container:
 
 To connect the frontend to the exporter and backend, you need to fill out these environment variables.
@@ -438,54 +511,36 @@ PENPOT_EXPORTER_URI: http://your-penpot-exporter:6061
 
 These variables are used for generate correct nginx.conf file on container startup.
 
-
-### Demo warning ###
-
-If you want to show a warning in the register and login page saying that this is a
-demonstration purpose instance (no backups, periodical data wipe, ...), set the following
-variable:
-
-```bash
-PENPOT_FLAGS: [...] enable-demo-warning
-```
-
 ## Other flags
+
+There are other flags that are useful for a more customized Penpot experience. This section has the list of the flags meant
+for the user:
 
 - <code class="language-bash">enable-cors</code>: Enables the default cors cofiguration that allows all domains
   (this configuration is designed only for dev purposes right now)
 - <code class="language-bash">enable-backend-api-doc</code>: Enables the <code class="language-bash">/api/doc</code>
   endpoint that lists all rpc methods available on backend
-- <code class="language-bash">disable-email-verification</code>: Deactivates the email verification process
-   (only recommended for local or internal setups)
-- <code class="language-bash">disable-secure-session-cookies</code>: By default, Penpot uses the
-  <code class="language-bash">secure</code> flag on cookies, this flag disables it;
-  it is useful if you plan to serve Penpot under different
-  domain than <code class="language-bash">localhost</code> without HTTPS
 - <code class="language-bash">disable-login-with-password</code>: allows disable password based login form
-- <code class="language-bash">disable-registration</code>: disables registration (still enabled for invitations only).
 - <code class="language-bash">enable-prepl-server</code>: enables PREPL server, used by manage.py and other additional
-  tools for communicate internally with Penpot backend
+  tools to communicate internally with Penpot backend. Check the [CLI section][5] to get more detail.
 
 __Since version 1.13.0__
 
 - <code class="language-bash">enable-log-invitation-tokens</code>: for cases where you don't have email configured, this
-  will log to console the invitation tokens
-- <code class="language-bash">enable-log-emails</code>: if you want to log in console send emails. This only works if smtp
-  is not configured
+  will log to console the invitation tokens.
 
 __Since version 2.0.0__
 
-- <code class="language-bash">disable-onboarding-team</code>: for disable onboarding team creation modal
-- <code class="language-bash">disable-onboarding-newsletter</code>: for disable onboarding newsletter modal
-- <code class="language-bash">disable-onboarding-questions</code>: for disable onboarding survey
-- <code class="language-bash">disable-onboarding</code>: for disable onboarding modal
-- <code class="language-bash">disable-dashboard-templates-section</code>: for hide the templates section from dashboard
-- <code class="language-bash">enable-webhooks</code>: for enable webhooks
-- <code class="language-bash">enable-access-tokens</code>: for enable access tokens
-- <code class="language-bash">disable-google-fonts-provider</code>: disables the google fonts provider (frontend)
+- <code class="language-bash">disable-onboarding</code>: disables the onboarding modals.
+- <code class="language-bash">disable-dashboard-templates-section</code>: hides the templates section from dashboard.
+- <code class="language-bash">enable-webhooks</code>: enables webhooks. More detail about this configuration in [webhooks section][6].
+- <code class="language-bash">enable-access-tokens</code>: enables access tokens. More detail about this configuration in [access tokens section][7].
+- <code class="language-bash">disable-google-fonts-provider</code>: disables the google fonts provider.
 
 [1]: /technical-guide/getting-started#configure-penpot-with-elestio
 [2]: /technical-guide/getting-started#configure-penpot-with-docker
 [3]: /technical-guide/developer/common#dev-environment
 [4]: https://github.com/penpot/penpot/blob/main/docker/images/files/nginx.conf
-
+[5]: /technical-guide/getting-started/#using-the-cli-for-administrative-tasks
+[6]: /technical-guide/integration/#webhooks
+[7]: /technical-guide/integration/#access-tokens
