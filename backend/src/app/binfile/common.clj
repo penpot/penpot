@@ -9,7 +9,6 @@
   binfile format implementations and management rpc methods."
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
@@ -219,10 +218,8 @@
   "Given a set of file-id's, return all matching relations with the libraries"
   [cfg ids]
 
-  (dm/assert!
-   "expected a set of uuids"
-   (and (set? ids)
-        (every? uuid? ids)))
+  (assert (set? ids) "expected a set of uuids")
+  (assert (every? uuid? ids) "expected a set of uuids")
 
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  (let [ids (db/create-array conn "uuid" ids)
@@ -503,9 +500,7 @@
   specific, should not be used outside of binfile domain"
   [{:keys [::timestamp] :as cfg} file & {:as opts}]
 
-  (dm/assert!
-   "expected valid timestamp"
-   (dt/instant? timestamp))
+  (assert (dt/instant? timestamp) "expected valid timestamp")
 
   (let [file (-> file
                  (assoc :created-at timestamp)
