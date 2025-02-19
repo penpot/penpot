@@ -14,6 +14,15 @@
   width: 100%;
 }
 
+.title-tokens {
+  @include bodySmallTypography;
+  text-transform: capitalize;
+}
+
+.title-tokens-active {
+  color: var(--assets-item-name-foreground-color, --color-foreground-primary);
+}
+
 .section-icon {
   @include flexCenter;
   padding-right: $s-2;
