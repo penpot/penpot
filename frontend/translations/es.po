@@ -3506,10 +3506,6 @@ msgstr "Diferencia"
 msgid "shortcuts.bool-exclude"
 msgstr "Exclusión"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:590
-msgid "shortcuts.fit-content-selected"
-msgstr "Redimensionar para ajustar al contenido"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:86
 msgid "shortcuts.bool-intersection"
 msgstr "Interescción"
