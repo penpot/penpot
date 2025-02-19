@@ -166,9 +166,9 @@
 
 (defn- make-library-colors-ref
   [file-id]
-  (l/derived (fn [libraries]
-               (dm/get-in libraries [file-id :data :colors]))
-             refs/libraries))
+  (l/derived (fn [files]
+               (dm/get-in files [file-id :data :colors]))
+             refs/files))
 
 (mf/defc file-color-palette*
   {::mf/private true}

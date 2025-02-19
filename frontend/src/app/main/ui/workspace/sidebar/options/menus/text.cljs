@@ -184,7 +184,7 @@
 
   (let [file-id        (mf/use-ctx ctx/current-file-id)
         typographies   (mf/deref refs/workspace-file-typography)
-        shared-libs    (mf/deref refs/libraries)
+        libraries      (mf/deref refs/files)
         label          (case type
                          :multiple (tr "workspace.options.text-options.title-selection")
                          :group (tr "workspace.options.text-options.title-group")
@@ -224,21 +224,19 @@
            (emit-update! ids attrs)))
 
         typography
-        (mf/use-memo
-         (mf/deps values file-id shared-libs)
-         (fn []
-           (cond
-             (and typography-id
-                  (not= typography-id :multiple)
-                  (not= typography-file-id file-id))
-             (-> shared-libs
-                 (get-in [typography-file-id :data :typographies typography-id])
-                 (assoc :file-id typography-file-id))
+        (mf/with-memo [values file-id libraries]
+          (cond
+            (and typography-id
+                 (not= typography-id :multiple)
+                 (not= typography-file-id file-id))
+            (-> libraries
+                (get-in [typography-file-id :data :typographies typography-id])
+                (assoc :file-id typography-file-id))
 
-             (and typography-id
-                  (not= typography-id :multiple)
-                  (= typography-file-id file-id))
-             (get typographies typography-id))))
+            (and typography-id
+                 (not= typography-id :multiple)
+                 (= typography-file-id file-id))
+            (get typographies typography-id)))
 
         on-convert-to-typography
         (fn [_]

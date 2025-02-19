@@ -295,7 +295,8 @@
   (let [single?             (= 1 (count shapes))
         shape               (first shapes)
         current-file-id     (mf/use-ctx ctx/current-file-id)
-        libraries           (mf/deref refs/files)
+
+        libraries           (mf/deref refs/libraries)
         objects             (mf/deref refs/workspace-page-objects)
 
         ^boolean
@@ -513,7 +514,7 @@
   [{:keys [shapes swap-opened?]}]
   (let [current-file-id     (mf/use-ctx ctx/current-file-id)
 
-        libraries           (deref refs/libraries)
+        libraries           (deref refs/files)
         current-file        (get libraries current-file-id)
 
         state*              (mf/use-state

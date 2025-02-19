@@ -48,7 +48,7 @@
            {:value "file" :label (tr "workspace.libraries.colors.file-library")}])
 
         options
-        (mf/with-memo [library-options file-id]
+        (mf/with-memo [library-options libraries file-id]
           (into library-options
                 (comp
                  (map val)

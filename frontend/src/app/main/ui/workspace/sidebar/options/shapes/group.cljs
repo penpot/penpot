@@ -34,7 +34,7 @@
   [props]
   (let [shape                    (unchecked-get props "shape")
         shape-with-children      (unchecked-get props "shape-with-children")
-        shared-libs              (unchecked-get props "shared-libs")
+        libraries                (unchecked-get props "libraries")
         objects                  (->> shape-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
         file-id                  (unchecked-get props "file-id")
         layout-container-values  (select-keys shape layout-container-flex-attrs)
@@ -106,7 +106,7 @@
       {:type type
        :shapes (vals objects)
        :file-id file-id
-       :libraries shared-libs}]
+       :libraries libraries}]
 
      (when-not (empty? shadow-ids)
        [:> shadow-menu* {:ids ids :values (get shape :shadow) :type type}])
