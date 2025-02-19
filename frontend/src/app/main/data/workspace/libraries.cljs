@@ -1191,12 +1191,11 @@
   (ptk/reify ::notify-sync-file
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file         (dm/get-in state [:files file-id])
+      (let [file         (dsh/lookup-file state file-id)
+
             file-data    (get file :data)
             ignore-until (get file :ignore-sync-until)
 
-
-            ;; FIXME: syntax of this can be improved
             libraries-need-sync
             (filter #(seq (assets-need-sync % file-data ignore-until))
                     (vals (get state :files)))
@@ -1212,8 +1211,7 @@
                  (st/emit! (ntf/hide)))
 
             do-dismiss
-            #(do (st/emit! ignore-sync)
-                 (st/emit! (ntf/hide)))]
+            #(st/emit! ignore-sync (ntf/hide))]
 
         (when (seq libraries-need-sync)
           (rx/of (ntf/dialog

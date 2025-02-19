@@ -17,34 +17,37 @@
    [:class {:optional true} :string]
    [:variant {:optional true}
     [:maybe [:enum "default" "error"]]]
-   [:acceptLabel {:optional true} :string]
-   [:cancelLabel {:optional true} :string]
-   [:onAccept {:optional true} [:fn fn?]]
-   [:onCancel {:optional true} [:fn fn?]]])
+   [:accept-label {:optional true} :string]
+   [:cancel-label {:optional true} :string]
+   [:on-accept {:optional true} [:fn fn?]]
+   [:on-cancel {:optional true} [:fn fn?]]])
 
 (mf/defc actionable*
-  {::mf/props :obj
-   ::mf/schema schema:actionable}
-  [{:keys [class variant acceptLabel cancelLabel children onAccept onCancel] :rest props}]
+  {::mf/schema schema:actionable}
+  [{:keys [class variant accept-label cancel-label children on-accept on-cancel] :rest props}]
 
-  (let [variant (or variant "default")
-        class (d/append-class class (stl/css :notification))
-        props (mf/spread-props props {:class class :data-testid "actionable"})
+  (let [variant (d/nilv variant "default")
+        class   (d/append-class class (stl/css :notification))
+        props   (mf/spread-props props
+                                 {:class class
+                                  :data-testid "actionable"})
 
-        handle-accept
+        on-accept
         (mf/use-fn
          (fn [e]
-           (when onAccept (onAccept e))))
+           (when (fn? on-accept)
+             (on-accept e))))
 
-        handle-cancel
+        on-cancel
         (mf/use-fn
          (fn [e]
-           (when onCancel (onCancel e))))]
+           (when on-cancel (on-cancel e))))]
 
-    [:> "aside" props
-     [:div {:class (stl/css :notification-message)}
-      children]
+    [:> :aside props
+     [:div {:class (stl/css :notification-message)} children]
      [:> button* {:variant "secondary"
-                  :on-click handle-cancel} cancelLabel]
+                  :on-click on-cancel}
+      cancel-label]
      [:> button* {:variant (if (= variant "default") "primary" "destructive")
-                  :on-click handle-accept} acceptLabel]]))
+                  :on-click on-accept}
+      accept-label]]))
