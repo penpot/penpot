@@ -206,7 +206,7 @@
                     nil))
            (rx/of
             (cond
-              (some? frame-id) (go-to-frame (uuid frame-id))
+              (some? frame-id) (go-to-frame frame-id)
               (some? index) (go-to-frame-by-index index)
               :else (go-to-frame-auto)))))))))
 
