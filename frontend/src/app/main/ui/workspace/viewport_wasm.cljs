@@ -348,7 +348,6 @@
 
       (when show-comments?
         [:> comments/comments-layer* {:vbox vbox
-                                      :page-id page-id
                                       :vport vport
                                       :zoom zoom
                                       :drawing drawing}])

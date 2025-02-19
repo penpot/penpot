@@ -9,30 +9,14 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.comments :as dcm]
-   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(defn- update-position
-  [positions {:keys [id] :as thread}]
-  (if (contains? positions id)
-    (-> thread
-        (assoc :position (dm/get-in positions [id :position]))
-        (assoc :frame-id (dm/get-in positions [id :frame-id])))
-    thread))
-
-(def ^:private ref:thread-positions
-  (l/derived (fn [state]
-               (-> (dsh/lookup-page state)
-                   (get :comment-thread-positions)))
-             st/state))
-
 (mf/defc comments-layer*
-  [{:keys [vbox vport zoom drawing file-id page-id]}]
+  [{:keys [vbox vport zoom drawing file-id]}]
   (let [vbox-x      (dm/get-prop vbox :x)
         vbox-y      (dm/get-prop vbox :y)
         vport-w     (dm/get-prop vport :width)
@@ -44,16 +28,7 @@
         profile     (mf/deref refs/profile)
         local       (mf/deref refs/comments-local)
 
-        positions   (mf/deref ref:thread-positions)
-
         threads-map (mf/deref refs/threads)
-        threads-map (mf/with-memo [threads-map page-id positions]
-                      (reduce-kv (fn [threads id thread]
-                                   (if (= (:page-id thread) page-id)
-                                     (assoc threads id (update-position positions thread))
-                                     threads))
-                                 {}
-                                 threads-map))
 
         threads
         (mf/with-memo [threads-map local profile]
@@ -93,7 +68,7 @@
          (when-let [thread (get threads-map id)]
            (when (seq (dcm/apply-filters local profile [thread]))
              [:> cmt/comment-floating-thread*
-              {:thread (update-position positions thread)
+              {:thread thread
                :viewport viewport
                :zoom zoom}])))
 
