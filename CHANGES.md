@@ -12,6 +12,8 @@
 
 ### :bug: Bugs fixed
 
+- Fix opacity in frame containers [Github #5858](https://github.com/penpot/penpot/pull/5858)
+
 
 ## 2.5.0 (Unreleased)
 
