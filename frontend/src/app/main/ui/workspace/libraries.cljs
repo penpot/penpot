@@ -248,10 +248,12 @@
         (mf/use-fn
          (mf/deps file-id)
          #(st/emit! (dwl/set-file-shared file-id false)
-                    (modal/show :libraries-dialog {})))
+                    (modal/show :libraries-dialog {:file-id file-id})))
 
         on-delete-cancel
-        (mf/use-fn #(st/emit! (modal/show :libraries-dialog {})))
+        (mf/use-fn
+         (mf/deps file-id)
+         #(st/emit! (modal/show :libraries-dialog {:file-id file-id})))
 
         publish
         (mf/use-fn
@@ -259,7 +261,7 @@
          (fn [event]
            (let [input-node (dom/get-target event)
                  publish-library #(st/emit! (dwl/set-file-shared file-id true))
-                 cancel-publish #(st/emit! (modal/show :libraries-dialog {}))]
+                 cancel-publish #(st/emit! (modal/show :libraries-dialog {:file-id file-id}))]
              (if empty-library?
                (st/emit! (modal/show
                           {:type :confirm
@@ -563,17 +565,15 @@
 (mf/defc libraries-dialog
   {::mf/register modal/components
    ::mf/register-as :libraries-dialog}
-  [{:keys [starting-tab] :as props :or {starting-tab :libraries}}]
-  (let [;; NOTE: we don't want to react on file changes, we just want
-        ;; a snapshot of file on the momento of open the dialog
-        file           (deref refs/file)
-
-        file-id        (:id file)
-        team-id        (:team-id file)
-        shared?        (:is-shared file)
+  [{:keys [starting-tab file-id] :as props :or {starting-tab :libraries}}]
+  (let [files   (mf/deref refs/files)
+        file    (get files file-id)
+        team-id (:team-id file)
+        shared? (:is-shared file)
 
         linked-libraries
-        (mf/deref refs/files)
+        (mf/with-memo [files file-id]
+          (refs/select-libraries files file-id))
 
         linked-libraries
         (mf/with-memo [linked-libraries file-id]
