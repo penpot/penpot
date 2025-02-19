@@ -284,7 +284,7 @@ PENPOT_LDAP_ATTRS_FULLNAME: cn
 PENPOT_LDAP_ATTRS_PHOTO: jpegPhoto
 ```
 
-### Penpot URI
+## Penpot URI
 
 You will need to set the <code class="language-bash">PENPOT_PUBLIC_URI</code> environment variable in case you go to serve Penpot to the users;
 it should point to public URI where users will access the application:
