@@ -11,6 +11,7 @@
    [app.common.files.helpers :as cph]
    [app.common.geom.shapes :as gsh]
    [app.common.svg.path.shapes-to-path :as stp]
+   [app.common.types.component :as ctc]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
@@ -99,7 +100,10 @@
              shapes (->> ordered-indexes
                          (map (d/getf objects))
                          (remove cph/frame-shape?)
-                         (remove #(ctn/has-any-copy-parent? objects %)))]
+                         (remove #(ctn/has-any-copy-parent? objects %))
+                         (remove #(->> %
+                                       (get objects)
+                                       (ctc/is-variant?))))]
 
          (when-not (empty? shapes)
            (let [[boolean-data index] (create-bool-data bool-type name (reverse shapes) objects)

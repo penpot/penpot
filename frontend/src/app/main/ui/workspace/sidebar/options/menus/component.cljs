@@ -740,8 +740,7 @@
 
 (mf/defc variant-menu*
   [{:keys [shapes]}]
-  (let [;; TODO check multi. What is shown? User can change properties like width?
-        multi              (> (count shapes) 1)
+  (let [multi              (> (count shapes) 1)
 
         shape              (first shapes)
         shape-name         (:name shape)
@@ -839,13 +838,14 @@
                                     :on-close on-menu-close
                                     :menu-entries menu-entries
                                     :main-instance true}]])]
-        [:*
-         (for [[pos property] (map vector (range) properties)]
-           (let [val (str/join ", " (:values property))]
-             [:div {:key (str (:id shape) (:name property)) :class (stl/css :variant-property-row)}
-              [:> input-with-values* {:name (:name property) :values val :on-blur (partial update-property-name pos)}]
-              [:> icon-button* {:variant "ghost"
-                                :aria-label (tr "workspace.shape.menu.remove-variant-property")
-                                :on-click (partial remove-property pos)
-                                :icon "remove"
-                                :disabled (<= (count properties) 1)}]]))]]])))
+        (when-not multi
+          [:*
+           (for [[pos property] (map vector (range) properties)]
+             (let [val (str/join ", " (:values property))]
+               [:div {:key (str (:id shape) (:name property)) :class (stl/css :variant-property-row)}
+                [:> input-with-values* {:name (:name property) :values val :on-blur (partial update-property-name pos)}]
+                [:> icon-button* {:variant "ghost"
+                                  :aria-label (tr "workspace.shape.menu.remove-variant-property")
+                                  :on-click (partial remove-property pos)
+                                  :icon "remove"
+                                  :disabled (<= (count properties) 1)}]]))])]])))

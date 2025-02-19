@@ -968,7 +968,10 @@
      (watch [_ state _]
        (let [objects   (dsh/lookup-page-objects state)
              selected  (or ids (dsh/lookup-selected state {:omit-blocked? true}))
-             shapes    (map #(get objects %) selected)
+             shapes    (->> selected
+                            (map #(get objects %))
+                            (remove ctk/is-variant-container?))
+             selected  (->> shapes (map :id))
              selrect   (gsh/shapes->rect shapes)
              center    (grc/rect->center selrect)
              modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point -1.0 1.0) center))]
@@ -983,7 +986,10 @@
      (watch [_ state _]
        (let [objects   (dsh/lookup-page-objects state)
              selected  (or ids (dsh/lookup-selected state {:omit-blocked? true}))
-             shapes    (map #(get objects %) selected)
+             shapes    (->> selected
+                            (map #(get objects %))
+                            (remove ctk/is-variant-container?))
+             selected  (->> shapes (map :id))
              selrect   (gsh/shapes->rect shapes)
              center    (grc/rect->center selrect)
              modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point 1.0 -1.0) center))]

@@ -13,6 +13,7 @@
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.logic.shapes :as cls]
    [app.common.schema :as sm]
+   [app.common.types.component :as ctc]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
@@ -248,7 +249,10 @@
              objects      (dsh/lookup-page-objects state page-id)
              selected     (->> (dsh/lookup-selected state)
                                (cfh/clean-loops objects)
-                               (remove #(ctn/has-any-copy-parent? objects (get objects %))))
+                               (remove #(ctn/has-any-copy-parent? objects (get objects %)))
+                               (remove #(->> %
+                                             (get objects)
+                                             (ctc/is-variant?))))
 
              changes      (-> (pcb/empty-changes it page-id)
                               (pcb/with-objects objects))

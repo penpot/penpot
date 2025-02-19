@@ -188,7 +188,9 @@
             (->> ids
                  (cfh/clean-loops objects)
                  (remove #(ctn/has-any-copy-parent? objects (get objects %)))
-                 (shapes-for-grouping objects))
+                 (shapes-for-grouping objects)
+                 (remove #(ctk/is-variant? %)))
+
             parents  (into #{} (map :parent-id) shapes)]
         (when-not (empty? shapes)
           (let [[group changes]
