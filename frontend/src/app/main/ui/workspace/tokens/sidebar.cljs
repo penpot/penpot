@@ -118,9 +118,10 @@
              (st/emit! (wtch/toggle-token {:token token
                                            :shapes selected-shapes})))))]
 
-    [:div {:on-click on-toggle-open-click}
+    [:div {:on-click on-toggle-open-click :class (stl/css :token-section-wrapper)}
      [:& cmm/asset-section {:icon (token-section-icon type)
                             :title title
+                            :section :tokens
                             :assets-count (count tokens)
                             :open? is-open}
       [:& cmm/asset-section-block {:role :title-button}

@@ -133,6 +133,10 @@
     :typographies "text-palette"
     "add"))
 
+(defn should-display-asset-count?
+  [section assets-count]
+  (or (not (= section :tokens)) (and (< 0 assets-count) (= section :tokens))))
+
 (mf/defc asset-section
   {::mf/wrap-props false}
   [{:keys [children file-id title section assets-count icon open? on-click]}]
@@ -154,14 +158,17 @@
 
         title
         (mf/html
-         [:span {:class (stl/css :title-name)}
+         [:span {:class (stl/css-case :title-name true
+                                      :title-tokens (= section :tokens)
+                                      :title-tokens-active (and (= section :tokens) (< 0 assets-count)))}
           [:span {:class (stl/css :section-icon)}
            [:> icon* {:icon-id (or icon (section-icon section)) :size "s"}]]
           [:span {:class (stl/css :section-name)}
            title]
 
-          [:span {:class (stl/css :num-assets)}
-           assets-count]])]
+          (when (should-display-asset-count? section assets-count)
+            [:span {:class (stl/css :num-assets)}
+             assets-count])])]
 
     [:div {:class (stl/css-case :asset-section true
                                 :opened (and (< 0 assets-count)
