@@ -541,7 +541,6 @@
 
   file)
 
-
 (defn apply-pending-migrations!
   "Apply alredy registered pending migrations to files"
   [cfg]
