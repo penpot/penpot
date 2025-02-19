@@ -354,7 +354,7 @@ PENPOT_FLAGS: [...] enable-log-emails
 
 ## Redis
 
-The Redis configuration is very simple, just provide with a valid redis URI. Redis is used
+The Redis configuration is very simple, just provide a valid redis URI. Redis is used
 mainly for websocket notifications coordination.
 
 ```bash
@@ -403,7 +403,7 @@ for subsystems (eg http sessions, or invitations) are derived.
 If you don't use it, all created sessions and invitations will become invalid on container restart
 or service restart.
 
-To use it, we recommend to use a trully randomly generated 512 bits base64 encoded string here.
+To use it, we recommend using a truly randomly generated 512 bits base64 encoded string here.
 You can generate one with:
 
 ```bash
@@ -442,7 +442,7 @@ POSTGRES_PASSWORD: penpot
 
 ### Storage
 
-Storage refers to storage used for store the user uploaded assets.
+Storage refers to storing the user uploaded assets.
 
 Assets storage is implemented using "plugable" backends. Currently there are two
 backends available: <code class="language-bash">fs</code> and <code class="language-bash">s3</code> (for AWS S3).
@@ -498,7 +498,7 @@ If you are using the official docker images, the best approach to set any config
 using environment variables, and the image automatically generates the <code class="language-bash">config.js</code> from
 them.
 
-In case you have a custom setup you probably need setup the following environment
+In case you have a custom setup, you probably need to configure the following environment
 variables on the frontend container:
 
 To connect the frontend to the exporter and backend, you need to fill out these environment variables.
@@ -522,7 +522,7 @@ for the user:
   endpoint that lists all rpc methods available on backend
 - <code class="language-bash">disable-login-with-password</code>: allows disable password based login form
 - <code class="language-bash">enable-prepl-server</code>: enables PREPL server, used by manage.py and other additional
-  tools for communicate internally with Penpot backend. Check the [CLI section][5] to get more detail.
+  tools to communicate internally with Penpot backend. Check the [CLI section][5] to get more detail.
 
 __Since version 1.13.0__
 
