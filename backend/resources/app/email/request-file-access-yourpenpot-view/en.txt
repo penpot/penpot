@@ -6,7 +6,7 @@ Since this file is in your Penpot team, you can provide access by sending a view
 
 To proceed, please click the link below to generate and send the view-only link:
 
-{{ public-uri }}/#/view/{{file-id}}?page-id={{page-id}}&section=interactions&index=0&share=true
+{{ public-uri }}/#/view?file-id={{file-id}}&page-id={{page-id}}&section=interactions&index=0&share=true
 
 
 
