@@ -72,6 +72,7 @@
 (def profile-fetched?
   (ptk/type? ::profile-fetched))
 
+;; FIXME: make it as general purpose handler, not only on profile
 (defn- on-fetch-profile-exception
   [cause]
   (let [data (ex-data cause)]
