@@ -23,7 +23,7 @@ Alternatively, you can create and share a view-only link to the file. This will 
 
 Click the link below to generate and send the link:
 
-{{ public-uri }}/#/view?file-id={{file-id}}&page-id={{page-id}}
+{{ public-uri }}/#/view?file-id={{file-id}}&page-id={{page-id}}&section=interactions&index=0&share=true
 
 
 If you do not wish to grant access at this time, you can simply disregard this email.
