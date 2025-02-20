@@ -129,13 +129,14 @@
              [:& cb/color-name {:color color :size 90}]
              (case format
                :hex [:& cb/color-name {:color color}]
-               :rgba (let [[r g b a] (cc/hex->rgba (:color color) (:opacity color))]
-                       (str/ffmt "%, %, %, %" r g b a))
+               :rgba (let [[r g b a] (cc/hex->rgba (:color color) (:opacity color))
+                           result (cc/format-rgba [r g b a])]
+                       [:* result])
                :hsla (let [[h s l a] (cc/hex->hsla (:color color) (:opacity color))
                            result (cc/format-hsla [h s l a])]
                        [:* result])))]
 
-          (when-not (:gradient color)
+          (when (and (not (:gradient color)) (= :hex format))
             [:span {:class (stl/css :opacity-info)}
              (dm/str (-> color
                          (:opacity)

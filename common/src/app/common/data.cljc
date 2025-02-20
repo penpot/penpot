@@ -1029,6 +1029,17 @@
            (str num)))
        (str num))))
 
+#?(:cljs
+   (defn format-number
+     ([value]
+      (format-number value nil))
+     ([value {:keys [precision] :or {precision 2}}]
+      (let [value (if (string? value) (parse-double value) value)]
+        (when (num? value)
+          (let [value (mth/precision value precision)]
+            (str value)))))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Util protocols
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
