@@ -44,7 +44,7 @@
 
 (defn- get-component-root-and-container
   [file-id component]
-  (let [data       (dm/get-in @refs/libraries [file-id :data])
+  (let [data       (dm/get-in @refs/files [file-id :data])
         root-shape (ctf/get-component-root data component)
         container  (ctf/get-component-page data component)]
     [root-shape container]))
@@ -453,7 +453,7 @@
          (fn [component event]
 
            (let [file-data
-                 (dm/get-in @refs/libraries [file-id :data])
+                 (dm/get-in @refs/files [file-id :data])
 
                  shape-main
                  (ctf/get-component-root file-data component)]

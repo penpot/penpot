@@ -168,11 +168,13 @@
                            (assoc file :data (d/removem (comp t/pointer? val) data))))))))))
 
 (defn- libraries-fetched
-  [libraries]
+  [file-id libraries]
   (ptk/reify ::libraries-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (let [libraries (d/index-by :id libraries)]
+      (let [libraries (->> libraries
+                           (map (fn [l] (assoc l :library-of file-id)))
+                           (d/index-by :id))]
         (update state :files merge libraries)))
 
     ptk/WatchEvent
@@ -208,7 +210,7 @@
                               (rx/map #(assoc % :synced-at synced-at)))))
                       (rx/merge-map resolve-file)
                       (rx/reduce conj [])
-                      (rx/map libraries-fetched))
+                      (rx/map (partial libraries-fetched file-id)))
                  (->> (rx/from libraries)
                       (rx/map :id)
                       (rx/mapcat (fn [file-id]

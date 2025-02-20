@@ -26,16 +26,11 @@
   "Retrieve all libraries, including the local file, on workspace or viewer"
   [from]
   (if (= from :workspace)
-    (let [workspace-data (deref refs/workspace-data)
-          {:keys [id] :as local} workspace-data
-          libraries (deref refs/libraries)]
-      (-> libraries
-          (assoc id {:id id
-                     :data local})))
-    (let [viewer-data     (deref refs/viewer-data)
-          local           (get-in viewer-data [:file :data])
-          id              (get local :id)
-          libraries       (:libraries viewer-data)]
+    (deref refs/libraries)
+    (let [viewer-data (deref refs/viewer-data)
+          local       (get-in viewer-data [:file :data])
+          id          (get local :id)
+          libraries   (:libraries viewer-data)]
       (-> libraries
           (assoc id {:id id
                      :data local})))))

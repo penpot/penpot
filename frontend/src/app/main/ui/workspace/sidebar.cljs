@@ -56,6 +56,7 @@
   [{:keys [layout file page-id] :as props}]
   (let [options-mode   (mf/deref refs/options-mode-global)
         project        (mf/deref refs/project)
+        file-id        (get file :id)
 
         design-tokens? (features/use-feature "design-tokens/v1")
         mode-inspect?  (= options-mode :inspect)
@@ -116,7 +117,7 @@
 
 
         assets-tab
-        (mf/html [:& assets-toolbox {:size (- size 58) :file-id file}])
+        (mf/html [:& assets-toolbox {:size (- size 58) :file-id file-id}])
 
         tokens-tab
         (when design-tokens?

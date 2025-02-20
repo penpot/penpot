@@ -17,11 +17,11 @@
 (mf/defc text-palette-ctx-menu
   [{:keys [show-menu? close-menu on-select-palette selected]}]
   (let [typographies (mf/deref refs/workspace-file-typography)
-        shared-libs  (mf/deref refs/libraries)]
+        libraries    (mf/deref refs/libraries)]
     [:& dropdown {:show show-menu?
                   :on-close close-menu}
      [:ul {:class (stl/css :text-context-menu)}
-      (for [[idx cur-library] (map-indexed vector (vals shared-libs))]
+      (for [[idx cur-library] (map-indexed vector (vals libraries))]
         (let [typographies (-> cur-library (get-in [:data :typographies]) vals)]
           [:li
            {:class (stl/css-case :palette-library true

@@ -44,7 +44,7 @@
 
 (mf/defc shape-options*
   {::mf/wrap [#(mf/throttle % 60)]}
-  [{:keys [shape shapes-with-children page-id file-id shared-libs] :as props}]
+  [{:keys [shape shapes-with-children page-id file-id libraries] :as props}]
   (let [shape-type (dm/get-prop shape :type)
         shape-id   (dm/get-prop shape :id)
 
@@ -56,8 +56,8 @@
     [:*
      (case shape-type
        :frame   [:> frame/options* props]
-       :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
-       :text    [:& text/options {:shape shape  :file-id file-id :shared-libs shared-libs}]
+       :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :libraries libraries}]
+       :text    [:& text/options {:shape shape  :file-id file-id :libraries libraries}]
        :rect    [:& rect/options {:shape shape}]
        :circle  [:& circle/options {:shape shape}]
        :path    [:& path/options {:shape shape}]
@@ -83,7 +83,7 @@
   [{:keys [selected objects page-id file-id selected-shapes shapes-with-children]}]
   (let [sp-panel             (mf/deref refs/specialized-panel)
         drawing              (mf/deref refs/workspace-drawing)
-        shared-libs          (mf/deref refs/libraries)
+        libraries            (mf/deref refs/libraries)
         edition              (mf/deref refs/selected-edition)
         edit-grid?           (ctl/grid-layout? objects edition)
         grid-edition         (mf/deref refs/workspace-grid-edition)
@@ -113,7 +113,7 @@
         {:shape (:object drawing)
          :page-id page-id
          :file-id file-id
-         :shared-libs shared-libs}]
+         :libraries libraries}]
 
        (= 0 (count selected))
        [:> page/options*]
@@ -123,7 +123,7 @@
         {:shape (first selected-shapes)
          :page-id page-id
          :file-id file-id
-         :shared-libs shared-libs
+         :libraries libraries
          :shapes-with-children shapes-with-children}]
 
        :else
@@ -132,7 +132,7 @@
          :shapes selected-shapes
          :page-id page-id
          :file-id file-id
-         :shared-libs shared-libs}])]))
+         :libraries libraries}])]))
 
 (mf/defc options-content*
   {::mf/memo true

@@ -1201,7 +1201,7 @@
                     (vals (get state :files)))
 
             do-more-info
-            #(modal/show! :libraries-dialog {:starting-tab "updates"})
+            #(modal/show! :libraries-dialog {:starting-tab "updates" :file-id file-id})
 
             do-update
             #(do (apply st/emit! (map (fn [library]
@@ -1388,7 +1388,10 @@
       (let [libraries (:workspace-shared-files state)
             library   (d/seek #(= (:id %) library-id) libraries)]
         (if library
-          (update state :files assoc library-id (dissoc library :library-summary))
+          (update state :files assoc library-id
+                  (-> library
+                      (dissoc :library-summary)
+                      (assoc :library-of file-id)))
           state)))
 
     ptk/WatchEvent
@@ -1401,6 +1404,8 @@
           (->> (rp/cmd! :get-file {:id library-id :features features})
                (rx/merge-map fpmap/resolve-file)
                ;; FIXME: this should call the libraries-fetched event instead of ad-hoc assoc event
+               (rx/map (fn [file]
+                         (assoc file :library-of file-id)))
                (rx/map (fn [file]
                          (fn [state]
                            (assoc-in state [:files library-id] file)))))

@@ -29,7 +29,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc options
-  [{:keys [shape file-id] :as props}]
+  [{:keys [shape file-id libraries] :as props}]
   (let [ids    [(:id shape)]
         type   (:type shape)
 
@@ -52,8 +52,6 @@
         state-map    (if (features/active-feature? @st/state "text-editor/v2")
                        (mf/deref refs/workspace-v2-editor-state)
                        (mf/deref refs/workspace-editor-state))
-
-        shared-libs  (mf/deref refs/libraries)
 
         editor-state (when (not (features/active-feature? @st/state "text-editor/v2"))
                        (get state-map (:id shape)))
@@ -150,7 +148,7 @@
         {:type type
          :shapes [shape]
          :file-id file-id
-         :libraries shared-libs}])
+         :libraries libraries}])
 
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
 

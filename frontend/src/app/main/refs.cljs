@@ -83,10 +83,32 @@
   files (without the content, only summary)"
   (l/derived :shared-files st/state))
 
+(defn select-libraries
+  [files file-id]
+  (persistent!
+   (reduce-kv (fn [result id file]
+                (if (or (= id file-id)
+                        (= (:library-of file) file-id))
+                  (assoc! result id file)
+                  result))
+              (transient {})
+              files)))
+
+;; NOTE: for performance reasons, prefer derefing refs/files and then
+;; use with-memo mechanism with `select-libraries` this will avoid
+;; executing the select-libraries reduce-kv on each state change and
+;; only execute it when files are changed. This ref exists for
+;; backward compatibility with the code, but it is considered
+;; DEPRECATED and all new code should not use it and old code should
+;; be gradually migrated to more efficient approach
 (def libraries
-  "A derived state that contanins the currently loaded shared libraries
-  with all its content; including the current file"
-  (l/derived :files st/state))
+  "A derived state that contanins the currently loaded shared
+  libraries with all its content; including the current file"
+  (l/derived (fn [state]
+               (let [files   (get state :files)
+                     file-id (get state :current-file-id)]
+                 (select-libraries files file-id)))
+             st/state))
 
 (defn extract-selected-files
   [files selected]
