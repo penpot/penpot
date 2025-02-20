@@ -535,11 +535,17 @@
    (letfn [(get-frame [parent-id]
              (if (cfh/frame-shape? objects parent-id) parent-id (get-in objects [parent-id :frame-id])))]
      (let [parent (get objects parent-id)
-          ;; We can always move the children to the parent they already have.
+           ;; We can always move the children to the parent they already have.
+           ;; But if we are pasting, those are new items, so it is considered a change
            no-changes?
-           (->> children (every? #(= parent-id (:parent-id %))))]
-       ;; In case no-changes is true we must ensure we are copy pasting the children in the same position
-       (if (or (and no-changes? (not pasting?)) (not (invalid-structure-for-component? objects parent children pasting? libraries)))
+           (and (->> children (every? #(= parent-id (:parent-id %))))
+                (not pasting?))
+           all-main?
+           (->> children (every? #(ctk/main-instance? %)))]
+       (if (or no-changes?
+               (and (not (invalid-structure-for-component? objects parent children pasting? libraries))
+                    ;; If we are moving into a variant-container, all the items should be main
+                    (or all-main? (not (ctk/is-variant-container? parent)))))
          [parent-id (get-frame parent-id)]
          (recur (:parent-id parent) objects children pasting? libraries))))))
 

@@ -29,10 +29,10 @@
 
         ;; ==== Action
 
-        changes                (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page)
+        changes                (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page))
+                                                          (pcb/with-objects (:objects page)))
                                                       (:id frame-parent)       ;; parent-id
-                                                      (:id page)               ;; page-id
                                                       0                        ;; to-index
                                                       #{(:id frame-to-move)})  ;; ids
 
@@ -61,10 +61,10 @@
 
         ;; ==== Action
 
-        changes                (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page)
+        changes                (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page))
+                                                          (pcb/with-objects (:objects page)))
                                                       uuid/zero             ;; parent-id
-                                                      (:id page)            ;; page-id
                                                       0                     ;; to-index
                                                       #{(:id circle)})      ;; ids
 

@@ -174,6 +174,26 @@
                  ::applied-changes-count (count redo-changes)))
     changes))
 
+(defn apply-changes-local-library
+  [changes]
+  (dm/assert!
+   "expected valid changes"
+   (check-changes! changes))
+
+  (if-let [library-data (::library-data (meta changes))]
+    (let [index         (::applied-changes-count (meta changes))
+          redo-changes  (:redo-changes changes)
+          new-changes   (if (< index (count redo-changes))
+                          (->> (subvec (:redo-changes changes) index)
+                               (map #(-> %
+                                         (assoc :page-id uuid/zero)
+                                         (dissoc :component-id))))
+                          [])
+          new-library-data (cfc/process-changes library-data new-changes)]
+      (vary-meta changes assoc ::library-data new-library-data
+                 ::applied-changes-count (count redo-changes)))
+    changes))
+
 ;; Page changes
 
 (defn add-empty-page
@@ -970,37 +990,37 @@
          (apply-changes-local)))))
 
 (defn update-component
-  ([changes id update-fn]
-   (let [library-data   (::library-data (meta changes))
-         prev-component (get-in library-data [:components id])]
-     (update-component changes id prev-component update-fn)))
-  ([changes id prev-component update-fn]
-   (assert-library! changes)
-   (let [new-component  (update-fn prev-component)]
-     (if prev-component
-       (-> changes
-           (update :redo-changes conj {:type :mod-component
-                                       :id id
-                                       :name (:name new-component)
-                                       :path (:path new-component)
-                                       :main-instance-id (:main-instance-id new-component)
-                                       :main-instance-page (:main-instance-page new-component)
-                                       :annotation (:annotation new-component)
-                                       :variant-id (:variant-id new-component)
-                                       :variant-properties (:variant-properties new-component)
-                                       :objects (:objects new-component) ;; this won't exist in components-v2 (except for deleted components)
-                                       :modified-at (:modified-at new-component)})
-           (update :undo-changes conj {:type :mod-component
-                                       :id id
-                                       :name (:name prev-component)
-                                       :path (:path prev-component)
-                                       :main-instance-id (:main-instance-id prev-component)
-                                       :main-instance-page (:main-instance-page prev-component)
-                                       :annotation (:annotation prev-component)
-                                       :variant-id (:variant-id prev-component)
-                                       :variant-properties (:variant-properties prev-component)
-                                       :objects (:objects prev-component)}))
-       changes))))
+  [changes id update-fn & {:keys [apply-changes-local-library?]}]
+  (assert-library! changes)
+  (let [library-data   (::library-data (meta changes))
+        prev-component (get-in library-data [:components id])
+        new-component  (update-fn prev-component)]
+    (if prev-component
+      (-> changes
+          (update :redo-changes conj {:type :mod-component
+                                      :id id
+                                      :name (:name new-component)
+                                      :path (:path new-component)
+                                      :main-instance-id (:main-instance-id new-component)
+                                      :main-instance-page (:main-instance-page new-component)
+                                      :annotation (:annotation new-component)
+                                      :variant-id (:variant-id new-component)
+                                      :variant-properties (:variant-properties new-component)
+                                      :objects (:objects new-component) ;; this won't exist in components-v2 (except for deleted components)
+                                      :modified-at (:modified-at new-component)})
+          (update :undo-changes conj {:type :mod-component
+                                      :id id
+                                      :name (:name prev-component)
+                                      :path (:path prev-component)
+                                      :main-instance-id (:main-instance-id prev-component)
+                                      :main-instance-page (:main-instance-page prev-component)
+                                      :annotation (:annotation prev-component)
+                                      :variant-id (:variant-id prev-component)
+                                      :variant-properties (:variant-properties prev-component)
+                                      :objects (:objects prev-component)})
+          (cond-> apply-changes-local-library?
+            (apply-changes-local-library)))
+      changes)))
 
 (defn delete-component
   [changes id page-id]
@@ -1061,3 +1081,11 @@
              (reduce reorder-grid changes))]
 
     changes))
+
+(defn get-library-data
+  [changes]
+  (::library-data (meta changes)))
+
+(defn get-objects
+  [changes]
+  (dm/get-in (::file-data (meta changes)) [:pages-index uuid/zero :objects]))

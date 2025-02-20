@@ -10,7 +10,6 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.variants :as clv]
-   [app.common.types.components-list :as ctcl]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
@@ -22,11 +21,7 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-(defn find-related-components
-  [data objects variant-id]
-  (->> (dm/get-in objects [variant-id :shapes])
-       (map #(dm/get-in objects [% :component-id]))
-       (map #(ctcl/get-component data % true))))
+(dm/export clv/find-related-components)
 
 (defn update-property-name
   "Update the variant property name on the position pos
@@ -39,10 +34,11 @@
             data    (dsh/lookup-file-data state)
             objects (-> (dsh/get-page data page-id)
                         (get :objects))
-            related-components (find-related-components data objects variant-id)
+
             changes (-> (pcb/empty-changes it page-id)
+                        (pcb/with-objects objects)
                         (pcb/with-library-data data)
-                        (clv/generate-update-property-name related-components pos new-name))
+                        (clv/generate-update-property-name variant-id pos new-name))
             undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
@@ -59,17 +55,11 @@
             data       (dsh/lookup-file-data state)
             objects    (-> (dsh/get-page data page-id)
                            (get :objects))
-            component  (ctcl/get-component data component-id true)
-            main-id    (:main-instance-id component)
-            properties (-> (:variant-properties component)
-                           (update pos assoc :value value))
-
-            name       (clv/properties-to-name properties)
 
             changes    (-> (pcb/empty-changes it page-id)
                            (pcb/with-library-data data)
                            (pcb/with-objects objects)
-                           (clv/generate-update-property-value component-id main-id pos value name))
+                           (clv/generate-update-property-value component-id pos value))
             undo-id    (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
@@ -88,12 +78,11 @@
             data    (dsh/lookup-file-data state)
             objects (-> (dsh/get-page data page-id)
                         (get :objects))
-            related-components (find-related-components data objects variant-id)
 
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-library-data data)
                         (pcb/with-objects objects)
-                        (clv/generate-remove-property related-components pos))
+                        (clv/generate-remove-property variant-id pos))
 
             undo-id (js/Symbol)]
         (rx/of
@@ -105,7 +94,7 @@
 
 (defn add-new-property
   "Add a new variant property to all the components with this variant-id"
-  [variant-id]
+  [variant-id & [options]]
   (ptk/reify ::add-new-property
     ptk/WatchEvent
     (watch [it state _]
@@ -114,20 +103,10 @@
             objects (-> (dsh/get-page data page-id)
                         (get :objects))
 
-            related-components (find-related-components data objects variant-id)
-
-
-            property-name (str "Property" (-> related-components
-                                              first
-                                              :variant-properties
-                                              count
-                                              inc))
-
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-library-data data)
                         (pcb/with-objects objects)
-                        (clv/generate-add-new-property related-components property-name))
-
+                        (clv/generate-add-new-property variant-id options))
 
             undo-id (js/Symbol)]
         (rx/of
@@ -155,7 +134,7 @@
 (defn transform-in-variant
   "Given the id of a main shape of a component, creates a variant structure for
    that component"
-  [id]
+  [main-instance-id]
   (ptk/reify ::transform-in-variant
     ptk/WatchEvent
     (watch [_ state _]
@@ -165,7 +144,7 @@
             file-id      (:current-file-id state)
             page-id      (:current-page-id state)
             objects      (dsh/lookup-page-objects state file-id page-id)
-            main         (get objects id)
+            main         (get objects main-instance-id)
             main-id      (:id main)
             undo-id      (js/Symbol)]
 
@@ -193,5 +172,5 @@
          (dwl/duplicate-component file-id (:component-id main) new-component-id)
          (set-variant-id (:component-id main) variant-id)
          (set-variant-id new-component-id variant-id)
-         (add-new-property variant-id)
+         (add-new-property variant-id {:fill-values? true})
          (dwu/commit-undo-transaction undo-id))))))
