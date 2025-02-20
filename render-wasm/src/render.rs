@@ -273,9 +273,9 @@ impl RenderState {
         modifiers: Option<&Matrix>,
         clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
     ) {
+        self.drawing_surface.canvas().save();
         if let Some((bounds, corners, transform)) = clip_bounds {
             self.drawing_surface.canvas().concat(&transform);
-
             if let Some(corners) = corners {
                 let rrect = RRect::new_rect_radii(bounds, &corners);
                 self.drawing_surface
@@ -299,6 +299,7 @@ impl RenderState {
                 .canvas()
                 .concat(&transform.invert().unwrap());
         }
+
         let center = shape.center();
 
         // Transform the shape in the center
@@ -358,6 +359,7 @@ impl RenderState {
         };
 
         self.apply_drawing_to_render_canvas();
+        self.drawing_surface.canvas().restore();
     }
 
     pub fn start_render_loop(
@@ -379,6 +381,7 @@ impl RenderState {
         self.drawing_surface
             .canvas()
             .translate((self.viewbox.pan_x, self.viewbox.pan_y));
+        //
         self.pending_nodes = vec![NodeRenderState {
             id: Uuid::nil(),
             visited_children: false,
@@ -497,6 +500,61 @@ impl RenderState {
         debug::render(self);
     }
 
+    pub fn render_shape_enter(&mut self, element: &mut Shape, mask: bool) {
+        // Masked groups needs two rendering passes, the first one rendering
+        // the content and the second one rendering the mask so we need to do
+        // an extra save_layer to keep all the masked group separate from other
+        // already drawn elements.
+        match element.kind {
+            Kind::Group(group) => {
+                if group.masked {
+                    let paint = skia::Paint::default();
+                    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+                    self.render_surface.canvas().save_layer(&layer_rec);
+                }
+            }
+            _ => {}
+        }
+
+        let mut paint = skia::Paint::default();
+        paint.set_blend_mode(element.blend_mode().into());
+        paint.set_alpha_f(element.opacity());
+
+        // When we're rendering the mask shape we need to set a special blend mode
+        // called 'destination-in' that keeps the drawn content within the mask.
+        // @see https://skia.org/docs/user/api/skblendmode_overview/
+        if mask {
+            let mut mask_paint = skia::Paint::default();
+            mask_paint.set_blend_mode(skia::BlendMode::DstIn);
+            let mask_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
+            self.render_surface.canvas().save_layer(&mask_rec);
+        }
+
+        if let Some(image_filter) = element.image_filter(self.viewbox.zoom * self.options.dpr()) {
+            paint.set_image_filter(image_filter);
+        }
+
+        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+        self.render_surface.canvas().save_layer(&layer_rec);
+    }
+
+    pub fn render_shape_exit(&mut self, element: &mut Shape, visited_mask: bool) {
+        if visited_mask {
+            // Because masked groups needs two rendering passes (first drawing
+            // the content and then drawing the mask), we need to do an
+            // extra restore.
+            match element.kind {
+                Kind::Group(group) => {
+                    if group.masked {
+                        self.render_surface.canvas().restore();
+                    }
+                }
+                _ => {}
+            }
+        }
+        self.render_surface.canvas().restore();
+    }
+
     pub fn render_shape_tree(
         &mut self,
         tree: &mut HashMap<Uuid, Shape>,
@@ -552,20 +610,8 @@ impl RenderState {
                         }
                         _ => {}
                     }
-                } else {
-                    // Because masked groups needs two rendering passes (first drawing
-                    // the content and then drawing the mask), we need to do an
-                    // extra restore.
-                    match element.kind {
-                        Kind::Group(group) => {
-                            if group.masked {
-                                self.render_surface.canvas().restore();
-                            }
-                        }
-                        _ => {}
-                    }
                 }
-                self.render_surface.canvas().restore();
+                self.render_shape_exit(element, visited_mask);
                 continue;
             }
 
@@ -580,50 +626,12 @@ impl RenderState {
                 }
             }
 
-            // Masked groups needs two rendering passes, the first one rendering
-            // the content and the second one rendering the mask so we need to do
-            // an extra save_layer to keep all the masked group separate from other
-            // already drawn elements.
-            match element.kind {
-                Kind::Group(group) => {
-                    if group.masked {
-                        let paint = skia::Paint::default();
-                        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-                        self.render_surface.canvas().save_layer(&layer_rec);
-                    }
-                }
-                _ => {}
-            }
-
-            let mut paint = skia::Paint::default();
-            paint.set_blend_mode(element.blend_mode().into());
-            paint.set_alpha_f(element.opacity());
-
-            // When we're rendering the mask shape we need to set a special blend mode
-            // called 'destination-in' that keeps the drawn content within the mask.
-            // @see https://skia.org/docs/user/api/skblendmode_overview/
-            if mask {
-                let mut mask_paint = skia::Paint::default();
-                mask_paint.set_blend_mode(skia::BlendMode::DstIn);
-                let mask_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
-                self.render_surface.canvas().save_layer(&mask_rec);
-            }
-
-            if let Some(image_filter) = element.image_filter(self.viewbox.zoom * self.options.dpr())
-            {
-                paint.set_image_filter(image_filter);
-            }
-
-            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-            self.render_surface.canvas().save_layer(&layer_rec);
-
-            self.drawing_surface.canvas().save();
+            self.render_shape_enter(element, mask);
             if !node_render_state.id.is_nil() {
                 self.render_shape(element, modifiers.get(&element.id), clip_bounds);
             } else {
                 self.apply_drawing_to_render_canvas();
             }
-            self.drawing_surface.canvas().restore();
 
             // Set the node as visited_children before processing children
             self.pending_nodes.push(NodeRenderState {
