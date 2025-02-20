@@ -297,24 +297,28 @@ impl RenderState {
 
             self.drawing_surface
                 .canvas()
-                .concat(&transform.invert().unwrap());
+                .concat(&transform.invert().unwrap_or(Matrix::default()));
+        }
+
+        // Clone so we don't change the value in the global state
+        let mut shape = shape.clone();
+
+        if let Some(modifiers) = modifiers {
+            shape.apply_transform(&modifiers);
         }
 
         let center = shape.center();
 
-        // Transform the shape in the center
-        let mut matrix = shape.transform.clone();
+        let mut matrix = shape.transform;
         matrix.post_translate(center);
         matrix.pre_translate(-center);
 
-        if let Some(modifiers) = modifiers {
-            matrix.post_concat(&modifiers);
-        }
-
-        self.drawing_surface.canvas().concat(&matrix);
-
         match &shape.kind {
             Kind::SVGRaw(sr) => {
+                if let Some(modifiers) = modifiers {
+                    self.drawing_surface.canvas().concat(&modifiers);
+                }
+                self.drawing_surface.canvas().concat(&matrix);
                 if let Some(svg) = shape.svg.as_ref() {
                     svg.render(self.drawing_surface.canvas())
                 } else {
@@ -332,12 +336,14 @@ impl RenderState {
                 }
             }
             _ => {
+                self.drawing_surface.canvas().concat(&matrix);
+
                 for fill in shape.fills().rev() {
-                    fills::render(self, shape, fill);
+                    fills::render(self, &shape, fill);
                 }
 
                 for stroke in shape.strokes().rev() {
-                    strokes::render(self, shape, stroke);
+                    strokes::render(self, &shape, stroke);
                 }
 
                 for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
