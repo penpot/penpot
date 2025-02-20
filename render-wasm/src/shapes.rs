@@ -577,7 +577,7 @@ mod tests {
                 assert_eq!(r.width(), 20.0);
                 assert_eq!(r.height(), 20.0);
             }
-            _ => assert!(false)
+            _ => assert!(false),
         }
     }
 }
