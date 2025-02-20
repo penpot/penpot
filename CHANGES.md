@@ -70,6 +70,7 @@ is a number of cores)
 - Fix rename locked boards [Taiga #10174](https://tree.taiga.io/project/penpot/issue/10174)
 - Fix update-libraries dialog disappear when clicking outside [Taiga #10238](https://tree.taiga.io/project/penpot/issue/10238)
 - Fix incorrect handling of team access requests with deleted/recreated users
+- Fix incorect handling of profile settings related to invitation notifications [Taiga #10252](https://tree.taiga.io/project/penpot/issue/10252)
 
 ## 2.4.3
 
