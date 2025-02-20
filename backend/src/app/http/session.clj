@@ -337,16 +337,17 @@
        or (updated_at is null and
            created_at < now() - ?::interval)")
 
-(defmethod ig/init-key ::tasks/gc
-  [_ {:keys [::db/pool ::tasks/max-age] :as cfg}]
-  (l/debug :hint "initializing session gc task" :max-age max-age)
-  (fn [_]
-    (db/with-atomic [conn pool]
-      (let [interval (db/interval max-age)
-            result   (db/exec-one! conn [sql:delete-expired interval interval])
-            result   (:next.jdbc/update-count result)]
-        (l/debug :task "gc"
-                 :hint "clean http sessions"
-                 :deleted result)
-        result))))
+(defn- collect-expired-tasks
+  [{:keys [::db/conn ::tasks/max-age]}]
+  (let [interval (db/interval max-age)
+        result   (db/exec-one! conn [sql:delete-expired interval interval])
+        result   (:next.jdbc/update-count result)]
+    (l/debug :task "gc"
+             :hint "clean http sessions"
+             :deleted result)
+    result))
 
+(defmethod ig/init-key ::tasks/gc
+  [_ {:keys [::tasks/max-age] :as cfg}]
+  (l/debug :hint "initializing session gc task" :max-age max-age)
+  (fn [_] (db/tx-run! cfg collect-expired-tasks)))

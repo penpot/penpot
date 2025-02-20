@@ -33,11 +33,11 @@
   pages of a file with specific permissions (who-comment and who-inspect)."
   {::doc/added "1.18"
    ::doc/module :files
-   ::sm/params schema:create-share-link}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
-  (db/with-atomic [conn pool]
-    (files/check-edition-permissions! conn profile-id file-id)
-    (create-share-link conn (assoc params :profile-id profile-id))))
+   ::sm/params schema:create-share-link
+   ::db/transaction true}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id] :as params}]
+  (files/check-edition-permissions! conn profile-id file-id)
+  (create-share-link conn (assoc params :profile-id profile-id)))
 
 (defn create-share-link
   [conn {:keys [profile-id file-id pages who-comment who-inspect]}]
@@ -61,10 +61,10 @@
 (sv/defmethod ::delete-share-link
   {::doc/added "1.18"
    ::doc/module ::files
-   ::sm/params schema:delete-share-link}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
-  (db/with-atomic [conn pool]
-    (let [slink (db/get-by-id conn :share-link id)]
-      (files/check-edition-permissions! conn profile-id (:file-id slink))
-      (db/delete! conn :share-link {:id id})
-      nil)))
+   ::sm/params schema:delete-share-link
+   ::db/transaction true}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id id] :as params}]
+  (let [slink (db/get-by-id conn :share-link id)]
+    (files/check-edition-permissions! conn profile-id (:file-id slink))
+    (db/delete! conn :share-link {:id id})
+    nil))

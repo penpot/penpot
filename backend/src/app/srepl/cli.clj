@@ -36,37 +36,39 @@
 (defmethod exec-command :create-profile
   [{:keys [fullname email password is-active]
     :or {is-active true}}]
-  (when-let [system (get-current-system)]
-    (db/with-atomic [conn (:app.db/pool system)]
-      (let [password (cmd.profile/derive-password system password)
-            params   {:id (uuid/next)
-                      :email email
-                      :fullname fullname
-                      :is-active is-active
-                      :password password
-                      :props {}}]
-        (->> (cmd.auth/create-profile! conn params)
-             (cmd.auth/create-profile-rels! conn))))))
+  (some-> (get-current-system)
+          (db/tx-run!
+           (fn [{:keys [::db/conn] :as system}]
+             (let [password (cmd.profile/derive-password system password)
+                   params   {:id (uuid/next)
+                             :email email
+                             :fullname fullname
+                             :is-active is-active
+                             :password password
+                             :props {}}]
+               (->> (cmd.auth/create-profile! conn params)
+                    (cmd.auth/create-profile-rels! conn)))))))
 
 (defmethod exec-command :update-profile
   [{:keys [fullname email password is-active]}]
-  (when-let [system (get-current-system)]
-    (db/with-atomic [conn (:app.db/pool system)]
-      (let [params (cond-> {}
-                     (some? fullname)
-                     (assoc :fullname fullname)
+  (some-> (get-current-system)
+          (db/tx-run!
+           (fn [{:keys [::db/conn] :as system}]
+             (let [params (cond-> {}
+                            (some? fullname)
+                            (assoc :fullname fullname)
 
-                     (some? password)
-                     (assoc :password (auth/derive-password password))
+                            (some? password)
+                            (assoc :password (auth/derive-password password))
 
-                     (some? is-active)
-                     (assoc :is-active is-active))]
-        (when (seq params)
-          (let [res (db/update! conn :profile
-                                params
-                                {:email email
-                                 :deleted-at nil})]
-            (pos? (db/get-update-count res))))))))
+                            (some? is-active)
+                            (assoc :is-active is-active))]
+               (when (seq params)
+                 (let [res (db/update! conn :profile
+                                       params
+                                       {:email email
+                                        :deleted-at nil})]
+                   (pos? (db/get-update-count res)))))))))
 
 (defmethod exec-command :delete-profile
   [{:keys [email soft]}]
@@ -75,16 +77,16 @@
               :code :invalid-arguments
               :hint "email should be provided"))
 
-  (when-let [system (get-current-system)]
-    (db/with-atomic [conn (:app.db/pool system)]
-
-      (let [res (if soft
-                  (db/update! conn :profile
-                              {:deleted-at (dt/now)}
-                              {:email email :deleted-at nil})
-                  (db/delete! conn :profile
-                              {:email email}))]
-        (pos? (db/get-update-count res))))))
+  (some-> (get-current-system)
+          (db/tx-run!
+           (fn [{:keys [::db/conn] :as system}]
+             (let [res (if soft
+                         (db/update! conn :profile
+                                     {:deleted-at (dt/now)}
+                                     {:email email :deleted-at nil})
+                         (db/delete! conn :profile
+                                     {:email email}))]
+               (pos? (db/get-update-count res)))))))
 
 (defmethod exec-command :search-profile
   [{:keys [email]}]
@@ -93,12 +95,12 @@
               :code :invalid-arguments
               :hint "email should be provided"))
 
-  (when-let [system (get-current-system)]
-    (db/with-atomic [conn (:app.db/pool system)]
-
-      (let [sql (str "select email, fullname, created_at, deleted_at from profile "
-                     " where email similar to ? order by created_at desc limit 100")]
-        (db/exec! conn [sql email])))))
+  (some-> (get-current-system)
+          (db/tx-run!
+           (fn [{:keys [::db/conn] :as system}]
+             (let [sql (str "select email, fullname, created_at, deleted_at from profile "
+                            " where email similar to ? order by created_at desc limit 100")]
+               (db/exec! conn [sql email]))))))
 
 (defmethod exec-command :derive-password
   [{:keys [password]}]

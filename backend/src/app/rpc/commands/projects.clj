@@ -219,12 +219,12 @@
    ::sm/params schema:update-project-pin
    ::webhooks/batch-timeout (dt/duration "5s")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
-   ::webhooks/event? true}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id team-id is-pinned] :as params}]
-  (db/with-atomic [conn pool]
-    (check-read-permissions! conn profile-id id)
-    (db/exec-one! conn [sql:update-project-pin team-id id profile-id is-pinned is-pinned])
-    nil))
+   ::webhooks/event? true
+   ::db/transaction true}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id id team-id is-pinned] :as params}]
+  (check-read-permissions! conn profile-id id)
+  (db/exec-one! conn [sql:update-project-pin team-id id profile-id is-pinned is-pinned])
+  nil)
 
 ;; --- MUTATION: Rename Project
 
@@ -238,17 +238,17 @@
 (sv/defmethod ::rename-project
   {::doc/added "1.18"
    ::sm/params schema:rename-project
-   ::webhooks/event? true}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id name] :as params}]
-  (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id id)
-    (let [project (db/get-by-id conn :project id ::sql/for-update true)]
-      (db/update! conn :project
-                  {:name name}
-                  {:id id})
-      (rph/with-meta (rph/wrap)
-        {::audit/props {:team-id (:team-id project)
-                        :prev-name (:name project)}}))))
+   ::webhooks/event? true
+   ::db/transaction true}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id id name] :as params}]
+  (check-edition-permissions! conn profile-id id)
+  (let [project (db/get-by-id conn :project id ::sql/for-update true)]
+    (db/update! conn :project
+                {:name name}
+                {:id id})
+    (rph/with-meta (rph/wrap)
+      {::audit/props {:team-id (:team-id project)
+                      :prev-name (:name project)}})))
 
 ;; --- MUTATION: Delete Project
 
@@ -280,13 +280,13 @@
 (sv/defmethod ::delete-project
   {::doc/added "1.18"
    ::sm/params schema:delete-project
-   ::webhooks/event? true}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
-  (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id id)
-    (let [project (delete-project conn id)]
-      (rph/with-meta (rph/wrap)
-        {::audit/props {:team-id (:team-id project)
-                        :name (:name project)
-                        :created-at (:created-at project)
-                        :modified-at (:modified-at project)}}))))
+   ::webhooks/event? true
+   ::db/transaction true}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id id] :as params}]
+  (check-edition-permissions! conn profile-id id)
+  (let [project (delete-project conn id)]
+    (rph/with-meta (rph/wrap)
+      {::audit/props {:team-id (:team-id project)
+                      :name (:name project)
+                      :created-at (:created-at project)
+                      :modified-at (:modified-at project)}})))

@@ -144,20 +144,20 @@
 
 (sv/defmethod ::delete-webhook
   {::doc/added "1.17"
-   ::sm/params schema:delete-webhook}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id]}]
-  (db/with-atomic [conn pool]
-    (let [whook (-> (db/get conn :webhook {:id id}) decode-row)]
-      (check-webhook-edition-permissions! conn profile-id (:team-id whook) (:profile-id whook))
-      (db/delete! conn :webhook {:id id})
-      nil)))
+   ::sm/params schema:delete-webhook
+   ::db/transaction true}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id id]}]
+  (let [whook (-> (db/get conn :webhook {:id id}) decode-row)]
+    (check-webhook-edition-permissions! conn profile-id (:team-id whook) (:profile-id whook))
+    (db/delete! conn :webhook {:id id})
+    nil))
 
 ;; --- Query: Webhooks
 
 (def sql:get-webhooks
-  "SELECT id, uri, mtype, is_active, error_code, error_count, profile_id 
-     FROM webhook 
-    WHERE team_id = ? 
+  "SELECT id, uri, mtype, is_active, error_code, error_count, profile_id
+     FROM webhook
+    WHERE team_id = ?
     ORDER BY uri")
 
 (def ^:private schema:get-webhooks

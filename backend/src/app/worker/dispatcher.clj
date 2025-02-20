@@ -71,11 +71,12 @@
 
           (run-batch! [rconn]
             (try
-              (db/with-atomic [conn pool]
-                (if-let [tasks (get-tasks conn)]
-                  (->> (group-by :queue tasks)
-                       (run! (partial push-tasks! conn rconn)))
-                  (px/sleep (::wait-duration cfg))))
+              (db/tx-run! cfg (fn [{:keys [::db/conn]}]
+                                (if-let [tasks (get-tasks conn)]
+                                  (->> (group-by :queue tasks)
+                                       (run! (partial push-tasks! conn rconn)))
+                                  ;; FIXME: this sleep should be outside the transaction
+                                  (px/sleep (::wait-duration cfg)))))
               (catch InterruptedException cause
                 (throw cause))
               (catch Exception cause

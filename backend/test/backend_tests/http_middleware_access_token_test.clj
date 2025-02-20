@@ -20,45 +20,33 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest soft-auth-middleware
-  (db/with-atomic [conn (::db/pool th/*system*)]
-    (let [profile (th/create-profile* 1)
-          system  (-> th/*system*
-                      (assoc ::db/conn conn)
-                      (assoc ::main/props (:app.setup/props th/*system*)))
+  (let [profile (th/create-profile* 1)
+        token   (db/tx-run! th/*system* app.rpc.commands.access-token/create-access-token (:id profile) "test" nil)
 
-          token   (app.rpc.commands.access-token/create-access-token
-                   system (:id profile) "test" nil)
+        request (volatile! nil)
+        handler (#'app.http.access-token/wrap-soft-auth
+                 (fn [req] (vreset! request req))
+                 th/*system*)]
 
-          request (volatile! nil)
-          handler (#'app.http.access-token/wrap-soft-auth
-                   (fn [req] (vreset! request req))
-                   system)]
+    (with-mocks [m1 {:target 'app.http.access-token/get-token
+                     :return nil}]
+      (handler {})
+      (t/is (= {} @request)))
 
-      (with-mocks [m1 {:target 'app.http.access-token/get-token
-                       :return nil}]
-        (handler {})
-        (t/is (= {} @request)))
+    (with-mocks [m1 {:target 'app.http.access-token/get-token
+                     :return (:token token)}]
+      (handler {})
 
-      (with-mocks [m1 {:target 'app.http.access-token/get-token
-                       :return (:token token)}]
-        (handler {})
-
-        (let [token-id (get @request :app.http.access-token/id)]
-          (t/is (= token-id (:id token))))))))
+      (let [token-id (get @request :app.http.access-token/id)]
+        (t/is (= token-id (:id token)))))))
 
 (t/deftest authz-middleware
   (let [profile (th/create-profile* 1)
-        system  (assoc th/*system* ::main/props (:app.setup/props th/*system*))
-
-        token   (db/with-atomic [conn (::db/pool th/*system*)]
-                  (let [system (assoc system ::db/conn conn)]
-                    (app.rpc.commands.access-token/create-access-token
-                     system (:id profile) "test" nil)))
-
+        token   (db/tx-run! th/*system* app.rpc.commands.access-token/create-access-token (:id profile) "test" nil)
         request (volatile! {})
         handler (#'app.http.access-token/wrap-authz
                  (fn [req] (vreset! request req))
-                 system)]
+                 th/*system*)]
 
     (handler nil)
     (t/is (nil? @request))

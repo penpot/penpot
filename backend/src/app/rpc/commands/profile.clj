@@ -124,32 +124,32 @@
 (sv/defmethod ::update-profile
   {::doc/added "1.0"
    ::sm/params schema:update-profile
-   ::sm/result schema:profile}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id fullname lang theme] :as params}]
-  (db/with-atomic [conn pool]
-    ;; NOTE: we need to retrieve the profile independently if we use
-    ;; it or not for explicit locking and avoid concurrent updates of
-    ;; the same row/object.
-    (let [profile (-> (db/get-by-id conn :profile profile-id ::sql/for-update true)
-                      (decode-row))
+   ::sm/result schema:profile
+   ::db/transaction true}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id fullname lang theme] :as params}]
+  ;; NOTE: we need to retrieve the profile independently if we use
+  ;; it or not for explicit locking and avoid concurrent updates of
+  ;; the same row/object.
+  (let [profile (-> (db/get-by-id conn :profile profile-id ::sql/for-update true)
+                    (decode-row))
 
-          ;; Update the profile map with direct params
-          profile (-> profile
-                      (assoc :fullname fullname)
-                      (assoc :lang lang)
-                      (assoc :theme theme))]
+        ;; Update the profile map with direct params
+        profile (-> profile
+                    (assoc :fullname fullname)
+                    (assoc :lang lang)
+                    (assoc :theme theme))]
 
-      (db/update! conn :profile
-                  {:fullname fullname
-                   :lang lang
-                   :theme theme
-                   :props (db/tjson (:props profile))}
-                  {:id profile-id})
+    (db/update! conn :profile
+                {:fullname fullname
+                 :lang lang
+                 :theme theme
+                 :props (db/tjson (:props profile))}
+                {:id profile-id})
 
-      (-> profile
-          (strip-private-attrs)
-          (d/without-nils)
-          (rph/with-meta {::audit/props (audit/profile->props profile)})))))
+    (-> profile
+        (strip-private-attrs)
+        (d/without-nils)
+        (rph/with-meta {::audit/props (audit/profile->props profile)}))))
 
 
 ;; --- MUTATION: Update Password
@@ -168,21 +168,20 @@
 (sv/defmethod ::update-profile-password
   {::doc/added "1.0"
    ::sm/params schema:update-profile-password
-   ::climit/id :auth/global}
+   ::climit/id :auth/global
+   ::db/transaction true}
   [cfg {:keys [::rpc/profile-id password] :as params}]
+  (let [profile    (validate-password! cfg (assoc params :profile-id profile-id))
+        session-id (::session/id params)]
 
-  (db/tx-run! cfg (fn [cfg]
-                    (let [profile    (validate-password! cfg (assoc params :profile-id profile-id))
-                          session-id (::session/id params)]
+    (when (= (:email profile) (str/lower (:password params)))
+      (ex/raise :type :validation
+                :code :email-as-password
+                :hint "you can't use your email as password"))
 
-                      (when (= (:email profile) (str/lower (:password params)))
-                        (ex/raise :type :validation
-                                  :code :email-as-password
-                                  :hint "you can't use your email as password"))
-
-                      (update-profile-password! cfg (assoc profile :password password))
-                      (invalidate-profile-session! cfg profile-id session-id)
-                      nil))))
+    (update-profile-password! cfg (assoc profile :password password))
+    (invalidate-profile-session! cfg profile-id session-id)
+    nil))
 
 (defn- invalidate-profile-session!
   "Removes all sessions except the current one."
@@ -440,37 +439,36 @@
 (declare ^:private get-owned-teams)
 
 (sv/defmethod ::delete-profile
-  {::doc/added "1.0"}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (db/with-atomic [conn pool]
-    (let [teams      (get-owned-teams conn profile-id)
-          deleted-at (dt/now)]
+  {::doc/added "1.0"
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  (let [teams      (get-owned-teams conn profile-id)
+        deleted-at (dt/now)]
 
-      ;; If we found owned teams with participants, we don't allow
-      ;; delete profile until the user properly transfer ownership or
-      ;; explicitly removes all participants from the team
-      (when (some pos? (map :participants teams))
-        (ex/raise :type :validation
-                  :code :owner-teams-with-people
-                  :hint "The user need to transfer ownership of owned teams."
-                  :context {:teams (mapv :id teams)}))
+    ;; If we found owned teams with participants, we don't allow
+    ;; delete profile until the user properly transfer ownership or
+    ;; explicitly removes all participants from the team
+    (when (some pos? (map :participants teams))
+      (ex/raise :type :validation
+                :code :owner-teams-with-people
+                :hint "The user need to transfer ownership of owned teams."
+                :context {:teams (mapv :id teams)}))
 
-      ;; Mark profile deleted immediatelly
-      (db/update! conn :profile
-                  {:deleted-at deleted-at}
-                  {:id profile-id})
+    ;; Mark profile deleted immediatelly
+    (db/update! conn :profile
+                {:deleted-at deleted-at}
+                {:id profile-id})
 
-      ;; Schedule cascade deletion to a worker
-      (wrk/submit! {::db/conn conn
-                    ::wrk/task :delete-object
-                    ::wrk/params {:object :profile
-                                  :deleted-at deleted-at
-                                  :id profile-id}})
+    ;; Schedule cascade deletion to a worker
+    (wrk/submit! {::db/conn conn
+                  ::wrk/task :delete-object
+                  ::wrk/params {:object :profile
+                                :deleted-at deleted-at
+                                :id profile-id}})
 
 
-      (-> (rph/wrap nil)
-          (rph/with-transform (session/delete-fn cfg))))))
-
+    (-> (rph/wrap nil)
+        (rph/with-transform (session/delete-fn cfg)))))
 
 ;; --- HELPERS
 
