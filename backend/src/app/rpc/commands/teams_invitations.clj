@@ -120,7 +120,7 @@
 
         nil)
 
-      (when (allow-invitation-emails? member)
+      (do
         (some->> member (teams/check-profile-muted conn))
         (teams/check-email-bounce conn email true)
         (teams/check-email-spam conn email true)
@@ -157,14 +157,15 @@
                           (assoc ::audit/props props))]
             (audit/submit! cfg event))
 
-          (eml/send! {::eml/conn conn
-                      ::eml/factory eml/invite-to-team
-                      :public-uri (cf/get :public-uri)
-                      :to email
-                      :invited-by (:fullname profile)
-                      :team (:name team)
-                      :token itoken
-                      :extra-data ptoken})
+          (when (allow-invitation-emails? member)
+            (eml/send! {::eml/conn conn
+                        ::eml/factory eml/invite-to-team
+                        :public-uri (cf/get :public-uri)
+                        :to email
+                        :invited-by (:fullname profile)
+                        :team (:name team)
+                        :token itoken
+                        :extra-data ptoken}))
 
           itoken)))))
 
