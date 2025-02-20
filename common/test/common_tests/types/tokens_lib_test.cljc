@@ -1241,7 +1241,8 @@
                                    "modified-at" now
                                    "name" "theme-1"
                                    "selectedTokenSets" {"core" "enabled"}}]
-                       "$metadata" {"tokenSetOrder" ["core"]}
+                       "$metadata" {"tokenSetOrder" ["core"]
+                                    "activeSets" #{},  "activeThemes" #{}}
                        "core"
                        {"colors" {"red" {"600" {"$value" "#e53e3e"
                                                 "$type" "color"

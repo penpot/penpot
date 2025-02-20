@@ -1251,7 +1251,8 @@ Will return a value that matches this schema:
                                       (update "sets" keys)))))
           active-sets (get metadata "activeSets")
           active-themes (get metadata "activeThemes")
-          themes-data (if (empty? active-themes)
+          themes-data (if (and (seq active-sets)
+                               (empty? active-themes))
                         (conj themes-data {"name" hidden-token-theme-name
                                            "group" ""
                                            "description" nil
