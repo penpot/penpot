@@ -1,4 +1,4 @@
-use skia_safe::{self as skia, Contains, Matrix, Rect};
+use skia_safe::{self as skia, Contains, Matrix, RRect, Rect};
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -14,7 +14,7 @@ mod options;
 mod shadows;
 mod strokes;
 
-use crate::shapes::{Kind, Shape};
+use crate::shapes::{Corners, Kind, Shape};
 use cache::CachedSurfaceImage;
 use gpu_state::GpuState;
 use options::RenderOptions;
@@ -43,7 +43,7 @@ pub struct NodeRenderState {
     // We use this bool to keep that we've traversed all the children inside this node.
     pub visited_children: bool,
     // This is used to clip the content of frames.
-    pub clip_bounds: Option<(Rect, Matrix)>,
+    pub clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
     // This is a flag to indicate that we've already drawn the mask of a masked group.
     pub visited_mask: bool,
     // This bool indicates that we're drawing the mask shape.
@@ -271,13 +271,21 @@ impl RenderState {
         &mut self,
         shape: &mut Shape,
         modifiers: Option<&Matrix>,
-        clip_bounds: Option<(Rect, Matrix)>,
+        clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
     ) {
-        if let Some((bounds, transform)) = clip_bounds {
+        if let Some((bounds, corners, transform)) = clip_bounds {
             self.drawing_surface.canvas().concat(&transform);
-            self.drawing_surface
-                .canvas()
-                .clip_rect(bounds, skia::ClipOp::Intersect, true);
+
+            if let Some(corners) = corners {
+                let rrect = RRect::new_rect_radii(bounds, &corners);
+                self.drawing_surface
+                    .canvas()
+                    .clip_rrect(rrect, skia::ClipOp::Intersect, true);
+            } else {
+                self.drawing_surface
+                    .canvas()
+                    .clip_rect(bounds, skia::ClipOp::Intersect, true);
+            }
 
             if self.options.is_debug_visible() {
                 let mut paint = skia::Paint::default();
@@ -508,7 +516,7 @@ impl RenderState {
                 visited_mask,
                 mask,
             } = node_render_state;
-            let element = tree.get(&node_render_state.id).ok_or(
+            let element = tree.get_mut(&node_id).ok_or(
                 "Error: Element with root_id {node_render_state.id} not found in the tree."
                     .to_string(),
             )?;
@@ -611,11 +619,7 @@ impl RenderState {
 
             self.drawing_surface.canvas().save();
             if !node_render_state.id.is_nil() {
-                self.render_shape(
-                    &mut element.clone(),
-                    modifiers.get(&element.id),
-                    clip_bounds,
-                );
+                self.render_shape(element, modifiers.get(&element.id), clip_bounds);
             } else {
                 self.apply_drawing_to_render_canvas();
             }
@@ -640,7 +644,11 @@ impl RenderState {
                         if let Some(modifiers) = modifiers.get(&element.id) {
                             transform.post_concat(&modifiers);
                         }
-                        (bounds, transform)
+                        let corners = match element.kind {
+                            Kind::Rect(_, corners) => corners,
+                            _ => None,
+                        };
+                        (bounds, corners, transform)
                     });
 
                 for child_id in element.children_ids().iter().rev() {
