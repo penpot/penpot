@@ -19,8 +19,8 @@
    [rumext.v2 :as mf]))
 
 (defn- prepare-colors
-  [shapes file-id shared-libs]
-  (let [data           (into [] (remove nil? (ctc/extract-all-colors shapes file-id shared-libs)))
+  [shapes file-id libraries]
+  (let [data           (into [] (remove nil? (ctc/extract-all-colors shapes file-id libraries)))
         groups         (d/group-by :attrs #(dissoc % :attrs) data)
         all-colors     (distinct (mapv :attrs data))
 

@@ -68,7 +68,7 @@
          (str (:font-size typography) "px | " (:name variant-data))]])]))
 
 (mf/defc palette
-  [{:keys [selected selected-ids current-file-id file-typographies shared-libs size width]}]
+  [{:keys [selected selected-ids current-file-id file-typographies libraries size width]}]
   (let [file-id
         (case selected
           :recent nil
@@ -79,7 +79,7 @@
         (case selected
           :recent []
           :file (sort-by #(str/lower (:name %)) (vals file-typographies))
-          (sort-by #(str/lower (:name %)) (vals (get-in shared-libs [selected :data :typographies]))))
+          (sort-by #(str/lower (:name %)) (vals (get-in libraries [selected :data :typographies]))))
         state (mf/use-state {:offset 0})
         offset-step 144
         buttons-size (cond
@@ -182,13 +182,17 @@
   {::mf/wrap [mf/memo]}
   [{:keys [size width selected] :as props}]
   (let [selected-ids      (mf/deref refs/selected-shapes)
+
+        ;; FIXME: we have duplicate operations, if we already have the
+        ;; libraries, so we already have file-typographies so we don't
+        ;; need two separate lens/refs for that
         file-typographies (mf/deref refs/workspace-file-typography)
-        shared-libs       (mf/deref refs/libraries)
+        libraries         (mf/deref refs/files)
         current-file-id   (mf/use-ctx ctx/current-file-id)]
     [:& palette {:current-file-id current-file-id
                  :selected-ids selected-ids
                  :file-typographies file-typographies
-                 :shared-libs shared-libs
+                 :libraries libraries
                  :width width
                  :selected selected
                  :size size}]))

@@ -48,13 +48,13 @@
   [{:keys [index color disable-gradient disable-opacity disable-image disable-picker hidden
            on-change on-reorder on-detach on-open on-close on-remove
            disable-drag on-focus on-blur select-only select-on-focus]}]
-  (let [shared-libs      (mf/deref refs/libraries)
+  (let [libraries        (mf/deref refs/files)
         hover-detach     (mf/use-state false)
         on-change        (h/use-ref-callback on-change)
 
         file-id          (or (:ref-file color) (:file-id color))
         color-id         (or (:ref-id color) (:id color))
-        src-colors       (dm/get-in shared-libs [file-id :data :colors])
+        src-colors       (dm/get-in libraries [file-id :data :colors])
         color-name       (dm/get-in src-colors [color-id :name])
 
         multiple-colors? (uc/multiple? color)

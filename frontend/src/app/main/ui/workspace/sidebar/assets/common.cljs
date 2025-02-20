@@ -323,7 +323,7 @@
         current-file-id     (mf/use-ctx ctx/current-file-id)
         current-page-id     (mf/use-ctx ctx/current-page-id)
 
-        libraries           (deref refs/libraries)
+        libraries           (deref refs/files)
         current-file        (get libraries current-file-id)
 
         objects             (-> (dsh/get-page (:data current-file) current-page-id)

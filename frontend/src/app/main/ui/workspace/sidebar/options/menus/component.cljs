@@ -373,7 +373,8 @@
   (let [single?             (= 1 (count shapes))
         shape               (first shapes)
         current-file-id     (mf/use-ctx ctx/current-file-id)
-        libraries           (mf/deref refs/files)
+
+        libraries           (mf/deref refs/libraries)
         objects             (mf/deref refs/workspace-page-objects)
 
         ^boolean
@@ -594,9 +595,9 @@
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
         current-page-id (mf/use-ctx ctx/current-page-id)
 
-        libraries       (deref refs/libraries)
+        libraries       (deref refs/files)
         current-file    (get libraries current-file-id)
-        data            (get-in libraries [current-file-id :data])
+        data            (get current-file :data)
 
         state*          (mf/use-state
                          #(do {:show-content true
