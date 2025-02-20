@@ -72,7 +72,7 @@ pub enum Kind {
     Group(Group),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum ConstraintH {
     Left,
     Right,
@@ -94,7 +94,7 @@ impl ConstraintH {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum ConstraintV {
     Top,
     Bottom,

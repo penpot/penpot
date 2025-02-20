@@ -10,79 +10,100 @@ use crate::math::Bounds;
 use crate::shapes::{ConstraintH, ConstraintV, Shape, TransformEntry};
 use crate::state::State;
 
-fn calculate_new_bounds(
+fn calculate_resize(
     constraint_h: ConstraintH,
     constraint_v: ConstraintV,
     parent_before: &Bounds,
     parent_after: &Bounds,
-    child_bounds: &Bounds,
-) -> (f32, f32, f32, f32) {
-    let (delta_left, scale_width) = match constraint_h {
-        ConstraintH::Scale => {
-            let width_scale = parent_after.width() / parent_before.width();
-            let target_left = parent_before.left(child_bounds.nw) * width_scale;
-            let current_left = parent_after.left(child_bounds.nw);
-            (target_left - current_left, width_scale)
-        }
-        ConstraintH::Left => {
-            let target_left = parent_before.left(child_bounds.nw);
-            let current_left = parent_after.left(child_bounds.nw);
-            (target_left - current_left, 1.0)
-        }
-        ConstraintH::Right => {
-            let target_right = parent_before.right(child_bounds.ne);
-            let current_right = parent_after.right(child_bounds.ne);
-            (current_right - target_right, 1.0)
+    child_before: &Bounds,
+    child_after: &Bounds,
+) -> Option<(f32, f32)> {
+    let scale_width = match constraint_h {
+        ConstraintH::Left | ConstraintH::Right | ConstraintH::Center => {
+            parent_before.width() / parent_after.width()
         }
         ConstraintH::LeftRight => {
-            let target_left = parent_before.left(child_bounds.nw);
-            let target_right = parent_before.right(child_bounds.ne);
-            let current_left = parent_after.left(child_bounds.nw);
-            let new_width = parent_after.width() - target_left - target_right;
-            let width_scale = new_width / child_bounds.width();
-            (target_left - current_left, width_scale)
+            let left = parent_before.left(child_before.nw);
+            let right = parent_before.right(child_before.ne);
+            let target_width = parent_after.width() - left - right;
+            target_width / child_after.width()
+        }
+        _ => 1.0,
+    };
+
+    let scale_height = match constraint_v {
+        ConstraintV::Top | ConstraintV::Bottom | ConstraintV::Center => {
+            parent_before.height() / parent_after.height()
+        }
+        ConstraintV::TopBottom => {
+            let top = parent_before.top(child_before.nw);
+            let bottom = parent_before.bottom(child_before.sw);
+            let target_height = parent_after.height() - top - bottom;
+            target_height / child_after.height()
+        }
+        _ => 1.0,
+    };
+
+    if (scale_width - 1.0).abs() < f32::EPSILON && (scale_height - 1.0).abs() < f32::EPSILON {
+        None
+    } else {
+        Some((scale_width, scale_height))
+    }
+}
+
+fn calculate_displacement(
+    constraint_h: ConstraintH,
+    constraint_v: ConstraintV,
+    parent_before: &Bounds,
+    parent_after: &Bounds,
+    child_before: &Bounds,
+    child_after: &Bounds,
+) -> Option<(f32, f32)> {
+    let delta_x = match constraint_h {
+        ConstraintH::Left | ConstraintH::LeftRight => {
+            let target_left = parent_before.left(child_before.nw);
+            let current_left = parent_after.left(child_after.nw);
+            target_left - current_left
+        }
+        ConstraintH::Right => {
+            let target_right = parent_before.right(child_before.ne);
+            let current_right = parent_after.right(child_after.ne);
+            current_right - target_right
         }
         ConstraintH::Center => {
             let delta_width = parent_after.width() - parent_before.width();
-            let delta_left = delta_width / 2.0;
-            (delta_left, 1.0)
+            let target_left = parent_before.left(child_before.nw);
+            let current_left = parent_after.left(child_after.nw);
+            target_left - current_left + delta_width / 2.0
         }
+        _ => 0.0,
     };
 
-    let (delta_top, scale_height) = match constraint_v {
-        ConstraintV::Scale => {
-            let height_scale = parent_after.height() / parent_before.height();
-            let target_top = parent_before.top(child_bounds.nw) * height_scale;
-            let current_top = parent_after.top(child_bounds.nw);
-            (target_top - current_top, height_scale)
-        }
-        ConstraintV::Top => {
-            let height_scale = 1.0;
-            let target_top = parent_before.top(child_bounds.nw);
-            let current_top = parent_after.top(child_bounds.nw);
-            (target_top - current_top, height_scale)
+    let delta_y = match constraint_v {
+        ConstraintV::Top | ConstraintV::TopBottom => {
+            let target_top = parent_before.top(child_before.nw);
+            let current_top = parent_after.top(child_after.nw);
+            target_top - current_top
         }
         ConstraintV::Bottom => {
-            let target_bottom = parent_before.bottom(child_bounds.sw);
-            let current_bottom = parent_after.bottom(child_bounds.sw);
-            (current_bottom - target_bottom, 1.0)
-        }
-        ConstraintV::TopBottom => {
-            let target_top = parent_before.top(child_bounds.nw);
-            let target_bottom = parent_before.bottom(child_bounds.sw);
-            let current_top = parent_after.top(child_bounds.nw);
-            let new_height = parent_after.height() - target_top - target_bottom;
-            let height_scale = new_height / child_bounds.height();
-            (target_top - current_top, height_scale)
+            let target_bottom = parent_before.bottom(child_before.ne);
+            let current_bottom = parent_after.bottom(child_after.ne);
+            current_bottom - target_bottom
         }
         ConstraintV::Center => {
             let delta_height = parent_after.height() - parent_before.height();
-            let delta_top = delta_height / 2.0;
-            (delta_top, 1.0)
+            let target_top = parent_before.top(child_before.nw);
+            let current_top = parent_after.top(child_after.nw);
+            target_top - current_top + delta_height / 2.0
         }
+        _ => 0.0,
     };
 
-    (delta_left, delta_top, scale_width, scale_height)
+    if delta_x.abs() < f32::EPSILON && delta_y.abs() < f32::EPSILON {
+        None
+    } else {
+        Some((delta_x, delta_y))
+    }
 }
 
 fn propagate_shape(
@@ -121,36 +142,53 @@ fn propagate_shape(
             }
 
             if let Some(child_bounds_before) = parent_bounds_before.box_bounds(&child.bounds()) {
-                let (delta_left, delta_top, scale_width, scale_height) = calculate_new_bounds(
+                let mut transform = transform;
+                let mut child_bounds_after = child_bounds_before.transform(&transform);
+
+                // Scale shape
+                if let Some((scale_width, scale_height)) = calculate_resize(
                     constraint_h,
                     constraint_v,
                     &parent_bounds_before,
                     &parent_bounds_after,
                     &child_bounds_before,
-                );
+                    &child_bounds_after,
+                ) {
+                    let center = child.center();
+
+                    let mut parent_transform = parent_bounds_after
+                        .transform_matrix()
+                        .unwrap_or(Matrix::default());
+                    parent_transform.post_translate(center);
+                    parent_transform.pre_translate(-center);
+
+                    let parent_transform_inv = &parent_transform.invert().unwrap();
+                    let origin = parent_transform_inv.map_point(child_bounds_after.nw);
+
+                    let mut scale = Matrix::scale((scale_width, scale_height));
+                    scale.post_translate(origin);
+                    scale.post_concat(&parent_transform);
+                    scale.pre_translate(-origin);
+                    scale.pre_concat(&parent_transform_inv);
+
+                    child_bounds_after.transform_mut(&scale);
+                    transform.post_concat(&scale);
+                }
 
                 // Translate position
-                let th = parent_bounds_after.hv(delta_left);
-                let tv = parent_bounds_after.vv(delta_top);
-                let mut transform = Matrix::translate(th + tv);
-                let child_bounds = child_bounds_before.transform(&transform);
+                if let Some((delta_x, delta_y)) = calculate_displacement(
+                    constraint_h,
+                    constraint_v,
+                    &parent_bounds_before,
+                    &parent_bounds_after,
+                    &child_bounds_before,
+                    &child_bounds_after,
+                ) {
+                    let th = parent_bounds_after.hv(delta_x);
+                    let tv = parent_bounds_after.vv(delta_y);
+                    transform.post_concat(&Matrix::translate(th + tv));
+                }
 
-                // Scale shape
-                let center = child.center();
-                let mut parent_transform = shape.transform;
-                parent_transform.post_translate(center);
-                parent_transform.pre_translate(-center);
-
-                let parent_transform_inv = &parent_transform.invert().unwrap();
-                let origin = parent_transform_inv.map_point(child_bounds.nw);
-
-                let mut scale = Matrix::scale((scale_width, scale_height));
-                scale.post_translate(origin);
-                scale.post_concat(&parent_transform);
-                scale.pre_translate(-origin);
-                scale.pre_concat(&parent_transform_inv);
-
-                transform.post_concat(&scale);
                 result.push(TransformEntry::new(child_id.clone(), transform));
             }
         }

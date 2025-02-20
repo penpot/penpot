@@ -122,65 +122,145 @@ impl Bounds {
     pub fn left(&self, p: Point) -> f32 {
         let hr = Ray::new(p, self.horizontal_vec());
         let vr = Ray::new(self.nw, self.vertical_vec());
-        if let Some(project_point) = intersect_rays(&hr, &vr) {
-            if vr.is_positive_side(&p) {
-                -Point::distance(project_point, p)
-            } else {
-                Point::distance(project_point, p)
-            }
+
+        let mut result = if let Some(project_point) = intersect_rays(&hr, &vr) {
+            Point::distance(project_point, p)
         } else {
-            // This should not happen. All points should have a proyection so the
-            // intersection ray should always exist
             0.0
+        };
+
+        if vr.is_positive_side(&p) {
+            result = -result;
         }
+
+        if self.flip_y() {
+            result = -result;
+        }
+
+        if self.flip_x() {
+            result = -result;
+        }
+
+        result
     }
 
     pub fn right(&self, p: Point) -> f32 {
         let hr = Ray::new(p, self.horizontal_vec());
         let vr = Ray::new(self.ne, self.vertical_vec());
-        if let Some(project_point) = intersect_rays(&hr, &vr) {
-            if vr.is_positive_side(&p) {
-                Point::distance(project_point, p)
-            } else {
-                -Point::distance(project_point, p)
-            }
+
+        let mut result = if let Some(project_point) = intersect_rays(&hr, &vr) {
+            Point::distance(project_point, p)
         } else {
-            // This should not happen. All points should have a proyection so the
-            // intersection ray should always exist
             0.0
+        };
+
+        if !vr.is_positive_side(&p) {
+            result = -result;
         }
+
+        if self.flip_y() {
+            result = -result;
+        }
+
+        if self.flip_x() {
+            result = -result;
+        }
+
+        result
     }
 
     pub fn top(&self, p: Point) -> f32 {
         let vr = Ray::new(p, self.vertical_vec());
         let hr = Ray::new(self.nw, self.horizontal_vec());
-        if let Some(project_point) = intersect_rays(&vr, &hr) {
-            if hr.is_positive_side(&p) {
-                Point::distance(project_point, p)
-            } else {
-                -Point::distance(project_point, p)
-            }
+
+        let mut result = if let Some(project_point) = intersect_rays(&vr, &hr) {
+            Point::distance(project_point, p)
         } else {
-            // This should not happen. All points should have a proyection so the
-            // intersection ray should always exist
             0.0
+        };
+
+        if !hr.is_positive_side(&p) {
+            result = -result;
         }
+
+        if self.flip_y() {
+            result = -result;
+        }
+
+        if self.flip_x() {
+            result = -result;
+        }
+
+        result
     }
 
     pub fn bottom(&self, p: Point) -> f32 {
         let vr = Ray::new(p, self.vertical_vec());
         let hr = Ray::new(self.sw, self.horizontal_vec());
-        if let Some(project_point) = intersect_rays(&vr, &hr) {
-            if hr.is_positive_side(&p) {
-                -Point::distance(project_point, p)
-            } else {
-                Point::distance(project_point, p)
-            }
+
+        let mut result = if let Some(project_point) = intersect_rays(&vr, &hr) {
+            Point::distance(project_point, p)
         } else {
-            // This should not happen. All points should have a proyection so the
-            // intersection ray should always exist
             0.0
+        };
+
+        if hr.is_positive_side(&p) {
+            result = -result;
         }
+
+        if self.flip_y() {
+            result = -result;
+        }
+
+        if self.flip_x() {
+            result = -result;
+        }
+
+        result
+    }
+
+    pub fn transform_matrix(&self) -> Option<Matrix> {
+        let w2 = self.width() / 2.0;
+        let h2 = self.height() / 2.0;
+
+        let s1x = -w2;
+        let s1y = -h2;
+        let s2x = w2;
+        let s2y = -h2;
+        let s4x = -w2;
+        let s4y = h2;
+
+        let d1x = self.nw.x;
+        let d1y = self.nw.y;
+        let d2x = self.ne.x;
+        let d2y = self.ne.y;
+        let d4x = self.sw.x;
+        let d4y = self.sw.y;
+
+        // TODO: Check how fast is to calculate here the invert matrix
+        let mut target_points_matrix = Matrix::new_all(d1x, d2x, d4x, d1y, d2y, d4y, 1.0, 1.0, 1.0);
+        let source_points_matrix = Matrix::new_all(s1x, s2x, s4x, s1y, s2y, s4y, 1.0, 1.0, 1.0);
+
+        let source_points_matrix_inv = source_points_matrix.invert()?;
+        target_points_matrix.pre_concat(&source_points_matrix_inv);
+
+        // Ignore translations
+        target_points_matrix.set_translate_x(0.0);
+        target_points_matrix.set_translate_y(0.0);
+
+        Some(target_points_matrix)
+    }
+
+    // TODO: Probably we can improve performance here removing the access
+    pub fn flip_x(&self) -> bool {
+        let m = self.transform_matrix().unwrap_or(Matrix::default());
+        m.scale_x() < 0.0
+    }
+
+    // TODO: Probably we can improve performance here removing the access
+    pub fn flip_y(&self) -> bool {
+        let m = self.transform_matrix().unwrap_or(Matrix::default());
+        m.scale_y() < 0.0
     }
 }
 
@@ -317,14 +397,46 @@ mod tests {
     #[test]
     fn test_bounds_distances() {
         let b1 = Bounds::new(
-            Point::new(1.0, 10.0),
-            Point::new(8.0, 10.0),
-            Point::new(8.0, 1.0),
             Point::new(1.0, 1.0),
+            Point::new(8.0, 1.0),
+            Point::new(8.0, 10.0),
+            Point::new(1.0, 10.0),
         );
-        assert_eq!(b1.left(Point::new(4.0, 8.0)), -3.0);
-        assert_eq!(b1.top(Point::new(4.0, 8.0)), -2.0);
-        assert_eq!(b1.right(Point::new(7.0, 6.0),), -1.0);
-        assert_eq!(b1.bottom(Point::new(7.0, 6.0),), -5.0);
+        assert_eq!(b1.left(Point::new(4.0, 8.0)), 3.0);
+        assert_eq!(b1.top(Point::new(4.0, 8.0)), 7.0);
+        assert_eq!(b1.right(Point::new(7.0, 6.0),), 1.0);
+        assert_eq!(b1.bottom(Point::new(7.0, 6.0),), 4.0);
+    }
+
+    #[test]
+    fn test_transform_matrix() {
+        let b = Bounds::new(
+            Point::new(0.0, 0.0),
+            Point::new(50.0, 0.0),
+            Point::new(50.0, 50.0),
+            Point::new(0.0, 50.0),
+        );
+
+        assert_eq!(b.width(), 50.0);
+        assert_eq!(b.height(), 50.0);
+        assert_eq!(b.transform_matrix().unwrap(), Matrix::default());
+
+        let b = Bounds::new(
+            Point::new(-25.0, 1.0),
+            Point::new(1.0, -34.5),
+            Point::new(27.0, 1.0),
+            Point::new(1.0, 36.5),
+        );
+
+        assert!((b.width() - 44.0).abs() <= 0.1);
+        assert!((b.height() - 44.0).abs() <= 0.1);
+
+        let m = b.transform_matrix().unwrap();
+        assert!((m.scale_x() - 0.59).abs() <= 0.1);
+        assert!((m.skew_y() - -0.81).abs() <= 0.1);
+        assert!((m.skew_x() - 0.59).abs() <= 0.1);
+        assert!((m.scale_y() - 0.81).abs() <= 0.1);
+        assert!((m.translate_x() - 0.0).abs() <= 0.1);
+        assert!((m.translate_y() - 0.0).abs() <= 0.1);
     }
 }
