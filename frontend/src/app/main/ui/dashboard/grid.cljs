@@ -25,6 +25,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as bc]
+   [app.main.ui.components.portal :refer [portal-on-document*]]
    [app.main.ui.dashboard.file-menu :refer [file-menu*]]
    [app.main.ui.dashboard.import :refer [use-import-file]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
@@ -241,29 +242,37 @@
     counter-el))
 
 (mf/defc grid-item*
-  {::mf/props :obj}
   [{:keys [file origin can-edit selected-files]}]
-  (let [file-id         (:id file)
+  (let [file-id  (get file :id)
+        state    (mf/deref refs/dashboard-local)
 
-        is-library-view (= origin :libraries)
+        menu-pos
+        (get state :menu-pos)
 
-        dashboard-local (mf/deref refs/dashboard-local)
-        file-menu-open? (:menu-open dashboard-local)
+        menu-open?
+        (and (get state :menu-open)
+             (= file-id (:file-id state)))
 
-        selected?       (contains? selected-files file-id)
+        selected?
+        (contains? selected-files file-id)
 
-        node-ref        (mf/use-ref)
-        menu-ref        (mf/use-ref)
+        selected-num
+        (count selected-files)
+
+        node-ref     (mf/use-ref)
+        menu-ref     (mf/use-ref)
+
+        is-library-view?
+        (= origin :libraries)
 
         on-menu-close
-        (mf/use-fn
-         (fn [_]
-           (st/emit! (dd/hide-file-menu))))
+        (mf/use-fn #(st/emit! (dd/hide-file-menu)))
 
         on-select
         (mf/use-fn
+         (mf/deps selected? selected-num)
          (fn [event]
-           (when (or (not selected?) (> (count selected-files) 1))
+           (when (or (not selected?) (> selected-num 1))
              (dom/stop-propagation event)
              (let [shift? (kbd/shift? event)]
                (when-not shift?
@@ -281,41 +290,36 @@
 
         on-drag-start
         (mf/use-fn
-         (mf/deps selected-files can-edit)
+         (mf/deps selected? selected-num)
          (fn [event]
            (st/emit! (dd/hide-file-menu))
            (when can-edit
-             (let [offset          (dom/get-offset-position (dom/event->native-event event))
-
-                   select-current? (not (contains? selected-files (:id file)))
-
-                   item-el         (mf/ref-val node-ref)
-                   counter-el      (create-counter-element
-                                    item-el
-                                    (if select-current?
-                                      1
-                                      (count selected-files)))]
-               (when select-current?
+             (let [offset     (dom/get-offset-position (dom/event->native-event event))
+                   item-el    (mf/ref-val node-ref)
+                   counter-el (create-counter-element item-el
+                                                      (if (not selected?)
+                                                        1
+                                                        selected-num))]
+               (when (not selected?)
                  (st/emit! (dd/clear-selected-files))
                  (st/emit! (dd/toggle-file-select file)))
 
                (dnd/set-data! event "penpot/files" "dummy")
                (dnd/set-allowed-effect! event "move")
 
-              ;; set-drag-image requires that the element is rendered and
-              ;; visible to the user at the moment of creating the ghost
-              ;; image (to make a snapshot), but you may remove it right
-              ;; afterwards, in the next render cycle.
+               ;; set-drag-image requires that the element is rendered
+               ;; and visible to the user at the moment of creating the
+               ;; ghost image (to make a snapshot), but you may remove
+               ;; it right afterwards, in the next render cycle.
                (dom/append-child! item-el counter-el)
                (dnd/set-drag-image! event item-el (:x offset) (:y offset))
-               (ts/raf #(.removeChild ^js item-el counter-el))))))
+               (ts/raf #(dom/remove-child! item-el counter-el))))))
 
         on-menu-click
         (mf/use-fn
          (mf/deps file selected?)
          (fn [event]
            (dom/stop-propagation event)
-           (dom/prevent-default event)
 
            (when-not selected?
              (when-not (kbd/shift? event)
@@ -339,12 +343,10 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps on-menu-click is-library-view)
+         (mf/deps on-menu-click)
          (fn [event]
-           (dom/stop-propagation event)
            (dom/prevent-default event)
-           (when-not is-library-view
-             (on-menu-click event))))
+           (on-menu-click event)))
 
         edit
         (mf/use-fn
@@ -362,8 +364,8 @@
            (dom/stop-propagation event)
            (st/emit! (dd/start-edit-file-name file-id))))
 
-        handle-key-down
-        (mf/use-callback
+        on-key-down
+        (mf/use-fn
          (mf/deps on-navigate on-select)
          (fn [event]
            (dom/stop-propagation event)
@@ -371,63 +373,70 @@
              (on-navigate event))
            (when (kbd/shift? event)
              (when (or (kbd/down-arrow? event) (kbd/left-arrow? event) (kbd/up-arrow? event) (kbd/right-arrow? event))
-               (on-select event)) ;; TODO Fix this
-             )))]
+               ;; TODO Fix this
+               (on-select event)))))
+
+        on-menu-key-down
+        (mf/use-fn
+         (mf/deps on-menu-click)
+         (fn [event]
+           (when (kbd/enter? event)
+             (dom/stop-propagation event)
+             (dom/prevent-default event)
+             (on-menu-click event))))]
 
     [:li {:class (stl/css-case :grid-item true
                                :project-th true
-                               :library is-library-view)}
+                               :library is-library-view?)}
      [:div
       {:class (stl/css-case :selected selected?
-                            :library is-library-view)
+                            :library is-library-view?)
        :ref node-ref
        :role "button"
        :title (:name file)
        :draggable (dm/str can-edit)
        :on-click on-select
-       :on-key-down handle-key-down
+       :on-key-down on-key-down
        :on-double-click on-navigate
        :on-drag-start on-drag-start
        :on-context-menu on-context-menu}
 
       [:div {:class (stl/css :overlay)}]
 
-      (if ^boolean is-library-view
+      (if ^boolean is-library-view?
         [:> grid-item-library* {:file file}]
         [:> grid-item-thumbnail* {:file file :can-edit can-edit}])
 
-      (when (and (:is-shared file) (not is-library-view))
+      (when (and (:is-shared file) (not is-library-view?))
         [:div {:class (stl/css :item-badge)} i/library])
 
       [:div {:class (stl/css :info-wrapper)}
        [:div {:class (stl/css :item-info)}
-        (if (and (= file-id (:file-id dashboard-local)) (:edition dashboard-local))
+        (if (and (= file-id (:file-id state)) (:edition state))
           [:& inline-edition {:content (:name file)
                               :on-end edit}]
           [:h3 (:name file)])
         [:& grid-item-metadata {:modified-at (:modified-at file)}]]
 
-       [:div {:class (stl/css-case :project-th-actions true :force-display (:menu-open dashboard-local))}
+       [:div {:class (stl/css-case :project-th-actions true :force-display menu-open?)}
         [:div
          {:class (stl/css :project-th-icon :menu)
           :tab-index "0"
           :role "button"
           :aria-label (tr "dashboard.options")
           :ref menu-ref
-          :id (str file-id "-action-menu")
+          :id (dm/str file-id "-action-menu")
           :on-click on-menu-click
-          :on-key-down (fn [event]
-                         (when (kbd/enter? event)
-                           (dom/stop-propagation event)
-                           (on-menu-click event)))}
+          :on-key-down on-menu-key-down}
+
          menu-icon
-         (when (and selected? file-menu-open?)
+         (when (and selected? menu-open?)
            ;; When the menu is open we disable events in the dashboard. We need to force pointer events
            ;; so the menu can be handled
-           [:div {:style {:pointer-events "all"}}
+           [:> portal-on-document* {}
             [:> file-menu* {:files (vals selected-files)
-                            :left (+ 24 (:x (:menu-pos dashboard-local)))
-                            :top (:y (:menu-pos dashboard-local))
+                            :left (+ 24 (:x menu-pos))
+                            :top (:y menu-pos)
                             :can-edit can-edit
                             :navigate true
                             :on-edit on-edit
@@ -454,6 +463,9 @@
 
         import-files
         (use-import-file project-id on-finish-import)
+
+        on-scroll
+        (mf/use-fn #(st/emit! (dd/hide-file-menu)))
 
         on-drag-enter
         (mf/use-fn
@@ -496,6 +508,7 @@
            :on-drag-over on-drag-over
            :on-drag-leave on-drag-leave
            :on-drop on-drop
+           :on-scroll on-scroll
            :ref node-ref}
      (cond
        (nil? files)

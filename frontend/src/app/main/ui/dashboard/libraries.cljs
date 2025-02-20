@@ -68,9 +68,9 @@
      [:section {:class (stl/css :dashboard-container :no-bg :dashboard-shared)
                 :ref rowref}
       [:> grid* {:files files
-                :selected-files selected-files
-                :project default-project
-                :origin :libraries
-                :limit limit
-                :can-edit can-edit}]]]))
+                 :selected-files selected-files
+                 :project default-project
+                 :origin :libraries
+                 :limit limit
+                 :can-edit can-edit}]]]))
 
