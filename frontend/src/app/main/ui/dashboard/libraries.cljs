@@ -11,7 +11,7 @@
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.dashboard.grid :refer [grid]]
+   [app.main.ui.dashboard.grid :refer [grid*]]
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -67,7 +67,7 @@
 
      [:section {:class (stl/css :dashboard-container :no-bg :dashboard-shared)
                 :ref rowref}
-      [:& grid {:files files
+      [:> grid* {:files files
                 :selected-files selected-files
                 :project default-project
                 :origin :libraries

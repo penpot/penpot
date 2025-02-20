@@ -435,7 +435,7 @@
                             :origin origin
                             :parent-id (dm/str file-id "-action-menu")}]])]]]]]))
 
-(mf/defc grid
+(mf/defc grid*
   {::mf/props :obj}
   [{:keys [files project origin limit create-fn can-edit selected-files]}]
   (let [dragging?  (mf/use-state false)
