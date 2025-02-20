@@ -60,15 +60,25 @@
   (media/validate-media-type! content)
   (media/validate-media-size! content)
 
-  (db/run! cfg (fn [cfg]
-                 (let [object (create-file-media-object cfg params)
-                       props  {:name (:name params)
-                               :file-id file-id
-                               :is-local (:is-local params)
-                               :size (:size content)
-                               :mtype (:mtype content)}]
-                   (with-meta object
-                     {::audit/replace-props props})))))
+  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                 ;; We get the minimal file for proper checking if
+                 ;; file is not already deleted
+                 (let [_     (files/get-minimal-file conn file-id)
+                       mobj  (create-file-media-object cfg params)]
+
+                   (db/update! conn :file
+                               {:modified-at (dt/now)
+                                :has-media-trimmed false}
+                               {:id file-id}
+                               {::db/return-keys false})
+
+                   (with-meta mobj
+                     {::audit/replace-props
+                      {:name (:name params)
+                       :file-id file-id
+                       :is-local (:is-local params)
+                       :size (:size content)
+                       :mtype (:mtype content)}})))))
 
 (defn- big-enough-for-thumbnail?
   "Checks if the provided image info is big enough for
@@ -142,19 +152,13 @@
       :always
       (assoc ::image (process-main-image info)))))
 
-(defn create-file-media-object
-  [{:keys [::sto/storage ::db/conn ::wrk/executor]}
+(defn- create-file-media-object
+  [{:keys [::sto/storage ::db/conn ::wrk/executor] :as cfg}
    {:keys [id file-id is-local name content]}]
-
   (let [result (px/invoke! executor (partial process-image content))
         image  (sto/put-object! storage (::image result))
         thumb  (when-let [params (::thumb result)]
                  (sto/put-object! storage params))]
-
-    (db/update! conn :file
-                {:modified-at (dt/now)
-                 :has-media-trimmed false}
-                {:id file-id})
 
     (db/exec-one! conn [sql:create-file-media-object
                         (or id (uuid/next))
@@ -182,7 +186,18 @@
    ::sm/params schema:create-file-media-object-from-url}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (files/check-edition-permissions! pool profile-id file-id)
-  (create-file-media-object-from-url cfg (assoc params :profile-id profile-id)))
+  ;; We get the minimal file for proper checking if file is not
+  ;; already deleted
+  (let [_    (files/get-minimal-file cfg file-id)
+        mobj (create-file-media-object-from-url cfg (assoc params :profile-id profile-id))]
+
+    (db/update! pool :file
+                {:modified-at (dt/now)
+                 :has-media-trimmed false}
+                {:id file-id}
+                {::db/return-keys false})
+
+    mobj))
 
 (defn download-image
   [{:keys [::http/client]} uri]

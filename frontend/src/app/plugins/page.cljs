@@ -369,11 +369,7 @@
                   :content content}
 
                  (fn [data]
-                   (->> (rp/cmd! :get-team-users {:file-id file-id})
-                        (rx/subs!
-                         (fn [users]
-                           (let [users (d/index-by :id users)]
-                             (resolve (pc/comment-thread-proxy plugin-id file-id id users data)))))))
+                   (resolve (pc/comment-thread-proxy plugin-id file-id id data)))
                  false))))))))
 
     :removeCommentThread
@@ -396,7 +392,7 @@
     (fn [criteria]
       (let [only-yours    (boolean (obj/get criteria "onlyYours" false))
             show-resolved (boolean (obj/get criteria "showResolved" true))
-            user-id      (-> @st/state :profile :id)]
+            user-id       (:profile-id @st/state)]
         (js/Promise.
          (fn [resolve reject]
            (cond
@@ -406,14 +402,11 @@
                (reject "Plugin doesn't have 'comment:read' permission"))
 
              :else
-             (->> (rx/zip (rp/cmd! :get-team-users {:file-id file-id})
-                          (rp/cmd! :get-comment-threads {:file-id file-id}))
-                  (rx/take 1)
+             (->> (rp/cmd! :get-comment-threads {:file-id file-id})
                   (rx/subs!
-                   (fn [[users comments]]
-                     (let [users (d/index-by :id users)
-                           comments
-                           (cond->> comments
+                   (fn [threads]
+                     (let [threads
+                           (cond->> threads
                              (not show-resolved)
                              (filter (comp not :is-resolved))
 
@@ -421,5 +414,5 @@
                              (filter #(contains? (:participants %) user-id)))]
                        (resolve
                         (format/format-array
-                         #(pc/comment-thread-proxy plugin-id file-id id users %) comments))))
+                         #(pc/comment-thread-proxy plugin-id file-id id %) threads))))
                    reject)))))))))

@@ -16,17 +16,17 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (defn selected-shapes-idx
   [state]
-  (let [objects (wsh/lookup-page-objects state)]
-    (->> (wsh/lookup-selected state)
+  (let [objects (dsh/lookup-page-objects state)]
+    (->> (dsh/lookup-selected state)
          (cph/clean-loops objects))))
 
 (defn create-bool-data
@@ -91,9 +91,9 @@
      ptk/WatchEvent
      (watch [it state _]
        (let [page-id (:current-page-id state)
-             objects (wsh/lookup-page-objects state)
+             objects (dsh/lookup-page-objects state)
              name (-> bool-type d/name str/capital)
-             ids  (->> (or ids (wsh/lookup-selected state))
+             ids  (->> (or ids (dsh/lookup-selected state))
                        (cph/clean-loops objects))
              ordered-indexes (cph/order-by-indexed-shapes objects ids)
              shapes (->> ordered-indexes
@@ -121,7 +121,7 @@
   (ptk/reify ::group-to-bool
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             change-to-bool
             (fn [shape] (group->bool shape bool-type objects))]
         (when-not (ctn/has-any-copy-parent? objects (get objects shape-id))
@@ -132,7 +132,7 @@
   (ptk/reify ::bool-to-group
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             change-to-group
             (fn [shape] (bool->group shape objects))]
         (when-not (ctn/has-any-copy-parent? objects (get objects shape-id))
@@ -144,7 +144,7 @@
   (ptk/reify ::change-bool-type
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             change-type
             (fn [shape] (assoc shape :bool-type bool-type))]
         (when-not (ctn/has-any-copy-parent? objects (get objects shape-id))

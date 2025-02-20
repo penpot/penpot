@@ -6,22 +6,29 @@
 
 (ns app.main.ui.workspace.tokens.changes
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.store :as st]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
+
+(declare token-properties)
 
 ;; Token Updates ---------------------------------------------------------------
 
@@ -31,11 +38,12 @@
   Optionally remove attributes from `attributes-to-remove`,
   this is useful for applying a single attribute from an attributes set
   while removing other applied tokens from this set."
-  [{:keys [attributes attributes-to-remove token shape-ids on-update-shape] :as _props}]
+  [{:keys [attributes attributes-to-remove token shape-ids on-update-shape]}]
   (ptk/reify ::apply-token
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [tokens (some-> (get-in state [:workspace-data :tokens-lib])
+      (when-let [tokens (some-> (dsh/lookup-file-data state)
+                                (get :tokens-lib)
                                 (ctob/get-active-themes-set-tokens))]
         (->> (rx/from (sd/resolve-tokens+ tokens))
              (rx/mapcat
@@ -44,11 +52,14 @@
                       resolved-value (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value])
                       tokenized-attributes (wtt/attributes-map attributes token)]
                   (rx/of
+                   (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
                    (dwu/start-undo-transaction undo-id)
                    (dwsh/update-shapes shape-ids (fn [shape]
                                                    (cond-> shape
-                                                     attributes-to-remove (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
-                                                     :always (update :applied-tokens merge tokenized-attributes))))
+                                                     attributes-to-remove
+                                                     (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
+                                                     :always
+                                                     (update :applied-tokens merge tokenized-attributes))))
                    (when on-update-shape
                      (on-update-shape resolved-value shape-ids attributes))
                    (dwu/commit-undo-transaction undo-id))))))))))
@@ -69,12 +80,16 @@
             (update shape :applied-tokens remove-token))))))))
 
 (defn toggle-token
-  [{:keys [token-type-props token shapes] :as _props}]
+  [{:keys [token shapes]}]
   (ptk/reify ::on-toggle-token
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [{:keys [attributes all-attributes on-update-shape]} token-type-props
-            unapply-tokens? (wtt/shapes-token-applied? token shapes (or all-attributes attributes))
+      (let [{:keys [attributes all-attributes on-update-shape]}
+            (get token-properties (:type token))
+
+            unapply-tokens?
+            (wtt/shapes-token-applied? token shapes (or all-attributes attributes))
+
             shape-ids (map :id shapes)]
         (if unapply-tokens?
           (rx/of
@@ -89,102 +104,265 @@
 
 ;; Shape Updates ---------------------------------------------------------------
 
-(defn update-shape-radius-all [value shape-ids]
-  (dwsh/update-shapes shape-ids
-                      (fn [shape]
-                        (when (ctsr/has-radius? shape)
-                          (ctsr/set-radius-1 shape value)))
-                      {:reg-objects? true
-                       :attrs ctt/border-radius-keys}))
+(defn update-shape-radius-all
+  ([value shape-ids attributes] (update-shape-radius-all value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+   (dwsh/update-shapes shape-ids
+                       (fn [shape]
+                         (ctsr/set-radius-to-all-corners shape value))
+                       {:reg-objects? true
+                        :ignore-touched true
+                        :page-id page-id
+                        :attrs ctt/border-radius-keys})))
 
-(defn update-opacity [value shape-ids]
-  (when (<= 0 value 1)
-    (dwsh/update-shapes shape-ids #(assoc % :opacity value))))
+(defn update-shape-radius-for-corners
+  ([value shape-ids attributes] (update-shape-radius-for-corners value shape-ids attributes nil))
+  ([value shape-ids attributes page-id]
+   (dwsh/update-shapes shape-ids
+                       (fn [shape]
+                         (ctsr/set-radius-for-corners shape attributes value))
+                       {:reg-objects? true
+                        :ignore-touched true
+                        :page-id page-id
+                        :attrs ctt/border-radius-keys})))
 
-(defn update-rotation [value shape-ids]
-  (ptk/reify ::update-shape-rotation
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of
-       (udw/trigger-bounding-box-cloaking shape-ids)
-       (udw/increase-rotation shape-ids value)))))
+(defn update-opacity
+  ([value shape-ids attributes] (update-opacity value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+   (when (<= 0 value 1)
+     (dwsh/update-shapes shape-ids
+                         #(assoc % :opacity value)
+                         {:ignore-touched true
+                          :page-id page-id}))))
 
-(defn update-shape-radius-single-corner [value shape-ids attributes]
-  (dwsh/update-shapes shape-ids
-                      (fn [shape]
-                        (when (ctsr/has-radius? shape)
-                          (cond-> shape
-                            (:rx shape) (ctsr/switch-to-radius-4)
-                            :always (ctsr/set-radius-4 (first attributes) value))))
-                      {:reg-objects? true
-                       :attrs [:rx :ry :r1 :r2 :r3 :r4]}))
+;; FIXME: if attributes are not always present, maybe we have an
+;; options here for pass optional value and preserve the correct and
+;; uniform api across all functions (?)
+
+(defn update-rotation
+  ([value shape-ids attributes] (update-rotation value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+   (ptk/reify ::update-shape-rotation
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (rx/of
+        (udw/trigger-bounding-box-cloaking shape-ids)
+        (udw/increase-rotation shape-ids value nil
+                               {:page-id page-id
+                                :ignore-touched true}))))))
 
 (defn update-stroke-width
-  [value shape-ids]
-  (dwsh/update-shapes shape-ids
-                      (fn [shape]
-                        (when (seq (:strokes shape))
-                          (assoc-in shape [:strokes 0 :stroke-width] value)))
-                      {:reg-objects? true
-                       :attrs [:strokes]}))
+  ([value shape-ids attributes] (update-stroke-width value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+   (dwsh/update-shapes shape-ids
+                       (fn [shape]
+                         (when (seq (:strokes shape))
+                           (assoc-in shape [:strokes 0 :stroke-width] value)))
+                       {:reg-objects? true
+                        :ignore-touched true
+                        :page-id page-id
+                        :attrs [:strokes]})))
 
-(defn update-color [f value shape-ids]
-  (let [color (some->> value
-                       (tinycolor/valid-color)
-                       (tinycolor/->hex)
-                       (str "#"))]
-    (f shape-ids {:color color} 0)))
+(defn update-color [f value shape-ids page-id]
+  (when-let [tc (tinycolor/valid-color value)]
+    (let [hex (tinycolor/->hex-string tc)
+          opacity (tinycolor/alpha tc)]
+      (f shape-ids {:color hex :opacity opacity} 0 {:ignore-touched true
+                                                    :page-id page-id}))))
 
 (defn update-fill
-  [value shape-ids]
-  (update-color wdc/change-fill value shape-ids))
+  ([value shape-ids attributes] (update-fill value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+   (update-color wdc/change-fill value shape-ids page-id)))
 
 (defn update-stroke-color
-  [value shape-ids]
-  (update-color wdc/change-stroke value shape-ids))
+  ([value shape-ids attributes] (update-stroke-color value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+   (update-color wdc/change-stroke-color value shape-ids page-id)))
 
-(defn update-shape-dimensions [value shape-ids attributes]
-  (ptk/reify ::update-shape-dimensions
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of
-       (when (:width attributes) (dwt/update-dimensions shape-ids :width value))
-       (when (:height attributes) (dwt/update-dimensions shape-ids :height value))))))
+(defn update-fill-stroke
+  ([value shape-ids attributes] (update-fill-stroke value shape-ids attributes nil))
+  ([value shape-ids attributes page-id]
+   (ptk/reify ::update-fill-stroke
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (rx/of
+        (when (:fill attributes) (update-fill value shape-ids attributes page-id))
+        (when (:stroke-color attributes) (update-stroke-color value shape-ids attributes page-id)))))))
+
+(defn update-shape-dimensions
+  ([value shape-ids attributes] (update-shape-dimensions value shape-ids attributes nil))
+  ([value shape-ids attributes page-id]
+   (ptk/reify ::update-shape-dimensions
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (rx/of
+        (when (:width attributes) (dwt/update-dimensions shape-ids :width value {:ignore-touched true :page-id page-id}))
+        (when (:height attributes) (dwt/update-dimensions shape-ids :height value {:ignore-touched true :page-id page-id})))))))
 
 (defn- attributes->layout-gap [attributes value]
   (let [layout-gap (-> (set/intersection attributes #{:column-gap :row-gap})
                        (zipmap (repeat value)))]
     {:layout-gap layout-gap}))
 
-(defn update-layout-padding [value shape-ids attrs]
-  (dwsl/update-layout shape-ids {:layout-padding (zipmap attrs (repeat value))}))
+(defn- shape-ids-with-layout [state page-id shape-ids]
+  (->> (dsh/lookup-shapes state page-id shape-ids)
+       (eduction
+        (filter ctsl/any-layout?)
+        (map :id))))
 
-(defn update-layout-spacing [value shape-ids attributes]
-  (ptk/reify ::update-layout-spacing
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [layout-shape-ids (->> (wsh/lookup-shapes state shape-ids)
-                                  (eduction
-                                   (filter :layout)
-                                   (map :id)))
-            layout-attributes (attributes->layout-gap attributes value)]
-        (rx/of
-         (dwsl/update-layout layout-shape-ids layout-attributes))))))
+(defn- shape-ids-with-layout-parent [state page-id shape-ids]
+  (let [objects (dsh/lookup-page-objects state)]
+    (->> (dsh/lookup-shapes state page-id shape-ids)
+         (eduction
+          (filter #(ctsl/any-layout-immediate-child? objects %))
+          (map :id)))))
 
-(defn update-shape-position [value shape-ids attributes]
-  (ptk/reify ::update-shape-position
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/concat
-       (map #(dwt/update-position % (zipmap attributes (repeat value))) shape-ids)))))
+(defn update-layout-item-margin
+  ([value shape-ids attrs] (update-layout-item-margin value shape-ids attrs nil))
+  ([value shape-ids attrs page-id]
+   (ptk/reify ::update-layout-item-margin
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [ids-with-layout-parent (shape-ids-with-layout-parent state (or page-id (:current-page-id state)) shape-ids)]
+         (rx/of
+          (dwsl/update-layout ids-with-layout-parent
+                              {:layout-item-margin (zipmap attrs (repeat value))}
+                              {:ignore-touched true
+                               :page-id page-id})))))))
 
-(defn update-layout-sizing-limits [value shape-ids attributes]
-  (ptk/reify ::update-layout-sizing-limits
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [props (-> {:layout-item-min-w value
-                       :layout-item-min-h value
-                       :layout-item-max-w value
-                       :layout-item-max-h value}
-                      (select-keys attributes))]
-        (dwsl/update-layout-child shape-ids props)))))
+(defn update-layout-padding
+  ([value shape-ids attrs] (update-layout-padding value shape-ids attrs nil))
+  ([value shape-ids attrs page-id]
+   (ptk/reify ::update-layout-padding
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [ids-with-layout (shape-ids-with-layout state (or page-id (:current-page-id state)) shape-ids)]
+         (rx/of
+          (dwsl/update-layout ids-with-layout
+                              {:layout-padding (zipmap attrs (repeat value))}
+                              {:ignore-touched true
+                               :page-id page-id})))))))
+
+(defn update-layout-spacing
+  ([value shape-ids attributes] (update-layout-spacing value shape-ids attributes nil))
+  ([value shape-ids attributes page-id]
+   (ptk/reify ::update-layout-spacing
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [ids-with-layout (shape-ids-with-layout state (or page-id (:current-page-id state)) shape-ids)
+             layout-attributes (attributes->layout-gap attributes value)]
+         (rx/of
+          (dwsl/update-layout ids-with-layout
+                              layout-attributes
+                              {:ignore-touched true
+                               :page-id page-id})))))))
+
+(defn update-shape-position
+  ([value shape-ids attributes] (update-shape-position value shape-ids attributes nil))
+  ([value shape-ids attributes page-id]
+   (ptk/reify ::update-shape-position
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (rx/concat
+        (map #(dwt/update-position % (zipmap attributes (repeat value)) {:ignore-touched true :page-id page-id}) shape-ids))))))
+
+(defn update-layout-sizing-limits
+  ([value shape-ids attributes] (update-layout-sizing-limits value shape-ids attributes nil))
+  ([value shape-ids attributes page-id]
+   (ptk/reify ::update-layout-sizing-limits
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (let [props (-> {:layout-item-min-w value
+                        :layout-item-min-h value
+                        :layout-item-max-w value
+                        :layout-item-max-h value}
+                       (select-keys attributes))]
+         (rx/of
+          (dwsl/update-layout-child shape-ids props {:ignore-touched true
+                                                     :page-id page-id})))))))
+
+;; Token Types -----------------------------------------------------------------
+
+;; FIXME: the values should be lazy evaluated, probably a function,
+;; becasue on future we will need to translate that labels and that
+;; can not be done statically
+
+(def token-properties
+  "A map of default properties by token type"
+  (d/ordered-map
+   :border-radius
+   {:title "Border Radius"
+    :attributes ctt/border-radius-keys
+    :on-update-shape update-shape-radius-all
+    :modal {:key :tokens/border-radius
+            :fields [{:label "Border Radius"
+                      :key :border-radius}]}}
+
+   :color
+   {:title "Color"
+    :attributes #{:fill}
+    :all-attributes ctt/color-keys
+    :on-update-shape update-fill-stroke
+    :modal {:key :tokens/color
+            :fields [{:label "Color" :key :color}]}}
+
+   :stroke-width
+   {:title "Stroke Width"
+    :attributes ctt/stroke-width-keys
+    :on-update-shape update-stroke-width
+    :modal {:key :tokens/stroke-width
+            :fields [{:label "Stroke Width"
+                      :key :stroke-width}]}}
+
+   :sizing
+   {:title "Sizing"
+    :attributes #{:width :height}
+    :all-attributes ctt/sizing-keys
+    :on-update-shape update-shape-dimensions
+    :modal {:key :tokens/sizing
+            :fields [{:label "Sizing"
+                      :key :sizing}]}}
+   :dimensions
+   {:title "Dimensions"
+    :attributes #{:width :height}
+    :all-attributes (set/union
+                     ctt/spacing-keys
+                     ctt/sizing-keys
+                     ctt/border-radius-keys
+                     ctt/stroke-width-keys)
+    :on-update-shape update-shape-dimensions
+    :modal {:key :tokens/dimensions
+            :fields [{:label "Dimensions"
+                      :key :dimensions}]}}
+
+   :opacity
+   {:title "Opacity"
+    :attributes ctt/opacity-keys
+    :on-update-shape update-opacity
+    :modal {:key :tokens/opacity
+            :fields [{:label "Opacity"
+                      :key :opacity}]}}
+
+   :rotation
+   {:title "Rotation"
+    :attributes ctt/rotation-keys
+    :on-update-shape update-rotation
+    :modal {:key :tokens/rotation
+            :fields [{:label "Rotation"
+                      :key :rotation}]}}
+   :spacing
+   {:title "Spacing"
+    :attributes #{:column-gap :row-gap}
+    :all-attributes ctt/spacing-keys
+    :on-update-shape update-layout-spacing
+    :modal {:key :tokens/spacing
+            :fields [{:label "Spacing"
+                      :key :spacing}]}}))
+
+(defn get-token-properties [token]
+  (get token-properties (:type token)))
+
+(defn token-attributes [token-type]
+  (dm/get-in token-properties [token-type :attributes]))
+

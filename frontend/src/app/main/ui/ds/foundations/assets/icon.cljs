@@ -55,6 +55,7 @@
 (def ^:icon-id arrow-right "arrow-right")
 (def ^:icon-id arrow-up "arrow-up")
 (def ^:icon-id asc-sort "asc-sort")
+(def ^:icon-id at "at")
 (def ^:icon-id board "board")
 (def ^:icon-id boards-thumbnail "boards-thumbnail")
 (def ^:icon-id boolean-difference "boolean-difference")
@@ -62,6 +63,7 @@
 (def ^:icon-id boolean-flatten "boolean-flatten")
 (def ^:icon-id boolean-intersection "boolean-intersection")
 (def ^:icon-id boolean-union "boolean-union")
+(def ^:icon-id broken-link "broken-link")
 (def ^:icon-id bug "bug")
 (def ^:icon-id character-a "character-a")
 (def ^:icon-id character-b "character-b")
@@ -136,6 +138,7 @@
 (def ^:icon-id fill-content "fill-content")
 (def ^:icon-id filter "filter")
 (def ^:icon-id fixed-width "fixed-width")
+(def ^:icon-id fit-content "fit-content")
 (def ^:icon-id flex "flex")
 (def ^:icon-id flex-grid "flex-grid")
 (def ^:icon-id flex-horizontal "flex-horizontal")
@@ -164,6 +167,7 @@
 (def ^:icon-id icon "icon")
 (def ^:icon-id img "img")
 (def ^:icon-id info "info")
+(def ^:icon-id import-export "import-export")
 (def ^:icon-id interaction "interaction")
 (def ^:icon-id join-nodes "join-nodes")
 (def ^:icon-id justify-content-column-around "justify-content-column-around")
@@ -287,17 +291,17 @@
 (def ^:private schema:icon
   [:map
    [:class {:optional true} [:maybe :string]]
-   [:id [:and :string [:fn #(contains? icon-list %)]]]
+   [:icon-id [:and :string [:fn #(contains? icon-list %)]]]
    [:size  {:optional true}
     [:maybe [:enum "s" "m"]]]])
 
 (mf/defc icon*
   {::mf/props :obj
    ::mf/schema schema:icon}
-  [{:keys [id size class] :rest props}]
+  [{:keys [icon-id size class] :rest props}]
   (let [class (dm/str (or class "") " " (stl/css :icon))
         props (mf/spread-props props {:class class :width icon-size-m :height icon-size-m})
         size-px (cond (= size "s") icon-size-s :else icon-size-m)
         offset (/ (- icon-size-m size-px) 2)]
     [:> "svg" props
-     [:use {:href (dm/str "#icon-" id) :width size-px :height size-px :x offset :y offset}]]))
+     [:use {:href (dm/str "#icon-" icon-id) :width size-px :height size-px :x offset :y offset}]]))

@@ -29,11 +29,11 @@
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]
-   [app.main.ui.workspace.colorpicker.gradients :refer [gradients]]
+   [app.main.ui.workspace.colorpicker.gradients :refer [gradients*]]
    [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector]]
    [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector]]
    [app.main.ui.workspace.colorpicker.libraries :refer [libraries]]
-   [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
+   [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.colorpicker.shortcuts :as sc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -110,8 +110,11 @@
                                      :linear :linear-gradient
                                      :radial :radial-gradient)
                                    :color))
-        active-color-tab       (mf/use-state (dc/get-active-color-tab))
-        drag?                  (mf/use-state false)
+        active-color-tab       (mf/use-state #(dc/get-active-color-tab))
+        drag?*                 (mf/use-state false)
+        drag?                  (deref drag?*)
+
+        type                   (if (= @active-color-tab "hsva") :hsv :rgb)
 
         fill-image-ref         (mf/use-ref nil)
 
@@ -132,7 +135,7 @@
            (st/emit! (dc/update-colorpicker-color
                       {:image (-> (select-keys image [:id :width :height :mtype :name])
                                   (assoc :keep-aspect-ratio true))}
-                      (not @drag?)))))
+                      (not drag?)))))
 
         on-fill-image-click
         (mf/use-fn #(dom/click (mf/ref-val fill-image-ref)))
@@ -149,7 +152,6 @@
            (let [keep-aspect-ratio? (-> current-color :image :keep-aspect-ratio not)
                  image              (-> (:image current-color)
                                         (assoc :keep-aspect-ratio keep-aspect-ratio?))]
-
 
              (st/emit!
               (dc/update-colorpicker-color {:image image} true)
@@ -174,15 +176,11 @@
 
         handle-change-color
         (mf/use-fn
-         (mf/deps current-color @drag?)
+         (mf/deps current-color drag?)
          (fn [color]
-           (when (or (not= (str/lower (:hex color)) (str/lower (:hex current-color)))
-                     (not= (:h color) (:h current-color))
-                     (not= (:s color) (:s current-color))
-                     (not= (:v color) (:v current-color)))
-             (let [recent-color (merge current-color color)
-                   recent-color (dc/materialize-color-components recent-color)]
-               (st/emit! (dc/update-colorpicker-color recent-color (not @drag?)))))))
+           (let [color (merge current-color color)
+                 color (dc/materialize-color-components color)]
+             (st/emit! (dc/update-colorpicker-color color (not drag?))))))
 
         handle-click-picker
         (mf/use-fn
@@ -214,18 +212,18 @@
 
         on-start-drag
         (mf/use-fn
-         (mf/deps drag? node-ref)
+         (mf/deps drag?* node-ref)
          (fn []
            (reset! should-update? false)
-           (reset! drag? true)
+           (reset! drag?* true)
            (st/emit! (dwu/start-undo-transaction (mf/ref-val node-ref)))))
 
         on-finish-drag
         (mf/use-fn
-         (mf/deps drag? node-ref)
+         (mf/deps drag?* node-ref)
          (fn []
            (reset! should-update? true)
-           (reset! drag? false)
+           (reset! drag?* false)
            (st/emit! (dwu/commit-undo-transaction (mf/ref-val node-ref)))))
 
         on-color-accept
@@ -346,7 +344,7 @@
                                       [:div {:class (stl/css :picker-detail-wrapper)}
                                        [:div {:class (stl/css :center-circle)}]
                                        [:canvas#picker-detail {:class (stl/css :picker-detail) :width 256 :height 140}]]
-                                      [:& ramp-selector
+                                      [:> ramp-selector*
                                        {:color current-color
                                         :disable-opacity disable-opacity
                                         :on-change handle-change-color
@@ -405,104 +403,104 @@
                                 :h h :s s :v v
                                 :alpha (/ alpha 255)}))))
 
-    [:div {:class (stl/css :colorpicker)
-           :ref node-ref
-           :style {:touch-action "none"}}
-     [:div {:class (stl/css :top-actions)}
-      [:div {:class (stl/css :top-actions-right)}
-       (when (= :gradient selected-mode)
-         [:div {:class (stl/css :opacity-input-wrapper)}
-          [:span {:class (stl/css :icon-text)} "%"]
-          [:> numeric-input*
-           {:value (-> data :opacity opacity->string)
-            :on-change handle-change-gradient-opacity
-            :default 100
-            :min 0
-            :max 100}]])
+    [:*
+     [:div {:class (stl/css :colorpicker)
+            :ref node-ref
+            :style {:touch-action "none"}}
+      [:div {:class (stl/css :top-actions)}
+       [:div {:class (stl/css :top-actions-right)}
+        (when (= :gradient selected-mode)
+          [:div {:class (stl/css :opacity-input-wrapper)}
+           [:span {:class (stl/css :icon-text)} "%"]
+           [:> numeric-input*
+            {:value (-> data :opacity opacity->string)
+             :on-change handle-change-gradient-opacity
+             :default 100
+             :min 0
+             :max 100}]])
 
-       (when (or (not disable-gradient) (not disable-image))
-         [:div {:class (stl/css :select)}
-          [:& select
-           {:default-value selected-mode
-            :options options
-            :on-change handle-change-mode}]])]
+        (when (or (not disable-gradient) (not disable-image))
+          [:div {:class (stl/css :select)}
+           [:& select
+            {:default-value selected-mode
+             :options options
+             :on-change handle-change-mode}]])]
 
-      (when (not= selected-mode :image)
-        [:button {:class (stl/css-case :picker-btn true
-                                       :selected picking-color?)
-                  :on-click handle-click-picker}
-         i/picker])]
+       (when (not= selected-mode :image)
+         [:button {:class (stl/css-case :picker-btn true
+                                        :selected picking-color?)
+                   :on-click handle-click-picker}
+          i/picker])]
 
-     (when (= selected-mode :gradient)
-       [:& gradients
-        {:type (:type state)
-         :stops (:stops state)
-         :editing-stop (:editing-stop state)
-         :on-stop-edit-start handle-stop-edit-start
-         :on-stop-edit-finish handle-stop-edit-finish
-         :on-select-stop handle-change-gradient-selected-stop
-         :on-change-type handle-change-gradient-type
-         :on-change-stop handle-gradient-change-stop
-         :on-add-stop-auto handle-gradient-add-stop-auto
-         :on-add-stop-preview handle-gradient-add-stop-preview
-         :on-remove-stop handle-gradient-remove-stop
-         :on-rotate-stops handle-rotate-stops
-         :on-reverse-stops handle-reverse-stops
-         :on-reorder-stops handle-reorder-stops}])
+      (when (= selected-mode :gradient)
+        [:> gradients*
+         {:type (:type state)
+          :stops (:stops state)
+          :editing-stop (:editing-stop state)
+          :on-stop-edit-start handle-stop-edit-start
+          :on-stop-edit-finish handle-stop-edit-finish
+          :on-select-stop handle-change-gradient-selected-stop
+          :on-change-type handle-change-gradient-type
+          :on-change-stop handle-gradient-change-stop
+          :on-add-stop-auto handle-gradient-add-stop-auto
+          :on-add-stop-preview handle-gradient-add-stop-preview
+          :on-remove-stop handle-gradient-remove-stop
+          :on-rotate-stops handle-rotate-stops
+          :on-reverse-stops handle-reverse-stops
+          :on-reorder-stops handle-reorder-stops}])
 
-     (if (= selected-mode :image)
-       (let [uri (cfg/resolve-file-media (:image current-color))
-             keep-aspect-ratio? (-> current-color :image :keep-aspect-ratio)]
-         [:div {:class (stl/css :select-image)}
-          [:div {:class (stl/css :content)}
-           (when (:image current-color)
-             [:img {:src uri}])]
+      (if (= selected-mode :image)
+        (let [uri (cfg/resolve-file-media (:image current-color))
+              keep-aspect-ratio? (-> current-color :image :keep-aspect-ratio)]
+          [:div {:class (stl/css :select-image)}
+           [:div {:class (stl/css :content)}
+            (when (:image current-color)
+              [:img {:src uri}])]
 
-          (when (some? (:image current-color))
-            [:div {:class (stl/css :checkbox-option)}
-             [:label {:for "keep-aspect-ratio"
-                      :class (stl/css-case  :global/checked keep-aspect-ratio?)}
-              [:span {:class (stl/css-case :global/checked keep-aspect-ratio?)}
-               (when keep-aspect-ratio?
-                 i/status-tick)]
-              (tr "media.keep-aspect-ratio")
-              [:input {:type "checkbox"
-                       :id "keep-aspect-ratio"
-                       :checked keep-aspect-ratio?
-                       :on-change handle-change-keep-aspect-ratio}]]])
-          [:button
-           {:class (stl/css :choose-image)
-            :title (tr "media.choose-image")
-            :aria-label (tr "media.choose-image")
-            :on-click on-fill-image-click}
-           (tr "media.choose-image")
-           [:& file-uploader
-            {:input-id "fill-image-upload"
-             :accept "image/jpeg,image/png"
-             :multi false
-             :ref fill-image-ref
-             :on-selected on-fill-image-selected}]]])
-       [:*
-        [:div {:class (stl/css :colorpicker-tabs)}
-         [:> tab-switcher* {:tabs tabs
-                            :default-selected "ramp"
-                            :on-change-tab on-change-tab}]]
+           (when (some? (:image current-color))
+             [:div {:class (stl/css :checkbox-option)}
+              [:label {:for "keep-aspect-ratio"
+                       :class (stl/css-case  :global/checked keep-aspect-ratio?)}
+               [:span {:class (stl/css-case :global/checked keep-aspect-ratio?)}
+                (when keep-aspect-ratio?
+                  i/status-tick)]
+               (tr "media.keep-aspect-ratio")
+               [:input {:type "checkbox"
+                        :id "keep-aspect-ratio"
+                        :checked keep-aspect-ratio?
+                        :on-change handle-change-keep-aspect-ratio}]]])
+           [:button
+            {:class (stl/css :choose-image)
+             :title (tr "media.choose-image")
+             :aria-label (tr "media.choose-image")
+             :on-click on-fill-image-click}
+            (tr "media.choose-image")
+            [:& file-uploader
+             {:input-id "fill-image-upload"
+              :accept "image/jpeg,image/png"
+              :multi false
+              :ref fill-image-ref
+              :on-selected on-fill-image-selected}]]])
+        [:*
+         [:div {:class (stl/css :colorpicker-tabs)}
+          [:> tab-switcher* {:tabs tabs
+                             :default-selected "ramp"
+                             :on-change-tab on-change-tab}]]
 
-        [:& color-inputs
-         {:type (if (= @active-color-tab :hsva) :hsv :rgb)
-          :disable-opacity disable-opacity
-          :color current-color
-          :on-change handle-change-color}]
+         [:& color-inputs
+          {:type type
+           :disable-opacity disable-opacity
+           :color current-color
+           :on-change handle-change-color}]
 
-        [:& libraries
-         {:state state
-          :current-color current-color
-          :disable-gradient disable-gradient
-          :disable-opacity disable-opacity
-          :disable-image disable-image
-          :on-select-color on-select-library-color
-          :on-add-library-color on-add-library-color}]])
-
+         [:& libraries
+          {:state state
+           :current-color current-color
+           :disable-gradient disable-gradient
+           :disable-opacity disable-opacity
+           :disable-image disable-image
+           :on-select-color on-select-library-color
+           :on-add-library-color on-add-library-color}]])]
      (when (fn? on-accept)
        [:div {:class (stl/css :actions)}
         [:button {:class (stl/css-case
@@ -522,32 +520,41 @@
         max-y   (- vh h)
         rulers? (mf/deref refs/rulers?)
         left-offset (if rulers? 40 18)
-        right-offset (+ w 40)]
-
+        right-offset (+ w 40)
+        top-offset (dm/str (- y 70) "px")
+        bottom-offset "1rem"
+        max-height-top (str "calc(100vh - " top-offset)
+        max-height-bottom (str "calc(100vh -" bottom-offset)]
     (cond
       (or (nil? x) (nil? y))
-      #js {:left "auto" :right "16rem" :top "4rem"}
+      #js {:left "auto" :right "16rem" :top "4rem" :maxHeight "calc(100vh - 4rem)"}
 
       (= position :left)
       (if (> y max-y)
         #js {:left (dm/str (- x right-offset) "px")
-             :bottom "1rem"}
+             :bottom bottom-offset
+             :maxHeight max-height-bottom}
         #js {:left (dm/str (- x right-offset) "px")
-             :top (dm/str (- y 70) "px")})
+             :top top-offset
+             :maxHeight max-height-top})
 
       (= position :right)
       (if (> y max-y)
         #js {:left (dm/str (+ x 80) "px")
-             :bottom "1rem"}
+             :bottom bottom-offset
+             :maxHeight max-height-bottom}
         #js {:left (dm/str (+ x 80) "px")
-             :top (dm/str (- y 70) "px")})
+             :top top-offset
+             :maxHeight max-height-top})
 
       :else
       (if (> y max-y)
         #js {:left (dm/str (+ x left-offset) "px")
-             :bottom "1rem"}
+             :bottom bottom-offset
+             :maxHeight max-height-bottom}
         #js {:left (dm/str (+ x left-offset) "px")
-             :top (dm/str (- y 70) "px")}))))
+             :top top-offset
+             :maxHeight max-height-top}))))
 
 (mf/defc colorpicker-modal
   {::mf/register modal/components

@@ -8,11 +8,13 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.types.color :as ctc]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.reorder-handler :refer [reorder-handler]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
+   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -140,24 +142,23 @@
     [:div {:class (stl/css-case
                    :stroke-data true
                    :dnd-over-top (= (:over dprops) :top)
-                   :dnd-over-bot (= (:over dprops) :bot))
-           :ref dref}
-           ;; Stroke Color
-     [:& color-row {:color {:color (:stroke-color stroke)
-                            :opacity (:stroke-opacity stroke)
-                            :id (:stroke-color-ref-id stroke)
-                            :file-id (:stroke-color-ref-file stroke)
-                            :gradient (:stroke-color-gradient stroke)
-                            :image (:stroke-image stroke)}
-                    :index index
-                    :title title
-                    :on-change on-color-change-refactor
-                    :on-detach on-color-detach
-                    :on-remove on-remove
-                    :disable-drag disable-drag
-                    :on-focus on-focus
-                    :select-on-focus select-on-focus
-                    :on-blur on-blur}]
+                   :dnd-over-bot (= (:over dprops) :bot))}
+
+     (when (some? on-reorder)
+       [:& reorder-handler {:ref dref}])
+
+     ;; Stroke Color
+     ;; FIXME: memorize stroke color
+     [:> color-row* {:color (ctc/stroke->shape-color stroke)
+                     :index index
+                     :title title
+                     :on-change on-color-change-refactor
+                     :on-detach on-color-detach
+                     :on-remove on-remove
+                     :disable-drag disable-drag
+                     :on-focus on-focus
+                     :select-on-focus select-on-focus
+                     :on-blur on-blur}]
 
            ;; Stroke Width, Alignment & Style
      [:div {:class (stl/css :stroke-options)}

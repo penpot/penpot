@@ -41,7 +41,7 @@
 (defn- on-success
   [profile data]
   (if (:changed data)
-    (st/emit! (du/fetch-profile)
+    (st/emit! (du/refresh-profile)
               (modal/hide))
     (let [message (tr "notifications.validation-email-sent" (:email profile))]
       (st/emit! (ntf/info message)
@@ -59,7 +59,7 @@
    [:map {:title "EmailChangeForm"}
     [:email-1 ::sm/email]
     [:email-2 ::sm/email]]
-   [:fn {:error/code "errors.invalid-email-confirmation"
+   [:fn {:error/fn #(tr "errors.invalid-email-confirmation")
          :error/field :email-2}
     (fn [data]
       (let [email-1 (:email-1 data)

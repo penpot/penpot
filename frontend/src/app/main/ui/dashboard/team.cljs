@@ -31,7 +31,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (def ^:private arrow-icon
@@ -279,27 +278,30 @@
         is-you           (= (:id profile) (:id member))
 
         can-change-rol   (or is-owner is-admin)
-        not-superior     (or is-admin (and can-change-rol (or member-is-admin member-is-editor member-is-viewer)))
+        not-superior     (or (and (not member-is-owner) is-admin) (and can-change-rol (or member-is-admin member-is-editor member-is-viewer)))
 
         role             (cond
                            member-is-owner  "labels.owner"
                            member-is-admin  "labels.admin"
                            member-is-editor "labels.editor"
-                           :else             "labels.viewer")
-
+                           :else            "labels.viewer")
         on-show          (mf/use-fn #(reset! show? true))
         on-hide          (mf/use-fn #(reset! show? false))]
     [:*
      (if (and can-change-rol not-superior (not (and is-you is-owner)))
        [:div {:class (stl/css :rol-selector :has-priv)
+              :role "combobox"
+              :aria-labelledby "role-label-id"
               :on-click on-show}
-        [:span {:class (stl/css :rol-label)} (tr role)]
+        [:span {:class (stl/css :rol-label)
+                :id "role-label-id"} (tr role)]
         arrow-icon]
        [:div {:class (stl/css :rol-selector)}
         [:span {:class (stl/css :rol-label)} (tr role)]])
 
      [:& dropdown {:show @show? :on-close on-hide}
-      [:ul {:class (stl/css :roles-dropdown)}
+      [:ul {:class (stl/css :roles-dropdown)
+            :role "listbox"}
        [:li {:on-click on-set-viewer
              :class (stl/css :rol-dropdown-item)}
         (tr "labels.viewer")]
@@ -487,7 +489,6 @@
 
         total-members
         (count members)
-
 
         owner
         (mf/with-memo [members]
@@ -741,15 +742,12 @@
      [:> i18n/tr-html* {:content (tr "labels.no-invitations-hint")
                         :tag-name "span"}])])
 
-(def ^:private ref:invitations
-  (l/derived :invitations st/state))
-
 (mf/defc invitation-section*
   {::mf/props :obj
    ::mf/private true}
   [{:keys [team]}]
   (let [permissions (get team :permissions)
-        invitations (mf/deref ref:invitations)
+        invitations (get team :invitations)
 
         team-id     (get team :id)
 
@@ -955,7 +953,7 @@
 
       [:span {:title (tr "dashboard.webhooks.cant-edit")
               :class (stl/css :menu-disabled)}
-       [:> icon* {:id "menu"}]])))
+       [:> icon* {:icon-id "menu"}]])))
 
 (mf/defc webhook-item*
   {::mf/wrap [mf/memo]
@@ -1035,13 +1033,10 @@
        :key (dm/str (:id webhook))
        :permissions permissions}])])
 
-(def ^:private ref:webhooks
-  (l/derived :webhooks st/state))
-
 (mf/defc webhooks-page*
   {::mf/props :obj}
   [{:keys [team]}]
-  (let [webhooks (mf/deref ref:webhooks)]
+  (let [webhooks (:webhooks team)]
 
     (mf/with-effect [team]
       (dom/set-html-title

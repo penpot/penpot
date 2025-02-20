@@ -9,10 +9,10 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.main.data.changes :as dch]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.path.common :refer [check-path-content!]]
    [app.main.data.workspace.path.helpers :as helpers]
    [app.main.data.workspace.path.state :as st]
-   [app.main.data.workspace.state-helpers :as wsh]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -83,7 +83,7 @@
 
      ptk/WatchEvent
      (watch [it state _]
-       (let [objects     (wsh/lookup-page-objects state)
+       (let [objects     (dsh/lookup-page-objects state)
              page-id     (:current-page-id state)
              id          (get-in state [:workspace-local :edition])
              old-content (get-in state [:workspace-local :edit-path id :old-content])

@@ -1,7 +1,8 @@
 {:deps {:aliases [:dev]}
- :http {:port 3448}
- :nrepl {:port 3447 :host "0.0.0.0"}
- :dev-http {8888 "classpath:public"}
+ :http {:port #shadow/env ["HTTP_PORT" :as :int :default 3448]}
+ :nrepl {:port #shadow/env ["NREPL_PORT" :as :int :default 3447] :host "0.0.0.0"}
+ :dev-http {#shadow/env ["DEV_PORT" :as :int :default 8888] "classpath:public"}
+ :cache-dir #shadow/env ["CACHE" :default ".shadow-cljs"]
 
  :builds
  {:main
@@ -126,8 +127,10 @@
    :modules
    {:base
     {:entries []}
+
     :components
-    {:exports {default app.main.ui.ds/default}
+    {:exports {default app.main.ui.ds/default
+               helpers app.main.ui.ds.helpers/default}
      :depends-on #{:base}}}
 
    :compiler-options
@@ -144,7 +147,7 @@
 
    :modules
    {:test {:init-fn frontend-tests.runner/init
-           :prepend-js "globalThis.navigator = {userAgent: \"\"}"}}}
+           :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}}
 
   :lib-penpot
   {:target :esm

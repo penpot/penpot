@@ -181,7 +181,7 @@
            (let [mdata  {:on-success on-file-created}
                  params {:project-id project-id}]
              (st/emit! (-> (dd/create-file (with-meta params mdata))
-                           (with-meta {::ev/origin origin}))))))
+                           (with-meta {::ev/origin origin :has-files (> file-count 0)}))))))
 
         on-create-click
         (mf/use-fn
@@ -338,7 +338,7 @@
                                                  ::ev/origin "dashboard"}))))]
 
     (mf/with-effect [show-team-hero?]
-      (swap! storage/global assoc ::show-eam-hero show-team-hero?))
+      (swap! storage/global assoc ::show-team-hero show-team-hero?))
 
     (mf/with-effect [team]
       (let [tname (if (:is-default team)

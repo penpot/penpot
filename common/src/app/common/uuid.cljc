@@ -96,6 +96,11 @@
 
 
 #?(:cljs
+   (defn from-unsigned-parts
+     [a b c d]
+     (uuid (impl/fromUnsignedParts a b c d))))
+
+#?(:cljs
    (defn get-u32
      "A cached variant of get-unsigned-parts"
      [this]

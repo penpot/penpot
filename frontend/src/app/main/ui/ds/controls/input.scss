@@ -41,12 +41,31 @@
   }
 }
 
+.input-seamless {
+  --input-bg-color: none;
+  --input-outline-color: none;
+  --input-height: auto;
+  --input-margin: 0;
+
+  padding: 0;
+  border: none;
+
+  &:hover {
+    --input-bg-color: none;
+    --input-outline-color: none;
+  }
+
+  &:has(*:focus-visible) {
+    --input-bg-color: none;
+    --input-outline-color: none;
+  }
+}
+
 .input {
-  margin: unset; // remove settings from global css
+  margin: var(--input-margin, unset); // remove settings from global css
   padding: 0;
   appearance: none;
-  margin-inline-start: var(--sp-xxs);
-  height: $sz-32;
+  height: var(--input-height, #{$sz-32});
   border: none;
   background: none;
   inline-size: 100%;
@@ -65,6 +84,16 @@
   &::placeholder {
     --input-fg-color: var(--color-foreground-secondary);
   }
+
+  &:is(:autofill, :autofill:hover, :autofill:focus, :autofill:active) {
+    -webkit-text-fill-color: var(--input-fg-color);
+    -webkit-background-clip: text;
+    caret-color: var(--input-bg-color);
+  }
+}
+
+.input-with-icon {
+  margin-inline-start: var(--sp-xxs);
 }
 
 .icon {

@@ -24,6 +24,7 @@ $width-settings-bar-max: $s-500;
   background-color: var(--panel-background-color);
   height: 100vh;
   max-height: 100vh;
+  z-index: $z-index-1;
 
   .resize-area {
     grid-area: resize;
@@ -65,7 +66,7 @@ $width-settings-bar-max: $s-500;
   height: 100vh;
   width: $width-settings-bar;
   background-color: var(--panel-background-color);
-  z-index: 0;
+  z-index: $z-index-1;
   &.not-expand {
     max-width: $width-settings-bar;
   }

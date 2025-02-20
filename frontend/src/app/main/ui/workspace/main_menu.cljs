@@ -611,23 +611,25 @@
           [:span {:class (stl/css :item-name)}
            (tr "dashboard.add-shared")]]))
 
-     [:div {:class (stl/css :separator)}]
+     (when can-edit
+       [:*
+        [:div {:class (stl/css :separator)}]
 
-     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                              :on-click    on-pin-version
-                              :on-key-down on-pin-version-key-down
-                              :id          "file-menu-show-version-history"}
-      [:span {:class (stl/css :item-name)}
-       (tr "dashboard.create-version-menu")]]
+        [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                 :on-click    on-pin-version
+                                 :on-key-down on-pin-version-key-down
+                                 :id          "file-menu-show-version-history"}
+         [:span {:class (stl/css :item-name)}
+          (tr "dashboard.create-version-menu")]]
 
-     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                              :on-click    on-show-version-history
-                              :on-key-down on-show-version-history-key-down
-                              :id          "file-menu-show-version-history"}
-      [:span {:class (stl/css :item-name)}
-       (tr "dashboard.show-version-history")]]
+        [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                 :on-click    on-show-version-history
+                                 :on-key-down on-show-version-history-key-down
+                                 :id          "file-menu-show-version-history"}
+         [:span {:class (stl/css :item-name)}
+          (tr "dashboard.show-version-history")]]
 
-     [:div {:class (stl/css :separator)}]
+        [:div {:class (stl/css :separator)}]])
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :on-click    on-export-shapes
@@ -781,6 +783,11 @@
                           (keyword))]
              (reset! sub-menu* menu))))
 
+        on-power-up-click
+        (mf/use-fn
+         (fn []
+           (dom/open-new-window "https://penpot.app/pricing")))
+
         toggle-flag
         (mf/use-fn
          (fn [event]
@@ -892,7 +899,15 @@
                                :data-testid   "help-info"
                                :id          "file-menu-help-info"}
        [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.help-info")]
-       [:span {:class (stl/css :open-arrow)} i/arrow]]]
+       [:span {:class (stl/css :open-arrow)} i/arrow]]
+      [:> dropdown-menu-item* {:class (stl/css-case :menu-item true)
+                               :on-click    on-power-up-click
+                               :on-key-down (fn [event]
+                                              (when (kbd/enter? event)
+                                                (on-power-up-click)))
+                               :on-pointer-enter close-sub-menu
+                               :id          "file-menu-power-up"}
+       [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.power-up")]]]
 
      (case sub-menu
        :file

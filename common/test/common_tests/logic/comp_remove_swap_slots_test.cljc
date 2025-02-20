@@ -61,10 +61,10 @@
         blue1                  (ths/get-shape file :blue1)
 
         ;; ==== Action
-        changes                (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page)
+        changes                (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page))
+                                                          (pcb/with-objects (:objects page)))
                                                       uuid/zero             ;; parent-id
-                                                      (:id page)            ;; page-id
                                                       0                     ;; to-index
                                                       #{(:id blue1)})       ;; ids
 
@@ -91,10 +91,10 @@
 
 
         ;; ==== Action
-        changes                (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page)
+        changes                (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page))
+                                                          (pcb/with-objects (:objects page)))
                                                       (:id b2)              ;; parent-id
-                                                      (:id page)            ;; page-id
                                                       0                     ;; to-index
                                                       #{(:id blue1)})       ;; ids
 
@@ -121,10 +121,10 @@
 
         ;; ==== Action
         ;; Move blue1 into yellow
-        changes                (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page)
+        changes                (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page))
+                                                          (pcb/with-objects (:objects page)))
                                                       (:id yellow)          ;; parent-id
-                                                      (:id page)            ;; page-id
                                                       0                     ;; to-index
                                                       #{(:id blue1)})       ;; ids
 
@@ -134,10 +134,10 @@
         yellow'                (ths/get-shape file' :frame-yellow)
 
         ;; Move yellow into root
-        changes'               (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page')
+        changes'               (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page'))
+                                                          (pcb/with-objects (:objects page')))
                                                       uuid/zero               ;; parent-id
-                                                      (:id page')             ;; page-id
                                                       0                       ;; to-index
                                                       #{(:id yellow')})       ;; ids
 
@@ -164,10 +164,10 @@
 
         ;; ==== Action
         ;; Move blue1 into yellow
-        changes                (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page)
+        changes                (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page))
+                                                          (pcb/with-objects (:objects page)))
                                                       (:id yellow)          ;; parent-id
-                                                      (:id page)            ;; page-id
                                                       0                     ;; to-index
                                                       #{(:id blue1)})       ;; ids
 
@@ -178,10 +178,10 @@
         b2'                    (ths/get-shape file' :frame-b2)
 
         ;; Move yellow into b2
-        changes'               (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page')
+        changes'               (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page'))
+                                                          (pcb/with-objects (:objects page')))
                                                       (:id b2')               ;; parent-id
-                                                      (:id page')             ;; page-id
                                                       0                       ;; to-index
                                                       #{(:id yellow')})       ;; ids
 
@@ -254,10 +254,10 @@
 
         ;; ==== Action
         ;; Move blue1 into yellow
-        changes                (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page)
+        changes                (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page))
+                                                          (pcb/with-objects (:objects page)))
                                                       (:id yellow)          ;; parent-id
-                                                      (:id page)            ;; page-id
                                                       0                     ;; to-index
                                                       #{(:id blue1)})       ;; ids
 
@@ -308,10 +308,10 @@
         blue1                  (ths/get-shape file :blue1)
 
         ;; ==== Action
-        changes                (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page)
+        changes                (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page))
+                                                          (pcb/with-objects (:objects page)))
                                                       (:parent-id blue1)    ;; parent-id
-                                                      (:id page)            ;; page-id
                                                       2                     ;; to-index
                                                       #{(:id blue1)})       ;; ids
 
@@ -338,10 +338,10 @@
 
         ;; ==== Action
         ;; Move blue1 into yellow
-        changes                (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page)
+        changes                (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page))
+                                                          (pcb/with-objects (:objects page)))
                                                       (:id yellow)          ;; parent-id
-                                                      (:id page)            ;; page-id
                                                       0                     ;; to-index
                                                       #{(:id blue1)})       ;; ids
 
@@ -351,10 +351,10 @@
         page'                  (thf/current-page file')
         blue1'                 (ths/get-shape file' :blue1)
         b1'                    (ths/get-shape file' :frame-b1)
-        changes'               (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page')
+        changes'               (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page'))
+                                                          (pcb/with-objects (:objects page')))
                                                       (:id b1')             ;; parent-id
-                                                      (:id page)            ;; page-id
                                                       0                     ;; to-index
                                                       #{(:id blue1')})      ;; ids
 
@@ -382,10 +382,10 @@
 
         ;; ==== Action
         ;; Relocate blue1 into yellow
-        changes                (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page)
+        changes                (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page))
+                                                          (pcb/with-objects (:objects page)))
                                                       (:id yellow)          ;; parent-id
-                                                      (:id page)            ;; page-id
                                                       0                     ;; to-index
                                                       #{(:id blue1)})       ;; ids
 
@@ -396,10 +396,10 @@
         page'                  (thf/current-page file')
         blue1'                 (ths/get-shape file' :blue1)
         b1'                    (ths/get-shape file' :frame-b1)
-        changes'               (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page')
+        changes'               (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page'))
+                                                          (pcb/with-objects (:objects page')))
                                                       (:id b1')          ;; parent-id
-                                                      (:id page')        ;; page-id
                                                       0                  ;; to-index
                                                       #{(:id blue1')})   ;; ids
 
@@ -428,10 +428,10 @@
         green-copy             (ths/get-shape file :green-copy)
 
         ;; ==== Action
-        changes                (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page)
+        changes                (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page))
+                                                          (pcb/with-objects (:objects page)))
                                                       uuid/zero                  ;; parent-id
-                                                      (:id page)                 ;; page-id
                                                       0                          ;; to-index
                                                       #{(:id green-copy)})       ;; ids
 
@@ -459,10 +459,10 @@
         b2                     (ths/get-shape file :frame-b2)
 
         ;; ==== Action
-        changes                (cls/generate-relocate (pcb/empty-changes nil)
-                                                      (:objects page)
+        changes                (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                          (pcb/with-page-id (:id page))
+                                                          (pcb/with-objects (:objects page)))
                                                       (:id b2)                   ;; parent-id
-                                                      (:id page)                 ;; page-id
                                                       0                          ;; to-index
                                                       #{(:id green-copy)})       ;; ids
 

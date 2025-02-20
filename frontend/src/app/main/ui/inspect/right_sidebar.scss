@@ -1,0 +1,104 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.settings-bar-right {
+  min-width: $s-252;
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  left: unset;
+  right: unset;
+  grid-area: right-sidebar;
+  overflow: hidden;
+  &.viewer-code {
+    height: calc(100vh - $s-48);
+  }
+}
+
+.viewer-code {
+  padding-inline-start: $s-8;
+}
+
+.tool-windows {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
+  padding-left: var(--sp-m);
+}
+
+.shape-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $s-8;
+  align-items: center;
+  height: $s-32;
+}
+
+.layers-icon,
+.shape-icon {
+  @include flexCenter;
+  height: $s-32;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.layer-title {
+  @include bodySmallTypography;
+  @include textEllipsis;
+  height: $s-32;
+  padding: $s-8 0;
+  color: var(--assets-item-name-foreground-color-rest);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $s-40;
+  padding-top: $s-24;
+}
+
+.code-info,
+.help-info {
+  @include flexColumn;
+  align-items: center;
+  justify-content: flex-start;
+  gap: $s-12;
+  margin-right: $s-8;
+}
+
+.placeholder-icon {
+  @extend .empty-icon;
+}
+
+.placeholder-label {
+  @include bodySmallTypography;
+  text-align: center;
+  width: $s-200;
+  color: var(--empty-message-foreground-color);
+}
+
+.more-info-btn {
+  @extend .button-secondary;
+  @include uppercaseTitleTipography;
+  height: $s-32;
+  padding: $s-8 $s-24;
+}
+
+.inspect-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.viewer-tab-switcher {
+  --tabs-nav-padding-inline-start: 0;
+  --tabs-nav-padding-inline-end: var(--sp-m);
+}

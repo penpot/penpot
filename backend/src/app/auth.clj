@@ -8,7 +8,7 @@
   (:require
    [buddy.hashers :as hashers]))
 
-(def default-params
+(def ^:private default-options
   {:alg :argon2id
    :memory 32768 ;; 32 MiB
    :iterations 3
@@ -16,12 +16,12 @@
 
 (defn derive-password
   [password]
-  (hashers/derive password default-params))
+  (hashers/derive password default-options))
 
 (defn verify-password
   [attempt password]
   (try
-    (hashers/verify attempt password)
+    (hashers/verify attempt password default-options)
     (catch Throwable _
       {:update false
        :valid false})))

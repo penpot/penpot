@@ -4,6 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../../ds/typography.scss" as t;
 @import "refactor/common-refactor.scss";
 
 .version-toolbox {
@@ -145,6 +146,7 @@
   max-width: $s-200;
   right: 0;
   left: unset;
+  top: var(--offset);
   .menu-option {
     @extend .dropdown-element-base;
   }
@@ -229,4 +231,13 @@
 
 .version-snapshot-menu-btn {
   visibility: hidden;
+}
+
+.cta {
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-secondary);
+
+  a {
+    color: var(--color-accent-primary);
+  }
 }

@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-management-test
   (:require
+   [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
    [app.common.pprint :as pp]
    [app.common.types.shape :as cts]
@@ -82,7 +83,6 @@
       ;; Check that result is correct
       (t/is (nil? (:error out)))
       (let [result (:result out)]
-
         ;; Check that the returned result is a file but has different id
         ;; and different name.
         (t/is (= "file 1 (copy)" (:name result)))

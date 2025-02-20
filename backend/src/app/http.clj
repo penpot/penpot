@@ -42,8 +42,8 @@
 (def default-params
   {::port 6060
    ::host "0.0.0.0"
-   ::max-body-size (* 1024 1024 30)             ; default 30 MiB
-   ::max-multipart-body-size (* 1024 1024 120)}) ; default 120 MiB
+   ::max-body-size 31457280              ; default  30 MiB
+   ::max-multipart-body-size 367001600}) ; default 350 MiB
 
 (defmethod ig/expand-key ::server
   [k v]

@@ -68,7 +68,7 @@
              :title (color-title color)}]
       ;; No multiple selection
       (let [color    (if (string? color) {:color color :opacity 1} color)
-            id       (:id color)
+            id       (or (:ref-id color) (:id color))
             gradient (:gradient color)
             opacity  (:opacity color)
             image    (:image color)]

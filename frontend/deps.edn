@@ -9,8 +9,8 @@
   funcool/okulary {:mvn/version "2022.04.11-16"}
 
   funcool/potok2
-  {:git/tag "v2.1"
-   :git/sha "84c97b9"
+  {:git/tag "v2.2"
+   :git/sha "0f7e15a"
    :git/url "https://github.com/funcool/potok.git"
    :exclusions [funcool/beicon2]}
 
@@ -20,8 +20,8 @@
    :git/url "https://github.com/funcool/beicon.git"}
 
   funcool/rumext
-  {:git/tag "v2.14"
-   :git/sha "0016623"
+  {:git/tag "v2.20"
+   :git/sha "7f5e1cd"
    :git/url "https://github.com/funcool/rumext.git"}
 
   instaparse/instaparse {:mvn/version "1.5.0"}

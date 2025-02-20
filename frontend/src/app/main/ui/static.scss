@@ -318,7 +318,7 @@
 
     hr {
       margin: $s-20 0;
-      border-top: solid 1px var(--modal-separator-backogrund-color);
+      border-top: solid $s-1 var(--modal-separator-backogrund-color);
     }
 
     .separator {

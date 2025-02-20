@@ -12,7 +12,6 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.logging :as log]
    [app.common.logic.shapes :as cls]
    [app.common.spec :as us]
@@ -27,6 +26,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.token :as cto]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
@@ -78,7 +78,6 @@
   [component new-component-id library-data]
   (let [components-v2 (dm/get-in library-data [:options :components-v2])]
     (if components-v2
-
       (let [main-instance-page  (ctf/get-component-page library-data component)
             main-instance-shape (ctf/get-component-root library-data component)
             delta               (gpt/point (+ (:width main-instance-shape) 50) 0)
@@ -152,7 +151,7 @@
 
 (defn generate-duplicate-component
   "Create a new component copied from the one with the given id."
-  [changes library component-id components-v2]
+  [changes library component-id new-component-id components-v2]
   (let [component          (ctkl/get-component (:data library) component-id)
         new-name           (:name component)
 
@@ -160,7 +159,7 @@
                              (ctf/get-component-page (:data library) component))
 
         new-component-id   (when components-v2
-                             (uuid/next))
+                             new-component-id)
 
         [new-component-shape new-component-shapes  ; <- null in components-v2
          new-main-instance-shape new-main-instance-shapes]
@@ -180,6 +179,7 @@
                            (:id new-main-instance-shape)
                            (:id main-instance-page)
                            (:annotation component)))))
+
 
 (defn generate-instantiate-component
   "Generate changes to create a new instance from a component."
@@ -202,46 +202,51 @@
                                       position
                                       components-v2
                                       (cond-> {}
-                                        force-frame? (assoc :force-frame-id frame-id)))
+                                        force-frame?
+                                        (assoc :force-frame-id frame-id)))
 
-         first-shape (cond-> (first new-shapes)
-                       (not (nil? parent-id))
-                       (assoc :parent-id parent-id)
-                       (and (not (nil? parent)) (= :frame (:type parent)))
-                       (assoc :frame-id (:id parent))
-                       (and (not (nil? parent)) (not= :frame (:type parent)))
-                       (assoc :frame-id (:frame-id parent))
-                       (and (not (nil? parent)) (ctn/in-any-component? objects parent))
-                       (dissoc :component-root)
-                       (and (nil? parent) (not (nil? frame-id)))
-                       (assoc :frame-id frame-id))
+         first-shape
+         (cond-> (first new-shapes)
+           (not (nil? parent-id))
+           (assoc :parent-id parent-id)
+           (and (not (nil? parent)) (= :frame (:type parent)))
+           (assoc :frame-id (:id parent))
+           (and (not (nil? parent)) (not= :frame (:type parent)))
+           (assoc :frame-id (:frame-id parent))
+           (and (not (nil? parent)) (ctn/in-any-component? objects parent))
+           (dissoc :component-root)
+           (and (nil? parent) (not (nil? frame-id)))
+           (assoc :frame-id frame-id))
 
          ;; on copy/paste old id is used later to reorder the paster layers
-         changes (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
-                   (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id)))
+         changes
+         (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
+           (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id)))
 
          changes
          (if (ctl/grid-layout? objects (:parent-id first-shape))
            (let [target-cell (-> position meta :cell)
+
                  [row column]
-                 (if (some? target-cell)
-                   [(:row target-cell) (:column target-cell)]
-                   (gslg/get-drop-cell (:parent-id first-shape) objects position))]
+                 (when (some? target-cell)
+                   [(:row target-cell) (:column target-cell)])]
              (-> changes
                  (pcb/update-shapes
                   [(:parent-id first-shape)]
                   (fn [shape objects]
                     (-> shape
                         (ctl/assign-cells objects)
-                        (ctl/push-into-cell [(:id first-shape)] row column)
-                        (ctl/assign-cells objects)))
+                        (cond-> (and (some? row) (some? column))
+                          (-> (ctl/push-into-cell [(:id first-shape)] row column)
+                              (ctl/assign-cells objects)))))
                   {:with-objects? true})
                  (pcb/reorder-grid-children [(:parent-id first-shape)])))
            changes)
 
-         changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
-                         changes
-                         (rest new-shapes))]
+         changes
+         (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
+                 changes
+                 (rest new-shapes))]
 
      [new-shape changes])))
 
@@ -304,7 +309,12 @@
                         (and (some? (ctk/get-swap-slot ref-shape))
                              (nil? (ctk/get-swap-slot shape))
                              (not= (:id shape) shape-id))
-                        (pcb/update-shapes [(:id shape)] #(ctk/set-swap-slot % (ctk/get-swap-slot ref-shape))))))]
+                        (pcb/update-shapes [(:id shape)] #(ctk/set-swap-slot % (ctk/get-swap-slot ref-shape)))
+
+                        ;; If we can't get the ref-shape (e.g. it's in an external library not linked),
+                        ;: we can't do a suitable advance. So it's better to detach the shape
+                        (nil? ref-shape)
+                        (pcb/update-shapes [(:id shape)] ctk/detach-shape))))]
 
     (reduce skip-near changes children)))
 
@@ -1479,6 +1489,44 @@
                                        [{:type :set-remote-synced
                                          :remote-synced (:remote-synced shape)}]}))))))
 
+(defn- update-tokens
+  "Token synchronization algorithm. Copy the applied tokens that have changed
+   in the origin shape to the dest shape (applying or removing as necessary).
+
+   Only the given token attributes are synced."
+  [changes container dest-shape orig-shape token-attrs]
+  (let [orig-tokens  (get orig-shape :applied-tokens {})
+        dest-tokens  (get dest-shape :applied-tokens {})
+        dest-tokens' (reduce (fn [dest-tokens' token-attr]
+                               (let [orig-token (get orig-tokens token-attr)
+                                     dest-token (get dest-tokens token-attr)]
+                                 (if (= orig-token dest-token)
+                                   dest-tokens'
+                                   (if (nil? orig-token)
+                                     (dissoc dest-tokens' token-attr)
+                                     (assoc dest-tokens' token-attr orig-token)))))
+                             dest-tokens
+                             token-attrs)]
+    (if (= dest-tokens dest-tokens')
+      changes
+      (-> changes
+          (update :redo-changes conj (make-change
+                                      container
+                                      {:type :mod-obj
+                                       :id (:id dest-shape)
+                                       :operations [{:type :set
+                                                     :attr :applied-tokens
+                                                     :val dest-tokens'
+                                                     :ignore-touched true}]}))
+          (update :undo-changes conj (make-change
+                                      container
+                                      {:type :mod-obj
+                                       :id (:id dest-shape)
+                                       :operations [{:type :set
+                                                     :attr :applied-tokens
+                                                     :val dest-tokens
+                                                     :ignore-touched true}]}))))))
+
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
   attributes that have changed in the origin shape to the dest shape.
@@ -1511,37 +1559,41 @@
     (loop [attrs (->> (seq (keys ctk/sync-attrs))
                       ;; We don't update the flex-child attrs
                       (remove ctk/swap-keep-attrs)
-
                       ;; We don't do automatic update of the `layout-grid-cells` property.
                       (remove #(= :layout-grid-cells %)))
+           applied-tokens #{}
            roperations []
            uoperations '()]
 
       (let [attr (first attrs)]
         (if (nil? attr)
-          (if (empty? roperations)
+          (if (and (empty? roperations) (empty? applied-tokens))
             changes
             (let [all-parents (cfh/get-parent-ids (:objects container)
                                                   (:id dest-shape))]
-              (-> changes
-                  (update :redo-changes conj (make-change
-                                              container
-                                              {:type :mod-obj
-                                               :id (:id dest-shape)
-                                               :operations roperations}))
-                  (update :redo-changes conj (make-change
-                                              container
-                                              {:type :reg-objects
-                                               :shapes all-parents}))
-                  (update :undo-changes conj (make-change
-                                              container
-                                              {:type :mod-obj
-                                               :id (:id dest-shape)
-                                               :operations (vec uoperations)}))
-                  (update :undo-changes concat [(make-change
-                                                 container
-                                                 {:type :reg-objects
-                                                  :shapes all-parents})]))))
+              (cond-> changes
+                (seq roperations)
+                (-> (update :redo-changes conj (make-change
+                                                container
+                                                {:type :mod-obj
+                                                 :id (:id dest-shape)
+                                                 :operations roperations}))
+                    (update :redo-changes conj (make-change
+                                                container
+                                                {:type :reg-objects
+                                                 :shapes all-parents}))
+                    (update :undo-changes conj (make-change
+                                                container
+                                                {:type :mod-obj
+                                                 :id (:id dest-shape)
+                                                 :operations (vec uoperations)}))
+                    (update :undo-changes concat [(make-change
+                                                   container
+                                                   {:type :reg-objects
+                                                    :shapes all-parents})]))
+                (seq applied-tokens)
+                (update-tokens container dest-shape origin-shape applied-tokens))))
+
           (let [;; position-data is a special case because can be affected by :geometry-group and :content-group
                 ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
                 ;; so it's calculated again
@@ -1564,14 +1616,21 @@
                             :val (get dest-shape attr)
                             :ignore-touched true}
 
-                attr-group (get ctk/sync-attrs attr)]
+                attr-group (get ctk/sync-attrs attr)
 
+                token-attrs (cto/shape-attr->token-attrs attr)
+                applied-tokens' (cond-> applied-tokens
+                                  (not (and (touched attr-group)
+                                            omit-touched?))
+                                  (into token-attrs))]
             (if (or (= (get origin-shape attr) (get dest-shape attr))
                     (and (touched attr-group) omit-touched?))
               (recur (next attrs)
+                     applied-tokens'
                      roperations
                      uoperations)
               (recur (next attrs)
+                     applied-tokens'
                      (conj roperations roperation)
                      (conj uoperations uoperation)))))))))
 
@@ -1953,7 +2012,7 @@
         has-flow?        (partial ctp/get-frame-flow flows)]
 
     (reduce (fn [changes frame-id]
-              (let [name     (cfh/generate-unique-name @unames "Flow 1")
+              (let [name     (cfh/generate-unique-name "Flow" @unames :immediate-suffix? true)
                     frame-id (get ids-map frame-id)
                     flow-id  (uuid/next)
                     new-flow {:id flow-id

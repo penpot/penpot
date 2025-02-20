@@ -1,0 +1,172 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../ds/typography.scss" as *;
+@import "refactor/common-refactor.scss";
+
+.token-pill {
+  @include use-typography("code-font");
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: $s-6;
+  border: $s-1 solid var(--token-pill-border);
+  outline: $s-2 solid var(--token-pill-outline);
+  height: $s-24;
+  border-radius: $br-8;
+  padding: $s-2 $s-8 $s-2 $s-4;
+  color: var(--token-pill-foreground);
+  background: var(--token-pill-background);
+}
+
+.name-wrapper {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.divided-name-wrapper {
+  height: $s-16;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.first-name-wrapper {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.last-name-wrapper {
+  flex-shrink: 0;
+}
+
+.token-pill-icon {
+  color: var(--token-pill-accent);
+}
+
+.token-pill-default {
+  --token-pill-background: var(--color-background-tertiary);
+  --token-pill-foreground: var(--color-foreground-secondary);
+  --token-pill-border: var(--color-background-tertiary);
+  --token-pill-outline: none;
+  --token-pill-accent: var(--color-background-quaternary);
+  &:hover {
+    --token-pill-background: var(--color-token-background);
+    --token-pill-foreground: var(--color-foreground-primary);
+    --token-pill-border: var(--color-token-background);
+    --token-pill-outline: none;
+    --token-pill-accent: var(--color-background-quaternary);
+  }
+
+  &:focus-visible {
+    --token-pill-outline: var(--color-background-primary);
+    --token-pill-border: var(--color-accent-primary);
+    outline-offset: -3px;
+  }
+}
+
+.token-pill-applied {
+  --token-pill-background: var(--color-token-background);
+  --token-pill-foreground: var(--color-token-foreground);
+  --token-pill-border: var(--color-token-border);
+  --token-pill-accent: var(--color-token-accent);
+
+  &:hover {
+    --token-pill-background: var(--color-token-background);
+    --token-pill-foreground: var(--color-foreground-primary);
+    --token-pill-border: var(--color-token-foreground);
+    --token-pill-accent: var(--color-token-accent);
+  }
+
+  &:focus-visible {
+    --token-pill-background: var(--color-token-background);
+    --token-pill-foreground: var(--color-token-foreground);
+    --token-pill-accent: var(--color-token-accent);
+    --token-pill-outline: var(--color-background-primary);
+    --token-pill-border: var(--color-accent-primary);
+  }
+}
+
+.token-pill-invalid {
+  --token-pill-background: var(--color-background-tertiary);
+  --token-pill-foreground: var(--color-foreground-error);
+  --token-pill-border: var(--color-background-tertiary);
+  --token-pill-outline: none;
+  --token-pill-accent: var(--color-foreground-error);
+
+  &:hover,
+  &:focus-visible {
+    --token-pill-background: var(--color-background-tertiary);
+    --token-pill-accent: var(--color-foreground-error);
+  }
+  &:hover {
+    --token-pill-foreground: var(--color-foreground-primary);
+    --token-pill-outline: none;
+    --token-pill-border: var(--color-foreground-error);
+  }
+  &:focus-visible {
+    --token-pill-foreground: var(--color-foreground-error);
+    --token-pill-border: var(--color-accent-primary);
+    --token-pill-outline: var(--color-foreground-error);
+  }
+}
+
+.token-pill-invalid-applied {
+  --token-pill-border: var(--color-foreground-error);
+  &:hover,
+  &:focus-visible {
+    --token-pill-border: var(--color-foreground-error);
+  }
+}
+
+.token-pill-viewer {
+  --token-pill-background: var(--color-background-primary);
+  --token-pill-foreground: var(--color-foreground-secondary);
+  --token-pill-border: var(--color-background-tertiary);
+  --token-pill-outline: none;
+  --token-pill-accent: var(--color-background-quaternary);
+}
+
+.token-pill-applied-viewer {
+  --token-pill-background: var(--color-background-primary);
+  --token-pill-foreground: var(--color-token-foreground);
+  --token-pill-border: var(--color-token-accent);
+  --token-pill-outline: none;
+  --token-pill-accent: var(--color-token-accent);
+}
+
+.token-pill-invalid-viewer {
+  --token-pill-border: var(--color-token-background);
+  --token-pill-foreground: var(--color-foreground-error);
+  --token-pill-accent: var(--color-foreground-error);
+
+  &:hover,
+  &:focus-visible {
+    --token-pill-border: var(--color-token-background);
+    --token-pill-foreground: var(--color-foreground-error);
+    --token-pill-accent: var(--color-foreground-error);
+  }
+}
+
+.token-pill-invalid-applied-viewer {
+  --token-pill-border: var(--color-accent-error);
+  --token-pill-foreground: var(--color-foreground-error);
+  --token-pill-accent: var(--color-foreground-error);
+  &:hover,
+  &:focus-visible {
+    --token-pill-border: var(--color-accent-error);
+    --token-pill-foreground: var(--color-foreground-error);
+    --token-pill-accent: var(--color-foreground-error);
+  }
+}

@@ -33,6 +33,8 @@
         more-classes (get props :class)
         auto-focus?  (get props :auto-focus? false)
 
+        data-testid  (d/nilv data-testid input-name)
+
         form         (or form (mf/use-ctx form-ctx))
 
         type'        (mf/use-state input-type)
@@ -45,7 +47,9 @@
                          (= @type' "email"))
         placeholder  (when is-text? (or placeholder label))
 
-        touched?     (get-in @form [:touched input-name])
+        touched?     (and (contains? (:data @form) input-name)
+                          (get-in @form [:touched input-name]))
+
         error        (get-in @form [:errors input-name])
 
         value        (get-in @form [:data input-name] "")
@@ -153,6 +157,14 @@
          children])
 
       (cond
+        (and touched? (:message error) show-error)
+        (let [message (:message error)]
+          [:div {:id (dm/str "error-" input-name)
+                 :class (stl/css :error)
+                 :data-testid (dm/str data-testid "-error")}
+           message])
+
+        ;; FIXME: DEPRECATED
         (and touched? (:code error) show-error)
         (let [code (:code error)]
           [:div {:id (dm/str "error-" input-name)
@@ -173,7 +185,9 @@
 
         focus?   (mf/use-state false)
 
-        touched? (get-in @form [:touched input-name])
+        touched? (and (contains? (:data @form) input-name)
+                      (get-in @form [:touched input-name]))
+
         error    (get-in @form [:errors input-name])
 
         value    (get-in @form [:data input-name] "")
@@ -211,6 +225,9 @@
      [:label {:class (stl/css :textarea-label)} label]
      [:> :textarea props]
      (cond
+       (and touched? (:message error))
+       [:span {:class (stl/css :error)} (:message error)]
+
        (and touched? (:code error))
        [:span {:class (stl/css :error)} (tr (:code error))]
 

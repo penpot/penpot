@@ -1,5 +1,4 @@
 import { expect, describe, test } from "vitest";
-import TextEditor from "../TextEditor.js";
 import {
   createEmptyParagraph,
   createParagraph,
@@ -244,6 +243,251 @@ describe("SelectionController", () => {
     );
     expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
       "Hello, World!",
+    );
+  });
+
+  test("`insertPaste` should insert a paragraph from a pasted fragment (at start)", () => {
+    const textEditorMock =
+      TextEditorMock.createTextEditorMockWithText(", World!");
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    focus(selection, textEditorMock, root.firstChild.firstChild.firstChild, 0);
+    const paragraph = createParagraph([createInline(new Text("Hello"))]);
+    const fragment = document.createDocumentFragment();
+    fragment.append(paragraph);
+
+    selectionController.insertPaste(fragment);
+    expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.dataset.itype).toBe("root");
+    expect(textEditorMock.root.firstChild).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.firstChild.dataset.itype).toBe("paragraph");
+    expect(textEditorMock.root.firstChild.firstChild).toBeInstanceOf(
+      HTMLSpanElement,
+    );
+    expect(textEditorMock.root.firstChild.firstChild.dataset.itype).toBe(
+      "inline",
+    );
+    expect(textEditorMock.root.textContent).toBe("Hello, World!");
+    expect(textEditorMock.root.firstChild.firstChild.firstChild).toBeInstanceOf(
+      Text,
+    );
+    expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
+      "Hello",
+    );
+    expect(
+      textEditorMock.root.lastChild.firstChild.firstChild.nodeValue,
+    ).toBe(", World!");
+  });
+
+  test("`insertPaste` should insert a paragraph from a pasted fragment (at middle)", () => {
+    const textEditorMock =
+      TextEditorMock.createTextEditorMockWithText("Lorem dolor");
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    focus(selection, textEditorMock, root.firstChild.firstChild.firstChild, "Lorem ".length);
+    const paragraph = createParagraph([createInline(new Text("ipsum "))]);
+    const fragment = document.createDocumentFragment();
+    fragment.append(paragraph);
+
+    selectionController.insertPaste(fragment);
+    expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.dataset.itype).toBe("root");
+    expect(textEditorMock.root.firstChild).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.firstChild.dataset.itype).toBe("paragraph");
+    expect(textEditorMock.root.firstChild.firstChild).toBeInstanceOf(
+      HTMLSpanElement,
+    );
+    expect(textEditorMock.root.firstChild.firstChild.dataset.itype).toBe(
+      "inline",
+    );
+    expect(textEditorMock.root.textContent).toBe("Lorem ipsum dolor");
+    expect(textEditorMock.root.firstChild.firstChild.firstChild).toBeInstanceOf(
+      Text,
+    );
+    expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
+      "Lorem ",
+    );
+    expect(textEditorMock.root.children.item(1).firstChild.firstChild.nodeValue).toBe(
+      "ipsum ",
+    );
+    expect(textEditorMock.root.lastChild.firstChild.firstChild.nodeValue).toBe(
+      "dolor",
+    );
+  });
+
+  test("`insertPaste` should insert a paragraph from a pasted fragment (at end)", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWithText("Hello");
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    focus(
+      selection,
+      textEditorMock,
+      root.firstChild.firstChild.firstChild,
+      "Hello".length,
+    );
+    const paragraph = createParagraph([createInline(new Text(", World!"))]);
+    const fragment = document.createDocumentFragment();
+    fragment.append(paragraph);
+
+    selectionController.insertPaste(fragment);
+    expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.dataset.itype).toBe("root");
+    expect(textEditorMock.root.firstChild).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.firstChild.dataset.itype).toBe("paragraph");
+    expect(textEditorMock.root.firstChild.firstChild).toBeInstanceOf(
+      HTMLSpanElement,
+    );
+    expect(textEditorMock.root.firstChild.firstChild.dataset.itype).toBe(
+      "inline",
+    );
+    expect(textEditorMock.root.textContent).toBe("Hello, World!");
+    expect(textEditorMock.root.firstChild.firstChild.firstChild).toBeInstanceOf(
+      Text,
+    );
+    expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
+      "Hello",
+    );
+    expect(
+      textEditorMock.root.lastChild.firstChild.firstChild.nodeValue,
+    ).toBe(", World!");
+  });
+
+  test("`insertPaste` should insert an inline from a pasted fragment (at start)", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWithText(", World!");
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    focus(
+      selection,
+      textEditorMock,
+      root.firstChild.firstChild.firstChild,
+      0,
+    );
+    const paragraph = createParagraph([createInline(new Text("Hello"))]);
+    paragraph.dataset.inline = "force";
+    const fragment = document.createDocumentFragment();
+    fragment.append(paragraph);
+
+    selectionController.insertPaste(fragment);
+    expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.dataset.itype).toBe("root");
+    expect(textEditorMock.root.firstChild).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.firstChild.dataset.itype).toBe("paragraph");
+    expect(textEditorMock.root.firstChild.firstChild).toBeInstanceOf(
+      HTMLSpanElement,
+    );
+    expect(textEditorMock.root.firstChild.firstChild.dataset.itype).toBe(
+      "inline",
+    );
+    expect(textEditorMock.root.textContent).toBe("Hello, World!");
+    expect(textEditorMock.root.firstChild.firstChild.firstChild).toBeInstanceOf(
+      Text,
+    );
+    expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
+      "Hello",
+    );
+    expect(
+      textEditorMock.root.firstChild.children.item(1).firstChild.nodeValue,
+    ).toBe(", World!");
+  });
+
+  test("`insertPaste` should insert an inline from a pasted fragment (at middle)", () => {
+    const textEditorMock =
+      TextEditorMock.createTextEditorMockWithText("Lorem dolor");
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    focus(selection, textEditorMock, root.firstChild.firstChild.firstChild, "Lorem ".length);
+    const paragraph = createParagraph([createInline(new Text("ipsum "))]);
+    paragraph.dataset.inline = "force";
+    const fragment = document.createDocumentFragment();
+    fragment.append(paragraph);
+
+    selectionController.insertPaste(fragment);
+    expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.dataset.itype).toBe("root");
+    expect(textEditorMock.root.firstChild).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.firstChild.dataset.itype).toBe("paragraph");
+    expect(textEditorMock.root.firstChild.firstChild).toBeInstanceOf(
+      HTMLSpanElement,
+    );
+    expect(textEditorMock.root.firstChild.firstChild.dataset.itype).toBe(
+      "inline",
+    );
+    expect(textEditorMock.root.textContent).toBe("Lorem ipsum dolor");
+    expect(textEditorMock.root.firstChild.firstChild.firstChild).toBeInstanceOf(
+      Text,
+    );
+    expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
+      "Lorem ",
+    );
+    expect(textEditorMock.root.firstChild.children.item(1).firstChild.nodeValue).toBe(
+      "ipsum ",
+    );
+    expect(
+      textEditorMock.root.firstChild.children.item(2).firstChild.nodeValue,
+    ).toBe("dolor");
+  });
+
+  test("`insertPaste` should insert an inline from a pasted fragment (at end)", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWithText("Hello");
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    focus(
+      selection,
+      textEditorMock,
+      root.firstChild.firstChild.firstChild,
+      "Hello".length,
+    );
+    const paragraph = createParagraph([
+      createInline(new Text(", World!"))
+    ]);
+    paragraph.dataset.inline = "force";
+    const fragment = document.createDocumentFragment();
+    fragment.append(paragraph);
+
+    selectionController.insertPaste(fragment);
+    expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.dataset.itype).toBe("root");
+    expect(textEditorMock.root.firstChild).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.firstChild.dataset.itype).toBe("paragraph");
+    expect(textEditorMock.root.firstChild.firstChild).toBeInstanceOf(
+      HTMLSpanElement,
+    );
+    expect(textEditorMock.root.firstChild.firstChild.dataset.itype).toBe(
+      "inline",
+    );
+    expect(textEditorMock.root.textContent).toBe("Hello, World!");
+    expect(textEditorMock.root.firstChild.firstChild.firstChild).toBeInstanceOf(
+      Text,
+    );
+    expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
+      "Hello",
+    );
+    expect(textEditorMock.root.firstChild.children.item(1).firstChild.nodeValue).toBe(
+      ", World!",
     );
   });
 

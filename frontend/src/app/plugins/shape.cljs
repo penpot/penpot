@@ -15,7 +15,7 @@
    [app.common.record :as crc]
    [app.common.schema :as sm]
    [app.common.spec :as us]
-   [app.common.svg.path.legacy-parser2 :as spp]
+   [app.common.svg.path :as path]
    [app.common.text :as txt]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -211,7 +211,7 @@
                   (u/display-not-valid :name value)
 
                   :else
-                  (st/emit! (dwsh/update-shapes [id] #(assoc % :name value))))))}
+                  (st/emit! (dw/end-rename-shape id value)))))}
 
            :blocked
            {:this true
@@ -313,11 +313,10 @@
 
            :borderRadius
            {:this true
-            :get #(-> % u/proxy->shape :rx)
+            :get #(-> % u/proxy->shape :r1)
             :set
             (fn [self value]
-              (let [id (obj/get self "$id")
-                    shape (u/proxy->shape self)]
+              (let [id (obj/get self "$id")]
                 (cond
                   (or (not (us/safe-int? value)) (< value 0))
                   (u/display-not-valid :borderRadius value)
@@ -325,21 +324,15 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/display-not-valid :borderRadius "Plugin doesn't have 'content:write' permission")
 
-                  (or (not (ctsr/has-radius? shape)) (ctsr/radius-4? shape))
-                  (st/emit! (dwsh/update-shapes [id] #(-> %
-                                                          ctsr/switch-to-radius-1
-                                                          (ctsr/set-radius-1 value))))
-
                   :else
-                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-1 % value))))))}
+                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-all-corners % value))))))}
 
            :borderRadiusTopLeft
            {:this true
             :get #(-> % u/proxy->shape :r1)
             :set
             (fn [self value]
-              (let [id (obj/get self "$id")
-                    shape (u/proxy->shape self)]
+              (let [id (obj/get self "$id")]
                 (cond
                   (not (us/safe-int? value))
                   (u/display-not-valid :borderRadiusTopLeft value)
@@ -347,21 +340,15 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/display-not-valid :borderRadiusTopLeft "Plugin doesn't have 'content:write' permission")
 
-                  (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
-                  (st/emit! (dwsh/update-shapes [id] #(-> %
-                                                          (ctsr/switch-to-radius-4)
-                                                          (ctsr/set-radius-4 :r1 value))))
-
                   :else
-                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r1 value))))))}
+                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r1 value))))))}
 
            :borderRadiusTopRight
            {:this true
             :get #(-> % u/proxy->shape :r2)
             :set
             (fn [self value]
-              (let [id (obj/get self "$id")
-                    shape (u/proxy->shape self)]
+              (let [id (obj/get self "$id")]
                 (cond
                   (not (us/safe-int? value))
                   (u/display-not-valid :borderRadiusTopRight value)
@@ -369,21 +356,15 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/display-not-valid :borderRadiusTopRight "Plugin doesn't have 'content:write' permission")
 
-                  (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
-                  (st/emit! (dwsh/update-shapes [id] #(-> %
-                                                          (ctsr/switch-to-radius-4)
-                                                          (ctsr/set-radius-4 :r2 value))))
-
                   :else
-                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r2 value))))))}
+                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r2 value))))))}
 
            :borderRadiusBottomRight
            {:this true
             :get #(-> % u/proxy->shape :r3)
             :set
             (fn [self value]
-              (let [id (obj/get self "$id")
-                    shape (u/proxy->shape self)]
+              (let [id (obj/get self "$id")]
                 (cond
                   (not (us/safe-int? value))
                   (u/display-not-valid :borderRadiusBottomRight value)
@@ -391,21 +372,15 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/display-not-valid :borderRadiusBottomRight "Plugin doesn't have 'content:write' permission")
 
-                  (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
-                  (st/emit! (dwsh/update-shapes [id] #(-> %
-                                                          (ctsr/switch-to-radius-4)
-                                                          (ctsr/set-radius-4 :r3 value))))
-
                   :else
-                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r3 value))))))}
+                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r3 value))))))}
 
            :borderRadiusBottomLeft
            {:this true
             :get #(-> % u/proxy->shape :r4)
             :set
             (fn [self value]
-              (let [id (obj/get self "$id")
-                    shape (u/proxy->shape self)]
+              (let [id (obj/get self "$id")]
                 (cond
                   (not (us/safe-int? value))
                   (u/display-not-valid :borderRadiusBottomLeft value)
@@ -413,13 +388,8 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/display-not-valid :borderRadiusBottomLeft "Plugin doesn't have 'content:write' permission")
 
-                  (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
-                  (st/emit! (dwsh/update-shapes [id] #(-> %
-                                                          (ctsr/switch-to-radius-4)
-                                                          (ctsr/set-radius-4 :r4 value))))
-
                   :else
-                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r4 value))))))}
+                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r4 value))))))}
 
            :opacity
            {:this true
@@ -545,9 +515,10 @@
             ;; not enumerable so there are no infinite loops
             :enumerable false
             :get (fn [self]
-                   (let [shape (u/proxy->shape self)
-                         parent-id (:parent-id shape)]
-                     (shape-proxy plugin-id (obj/get self "$file") (obj/get self "$page") parent-id)))}
+                   (let [shape (u/proxy->shape self)]
+                     (when-not (cfh/root? shape)
+                       (let [parent-id (:parent-id shape)]
+                         (shape-proxy plugin-id (obj/get self "$file") (obj/get self "$page") parent-id)))))}
 
            :parentX
            {:this true
@@ -983,7 +954,7 @@
 
                  :else
                  (do (st/emit! (dwsl/create-layout-from-id id :flex :from-frame? true :calculate-params? false))
-                     (grid/grid-layout-proxy plugin-id file-id page-id id)))))
+                     (flex/flex-layout-proxy plugin-id file-id page-id id)))))
 
            :addGridLayout
            (fn []
@@ -1326,12 +1297,10 @@
          (cond-> (or (cfh/path-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
             {:name "content"
-             :get #(-> % u/proxy->shape :content format/format-path-content)
+             :get #(-> % u/proxy->shape :content upf/format-path)
              :set
              (fn [_ value]
-               (let [content
-                     (->> (parser/parse-path-content value)
-                          (spp/simplify-commands))]
+               (let [content (->> (path/parse value))]
                  (cond
                    (not (cfh/path-shape? data))
                    (u/display-not-valid :content-type type)

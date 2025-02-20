@@ -87,10 +87,16 @@
              (dom/blur! input))))
 
         context-value
-        (mf/spread props
-                   :on-change on-change'
-                   :encode-fn encode-fn
-                   :decode-fn decode-fn)]
+        (mf/spread-object props
+                          ;; We pass a special metadata for disable
+                          ;; key casing transformation in this
+                          ;; concrete case, because this component
+                          ;; uses legacy mode and props are in
+                          ;; kebab-case style
+                          ^{::mf/transform false}
+                          {:on-change on-change'
+                           :encode-fn encode-fn
+                           :decode-fn decode-fn})]
 
     [:& (mf/provider context) {:value context-value}
      [:div {:class (dm/str class " " (stl/css :radio-btn-wrapper))

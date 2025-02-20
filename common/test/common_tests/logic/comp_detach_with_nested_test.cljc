@@ -103,6 +103,83 @@
     (t/is (= (:shape-ref copy-nested-ellipse) (thi/id :nested-ellipse)))
     (t/is (nil? (ctk/get-swap-slot copy-nested-ellipse)))))
 
+(t/deftest test-advance-in-library
+  (let [;; ==== Setup
+        library (setup-file)
+        file    (-> (thf/sample-file :file2)
+                    (thc/instantiate-component :c-big-board
+                                               :copy-big-board
+                                               :library library
+                                               :children-labels [:copy-h-board-with-ellipse
+                                                                 :copy-nested-h-ellipse
+                                                                 :copy-nested-ellipse]))
+        page (thf/current-page file)
+
+        ;; ==== Action
+        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+                                                  (pcb/with-page page)
+                                                  (pcb/with-objects (:objects page)))
+                                              page
+                                              {(:id file) file
+                                               (:id library) library}
+                                              (thi/id :copy-big-board))
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        copy-h-board-with-ellipse (ths/get-shape file' :copy-h-board-with-ellipse)
+        copy-nested-h-ellipse     (ths/get-shape file' :copy-nested-h-ellipse)
+        copy-nested-ellipse       (ths/get-shape file' :copy-nested-ellipse)]
+
+    ;; ==== Check
+
+    ;; It should the same as above, but in an external library.
+    (thf/dump-file file)
+    (t/is (ctk/instance-root? copy-h-board-with-ellipse))
+    (t/is (= (:shape-ref copy-h-board-with-ellipse) (thi/id :board-with-ellipse)))
+    (t/is (nil? (ctk/get-swap-slot copy-h-board-with-ellipse)))
+
+    (t/is (ctk/instance-head? copy-nested-h-ellipse))
+    (t/is (= (:shape-ref copy-nested-h-ellipse) (thi/id :nested-h-ellipse)))
+    (t/is (nil? (ctk/get-swap-slot copy-nested-h-ellipse)))
+
+    (t/is (not (ctk/instance-head? copy-nested-ellipse)))
+    (t/is (= (:shape-ref copy-nested-ellipse) (thi/id :nested-ellipse)))
+    (t/is (nil? (ctk/get-swap-slot copy-nested-ellipse)))))
+
+(t/deftest test-advance-in-broken-library
+  (let [;; ==== Setup
+        library (setup-file)
+        file    (-> (thf/sample-file :file2)
+                    (thc/instantiate-component :c-big-board
+                                               :copy-big-board
+                                               :library library
+                                               :children-labels [:copy-h-board-with-ellipse
+                                                                 :copy-nested-h-ellipse
+                                                                 :copy-nested-ellipse]))
+        page (thf/current-page file)
+
+        ;; ==== Action
+        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+                                                  (pcb/with-page page)
+                                                  (pcb/with-objects (:objects page)))
+                                              page
+                                              {(:id file) file}
+                                              (thi/id :copy-big-board))
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        copy-h-board-with-ellipse (ths/get-shape file' :copy-h-board-with-ellipse)
+        copy-nested-h-ellipse     (ths/get-shape file' :copy-nested-h-ellipse)
+        copy-nested-ellipse       (ths/get-shape file' :copy-nested-ellipse)]
+
+    ;; ==== Check
+
+    ;; If the main component cannot be found, because it's in a library that is
+    ;; not available, the nested copies should be detached too.
+    (t/is (not (ctk/in-component-copy? copy-h-board-with-ellipse)))
+    (t/is (not (ctk/in-component-copy? copy-nested-h-ellipse)))
+    (t/is (not (ctk/in-component-copy? copy-nested-ellipse)))))
+
 (t/deftest test-dont-advance-when-swapped-copy
   (let [;; ==== Setup
         file (-> (setup-file)

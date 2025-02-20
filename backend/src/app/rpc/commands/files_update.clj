@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.files-update
   (:require
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
@@ -18,6 +19,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as feat.fdata]
+   [app.features.file-migrations :as feat.fmigr]
    [app.http.errors :as errors]
    [app.loggers.audit :as audit]
    [app.loggers.webhooks :as webhooks]
@@ -118,6 +120,7 @@
 (sv/defmethod ::update-file
   {::climit/id [[:update-file/by-profile ::rpc/profile-id]
                 [:update-file/global]]
+
    ::webhooks/event? true
    ::webhooks/batch-timeout (dt/duration "2m")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
@@ -202,45 +205,27 @@
    {:keys [profile-id file features changes session-id skip-validate] :as params}]
 
   (let [;; Retrieve the file data
-        file (feat.fdata/resolve-file-data cfg file)
+        file  (feat.fmigr/resolve-applied-migrations cfg file)
+        file  (feat.fdata/resolve-file-data cfg file)
+        file  (assoc file :features
+                     (-> features
+                         (set/difference cfeat/frontend-only-features)
+                         (set/union (:features file))))]
 
-        file (assoc file :features
-                    (-> features
-                        (set/difference cfeat/frontend-only-features)
-                        (set/union (:features file))))
+    ;; We create a new lexycal scope for clearly delimit the result of
+    ;; executing this update file operation and all its side effects
+    (let [file (px/invoke! executor
+                           (fn []
+                             ;; Process the file data on separated thread for avoid to do
+                             ;; the CPU intensive operation on vthread.
+                             (binding [cfeat/*current*  features
+                                       cfeat/*previous* (:features file)]
+                               (update-file-data! cfg file
+                                                  process-changes-and-validate
+                                                  changes skip-validate))))]
 
-        ;; Process the file data on separated thread for avoid to do
-        ;; the CPU intensive operation on vthread.
-        file  (px/invoke! executor
-                          (fn []
-                            (binding [cfeat/*current*  features
-                                      cfeat/*previous* (:features file)]
-                              (update-file-data! cfg file
-                                                 process-changes-and-validate
-                                                 changes skip-validate))))]
-
-    (when (feat.fdata/offloaded? file)
-      (let [storage (sto/resolve cfg ::db/reuse-conn true)]
-        (some->> (:data-ref-id file) (sto/touch-object! storage))))
-
-    (-> cfg
-        (assoc ::wrk/task :file-xlog-gc)
-        (assoc ::wrk/label (str "xlog:" (:id file)))
-        (assoc ::wrk/params {:file-id (:id file)})
-        (assoc ::wrk/delay (dt/duration "5m"))
-        (assoc ::wrk/dedupe true)
-        (assoc ::wrk/priority 1)
-        (wrk/submit!))
-
-    (persist-file! cfg file)
-
-    (let [params   (assoc params :file file)
-          response {:revn (:revn file)
-                    :lagged (get-lagged-changes conn params)}
-          features (db/create-array conn "text" (:features file))
-          deleted-at (if (::snapshot-data file)
-                       (dt/plus timestamp (cf/get-deletion-delay))
-                       (dt/plus timestamp (dt/duration {:hours 1})))]
+      (feat.fmigr/upsert-migrations! conn file)
+      (persist-file! cfg file)
 
       ;; Insert change (xlog) with deleted_at in a future data for
       ;; make them automatically eleggible for GC once they expires
@@ -250,19 +235,27 @@
                    :profile-id profile-id
                    :created-at timestamp
                    :updated-at timestamp
-                   :deleted-at deleted-at
+                   :deleted-at (if (::snapshot-data file)
+                                 (dt/plus timestamp (cf/get-deletion-delay))
+                                 (dt/plus timestamp (dt/duration {:hours 1})))
                    :file-id (:id file)
                    :revn (:revn file)
                    :version (:version file)
-                   :features features
+                   :features (:features file)
                    :label (::snapshot-label file)
                    :data (::snapshot-data file)
                    :changes (blob/encode changes)}
                   {::db/return-keys false})
 
       ;; Send asynchronous notifications
-      (send-notifications! cfg params)
+      (send-notifications! cfg params file))
 
+    (when (feat.fdata/offloaded? file)
+      (let [storage (sto/resolve cfg ::db/reuse-conn true)]
+        (some->> (:data-ref-id file) (sto/touch-object! storage))))
+
+    (let [response {:revn (:revn file)
+                    :lagged (get-lagged-changes conn params)}]
       (vary-meta response assoc ::audit/replace-props
                  {:id         (:id file)
                   :name       (:name file)
@@ -272,9 +265,10 @@
 
 (defn update-file!
   "A public api that allows apply a transformation to a file with all context setup."
-  [cfg file-id update-fn & args]
+  [{:keys [::db/conn] :as cfg} file-id update-fn & args]
   (let [file (get-file cfg file-id)
         file (apply update-file-data! cfg file update-fn args)]
+    (feat.fmigr/upsert-migrations! conn file)
     (persist-file! cfg file)))
 
 (def ^:private sql:get-file
@@ -302,8 +296,7 @@
 
   It also updates the project modified-at attr."
   [{:keys [::db/conn ::timestamp]} file]
-  (let [features (db/create-array conn "text" (:features file))
-        ;; The timestamp can be nil because this function is also
+  (let [;; The timestamp can be nil because this function is also
         ;; intended to be used outside of this module
         modified-at (or timestamp (dt/now))]
 
@@ -316,7 +309,7 @@
                 {:revn (:revn file)
                  :data (:data file)
                  :version (:version file)
-                 :features features
+                 :features (:features file)
                  :data-backend nil
                  :data-ref-id nil
                  :modified-at modified-at
@@ -375,38 +368,16 @@
                    (-> file
                        (assoc ::snapshot-data snapshot)
                        (assoc ::snapshot-label label)))
-                 file)
+                 file)]
 
-          file (cond-> file
-                 (contains? cfeat/*current* "fdata/objects-map")
-                 (feat.fdata/enable-objects-map)
-
-                 (contains? cfeat/*current* "fdata/pointer-map")
-                 (feat.fdata/enable-pointer-map)
-
-                 :always
-                 (update :data blob/encode))]
-
-      (feat.fdata/persist-pointers! cfg id)
-
-      file)))
+      (bfc/encode-file cfg file))))
 
 (defn- get-file-libraries
   "A helper for preload file libraries, mainly used for perform file
   semantical and structural validation"
   [{:keys [::db/conn] :as cfg} file]
   (->> (files/get-file-libraries conn (:id file))
-       (into [file] (map (fn [{:keys [id]}]
-                           (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
-                                     pmap/*tracked* nil]
-                             ;; We do not resolve the objects maps here
-                             ;; because there is a lower probability that all
-                             ;; shapes needed to be loded into memory, so we
-                             ;; leeave it on lazy status
-                             (-> (files/get-file cfg id :migrate? false)
-                                 (update :data feat.fdata/process-pointers deref) ; ensure all pointers resolved
-                                 (update :data feat.fdata/process-objects (partial into {}))
-                                 (fmg/migrate-file))))))
+       (into [file] (map #(bfc/get-file cfg (:id %))))
        (d/index-by :id)))
 
 (defn- soft-validate-file-schema!
@@ -424,19 +395,37 @@
       (l/error :hint "file validation error"
                :cause cause))))
 
+
 (defn- process-changes-and-validate
   [cfg file changes skip-validate]
   (let [;; WARNING: this ruins performance; maybe we need to find
         ;; some other way to do general validation
-        libs (when (and (or (contains? cf/flags :file-validation)
-                            (contains? cf/flags :soft-file-validation))
-                        (not skip-validate))
-               (get-file-libraries cfg file))
+        libs
+        (when (and (or (contains? cf/flags :file-validation)
+                       (contains? cf/flags :soft-file-validation))
+                   (not skip-validate))
+          (get-file-libraries cfg file))
 
-        file (-> (files/check-version! file)
-                 (update :revn inc)
-                 (update :data cpc/process-changes changes)
-                 (update :data d/without-nils))]
+
+        ;; The main purpose of this atom is provide a contextual state
+        ;; for the changes subsystem where optionally some hints can
+        ;; be provided for the changes processing. Right now we are
+        ;; using it for notify about the existence of media refs when
+        ;; a new shape is added.
+        state
+        (atom {})
+
+        file
+        (binding [cpc/*state* state]
+          (-> (files/check-version! file)
+              (update :revn inc)
+              (update :data cpc/process-changes changes)
+              (update :data d/without-nils)))
+
+        file
+        (if-let [media-refs (-> @state :media-refs not-empty)]
+          (bfc/update-media-references! cfg file media-refs)
+          file)]
 
     (binding [pmap/*tracked* nil]
       (when (contains? cf/flags :soft-file-validation)
@@ -483,7 +472,7 @@
        (vec)))
 
 (defn- send-notifications!
-  [cfg {:keys [file team changes session-id] :as params}]
+  [cfg {:keys [team changes session-id] :as params} file]
   (let [lchanges (filter library-change? changes)
         msgbus   (::mbus/msgbus cfg)]
 

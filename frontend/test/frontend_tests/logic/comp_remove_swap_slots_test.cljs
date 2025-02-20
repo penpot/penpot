@@ -116,7 +116,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'         (ths/get-file-from-store new-state)
+               file'         (ths/get-file-from-state new-state)
                page'         (cthf/current-page file')
                blue1'        (cths/get-shape file' :blue1)
                copied-blue1' (find-copied-shape blue1' page' uuid/zero)]
@@ -155,7 +155,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'         (ths/get-file-from-store new-state)
+               file'         (ths/get-file-from-state new-state)
                page'         (cthf/current-page file')
                b1'           (cths/get-shape file' :frame-b1)
                blue1'        (cths/get-shape file' :blue1)
@@ -193,7 +193,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'         (ths/get-file-from-store new-state)
+               file'         (ths/get-file-from-state new-state)
                page'         (cthf/current-page file')
                yellow'       (cths/get-shape file' :frame-yellow)
                blue1'        (cths/get-shape file' :blue1)
@@ -232,7 +232,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'         (ths/get-file-from-store new-state)
+               file'         (ths/get-file-from-state new-state)
                page'         (cthf/current-page file')
                b2'           (cths/get-shape file' :frame-b2)
                blue1'        (cths/get-shape file' :blue1)
@@ -272,7 +272,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'         (ths/get-file-from-store new-state)
+               file'         (ths/get-file-from-state new-state)
                page'         (cthf/current-page file')
                copied-blue1' (find-copied-shape blue1 page' uuid/zero)]
 
@@ -309,7 +309,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'         (ths/get-file-from-store new-state)
+               file'         (ths/get-file-from-state new-state)
                page'         (cthf/current-page file')
                yellow'       (cths/get-shape file' :frame-yellow)
                copied-blue1' (find-copied-shape blue1 page' (:id yellow'))]
@@ -346,7 +346,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'         (ths/get-file-from-store new-state)
+               file'         (ths/get-file-from-state new-state)
                page'         (cthf/current-page file')
                b2'           (cths/get-shape file' :frame-b2)
                copied-blue1' (find-copied-shape blue1 page' (:id b2'))]
@@ -380,7 +380,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'          (ths/get-file-from-store new-state)
+               file'          (ths/get-file-from-state new-state)
                page'          (cthf/current-page file')
                copied-yellow' (find-copied-shape yellow page' uuid/zero)
                blue1'         (cths/get-shape file' :blue1)
@@ -419,7 +419,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'          (ths/get-file-from-store new-state)
+               file'          (ths/get-file-from-state new-state)
                page'          (cthf/current-page file')
                b1'            (cths/get-shape file' :frame-b1)
                copied-yellow' (find-copied-shape yellow page' (:id b1'))
@@ -459,7 +459,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'          (ths/get-file-from-store new-state)
+               file'          (ths/get-file-from-state new-state)
                page'          (cthf/current-page file')
                b2'            (cths/get-shape file' :frame-b2)
                copied-yellow' (find-copied-shape yellow page' (:id b2'))
@@ -500,7 +500,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'          (ths/get-file-from-store new-state)
+               file'          (ths/get-file-from-state new-state)
                page'          (cthf/current-page file')
                copied-yellow' (find-copied-shape yellow page' uuid/zero)
                copied-blue1'  (find-copied-shape blue1 page' (:id copied-yellow'))]
@@ -537,7 +537,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'          (ths/get-file-from-store new-state)
+               file'          (ths/get-file-from-state new-state)
                page'          (cthf/current-page file')
                b1'            (cths/get-shape file' :frame-b1)
                copied-yellow' (find-copied-shape yellow page' (:id b1'))
@@ -575,7 +575,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'          (ths/get-file-from-store new-state)
+               file'          (ths/get-file-from-state new-state)
                page'          (cthf/current-page file')
                b2'            (cths/get-shape file' :frame-b2)
                copied-yellow' (find-copied-shape yellow page' (:id b2'))
@@ -609,7 +609,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'          (ths/get-file-from-store new-state)
+               file'          (ths/get-file-from-state new-state)
                page'          (cthf/current-page file')
                blue2'         (cths/get-shape file' :blue-copy-in-green-copy)
                copied-green'  (find-copied-shape green page' uuid/zero)
@@ -648,7 +648,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'          (ths/get-file-from-store new-state)
+               file'          (ths/get-file-from-state new-state)
                page'          (cthf/current-page file')
                b1'            (cths/get-shape file' :frame-b1)
                blue2'         (cths/get-shape file' :blue-copy-in-green-copy)
@@ -688,7 +688,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'          (ths/get-file-from-store new-state)
+               file'          (ths/get-file-from-state new-state)
                page'          (cthf/current-page file')
                b2'            (cths/get-shape file' :frame-b2)
                blue2'         (cths/get-shape file' :blue-copy-in-green-copy)
@@ -731,7 +731,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'          (ths/get-file-from-store new-state)
+               file'          (ths/get-file-from-state new-state)
                page'          (cthf/current-page file')
                copied-green'  (find-copied-shape green page' uuid/zero)
                copied-blue1'  (find-copied-shape blue2 page' (:id copied-green'))]
@@ -768,7 +768,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'          (ths/get-file-from-store new-state)
+               file'          (ths/get-file-from-state new-state)
                page'          (cthf/current-page file')
                b1'            (cths/get-shape file' :frame-b1)
                copied-green'  (find-copied-shape green page' (:id b1'))
@@ -806,7 +806,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'          (ths/get-file-from-store new-state)
+               file'          (ths/get-file-from-state new-state)
                page'          (cthf/current-page file')
                b2'            (cths/get-shape file' :frame-b2)
                copied-green'  (find-copied-shape green page' (:id b2'))
@@ -855,7 +855,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'         (ths/get-file-from-store new-state)
+               file'         (ths/get-file-from-state new-state)
                page'         (cthf/current-page file')
                green'        (cths/get-shape file' :frame-green)
                blue1'        (cths/get-shape file' :blue1)

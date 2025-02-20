@@ -11,45 +11,73 @@
    [app.main.refs :as refs]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc color-palette-ctx-menu
-  [{:keys [show-menu? close-menu on-select-palette selected]}]
-  (let [recent-colors (mf/deref refs/workspace-recent-colors)
-        file-colors   (mf/deref refs/workspace-file-colors)
-        shared-libs   (mf/deref refs/workspace-libraries)]
-    [:& dropdown {:show show-menu?
-                  :on-close close-menu}
-     [:ul {:class (stl/css :palette-menu)}
-      (for [{:keys [data id] :as library} (vals shared-libs)]
-        (let [colors (-> data :colors vals)]
-          [:li  {:class (stl/css-case :palette-library true
-                                      :selected (= selected id))
-                 :key (dm/str "library-" id)
-                 :on-click on-select-palette
-                 :data-palette (dm/str id)}
-           [:div {:class (stl/css :option-wrapper)}
-            [:div {:class (stl/css :library-name)}
-             [:div {:class (stl/css :lib-name-wrapper)}
-              [:span {:class (stl/css :lib-name)}
-               (dm/str (:name library))]
-              [:span {:class (stl/css :lib-num)}
-               (dm/str "(" (count colors) ")")]]
-             (when (= selected id)
-               [:span {:class (stl/css :icon-wrapper)}
-                i/tick])]
-            [:div {:class (stl/css :color-sample)
-                   :style #js {"--bullet-size" "20px"}}
-             (for [[i {:keys [color id gradient]}] (map-indexed vector (take 7 colors))]
-               [:& cb/color-bullet {:key (dm/str "color-" i)
-                                    :mini? true
-                                    :color {:color color :id id :gradient gradient}}])]]]))
+(def ^:private xf:sample-colors
+  (comp (map val)
+        (take 7)))
 
-      [:li {:class (stl/css-case :file-library true
-                                 :selected (= selected :file))
-            :on-click on-select-palette
+(defn- extract-colors
+  [{:keys [data] :as file}]
+  (let [colors (into [] xf:sample-colors (:colors data))]
+    (-> file
+        (assoc :colors colors)
+        (dissoc :data))))
+
+(mf/defc color-palette-ctx-menu*
+  [{:keys [show on-close on-select selected]}]
+  (let [recent-colors (mf/deref refs/recent-colors)
+        libraries     (mf/deref refs/libraries)
+
+        file-id       (mf/use-ctx ctx/current-file-id)
+        local-colors  (mf/with-memo [libraries file-id]
+                        (let [colors (dm/get-in libraries [file-id :data :colors])]
+                          (into [] xf:sample-colors colors)))
+
+        libraries     (mf/with-memo [libraries file-id]
+                        (->> (dissoc libraries file-id)
+                             (vals)
+                             (mapv extract-colors)))
+
+        recent-colors (mf/with-memo [recent-colors]
+                        (->> (reverse recent-colors)
+                             (take 7)
+                             (map-indexed (fn [index color]
+                                            (assoc color ::id (dm/str index))))
+                             (vec)))]
+
+    [:& dropdown {:show show :on-close on-close}
+     [:ul {:class (stl/css :palette-menu)}
+      (for [{:keys [id colors] :as library} libraries]
+        [:li  {:class (stl/css-case :palette-library true
+                                    :selected (= selected id))
+               :key (dm/str "library-" id)
+               :on-click on-select
+               :data-palette (dm/str id)}
+         [:div {:class (stl/css :option-wrapper)}
+          [:div {:class (stl/css :library-name)}
+           [:div {:class (stl/css :lib-name-wrapper)}
+            [:span {:class (stl/css :lib-name)}
+             (dm/str (:name library))]
+            [:span {:class (stl/css :lib-num)}
+             (dm/str "(" (count colors) ")")]]
+           (when (= selected id)
+             [:span {:class (stl/css :icon-wrapper)}
+              i/tick])]
+          [:div {:class (stl/css :color-sample)
+                 :style {:--bullet-size "20px"}}
+           (for [color colors]
+             [:& cb/color-bullet {:key (dm/str (:id color))
+                                  :mini true
+                                  :color color}])]]])
+
+      [:li {:class (stl/css-case
+                    :file-library true
+                    :selected (= selected :file))
+            :on-click on-select
             :data-palette "file"}
 
        [:div {:class (stl/css :option-wrapper)}
@@ -59,21 +87,22 @@
           [:span {:class (stl/css :lib-name)}
            (dm/str (tr "workspace.libraries.colors.file-library"))]
           [:span {:class (stl/css :lib-num)}
-           (dm/str "(" (count file-colors) ")")]]
+           (dm/str "(" (count local-colors) ")")]]
 
          (when (= selected :file)
            [:span {:class (stl/css :icon-wrapper)}
             i/tick])]
         [:div {:class (stl/css :color-sample)
-               :style #js {"--bullet-size" "20px"}}
-         (for [[i color] (map-indexed vector (take 7 (vals file-colors)))]
-           [:& cb/color-bullet {:key (dm/str "color-" i)
-                                :mini? true
+               :style {:--bullet-size "20px"}}
+         (for [color local-colors]
+           [:& cb/color-bullet {:key (dm/str (:id color))
+                                :mini true
                                 :color color}])]]]
 
-      [:li {:class (stl/css :recent-colors true
-                            :selected (= selected :recent))
-            :on-click on-select-palette
+      [:li {:class (stl/css
+                    :recent-colors true
+                    :selected (= selected :recent))
+            :on-click on-select
             :data-palette "recent"}
        [:div {:class (stl/css :option-wrapper)}
         [:div {:class (stl/css :library-name)}
@@ -87,8 +116,9 @@
            [:span {:class (stl/css :icon-wrapper)}
             i/tick])]
         [:div {:class (stl/css :color-sample)
-               :style #js {"--bullet-size" "20px"}}
-         (for [[idx color] (map-indexed vector (take 7 (reverse recent-colors)))]
-           [:& cb/color-bullet {:key (str "color-" idx)
-                                :mini? true
+               :style {:--bullet-size "20px"}}
+
+         (for [color recent-colors]
+           [:& cb/color-bullet {:key (dm/str (::id color))
+                                :mini true
                                 :color color}])]]]]]))

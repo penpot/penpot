@@ -7,6 +7,7 @@
 (ns backend-tests.binfile-test
   "Internal binfile test, no RPC involved"
   (:require
+   [app.binfile.common :as bfc]
    [app.binfile.v3 :as v3]
    [app.common.features :as cfeat]
    [app.common.pprint :as pp]
@@ -93,15 +94,15 @@
 
     (v3/export-files!
      (-> th/*system*
-         (assoc ::v3/ids #{(:id file)})
-         (assoc ::v3/embed-assets false)
-         (assoc ::v3/include-libraries false))
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/embed-assets false)
+         (assoc ::bfc/include-libraries false))
      (io/output-stream output))
 
     (let [result (-> th/*system*
-                     (assoc ::v3/project-id (:default-project-id profile))
-                     (assoc ::v3/profile-id (:id profile))
-                     (assoc ::v3/input output)
+                     (assoc ::bfc/project-id (:default-project-id profile))
+                     (assoc ::bfc/profile-id (:id profile))
+                     (assoc ::bfc/input output)
                      (v3/import-files!))]
       (t/is (= (count result) 1))
       (t/is (every? uuid? result)))))

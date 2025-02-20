@@ -12,7 +12,6 @@
    [app.common.files.helpers :as cfh]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -43,7 +42,7 @@
   [{:keys [selected] :as props}]
   (let [pending-selected (mf/use-var selected)
         current-selected (mf/use-state selected)
-        props            (mf/spread props :selected @current-selected)
+        props            (mf/spread-object props {:selected @current-selected})
 
         set-selected
         (mf/use-memo
@@ -169,11 +168,12 @@
 (defn use-search
   [page objects]
   (let [state*          (mf/use-state
-                         {:show-search false
-                          :show-menu false
-                          :search-text ""
-                          :filters #{}
-                          :num-items 100})
+                         #(do {:show-search false
+                               :show-menu false
+                               :search-text ""
+                               :filters #{}
+                               :num-items 100}))
+
         state           (deref state*)
         current-filters (:filters state)
         current-items   (:num-items state)
@@ -336,7 +336,7 @@
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
                [:span {:class (stl/css :filter-menu-item-icon)}
-                (if (cf/external-feature-flag "boards-01" "test") i/board-2 i/board)]
+                i/board]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.frames")]]
 

@@ -20,6 +20,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape-tree :as ctst]
+   [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -288,6 +289,7 @@
         changes (cll/generate-duplicate-component (pcb/empty-changes)
                                                   file
                                                   (:id component)
+                                                  (uuid/next)
                                                   true)
 
         file'   (thf/apply-changes file changes)

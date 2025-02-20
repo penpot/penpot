@@ -161,7 +161,8 @@
 (mf/defc filters
   [{:keys [filter-id shape]}]
 
-  (let [filters       (-> shape gsb/shape->filters change-filter-in)
+  (let [shape'        (update shape :shadow reverse)
+        filters       (-> shape' gsb/shape->filters change-filter-in)
         bounds        (gsb/get-rect-filter-bounds (:selrect shape) filters (or (-> shape :blur :value) 0))
         padding       (gsb/calculate-padding shape)
         selrect       (:selrect shape)

@@ -48,6 +48,7 @@
     :$file {:enumerable false :get (constantly file-id)}
 
     :id {:get (fn [] (dm/str id))}
+    :fileId {:get #(dm/str file-id)}
 
     :name
     {:this true
@@ -98,7 +99,7 @@
          :else
          (let [color (-> (u/proxy->library-color self)
                          (assoc :color value))]
-           (st/emit! (dwl/update-color color file-id)))))}
+           (st/emit! (dwl/update-color-data color file-id)))))}
 
     :opacity
     {:this true
@@ -115,7 +116,7 @@
          :else
          (let [color (-> (u/proxy->library-color self)
                          (assoc :opacity value))]
-           (st/emit! (dwl/update-color color file-id)))))}
+           (st/emit! (dwl/update-color-data color file-id)))))}
 
     :gradient
     {:this true
@@ -133,7 +134,7 @@
            :else
            (let [color (-> (u/proxy->library-color self)
                            (assoc :gradient value))]
-             (st/emit! (dwl/update-color color file-id))))))}
+             (st/emit! (dwl/update-color-data color file-id))))))}
 
     :image
     {:this true
@@ -151,7 +152,7 @@
            :else
            (let [color (-> (u/proxy->library-color self)
                            (assoc :image value))]
-             (st/emit! (dwl/update-color color file-id))))))}
+             (st/emit! (dwl/update-color-data color file-id))))))}
 
     :remove
     (fn []
@@ -640,7 +641,7 @@
          :else
          (let [component (u/proxy->library-component self)
                value (dm/str (d/nilv (:path component) "") " / " value)]
-           (st/emit! (dwl/rename-component id value)))))}
+           (st/emit! (dwl/rename-component-and-main-instance id value)))))}
 
     :path
     {:this true
@@ -929,7 +930,7 @@
     :connected
     {:get
      (fn []
-       (let [libraries (get @st/state :workspace-libraries)]
+       (let [libraries (get @st/state :files)]
          (apply array (->> libraries keys (map (partial library-proxy plugin-id))))))}
 
     :availableLibraries
@@ -937,7 +938,7 @@
       (let [team-id (:current-team-id @st/state)]
         (js/Promise.
          (fn [resolve reject]
-           (let [current-libs (into #{} (map first) (get @st/state :workspace-libraries))]
+           (let [current-libs (into #{} (map first) (get @st/state :files))]
              (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
                   (rx/map (fn [result]
                             (->> result

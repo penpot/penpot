@@ -149,7 +149,6 @@
             [:input {:type "text"
                      :value (:token created "")
                      :class (stl/css :custom-input-token)
-                     :placeholder (tr "modals.create-access-token.token")
                      :read-only true}]
             [:button {:title (tr "modals.create-access-token.copy-token")
                       :class (stl/css :copy-btn)

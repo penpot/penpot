@@ -4,6 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../../../ds/typography.scss" as t;
+@use "../../../ds/_sizes.scss" as *;
+
 @import "refactor/common-refactor.scss";
 
 .modal-overlay {
@@ -12,10 +15,10 @@
 
 .modal-dialog {
   @extend .modal-container-base;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+
   width: 100%;
-  max-width: $s-468;
+  max-width: $s-512;
+  max-height: unset;
   user-select: none;
 }
 
@@ -29,9 +32,14 @@
 }
 
 .themes-modal-wrapper {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: 0fr minmax(0, 1fr);
   gap: $s-24;
+  max-height: $s-688;
+}
+
+.edit-theme-form {
+  display: flex;
 }
 
 .themes-modal-title {
@@ -52,10 +60,6 @@
   &:hover {
     color: var(--color-accent-primary);
   }
-}
-
-.labeled-input-label {
-  color: var(--color-foreground-primary);
 }
 
 .button-footer {
@@ -101,6 +105,8 @@
 
 .theme-group-label {
   color: var(--color-foreground-secondary);
+  margin: 0 0 $s-12 0;
+  padding: 0;
 }
 
 .group-title {
@@ -114,12 +120,14 @@
   display: flex;
   flex-direction: column;
   gap: $s-6;
+  margin: 0;
 }
 
 .theme-group-wrapper {
   display: flex;
   flex-direction: column;
-  gap: $s-8;
+  overflow-y: auto;
+  gap: $s-32;
 }
 
 .theme-row {
@@ -146,7 +154,6 @@
 }
 
 .sets-count-button {
-  text-transform: lowercase;
   padding: $s-6;
   padding-left: $s-12;
 }
@@ -155,18 +162,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  text-transform: lowercase;
 }
 
 .edit-theme-wrapper {
   display: flex;
   flex-direction: column;
   gap: $s-24;
+  inline-size: 100%;
 }
 
 .sets-list-wrapper {
-  border: 1px solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
+  border: $s-1 solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
   border-radius: $s-8;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .sets-count-empty-button {
@@ -188,11 +197,13 @@
   gap: $s-12;
 }
 
-.group-drop-down-button {
-  @include buttonStyle;
+.label {
+  @include t.use-typography("body-small");
+  @include textEllipsis;
+  color: var(--color-foreground-primary);
+}
+
+.label-optional {
+  margin-inline-start: 1ex;
   color: var(--color-foreground-secondary);
-  width: $s-24;
-  height: 100%;
-  padding: 0;
-  margin: 0 $s-6;
 }

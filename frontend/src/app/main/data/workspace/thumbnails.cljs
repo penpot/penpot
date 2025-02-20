@@ -12,9 +12,9 @@
    [app.common.thumbnails :as thc]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as-alias dps]
    [app.main.data.workspace.notifications :as-alias wnt]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.rasterizer :as thr]
    [app.main.refs :as refs]
    [app.main.render :as render]
@@ -52,6 +52,11 @@
 (defonce queue
   (q/create find-request (/ 1000 30)))
 
+(defn clear-queue!
+  []
+  (l/dbg :hint "clearing thumbnail queue")
+  (q/clear! queue))
+
 ;; This function first renders the HTML calling `render/render-frame` that
 ;; returns HTML as a string, then we send that data to the iframe rasterizer
 ;; that returns the image as a Blob. Finally we create a URI for that blob.
@@ -60,7 +65,9 @@
   [state file-id page-id frame-id tag]
   (let [object-id (thc/fmt-object-id file-id page-id frame-id tag)
         tp        (tp/tpoint-ms)
-        objects   (wsh/lookup-objects state file-id page-id)
+        objects   (-> (dsh/lookup-file-data state file-id)
+                      (dsh/get-page page-id)
+                      :objects)
         shape     (get objects frame-id)]
 
     (->> (render/render-frame objects shape object-id)
@@ -87,7 +94,7 @@
 
        ptk/UpdateEvent
        (update [_ state]
-         (update state :workspace-thumbnails
+         (update state :thumbnails
                  (fn [thumbs]
                    (if-let [uri (get thumbs object-id)]
                      (do (vreset! pending uri)
@@ -115,10 +122,10 @@
     (ptk/reify ::assoc-thumbnail
       ptk/UpdateEvent
       (update [_ state]
-        (let [prev-uri (dm/get-in state [:workspace-thumbnails object-id])]
+        (let [prev-uri (dm/get-in state [:thumbnails object-id])]
           (some->> prev-uri (vreset! prev-uri*))
           (l/trc :hint "assoc thumbnail" :object-id object-id :uri uri)
-          (update state :workspace-thumbnails assoc object-id uri)))
+          (update state :thumbnails assoc object-id uri)))
 
       ptk/EffectEvent
       (effect [_ _ _]
@@ -134,8 +141,8 @@
     (update [_ state]
       (let [old-id (dm/str old-id)
             new-id (dm/str new-id)
-            thumbnail (dm/get-in state [:workspace-thumbnails old-id])]
-        (update state :workspace-thumbnails assoc new-id thumbnail)))))
+            thumbnail (dm/get-in state [:thumbnails old-id])]
+        (update state :thumbnails assoc new-id thumbnail)))))
 
 (defn update-thumbnail
   "Updates the thumbnail information for the given `id`"

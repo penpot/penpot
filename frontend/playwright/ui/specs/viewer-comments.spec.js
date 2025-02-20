@@ -19,12 +19,8 @@ test("Comment is shown with scroll and valid position", async ({ page }) => {
   });
   await viewer.showComments();
   await viewer.showCommentsThread(1);
-  await expect(
-    viewer.page.getByRole("textbox", { name: "Reply" }),
-  ).toBeVisible();
+  await expect(viewer.page.getByRole("textbox")).toBeVisible();
   await viewer.showCommentsThread(1);
   await viewer.showCommentsThread(2);
-  await expect(
-    viewer.page.getByRole("textbox", { name: "Reply" }),
-  ).toBeVisible();
+  await expect(viewer.page.getByRole("textbox")).toBeVisible();
 });

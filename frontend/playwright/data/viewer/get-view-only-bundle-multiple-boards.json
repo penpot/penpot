@@ -1,0 +1,85 @@
+{
+  "~:permissions": {
+    "~:type": "~:membership",
+    "~:is-owner": true,
+    "~:is-admin": true,
+    "~:can-edit": true,
+    "~:can-read": true,
+    "~:is-logged": true,
+    "~:in-team": true
+  },
+  "~:libraries": [],
+  "~:file": {
+    "~:features": {
+      "~#set": [
+        "layout/grid",
+        "fdata/pointer-map",
+        "fdata/objects-map",
+        "components/v2",
+        "fdata/shape-data-type"
+      ]
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "Nuevo Archivo 1",
+    "~:revn": 3,
+    "~:modified-at": "~m1737715191361",
+    "~:vern": 0,
+    "~:id": "~udd5cc0bb-91ff-81b9-8004-77df9cd3edb0",
+    "~:is-shared": false,
+    "~:version": 61,
+    "~:project-id": "~u0b5bcbca-32ab-81eb-8005-a12049f428c2",
+    "~:created-at": "~m1737708162019",
+    "~:data": {
+      "~:id": "~udd5cc0bb-91ff-81b9-8004-77df9cd3edb0",
+      "~:options": {
+        "~:components-v2": true
+      },
+      "~:pages": [
+        "~udd5cc0bb-91ff-81b9-8004-77df9cd3edb3"
+      ],
+      "~:pages-index": {
+        "~udd5cc0bb-91ff-81b9-8004-77df9cd3edb3": {
+          "~#penpot/pointer": [
+            "~u0b5bcbca-32ab-81eb-8005-a13d7c92eb59",
+            {
+              "~:created-at": "~m1737715191371"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "~:team": {
+    "~:id": "~u0b5bcbca-32ab-81eb-8005-a12049f3a82a",
+    "~:created-at": "~m1737707537358",
+    "~:modified-at": "~m1737707537358",
+    "~:name": "1",
+    "~:is-default": false,
+    "~:features": {
+      "~#set": [
+        "layout/grid",
+        "fdata/pointer-map",
+        "fdata/objects-map",
+        "components/v2",
+        "fdata/shape-data-type"
+      ]
+    },
+    "~:permissions": {
+      "~:type": "~:membership",
+      "~:is-owner": true,
+      "~:is-admin": true,
+      "~:can-edit": true,
+      "~:can-read": true,
+      "~:is-logged": true,
+      "~:in-team": true
+    }
+  },
+  "~:project": {
+    "~:id": "~u0b5bcbca-32ab-81eb-8005-a12049f428c2",
+    "~:name": "Drafts",
+    "~:team-id": "~u0b5bcbca-32ab-81eb-8005-a12049f3a82a"
+  },
+  "~:share-links": [],
+  "~:fonts": []
+}

@@ -28,10 +28,12 @@
   (r/map->Match data))
 
 (defn resolve
-  ([router id] (resolve router id {}))
+  ([router id]
+   (resolve router id {}))
   ([router id params]
-   (when-let [match (r/match-by-name router id)]
-     (r/match->path match params))))
+   (when router
+     (when-let [match (r/match-by-name router id)]
+       (r/match->path match params)))))
 
 (defn create
   [routes]
@@ -118,6 +120,11 @@
   ([id params & {:as options}]
    (navigate id params options)))
 
+(defn lookup-name
+  [state]
+  (dm/get-in state [:route :data :name]))
+
+;; FIXME: rename to lookup-params
 (defn get-params
   [state]
   (dm/get-in state [:route :params :query]))

@@ -4,7 +4,6 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-#_:clj-kondo/ignore
 (ns app.common.data.macros
   "Data retrieval & manipulation specific macros."
   (:refer-clojure :exclude [get-in select-keys str with-open min max])

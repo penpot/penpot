@@ -19,13 +19,14 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.modal :as md]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
    [app.util.mouse :as mse]
@@ -138,23 +139,34 @@
 
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id (:current-page-id state)
-             objects (wsh/lookup-page-objects state page-id)]
-         (rx/of
-          (dwc/expand-all-parents [id] objects)
-          :interrupt
-          ::dwsp/interrupt))))))
+       (let [page-id              (:current-page-id state)
+             objects              (dsh/lookup-page-objects state page-id)
+             selected-id          (dsh/lookup-selected state)
+             selected             (dsh/lookup-shapes state selected-id)
+             frame-ids            (map (fn [item] (let [parent (cfh/get-frame objects (:id item))]
+                                                    (:id parent))) selected)
+             params-without-board (-> (rt/get-params state)
+                                      (dissoc :board-id))
+             params-board         (-> (rt/get-params state)
+                                      (assoc :board-id frame-ids))]
+
+         (rx/of (dwc/expand-all-parents [id] objects)
+                :interrupt
+                ::dwsp/interrupt
+                (if (some #(= % uuid/zero) frame-ids)
+                  (rt/nav :workspace params-without-board {::rt/replace true})
+                  (rt/nav :workspace params-board {::rt/replace true}))))))))
 
 (defn select-prev-shape
   ([]
    (ptk/reify ::select-prev-shape
      ptk/WatchEvent
      (watch [_ state _]
-       (let [selected       (wsh/lookup-selected state)
+       (let [selected       (dsh/lookup-selected state)
              count-selected (count selected)
              first-selected (first selected)
              page-id        (:current-page-id state)
-             objects        (wsh/lookup-page-objects state page-id)
+             objects        (dsh/lookup-page-objects state page-id)
              current        (get objects first-selected)
              parent         (get objects (:parent-id current))
              sibling-ids    (:shapes parent)
@@ -175,11 +187,11 @@
    (ptk/reify ::select-next-shape
      ptk/WatchEvent
      (watch [_ state _]
-       (let [selected       (wsh/lookup-selected state)
+       (let [selected       (dsh/lookup-selected state)
              count-selected (count selected)
              first-selected (first selected)
              page-id        (:current-page-id state)
-             objects        (wsh/lookup-page-objects state page-id)
+             objects        (dsh/lookup-page-objects state page-id)
              current        (get objects first-selected)
              parent         (get objects (:parent-id current))
              sibling-ids    (:shapes parent)
@@ -218,10 +230,10 @@
        (rx/of ::dwsp/interrupt))
      ptk/UpdateEvent
      (update [_ state]
-       (let [objects (or objects (wsh/lookup-page-objects state))
+       (let [objects (or objects (dsh/lookup-page-objects state))
              append-to-selection (cfh/expand-region-selection objects (into #{} [(get-in state [:workspace-local :last-selected]) id]))
              selection (-> state
-                           wsh/lookup-selected
+                           dsh/lookup-selected
                            (conj id))]
          (-> state
              (assoc-in [:workspace-local :selected]
@@ -238,7 +250,7 @@
   (ptk/reify ::select-shapes
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             focus (:workspace-focus-selected state)
             ids (if (d/not-empty? focus)
                   (cpf/filter-not-focus objects focus ids)
@@ -247,7 +259,7 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)]
+      (let [objects (dsh/lookup-page-objects state)]
         (rx/of
          (dwc/expand-all-parents ids objects)
          ::dwsp/interrupt)))))
@@ -261,11 +273,11 @@
             ;; case delimit the objects to the focused shapes if focus
             ;; mode is active
             focus    (:workspace-focus-selected state)
-            objects  (-> (wsh/lookup-page-objects state)
+            objects  (-> (dsh/lookup-page-objects state)
                          (cpf/focus-objects focus))
 
             lookup   (d/getf objects)
-            parents  (->> (wsh/lookup-selected state)
+            parents  (->> (dsh/lookup-selected state)
                           (into #{} (comp (keep lookup) (map :parent-id))))
 
             ;; If we have a only unique parent, then use it as main
@@ -290,8 +302,12 @@
   ([check-modal]
    (ptk/reify ::deselect-all
      ptk/WatchEvent
-     (watch [_ _ _]
-       (rx/of ::dwsp/interrupt))
+     (watch [_ state _]
+       (let [params-without-board (-> (rt/get-params state)
+                                      (dissoc :board-id))]
+         (rx/of ::dwsp/interrupt)
+         (rx/of (rt/nav :workspace params-without-board {::rt/replace true}))))
+
      ptk/UpdateEvent
      (update [_ state]
 
@@ -314,8 +330,8 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [page-id     (:current-page-id state)
-             objects     (wsh/lookup-page-objects state)
-             selected    (wsh/lookup-selected state)
+             objects     (dsh/lookup-page-objects state)
+             selected    (dsh/lookup-selected state)
              initial-set (if preserve?
                            selected
                            lks/empty-linked-set)
@@ -348,7 +364,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
+            objects  (dsh/lookup-page-objects state page-id)
             group    (get objects group-id)
             children (map #(get objects %) (:shapes group))
 
@@ -420,7 +436,7 @@
   (ptk/reify ::duplicate-shapes
     ptk/WatchEvent
     (watch [it state _]
-      (let [page     (wsh/lookup-page state)
+      (let [page     (dsh/lookup-page state)
             objects  (:objects page)
             ids (into #{}
                       (comp (map (d/getf objects))
@@ -434,8 +450,9 @@
                                   (gpt/point 0 0))
 
                 file-id         (:current-file-id state)
-                libraries       (wsh/get-libraries state)
-                library-data    (wsh/get-file state file-id)
+
+                libraries       (dsh/lookup-libraries state)
+                library-data    (dsh/lookup-file-data state file-id)
 
                 changes         (-> (pcb/empty-changes it)
                                     (cll/generate-duplicate-changes objects page ids delta libraries library-data file-id)
@@ -489,7 +506,7 @@
      ptk/WatchEvent
      (watch [_ state _]
        (when (or (not move-delta?) (nil? (get-in state [:workspace-local :transform])))
-         (let [selected (wsh/lookup-selected state)]
+         (let [selected (dsh/lookup-selected state)]
            (rx/of (duplicate-shapes selected
                                     :move-delta? move-delta?
                                     :alt-duplication? alt-duplication?))))))))
@@ -508,7 +525,7 @@
     ptk/UpdateEvent
     (update [_ state]
 
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
 
             focus (-> (:workspace-focus-selected state)
                       (set/union added)
@@ -526,7 +543,7 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [selected (wsh/lookup-selected state)]
+      (let [selected (dsh/lookup-selected state)]
         (cond-> state
           (and (empty? (:workspace-focus-selected state))
                (d/not-empty? selected))

@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.5.0
+## 2.6.0 (Unreleased)
 
 ### :rocket: Epics and highlights
 
@@ -10,9 +10,110 @@
 
 ### :sparkles: New features
 
-- New gradients UI with multi-stop support.
+### :bug: Bugs fixed
+
+- Fix opacity in frame containers [Github #5858](https://github.com/penpot/penpot/pull/5858)
+
+
+## 2.5.0 (Unreleased)
+
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+Although this is not a breaking change, we believe it’s important to highlight it in this
+section:
+
+This release includes a fix for an internal bug in Penpot that caused incorrect handling
+of media assets (e.g., fill images). The issue has been resolved since version 2.4.3, so
+no new incorrect references will be generated. However, existing files may still contain
+incorrect references.
+
+To address this, we’ve provided a script to correct these references in existing files.
+
+While having incorrect references generally doesn’t result in visible issues, there are
+rare cases where it can cause problems. For example, if a component library (containing
+images) is deleted, and that library is being used in other files, running the FileGC task
+(responsible for freeing up space and performing logical deletions) could leave those
+files with broken references to the images.
+
+To execute script:
+
+```bash
+docker exec -ti <container-name-or-id> ./run.sh app.migrations.media-refs '{:max-jobs 1}'
+```
+
+If you have a big database and many cores available, you can reduce the time of processing
+all files by increasing paralelizacion changing the `max-jobs` value from 1 to N (where N
+is a number of cores)
+
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features
+
+- [GRADIENTS] New gradients UI with multi-stop support. [Taiga #3418](https://tree.taiga.io/project/penpot/epic/3418)
+- [GRADIENTS] Radial Gradient [Taiga #8768](https://tree.taiga.io/project/penpot/us/8768)
+- Shareable link pointing to an specific board. [Taiga #3219](https://tree.taiga.io/project/penpot/us/3219)
+- Copy styles in CSS [Taiga #9401](https://tree.taiga.io/project/penpot/us/9401)
+- Copy/paste shape styles (fills, strokes, shadows, etc..) [Taiga #8937](https://tree.taiga.io/project/penpot/us/8937)
+- Copy text content to clipboard [Taiga #9970](https://tree.taiga.io/project/penpot/us/9970?milestone=424203)
+- Resize board to fit content option [Taiga #4707](https://tree.taiga.io/project/penpot/us/4707)
+- Rename selected layer via Board name [Taiga #9430](https://tree.taiga.io/project/penpot/us/9430)
+- [COMMENTS] Mention Functionality with and Sidebar Filters [Taiga #9237](https://tree.taiga.io/project/penpot/us/9237)
+- [COMMENTS] Visual Changes in Comments [Taiga #9234](https://tree.taiga.io/project/penpot/us/9234)
+- [COMMENTS] Notifications in Backend, Profile Section, and Mention Email Notification [Taiga #9233](https://tree.taiga.io/project/penpot/us/9233)
 
 ### :bug: Bugs fixed
+
+- Fix menu shadow color [Taiga #10102](https://tree.taiga.io/project/penpot/issue/10102)
+- Fix missing state refresh on notifications update [Taiga #10253](https://tree.taiga.io/project/penpot/issue/10253)
+- Fix icon visualization on select component [Taiga #8889](https://tree.taiga.io/project/penpot/issue/8889)
+- Fix typo on integration tests docs [Taiga #10112](https://tree.taiga.io/project/penpot/issue/10112)
+- Fix problem with alt key measures being stuck [Taiga #9348](https://tree.taiga.io/project/penpot/issue/9348)
+- Fix error when reseting stroke cap
+- Fix problem with strokes not refreshing in Safari [Taiga #9040](https://tree.taiga.io/project/penpot/issue/9040)
+- Fix problem with multiple color changes [Taiga #9631](https://tree.taiga.io/project/penpot/issue/9631)
+- Fix create new layers in a component copy [Taiga #10037](https://tree.taiga.io/project/penpot/issue/10037)
+- Fix problem in plugins with zoomIntoView [Plugins #189](https://github.com/penpot/penpot-plugins/issues/189)
+- Fix problem in plugins with renaming components [Taiga #10060](https://tree.taiga.io/project/penpot/issue/10060)
+- Added upload svg with images method [#5489](https://github.com/penpot/penpot/issues/5489)
+- Fix problem with root frame parent reference [Taiga #9437](https://tree.taiga.io/project/penpot/issue/9437)
+- Fix change flex direction using plugins API [Taiga #9407](https://tree.taiga.io/project/penpot/issue/9407)
+- Fix problem opening url when page-id didn't exist [Taiga #10157](https://tree.taiga.io/project/penpot/issue/10157)
+- Fix problem with onboarding to a team [Taiga #10143](https://tree.taiga.io/project/penpot/issue/10143)
+- Fix problem with grid layout crashing [Taiga #10127](https://tree.taiga.io/project/penpot/issue/10127)
+- Fix rename locked boards [Taiga #10174](https://tree.taiga.io/project/penpot/issue/10174)
+- Fix update-libraries dialog disappear when clicking outside [Taiga #10238](https://tree.taiga.io/project/penpot/issue/10238)
+- Fix incorrect handling of team access requests with deleted/recreated users
+
+## 2.4.3
+
+### :bug: Bugs fixed
+
+- Fix errors from editable select on measures menu [Taiga #9888](https://tree.taiga.io/project/penpot/issue/9888)
+- Fix exception on importing some templates from templates slider
+- Consolidate adding share button to workspace
+- Fix problem when pasting text [Taiga #9929](https://tree.taiga.io/project/penpot/issue/9929)
+- Fix incorrect media reference handling on component instantiation
+
+## 2.4.2
+
+### :bug: Bugs fixed
+
+- Fix detach when top copy is dangling and nested copy is not [Taiga #9699](https://tree.taiga.io/project/penpot/issue/9699)
+- Fix problem in plugins with `replaceColor` method [#174](https://github.com/penpot/penpot-plugins/issues/174)
+- Fix issue with recursive commponents [Taiga #9903](https://tree.taiga.io/project/penpot/issue/9903)
+- Fix missing methods reference on API Docs
+- Fix memory usage issue on file-gc asynchronous task (related to snapshots feature)
+
+
+## 2.4.1
+
+### :bug: Bugs fixed
+
+- Fix error when importing files with touched components [Taiga #9625](https://tree.taiga.io/project/penpot/issue/9625)
+- Fix problem when changing color libraries [Plugins #184](https://github.com/penpot/penpot-plugins/issues/184)
 
 
 ## 2.4.0
@@ -26,12 +127,12 @@
   (penpot). Because of that, the default NGINX listen port is now 8080 instead of 80, so
   you will have to modify your infrastructure to apply this change.
 
-- Redis 7.2 is explicitly pinned in our example docker-compose.yml file. This is done because, 
-  starting with the next versions, Redis is no longer distributed under an open-source license. 
-  On-premise users are obviously free to upgrade to the version they are using or a more modern one. 
-  Keep in mind that if you were using a version other than 7.2, you may have to recreate the volume 
-  associated with the Redis container because the 7.2 storage format may not be compatible with what 
-  you already have stored on the volume, and Redis may not start. In the near future, we will evaluate 
+- Redis 7.2 is explicitly pinned in our example docker-compose.yml file. This is done because,
+  starting with the next versions, Redis is no longer distributed under an open-source license.
+  On-premise users are obviously free to upgrade to the version they are using or a more modern one.
+  Keep in mind that if you were using a version other than 7.2, you may have to recreate the volume
+  associated with the Redis container because the 7.2 storage format may not be compatible with what
+  you already have stored on the volume, and Redis may not start. In the near future, we will evaluate
   whether to move to an open-source version of Redis (such as https://valkey.io/).
 
 ### :heart: Community contributions (Thank you!)
@@ -46,6 +147,8 @@
 ### :bug: Bugs fixed
 
 - Fix problem with some texts desynchronization [Taiga #9379](https://tree.taiga.io/project/penpot/issue/9379)
+- Fix problem with reoder grid layers [#5446](https://github.com/penpot/penpot/issues/5446)
+- Fix problem with swap component style [#9542](https://tree.taiga.io/project/penpot/issue/9542)
 
 ## 2.3.3
 

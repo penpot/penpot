@@ -4,7 +4,7 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC",
   "private": true,
-  "packageManager": "yarn@4.3.1",
+  "packageManager": "yarn@4.6.0+sha512.5383cc12567a95f1d668fbe762dfe0075c595b4bfff433be478dbbe24e05251a8e8c3eb992a986667c1d53b6c3a9c85b8398c35a960587fbd9fa3a0915406728",
   "repository": {
     "type": "git",
     "url": "https://github.com/penpot/penpot"
@@ -14,16 +14,16 @@
     "cookies": "^0.9.1",
     "generic-pool": "^3.9.0",
     "inflation": "^2.1.0",
-    "ioredis": "^5.4.1",
+    "ioredis": "^5.4.2",
     "luxon": "^3.5.0",
-    "playwright": "^1.48.1",
+    "playwright": "^1.50.0",
     "raw-body": "^3.0.0",
     "svgo": "penpot/svgo#v3",
     "xml-js": "^1.6.11",
     "xregexp": "^5.1.1"
   },
   "devDependencies": {
-    "shadow-cljs": "2.28.18",
+    "shadow-cljs": "2.28.20",
     "source-map-support": "^0.5.21"
   },
   "scripts": {

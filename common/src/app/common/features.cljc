@@ -52,7 +52,8 @@
     "plugins/runtime"
     "design-tokens/v1"
     "text-editor/v2"
-    "render-wasm/v1"})
+    "render-wasm/v1"
+    "variants/v1"})
 
 ;; A set of features enabled by default
 (def default-features
@@ -111,6 +112,7 @@
     :feature-design-tokens "design-tokens/v1"
     :feature-text-editor-v2 "text-editor/v2"
     :feature-render-wasm "render-wasm/v1"
+    :feature-variants "variants/v1"
     nil))
 
 (defn migrate-legacy-features
@@ -141,7 +143,7 @@
   (keep flag->feature))
 
 (defn get-enabled-features
-  "Get the globally enabled fratures set."
+  "Get the globally enabled features set."
   [flags]
   (into default-features xf-flag-to-feature flags))
 

@@ -6,13 +6,13 @@
 
 (ns app.rpc.commands.files-create
   (:require
+   [app.binfile.common :as bfc]
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.types.file :as ctf]
    [app.config :as cf]
    [app.db :as db]
-   [app.features.fdata :as feat.fdata]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
@@ -21,7 +21,6 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
-   [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -48,34 +47,19 @@
 
   (binding [pmap/*tracked* (pmap/create-tracked)
             cfeat/*current* features]
-    (let [file     (ctf/make-file {:id id
-                                   :project-id project-id
-                                   :name name
-                                   :revn revn
-                                   :is-shared is-shared
-                                   :features features
-                                   :ignore-sync-until ignore-sync-until
-                                   :modified-at modified-at
-                                   :deleted-at deleted-at
-                                   :create-page create-page
-                                   :page-id page-id})
-
-          file     (if (contains? features "fdata/objects-map")
-                     (feat.fdata/enable-objects-map file)
-                     file)
-
-          file     (if (contains? features "fdata/pointer-map")
-                     (feat.fdata/enable-pointer-map file)
-                     file)]
-
-      (db/insert! conn :file
-                  (-> file
-                      (update :data blob/encode)
-                      (update :features db/encode-pgarray conn "text"))
-                  {::db/return-keys false})
-
-      (when (contains? features "fdata/pointer-map")
-        (feat.fdata/persist-pointers! cfg (:id file)))
+    (let [file (ctf/make-file {:id id
+                               :project-id project-id
+                               :name name
+                               :revn revn
+                               :is-shared is-shared
+                               :features features
+                               :ignore-sync-until ignore-sync-until
+                               :modified-at modified-at
+                               :deleted-at deleted-at
+                               :create-page create-page
+                               :page-id page-id})
+          file (-> (bfc/insert-file! cfg file)
+                   (bfc/decode-row))]
 
       (->> (assoc params :file-id (:id file) :role :owner)
            (create-file-role! conn))

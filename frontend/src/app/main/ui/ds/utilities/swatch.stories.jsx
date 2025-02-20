@@ -6,6 +6,7 @@
 
 import * as React from "react";
 import Components from "@target/components";
+import { helpers } from "@target/components";
 import { action } from "@storybook/addon-actions";
 
 const { Swatch } = Components;
@@ -15,23 +16,18 @@ export default {
   component: Swatch,
   argTypes: {
     background: {
-      control: { type: "text" },
-    },
-    format: {
-      control: "select",
-      options: ["square", "rounded"],
+      control: "object",
     },
     size: {
       control: "select",
-      options: ["small", "medium"],
+      options: ["small", "medium", "large"],
     },
     active: {
       control: { type: "boolean" },
     },
   },
   args: {
-    background: "#663399",
-    format: "square",
+    background: { color: "#7efff5" },
     size: "medium",
     active: false,
   },
@@ -42,39 +38,65 @@ export const Default = {};
 
 export const WithOpacity = {
   args: {
-    background: "rgba(255, 0, 0, 0.5)",
+    background: {
+      color: "#2f226c",
+      opacity: 0.5,
+    },
   },
 };
+
+const stops = [
+  {
+    color: "#151035",
+    opacity: 1,
+    offset: 0,
+  },
+  {
+    color: "#2f226c",
+    opacity: 0.5,
+    offset: 1,
+  },
+];
 
 export const LinearGradient = {
   args: {
-    background: "linear-gradient(to right, transparent, mistyrose)",
+    background: {
+      gradient: {
+        type: helpers.keyword("linear"),
+        "start-x": 0,
+        "start-y": 0,
+        "end-x": 1,
+        "end-y": 0,
+        width: 1,
+        stops,
+      },
+    },
   },
 };
 
-export const Image = {
+export const RadialGradient = {
   args: {
-    background: "images/form/never-used.png",
-    size: "medium",
+    background: {
+      gradient: {
+        type: helpers.keyword("radial"),
+        "start-x": 0,
+        "start-y": 0,
+        "end-x": 1,
+        "end-y": 0,
+        width: 1,
+        stops,
+      },
+    },
   },
 };
 
 export const Rounded = {
   args: {
-    format: "rounded",
-  },
-};
-
-export const Small = {
-  args: {
-    size: "small",
-  },
-};
-
-export const Active = {
-  args: {
-    active: true,
-    background: "#CC00CC",
+    background: {
+      id: helpers.generateUuid(),
+      color: "#2f226c",
+      opacity: 0.5,
+    },
   },
 };
 

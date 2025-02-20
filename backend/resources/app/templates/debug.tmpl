@@ -114,35 +114,11 @@ Debug Main Page
     </fieldset>
     <fieldset>
       <legend>Import binfile:</legend>
-      <desc>Import penpot file in binary
-      format. If <strong>overwrite</strong> is checked, all files will
-      be overwritten using the same ids found in the file instead of
-      generating a new ones.</desc>
+      <desc>Import penpot file in binary format.</desc>
 
       <form method="post" enctype="multipart/form-data" action="/dbg/file/import">
         <div class="row">
           <input type="file" name="file" value="" />
-        </div>
-
-        <div class="row">
-          <label>Overwrite?</label>
-          <input type="checkbox" name="overwrite" />
-          <br />
-          <small>
-            Instead of creating a new file with all relations remapped,
-            reuses all ids and updates/overwrites the objects that are
-            already exists on the database.
-            <strong>Warning, this operation should be used with caution.</strong>
-          </small>
-        </div>
-
-        <div class="row">
-          <label>Migrate?</label>
-          <input type="checkbox" name="migrate" />
-          <br />
-          <small>
-            Applies the file migrations on the importation process.
-          </small>
         </div>
 
         <div class="row">

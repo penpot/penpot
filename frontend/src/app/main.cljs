@@ -23,7 +23,6 @@
    [app.main.ui.confirm]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.delete-shared]
-   [app.main.ui.modal :refer [modal]]
    [app.main.ui.routes :as rt]
    [app.main.worker :as worker]
    [app.plugins :as plugins]
@@ -31,20 +30,21 @@
    [app.util.i18n :as i18n]
    [app.util.theme :as theme]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [debug]
    [features]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (log/setup! {:app :info})
+(log/set-level! :debug)
 
 (when (= :browser cf/target)
-  (log/info :version (:full cf/version)
-            :asserts *assert*
-            :build-date cf/build-date
-            :public-uri (dm/str cf/public-uri))
-  (log/info :flags (str/join "," (map name cf/flags))))
+  (log/inf :version (:full cf/version)
+           :asserts *assert*
+           :build-date cf/build-date
+           :public-uri (dm/str cf/public-uri))
+  (doseq [flag cf/flags]
+    (log/dbg :hint "flag enabled" :flag (name flag))))
 
 (declare reinit)
 
@@ -52,31 +52,9 @@
   (let [el (dom/get-element "app")]
     (mf/create-root el)))
 
-(defonce modal-root
-  (let [el (dom/get-element "modal")]
-    (mf/create-root el)))
-
 (defn init-ui
   []
-  (mf/render! app-root (mf/element ui/app))
-  (mf/render! modal-root (mf/element modal)))
-
-(defn- initialize-profile
-  "Event used mainly on application bootstrap; it fetches the profile
-  and if and only if the fetched profile corresponds to an
-  authenticated user; proceed to fetch teams."
-  [stream]
-  (rx/merge
-   (rx/of (dp/fetch-profile))
-   (->> stream
-        (rx/filter dp/profile-fetched?)
-        (rx/take 1)
-        (rx/map deref)
-        (rx/mapcat (fn [profile]
-                     (if (dp/is-authenticated? profile)
-                       (rx/of (dp/initialize-profile profile))
-                       (rx/empty))))
-        (rx/observe-on :async))))
+  (mf/render! app-root (mf/element ui/app)))
 
 (defn initialize
   []
@@ -89,9 +67,8 @@
     (watch [_ _ stream]
       (rx/merge
        (rx/of (ev/initialize)
-              (feat/initialize))
-
-       (initialize-profile stream)
+              (feat/initialize)
+              (dp/refresh-profile))
 
        ;; Watch for profile deletion events
        (->> stream
@@ -132,9 +109,7 @@
    ;; The hard flag will force to unmount the whole UI and will redraw every component
    (when hard?
      (mf/unmount! app-root)
-     (mf/unmount! modal-root)
-     (set! app-root (mf/create-root (dom/get-element "app")))
-     (set! modal-root (mf/create-root (dom/get-element "modal"))))
+     (set! app-root (mf/create-root (dom/get-element "app"))))
    (st/emit! (ev/initialize))
    (init-ui)))
 

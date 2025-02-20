@@ -6,7 +6,7 @@
   org.clojure/clojure {:mvn/version "1.12.0"}
   org.clojure/tools.namespace {:mvn/version "1.5.0"}
 
-  com.github.luben/zstd-jni {:mvn/version "1.5.6-6"}
+  com.github.luben/zstd-jni {:mvn/version "1.5.6-9"}
 
   io.prometheus/simpleclient {:mvn/version "0.16.0"}
   io.prometheus/simpleclient_hotspot {:mvn/version "0.16.0"}
@@ -17,7 +17,7 @@
 
   io.prometheus/simpleclient_httpserver {:mvn/version "0.16.0"}
 
-  io.lettuce/lettuce-core {:mvn/version "6.4.0.RELEASE"}
+  io.lettuce/lettuce-core {:mvn/version "6.5.2.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
   funcool/yetti
@@ -26,13 +26,14 @@
    :git/url "https://github.com/funcool/yetti.git"
    :exclusions [org.slf4j/slf4j-api]}
 
-  com.github.seancorfield/next.jdbc {:mvn/version "1.3.955"}
+  com.github.seancorfield/next.jdbc
+  {:mvn/version "1.3.994"}
   metosin/reitit-core {:mvn/version "0.7.2"}
-  nrepl/nrepl {:mvn/version "1.3.0"}
-  cider/cider-nrepl {:mvn/version "0.50.2"}
+  nrepl/nrepl {:mvn/version "1.3.1"}
+  cider/cider-nrepl {:mvn/version "0.52.0"}
 
-  org.postgresql/postgresql {:mvn/version "42.7.4"}
-  org.xerial/sqlite-jdbc {:mvn/version "3.46.1.3"}
+  org.postgresql/postgresql {:mvn/version "42.7.5"}
+  org.xerial/sqlite-jdbc {:mvn/version "3.48.0.0"}
 
   com.zaxxer/HikariCP {:mvn/version "6.0.0"}
 
@@ -41,9 +42,9 @@
   buddy/buddy-hashers {:mvn/version "2.0.167"}
   buddy/buddy-sign {:mvn/version "3.6.1-359"}
 
-  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.1.8"}
+  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.2.0"}
 
-  org.jsoup/jsoup {:mvn/version "1.18.1"}
+  org.jsoup/jsoup {:mvn/version "1.18.3"}
   org.im4java/im4java
   {:git/tag "1.4.0-penpot-2"
    :git/sha "e2b3e16"
@@ -54,11 +55,11 @@
   org.clojars.pntblnk/clj-ldap {:mvn/version "0.0.17"}
 
   dawran6/emoji {:mvn/version "0.1.5"}
-  markdown-clj/markdown-clj {:mvn/version "1.12.1"}
+  markdown-clj/markdown-clj {:mvn/version "1.12.2"}
 
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
-  software.amazon.awssdk/s3 {:mvn/version "2.28.26"}
+  software.amazon.awssdk/s3 {:mvn/version "2.30.7"}
   }
 
  :paths ["src" "resources" "target/classes"]
@@ -74,7 +75,7 @@
 
   :build
   {:extra-deps
-   {io.github.clojure/tools.build {:git/tag "v0.10.5" :git/sha "2a21b7a"}}
+   {io.github.clojure/tools.build {:git/tag "v0.10.6" :git/sha "52cf7d6"}}
    :ns-default build}
 
   :test
@@ -88,8 +89,8 @@
 
   :jmx-remote
   {:jvm-opts ["-Dcom.sun.management.jmxremote"
-              "-Dcom.sun.management.jmxremote.port=9091"
-              "-Dcom.sun.management.jmxremote.rmi.port=9091"
+              "-Dcom.sun.management.jmxremote.port=9090"
+              "-Dcom.sun.management.jmxremote.rmi.port=9090"
               "-Dcom.sun.management.jmxremote.local.only=false"
               "-Dcom.sun.management.jmxremote.authenticate=false"
               "-Dcom.sun.management.jmxremote.ssl=false"

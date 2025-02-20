@@ -29,7 +29,7 @@
 
 (sm/register! ::component schema:component)
 
-(def check-component!
+(def check-component
   (sm/check-fn schema:component))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -65,8 +65,6 @@
    :fill-color              :fill-group
    :fill-opacity            :fill-group
 
-   :rx                      :radius-group
-   :ry                      :radius-group
    :r1                      :radius-group
    :r2                      :radius-group
    :r3                      :radius-group
@@ -140,6 +138,14 @@
     :layout-item-z-index
     :layout-item-align-self})
 
+(defn component-attr?
+  "Check if some attribute is one that is involved in component syncrhonization.
+   Note that design tokens also are involved, although they go by an alternate
+   route and thus they are not part of :sync-attrs."
+  [attr]
+  (or (get sync-attrs attr)
+      (= :applied-tokens attr)))
+
 (defn instance-root?
   "Check if this shape is the head of a top instance."
   [shape]
@@ -208,6 +214,19 @@
   [shape-id page-id component]
   (and (= shape-id (:main-instance-id component))
        (= page-id (:main-instance-page component))))
+
+
+(defn is-variant?
+  "Check if this shape or component is a variant component"
+  [item]
+  (some? (:variant-id item)))
+
+
+(defn is-variant-container?
+  "Check if this shape is a variant container"
+  [shape]
+  (:is-variant-container shape))
+
 
 (defn set-touched-group
   [touched group]

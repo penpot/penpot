@@ -373,7 +373,7 @@
             (assoc :points points)
             (assoc :rotation rotation))))))
 
-(defn- apply-transform
+(defn apply-transform
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform-mtx]

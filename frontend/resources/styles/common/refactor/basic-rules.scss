@@ -810,28 +810,6 @@
   }
 }
 
-.comment-bubbles {
-  @include bodySmallTypography;
-  @include flexCenter;
-  height: $s-32;
-  width: $s-32;
-  border-radius: $br-circle;
-  background-color: var(--comment-bullet-background-color-rest);
-  border: $s-1 solid var(--comment-bullet-border-color-rest);
-  color: var(--comment-bullet-foreground-color-rest);
-}
-
-.resolved-comment-bubble {
-  background-color: var(--comment-bullet-background-color-resolved);
-  border: $s-1 solid var(--comment-bullet-border-color-resolved);
-  color: var(--comment-bullet-foreground-color-resolved);
-}
-.unread-comment-bubble {
-  background-color: var(--comment-bullet-background-color-unread);
-  border: $s-1 solid var(--comment-bullet-border-color-unread);
-  color: var(--comment-bullet-foreground-color-unread);
-}
-
 // SELECTS AND DROPDOWNS
 .menu-dropdown {
   @include menuShadow;
@@ -895,7 +873,7 @@
   top: $s-32;
   left: 0;
   width: 100%;
-  max-height: $s-300;
+  max-height: var(--menu-max-height, $s-300);
   padding: $s-2;
   margin: 0;
   margin-top: $s-1;

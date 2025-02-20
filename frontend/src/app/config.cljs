@@ -63,20 +63,11 @@
     :browser
     :webworker))
 
-(def default-flags
-  [:enable-onboarding
-   :enable-onboarding-team
-   :enable-onboarding-questions
-   :enable-onboarding-newsletter
-   :enable-dashboard-templates-section
-   :enable-google-fonts-provider
-   :enable-component-thumbnails])
-
 (defn- parse-flags
   [global]
   (let [flags (obj/get global "penpotFlags" "")
         flags (sequence (map keyword) (str/words flags))]
-    (flags/parse flags/default default-flags flags)))
+    (flags/parse flags/default flags)))
 
 (defn- parse-version
   [global]
@@ -105,12 +96,13 @@
 (def browser              (parse-browser))
 (def platform             (parse-platform))
 
-(def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI" "https://penpot.app/terms"))
-(def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI" "https://penpot.app/privacy"))
+(def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI"))
+(def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI"))
 (def flex-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
 (def grid-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
 (def plugins-list-uri     (obj/get global "penpotPluginsListUri" "https://penpot.app/penpothub/plugins"))
 (def plugins-whitelist    (into #{} (obj/get global "penpotPluginsWhitelist" [])))
+(def templates-uri        (obj/get global "penpotTemplatesUri" "https://penpot.github.io/penpot-files/"))
 
 (defn- normalize-uri
   [uri-str]
@@ -141,6 +133,16 @@
 (defn external-session-id
   []
   (let [f (obj/get global "externalSessionId")]
+    (when (fn? f) (f))))
+
+(defn external-context-info
+  []
+  (let [f (obj/get global "externalContextInfo")]
+    (when (fn? f) (f))))
+
+(defn initialize-external-context-info
+  []
+  (let [f (obj/get global "initializeExternalConfigInfo")]
     (when (fn? f) (f))))
 
 ;; --- Helper Functions

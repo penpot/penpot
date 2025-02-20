@@ -18,6 +18,7 @@
    [app.main.ui.components.button-link :as bl]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
@@ -120,17 +121,10 @@
               :else
               (reset! error (tr "errors.generic")))))
 
-        on-success-default
-        (mf/use-fn
-         (fn [data]
-           (when-let [token (:invitation-token data)]
-             (st/emit! (rt/nav :auth-verify-token {:token token})))))
-
         on-success
         (fn [data]
-          (if (nil? on-success-callback)
-            (on-success-default data)
-            (on-success-callback)))
+          (when (fn? on-success-callback)
+            (on-success-callback data)))
 
         on-submit
         (mf/use-callback
@@ -165,10 +159,8 @@
 
     [:*
      (when-let [message @error]
-       [:& context-notification
-        {:level :error
-         :content message
-         :role "alert"}])
+       [:> context-notification*
+        {:level :error} message])
 
      [:& fm/form {:on-submit on-submit
                   :class (stl/css :login-form)

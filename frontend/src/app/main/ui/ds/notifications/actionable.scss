@@ -1,0 +1,41 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../_borders.scss" as *;
+@use "../typography.scss" as *;
+
+.notification {
+  @include use-typography("body-medium");
+
+  --actionable-bg-color: var(--color-background-primary);
+  --actionable-fg-color: var(--color-foreground-primary);
+  --actionable-border-color: var(--color-background-quaternary);
+  --actionable-icon-color: var(--color-foreground-secondary);
+  --actionable-padding: var(--sp-s);
+
+  align-items: center;
+  background: var(--actionable-bg-color);
+  border-radius: $br-8;
+  border: $b-1 solid var(--actionable-border-color);
+  color: var(--actionable-fg-color);
+  display: grid;
+  gap: var(--sp-s);
+  grid-template-columns: 1fr auto auto;
+  justify-content: space-between;
+  padding: var(--actionable-padding);
+  padding-inline-start: var(--sp-l);
+
+  // Targets the potential links included by the creator in the children props.
+  & a {
+    color: var(--color-accent-primary);
+    text-decoration: none;
+  }
+}
+
+.notification-message {
+  display: flex;
+  align-items: center;
+}

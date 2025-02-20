@@ -20,21 +20,21 @@
    [:icon {:optional true}
     [:and :string [:fn #(contains? icon-list %)]]]
    [:type {:optional true} :string]
-   [:ref {:optional true} some?]])
+   [:variant {:optional true} :string]])
 
 (mf/defc input*
   {::mf/props :obj
    ::mf/forward-ref true
    ::mf/schema schema:input}
-  [{:keys [icon class type] :rest props} ref]
+  [{:keys [icon class type variant] :rest props} ref]
   (let [ref   (or ref (mf/use-ref))
         type  (d/nilv type "text")
         props (mf/spread-props props
-                               :class (stl/css-case
-                                       :input true
-                                       :input-with-icon (some? icon))
-                               :ref ref
-                               :type type)
+                               {:class (stl/css-case
+                                        :input true
+                                        :input-with-icon (some? icon))
+                                :ref ref
+                                :type type})
 
         on-icon-click
         (mf/use-fn
@@ -44,7 +44,8 @@
              (dom/select-node input-node)
              (dom/focus! input-node))))]
 
-    [:> :span {:class (dm/str class " " (stl/css :container))}
+    [:> :span {:class (dm/str class " " (stl/css-case :container true
+                                                      :input-seamless (= variant "seamless")))}
      (when (some? icon)
-       [:> icon* {:id icon :class (stl/css :icon) :on-click on-icon-click}])
+       [:> icon* {:icon-id icon :class (stl/css :icon) :on-click on-icon-click}])
      [:> :input props]]))

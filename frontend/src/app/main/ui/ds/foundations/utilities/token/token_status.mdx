@@ -1,0 +1,31 @@
+import { Canvas, Meta } from '@storybook/blocks';
+import * as TokenStatusIconStories from "./token_status.stories"
+
+<Meta of={TokenStatusIconStories} />
+
+# Token status icons
+
+## Technical notes
+
+There are some SVG that are not regular icons, and that are only
+meant to be used on token components.
+
+They represent the applied status of a token over a shape.
+
+The assets are located in the `frontend/resources/images/icons` folder.
+
+### Using asset IDs
+
+For convenience, icons IDs are available in the component namespace.
+
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*] :as ts]))
+```
+
+```clj
+[:> token-status-icon*
+        {:icon-id ts/token-status-partial
+         :class (stl/css :token-pill-icon)}]
+```

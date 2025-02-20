@@ -53,28 +53,30 @@
     :else value))
 
 (defn format-color
-  [value _options]
-  (cond
-    (:image value)
-    (let [image-url (cfg/resolve-file-media (:image value))
-          opacity-color (when (not= (:opacity value) 1)
-                          (uc/gradient->css {:type :linear
-                                             :stops [{:color "#FFFFFF" :opacity (:opacity value)}
-                                                     {:color "#FFFFFF" :opacity (:opacity value)}]}))]
-      (if opacity-color
-        ;; CSS doesn't allow setting directly opacity to background image, we should add a dummy gradient to get it
-        (dm/fmt "%, url(%) no-repeat center center / cover" opacity-color image-url)
-        (dm/fmt "url(%) no-repeat center center / cover" image-url)))
+  [value options]
+  (let [format (get options :format :hex)]
+    (cond
+      (:image value)
+      (let [image-url (cfg/resolve-file-media (:image value))
+            opacity-color (when (not= (:opacity value) 1)
+                            (uc/gradient->css {:type :linear
+                                               :stops [{:color "#FFFFFF" :opacity (:opacity value)}
+                                                       {:color "#FFFFFF" :opacity (:opacity value)}]}))]
+        (if opacity-color
+          ;; CSS doesn't allow setting directly opacity to background image, we should add a dummy gradient to get it
+          (dm/fmt "%, url(%) no-repeat center center / cover" opacity-color image-url)
+          (dm/fmt "url(%) no-repeat center center / cover" image-url)))
 
-    (not= (:opacity value) 1)
-    (uc/color->background value)
+      (not= (:opacity value) 1)
+      (uc/color->format->background value format)
 
-    :else
-    (str/upper (:color value))))
+      :else
+      (uc/color->format->background value format))))
 
 (defmethod format-value :color
   [_ value options]
-  (format-color value options))
+  (let [format (get options :format :hex)]
+    (format-color value (assoc options :format format))))
 
 (defmethod format-value :color-array
   [_ value options]

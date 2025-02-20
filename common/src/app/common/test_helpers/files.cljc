@@ -58,6 +58,12 @@
     (validate-file! file')
     file'))
 
+(defn apply-undo-changes
+  [file changes]
+  (let [file' (ctf/update-file-data file #(cfc/process-changes % (:undo-changes changes) true))]
+    (validate-file! file')
+    file'))
+
 ;; ----- Pages
 
 (defn sample-page

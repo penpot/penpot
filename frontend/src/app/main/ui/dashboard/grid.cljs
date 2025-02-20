@@ -189,7 +189,7 @@
                  [:& bc/color-bullet {:color {:color (:color color)
                                               :id (:id color)
                                               :opacity (:opacity color)}
-                                      :mini? true}]
+                                      :mini true}]
                  [:div {:class (stl/css :name-block)}
                   [:span {:class (stl/css :color-name)} (:name color)]
                   (when-not (= (:name color) default-name)
@@ -316,20 +316,35 @@
          (fn [event]
            (dom/stop-propagation event)
            (dom/prevent-default event)
+
            (when-not selected?
              (when-not (kbd/shift? event)
                (st/emit! (dd/clear-selected-files)))
-             (st/emit! (dd/toggle-file-select file)))
+             (do
+               (st/emit! (dd/toggle-file-select file))))
 
-           (let [client-position (dom/get-client-position event)
-                 position (if (and (nil? (:y client-position)) (nil? (:x client-position)))
-                            (let [target-element (dom/get-target event)
-                                  points         (dom/get-bounding-rect target-element)
-                                  y              (:top points)
-                                  x              (:left points)]
-                              (gpt/point x y))
-                            client-position)]
+           (let [client-position
+                 (dom/get-client-position event)
+
+                 position
+                 (if (and (nil? (:y client-position)) (nil? (:x client-position)))
+                   (let [target-element (dom/get-target event)
+                         points         (dom/get-bounding-rect target-element)
+                         y              (:top points)
+                         x              (:left points)]
+                     (gpt/point x y))
+                   client-position)]
+
              (st/emit! (dd/show-file-menu-with-position file-id position)))))
+
+        on-context-menu
+        (mf/use-fn
+         (mf/deps on-menu-click is-library-view)
+         (fn [event]
+           (dom/stop-propagation event)
+           (dom/prevent-default event)
+           (when-not is-library-view
+             (on-menu-click event))))
 
         edit
         (mf/use-fn
@@ -373,7 +388,7 @@
        :on-key-down handle-key-down
        :on-double-click on-navigate
        :on-drag-start on-drag-start
-       :on-context-menu on-menu-click}
+       :on-context-menu on-context-menu}
 
       [:div {:class (stl/css :overlay)}]
 
@@ -396,6 +411,8 @@
         [:div
          {:class (stl/css :project-th-icon :menu)
           :tab-index "0"
+          :role "button"
+          :aria-label (tr "dashboard.options")
           :ref menu-ref
           :id (str file-id "-action-menu")
           :on-click on-menu-click
@@ -409,7 +426,6 @@
            ;; so the menu can be handled
            [:div {:style {:pointer-events "all"}}
             [:> file-menu* {:files (vals selected-files)
-                            :show (:menu-open dashboard-local)
                             :left (+ 24 (:x (:menu-pos dashboard-local)))
                             :top (:y (:menu-pos dashboard-local))
                             :can-edit can-edit
@@ -423,19 +439,21 @@
   {::mf/props :obj}
   [{:keys [files project origin limit create-fn can-edit selected-files]}]
   (let [dragging?  (mf/use-state false)
-        project-id (:id project)
+        project-id (get project :id)
+        team-id    (get project :team-id)
+
         node-ref   (mf/use-var nil)
 
         on-finish-import
         (mf/use-fn
+         (mf/deps project-id team-id)
          (fn []
            (st/emit! (dpj/fetch-files project-id)
-                     (dtm/fetch-shared-files)
+                     (dtm/fetch-shared-files team-id)
                      (dd/clear-selected-files))))
 
-
-
-        import-files (use-import-file project-id on-finish-import)
+        import-files
+        (use-import-file project-id on-finish-import)
 
         on-drag-enter
         (mf/use-fn
@@ -502,7 +520,9 @@
         {:limit limit
          :can-edit can-edit
          :create-fn create-fn
-         :origin origin}])]))
+         :origin origin
+         :project-id project-id
+         :on-finish-import on-finish-import}])]))
 
 (mf/defc line-grid-row
   [{:keys [files selected-files dragging? limit can-edit] :as props}]
@@ -626,4 +646,6 @@
         {:dragging? @dragging?
          :limit limit
          :can-edit can-edit
-         :create-fn create-fn}])]))
+         :create-fn create-fn
+         :project-id project-id
+         :on-finish-import on-finish-import}])]))

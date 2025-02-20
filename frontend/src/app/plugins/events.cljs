@@ -7,7 +7,7 @@
 (ns app.plugins.events
   (:require
    [app.common.data.macros :as dm]
-   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.helpers :as dsh]
    [app.main.store :as st]
    [app.plugins.file :as file]
    [app.plugins.page :as page]
@@ -63,8 +63,8 @@
 (defmethod handle-state-change "shapechange"
   [_ plugin-id old-val new-val props]
   (if-let [shape-id (-> (obj/get props "shapeId") parser/parse-id)]
-    (let [old-shape (wsh/lookup-shape old-val shape-id)
-          new-shape (wsh/lookup-shape new-val shape-id)
+    (let [old-shape (dsh/lookup-shape old-val shape-id)
+          new-shape (dsh/lookup-shape new-val shape-id)
 
           file-id (:current-file-id new-val)
           page-id (:current-page-id new-val)]

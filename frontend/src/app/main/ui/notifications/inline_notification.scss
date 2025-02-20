@@ -6,73 +6,19 @@
 
 @import "refactor/common-refactor.scss";
 
-.inline-notification {
-  --inline-notification-bg-color: var(--alert-background-color-default);
-  --inline-notification-fg-color: var(--alert-text-foreground-color-default);
-  --inline-notification-border-color: var(--alert-border-color-default);
-  @include alertShadow;
+.new-inline {
   position: absolute;
   top: $s-72;
+  margin: auto;
   left: 0;
   right: 0;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: $s-24;
   min-height: $s-48;
   min-width: $s-640;
   width: fit-content;
   max-width: $s-960;
-  padding: $s-8;
-  margin-inline: auto;
-  border: $s-1 solid var(--inline-notification-border-color);
-  border-radius: $br-8;
   z-index: $z-index-modal;
-  background-color: var(--inline-notification-bg-color);
-  color: var(--inline-notification-fg-color);
-}
-
-.inline-text {
-  @include bodySmallTypography;
-  align-self: center;
-}
-
-.link-nav {
-  display: inline;
 }
 
 .link {
-  @include bodySmallTypography;
   margin: 0;
-  height: 100%;
-  color: var(--modal-link-foreground-color);
-}
-
-.actions {
-  display: grid;
-  grid-template-columns: none;
-  grid-auto-flow: column;
-  align-self: center;
-  gap: $s-8;
-}
-
-.action-btn {
-  @extend .button-secondary;
-  @include uppercaseTitleTipography;
-  min-height: $s-32;
-  min-width: $s-32;
-  width: fit-content;
-  padding: $s-8 $s-24;
-  border: $s-1 solid transparent;
-}
-
-.action-btn.primary {
-  @extend .button-primary;
-}
-
-.action-btn.secondary {
-  @extend .button-secondary;
-}
-
-.action-btn.danger {
-  @extend .modal-danger-btn;
 }

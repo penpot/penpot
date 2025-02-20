@@ -21,10 +21,10 @@
   (case (:code (ex-data error))
     :old-password-not-match
     (swap! form assoc-in [:errors :password-old]
-           {:code "errors.wrong-old-password"})
+           {:message (tr "errors.wrong-old-password")})
     :email-as-password
     (swap! form assoc-in [:errors :password-1]
-           {:code "errors.email-as-password"})
+           {:message (tr "errors.email-as-password")})
 
     (let [msg (tr "generic.error")]
       (st/emit! (ntf/error msg)))))

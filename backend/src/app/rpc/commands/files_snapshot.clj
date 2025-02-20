@@ -28,13 +28,19 @@
    [cuerdas.core :as str]))
 
 (def sql:get-file-snapshots
-  "SELECT id, label, revn, created_at, created_by, profile_id
-     FROM file_change
-    WHERE file_id = ?
-      AND data IS NOT NULL
-      AND (deleted_at IS NULL OR deleted_at > now())
-    ORDER BY created_at DESC
-    LIMIT 20")
+  "WITH changes AS (
+      SELECT id, label, revn, created_at, created_by, profile_id
+        FROM file_change
+       WHERE file_id = ?
+         AND data IS NOT NULL
+         AND (deleted_at IS NULL OR deleted_at > now())
+   ), versions AS (
+      (SELECT * FROM changes WHERE created_by = 'system' LIMIT 1000)
+      UNION ALL
+      (SELECT * FROM changes WHERE created_by != 'system' LIMIT 1000)
+   )
+   SELECT * FROM versions
+    ORDER BY created_at DESC;")
 
 (defn get-file-snapshots
   [conn file-id]

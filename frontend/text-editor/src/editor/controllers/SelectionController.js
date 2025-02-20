@@ -30,6 +30,7 @@ import {
   splitParagraph,
   mergeParagraphs,
   fixParagraph,
+  createParagraph,
 } from "../content/dom/Paragraph.js";
 import {
   removeBackward,
@@ -42,7 +43,7 @@ import { getTextNodeLength, getClosestTextNode, isTextNode } from "../content/do
 import TextNodeIterator from "../content/dom/TextNodeIterator.js";
 import TextEditor from "../TextEditor.js";
 import CommandMutations from "../commands/CommandMutations.js";
-import { setRootStyles } from "../content/dom/Root.js";
+import { isRoot, setRootStyles } from "../content/dom/Root.js";
 import { SelectionDirection } from "./SelectionDirection.js";
 import SafeGuard from "./SafeGuard.js";
 
@@ -357,6 +358,16 @@ export class SelectionController extends EventTarget {
           detail: this.#currentStyle,
         })
       );
+    } else {
+      const firstInline = this.#textEditor.root?.firstElementChild?.firstElementChild;
+      if (firstInline) {
+        this.#updateCurrentStyle(firstInline);
+        this.dispatchEvent(
+          new CustomEvent("stylechange", {
+            detail: this.#currentStyle,
+          }),
+        );
+      }
     }
   }
 
@@ -947,6 +958,15 @@ export class SelectionController extends EventTarget {
   }
 
   /**
+   * Is true if the current focus node is a root.
+   *
+   * @type {boolean}
+   */
+  get isRootFocus() {
+    return isRoot(this.focusNode)
+  }
+
+  /**
    * Indicates that we have multiple nodes selected.
    *
    * @type {boolean}
@@ -1024,11 +1044,37 @@ export class SelectionController extends EventTarget {
    * @param {DocumentFragment} fragment
    */
   insertPaste(fragment) {
-    const numParagraphs = fragment.children.length;
+    if (fragment.children.length === 1
+     && fragment.firstElementChild?.dataset?.inline === "force"
+    ) {
+      const collapseNode = fragment.lastElementChild.firstChild
+      if (this.isInlineStart) {
+        this.focusInline.before(...fragment.firstElementChild.children)
+      } else if (this.isInlineEnd) {
+        this.focusInline.after(...fragment.firstElementChild.children);
+      } else {
+        const newInline = splitInline(
+          this.focusInline,
+          this.focusOffset
+        )
+        this.focusInline.after(...fragment.firstElementChild.children, newInline)
+      }
+      return this.collapse(
+        collapseNode,
+        collapseNode.nodeValue.length
+      );
+    }
+    const collapseNode = fragment.lastElementChild.lastElementChild.firstChild
     if (this.isParagraphStart) {
+      const a = fragment.lastElementChild;
+      const b = this.focusParagraph;
       this.focusParagraph.before(fragment);
+      mergeParagraphs(a, b);
     } else if (this.isParagraphEnd) {
+      const a = this.focusParagraph;
+      const b = fragment.firstElementChild;
       this.focusParagraph.after(fragment);
+      mergeParagraphs(a, b);
     } else {
       const newParagraph = splitParagraph(
         this.focusParagraph,
@@ -1037,6 +1083,7 @@ export class SelectionController extends EventTarget {
       );
       this.focusParagraph.after(fragment, newParagraph);
     }
+    return this.collapse(collapseNode, collapseNode.nodeValue.length);
   }
 
   /**
@@ -1045,7 +1092,6 @@ export class SelectionController extends EventTarget {
    * @param {DocumentFragment} fragment
    */
   replaceWithPaste(fragment) {
-    const numParagraphs = fragment.children.length;
     this.removeSelected();
     this.insertPaste(fragment);
   }
@@ -1201,6 +1247,16 @@ export class SelectionController extends EventTarget {
       );
     } else if (this.isLineBreakFocus) {
       this.focusNode.replaceWith(new Text(newText));
+    } else if (this.isRootFocus) {
+      const newTextNode = new Text(newText);
+      const newInline = createInline(newTextNode, this.#currentStyle);
+      const newParagraph = createParagraph([
+        newInline
+      ], this.#currentStyle)
+      this.focusNode.replaceChildren(
+        newParagraph
+      );
+      return this.collapse(newTextNode, newText.length + 1);
     } else {
       throw new Error('Unknown node type');
     }

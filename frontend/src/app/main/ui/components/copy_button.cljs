@@ -11,13 +11,14 @@
    [app.main.data.event :as-alias ev]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [rumext.v2 :as mf]))
 
 (mf/defc copy-button
   {::mf/props :obj}
-  [{:keys [data on-copied children class]}]
+  [{:keys [data on-copied children class aria-label]}]
   (let [active* (mf/use-state false)
         active? (deref active*)
 
@@ -38,6 +39,7 @@
               (if (fn? data) (data) data)))))]
 
     [:button {:class class
+              :aria-label (or aria-label (tr "labels.copy"))
               :data-active (dm/str active?)
               :on-click on-click}
      children

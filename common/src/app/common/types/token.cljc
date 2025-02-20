@@ -6,8 +6,10 @@
 
 (ns app.common.types.token
   (:require
+   [app.common.data :as d]
    [app.common.schema :as sm]
    [app.common.schema.registry :as sr]
+   [clojure.data :as data]
    [clojure.set :as set]
    [malli.util :as mu]))
 
@@ -57,7 +59,8 @@
   [t]
   (token-types t))
 
-(def token-name-ref :string)
+(def token-name-ref
+  [:and :string [:re #"^(?!\$)([a-zA-Z0-9-$]+\.?)*(?<!\.)$"]])
 
 (defn valid-token-name-ref?
   [n]
@@ -84,8 +87,6 @@
 (sm/register!
  ^{::sm/type ::border-radius}
  [:map
-  [:rx {:optional true} token-name-ref]
-  [:ry {:optional true} token-name-ref]
   [:r1 {:optional true} token-name-ref]
   [:r2 {:optional true} token-name-ref]
   [:r3 {:optional true} token-name-ref]
@@ -128,6 +129,10 @@
   [:p2 {:optional true} token-name-ref]
   [:p3 {:optional true} token-name-ref]
   [:p4 {:optional true} token-name-ref]
+  [:m1 {:optional true} token-name-ref]
+  [:m2 {:optional true} token-name-ref]
+  [:m3 {:optional true} token-name-ref]
+  [:m4 {:optional true} token-name-ref]
   [:x {:optional true} token-name-ref]
   [:y {:optional true} token-name-ref]])
 
@@ -150,6 +155,15 @@
 
 (def rotation-keys (schema-keys ::rotation))
 
+(def all-keys (set/union color-keys
+                         border-radius-keys
+                         stroke-width-keys
+                         sizing-keys
+                         opacity-keys
+                         spacing-keys
+                         dimensions-keys
+                         rotation-keys))
+
 (sm/register!
  ^{::sm/type ::tokens}
  [:map {:title "Applied Tokens"}])
@@ -163,3 +177,64 @@
   ::spacing
   ::rotation
   ::dimensions])
+
+(defn shape-attr->token-attrs
+  ([shape-attr] (shape-attr->token-attrs shape-attr nil))
+  ([shape-attr changed-sub-attr]
+   (cond
+     (= :fills shape-attr) #{:fill}
+     (and (= :strokes shape-attr) (nil? changed-sub-attr)) #{:stroke-width :stroke-color}
+     (= :strokes shape-attr)
+     (cond
+       (some #{:stroke-color} changed-sub-attr) #{:stroke-color}
+       (some #{:stroke-width} changed-sub-attr) #{:stroke-width})
+     (border-radius-keys shape-attr) #{shape-attr}
+     (sizing-keys shape-attr) #{shape-attr}
+     (opacity-keys shape-attr) #{shape-attr}
+     (spacing-keys shape-attr) #{shape-attr}
+     (rotation-keys shape-attr) #{shape-attr})))
+
+(defn token-attr->shape-attr
+  [token-attr]
+  (case token-attr
+    :fill :fills
+    :stroke-color :strokes
+    :stroke-width :strokes
+    token-attr))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKENS IN SHAPES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- toggle-or-apply-token
+  "Remove any shape attributes from token if they exists.
+  Othewise apply token attributes."
+  [shape token]
+  (let [[shape-leftover token-leftover _matching] (data/diff (:applied-tokens shape) token)]
+    (merge {} shape-leftover token-leftover)))
+
+(defn- token-from-attributes [token attributes]
+  (->> (map (fn [attr] [attr (:name token)]) attributes)
+       (into {})))
+
+(defn- apply-token-to-attributes [{:keys [shape token attributes]}]
+  (let [token (token-from-attributes token attributes)]
+    (toggle-or-apply-token shape token)))
+
+(defn apply-token-to-shape
+  [{:keys [shape token attributes] :as _props}]
+  (let [applied-tokens (apply-token-to-attributes {:shape shape
+                                                   :token token
+                                                   :attributes attributes})]
+    (update shape :applied-tokens #(merge % applied-tokens))))
+
+(defn maybe-apply-token-to-shape
+  "When the passed `:token` is non-nil apply it to the `:applied-tokens` on a shape."
+  [{:keys [shape token _attributes] :as props}]
+  (if token
+    (apply-token-to-shape props)
+    shape))
+
+(defn unapply-token-id [shape attributes]
+  (update shape :applied-tokens d/without-keys attributes))
+

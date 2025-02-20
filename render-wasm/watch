@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -x
+
+_SCRIPT_DIR=$(dirname $0);
+pushd $_SCRIPT_DIR;
+
+. ./_build_env 
+
+pushd $_SCRIPT_DIR;
+cargo watch \
+      -x "build $_CARGO_PARAMS" \
+      -s "cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.js ../frontend/resources/public/js/" \
+      -s "cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.wasm ../frontend/resources/public/js/" \
+      -s "sed -i 's/render_wasm.wasm/render_wasm.wasm?version=develop/g' ../frontend/resources/public/js/render_wasm.js" \
+      -s "echo 'DONE\n'";
+
+popd

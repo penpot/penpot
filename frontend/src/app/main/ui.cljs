@@ -10,6 +10,7 @@
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.team :as dtm]
+   [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -29,7 +30,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def auth-page
@@ -61,8 +61,7 @@
                                                     :file-id file-id
                                                     :page-id page-id
                                                     :layout layout)))
-                   ptk/handle-error)))
-
+                   errors/on-error)))
   [:> loader*
    {:title (tr "labels.loading")
     :overlay true}])
@@ -70,7 +69,7 @@
 (mf/defc dashboard-legacy-redirect*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [section team-id project-id search-term plugin-url]}]
+  [{:keys [section team-id project-id search-term plugin-url template-url]}]
   (let [section (case section
                   :dashboard-legacy-search
                   :dashboard-search
@@ -97,7 +96,8 @@
       (let [params {:team-id team-id
                     :project-id project-id
                     :search-term search-term
-                    :plugin plugin-url}]
+                    :plugin plugin-url
+                    :template-url template-url}]
         (st/emit! (rt/nav section (d/without-nils params)))))
 
     [:> loader*
@@ -127,19 +127,19 @@
   {::mf/props :obj
    ::mf/private true}
   [{:keys [team-id children]}]
-
   (mf/with-effect [team-id]
     (st/emit! (dtm/initialize-team team-id))
     (fn []
       (st/emit! (dtm/finalize-team team-id))))
 
-  (let [team (mf/deref refs/team)]
+  (let [{:keys [permissions] :as team} (mf/deref refs/team)]
     (when (= team-id (:id team))
-      [:& (mf/provider ctx/current-team-id) {:value team-id}
-       [:& (mf/provider ctx/permissions) {:value (:permissions team)}
-        ;; The `:key` is mandatory here because we want to reinitialize
-        ;; all dom tree instead of simple rerender.
-        [:* {:key (str team-id)} children]]])))
+      [:> (mf/provider ctx/current-team-id) {:value team-id}
+       [:> (mf/provider ctx/permissions) {:value permissions}
+        [:> (mf/provider ctx/can-edit?) {:value (:can-edit permissions)}
+         ;; The `:key` is mandatory here because we want to reinitialize
+         ;; all dom tree instead of simple rerender.
+         [:* {:key (str team-id)} children]]]])))
 
 (mf/defc page*
   {::mf/props :obj
@@ -148,6 +148,7 @@
   (let [{:keys [data params]} route
         props   (get profile :props)
         section (get data :name)
+        team    (mf/deref refs/team)
 
 
         show-question-modal?
@@ -165,10 +166,12 @@
         (and (contains? cf/flags :onboarding)
              (not (:onboarding-viewed props))
              (not (contains? props :onboarding-team-id))
-             (contains? props :newsletter-updates))
+             (contains? props :newsletter-updates)
+             (:is-default team))
 
         show-release-modal?
         (and (contains? cf/flags :onboarding)
+             (not (contains? cf/flags :hide-release-modal))
              (:onboarding-viewed props)
              (not= (:release-notes-viewed props) (:main cf/version))
              (not= "0.0" (:main cf/version)))]
@@ -190,7 +193,8 @@
         :settings-password
         :settings-options
         :settings-feedback
-        :settings-access-tokens)
+        :settings-access-tokens
+        :settings-notifications)
        [:? [:& settings-page {:route route}]]
 
        :debug-icons-preview
@@ -207,13 +211,14 @@
         :dashboard-invitations
         :dashboard-webhooks
         :dashboard-settings)
-       (let [params      (get params :query)
-             team-id     (some-> params :team-id uuid)
-             project-id  (some-> params :project-id uuid)
-             search-term (some-> params :search-term)
-             plugin-url  (some-> params :plugin)]
+       (let [params        (get params :query)
+             team-id       (some-> params :team-id uuid)
+             project-id    (some-> params :project-id uuid)
+             search-term   (some-> params :search-term)
+             plugin-url    (some-> params :plugin)
+             template-url  (some-> params :template)]
          [:?
-          #_[:& app.main.ui.releases/release-notes-modal {:version "2.3"}]
+          #_[:& app.main.ui.releases/release-notes-modal {:version "2.5"}]
           #_[:& app.main.ui.onboarding/onboarding-templates-modal]
           #_[:& app.main.ui.onboarding/onboarding-modal]
           #_[:& app.main.ui.onboarding.team-choice/onboarding-team-modal]
@@ -237,7 +242,8 @@
                                :team-id team-id
                                :search-term search-term
                                :plugin-url plugin-url
-                               :project-id project-id}]]])
+                               :project-id project-id
+                               :template-url template-url}]]])
 
        :workspace
        (let [params     (get params :query)
@@ -318,13 +324,15 @@
        (let [team-id     (some-> params :path :team-id uuid)
              project-id  (some-> params :path :project-id uuid)
              search-term (some-> params :query :search-term)
-             plugin-url  (some-> params :query :plugin)]
+             plugin-url  (some-> params :query :plugin)
+             template-url  (some-> params :template)]
          [:> dashboard-legacy-redirect*
           {:team-id team-id
            :section section
            :project-id project-id
            :search-term search-term
-           :plugin-url plugin-url}])
+           :plugin-url plugin-url
+           :template-url template-url}])
 
        :viewer-legacy
        (let [{:keys [query-params path-params]} route

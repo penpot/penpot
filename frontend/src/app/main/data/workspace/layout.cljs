@@ -187,5 +187,3 @@
       (if (= val ::does-not-exist)
         (swap! storage/user dissoc skey)
         (swap! storage/user assoc skey val)))))
-
-

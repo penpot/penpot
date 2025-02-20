@@ -15,13 +15,14 @@
 (defn kebab-case [s] (str/replace s #"_" "-"))
 (defn snake-case [s] (str/replace s #"-" "_"))
 
-(def default-opts
-  {:table-fn snake-case
-   :column-fn snake-case})
-
 (defn as-kebab-maps
   [rs opts]
   (jdbc-opt/as-unqualified-modified-maps rs (assoc opts :label-fn kebab-case)))
+
+(def default-opts
+  {:table-fn snake-case
+   :column-fn snake-case
+   :builder-fn as-kebab-maps})
 
 (defn insert
   ([table key-map]
@@ -38,7 +39,10 @@
 
 (defn insert-many
   [table cols rows opts]
-  (let [opts (merge default-opts opts)]
+  (let [opts (merge default-opts opts)
+        opts (cond-> opts
+               (::on-conflict-do-nothing opts)
+               (assoc :suffix "ON CONFLICT DO NOTHING"))]
     (sql/for-insert-multi table cols rows opts)))
 
 (defn select

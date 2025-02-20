@@ -12,12 +12,12 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.reorder-handler :refer [reorder-handler]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
-   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
+   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -34,10 +34,6 @@
   (/ (.. event -nativeEvent -offsetX)
      (-> event dom/get-current-target dom/get-bounding-rect :width)))
 
-;; (defn- format-rgba
-;;   [{:keys [r g b alpha offset]}]
-;;   (str/ffmt "rgba(%1, %2, %3, %4) %5%%" r g b alpha (* offset 100)))
-
 (defn- format-rgb
   [{:keys [r g b offset]}]
   (str/ffmt "rgb(%1, %2, %3) %4%%" r g b (* offset 100)))
@@ -52,11 +48,11 @@
        (str/join ", ")
        (str/ffmt "linear-gradient(90deg, %1)")))
 
-(mf/defc stop-input-row
+(mf/defc stop-input-row*
+  {::mf/private true}
   [{:keys [stop
            index
            is-selected
-
            on-select-stop
            on-change-stop
            on-remove-stop
@@ -65,7 +61,7 @@
            on-blur-stop-offset
            on-focus-stop-color
            on-blur-stop-color]}]
-  (let [{:keys [color opacity offset]} stop
+  (let [offset (get stop :offset)
 
         handle-change-stop-color
         (mf/use-callback
@@ -140,14 +136,7 @@
                                 :dnd-over-top (= (:over dprops) :top)
                                 :dnd-over-bot (= (:over dprops) :bot))}
 
-     [:div {:ref dref
-            :class (stl/css :reorder)}
-      [:> icon*
-       {:id i/reorder
-        :class (stl/css :reorder-icon)
-        :aria-hidden true}]]
-     [:hr {:class (stl/css :reorder-separator-top)}]
-     [:hr {:class (stl/css :reorder-separator-bottom)}]
+     [:& reorder-handler {:ref dref}]
 
      [:div {:class (stl/css :offset-input-wrapper)}
       [:span {:class (stl/css :icon-text)} "%"]
@@ -160,18 +149,17 @@
         :on-focus handle-focus-stop-offset
         :on-blur handle-blur-stop-offset}]]
 
-     [:& color-row
+     [:> color-row*
       {:disable-gradient true
        :disable-picker true
-       :color {:color color
-               :opacity opacity}
+       :color stop
        :index index
        :on-change handle-change-stop-color
        :on-remove handle-remove-stop
        :on-focus handle-focus-stop-color
        :on-blur handle-blur-stop-color}]]))
 
-(mf/defc gradients
+(mf/defc gradients*
   [{:keys [type
            stops
            editing-stop
@@ -187,7 +175,7 @@
            on-rotate-stops
            on-reorder-stops]}]
 
-  (let [preview-state  (mf/use-state {:hover? false :offset 0.5})
+  (let [preview-state  (mf/use-state #(do {:hover? false :offset 0.5}))
         dragging-ref   (mf/use-ref false)
         start-ref      (mf/use-ref nil)
         start-offset   (mf/use-ref nil)
@@ -357,7 +345,7 @@
      [:div {:class (stl/css :gradient-stops-list)}
       [:& h/sortable-container {}
        (for [[index stop] (d/enumerate stops)]
-         [:& stop-input-row
+         [:> stop-input-row*
           {:key index
            :stop stop
            :index index

@@ -20,14 +20,18 @@
   --button-focus-inner-ring-color: initial;
   --button-focus-outer-ring-color: initial;
 
+  --button-width: initial;
+  --button-height: #{$sz-32};
+
   appearance: none;
-  height: $sz-32;
-  border: none;
-  border-radius: $br-8;
+
+  width: var(--button-width);
+  height: var(--button-height);
 
   background: var(--button-bg-color);
   color: var(--button-fg-color);
   border: $b-1 solid var(--button-border-color);
+  border-radius: $br-8;
 
   &:hover {
     --button-bg-color: var(--button-hover-bg-color);
@@ -129,22 +133,4 @@
   &:active {
     box-shadow: inset 0 0 #{px2rem(10)} #{px2rem(2)} rgba(0, 0, 0, 0.2);
   }
-}
-
-%base-button-action {
-  --button-bg-color: transparent;
-  --button-fg-color: var(--color-foreground-secondary);
-
-  --button-hover-bg-color: transparent;
-  --button-hover-fg-color: var(--color-accent-primary);
-
-  --button-active-bg-color: var(--color-background-quaternary);
-
-  --button-disabled-bg-color: transparent;
-  --button-disabled-fg-color: var(--color-accent-primary-muted);
-
-  --button-focus-bg-color: transparent;
-  --button-focus-fg-color: var(--color-accent-primary);
-  --button-focus-inner-ring-color: transparent;
-  --button-focus-outer-ring-color: var(--color-accent-primary);
 }

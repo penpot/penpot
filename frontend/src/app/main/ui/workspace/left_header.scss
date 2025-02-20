@@ -49,6 +49,9 @@
   @include smallTitleTipography;
   text-transform: none;
   color: var(--title-foreground-color-hover);
+  align-items: center;
+  display: flex;
+  flex-direction: row;
 }
 
 .file-name-input {
@@ -78,5 +81,43 @@
     fill: none;
     height: $s-16;
     width: $s-16;
+  }
+}
+
+.status-notification {
+  width: $s-6;
+  height: $s-6;
+  border-radius: 50%;
+  margin-right: $s-4;
+  flex-shrink: 0;
+  background-color: var(--status-widget-background-color-pending);
+
+  &.pending-status {
+    background-color: var(--status-widget-background-color-warning);
+  }
+
+  &.saving-status {
+    background-color: var(--status-widget-background-color-pending);
+  }
+
+  &.saved-status {
+    background-color: var(--status-widget-background-color-success);
+    animation: jump 0.3s ease-out;
+  }
+
+  &.error-status {
+    background-color: var(--status-widget-background-color-error);
+  }
+}
+
+@keyframes jump {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(0);
   }
 }

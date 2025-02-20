@@ -23,7 +23,8 @@ export function mergeStyleDeclarations(target, source) {
   // for (const styleName of source) {
   for (let index = 0; index < source.length; index++) {
     const styleName = source.item(index);
-    target.setProperty(styleName, source.getPropertyValue(styleName));
+    const styleValue = source.getPropertyValue(styleName);
+    target.setProperty(styleName, styleValue);
   }
   return target
 }
@@ -76,6 +77,17 @@ function getInertElement() {
 }
 
 /**
+ * Returns a default declaration.
+ *
+ * @returns {CSSStyleDeclaration}
+ */
+function getStyleDefaultsDeclaration() {
+  const element = getInertElement();
+  resetInertElement();
+  return element.style;
+}
+
+/**
  * Computes the styles of an element the same way `window.getComputedStyle` does.
  *
  * @param {Element} element
@@ -97,9 +109,10 @@ export function getComputedStyle(element) {
           inertElement.style.setProperty(styleName, newValue);
         }
       } else {
+        const newValue = currentElement.style.getPropertyValue(styleName);
         inertElement.style.setProperty(
           styleName,
-          currentElement.style.getPropertyValue(styleName)
+          newValue
         );
       }
     }
@@ -115,14 +128,16 @@ export function getComputedStyle(element) {
  *       CSS properties like `font-family` or some CSS variables.
  *
  * @param {Node} node
- * @param {CSSStyleDeclaration} styleDefaults
+ * @param {CSSStyleDeclaration} [styleDefaults]
  * @returns {CSSStyleDeclaration}
  */
-export function normalizeStyles(node, styleDefaults) {
+export function normalizeStyles(node, styleDefaults = getStyleDefaultsDeclaration()) {
+  const computedStyle = getComputedStyle(node.parentElement);
   const styleDeclaration = mergeStyleDeclarations(
     styleDefaults,
-    getComputedStyle(node.parentElement)
+    computedStyle
   );
+
   // If there's a color property, we should convert it to
   // a --fills CSS variable property.
   const fills = styleDeclaration.getPropertyValue("--fills");
@@ -130,11 +145,14 @@ export function normalizeStyles(node, styleDefaults) {
   if (color && !fills) {
     styleDeclaration.removeProperty("color");
     styleDeclaration.setProperty("--fills", getFills(color));
+  } else {
+    styleDeclaration.setProperty("--fills", fills);
   }
+
   // If there's a font-family property and not a --font-id, then
   // we remove the font-family because it will not work.
   const fontFamily = styleDeclaration.getPropertyValue("font-family");
-  const fontId = styleDeclaration.getPropertyPriority("--font-id");
+  const fontId = styleDeclaration.getPropertyValue("--font-id");
   if (fontFamily && !fontId) {
     styleDeclaration.removeProperty("font-family");
   }
@@ -145,8 +163,15 @@ export function normalizeStyles(node, styleDefaults) {
   }
 
   const lineHeight = styleDeclaration.getPropertyValue("line-height");
-  if (!lineHeight || lineHeight === "") {
+  if (!lineHeight || lineHeight === "" || !lineHeight.endsWith("px")) {
+    // TODO: Podríamos convertir unidades en decimales.
     styleDeclaration.setProperty("line-height", DEFAULT_LINE_HEIGHT);
+  } else if (lineHeight.endsWith("px")) {
+    const fontSize = styleDeclaration.getPropertyValue("font-size");
+    styleDeclaration.setProperty(
+      "line-height",
+      parseFloat(lineHeight) / parseFloat(fontSize),
+    );
   }
   return styleDeclaration
 }

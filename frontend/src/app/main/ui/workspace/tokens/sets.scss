@@ -4,12 +4,28 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../../ds/typography.scss" as *;
 @import "refactor/common-refactor.scss";
 
 .sets-list {
   width: 100%;
   margin-bottom: 0;
   overflow-y: auto;
+}
+
+.empty-sets-wrapper {
+  padding: $s-12;
+  padding-inline-start: $s-24;
+  color: var(--color-foreground-secondary);
+}
+
+.create-set-button {
+  @include use-typography("body-small");
+  background-color: transparent;
+  border: none;
+  appearance: none;
+  color: var(--color-accent-primary);
+  cursor: pointer;
 }
 
 .set-item-container {
@@ -20,8 +36,9 @@
   min-height: $s-32;
   cursor: pointer;
   color: var(--layer-row-foreground-color);
-  padding-left: calc($s-32 * var(--tree-depth, 0));
+  padding-left: calc($s-24 * var(--tree-depth, 0) + $s-8);
   border: $s-2 solid transparent;
+  gap: $s-2;
 
   &.dnd-over-bot {
     border-bottom: $s-2 solid var(--layer-row-foreground-color-hover);
@@ -32,6 +49,18 @@
   &.dnd-over {
     border: $s-2 solid var(--layer-row-foreground-color-hover);
   }
+}
+
+.set-item-group {
+  cursor: unset;
+  padding-left: calc($s-24 * var(--tree-depth, 0));
+  gap: 0;
+}
+
+.set-item-group-collapse-button {
+  cursor: pointer;
+  width: auto;
+  height: $s-28;
 }
 
 .set-name {
@@ -60,17 +89,28 @@
   height: $s-16;
   margin-inline: $s-6;
   background-color: var(--input-checkbox-background-color-rest);
-  border: 1px solid var(--input-checkbox-border-color-rest);
-  border-radius: 0.25rem;
+  border: $s-1 solid var(--input-checkbox-border-color-rest);
+  border-radius: $s-4;
   padding: 0;
 }
 
 .checkbox-checked-style {
   background-color: var(--input-border-color-active);
+  color: var(--color-background-secondary);
+}
+
+.checkbox-disabled {
+  border: $s-1 solid var(--color-background-quaternary);
+  background-color: var(--color-background-tertiary);
+}
+
+.checkbox-disabled-checked {
+  background-color: var(--color-accent-primary-muted);
+  color: var(--color-background-quaternary);
 }
 
 .check-icon {
-  color: var(--color-background-secondary);
+  color: currentColor;
 }
 
 .set-item-container:hover {
@@ -105,18 +145,18 @@
 
 .editing-node {
   @include textEllipsis;
-  color: var(--layer-row-foreground-color-focus);
-}
-
-.editing-node {
-  @include textEllipsis;
   @include bodySmallTypography;
   @include removeInputStyle;
+
+  border: $s-1 solid var(--input-border-color-focus);
+  border-radius: $br-8;
+  color: var(--layer-row-foreground-color-focus);
   flex-grow: 1;
   height: $s-28;
-  padding-left: $s-6;
   margin: 0;
-  border-radius: $br-8;
-  border: $s-1 solid var(--input-border-color-focus);
-  color: var(--layer-row-foreground-color);
+  padding-left: $s-6;
+
+  &::placeholder {
+    color: var(--layer-row-foreground-color-placeholder);
+  }
 }

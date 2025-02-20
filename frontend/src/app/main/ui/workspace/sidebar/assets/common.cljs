@@ -15,17 +15,20 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.config :as cf]
+   [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.variants :as dwv]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg component-svg-thumbnail]]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
@@ -58,7 +61,10 @@
                               (if reverse? "z" "a")
                               path)]
                    (str/lower (cfh/merge-path-item path name))))
-               (if ^boolean reverse? > <)))))
+               (if ^boolean reverse? > <))
+
+      :always
+      (vec))))
 
 (defn add-group
   [asset group-name]
@@ -119,18 +125,21 @@
     :left (:left state)
     :options options}])
 
-(mf/defc section-icon
-  {::mf/wrap-props false}
-  [{:keys [section]}]
+(defn section-icon
+  [section]
   (case section
-    :colors i/drop-icon
-    :components i/component
-    :typographies i/text-palette
-    i/add))
+    :colors "drop"
+    :components "component"
+    :typographies "text-palette"
+    "add"))
+
+(defn should-display-asset-count?
+  [section assets-count]
+  (or (not (= section :tokens)) (and (< 0 assets-count) (= section :tokens))))
 
 (mf/defc asset-section
   {::mf/wrap-props false}
-  [{:keys [children file-id title section assets-count icon open?]}]
+  [{:keys [children file-id title section assets-count icon open? on-click]}]
   (let [children    (-> (array/normalize-to-array children)
                         (array/without-nils))
 
@@ -149,28 +158,34 @@
 
         title
         (mf/html
-         [:span {:class (stl/css :title-name)}
+         [:span {:class (stl/css-case :title-name true
+                                      :title-tokens (= section :tokens)
+                                      :title-tokens-active (and (= section :tokens) (< 0 assets-count)))}
           [:span {:class (stl/css :section-icon)}
-           [:& (or icon section-icon) {:section section}]]
+           [:> icon* {:icon-id (or icon (section-icon section)) :size "s"}]]
           [:span {:class (stl/css :section-name)}
            title]
 
-          [:span {:class (stl/css :num-assets)}
-           assets-count]])]
+          (when (should-display-asset-count? section assets-count)
+            [:span {:class (stl/css :num-assets)}
+             assets-count])])]
 
     [:div {:class (stl/css-case :asset-section true
                                 :opened (and (< 0 assets-count)
-                                             open?))}
+                                             open?))
+           :on-click on-click}
      [:& title-bar
       {:collapsable   (< 0 assets-count)
        :collapsed     (not open?)
        :all-clickable true
        :on-collapsed  on-collapsed
        :add-icon-gap  (= 0 assets-count)
-       :class         (stl/css-case :title-spacing open?)
        :title         title}
       buttons]
-     (when ^boolean open? content)]))
+     (when ^boolean (and (< 0 assets-count)
+                         open?)
+       [:div {:class (stl/css-case :title-spacing open?)}
+        content])]))
 
 (mf/defc asset-section-block
   {::mf/wrap-props false}
@@ -313,19 +328,22 @@
         copies              (filter ctk/in-component-copy? shapes)
 
         current-file-id     (mf/use-ctx ctx/current-file-id)
-        objects             (deref refs/workspace-page-objects)
-        workspace-data      (deref refs/workspace-data)
-        workspace-libraries (deref refs/workspace-libraries)
-        current-file        {:id current-file-id :data workspace-data}
+        current-page-id     (mf/use-ctx ctx/current-page-id)
+
+        libraries           (deref refs/files)
+        current-file        (get libraries current-file-id)
+
+        objects             (-> (dsh/get-page (:data current-file) current-page-id)
+                                (get :objects))
 
         find-component      (fn [shape include-deleted?]
                               (ctf/resolve-component
-                               shape current-file workspace-libraries {:include-deleted? include-deleted?}))
+                               shape current-file libraries {:include-deleted? include-deleted?}))
 
         local-or-exists     (fn [shape]
                               (let [library-id (:component-file shape)]
                                 (or (= library-id current-file-id)
-                                    (some? (get workspace-libraries library-id)))))
+                                    (some? (get libraries library-id)))))
 
         restorable-copies   (->> copies
                                  (filter #(nil? (find-component % false)))
@@ -363,6 +381,8 @@
         can-detach? (and (seq copies)
                          (every? #(not (ctn/has-any-copy-parent? objects %)) copies))
 
+        variants? (features/use-feature "variants/v1")
+
 
         do-detach-component
         #(st/emit! (dwl/detach-components (map :id copies)))
@@ -396,8 +416,12 @@
         do-create-annotation
         #(st/emit! (dw/set-annotations-id-for-create id))
 
+        do-add-variant
+        #(when variants?
+           (st/emit! (dwv/transform-in-variant id)))
+
         do-show-local-component
-        #(st/emit! (dwl/go-to-local-component component-id))
+        #(st/emit! (dwl/go-to-local-component :id component-id))
 
         ;; When the show-remote is after a restore, the component may still be deleted
         do-show-remote-component
@@ -445,5 +469,8 @@
                          :action do-show-component})
                       (when can-update-main?
                         {:title (tr "workspace.shape.menu.update-main")
-                         :action do-update-component})]]
+                         :action do-update-component})
+                      (when (and variants? (not multi) main-instance?)
+                        {:title (tr "workspace.shape.menu.add-variant")
+                         :action do-add-variant})]]
     (filter (complement nil?) menu-entries)))

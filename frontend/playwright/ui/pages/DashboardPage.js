@@ -55,6 +55,7 @@ export class DashboardPage extends BaseWebSocketPage {
 
   static anyTeamId = "c7ce0794-0992-8105-8004-38e630f40f6d";
   static secondTeamId = "dd33ff88-f4e5-8033-8003-8096cc07bdf3";
+  static newTeamId = "0b5bcbca-32ab-81eb-8005-a153d23d7739";
   static draftProjectId = "c7ce0794-0992-8105-8004-38e630f7920b";
 
   constructor(page) {
@@ -71,7 +72,7 @@ export class DashboardPage extends BaseWebSocketPage {
 
     this.draftsLink = this.sidebar.getByText("Drafts");
     this.fontsLink = this.sidebar.getByText("Fonts");
-    this.libsLink = this.sidebar.getByText("Libraries");
+    this.librariesLink = this.sidebar.getByText("Libraries");
 
     this.searchButton = page.getByRole("button", { name: "dashboard-search" });
     this.searchInput = page.getByPlaceholder("Search…");
@@ -152,6 +153,9 @@ export class DashboardPage extends BaseWebSocketPage {
       "dashboard/get-font-variants.json",
     );
     await this.mockRPC("search-files", "dashboard/search-files.json", {
+      method: "POST",
+    });
+    await this.mockRPC("delete-team", "dashboard/delete-team.json", {
       method: "POST",
     });
     await this.mockRPC("search-files", "dashboard/search-files.json");
@@ -276,6 +280,13 @@ export class DashboardPage extends BaseWebSocketPage {
     await this.userAccount.click();
 
     await this.userProfileOption.click();
+  }
+
+  async goToLibraries() {
+    await this.page.goto(
+      `#/dashboard/libraries?team-id=${DashboardPage.anyTeamId}`,
+    );
+    await expect(this.mainHeading).toHaveText("Libraries");
   }
 }
 

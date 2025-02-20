@@ -7,18 +7,19 @@
 (ns app.main.ui.workspace.right-header
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.drawing.common :as dwc]
+   [app.main.data.workspace.history :as dwh]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.dashboard.team]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.exports.assets :refer [export-progress-widget]]
    [app.main.ui.formats :as fmt]
@@ -31,39 +32,6 @@
 
 (def ref:persistence-status
   (l/derived :status refs/persistence))
-
-;; --- Persistence state Widget
-
-(mf/defc persistence-state-widget
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  []
-  (let [status (mf/deref ref:persistence-status)
-        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)]
-    (when-not workspace-read-only?
-      [:div {:class (stl/css :persistence-status-widget)}
-       (case status
-         :pending
-         [:div {:class (stl/css :status-icon :pending-status)
-                :title (tr "workspace.header.unsaved")}
-          i/status-alert]
-
-         :saving
-         [:div {:class (stl/css :status-icon :pending-status)
-                :title (tr "workspace.header.unsaved")}
-          i/status-alert]
-
-         :saved
-         [:div {:class (stl/css :status-icon :saved-status)
-                :title (tr "workspace.header.saved")}
-          i/status-tick]
-
-         :error
-         [:div {:class (stl/css :status-icon :error-status)
-                :title "There was an error saving the data. Please refresh if this persists."}
-          i/status-wrong]
-
-         nil)])))
 
 ;; --- Zoom Widget
 
@@ -141,8 +109,7 @@
 
 ;; --- Header Component
 
-(mf/defc right-header
-  {::mf/wrap-props false}
+(mf/defc right-header*
   [{:keys [file layout page-id]}]
   (let [file-id           (:id file)
 
@@ -198,7 +165,7 @@
              (st/emit! :interrupt
                        (dw/clear-edition-mode)))
 
-           (st/emit! (-> (dw/toggle-layout-flag :document-history)
+           (st/emit! (-> (dwh/initialize-history)
                          (vary-meta assoc ::ev/origin "workspace-header")))))
 
         open-share-dialog
@@ -216,8 +183,6 @@
     [:div {:class (stl/css :workspace-header-right)}
      [:div {:class (stl/css :users-section)}
       [:& active-sessions]]
-
-     [:& persistence-state-widget]
 
      [:& export-progress-widget]
 
@@ -244,14 +209,14 @@
      (when-not ^boolean read-only?
        [:div {:class (stl/css :history-section)}
         [:button
-         {:title (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
-          :aria-label (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
+         {:title (tr "workspace.sidebar.history")
+          :aria-label (tr "workspace.sidebar.history")
           :class (stl/css-case :selected (contains? layout :document-history)
                                :history-button true)
           :on-click toggle-history}
          i/history]])
 
-     (when (cf/external-feature-flag "share-01" "test")
+     (when  (not (:is-default team))
        [:a {:class (stl/css :viewer-btn)
             :title (tr "workspace.header.share")
             :on-click open-share-dialog}

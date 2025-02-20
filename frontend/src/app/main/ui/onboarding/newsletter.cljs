@@ -10,6 +10,7 @@
    [app.main.data.event :as-alias ev]
    [app.main.data.notifications :as ntf]
    [app.main.data.profile :as du]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -22,6 +23,7 @@
   (let [state* (mf/use-state #(do {:newsletter-updates false
                                    :newsletter-news false}))
         state  (deref state*)
+        team (mf/deref refs/team)
 
         on-change
         (mf/use-fn
@@ -33,7 +35,7 @@
 
         on-next
         (mf/use-fn
-         (mf/deps state)
+         (mf/deps state team)
          (fn []
            (when (or (:newsletter-updates state)
                      (:newsletter-news state))
@@ -44,7 +46,10 @@
                             (assoc :label "newsletter:subscriptions")
                             (assoc :step 6))]
              (st/emit! (ptk/data-event ::ev/event params)
-                       (du/update-profile-props state)))))]
+                       (du/update-profile-props
+                        (cond-> state
+                          (not (:is-default team))
+                          (assoc :onboarding-viewed true)))))))]
 
     [:div {:class (stl/css-case
                    :modal-overlay true)}

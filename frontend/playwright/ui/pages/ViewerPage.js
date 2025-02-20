@@ -51,6 +51,21 @@ export class ViewerPage extends BaseWebSocketPage {
     );
   }
 
+  async setupFileWithMultipleBoards() {
+    await this.mockRPC(
+      /get\-view\-only\-bundle\?/,
+      "viewer/get-view-only-bundle-multiple-boards.json",
+    );
+    await this.mockRPC(
+      "get-comment-threads?file-id=*",
+      "workspace/get-comment-threads-empty.json",
+    );
+    await this.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "viewer/get-file-fragment-multiple-boards.json",
+    );
+  }
+
   async setupFileWithComments() {
     await this.mockRPC(
       /get\-view\-only\-bundle\?/,
@@ -104,8 +119,7 @@ export class ViewerPage extends BaseWebSocketPage {
 
   async showCommentsThread(number, clickOptions = {}) {
     await this.page
-      .getByTestId("floating-thread-bubble")
-      .filter({ hasText: number.toString() })
+      .getByTestId(`floating-thread-bubble-${number.toString()}`)
       .click(clickOptions);
   }
 

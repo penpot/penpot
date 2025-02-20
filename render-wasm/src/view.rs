@@ -1,4 +1,4 @@
-use crate::math::Rect;
+use skia_safe::Rect;
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct Viewbox {

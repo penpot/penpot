@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.types.team :as ctt]
@@ -118,8 +119,10 @@
       (let [team-id (:current-team-id state)
             teams   (get state :teams)
             team    (get teams team-id)]
-        (rx/of (set-current-team team)
-               (fetch-members))))))
+        (if (not team)
+          (rx/throw (ex/error :type :authentication))
+          (rx/of (set-current-team team)
+                 (fetch-members)))))))
 
 (defn initialize-team
   [team-id]
@@ -223,26 +226,6 @@
       (let [team-id (:current-team-id state)]
         (->> (rp/cmd! :get-webhooks {:team-id team-id})
              (rx/map (partial webhooks-fetched team-id)))))))
-
-(defn- shared-files-fetched
-  [files]
-  (ptk/reify ::shared-files-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [files (d/index-by :id files)]
-        (assoc state :shared-files files)))))
-
-(defn fetch-shared-files
-  "Event mainly used for fetch a list of shared libraries for a team,
-  this list does not includes the content of the library per se.  It
-  is used mainly for show available libraries and a summary of it."
-  []
-  (ptk/reify ::fetch-shared-files
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
-             (rx/map shared-files-fetched))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Modification
@@ -474,6 +457,13 @@
              (rx/tap on-success)
              (rx/catch on-error))))))
 
+(defn- team-deleted
+  [id]
+  (ptk/reify ::team-deleted
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :teams dissoc id))))
+
 (defn delete-team
   [{:keys [id] :as params}]
   (ptk/reify ::delete-team
@@ -485,7 +475,10 @@
             (meta params)]
 
         (->> (rp/cmd! :delete-team {:id id})
-             (rx/mapcat on-success)
+             (rx/mapcat (fn [result]
+                          (rx/concat
+                           (rx/of (team-deleted id))
+                           (on-success result))))
              (rx/catch on-error))))))
 
 (defn delete-webhook
@@ -554,6 +547,25 @@
                            (rx/of (fetch-webhooks)))))
              (rx/catch on-error))))))
 
+(defn- shared-files-fetched
+  [files]
+  (ptk/reify ::shared-files-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [files (d/index-by :id files)]
+        (update state :shared-files merge files)))))
 
+(defn fetch-shared-files
+  "Event mainly used for fetch a list of shared libraries for a team,
+  this list does not includes the content of the library per se.  It
+  is used mainly for show available libraries and a summary of it."
+  ([] (fetch-shared-files nil))
+  ([team-id]
+   (ptk/reify ::fetch-shared-files
+     ptk/WatchEvent
+     (watch [_ state _]
+       (when-let [team-id (or team-id (:current-team-id state))]
+         (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
+              (rx/map shared-files-fetched)))))))
 
 

@@ -5,10 +5,10 @@
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.warnings :as wtw]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]
@@ -59,6 +59,31 @@
       :references references}
      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
 
+(defn parse-sd-token-opacity-value
+  "Parses `value` of a dimensions `sd-token` into a map like `{:value 1 :unit \"px\"}`.
+  If the `value` is not parseable and/or has missing references returns a map with `:errors`.
+  If the `value` is parseable but is out of range returns a map with `warnings`."
+  [value has-references?]
+
+  (let [parsed-value (wtt/parse-token-value value)
+        out-of-scope (not (<= 0 (:value parsed-value) 1))
+        references (seq (ctob/find-token-value-references value))]
+    (cond
+      (and parsed-value (not out-of-scope))
+      parsed-value
+
+      references
+      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+       :references references}
+
+      (and (not has-references?) out-of-scope)
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-opacity value)]}
+
+      (and has-references? out-of-scope)
+      (assoc parsed-value :warnings [(wtw/warning-with-value :warning.style-dictionary/invalid-referenced-token-value value)])
+
+      :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
+
 (defn process-sd-tokens
   "Converts a StyleDictionary dictionary with resolved tokens (aka `sd-tokens`) back to clojure.
   The `get-origin-token` argument should be a function that takes an
@@ -95,14 +120,22 @@
    (fn [acc ^js sd-token]
      (let [origin-token (get-origin-token sd-token)
            value (.-value sd-token)
+           has-references? (str/includes? (:value origin-token) "{")
            parsed-token-value (case (:type origin-token)
                                 :color (parse-sd-token-color-value value)
+                                :opacity (parse-sd-token-opacity-value value has-references?)
                                 (parse-sd-token-dimensions-value value))
-           output-token (if (:errors parsed-token-value)
-                          (merge origin-token parsed-token-value)
-                          (assoc origin-token
-                                 :resolved-value (:value parsed-token-value)
-                                 :unit (:unit parsed-token-value)))]
+           output-token (cond (:errors parsed-token-value)
+                              (merge origin-token parsed-token-value)
+                              (:warnings parsed-token-value)
+                              (assoc origin-token
+                                     :resolved-value (:value parsed-token-value)
+                                     :warnings (:warnings parsed-token-value)
+                                     :unit (:unit parsed-token-value))
+                              :else
+                              (assoc origin-token
+                                     :resolved-value (:value parsed-token-value)
+                                     :unit (:unit parsed-token-value)))]
        (assoc acc (:name output-token) output-token)))
    {} sd-tokens))
 
@@ -132,10 +165,10 @@
   ([tokens-tree get-token]
    (resolve-tokens-tree+ tokens-tree get-token (StyleDictionary. default-config)))
   ([tokens-tree get-token style-dictionary]
-   (-> style-dictionary
-       (add-tokens tokens-tree)
-       (build-dictionary)
-       (p/then #(process-sd-tokens % get-token)))))
+   (let [sdict (-> style-dictionary
+                   (add-tokens tokens-tree)
+                   (build-dictionary))]
+     (p/fmap #(process-sd-tokens % get-token) sdict))))
 
 (defn sd-token-name [^js sd-token]
   (.. sd-token -original -name))
@@ -143,8 +176,10 @@
 (defn sd-token-uuid [^js sd-token]
   (uuid (.-uuid (.-id ^js sd-token))))
 
-(defn resolve-tokens+ [tokens]
-  (resolve-tokens-tree+ (ctob/tokens-tree tokens) #(get tokens (sd-token-name %))))
+(defn resolve-tokens+
+  [tokens]
+  (let [tokens-tree (ctob/tokens-tree tokens)]
+    (resolve-tokens-tree+ tokens-tree #(get tokens (sd-token-name %)))))
 
 (defn resolve-tokens-interactive+
   "Interactive check of resolving tokens.
@@ -174,6 +209,7 @@
   [err]
   (let [[header-1 header-2 & errors] (str/split err "\n")]
     (when (and
+          ;; TODO: This needs translations
            (= header-1 "Error: ")
            (= header-2 "Reference Errors:"))
       errors)))
@@ -187,7 +223,9 @@
                      (throw (wte/error-ex-info :error.import/json-parse-error data e))))))
        (rx/map (fn [json-data]
                  (try
-                   (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data)
+                   (if-not (ctob/has-legacy-format? json-data)
+                     (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data)
+                     (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data))
                    (catch js/Error e
                      (throw (wte/error-ex-info :error.import/invalid-json-data json-data e))))))
        (rx/mapcat (fn [tokens-lib]
@@ -206,10 +244,11 @@
 
 ;; === Errors
 
-(defn humanize-errors [{:keys [errors value] :as _token}]
+(defn humanize-errors [{:keys [errors] :as token}]
   (->> (map (fn [err]
-              (case err
-                :error.style-dictionary/missing-reference (str "Could not resolve reference token with the name: " value)
+              (case (:error/code err)
+                ;; TODO: This needs translations
+                :error.style-dictionary/missing-reference (str "Could not resolve reference token with the name: " (:error/value err))
                 nil))
             errors)
        (str/join "\n")))
@@ -229,32 +268,45 @@
              :or {cache-atom !tokens-cache}
              :as config}]
   (let [tokens-state (mf/use-state (get @cache-atom tokens))]
-    (mf/use-effect
-     (mf/deps tokens config)
-     (fn []
-       (let [cached (get @cache-atom tokens)]
-         (cond
-           (nil? tokens) nil
-           ;; The tokens are already processing somewhere
-           (p/promise? cached) (-> cached
-                                   (p/then #(reset! tokens-state %))
-                                   #_(p/catch js/console.error))
-           ;; Get the cached entry
-           (some? cached) (reset! tokens-state cached)
-           ;; No cached entry, start processing
-           :else (let [promise+ (if interactive?
-                                  (resolve-tokens-interactive+ tokens)
-                                  (resolve-tokens+ tokens))]
-                   (swap! cache-atom assoc tokens promise+)
-                   (p/then promise+ (fn [resolved-tokens]
-                                      (swap! cache-atom assoc tokens resolved-tokens)
-                                      (reset! tokens-state resolved-tokens))))))))
+
+    ;; FIXME: this with effect with trigger all the time because
+    ;; `config` will be always a different instance
+
+    (mf/with-effect [tokens config]
+      (let [cached (get @cache-atom tokens)]
+        (cond
+          (nil? tokens) nil
+          ;; The tokens are already processing somewhere
+          (p/promise? cached) (-> cached
+                                  (p/then #(reset! tokens-state %))
+                                  #_(p/catch js/console.error))
+          ;; Get the cached entry
+          (some? cached) (reset! tokens-state cached)
+          ;; No cached entry, start processing
+          :else (let [promise+ (if interactive?
+                                 (resolve-tokens-interactive+ tokens)
+                                 (resolve-tokens+ tokens))]
+                  (swap! cache-atom assoc tokens promise+)
+                  (p/then promise+ (fn [resolved-tokens]
+                                     (swap! cache-atom assoc tokens resolved-tokens)
+                                     (reset! tokens-state resolved-tokens)))))))
     @tokens-state))
 
-(defn use-resolved-workspace-tokens []
-  (-> (mf/deref refs/workspace-selected-token-set-tokens)
-      (use-resolved-tokens)))
+(defn use-resolved-tokens*
+  "This hook will return the unresolved tokens as state until they are
+  processed, then the state will be updated with the resolved tokens.
 
-(defn use-active-theme-sets-tokens []
-  (-> (mf/deref refs/workspace-active-theme-sets-tokens)
-      (use-resolved-tokens {:cache-atom !theme-tokens-cache})))
+  This is a cache-less, simplified version of use-resolved-tokens
+  hook."
+  [tokens & {:keys [interactive?]}]
+  (let [state* (mf/use-state tokens)]
+    (mf/with-effect [tokens interactive?]
+      (when (seq tokens)
+        (let [promise (if interactive?
+                        (resolve-tokens-interactive+ tokens)
+                        (resolve-tokens+ tokens))]
+
+          (->> promise
+               (p/fmap (fn [resolved-tokens]
+                         (reset! state* resolved-tokens)))))))
+    @state*))

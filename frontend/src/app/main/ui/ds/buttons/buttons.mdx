@@ -45,6 +45,24 @@ These are available in the `app.main.ds.foundations.assets.icon` namespace.
 
 <Canvas of={ButtonStories.WithIcon} />
 
+```clj
+[:> icon-button* {:variant "primary"
+                  :icon i/effects}]
+```
+
+<Canvas of={IconButtonStories.Primary} />
+
+### Action Buttons
+
+Action buttons are a variant of `icon-button*` (`"action"`) but smaller.
+
+```clj
+[:> icon-button* {:variant "action"
+                  :icon i/effects}]
+```
+
+<Canvas of={IconButtonStories.Action} />
+
 ### Accessibility
 
 Icon buttons require an `aria-label`. This is also shown in a tooltip on hovering the button.

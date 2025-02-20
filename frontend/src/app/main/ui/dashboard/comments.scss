@@ -44,21 +44,16 @@
 }
 
 .comment-button {
-  @include buttonStyle;
-  @include flexCenter;
-  border-radius: $br-8;
-  height: $s-32;
-  width: $s-32;
-  --comment-icon-small-foreground-color: var(--icon-foreground);
-
-  &.unread,
-  &.open {
-    --comment-icon-small-foreground-color: var(--icon-foreground-selected);
-  }
-
-  &:hover {
-    background-color: var(--color-background-quaternary);
-    --comment-icon-small-foreground-color: var(--icon-foreground-active);
+  position: relative;
+  .unread {
+    position: absolute;
+    width: $s-8;
+    height: $s-8;
+    border: $s-2 solid var(--color-background-tertiary);
+    border-radius: 50%;
+    background: red;
+    top: $s-6;
+    right: $s-6;
   }
 }
 
@@ -91,6 +86,7 @@
   height: $s-40;
   align-items: center;
   padding: 0 $s-12;
+  gap: $s-4;
 }
 
 .header-title {
@@ -101,12 +97,12 @@
   text-transform: uppercase;
 }
 
-.close-btn {
-  @include buttonStyle;
-  @include flexCenter;
-}
-
-.close-icon {
-  @extend .button-icon;
-  stroke: var(--icon-foreground);
+.notifications-button {
+  &:hover {
+    cursor: pointer;
+  }
+  &.mark-all-as-read-button {
+    border-radius: $s-8;
+    border: $s-1 solid;
+  }
 }

@@ -273,7 +273,8 @@
                       (merge {:viewed-tutorial? false
                               :viewed-walkthrough? false
                               :nudge {:big 10 :small 1}
-                              :v2-info-shown true})
+                              :v2-info-shown true
+                              :release-notes-viewed (:main cf/version)})
                       (db/tjson))
 
         password  (or (:password params) "!")

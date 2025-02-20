@@ -4,7 +4,7 @@ Hello!
 
 To provide access, please click the link below:
 
-{{ public-uri }}/#/dashboard/team/{{team-id}}/members?invite-email={{requested-by-email|urlescape}}
+{{ public-uri }}/#/dashboard/members?team-id={{team-id}}&invite-email={{requested-by-email|urlescape}}
 
 
 If you do not wish to grant access at this time, you can simply disregard this email.

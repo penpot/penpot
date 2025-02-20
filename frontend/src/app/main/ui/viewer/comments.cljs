@@ -21,6 +21,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.comments :as wc]
+   [app.main.ui.workspace.viewport.utils :as utils]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
@@ -127,9 +128,11 @@
 
 (mf/defc comments-layer
   {::mf/props :obj}
-  [{:keys [zoom file users frame page]}]
+  [{:keys [zoom file frame page]}]
   (let [profile        (mf/deref refs/profile)
         local          (mf/deref refs/comments-local)
+
+        cursor         (utils/get-cursor :comments)
 
         open-thread-id (:open local)
         page-id        (:id page)
@@ -203,28 +206,27 @@
 
     [:div {:class (stl/css :comments-section)
            :on-click on-click}
-     [:div {:class (stl/css :viewer-comments-container)}
+     [:div {:class (dm/str cursor " " (stl/css :viewer-comments-container))}
       [:div {:class (stl/css :threads)}
        (for [item threads]
-         [:& cmt/thread-bubble
+         [:> cmt/comment-floating-bubble*
           {:thread item
            :position-modifier modifier1
            :zoom zoom
            :on-click on-bubble-click
-           :open? (= (:id item) (:open local))
+           :is-open (= (:id item) (:open local))
            :key (:seqn item)
            :origin :viewer}])
 
        (when-let [thread (get threads-map open-thread-id)]
-         [:& cmt/thread-comments
+         [:> cmt/comment-floating-thread*
           {:thread thread
            :position-modifier modifier1
            :viewport {:offset-x 0 :offset-y 0 :width (:width vsize) :height (:height vsize)}
-           :profiles users
            :zoom zoom}])
 
        (when-let [draft (:draft local)]
-         [:& cmt/draft-thread
+         [:> cmt/comment-floating-thread-draft*
           {:draft draft
            :position-modifier modifier1
            :on-cancel on-draft-cancel

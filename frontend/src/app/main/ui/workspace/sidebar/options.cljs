@@ -18,7 +18,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
-   [app.main.ui.viewer.inspect.right-sidebar :as hrs]
+   [app.main.ui.inspect.right-sidebar :as hrs]
    [app.main.ui.workspace.sidebar.options.menus.align :refer [align-options]]
    [app.main.ui.workspace.sidebar.options.menus.bool :refer [bool-options]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
@@ -42,17 +42,22 @@
 
 ;; --- Options
 
-(mf/defc shape-options
+(mf/defc shape-options*
   {::mf/wrap [#(mf/throttle % 60)]}
-  [{:keys [shape shapes-with-children page-id file-id shared-libs]}]
-  (let [workspace-modifiers (mf/deref refs/workspace-modifiers)
-        modifiers (get-in workspace-modifiers [(:id shape) :modifiers])
-        shape (gsh/transform-shape shape modifiers)]
+  [{:keys [shape shapes-with-children page-id file-id libraries] :as props}]
+  (let [shape-type (dm/get-prop shape :type)
+        shape-id   (dm/get-prop shape :id)
+
+        modifiers  (mf/deref refs/workspace-modifiers)
+        modifiers  (dm/get-in modifiers [shape-id :modifiers])
+
+        shape      (gsh/transform-shape shape modifiers)]
+
     [:*
-     (case (:type shape)
-       :frame   [:& frame/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
-       :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
-       :text    [:& text/options {:shape shape  :file-id file-id :shared-libs shared-libs}]
+     (case shape-type
+       :frame   [:> frame/options* props]
+       :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :libraries libraries}]
+       :text    [:& text/options {:shape shape  :file-id file-id :libraries libraries}]
        :rect    [:& rect/options {:shape shape}]
        :circle  [:& circle/options {:shape shape}]
        :path    [:& path/options {:shape shape}]
@@ -73,12 +78,12 @@
   (when (= (:type panel) :component-swap)
     [:& component-menu {:shapes (:shapes panel) :swap-opened? true}]))
 
-(mf/defc design-menu
+(mf/defc design-menu*
   {::mf/wrap [mf/memo]}
   [{:keys [selected objects page-id file-id selected-shapes shapes-with-children]}]
   (let [sp-panel             (mf/deref refs/specialized-panel)
         drawing              (mf/deref refs/workspace-drawing)
-        shared-libs          (mf/deref refs/workspace-libraries)
+        libraries            (mf/deref refs/libraries)
         edition              (mf/deref refs/selected-edition)
         edit-grid?           (ctl/grid-layout? objects edition)
         grid-edition         (mf/deref refs/workspace-grid-edition)
@@ -104,21 +109,21 @@
        [:& specialized-panel {:panel sp-panel}]
 
        (d/not-empty? drawing)
-       [:& shape-options
+       [:> shape-options*
         {:shape (:object drawing)
          :page-id page-id
          :file-id file-id
-         :shared-libs shared-libs}]
+         :libraries libraries}]
 
        (= 0 (count selected))
-       [:& page/options]
+       [:> page/options*]
 
        (= 1 (count selected))
-       [:& shape-options
+       [:> shape-options*
         {:shape (first selected-shapes)
          :page-id page-id
          :file-id file-id
-         :shared-libs shared-libs
+         :libraries libraries
          :shapes-with-children shapes-with-children}]
 
        :else
@@ -127,11 +132,11 @@
          :shapes selected-shapes
          :page-id page-id
          :file-id file-id
-         :shared-libs shared-libs}])]))
+         :libraries libraries}])]))
 
-(mf/defc options-content
+(mf/defc options-content*
   {::mf/memo true
-   ::mf/props :obj}
+   ::mf/private true}
   [{:keys [selected shapes shapes-with-children page-id file-id on-change-section on-expand]}]
   (let [objects              (mf/deref refs/workspace-page-objects)
         permissions          (mf/use-ctx ctx/permissions)
@@ -151,12 +156,13 @@
               (st/emit! :interrupt (dwc/set-workspace-read-only false)))))
 
         design-content
-        (mf/html [:& design-menu {:selected selected
-                                  :objects objects
-                                  :page-id page-id
-                                  :file-id file-id
-                                  :selected-shapes selected-shapes
-                                  :shapes-with-children shapes-with-children}])
+        (mf/html [:> design-menu*
+                  {:selected selected
+                   :objects objects
+                   :page-id page-id
+                   :file-id file-id
+                   :selected-shapes selected-shapes
+                   :shapes-with-children shapes-with-children}])
 
         inspect-content
         (mf/html [:div {:class (stl/css :element-options :inspect-options)}
@@ -191,6 +197,10 @@
                     :id "inspect"
                     :content inspect-content}])]
 
+    (mf/with-effect [permissions]
+      (when-not (:can-edit permissions)
+        (on-change-tab :inspect)))
+
     [:div {:class (stl/css :tool-window)}
      [:> tab-switcher* {:tabs tabs
                         :default-selected "info"
@@ -202,20 +212,19 @@
 ;; selected-objects-with-children are derefed always but they only
 ;; need on multiple selection in majority of cases
 
-(mf/defc options-toolbox
-  {::mf/memo true
-   ::mf/props :obj}
+(mf/defc options-toolbox*
+  {::mf/memo true}
   [{:keys [section selected on-change-section on-expand]}]
   (let [page-id              (mf/use-ctx ctx/current-page-id)
         file-id              (mf/use-ctx ctx/current-file-id)
         shapes               (mf/deref refs/selected-objects)
         shapes-with-children (mf/deref refs/selected-shapes-with-children)]
 
-    [:& options-content {:shapes shapes
-                         :selected selected
-                         :shapes-with-children shapes-with-children
-                         :file-id file-id
-                         :page-id page-id
-                         :section section
-                         :on-change-section on-change-section
-                         :on-expand on-expand}]))
+    [:> options-content* {:shapes shapes
+                          :selected selected
+                          :shapes-with-children shapes-with-children
+                          :file-id file-id
+                          :page-id page-id
+                          :section section
+                          :on-change-section on-change-section
+                          :on-expand on-expand}]))

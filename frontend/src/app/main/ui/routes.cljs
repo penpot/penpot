@@ -14,6 +14,7 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -33,7 +34,8 @@
     ["/password"      :settings-password]
     ["/feedback"      :settings-feedback]
     ["/options"       :settings-options]
-    ["/access-tokens" :settings-access-tokens]]
+    ["/access-tokens" :settings-access-tokens]
+    ["/notifications" :settings-notifications]]
 
    ["/frame-preview" :frame-preview]
 
@@ -74,14 +76,26 @@
    ["/workspace" :workspace]
    ["/workspace/:project-id/:file-id" :workspace-legacy]])
 
+
+(defn- store-session-params
+  [{:keys [template plugin]}]
+  (binding [storage/*sync* true]
+    (when (some? template)
+      (swap! storage/session assoc
+             :template-url template))
+    (when (some? plugin)
+      (swap! storage/session assoc
+             :plugin-url plugin))))
+
 (defn on-navigate
   [router path]
-  (let [location (.-location js/document)
-        [base-path qs] (str/split path "?")
-        location-path (dm/str (.-origin location) (.-pathname location))
+  (let [location        (.-location js/document)
+        [base-path qs]  (str/split path "?")
+        location-path   (dm/str (.-origin location) (.-pathname location))
         valid-location? (= location-path (dm/str cf/public-uri))
-        match (rt/match router path)
-        empty-path? (or (= base-path "") (= base-path "/"))]
+        match           (rt/match router path)
+        empty-path?     (or (= base-path "") (= base-path "/"))
+        query-params    (u/query-string->map qs)]
 
     (cond
       (not valid-location?)
@@ -95,17 +109,24 @@
       ;; avoids some race conditions that causes unexpected redirects
       ;; on invitations workflows (and probably other cases).
       (->> (rp/cmd! :get-profile)
-           (rx/subs! (fn [{:keys [id] :as profile}]
+           (rx/mapcat (fn [profile]
+                        (->> (rp/cmd! :get-teams {})
+                             (rx/map (fn [teams]
+                                       (assoc profile ::teams (into #{} (map :id) teams)))))))
+           (rx/subs! (fn [{:keys [id ::teams] :as profile}]
                        (cond
                          (= id uuid/zero)
-                         (st/emit! (rt/nav :auth-login))
+                         (do
+                           (store-session-params query-params)
+                           (st/emit! (rt/nav :auth-login)))
 
                          empty-path?
-                         (let [team-id (or (dtm/get-last-team-id)
-                                           (:default-team-id profile))]
-                           (st/emit! (rt/nav :dashboard-recent
-                                             (-> (u/query-string->map qs)
-                                                 (assoc :team-id team-id)))))
+                         (let [team-id (dtm/get-last-team-id)]
+                           (if (contains? teams team-id)
+                             (st/emit! (rt/nav :dashboard-recent
+                                               (assoc query-params :team-id team-id)))
+                             (st/emit! (rt/nav :dashboard-recent
+                                               (assoc query-params :team-id (:default-team-id profile))))))
 
                          :else
                          (st/emit! (rt/assign-exception {:type :not-found})))))))))

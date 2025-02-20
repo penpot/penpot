@@ -162,3 +162,53 @@ test("Create a RADIAL gradient", async ({ page }) => {
     .nth(2);
   await inputOpacity2.fill("100");
 });
+
+// Fix for https://tree.taiga.io/project/penpot/issue/9900
+test("Bug 9900 - Color picker has no inputs for HSV values", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+
+  await workspacePage.goToWorkspace();
+  const swatch = workspacePage.page.getByRole("button", { name: "E8E9EA" });
+  await swatch.click();
+
+  const HSVA = await workspacePage.page.getByLabel("HSVA");
+  await HSVA.click();
+
+  await workspacePage.page.getByLabel("H", { exact: true }).isVisible();
+  await workspacePage.page.getByLabel("S", { exact: true }).isVisible();
+  await workspacePage.page.getByLabel("V", { exact: true }).isVisible();
+});
+
+test("Bug 10089 - Cannot change alpha", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-not-empty.json",
+  );
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+  await workspacePage.clickLeafLayer("Rectangle");
+
+  const swatch = workspacePage.page.getByRole("button", { name: "#B1B2B5" });
+  const swatchBox = await swatch.boundingBox();
+  await swatch.click();
+
+  const alpha = workspacePage.page.getByLabel("A", { exact: true });
+  await expect(alpha).toHaveValue("100");
+
+  const alphaSlider = workspacePage.page.getByTestId("slider-opacity");
+  await alphaSlider.click();
+
+  await expect(alpha).toHaveValue("50");
+});

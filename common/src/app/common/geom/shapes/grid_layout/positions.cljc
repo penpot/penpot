@@ -114,61 +114,62 @@
 
 (defn child-position-delta
   [parent child child-bounds child-width child-height layout-data cell-data]
-  (let [cell-bounds (cell-bounds layout-data cell-data)
-        child-origin (gpo/origin child-bounds)
+  (if-let [cell-bounds (cell-bounds layout-data cell-data)]
+    (let [child-origin (gpo/origin child-bounds)
 
-        align (:layout-align-items parent)
-        justify (:layout-justify-items parent)
-        align-self (:align-self cell-data)
-        justify-self (:justify-self cell-data)
+          align (:layout-align-items parent)
+          justify (:layout-justify-items parent)
+          align-self (:align-self cell-data)
+          justify-self (:justify-self cell-data)
 
-        align-self (when (and align-self (not= align-self :auto)) align-self)
-        justify-self (when (and justify-self (not= justify-self :auto)) justify-self)
+          align-self (when (and align-self (not= align-self :auto)) align-self)
+          justify-self (when (and justify-self (not= justify-self :auto)) justify-self)
 
-        align (or align-self align)
-        justify (or justify-self justify)
+          align (or align-self align)
+          justify (or justify-self justify)
 
-        origin-h (gpo/project-point cell-bounds :h child-origin)
-        origin-v (gpo/project-point cell-bounds :v child-origin)
-        hv     (partial gpo/start-hv cell-bounds)
-        vv     (partial gpo/start-vv cell-bounds)
+          origin-h (gpo/project-point cell-bounds :h child-origin)
+          origin-v (gpo/project-point cell-bounds :v child-origin)
+          hv     (partial gpo/start-hv cell-bounds)
+          vv     (partial gpo/start-vv cell-bounds)
 
-        [top-m right-m bottom-m left-m] (ctl/child-margins child)
+          [top-m right-m bottom-m left-m] (ctl/child-margins child)
 
-        ;; Adjust alignment/justify
-        [from-h to-h]
-        (case justify
-          :end
-          [(gpt/add origin-h (hv child-width))
-           (gpt/subtract (nth cell-bounds 1) (hv right-m))]
+          ;; Adjust alignment/justify
+          [from-h to-h]
+          (case justify
+            :end
+            [(gpt/add origin-h (hv child-width))
+             (gpt/subtract (nth cell-bounds 1) (hv right-m))]
 
-          :center
-          [(gpt/add origin-h (hv (/ child-width 2)))
-           (-> (gpo/project-point cell-bounds :h (gpo/center cell-bounds))
-               (gpt/add (hv (/ left-m 2)))
-               (gpt/subtract (hv (/ right-m 2))))]
+            :center
+            [(gpt/add origin-h (hv (/ child-width 2)))
+             (-> (gpo/project-point cell-bounds :h (gpo/center cell-bounds))
+                 (gpt/add (hv (/ left-m 2)))
+                 (gpt/subtract (hv (/ right-m 2))))]
 
-          [origin-h
-           (gpt/add (first cell-bounds) (hv left-m))])
+            [origin-h
+             (gpt/add (first cell-bounds) (hv left-m))])
 
-        [from-v to-v]
-        (case align
-          :end
-          [(gpt/add origin-v (vv child-height))
-           (gpt/subtract (nth cell-bounds 3) (vv bottom-m))]
+          [from-v to-v]
+          (case align
+            :end
+            [(gpt/add origin-v (vv child-height))
+             (gpt/subtract (nth cell-bounds 3) (vv bottom-m))]
 
-          :center
-          [(gpt/add origin-v (vv (/ child-height 2)))
-           (-> (gpo/project-point cell-bounds :v (gpo/center cell-bounds))
-               (gpt/add (vv top-m))
-               (gpt/subtract (vv bottom-m)))]
+            :center
+            [(gpt/add origin-v (vv (/ child-height 2)))
+             (-> (gpo/project-point cell-bounds :v (gpo/center cell-bounds))
+                 (gpt/add (vv top-m))
+                 (gpt/subtract (vv bottom-m)))]
 
-          [origin-v
-           (gpt/add (first cell-bounds) (vv top-m))])]
+            [origin-v
+             (gpt/add (first cell-bounds) (vv top-m))])]
 
-    (-> (gpt/point)
-        (gpt/add (gpt/to-vec from-h to-h))
-        (gpt/add (gpt/to-vec from-v to-v)))))
+      (-> (gpt/point)
+          (gpt/add (gpt/to-vec from-h to-h))
+          (gpt/add (gpt/to-vec from-v to-v))))
+    (gpt/point 0 0)))
 
 (defn child-modifiers
   [parent parent-bounds child child-bounds layout-data cell-data]

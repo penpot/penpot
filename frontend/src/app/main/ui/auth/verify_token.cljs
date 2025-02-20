@@ -34,7 +34,7 @@
   (let [msg (tr "dashboard.notifications.email-changed-successfully")]
     (ts/schedule 100 #(st/emit! (ntf/success msg)))
     (st/emit! (rt/nav :settings-profile)
-              (du/fetch-profile))))
+              (du/refresh-profile))))
 
 (defmethod handle-token :auth
   [tdata]
@@ -47,7 +47,7 @@
     (let [team-id (:team-id tdata)]
       (st/emit!
        (ntf/success (tr "auth.notifications.team-invitation-accepted"))
-       (du/fetch-profile)
+       (du/refresh-profile)
        (dcm/go-to-dashboard-recent :team-id team-id)))
 
     :pending

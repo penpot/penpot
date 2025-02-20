@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @import "refactor/common-refactor.scss";
+@import "../../../../ds/_sizes.scss";
 
 .element-set {
   margin: 0;
@@ -34,6 +35,21 @@
 
 .shadow-element {
   @include flexColumn;
+  position: relative;
+
+  --reorder-left-position: calc(-1 * var(--sp-m) - var(--sp-xxs));
+
+  &:hover {
+    --reorder-icon-visibility: visible;
+  }
+
+  &.dnd-over-top {
+    --reorder-top-display: block;
+  }
+
+  &.dnd-over-bot {
+    --reorder-bottom-display: block;
+  }
 }
 
 .basic-options {
@@ -87,6 +103,7 @@
 
 .shadow-advanced-options {
   @include flexColumn;
+  width: $sz-252;
 }
 
 .first-row,

@@ -9,8 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.math :as mth]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -43,8 +43,8 @@
   (ptk/reify ::set-opacity
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects    (wsh/lookup-page-objects state)
-            selected   (wsh/lookup-selected state {:omit-blocked? true})
+      (let [objects    (dsh/lookup-page-objects state)
+            selected   (dsh/lookup-selected state {:omit-blocked? true})
             shapes     (map #(get objects %) selected)
             shapes-ids (->> shapes
                             (map :id))]

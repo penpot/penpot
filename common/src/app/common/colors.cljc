@@ -248,11 +248,12 @@
   [[h s brightness]]
   (if (= s 0)
     [brightness brightness brightness]
-    (let [sextant   (int (mth/floor (/ h 60)))
-          remainder (- (/ h 60) sextant)
-          val1      (int (* brightness (- 1 s)))
-          val2      (int (* brightness (- 1 (* s remainder))))
-          val3      (int (* brightness (- 1 (* s (- 1 remainder)))))]
+    (let [sextant    (int (mth/floor (/ h 60)))
+          remainder  (- (/ h 60) sextant)
+          brightness (d/nilv brightness 0)
+          val1       (int (* brightness (- 1 s)))
+          val2       (int (* brightness (- 1 (* s remainder))))
+          val3       (int (* brightness (- 1 (* s (- 1 remainder)))))]
       (case sextant
         1 [val2 brightness val1]
         2 [val1 brightness val3]

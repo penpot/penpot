@@ -9,6 +9,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.types.color :as ctc]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
@@ -16,7 +17,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
+   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -167,23 +168,18 @@
           (seq fills)
           [:& h/sortable-container {}
            (for [[index value] (d/enumerate (:fills values []))]
-             [:& color-row {:color {:color (:fill-color value)
-                                    :opacity (:fill-opacity value)
-                                    :id (:fill-color-ref-id value)
-                                    :file-id (:fill-color-ref-file value)
-                                    :gradient (:fill-color-gradient value)
-                                    :image (:fill-image value)}
-                            :key index
-                            :index index
-                            :title (tr "workspace.options.fill")
-                            :on-change (on-change index)
-                            :on-reorder (on-reorder index)
-                            :on-detach (on-detach index)
-                            :on-remove (on-remove index)
-                            :disable-drag disable-drag
-                            :on-focus on-focus
-                            :select-on-focus (not @disable-drag)
-                            :on-blur on-blur}])])
+             [:> color-row* {:color (ctc/fill->shape-color value)
+                             :key index
+                             :index index
+                             :title (tr "workspace.options.fill")
+                             :on-change (on-change index)
+                             :on-reorder (on-reorder index)
+                             :on-detach (on-detach index)
+                             :on-remove (on-remove index)
+                             :disable-drag disable-drag
+                             :on-focus on-focus
+                             :select-on-focus (not @disable-drag)
+                             :on-blur on-blur}])])
 
         (when (or (= type :frame)
                   (and (= type :multiple) (some? (:hide-fill-on-export values))))

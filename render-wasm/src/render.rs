@@ -1,103 +1,76 @@
-use skia::gpu::{self, gl::FramebufferInfo, DirectContext};
-use skia::Contains;
-use skia_safe as skia;
+use skia_safe::{self as skia, Contains, Matrix, RRect, Rect};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::debug;
-use crate::math::Rect;
-use crate::shapes::{draw_image_in_container, Fill, Image, Shape};
 use crate::view::Viewbox;
 
-struct GpuState {
-    pub context: DirectContext,
-    framebuffer_info: FramebufferInfo,
+mod blend;
+mod cache;
+mod debug;
+mod fills;
+mod gpu_state;
+mod images;
+mod options;
+mod shadows;
+mod strokes;
+
+use crate::shapes::{Corners, Kind, Shape};
+use cache::CachedSurfaceImage;
+use gpu_state::GpuState;
+use options::RenderOptions;
+
+pub use blend::BlendMode;
+pub use images::*;
+
+const DEFAULT_FONT_BYTES: &[u8] =
+    include_bytes!("../../frontend/resources/fonts/RobotoMono-Regular.ttf");
+
+const MAX_BLOCKING_TIME_MS: i32 = 32;
+const NODE_BATCH_THRESHOLD: i32 = 10;
+
+extern "C" {
+    fn emscripten_run_script(script: *const i8);
+    fn emscripten_run_script_int(script: *const i8) -> i32;
 }
 
-impl GpuState {
-    fn new() -> Self {
-        let interface = skia::gpu::gl::Interface::new_native().unwrap();
-        let context = skia::gpu::direct_contexts::make_gl(interface, None).unwrap();
-        let framebuffer_info = {
-            let mut fboid: gl::types::GLint = 0;
-            unsafe { gl::GetIntegerv(gl::FRAMEBUFFER_BINDING, &mut fboid) };
-
-            FramebufferInfo {
-                fboid: fboid.try_into().unwrap(),
-                format: skia::gpu::gl::Format::RGBA8.into(),
-                protected: skia::gpu::Protected::No,
-            }
-        };
-
-        GpuState {
-            context,
-            framebuffer_info,
-        }
-    }
-
-    /// Create a Skia surface that will be used for rendering.
-    fn create_target_surface(&mut self, width: i32, height: i32) -> skia::Surface {
-        let backend_render_target =
-            gpu::backend_render_targets::make_gl((width, height), 1, 8, self.framebuffer_info);
-
-        gpu::surfaces::wrap_backend_render_target(
-            &mut self.context,
-            &backend_render_target,
-            skia::gpu::SurfaceOrigin::BottomLeft,
-            skia::ColorType::RGBA8888,
-            None,
-            None,
-        )
-        .unwrap()
-    }
+fn get_time() -> i32 {
+    let script = std::ffi::CString::new("performance.now()").unwrap();
+    unsafe { emscripten_run_script_int(script.as_ptr()) }
 }
 
-pub(crate) struct CachedSurfaceImage {
-    pub image: Image,
-    pub viewbox: Viewbox,
-    has_all_shapes: bool,
-}
-
-impl CachedSurfaceImage {
-    fn is_dirty(&self, viewbox: &Viewbox) -> bool {
-        !self.has_all_shapes && !self.viewbox.area.contains(viewbox.area)
-    }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-struct RenderOptions {
-    debug_flags: u32,
-    dpr: Option<f32>,
-}
-
-impl Default for RenderOptions {
-    fn default() -> Self {
-        Self {
-            debug_flags: 0x00,
-            dpr: None,
-        }
-    }
-}
-
-impl RenderOptions {
-    pub fn is_debug_visible(&self) -> bool {
-        self.debug_flags & debug::DEBUG_VISIBLE == debug::DEBUG_VISIBLE
-    }
-
-    pub fn dpr(&self) -> f32 {
-        self.dpr.unwrap_or(1.0)
-    }
+pub struct NodeRenderState {
+    pub id: Uuid,
+    // We use this bool to keep that we've traversed all the children inside this node.
+    pub visited_children: bool,
+    // This is used to clip the content of frames.
+    pub clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
+    // This is a flag to indicate that we've already drawn the mask of a masked group.
+    pub visited_mask: bool,
+    // This bool indicates that we're drawing the mask shape.
+    pub mask: bool,
 }
 
 pub(crate) struct RenderState {
     gpu_state: GpuState,
+    pub options: RenderOptions,
     pub final_surface: skia::Surface,
+    pub render_surface: skia::Surface,
     pub drawing_surface: skia::Surface,
+    pub shadow_surface: skia::Surface,
+    pub overlay_surface: skia::Surface,
     pub debug_surface: skia::Surface,
+    pub font_provider: skia::textlayout::TypefaceFontProvider,
     pub cached_surface_image: Option<CachedSurfaceImage>,
-    options: RenderOptions,
     pub viewbox: Viewbox,
-    images: HashMap<Uuid, Image>,
+    pub images: ImageStore,
+    pub background_color: skia::Color,
+    // Identifier of the current requestAnimationFrame call, if any.
+    pub render_request_id: Option<i32>,
+    // Indicates whether the rendering process has pending frames.
+    pub render_in_progress: bool,
+    // Stack of nodes pending to be rendered.
+    pub pending_nodes: Vec<NodeRenderState>,
+    pub render_complete: bool,
 }
 
 impl RenderState {
@@ -105,35 +78,63 @@ impl RenderState {
         // This needs to be done once per WebGL context.
         let mut gpu_state = GpuState::new();
         let mut final_surface = gpu_state.create_target_surface(width, height);
+        let render_surface = final_surface
+            .new_surface_with_dimensions((width, height))
+            .unwrap();
+        let shadow_surface = final_surface
+            .new_surface_with_dimensions((width, height))
+            .unwrap();
+        let overlay_surface = final_surface
+            .new_surface_with_dimensions((width, height))
+            .unwrap();
         let drawing_surface = final_surface
             .new_surface_with_dimensions((width, height))
             .unwrap();
         let debug_surface = final_surface
             .new_surface_with_dimensions((width, height))
             .unwrap();
+        let mut font_provider = skia::textlayout::TypefaceFontProvider::new();
+        let default_font = skia::FontMgr::default()
+            .new_from_data(DEFAULT_FONT_BYTES, None)
+            .expect("Failed to load font");
+        font_provider.register_typeface(default_font, "robotomono-regular");
 
         RenderState {
             gpu_state,
             final_surface,
+            render_surface,
+            overlay_surface,
+            shadow_surface,
             drawing_surface,
             debug_surface,
             cached_surface_image: None,
+            font_provider,
             options: RenderOptions::default(),
             viewbox: Viewbox::new(width as f32, height as f32),
-            images: HashMap::with_capacity(2048),
+            images: ImageStore::new(),
+            background_color: skia::Color::TRANSPARENT,
+            render_request_id: None,
+            render_in_progress: false,
+            pending_nodes: vec![],
+            render_complete: true,
         }
     }
 
-    pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
-        let image_data = skia::Data::new_copy(image_data);
-        let image = Image::from_encoded(image_data).ok_or("Error decoding image data")?;
-
-        self.images.insert(id, image);
+    pub fn add_font(&mut self, family_name: String, font_data: &[u8]) -> Result<(), String> {
+        let typeface = skia::FontMgr::default()
+            .new_from_data(font_data, None)
+            .expect("Failed to add font");
+        self.font_provider
+            .register_typeface(typeface, family_name.as_ref());
         Ok(())
     }
 
+    pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
+        self.images.add(id, image_data)
+    }
+
     pub fn has_image(&mut self, id: &Uuid) -> bool {
-        self.images.contains_key(id)
+        self.images.contains(id)
     }
 
     pub fn set_debug_flags(&mut self, debug: u32) {
@@ -150,12 +151,29 @@ impl RenderState {
         }
     }
 
+    pub fn set_background_color(&mut self, color: skia::Color) {
+        self.background_color = color;
+        let _ = self.render_from_cache();
+    }
+
     pub fn resize(&mut self, width: i32, height: i32) {
         let dpr_width = (width as f32 * self.options.dpr()).floor() as i32;
         let dpr_height = (height as f32 * self.options.dpr()).floor() as i32;
 
         let surface = self.gpu_state.create_target_surface(dpr_width, dpr_height);
         self.final_surface = surface;
+        self.render_surface = self
+            .final_surface
+            .new_surface_with_dimensions((dpr_width, dpr_height))
+            .unwrap();
+        self.overlay_surface = self
+            .final_surface
+            .new_surface_with_dimensions((dpr_width, dpr_height))
+            .unwrap();
+        self.shadow_surface = self
+            .final_surface
+            .new_surface_with_dimensions((dpr_width, dpr_height))
+            .unwrap();
         self.drawing_surface = self
             .final_surface
             .new_surface_with_dimensions((dpr_width, dpr_height))
@@ -171,25 +189,27 @@ impl RenderState {
     pub fn flush(&mut self) {
         self.gpu_state
             .context
-            .flush_and_submit_surface(&mut self.final_surface, None)
-    }
-
-    pub fn translate(&mut self, dx: f32, dy: f32) {
-        self.drawing_surface.canvas().translate((dx, dy));
-    }
-
-    pub fn scale(&mut self, sx: f32, sy: f32) {
-        self.drawing_surface.canvas().scale((sx, sy));
+            .flush_and_submit_surface(&mut self.final_surface, None);
     }
 
     pub fn reset_canvas(&mut self) {
+        self.drawing_surface.canvas().restore_to_count(1);
+        self.render_surface.canvas().restore_to_count(1);
         self.drawing_surface
             .canvas()
-            .clear(skia::Color::TRANSPARENT)
+            .clear(self.background_color)
             .reset_matrix();
-        self.final_surface
+        self.render_surface
             .canvas()
-            .clear(skia::Color::TRANSPARENT)
+            .clear(self.background_color)
+            .reset_matrix();
+        self.shadow_surface
+            .canvas()
+            .clear(self.background_color)
+            .reset_matrix();
+        self.overlay_surface
+            .canvas()
+            .clear(self.background_color)
             .reset_matrix();
         self.debug_surface
             .canvas()
@@ -197,80 +217,230 @@ impl RenderState {
             .reset_matrix();
     }
 
-    pub fn render_single_shape(&mut self, shape: &Shape) {
-        // Check transform-matrix code from common/src/app/common/geom/shapes/transforms.cljc
-        let mut matrix = skia::Matrix::new_identity();
-        let (translate_x, translate_y) = shape.translation();
-        let (scale_x, scale_y) = shape.scale();
-        let (skew_x, skew_y) = shape.skew();
-
-        matrix.set_all(
-            scale_x,
-            skew_x,
-            translate_x,
-            skew_y,
-            scale_y,
-            translate_y,
-            0.,
-            0.,
-            1.,
-        );
-
-        let mut center = shape.selrect.center();
-        matrix.post_translate(center);
-        center.negate();
-        matrix.pre_translate(center);
-
-        self.drawing_surface.canvas().concat(&matrix);
-
-        for fill in shape.fills().rev() {
-            self.render_fill(fill, shape.selrect);
-        }
-
-        let mut paint = skia::Paint::default();
-        paint.set_blend_mode(shape.blend_mode.into());
-        paint.set_alpha_f(shape.opacity);
-        self.drawing_surface.draw(
+    pub fn apply_render_to_final_canvas(&mut self) {
+        self.render_surface.draw(
             &mut self.final_surface.canvas(),
             (0.0, 0.0),
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
-            Some(&paint),
+            Some(&skia::Paint::default()),
         );
+    }
+
+    pub fn apply_drawing_to_render_canvas(&mut self) {
+        self.gpu_state
+            .context
+            .flush_and_submit_surface(&mut self.drawing_surface, None);
+
+        self.drawing_surface.draw(
+            &mut self.render_surface.canvas(),
+            (0.0, 0.0),
+            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
+            Some(&skia::Paint::default()),
+        );
+
+        self.gpu_state
+            .context
+            .flush_and_submit_surface(&mut self.render_surface, None);
+
+        self.gpu_state
+            .context
+            .flush_and_submit_surface(&mut self.overlay_surface, None);
+        self.overlay_surface.draw(
+            &mut self.render_surface.canvas(),
+            (0.0, 0.0),
+            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
+            None,
+        );
+
+        self.shadow_surface.canvas().clear(skia::Color::TRANSPARENT);
+        self.overlay_surface
+            .canvas()
+            .clear(skia::Color::TRANSPARENT);
         self.drawing_surface
             .canvas()
             .clear(skia::Color::TRANSPARENT);
     }
 
-    pub fn navigate(&mut self, shapes: &HashMap<Uuid, Shape>) -> Result<(), String> {
-        if let Some(cached_surface_image) = self.cached_surface_image.as_ref() {
-            if cached_surface_image.is_dirty(&self.viewbox) {
-                self.render_all(shapes, true);
+    pub fn invalidate_cache_if_needed(&mut self) {
+        if let Some(ref mut cached_surface_image) = self.cached_surface_image {
+            cached_surface_image.invalidate_if_dirty(&self.viewbox);
+        }
+    }
+
+    pub fn render_shape(
+        &mut self,
+        shape: &mut Shape,
+        modifiers: Option<&Matrix>,
+        clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
+    ) {
+        if let Some((bounds, corners, transform)) = clip_bounds {
+            self.drawing_surface.canvas().concat(&transform);
+
+            if let Some(corners) = corners {
+                let rrect = RRect::new_rect_radii(bounds, &corners);
+                self.drawing_surface
+                    .canvas()
+                    .clip_rrect(rrect, skia::ClipOp::Intersect, true);
             } else {
-                self.render_all_from_cache()?;
+                self.drawing_surface
+                    .canvas()
+                    .clip_rect(bounds, skia::ClipOp::Intersect, true);
             }
+
+            if self.options.is_debug_visible() {
+                let mut paint = skia::Paint::default();
+                paint.set_style(skia::PaintStyle::Stroke);
+                paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
+                paint.set_stroke_width(4.);
+                self.drawing_surface.canvas().draw_rect(bounds, &paint);
+            }
+
+            self.drawing_surface
+                .canvas()
+                .concat(&transform.invert().unwrap());
+        }
+        let center = shape.center();
+
+        // Transform the shape in the center
+        let mut matrix = shape.transform.clone();
+        matrix.post_translate(center);
+        matrix.pre_translate(-center);
+
+        if let Some(modifiers) = modifiers {
+            matrix.post_concat(&modifiers);
         }
 
+        self.drawing_surface.canvas().concat(&matrix);
+
+        match &shape.kind {
+            Kind::SVGRaw(sr) => {
+                if let Some(svg) = shape.svg.as_ref() {
+                    svg.render(self.drawing_surface.canvas())
+                } else {
+                    let font_manager = skia::FontMgr::from(self.font_provider.clone());
+                    let dom_result = skia::svg::Dom::from_str(sr.content.to_string(), font_manager);
+                    match dom_result {
+                        Ok(dom) => {
+                            dom.render(self.drawing_surface.canvas());
+                            shape.set_svg(dom);
+                        }
+                        Err(e) => {
+                            eprintln!("Error parsing SVG. Error: {}", e);
+                        }
+                    }
+                }
+            }
+            _ => {
+                for fill in shape.fills().rev() {
+                    fills::render(self, shape, fill);
+                }
+
+                for stroke in shape.strokes().rev() {
+                    strokes::render(self, shape, stroke);
+                }
+
+                for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
+                    shadows::render_inner_shadow(
+                        self,
+                        shadow,
+                        self.viewbox.zoom * self.options.dpr(),
+                    );
+                }
+
+                for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
+                    shadows::render_drop_shadow(
+                        self,
+                        shadow,
+                        self.viewbox.zoom * self.options.dpr(),
+                    );
+                }
+            }
+        };
+
+        self.apply_drawing_to_render_canvas();
+    }
+
+    pub fn start_render_loop(
+        &mut self,
+        tree: &mut HashMap<Uuid, Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
+        timestamp: i32,
+    ) -> Result<(), String> {
+        if self.render_in_progress {
+            if let Some(frame_id) = self.render_request_id {
+                self.cancel_animation_frame(frame_id);
+            }
+        }
+        self.reset_canvas();
+        self.drawing_surface.canvas().scale((
+            self.viewbox.zoom * self.options.dpr(),
+            self.viewbox.zoom * self.options.dpr(),
+        ));
+        self.drawing_surface
+            .canvas()
+            .translate((self.viewbox.pan_x, self.viewbox.pan_y));
+        self.pending_nodes = vec![NodeRenderState {
+            id: Uuid::nil(),
+            visited_children: false,
+            clip_bounds: None,
+            visited_mask: false,
+            mask: false,
+        }];
+        self.render_in_progress = true;
+        self.process_animation_frame(tree, modifiers, timestamp)?;
+        self.render_complete = true;
         Ok(())
     }
 
-    pub fn render_all(
-        &mut self,
-        shapes: &HashMap<Uuid, Shape>,
-        generate_cached_surface_image: bool,
-    ) {
-        self.reset_canvas();
-        self.scale(
-            self.viewbox.zoom * self.options.dpr(),
-            self.viewbox.zoom * self.options.dpr(),
-        );
-        self.translate(self.viewbox.pan_x, self.viewbox.pan_y);
+    pub fn request_animation_frame(&mut self) -> i32 {
+        let script =
+            std::ffi::CString::new("requestAnimationFrame(_process_animation_frame)").unwrap();
+        unsafe { emscripten_run_script_int(script.as_ptr()) }
+    }
 
-        let is_complete = self.render_shape_tree(&Uuid::nil(), shapes);
-        if generate_cached_surface_image || self.cached_surface_image.is_none() {
+    pub fn cancel_animation_frame(&mut self, frame_id: i32) {
+        let cancel_script = format!("cancelAnimationFrame({})", frame_id);
+        let c_cancel_script = std::ffi::CString::new(cancel_script).unwrap();
+        unsafe {
+            emscripten_run_script(c_cancel_script.as_ptr());
+        }
+    }
+
+    pub fn process_animation_frame(
+        &mut self,
+        tree: &mut HashMap<Uuid, Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
+        timestamp: i32,
+    ) -> Result<(), String> {
+        if self.render_in_progress {
+            self.render_shape_tree(tree, modifiers, timestamp)?;
+            if self.render_in_progress {
+                if let Some(frame_id) = self.render_request_id {
+                    self.cancel_animation_frame(frame_id);
+                }
+                self.render_request_id = Some(self.request_animation_frame());
+            }
+        }
+
+        // self.render_in_progress can have changed
+        if self.render_in_progress {
+            if self.cached_surface_image.is_some() {
+                self.render_from_cache()?;
+            }
+            return Ok(());
+        }
+
+        // Chech if cached_surface_image is not set or is invalid
+        if self
+            .cached_surface_image
+            .as_ref()
+            .map_or(true, |img| img.invalid)
+        {
             self.cached_surface_image = Some(CachedSurfaceImage {
-                image: self.final_surface.image_snapshot(),
+                image: self.render_surface.image_snapshot(),
                 viewbox: self.viewbox,
-                has_all_shapes: is_complete,
+                invalid: false,
+                has_all_shapes: self.render_complete,
             });
         }
 
@@ -278,31 +448,17 @@ impl RenderState {
             self.render_debug();
         }
 
+        debug::render_wasm_label(self);
+        self.apply_render_to_final_canvas();
         self.flush();
+        Ok(())
     }
 
-    fn render_fill(&mut self, fill: &Fill, selrect: Rect) {
-        if let Fill::Image(image_fill) = fill {
-            let image = self.images.get(&image_fill.id());
-            if let Some(image) = image {
-                draw_image_in_container(
-                    &self.drawing_surface.canvas(),
-                    &image,
-                    image_fill.size(),
-                    selrect,
-                    &fill.to_paint(&selrect),
-                );
-            }
-        } else {
-            self.drawing_surface
-                .canvas()
-                .draw_rect(selrect, &fill.to_paint(&selrect));
-        }
+    pub fn clear_cache(&mut self) {
+        self.cached_surface_image = None;
     }
 
-    fn render_all_from_cache(&mut self) -> Result<(), String> {
-        self.reset_canvas();
-
+    pub fn render_from_cache(&mut self) -> Result<(), String> {
         let cached = self
             .cached_surface_image
             .as_ref()
@@ -324,9 +480,10 @@ impl RenderState {
             navigate_x * self.options.dpr(),
             navigate_y * self.options.dpr(),
         ));
+        self.final_surface.canvas().clear(self.background_color);
         self.final_surface
             .canvas()
-            .draw_image(image.clone(), (0, 0), Some(&paint));
+            .draw_image(image, (0, 0), Some(&paint));
 
         self.final_surface.canvas().restore();
         self.drawing_surface.canvas().restore();
@@ -336,85 +493,185 @@ impl RenderState {
         Ok(())
     }
 
-    fn render_debug_view(&mut self) {
-        let mut paint = skia::Paint::default();
-        paint.set_style(skia::PaintStyle::Stroke);
-        paint.set_color(skia::Color::from_argb(255, 255, 0, 255));
-        paint.set_stroke_width(1.);
-
-        let mut scaled_rect = self.viewbox.area.clone();
-        let x = 100. + scaled_rect.x() * 0.2;
-        let y = 100. + scaled_rect.y() * 0.2;
-        let width = scaled_rect.width() * 0.2;
-        let height = scaled_rect.height() * 0.2;
-        scaled_rect.set_xywh(x, y, width, height);
-
-        self.debug_surface.canvas().draw_rect(scaled_rect, &paint);
-    }
-
-    fn render_debug_shape(&mut self, shape: &Shape, intersected: bool) {
-        let mut paint = skia::Paint::default();
-        paint.set_style(skia::PaintStyle::Stroke);
-        paint.set_color(if intersected {
-            skia::Color::from_argb(255, 255, 255, 0)
-        } else {
-            skia::Color::from_argb(255, 0, 255, 255)
-        });
-        paint.set_stroke_width(1.);
-
-        let mut scaled_rect = shape.selrect.clone();
-        let x = 100. + scaled_rect.x() * 0.2;
-        let y = 100. + scaled_rect.y() * 0.2;
-        let width = scaled_rect.width() * 0.2;
-        let height = scaled_rect.height() * 0.2;
-        scaled_rect.set_xywh(x, y, width, height);
-
-        self.debug_surface.canvas().draw_rect(scaled_rect, &paint);
-    }
-
     fn render_debug(&mut self) {
-        let paint = skia::Paint::default();
-        self.render_debug_view();
-        self.debug_surface.draw(
-            &mut self.final_surface.canvas(),
-            (0.0, 0.0),
-            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
-            Some(&paint),
-        );
+        debug::render(self);
     }
 
-    // Returns a boolean indicating if the viewbox contains the rendered shapes
-    fn render_shape_tree(&mut self, id: &Uuid, shapes: &HashMap<Uuid, Shape>) -> bool {
-        let shape = shapes.get(&id).unwrap();
-        let mut is_complete = self.viewbox.area.contains(shape.selrect);
+    pub fn render_shape_tree(
+        &mut self,
+        tree: &mut HashMap<Uuid, Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
+        timestamp: i32,
+    ) -> Result<(), String> {
+        if !self.render_in_progress {
+            return Ok(());
+        }
 
-        if !id.is_nil() {
-            if !shape.selrect.intersects(self.viewbox.area) || shape.hidden {
-                self.render_debug_shape(shape, false);
-                // TODO: This means that not all the shapes are renderer so we
-                // need to call a render_all on the zoom out.
-                return is_complete; // TODO return is_complete or return false??
-            } else {
-                self.render_debug_shape(shape, true);
+        let mut i = 0;
+        while let Some(node_render_state) = self.pending_nodes.pop() {
+            let NodeRenderState {
+                id: node_id,
+                visited_children,
+                clip_bounds,
+                visited_mask,
+                mask,
+            } = node_render_state;
+            let element = tree.get_mut(&node_id).ok_or(
+                "Error: Element with root_id {node_render_state.id} not found in the tree."
+                    .to_string(),
+            )?;
+
+            let render_complete = self.viewbox.area.contains(element.selrect());
+            if visited_children {
+                if !visited_mask {
+                    match element.kind {
+                        Kind::Group(group) => {
+                            // When we're dealing with masked groups we need to
+                            // do a separate extra step to draw the mask (the last
+                            // element of a masked group) and blend (using
+                            // the blend mode 'destination-in') the content
+                            // of the group and the mask.
+                            if group.masked {
+                                self.pending_nodes.push(NodeRenderState {
+                                    id: node_id,
+                                    visited_children: true,
+                                    clip_bounds: None,
+                                    visited_mask: true,
+                                    mask: false,
+                                });
+                                if let Some(&mask_id) = element.mask_id() {
+                                    self.pending_nodes.push(NodeRenderState {
+                                        id: mask_id,
+                                        visited_children: false,
+                                        clip_bounds: None,
+                                        visited_mask: false,
+                                        mask: true,
+                                    });
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                } else {
+                    // Because masked groups needs two rendering passes (first drawing
+                    // the content and then drawing the mask), we need to do an
+                    // extra restore.
+                    match element.kind {
+                        Kind::Group(group) => {
+                            if group.masked {
+                                self.render_surface.canvas().restore();
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                self.render_surface.canvas().restore();
+                continue;
             }
+
+            // If we didn't visited_children this shape, then we need to do
+            if !node_render_state.id.is_nil() {
+                if !element.selrect().intersects(self.viewbox.area) || element.hidden() {
+                    debug::render_debug_shape(self, element, false);
+                    self.render_complete = render_complete;
+                    continue;
+                } else {
+                    debug::render_debug_shape(self, element, true);
+                }
+            }
+
+            // Masked groups needs two rendering passes, the first one rendering
+            // the content and the second one rendering the mask so we need to do
+            // an extra save_layer to keep all the masked group separate from other
+            // already drawn elements.
+            match element.kind {
+                Kind::Group(group) => {
+                    if group.masked {
+                        let paint = skia::Paint::default();
+                        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+                        self.render_surface.canvas().save_layer(&layer_rec);
+                    }
+                }
+                _ => {}
+            }
+
+            let mut paint = skia::Paint::default();
+            paint.set_blend_mode(element.blend_mode().into());
+            paint.set_alpha_f(element.opacity());
+
+            // When we're rendering the mask shape we need to set a special blend mode
+            // called 'destination-in' that keeps the drawn content within the mask.
+            // @see https://skia.org/docs/user/api/skblendmode_overview/
+            if mask {
+                let mut mask_paint = skia::Paint::default();
+                mask_paint.set_blend_mode(skia::BlendMode::DstIn);
+                let mask_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
+                self.render_surface.canvas().save_layer(&mask_rec);
+            }
+
+            if let Some(image_filter) = element.image_filter(self.viewbox.zoom * self.options.dpr())
+            {
+                paint.set_image_filter(image_filter);
+            }
+
+            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+            self.render_surface.canvas().save_layer(&layer_rec);
+
+            self.drawing_surface.canvas().save();
+            if !node_render_state.id.is_nil() {
+                self.render_shape(element, modifiers.get(&element.id), clip_bounds);
+            } else {
+                self.apply_drawing_to_render_canvas();
+            }
+            self.drawing_surface.canvas().restore();
+
+            // Set the node as visited_children before processing children
+            self.pending_nodes.push(NodeRenderState {
+                id: node_id,
+                visited_children: true,
+                clip_bounds: None,
+                visited_mask: false,
+                mask: mask,
+            });
+
+            if element.is_recursive() {
+                let children_clip_bounds =
+                    (!node_render_state.id.is_nil() & element.clip()).then(|| {
+                        let bounds = element.selrect();
+                        let mut transform = element.transform;
+                        transform.post_translate(bounds.center());
+                        transform.pre_translate(-bounds.center());
+                        if let Some(modifiers) = modifiers.get(&element.id) {
+                            transform.post_concat(&modifiers);
+                        }
+                        let corners = match element.kind {
+                            Kind::Rect(_, corners) => corners,
+                            _ => None,
+                        };
+                        (bounds, corners, transform)
+                    });
+
+                for child_id in element.children_ids().iter().rev() {
+                    self.pending_nodes.push(NodeRenderState {
+                        id: *child_id,
+                        visited_children: false,
+                        clip_bounds: children_clip_bounds,
+                        visited_mask: false,
+                        mask: false,
+                    });
+                }
+            }
+
+            // We try to avoid doing too many calls to get_time
+            if i % NODE_BATCH_THRESHOLD == 0 && get_time() - timestamp > MAX_BLOCKING_TIME_MS {
+                return Ok(());
+            }
+
+            i += 1;
         }
 
-        // This is needed so the next non-children shape does not carry this shape's transform
-        self.final_surface.canvas().save();
-        self.drawing_surface.canvas().save();
-
-        if !id.is_nil() {
-            self.render_single_shape(shape);
-        }
-
-        // draw all the children shapes
-        let shape_ids = shape.children.iter();
-        for shape_id in shape_ids {
-            is_complete = self.render_shape_tree(shape_id, shapes) && is_complete;
-        }
-
-        self.final_surface.canvas().restore();
-        self.drawing_surface.canvas().restore();
-        return is_complete;
+        // If we finish processing every node rendering is complete
+        self.render_in_progress = false;
+        Ok(())
     }
 }

@@ -30,7 +30,7 @@ test("Save and restore version", async ({ page }) => {
     "workspace/versions-snapshot-1.json",
   );
 
-  await page.getByLabel("History (Alt+H)").click();
+  await page.getByLabel("History").click();
 
   await workspacePage.mockRPC(
     "create-file-snapshot",
@@ -71,4 +71,7 @@ test("Save and restore version", async ({ page }) => {
   );
 
   await page.getByRole("button", { name: "Restore" }).click();
+
+  // check that the history panel is closed after restore
+  await expect(page.getByRole("tab", { name: "design" })).toBeVisible();
 });

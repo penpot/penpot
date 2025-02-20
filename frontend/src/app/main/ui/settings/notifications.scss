@@ -1,0 +1,42 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+@use "./profile" as *;
+
+.update-btn {
+  margin-top: $s-16;
+  @extend .button-primary;
+  height: $s-36;
+}
+
+.notifications-form {
+  width: $s-400;
+}
+
+.notifications-page {
+  display: flex;
+  justify-content: center;
+}
+
+.radio-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.form-container {
+  h3 {
+    color: var(--color-foreground-secondary);
+  }
+
+  h4 {
+    font-size: $fs-11;
+    color: var(--color-foreground-primary);
+    text-transform: uppercase;
+    margin: $s-12;
+  }
+}

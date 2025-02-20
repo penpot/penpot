@@ -11,7 +11,7 @@
    [app.common.svg.path.shapes-to-path :as upsp]
    [app.common.types.container :as ctn]
    [app.main.data.changes :as dch]
-   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.helpers :as dsh]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -23,8 +23,8 @@
      ptk/WatchEvent
      (watch [it state _]
        (let [page-id  (:current-page-id state)
-             objects  (wsh/lookup-page-objects state)
-             selected (->> (or ids (wsh/lookup-selected state))
+             objects  (dsh/lookup-page-objects state)
+             selected (->> (or ids (dsh/lookup-selected state))
                            (remove #(ctn/has-any-copy-parent? objects (get objects %))))
 
              children-ids

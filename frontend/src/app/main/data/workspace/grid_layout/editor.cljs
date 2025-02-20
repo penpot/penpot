@@ -9,7 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.rect :as grc]
    [app.common.types.shape.layout :as ctl]
-   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.helpers :as dsh]
    [potok.v2.core :as ptk]))
 
 (defn hover-grid-cell
@@ -34,7 +34,7 @@
      ptk/UpdateEvent
      (update [_ state]
        (if shift?
-         (let [objects  (wsh/lookup-page-objects state)
+         (let [objects  (dsh/lookup-page-objects state)
                grid     (get objects grid-id)
                selected (or (dm/get-in state [:workspace-grid-edition grid-id :selected]) #{})
                selected (into selected [cell-id])
@@ -74,7 +74,7 @@
   (ptk/reify ::clean-selection
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             shape (get objects grid-id)]
         (update-in state [:workspace-grid-edition grid-id :selected]
                    (fn [selected]
@@ -94,7 +94,7 @@
   (ptk/reify ::locate-board
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             srect (get-in objects [grid-id :selrect])]
         (-> state
             (update :workspace-local
@@ -111,7 +111,7 @@
   (ptk/reify ::select-track-cells
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             parent  (get objects grid-id)
 
             cells

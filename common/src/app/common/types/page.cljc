@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.types.page
+  (:refer-clojure :exclude [empty?])
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as-alias gpt]
@@ -33,7 +34,7 @@
    [:id ::sm/uuid]
    [:axis [::sm/one-of #{:x :y}]]
    [:position ::sm/safe-number]
-   [:frame-id {:optional true} ::sm/uuid]])
+   [:frame-id {:optional true} [:maybe ::sm/uuid]]])
 
 (def schema:guides
   [:map-of {:gen/max 2} ::sm/uuid schema:guide])
@@ -98,3 +99,8 @@
 (defn get-frame-flow
   [flows frame-id]
   (d/seek #(= (:starting-frame %) frame-id) (vals flows)))
+
+(defn is-empty?
+  "Check if page is empty or contains shapes"
+  [page]
+  (= 1 (count (:objects page))))

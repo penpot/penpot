@@ -13,47 +13,30 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(defn- update-position
-  [positions {:keys [id] :as thread}]
-  (if (contains? positions id)
-    (-> thread
-        (assoc :position (dm/get-in positions [id :position]))
-        (assoc :frame-id (dm/get-in positions [id :frame-id])))
-    thread))
+(mf/defc comments-layer*
+  [{:keys [vbox vport zoom drawing file-id]}]
+  (let [vbox-x      (dm/get-prop vbox :x)
+        vbox-y      (dm/get-prop vbox :y)
+        vport-w     (dm/get-prop vport :width)
+        vport-h     (dm/get-prop vport :height)
 
-(mf/defc comments-layer
-  {::mf/props :obj}
-  [{:keys [vbox vport zoom file-id page-id drawing] :as props}]
-  (let [vbox-x   (dm/get-prop vbox :x)
-        vbox-y   (dm/get-prop vbox :y)
-        vport-w  (dm/get-prop vport :width)
-        vport-h  (dm/get-prop vport :height)
+        pos-x       (* (- vbox-x) zoom)
+        pos-y       (* (- vbox-y) zoom)
 
-        pos-x    (* (- vbox-x) zoom)
-        pos-y    (* (- vbox-y) zoom)
+        profile     (mf/deref refs/profile)
+        local       (mf/deref refs/comments-local)
 
-        profile  (mf/deref refs/profile)
-        profiles (mf/deref refs/profiles)
-        local    (mf/deref refs/comments-local)
-
-        positions-ref
-        (mf/with-memo [page-id]
-          ;; FIXME: use lookup helpers here
-          (-> (l/in [:workspace-data :pages-index page-id :comment-thread-positions])
-              (l/derived st/state)))
-
-        positions   (mf/deref positions-ref)
-        threads-map (mf/deref refs/threads-ref)
+        threads-map (mf/deref refs/threads)
 
         threads
-        (mf/with-memo [threads-map positions local profile]
+        (mf/with-memo [threads-map local profile]
           (->> (vals threads-map)
-               (filter #(= (:page-id %) page-id))
-               (mapv (partial update-position positions))
                (dcm/apply-filters local profile)))
+
+        viewport
+        (assoc vport :offset-x pos-x :offset-y pos-y)
 
         on-draft-cancel
         (mf/use-fn #(st/emit! :interrupt))
@@ -69,28 +52,29 @@
 
     [:div {:class (stl/css :comments-section)}
      [:div
-      {:class (stl/css :workspace-comments-container)
+      {:id "comments"
+       :class (stl/css :workspace-comments-container)
        :style {:width (dm/str vport-w "px")
                :height (dm/str vport-h "px")}}
       [:div {:class (stl/css :threads)
              :style {:transform (dm/fmt "translate(%px, %px)" pos-x pos-y)}}
        (for [item threads]
-         [:& cmt/thread-bubble {:thread item
-                                :zoom zoom
-                                :open? (= (:id item) (:open local))
-                                :key (:seqn item)}])
+         [:> cmt/comment-floating-bubble* {:thread item
+                                           :zoom zoom
+                                           :is-open (= (:id item) (:open local))
+                                           :key (:seqn item)}])
 
        (when-let [id (:open local)]
          (when-let [thread (get threads-map id)]
            (when (seq (dcm/apply-filters local profile [thread]))
-             [:& cmt/thread-comments {:thread (update-position positions thread)
-                                      :profiles profiles
-                                      :viewport {:offset-x pos-x :offset-y pos-y :width (:width vport) :height (:height vport)}
-                                      :zoom zoom}])))
+             [:> cmt/comment-floating-thread*
+              {:thread thread
+               :viewport viewport
+               :zoom zoom}])))
 
        (when-let [draft (:comment drawing)]
-         [:& cmt/draft-thread {:draft draft
-                               :on-cancel on-draft-cancel
-                               :on-submit on-draft-submit
-                               :zoom zoom}])]]]))
-
+         [:> cmt/comment-floating-thread-draft*
+          {:draft draft
+           :on-cancel on-draft-cancel
+           :on-submit on-draft-submit
+           :zoom zoom}])]]]))

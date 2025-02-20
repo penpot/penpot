@@ -12,8 +12,8 @@
    [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.worker :as uw]
    [beicon.v2.core :as rx]
@@ -33,7 +33,7 @@
     (watch [_ state _]
       (let [tool    (dm/get-in state [:workspace-drawing :tool])
             shape   (dm/get-in state [:workspace-drawing :object])
-            objects (wsh/lookup-page-objects state)
+            objects (dsh/lookup-page-objects state)
             page-id (:current-page-id state)]
 
         (rx/concat

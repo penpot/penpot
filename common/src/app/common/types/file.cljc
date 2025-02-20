@@ -63,10 +63,15 @@
 (def schema:pages-index
   [:map-of {:gen/max 5} ::sm/uuid ::ctp/page])
 
+(def schema:options
+  [:map {:title "FileOptions"}
+   [:components-v2 {:optional true} ::sm/boolean]])
+
 (def schema:data
   [:map {:title "FileData"}
    [:pages [:vector ::sm/uuid]]
    [:pages-index schema:pages-index]
+   [:options {:optional true} schema:options]
    [:colors {:optional true} schema:colors]
    [:components {:optional true} schema:components]
    [:typographies {:optional true} schema:typographies]
@@ -78,8 +83,18 @@
   because sometimes we want to validate file without the data."
   [:map {:title "file"}
    [:id ::sm/uuid]
+   [:revn {:optional true} :int]
+   [:vern {:optional true} :int]
+   [:created-at {:optional true} ::sm/inst]
+   [:modified-at {:optional true} ::sm/inst]
+   [:deleted-at {:optional true} ::sm/inst]
+   [:project-id {:optional true} ::sm/uuid]
+   [:is-shared {:optional true} ::sm/boolean]
    [:data {:optional true} schema:data]
-   [:features ::cfeat/features]])
+   [:version :int]
+   [:features ::cfeat/features]
+   [:migrations {:optional true}
+    [::sm/set :string]]])
 
 (sm/register! ::data schema:data)
 (sm/register! ::file schema:file)
@@ -335,24 +350,28 @@
     (true? (= (:id component) (:id ref-component)))))
 
 (defn find-swap-slot
-  [shape container file libraries]
-  (if-let [swap-slot (ctk/get-swap-slot shape)]
-    swap-slot
-    (let [ref-shape (find-ref-shape file
-                                    container
-                                    libraries
-                                    shape
-                                    :include-deleted? true
-                                    :with-context? true)
-          shape-meta (meta ref-shape)
-          ref-file (:file shape-meta)
-          ref-container (:container shape-meta)]
-      (when ref-shape
-        (if-let [swap-slot (ctk/get-swap-slot ref-shape)]
-          swap-slot
-          (if (ctk/main-instance? ref-shape)
-            (:id shape)
-            (find-swap-slot ref-shape ref-container ref-file libraries)))))))
+  ([shape container file libraries]
+   (find-swap-slot shape container file libraries #{}))
+  ([shape container file libraries viewed-ids]
+   (if (contains? viewed-ids (:id shape)) ;; prevent cycles
+     nil
+     (if-let [swap-slot (ctk/get-swap-slot shape)]
+       swap-slot
+       (let [ref-shape (find-ref-shape file
+                                       container
+                                       libraries
+                                       shape
+                                       :include-deleted? true
+                                       :with-context? true)
+             shape-meta (meta ref-shape)
+             ref-file (:file shape-meta)
+             ref-container (:container shape-meta)]
+         (when ref-shape
+           (if-let [swap-slot (ctk/get-swap-slot ref-shape)]
+             swap-slot
+             (if (ctk/main-instance? ref-shape)
+               (:id shape)
+               (find-swap-slot ref-shape ref-container ref-file libraries (conj viewed-ids (:id shape)))))))))))
 
 (defn match-swap-slot?
   [shape-main shape-inst container-inst container-main file libraries]
@@ -451,8 +470,8 @@
   Returns a list ((asset ((container shapes) (container shapes)...))...)"
   [file-data library-data asset-type]
   (let [assets-seq (case asset-type
-                     :component (ctkl/components-seq library-data)
-                     :color (ctcl/colors-seq library-data)
+                     :component  (ctkl/components-seq library-data)
+                     :color      (ctcl/colors-seq library-data)
                      :typography (ctyl/typographies-seq library-data))
 
         find-usages-in-container
@@ -738,16 +757,20 @@
                         (:component-id shape) "@"
                         :else "-")
 
-                  (when (and (:component-file shape) component-file)
+                  (when (:component-file shape)
                     (str/format "<%s> "
-                                (if (= (:id component-file) (:id file))
-                                  "local"
-                                  (:name component-file))))
+                                (if component-file
+                                  (if (= (:id component-file) (:id file))
+                                    "local"
+                                    (:name component-file))
+                                  (if show-ids
+                                    (str/format "¿%s?" (:component-file shape))
+                                    "?"))))
 
                   (or (:name component-shape)
-                      (str/format "?%s"
-                                  (when show-ids
-                                    (str " " (:shape-ref shape)))))
+                      (if show-ids
+                        (str/format "¿%s?" (:shape-ref shape))
+                        "?"))
 
                   (when (and show-ids component-shape)
                     (str/format " %s" (:id component-shape)))

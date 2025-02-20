@@ -9,8 +9,10 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.media :as cm]
+   [app.config :as cf]
    [app.main.data.fonts :as df]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
@@ -109,6 +111,8 @@
                             (swap! uploading* disj id)
                             (st/emit! (df/add-font font)))
                           (fn [error]
+                            (st/emit! (ntf/error (tr "errors.bad-font" (first (:names item)))))
+                            (swap! fonts* dissoc id)
                             (js/console.log "error" error))))))
 
         on-upload
@@ -180,9 +184,10 @@
                            :ref input-ref
                            :on-selected on-selected}]]
 
-       [:& context-notification {:content (tr "dashboard.fonts.hero-text2")
-                                 :level :default
-                                 :is-html true}]
+       (when-let [url cf/terms-of-service-uri]
+         [:& context-notification {:content (tr "dashboard.fonts.hero-text2" url)
+                                   :level :default
+                                   :is-html true}])
 
        (when problematic-fonts?
          [:& context-notification {:content (tr "dashboard.fonts.warning-text")

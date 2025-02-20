@@ -15,21 +15,21 @@
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu fill-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu]]
    [rumext.v2 :as mf]))
 
 (mf/defc options
-  [{:keys [shape file-id] :as props}]
+  [{:keys [shape file-id libraries] :as props}]
   (let [ids    [(:id shape)]
         type   (:type shape)
 
@@ -52,8 +52,6 @@
         state-map    (if (features/active-feature? @st/state "text-editor/v2")
                        (mf/deref refs/workspace-v2-editor-state)
                        (mf/deref refs/workspace-editor-state))
-
-        shared-libs  (mf/deref refs/workspace-libraries)
 
         editor-state (when (not (features/active-feature? @st/state "text-editor/v2"))
                        (get state-map (:id shape)))
@@ -98,7 +96,7 @@
      [:& layer-menu {:ids ids
                      :type type
                      :values layer-values}]
-     [:& measures-menu
+     [:> measures-menu*
       {:ids ids
        :type type
        :values (select-keys shape measure-attrs)
@@ -146,11 +144,13 @@
                       :disable-stroke-style true}]
 
      (when (= :multiple (:fills fill-values))
-       [:& color-selection-menu {:type type :shapes [shape] :file-id file-id :shared-libs shared-libs}])
+       [:> color-selection-menu*
+        {:type type
+         :shapes [shape]
+         :file-id file-id
+         :libraries libraries}])
 
-     [:& shadow-menu
-      {:ids ids
-       :values (select-keys shape [:shadow])}]
+     [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
 
      [:& blur-menu
       {:ids ids

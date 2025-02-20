@@ -12,6 +12,7 @@
    [app.main.data.event :as ev]
    [app.main.data.persistence :as dwp]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.thumbnails :as th]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.util.time :as dt]
@@ -48,7 +49,7 @@
   (ptk/reify ::fetch-versions
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)]
+      (when-let [file-id (:current-file-id state)]
         (->> (rp/cmd! :get-file-snapshots {:file-id file-id})
              (rx/map #(update-version-state {:status :loaded :data %})))))))
 
@@ -93,27 +94,30 @@
 (defn restore-version
   [id origin]
   (assert (uuid? id) "expected valid uuid for `id`")
-
   (ptk/reify ::restore-version
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id (:current-file-id state)]
         (rx/concat
-         (rx/of ::dwp/force-persist)
-
-         ;; FIXME: we should abstract this
+         (rx/of ::dwp/force-persist
+                (dw/remove-layout-flag :document-history))
          (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
               (rx/filter #(or (nil? %) (= :saved %)))
               (rx/take 1)
               (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
+              (rx/tap #(th/clear-queue!))
               (rx/map #(dw/initialize-workspace file-id)))
+         (case origin
+           :version
+           (rx/of (ptk/event ::ev/event {::ev/name "restore-pin-version"}))
 
-         (when-let [name (case origin
-                           :version "restore-pin-version"
-                           :snapshot "restore-autosave"
-                           :plugin "restore-version-plugin"
-                           nil)]
-           (rx/of (ptk/event ::ev/event {::ev/name name}))))))))
+           :snapshot
+           (rx/of (ptk/event ::ev/event {::ev/name "restore-autosave"}))
+
+           :plugin
+           (rx/of (ptk/event ::ev/event {::ev/name "restore-version-plugin"}))
+
+           (rx/empty)))))))
 
 (defn delete-version
   [id]

@@ -16,6 +16,7 @@
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
+   [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.websocket :as dws]
    [app.main.features :as features]
@@ -25,6 +26,7 @@
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (log/set-level! :warn)
@@ -186,8 +188,8 @@
   (ptk/reify ::show-file-menu-with-position
     ptk/UpdateEvent
     (update [_ state]
-      (update state :dashboard-local
-              assoc :menu-open true
+      (update state :dashboard-local assoc
+              :menu-open true
               :menu-pos pos
               :file-id file-id))))
 
@@ -247,15 +249,18 @@
   (ptk/reify ::create-project
     ptk/WatchEvent
     (watch [_ state _]
-      (let [projects (get state :projects)
-            unames   (cfh/get-used-names projects)
-            name     (cfh/generate-unique-name unames (str (tr "dashboard.new-project-prefix") " 1"))
-            team-id  (:current-team-id state)
-            params   {:name name
-                      :team-id team-id}
+      (let [team-id   (:current-team-id state)
+            projects  (dsh/lookup-team-projects state team-id)
+            unames    (cfh/get-used-names projects)
+            base-name (tr "dashboard.new-project-prefix")
+            name      (cfh/generate-unique-name base-name unames :immediate-suffix? true)
+            team-id   (:current-team-id state)
+            params    {:name name
+                       :team-id team-id}
             {:keys [on-success on-error]
              :or {on-success identity
-                  on-error rx/throw}} (meta params)]
+                  on-error rx/throw}}
+            (meta params)]
         (->> (rp/cmd! :create-project params)
              (rx/tap on-success)
              (rx/map project-created)
@@ -280,13 +285,18 @@
        :name name})
 
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
-
-            new-name (str name " " (tr "dashboard.copy-suffix"))]
-
+            projects (get state :projects)
+            unames (cfh/get-used-names projects)
+            suffix-fn (fn [copy-count]
+                        (str/concat " "
+                                    (tr "dashboard.copy-suffix")
+                                    (when (> copy-count 1)
+                                      (str " " copy-count))))
+            new-name (cfh/generate-unique-name name unames :suffix-fn suffix-fn)]
         (->> (rp/cmd! :duplicate-project {:project-id id :name new-name})
              (rx/tap on-success)
              (rx/map project-duplicated)
@@ -361,7 +371,7 @@
 ;; --- EVENT: delete-file
 
 (defn file-deleted
-  [_team-id project-id]
+  [project-id]
   (ptk/reify ::file-deleted
     ptk/UpdateEvent
     (update [_ state]
@@ -378,10 +388,9 @@
           (d/update-when :recent-files dissoc id)))
 
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (uuid/uuid (get-in state [:route :path-params :team-id]))]
-        (->> (rp/cmd! :delete-file {:id id})
-             (rx/map #(file-deleted team-id project-id)))))))
+    (watch [_ _ _]
+      (->> (rp/cmd! :delete-file {:id id})
+           (rx/map (partial file-deleted project-id))))))
 
 ;; --- Rename File
 
@@ -460,14 +469,16 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (assoc-in [:files id] file)
-          (assoc-in [:recent-files id] file)
-          (update-in [:projects project-id :count] inc)))))
+      (let [file (dissoc file :data)]
+        (-> state
+            (assoc-in [:files id] file)
+            (assoc-in [:recent-files id] file)
+            (update-in [:projects project-id :count] inc))))))
 
 (defn create-file
   [{:keys [project-id name] :as params}]
   (dm/assert! (uuid? project-id))
+
   (ptk/reify ::create-file
     ev/Event
     (-data [_] {:project-id project-id})
@@ -476,16 +487,19 @@
     (watch [it state _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
-                  on-error rx/throw}} (meta params)
+                  on-error rx/throw}}
+            (meta params)
 
-            files    (get state :files)
-            unames   (cfh/get-used-names files)
-            name     (or name (cfh/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1")))
-            features (-> (features/get-team-enabled-features state)
-                         (set/difference cfeat/frontend-only-features))
-            params   (-> params
-                         (assoc :name name)
-                         (assoc :features features))]
+            files     (dsh/lookup-team-files state)
+            unames    (cfh/get-used-names files)
+            base-name (tr "dashboard.new-file-prefix")
+            name      (or name
+                          (cfh/generate-unique-name base-name unames :immediate-suffix? true))
+            features  (-> (features/get-team-enabled-features state)
+                          (set/difference cfeat/frontend-only-features))
+            params    (-> params
+                          (assoc :name name)
+                          (assoc :features features))]
 
         (->> (rp/cmd! :create-file params)
              (rx/tap on-success)
@@ -500,13 +514,17 @@
   (dm/assert! (string? name))
   (ptk/reify ::duplicate-file
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
-
-            new-name (str name " " (tr "dashboard.copy-suffix"))]
-
+            unames (cfh/get-used-names (get state :files))
+            suffix-fn (fn [copy-count]
+                        (str/concat " "
+                                    (tr "dashboard.copy-suffix")
+                                    (when (> copy-count 1)
+                                      (str " " copy-count))))
+            new-name (cfh/generate-unique-name name unames :suffix-fn suffix-fn)]
         (->> (rp/cmd! :duplicate-file {:file-id id :name new-name})
              (rx/tap on-success)
              (rx/map file-created)
@@ -552,18 +570,17 @@
 
 (defn clone-template
   [{:keys [template-id project-id] :as params}]
-  (dm/assert! (uuid? project-id))
   (ptk/reify ::clone-template
     ev/Event
     (-data [_]
-      {:template-id template-id
-       :project-id project-id})
+      {:template-id template-id})
 
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
-                  on-error rx/throw}} (meta params)]
+                  on-error rx/throw}} (meta params)
+            project-id (or project-id (:current-project-id state))]
         (->> (rp/cmd! ::sse/clone-template {:project-id project-id
                                             :template-id template-id})
              (rx/tap (fn [event]
@@ -588,12 +605,12 @@
             pparams       (:path-params route)
             in-project?   (contains? pparams :project-id)
             name          (if in-project?
-                            (let [files  (get state :files)
+                            (let [files  (dsh/lookup-team-files state team-id)
                                   unames (cfh/get-used-names files)]
-                              (cfh/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1")))
-                            (let [projects (get state :projects)
+                              (cfh/generate-unique-name (tr "dashboard.new-file-prefix") unames :immediate-suffix? true))
+                            (let [projects (dsh/lookup-team-projects  state team-id)
                                   unames   (cfh/get-used-names projects)]
-                              (cfh/generate-unique-name unames (str (tr "dashboard.new-project-prefix") " 1"))))
+                              (cfh/generate-unique-name (tr "dashboard.new-project-prefix") unames :immediate-suffix? true)))
             params        (if in-project?
                             {:project-id (:project-id pparams)
                              :name name}

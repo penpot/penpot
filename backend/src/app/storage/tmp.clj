@@ -16,10 +16,13 @@
    [app.util.time :as dt]
    [app.worker :as wrk]
    [datoteka.fs :as fs]
+   [datoteka.io :as io]
    [integrant.core :as ig]
    [promesa.exec :as px]
    [promesa.exec.csp :as sp])
   (:import
+   java.io.InputStream
+   java.io.OutputStream
    java.nio.file.Files))
 
 (def default-tmp-dir "/tmp/penpot")
@@ -85,4 +88,13 @@
         path  (Files/createFile path attrs)]
     (fs/delete-on-exit! path)
     (sp/offer! queue [path (some-> min-age dt/duration)])
+    path))
+
+(defn tempfile-from
+  "Create a new tempfile from from consuming the stream"
+  [input & {:as options}]
+  (let [path (tempfile options)]
+    (with-open [^InputStream input (io/input-stream input)]
+      (with-open [^OutputStream output (io/output-stream path)]
+        (io/copy input output)))
     path))

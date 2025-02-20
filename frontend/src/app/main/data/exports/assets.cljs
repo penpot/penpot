@@ -8,9 +8,9 @@
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.persistence :as dwp]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -56,11 +56,11 @@
     (watch [_ state _]
       (let [file-id  (:current-file-id state)
             page-id  (:current-page-id state)
-            selected (or selected (wsh/lookup-selected state page-id {}))
+            selected (or selected (dsh/lookup-selected state page-id {}))
 
             shapes   (if (seq selected)
-                       (wsh/lookup-shapes state selected)
-                       (reverse (wsh/filter-shapes state #(pos? (count (:exports %))))))
+                       (dsh/lookup-shapes state selected)
+                       (reverse (dsh/filter-shapes state #(pos? (count (:exports %))))))
 
             exports  (for [shape  shapes
                            export (:exports shape)]

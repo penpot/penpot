@@ -77,12 +77,12 @@
          [:& radio-button {:icon i/boolean-intersection
                            :value "intersection"
                            :disabled disabled-bool-btns
-                           :title (str (tr "intersection") " (" (sc/get-tooltip :bool-intersection) ")")
+                           :title (str (tr "workspace.shape.menu.intersection") " (" (sc/get-tooltip :bool-intersection) ")")
                            :id "bool-opt-intersection"}]
          [:& radio-button {:icon i/boolean-exclude
                            :value "exclude"
                            :disabled disabled-bool-btns
-                           :title (str (tr "exclude") " (" (sc/get-tooltip :bool-exclude) ")")
+                           :title (str (tr "workspace.shape.menu.exclude") " (" (sc/get-tooltip :bool-exclude) ")")
                            :id "bool-opt-exclude"}]]]
 
        [:button

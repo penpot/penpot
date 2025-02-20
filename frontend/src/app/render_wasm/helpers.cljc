@@ -13,4 +13,3 @@
   (let [fn-sym (with-meta (gensym "fn-") {:tag 'function})]
     `(let [~fn-sym (cljs.core/unchecked-get ~module ~name)]
        (~fn-sym ~@params))))
-

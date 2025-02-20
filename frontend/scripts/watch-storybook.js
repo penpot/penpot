@@ -23,14 +23,21 @@ async function compileSassAll() {
 async function compileSass(path) {
   const start = process.hrtime();
   log.info("changed:", path);
-  const result = await h.compileSass(worker, path, { modules: true });
-  sass.index[result.outputPath] = result.css;
 
-  const output = h.concatSass(sass);
-  await fs.writeFile("./resources/public/css/ds.css", output);
+  try {
+    const result = await h.compileSass(worker, path, { modules: true });
+    sass.index[result.outputPath] = result.css;
 
-  const end = process.hrtime(start);
-  log.info("done:", `(${ppt(end)})`);
+    const output = h.concatSass(sass);
+    await fs.writeFile("./resources/public/css/ds.css", output);
+
+    const end = process.hrtime(start);
+    log.info("done:", `(${ppt(end)})`);
+  } catch (cause) {
+    console.error(cause);
+    const end = process.hrtime(start);
+    log.error("error:", `(${ppt(end)})`);
+  }
 }
 
 await fs.mkdir("./resources/public/css/", { recursive: true });

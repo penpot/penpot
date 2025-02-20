@@ -976,6 +976,11 @@ Mousetrap.prototype.stopCallback = function (e, element, combo) {
     return false;
   }
 
+  // Keyup events need to be dispatched always. Otherwise some events can be stuck
+  if (e.type == 'keyup') {
+    return false;
+  }
+
   if ('composedPath' in e && typeof e.composedPath === 'function') {
     // For open shadow trees, update `element` so that the following check works.
     const initialEventTarget = e.composedPath()[0];
@@ -986,10 +991,11 @@ Mousetrap.prototype.stopCallback = function (e, element, combo) {
 
   // stop for input, select, textarea and button
   const shouldStop = element.tagName == "INPUT" ||
-    element.tagName == "SELECT" ||
-    element.tagName == "TEXTAREA" ||
-    (element.tagName == "BUTTON" && combo.includes("tab")) ||
-    (element.contentEditable && element.contentEditable == "true");
+        element.tagName == "SELECT" ||
+        element.tagName == "TEXTAREA" ||
+        (element.tagName == "BUTTON" && combo.includes("tab")) ||
+        (element.contentEditable && (element.contentEditable == "true" || element.contentEditable === "plaintext-only"));
+
   return shouldStop;
 }
 

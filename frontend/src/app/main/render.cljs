@@ -128,11 +128,13 @@
 (defn svg-raw-wrapper-factory
   [objects]
   (let [shape-wrapper (shape-wrapper-factory objects)
-        svg-raw-shape   (svg-raw/svg-raw-shape shape-wrapper)]
+        svg-raw-shape (svg-raw/svg-raw-shape shape-wrapper)]
     (mf/fnc svg-raw-wrapper
       [{:keys [shape] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))]
         (if (and (map? (:content shape))
+                ;;  tspan shouldn't be contained in a group or have svg defs
+                 (not= :tspan (get-in shape [:content :tag]))
                  (or (= :svg (get-in shape [:content :tag]))
                      (contains? shape :svg-attrs)))
           [:> shape-container {:shape shape}

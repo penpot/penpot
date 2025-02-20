@@ -18,7 +18,7 @@ if [ -f ./environ ]; then
     source ./environ
 fi
 
-export JVM_OPTS="-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j2.configurationFile=log4j2.xml -XX:-OmitStackTraceInFastThrow -Dpolyglot.engine.WarnInterpreterOnly=false --enable-preview $JVM_OPTS"
+export JVM_OPTS="-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j2.configurationFile=log4j2.xml -XX:-OmitStackTraceInFastThrow --enable-preview $JVM_OPTS"
 
 ENTRYPOINT=${1:-app.main};
 

@@ -6,22 +6,44 @@
 
 (ns app.main.data.tokens
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
+   [app.common.logic.tokens :as clt]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.changes :as dch]
+   [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.refs :as refs]
-   [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.main.ui.workspace.tokens.update :as wtu]
+   [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
-   [clojure.data :as data]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
+
+(declare set-selected-token-set-name)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKENS Getters
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; FIXME: lookup rename
+
+(defn get-tokens-lib
+  [state]
+  (-> (dsh/lookup-file-data state)
+      (get :tokens-lib)))
+
+(defn lookup-token-set
+  ([state]
+   (when-let [selected (dm/get-in state [:workspace-tokens :selected-token-set-name])]
+     (lookup-token-set state selected)))
+  ([state name]
+   (some-> (get-tokens-lib state)
+           (ctob/get-set name))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
@@ -41,67 +63,8 @@
       (rx/of (dwsh/update-shapes [id] #(merge % attrs))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; TOKENS Getters
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn get-tokens-lib [state]
-  (get-in state [:workspace-data :tokens-lib]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn toggle-or-apply-token
-  "Remove any shape attributes from token if they exists.
-  Othewise apply token attributes."
-  [shape token]
-  (let [[shape-leftover token-leftover _matching] (data/diff (:applied-tokens shape) token)]
-    (merge {} shape-leftover token-leftover)))
-
-(defn token-from-attributes [token attributes]
-  (->> (map (fn [attr] [attr (wtt/token-identifier token)]) attributes)
-       (into {})))
-
-(defn unapply-token-id [shape attributes]
-  (update shape :applied-tokens d/without-keys attributes))
-
-(defn apply-token-to-attributes [{:keys [shape token attributes]}]
-  (let [token (token-from-attributes token attributes)]
-    (toggle-or-apply-token shape token)))
-
-(defn apply-token-to-shape
-  [{:keys [shape token attributes] :as _props}]
-  (let [applied-tokens (apply-token-to-attributes {:shape shape
-                                                   :token token
-                                                   :attributes attributes})]
-    (update shape :applied-tokens #(merge % applied-tokens))))
-
-(defn maybe-apply-token-to-shape
-  "When the passed `:token` is non-nil apply it to the `:applied-tokens` on a shape."
-  [{:keys [shape token _attributes] :as props}]
-  (if token
-    (apply-token-to-shape props)
-    shape))
-
-(defn get-token-data-from-token-id
-  [id]
-  (let [workspace-data (deref refs/workspace-data)]
-    (get (:tokens workspace-data) id)))
-
-(defn set-selected-token-set-id
-  [id]
-  (ptk/reify ::set-selected-token-set-id
-    ptk/UpdateEvent
-    (update [_ state]
-      (wtts/assoc-selected-token-set-id state id))))
-
-(defn set-selected-token-set-id-from-name
-  [token-set-name]
-  (ptk/reify ::set-selected-token-set-id-from-name
-    ptk/UpdateEvent
-    (update [_ state]
-      (->> (ctob/set-name->set-path-string token-set-name)
-           (wtts/assoc-selected-token-set-id state)))))
 
 (defn create-token-theme [token-theme]
   (let [new-token-theme token-theme]
@@ -146,7 +109,8 @@
   (ptk/reify ::delete-token-theme
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (get state :workspace-data)
+      (let [data    (dsh/lookup-file-data state)
+
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-token-theme group name))]
@@ -154,19 +118,30 @@
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
 
-(defn create-token-set [token-set]
-  (let [new-token-set (merge
-                       {:name "Token Set"
-                        :tokens []}
-                       token-set)]
-    (ptk/reify ::create-token-set
-      ptk/WatchEvent
-      (watch [it _ _]
-        (let [changes (-> (pcb/empty-changes it)
-                          (pcb/add-token-set new-token-set))]
-          (rx/of
-           (set-selected-token-set-id-from-name (:name new-token-set))
-           (dch/commit-changes changes)))))))
+(defn create-token-set
+  [set-name token-set]
+  (ptk/reify ::create-token-set
+    ptk/UpdateEvent
+    (update [_ state]
+      ;; Clear possible local state
+      (update state :workspace-tokens dissoc :token-set-new-path))
+
+    ptk/WatchEvent
+    (watch [it _ _]
+      (let [token-set (update token-set :name #(if (empty? %) set-name (ctob/join-set-path [% set-name])))
+            changes   (-> (pcb/empty-changes it)
+                          (pcb/add-token-set token-set))]
+        (rx/of (set-selected-token-set-name (:name token-set))
+               (dch/commit-changes changes))))))
+
+(defn rename-token-set-group [set-group-path set-group-fname]
+  (ptk/reify ::rename-token-set-group
+    ptk/WatchEvent
+    (watch [it _state _]
+      (let [changes (-> (pcb/empty-changes it)
+                        (pcb/rename-token-set-group set-group-path set-group-fname))]
+        (rx/of
+         (dch/commit-changes changes))))))
 
 (defn update-token-set [set-name token-set]
   (ptk/reify ::update-token-set
@@ -177,107 +152,160 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/update-token-set token-set prev-token-set))]
         (rx/of
-         (set-selected-token-set-id-from-name (:name token-set))
+         (set-selected-token-set-name (:name token-set))
          (dch/commit-changes changes))))))
 
-(defn toggle-token-set [{:keys [token-set-name]}]
+(defn toggle-token-set
+  [name]
+  (assert (string? name) "expected a string for `name`")
   (ptk/reify ::toggle-token-set
     ptk/WatchEvent
-    (watch [it state _]
-      (let [tokens-lib (get-tokens-lib state)
-            prev-theme (ctob/get-theme tokens-lib ctob/hidden-token-theme-group ctob/hidden-token-theme-name)
-            active-token-set-names (ctob/get-active-themes-set-names tokens-lib)
-            theme (-> (or (some-> prev-theme
-                                  (ctob/set-sets active-token-set-names))
-                          (ctob/make-hidden-token-theme :sets active-token-set-names))
-                      (ctob/toggle-set token-set-name))
-            prev-active-token-themes (ctob/get-active-theme-paths tokens-lib)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/update-active-token-themes #{(ctob/token-theme-path ctob/hidden-token-theme-group ctob/hidden-token-theme-name)} prev-active-token-themes))
-            changes' (if prev-theme
-                       (pcb/update-token-theme changes theme prev-theme)
-                       (pcb/add-token-theme changes theme))]
+    (watch [_ state _]
+      (let [tlib (get-tokens-lib state)
+            changes (-> (pcb/empty-changes)
+                        (clt/generate-toggle-token-set tlib name))]
+
+        (rx/of (dch/commit-changes changes)
+               (wtu/update-workspace-tokens))))))
+
+(defn toggle-token-set-group [group-path]
+  (ptk/reify ::toggle-token-set-group
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (get-tokens-lib state) group-path)]
         (rx/of
-         (dch/commit-changes changes')
+         (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
 
 (defn import-tokens-lib [lib]
   (ptk/reify ::import-tokens-lib
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (get state :workspace-data)
-            update-token-set-change (some-> lib
-                                            (ctob/get-sets)
-                                            (first)
-                                            (:name)
-                                            (set-selected-token-set-id-from-name))
+      (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/set-tokens-lib lib))]
-        (rx/of
-         (dch/commit-changes changes)
-         update-token-set-change
-         (wtu/update-workspace-tokens))))))
+        (rx/of (dch/commit-changes changes)
+               (wtu/update-workspace-tokens))))))
 
-(defn delete-token-set-path [token-set-path]
+(defn delete-token-set-path
+  [group? path]
   (ptk/reify ::delete-token-set-path
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (get state :workspace-data)
+      (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token-set-path token-set-path))]
-        (rx/of
-         (dch/commit-changes changes)
-         (wtu/update-workspace-tokens))))))
+                        (pcb/delete-token-set-path group? path))]
+        (rx/of (dch/commit-changes changes)
+               (wtu/update-workspace-tokens))))))
 
-(defn move-token-set [source-set-name dest-set-name position]
-  (ptk/reify ::move-token-set
+(defn drop-error [{:keys [error to-path]}]
+  (ptk/reify ::drop-error
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [content (case error
+                      :path-exists (tr "errors.drag-drop.set-exists" to-path)
+                      :parent-to-child (tr "errors.drag-drop.parent-to-child")
+                      nil)]
+        (when content
+          (rx/of
+           (ntf/show {:content content
+                      :type :toast
+                      :level :error
+                      :timeout 9000})))))))
+
+(defn drop-token-set-group [drop-opts]
+  (ptk/reify ::drop-token-set-group
     ptk/WatchEvent
     (watch [it state _]
-      (let [tokens-lib (get-tokens-lib state)
-            prev-before-set-name (ctob/get-neighbor-set-name tokens-lib source-set-name 1)
-            [source-set-name' dest-set-name'] (if (= :top position)
-                                                [source-set-name dest-set-name]
-                                                [source-set-name (ctob/get-neighbor-set-name tokens-lib dest-set-name 1)])
-            changes (-> (pcb/empty-changes it)
-                        (pcb/move-token-set-before source-set-name' dest-set-name' prev-before-set-name))]
-        (rx/of
-         (dch/commit-changes changes)
-         (wtu/update-workspace-tokens))))))
+      (try
+        (when-let [changes (clt/generate-move-token-set-group (pcb/empty-changes it) (get-tokens-lib state) drop-opts)]
+          (rx/of
+           (dch/commit-changes changes)
+           (wtu/update-workspace-tokens)))
+        (catch js/Error e
+          (rx/of
+           (drop-error (ex-data e))))))))
 
-(defn update-create-token
-  [{:keys [token prev-token-name]}]
-  (ptk/reify ::update-create-token
+(defn drop-token-set [drop-opts]
+  (ptk/reify ::drop-token-set
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [token-set (wtts/get-selected-token-set state)
-            token-set-name (or (:name token-set) "Global")
-            changes (if (not token-set)
-                      ;; No set created add a global set
-                      (let [tokens-lib (get-tokens-lib state)
-                            token-set (ctob/make-token-set :name token-set-name :tokens {(:name token) token})
-                            hidden-theme (ctob/make-hidden-token-theme :sets [token-set-name])
-                            active-theme-paths (some-> tokens-lib ctob/get-active-theme-paths)
-                            add-to-hidden-theme? (= active-theme-paths #{ctob/hidden-token-theme-path})
-                            base-changes (pcb/add-token-set (pcb/empty-changes) token-set)]
-                        (cond
-                          (not tokens-lib) (-> base-changes
-                                               (pcb/add-token-theme hidden-theme)
-                                               (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} #{}))
+    (watch [it state _]
+      (try
+        (when-let [changes (clt/generate-move-token-set (pcb/empty-changes it) (get-tokens-lib state) drop-opts)]
+          (rx/of (dch/commit-changes changes)
+                 (wtu/update-workspace-tokens)))
+        (catch js/Error e
+          (rx/of
+           (drop-error (ex-data e))))))))
 
-                          add-to-hidden-theme? (let [prev-hidden-theme (ctob/get-theme tokens-lib ctob/hidden-token-theme-group ctob/hidden-token-theme-name)]
-                                                 (-> base-changes
-                                                     (pcb/update-token-theme (ctob/toggle-set prev-hidden-theme ctob/hidden-token-theme-path) prev-hidden-theme)))
+(defn- create-token-with-set
+  "A special case when a first token is created and no set exists"
+  [token]
+  (ptk/reify ::create-token-and-set
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [set-name   "Global"
 
-                          :else base-changes))
-                      ;; Either update or add token to existing set
-                      (if-let [prev-token (ctob/get-token token-set (or prev-token-name (:name token)))]
-                        (pcb/update-token (pcb/empty-changes) (:name token-set) token prev-token)
-                        (pcb/add-token (pcb/empty-changes) (:name token-set) token)))]
-        (rx/of
-         (set-selected-token-set-id-from-name token-set-name)
-         (dch/commit-changes changes))))))
+            token-set
+            (-> (ctob/make-token-set :name set-name)
+                (ctob/add-token token))
+
+            hidden-theme
+            (ctob/make-hidden-token-theme :sets [set-name])
+
+            changes
+            (pcb/add-token-set (pcb/empty-changes) token-set)
+
+            changes
+            (-> changes
+                (pcb/add-token-theme hidden-theme)
+                (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} #{}))]
+
+        (rx/of (set-selected-token-set-name set-name)
+               (dch/commit-changes changes))))))
+
+(defn create-token
+  [params]
+  (let [token (ctob/make-token params)]
+    (ptk/reify ::create-token
+      ptk/WatchEvent
+      (watch [it state _]
+        (if-let [token-set (lookup-token-set state)]
+          (let [data    (dsh/lookup-file-data state)
+                changes (-> (pcb/empty-changes it)
+                            (pcb/with-library-data data)
+                            (pcb/set-token (:name token-set)
+                                           (:name token)
+                                           token))]
+
+            (rx/of (dch/commit-changes changes)
+                   (ptk/data-event ::ev/event {::ev/name "create-token"})))
+
+          (rx/of (create-token-with-set token)))))))
+
+(defn update-token
+  [name params]
+  (assert (string? name) "expected string for `name`")
+
+  (ptk/reify ::update-token
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [token-set (lookup-token-set state)
+            data      (dsh/lookup-file-data state)
+            token     (ctob/get-token token-set name)
+            token'    (->> (merge token params)
+                           (into {})
+                           (ctob/make-token))
+
+            changes   (-> (pcb/empty-changes it)
+                          (pcb/with-library-data data)
+                          (pcb/set-token (:name token-set)
+                                         (:name token)
+                                         token'))]
+
+        (rx/of (dch/commit-changes changes))))))
 
 (defn delete-token
   [set-name token-name]
@@ -286,10 +314,10 @@
   (ptk/reify ::delete-token
     ptk/WatchEvent
     (watch [it state _]
-      (let [data    (get state :workspace-data)
+      (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token set-name token-name))]
+                        (pcb/set-token set-name token-name nil))]
         (rx/of (dch/commit-changes changes))))))
 
 (defn duplicate-token
@@ -298,63 +326,99 @@
   (ptk/reify ::duplicate-token
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [token (some-> (wtts/get-selected-token-set state)
-                               (ctob/get-token token-name)
-                               (update :name #(str/concat % "-copy")))]
-        (rx/of
-         (update-create-token {:token token}))))))
+      (when-let [token-set (lookup-token-set state)]
+        (when-let [token (ctob/get-token token-set token-name)]
+          (let [tokens (ctob/get-tokens token-set)
+                unames (map :name tokens)
+
+                suffix-fn
+                (fn [copy-count]
+                  (let [suffix (tr "workspace.token.duplicate-suffix")]
+                    (str/concat "-"
+                                suffix
+                                (when (> copy-count 1)
+                                  (str "-" copy-count)))))
+
+                copy-name
+                (cfh/generate-unique-name token-name unames :suffix-fn suffix-fn)]
+
+            (rx/of (create-token (assoc token :name copy-name)))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKEN UI OPS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn set-token-type-section-open
   [token-type open?]
   (ptk/reify ::set-token-type-section-open
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-tokens :open-status token-type] open?))))
+      (update-in state [:workspace-tokens :open-status-by-type] assoc token-type open?))))
 
-;; === Token Context Menu
+(defn assign-token-context-menu
+  [{:keys [position] :as params}]
 
-(defn show-token-context-menu
-  [{:keys [position _token-name] :as params}]
-  (dm/assert! (gpt/point? position))
+  (when params
+    (assert (gpt/point? position) "expected a point instance for `position` param"))
+
   (ptk/reify ::show-token-context-menu
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :token-context-menu] params))))
+      (if params
+        (update state :workspace-tokens assoc :token-context-menu params)
+        (update state :workspace-tokens dissoc :token-context-menu)))))
 
-(def hide-token-context-menu
-  (ptk/reify ::hide-token-context-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :token-context-menu] nil))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKEN-SET UI OPS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; === Token Set Context Menu
-
-(defn show-token-set-context-menu
-  [{:keys [position _token-set-name] :as params}]
-  (dm/assert! (gpt/point? position))
-  (ptk/reify ::show-token-set-context-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :token-set-context-menu] params))))
-
-(def hide-token-set-context-menu
-  (ptk/reify ::hide-token-set-context-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :token-set-context-menu] nil))))
-
-;; === Import Export Context Menu
-
-(defn show-import-export-context-menu
+(defn assign-token-set-context-menu
   [{:keys [position] :as params}]
-  (dm/assert! (gpt/point? position))
-  (ptk/reify ::show-import-export-context-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :import-export-context-menu] params))))
+  (when params
+    (assert (gpt/point? position) "expected valid point for `position` param"))
 
-(def hide-import-export-set-context-menu
-  (ptk/reify ::hide-import-export-set-context-menu
+  (ptk/reify ::assign-token-set-context-menu
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :import-export-set-context-menu] nil))))
+      (if params
+        (update state :workspace-tokens assoc :token-set-context-menu params)
+        (update state :workspace-tokens dissoc :token-set-context-menu)))))
+
+(defn set-selected-token-set-name
+  [name]
+  (ptk/reify ::set-selected-token-set-name
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-tokens assoc :selected-token-set-name name))))
+
+(defn start-token-set-edition
+  [edition-id]
+  (assert (string? edition-id) "expected a string for `edition-id`")
+
+  (ptk/reify ::start-token-set-edition
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-tokens assoc :token-set-edition-id edition-id))))
+
+(defn start-token-set-creation
+  [path]
+  (assert (vector? path) "expected a vector for `path`")
+
+  (ptk/reify ::start-token-set-creation
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-tokens assoc :token-set-new-path path))))
+
+(defn clear-token-set-edition
+  []
+  (ptk/reify ::clear-token-set-edition
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-tokens dissoc :token-set-edition-id))))
+
+(defn clear-token-set-creation
+  []
+  (ptk/reify ::clear-token-set-creation
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-tokens dissoc :token-set-new-path))))

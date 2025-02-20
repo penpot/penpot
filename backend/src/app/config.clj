@@ -42,7 +42,6 @@
    :rpc-rlimit-config "resources/rlimit.edn"
    :rpc-climit-config "resources/climit.edn"
 
-   :auto-file-snapshot-total 10
    :auto-file-snapshot-every 5
    :auto-file-snapshot-timeout "3h"
 
@@ -101,7 +100,6 @@
     [:telemetry-uri {:optional true} :string]
     [:telemetry-with-taiga {:optional true} ::sm/boolean] ;; DELETE
 
-    [:auto-file-snapshot-total {:optional true} ::sm/int]
     [:auto-file-snapshot-every {:optional true} ::sm/int]
     [:auto-file-snapshot-timeout {:optional true} ::dt/duration]
 
@@ -230,19 +228,9 @@
     [:objects-storage-s3-endpoint {:optional true} ::sm/uri]
     [:objects-storage-s3-io-threads {:optional true} ::sm/int]]))
 
-(def default-flags
-  [:enable-backend-api-doc
-   :enable-backend-openapi-doc
-   :enable-backend-worker
-   :enable-secure-session-cookies
-   :enable-email-verification
-   :enable-v2-migration])
-
 (defn- parse-flags
   [config]
-  (flags/parse flags/default
-               default-flags
-               (:flags config)))
+  (flags/parse flags/default (:flags config)))
 
 (defn read-env
   [prefix]

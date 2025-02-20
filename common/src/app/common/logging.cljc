@@ -275,7 +275,7 @@
      [_ _ _ {:keys [::logger ::props ::level ::cause ::trace ::message]}]
      (when (enabled? logger level)
        (let [hstyles (str/ffmt "font-weight: 600; color: %" (level->color level))
-             mstyles (str/ffmt "font-weight: 300; color: %" "#282a2e")
+             mstyles (str/ffmt "font-weight: 300; color: %" (level->color level))
              header  (str/concat "%c" (level->name level) " [" logger "] ")
              message (str/concat header "%c" @message)]
 

@@ -74,8 +74,8 @@
    objects
    selected))
 
-(mf/defc viewport
-  [{:keys [selected wglobal wlocal layout file palete-size] :as props}]
+(mf/defc viewport*
+  [{:keys [selected wglobal wlocal layout file page palete-size]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
         {:keys [edit-path
@@ -102,7 +102,6 @@
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
 
-        page              (mf/deref refs/workspace-page)
         objects           (get page :objects)
         page-id           (get page :id)
         background        (get page :background clr/canvas)
@@ -113,7 +112,7 @@
         text-modifiers    (mf/deref refs/workspace-text-modifier)
 
         objects-modified  (mf/with-memo [base-objects text-modifiers modifiers]
-                            (binding [cts/*wasm-sync* true]
+                            (binding [cts/*wasm-sync* false]
                               (apply-modifiers-to-selected selected base-objects text-modifiers modifiers)))
 
         selected-shapes   (keep (d/getf objects-modified) selected)
@@ -133,6 +132,7 @@
         frame-hover       (mf/use-state nil)
         active-frames     (mf/use-state #{})
         canvas-init?      (mf/use-state false)
+        initialized?      (mf/use-state false)
 
         ;; REFS
         [viewport-ref
@@ -292,17 +292,26 @@
       (when @canvas-init?
         (wasm.api/resize-viewbox (:width vport) (:height vport))))
 
-    (mf/with-effect [base-objects canvas-init?]
-      (when @canvas-init?
+    (mf/with-effect [@canvas-init?  base-objects]
+      (when (and @canvas-init? @initialized?)
         (wasm.api/set-objects base-objects)))
 
-    (mf/with-effect [preview-blend canvas-init?]
+    (mf/with-effect [@canvas-init? preview-blend]
       (when (and @canvas-init? preview-blend)
-        (wasm.api/request-render)))
+        (wasm.api/request-render "with-effect")))
 
-    (mf/with-effect [vbox canvas-init?]
-      (when @canvas-init?
-        (wasm.api/set-view zoom vbox)))
+    (mf/with-effect [@canvas-init? zoom vbox background]
+      (when (and @canvas-init? (not @initialized?))
+        (wasm.api/initialize base-objects zoom vbox background)
+        (reset! initialized? true)))
+
+    (mf/with-effect [vbox zoom]
+      (when (and @canvas-init? initialized?)
+        (wasm.api/set-view-box zoom vbox)))
+
+    (mf/with-effect [background]
+      (when (and @canvas-init? initialized?)
+        (wasm.api/set-canvas-background background)))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -333,12 +342,10 @@
              :edition edition}])]]]
 
       (when show-comments?
-        [:& comments/comments-layer {:vbox vbox
-                                     :vport vport
-                                     :zoom zoom
-                                     :drawing drawing
-                                     :page-id page-id
-                                     :file-id (:id file)}])
+        [:> comments/comments-layer* {:vbox vbox
+                                      :vport vport
+                                      :zoom zoom
+                                      :drawing drawing}])
 
       (when picking-color?
         [:& pixel-overlay/pixel-overlay {:vport vport
@@ -479,7 +486,7 @@
            :shift? @shift?}])
 
        [:& widgets/frame-titles
-        {:objects base-objects
+        {:objects (with-meta objects-modified nil)
          :selected selected
          :zoom zoom
          :show-artboard-names? show-artboard-names?
@@ -563,6 +570,7 @@
          [:> guides/viewport-guides*
           {:zoom zoom
            :vbox vbox
+           :guides (:guides page)
            :hover-frame guide-frame
            :disabled-guides disabled-guides?
            :modifiers modifiers}])
@@ -617,7 +625,7 @@
               :hover-disabled? hover-disabled?}])])
 
        (when show-gradient-handlers?
-         [:& gradients/gradient-handlers
+         [:> gradients/gradient-handlers*
           {:id (first selected)
            :zoom zoom}])
 

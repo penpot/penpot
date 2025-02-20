@@ -415,6 +415,12 @@
       [:type [:= :add-token-sets]]
       [:token-sets [:sequential ::ctot/token-set]]]]
 
+    [:rename-token-set-group
+     [:map {:title "RenameTokenSetGroup"}
+      [:type [:= :rename-token-set-group]]
+      [:set-group-path [:vector :string]]
+      [:set-group-fname :string]]]
+
     [:mod-token-set
      [:map {:title "ModTokenSetChange"}
       [:type [:= :mod-token-set]]
@@ -424,8 +430,18 @@
     [:move-token-set-before
      [:map {:title "MoveTokenSetBefore"}
       [:type [:= :move-token-set-before]]
-      [:set-name :string]
-      [:before-set-name [:maybe :string]]]]
+      [:from-path [:vector :string]]
+      [:to-path [:vector :string]]
+      [:before-path [:maybe [:vector :string]]]
+      [:before-group? [:maybe :boolean]]]]
+
+    [:move-token-set-group-before
+     [:map {:title "MoveTokenSetGroupBefore"}
+      [:type [:= :move-token-set-group-before]]
+      [:from-path [:vector :string]]
+      [:to-path [:vector :string]]
+      [:before-path [:maybe [:vector :string]]]
+      [:before-group? [:maybe :boolean]]]]
 
     [:del-token-set
      [:map {:title "DelTokenSetChange"}
@@ -442,24 +458,12 @@
       [:type [:= :set-tokens-lib]]
       [:tokens-lib :any]]]
 
-    [:add-token
-     [:map {:title "AddTokenChange"}
-      [:type [:= :add-token]]
+    [:set-token
+     [:map {:title "SetTokenChange"}
+      [:type [:= :set-token]]
       [:set-name :string]
-      [:token ::cto/token]]]
-
-    [:mod-token
-     [:map {:title "ModTokenChange"}
-      [:type [:= :mod-token]]
-      [:set-name :string]
-      [:name :string]
-      [:token ::cto/token]]]
-
-    [:del-token
-     [:map {:title "DelTokenChange"}
-      [:type [:= :del-token]]
-      [:set-name :string]
-      [:name :string]]]]])
+      [:token-name :string]
+      [:token [:maybe ::cto/token]]]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
@@ -491,6 +495,11 @@
   first processing phase of changes. Should be set to a hash-set
   instance and will contain changes that caused the touched
   modification."
+  nil)
+
+(def ^:dynamic *state*
+  "A general purpose state to signal some out of order operations
+  to the processor backend."
   nil)
 
 (defmulti process-change (fn [_ change] (:type change)))
@@ -627,18 +636,44 @@
 
 ;; --- Shape / Obj
 
+;; The main purpose of this is ensure that all created shapes has
+;; valid media references; so for make sure of it, we analyze each
+;; shape added via `:add-obj` change for media usage, and if shape has
+;; media refs, we put that media refs on the check list (on the
+;; *state*) which will subsequently be processed and all incorrect
+;; references will be corrected.  The media ref is anything that can
+;; be pointing to a file-media-object on the shape, per example we
+;; have fill-image, stroke-image, etc.
+
+(defn- collect-shape-media-refs
+  [state obj page-id]
+  (let [media-refs
+        (-> (cfh/collect-shape-media-refs obj)
+            (not-empty))
+
+        xform
+        (map (fn [id]
+               {:page-id page-id
+                :shape-id (:id obj)
+                :id id}))]
+
+    (update state :media-refs into xform media-refs)))
+
 (defmethod process-change :add-obj
   [data {:keys [id obj page-id component-id frame-id parent-id index ignore-touched]}]
   (let [update-container
         (fn [container]
           (ctst/add-shape id obj container frame-id parent-id index ignore-touched))]
 
+    (when *state*
+      (swap! *state* collect-shape-media-refs obj page-id))
+
     (if page-id
       (d/update-in-when data [:pages-index page-id] update-container)
       (d/update-in-when data [:components component-id] update-container))))
 
 (defn- process-operations
-  [objects {:keys [id operations] :as change}]
+  [objects {:keys [page-id id operations] :as change}]
   (if-let [shape (get objects id)]
     (let [shape    (reduce process-operation shape operations)
           touched? (-> shape meta ::ctn/touched)]
@@ -647,6 +682,10 @@
       ;; need to report them for to be used in the second
       ;; phase of changes procesing
       (when touched? (some-> *touched-changes* (vswap! conj change)))
+
+      (when (and *state* page-id)
+        (swap! *state* collect-shape-media-refs shape page-id))
+
       (assoc objects id shape))
 
     objects))
@@ -886,7 +925,7 @@
   (letfn [(update-fn [data]
             (if (some? value)
               (assoc-in data [:plugin-data namespace key] value)
-              (update-in data [:plugin-data namespace] dissoc key)))]
+              (d/update-in-when data [:plugin-data namespace] dissoc key)))]
 
     (case object-type
       :file
@@ -989,29 +1028,21 @@
   [data {:keys [tokens-lib]}]
   (assoc data :tokens-lib tokens-lib))
 
-(defmethod process-change :add-token
-  [data {:keys [set-name token]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/add-token-in-set set-name (ctob/make-token token)))))
+(defmethod process-change :set-token
+  [data {:keys [set-name token-name token]}]
+  (update data :tokens-lib
+          (fn [lib]
+            (let [lib' (ctob/ensure-tokens-lib lib)]
+              (cond
+                (not token)
+                (ctob/delete-token-from-set lib' set-name token-name)
 
-(defmethod process-change :mod-token
-  [data {:keys [set-name name token]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/update-token-in-set
-                                 set-name
-                                 name
-                                 (fn [old-token]
-                                   (ctob/make-token (merge old-token token)))))))
+                (not (ctob/get-token-in-set lib' set-name token-name))
+                (ctob/add-token-in-set lib' set-name (ctob/make-token token))
 
-(defmethod process-change :del-token
-  [data {:keys [set-name name]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/delete-token-from-set
-                                 set-name
-                                 name))))
+                :else
+                (ctob/update-token-in-set lib' set-name token-name (fn [prev-token]
+                                                                     (ctob/make-token (merge prev-token token)))))))))
 
 (defmethod process-change :add-temporary-token-theme
   [data {:keys [token-theme]}]
@@ -1063,6 +1094,13 @@
                                 (ctob/ensure-tokens-lib)
                                 (ctob/add-sets (map ctob/make-token-set token-sets)))))
 
+(defmethod process-change :rename-token-set-group
+  [data {:keys [set-group-path set-group-fname]}]
+  (update data :tokens-lib (fn [lib]
+                             (-> lib
+                                 (ctob/ensure-tokens-lib)
+                                 (ctob/rename-set-group set-group-path set-group-fname)))))
+
 (defmethod process-change :mod-token-set
   [data {:keys [name token-set]}]
   (update data :tokens-lib (fn [lib]
@@ -1072,10 +1110,16 @@
                                                          (merge prev-set (dissoc token-set :tokens))))))))
 
 (defmethod process-change :move-token-set-before
-  [data {:keys [set-name before-set-name]}]
+  [data {:keys [from-path to-path before-path before-group?] :as changes}]
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
-                                (ctob/move-set-before set-name before-set-name))))
+                                (ctob/move-set from-path to-path before-path before-group?))))
+
+(defmethod process-change :move-token-set-group-before
+  [data {:keys [from-path to-path before-path before-group?]}]
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/move-set-group from-path to-path before-path before-group?))))
 
 (defmethod process-change :del-token-set
   [data {:keys [name]}]
@@ -1153,7 +1197,7 @@
                      ; We need to trigger a sync if the shape has changed any
                      ; attribute that participates in components synchronization.
                      (and (= (:type operation) :set)
-                          (get ctk/sync-attrs (:attr operation))))
+                          (ctk/component-attr? (:attr operation))))
         any-sync? (some need-sync? operations)]
     (when any-sync?
       (if page-id

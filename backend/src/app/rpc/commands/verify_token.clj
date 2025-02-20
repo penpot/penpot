@@ -166,23 +166,26 @@
         ;; invited team.
         (let [props {:team-id (:team-id claims)
                      :role (:role claims)
-                     :invitation-id (:id invitation)}
+                     :invitation-id (:id invitation)}]
 
-              accept-invitation-event
-              (-> (audit/event-from-rpc-params params)
-                  (assoc ::audit/name "accept-team-invitation")
-                  (assoc ::audit/props props))
+          (audit/submit!
+           cfg
+           (-> (audit/event-from-rpc-params params)
+               (assoc ::audit/name "accept-team-invitation")
+               (assoc ::audit/props props)))
 
-              accept-invitation-from-event
-              (-> (audit/event-from-rpc-params params)
-                  (assoc ::audit/profile-id (:created-by invitation))
-                  (assoc ::audit/name "accept-team-invitation-from")
-                  (assoc ::audit/props (assoc props
-                                              :profile-id (:id profile)
-                                              :email (:email profile))))]
-
-          (audit/submit! cfg accept-invitation-event)
-          (audit/submit! cfg accept-invitation-from-event)
+          ;; NOTE: Backward compatibility; old invitations can
+          ;; have the `created-by` to be nil; so in this case we
+          ;; don't submit this event to the audit-log
+          (when-let [created-by (:created-by invitation)]
+            (audit/submit!
+             cfg
+             (-> (audit/event-from-rpc-params params)
+                 (assoc ::audit/profile-id created-by)
+                 (assoc ::audit/name "accept-team-invitation-from")
+                 (assoc ::audit/props (assoc props
+                                             :profile-id (:id profile)
+                                             :email (:email profile))))))
 
           (accept-invitation cfg claims invitation profile)
           (assoc claims :state :created))

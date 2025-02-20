@@ -1,7 +1,6 @@
-use skia_safe as skia;
+use skia_safe::{self as skia, Rect};
 
 use super::Color;
-use crate::math;
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -19,6 +18,13 @@ impl RawStopData {
     pub fn offset(&self) -> f32 {
         self.offset as f32 / 100.0
     }
+
+    pub fn from_bytes(bytes: [u8; 5]) -> Self {
+        Self {
+            color: [bytes[0], bytes[1], bytes[2], bytes[3]],
+            offset: bytes[4],
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -28,6 +34,7 @@ pub struct Gradient {
     opacity: f32,
     start: (f32, f32),
     end: (f32, f32),
+    width: f32,
 }
 
 impl Gradient {
@@ -36,7 +43,7 @@ impl Gradient {
         self.offsets.push(offset);
     }
 
-    fn to_shader(&self, rect: &math::Rect) -> skia::Shader {
+    fn to_linear_shader(&self, rect: &Rect) -> Option<skia::Shader> {
         let start = (
             rect.left + self.start.0 * rect.width(),
             rect.top + self.start.1 * rect.height(),
@@ -45,7 +52,7 @@ impl Gradient {
             rect.left + self.end.0 * rect.width(),
             rect.top + self.end.1 * rect.height(),
         );
-        let shader = skia::shader::Shader::linear_gradient(
+        skia::shader::Shader::linear_gradient(
             (start, end),
             self.colors.as_slice(),
             self.offsets.as_slice(),
@@ -53,8 +60,39 @@ impl Gradient {
             None,
             None,
         )
-        .unwrap();
-        shader
+    }
+
+    fn to_radial_shader(&self, rect: &Rect) -> Option<skia::Shader> {
+        let center = skia::Point::new(
+            rect.left + self.start.0 * rect.width(),
+            rect.top + self.start.1 * rect.height(),
+        );
+        let end = skia::Point::new(
+            rect.left + self.end.0 * rect.width(),
+            rect.top + self.end.1 * rect.height(),
+        );
+
+        let direction = end - center;
+        let distance = (direction.x.powi(2) + direction.y.powi(2)).sqrt();
+        let angle = direction.y.atan2(direction.x).to_degrees();
+
+        // Based on the code from frontend/src/app/main/ui/shapes/gradients.cljs
+        let mut transform = skia::Matrix::new_identity();
+        transform.pre_translate((center.x, center.y));
+        transform.pre_rotate(angle + 90., skia::Point::new(0., 0.));
+        // We need an extra transform, because in skia radial gradients are circular and we need them to be ellipses if they must adapt to the shape
+        transform.pre_scale((self.width * rect.width() / rect.height(), 1.), None);
+        transform.pre_translate((-center.x, -center.y));
+
+        skia::shader::Shader::radial_gradient(
+            center,
+            distance,
+            self.colors.as_slice(),
+            self.offsets.as_slice(),
+            skia::TileMode::Clamp,
+            None,
+            Some(&transform),
+        )
     }
 }
 
@@ -80,6 +118,7 @@ impl ImageFill {
 pub enum Fill {
     Solid(Color),
     LinearGradient(Gradient),
+    RadialGradient(Gradient),
     Image(ImageFill),
 }
 
@@ -91,6 +130,22 @@ impl Fill {
             opacity,
             colors: vec![],
             offsets: vec![],
+            width: 0.,
+        })
+    }
+    pub fn new_radial_gradient(
+        start: (f32, f32),
+        end: (f32, f32),
+        opacity: f32,
+        width: f32,
+    ) -> Self {
+        Self::RadialGradient(Gradient {
+            start,
+            end,
+            opacity,
+            colors: vec![],
+            offsets: vec![],
+            width,
         })
     }
 
@@ -103,7 +158,7 @@ impl Fill {
         })
     }
 
-    pub fn to_paint(&self, rect: &math::Rect) -> skia::Paint {
+    pub fn to_paint(&self, rect: &Rect) -> skia::Paint {
         match self {
             Self::Solid(color) => {
                 let mut p = skia::Paint::default();
@@ -115,9 +170,19 @@ impl Fill {
             }
             Self::LinearGradient(gradient) => {
                 let mut p = skia::Paint::default();
-                p.set_shader(gradient.to_shader(&rect));
+                p.set_shader(gradient.to_linear_shader(&rect));
                 p.set_alpha((gradient.opacity * 255.) as u8);
                 p.set_style(skia::PaintStyle::Fill);
+                p.set_anti_alias(true);
+                p.set_blend_mode(skia::BlendMode::SrcOver);
+                p
+            }
+            Self::RadialGradient(gradient) => {
+                let mut p = skia::Paint::default();
+                p.set_shader(gradient.to_radial_shader(&rect));
+                p.set_alpha((gradient.opacity * 255.) as u8);
+                p.set_style(skia::PaintStyle::Fill);
+                p.set_anti_alias(true);
                 p.set_blend_mode(skia::BlendMode::SrcOver);
                 p
             }

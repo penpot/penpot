@@ -29,6 +29,15 @@ x-flags: &penpot-flags
 x-uri: &penpot-public-uri
   PENPOT_PUBLIC_URI: http://localhost:9001
 
+x-body-size: &penpot-http-body-size
+  # Max body size (30MiB); Used for plain requests, should never be
+  # greater than multi-part size
+  PENPOT_HTTP_SERVER_MAX_BODY_SIZE: 31457280
+
+  # Max multipart body size (350MiB)
+  PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE: 367001600
+
+
 networks:
   penpot:
 
@@ -63,7 +72,7 @@ services:
   #     - "443:443"
 
   penpot-frontend:
-    image: "penpotapp/frontend:latest"
+    image: "penpotapp/frontend:${PENPOT_VERSION:-latest}"
     restart: always
     ports:
       - 9001:8080
@@ -103,18 +112,20 @@ services:
       # - "traefik.http.routers.penpot-https.tls.certresolver=letsencrypt"
 
     environment:
-      << : *penpot-flags
+      << : [*penpot-flags, *penpot-http-body-size]
 
   penpot-backend:
-    image: "penpotapp/backend:latest"
+    image: "penpotapp/backend:${PENPOT_VERSION:-latest}"
     restart: always
 
     volumes:
       - penpot_assets:/opt/data/assets
 
     depends_on:
-      - penpot-postgres
-      - penpot-redis
+      penpot-postgres:
+        condition: service_healthy
+      penpot-redis:
+        condition: service_healthy
 
     networks:
       - penpot
@@ -123,7 +134,7 @@ services:
     ## container.
 
     environment:
-      << : [*penpot-flags, *penpot-public-uri]
+      << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size]
 
       ## Penpot SECRET KEY. It serves as a master key from which other keys for subsystems
       ## (eg http sessions, or invitations) are derived.
@@ -177,6 +188,7 @@ services:
       ## audit what data we send with the code available on github.
 
       PENPOT_TELEMETRY_ENABLED: true
+      PENPOT_TELEMETRY_REFERER: compose
 
       ## Example SMTP/Email configuration. By default, emails are sent to the mailcatch
       ## service, but for production usage it is recommended to setup a real SMTP
@@ -193,15 +205,20 @@ services:
       PENPOT_SMTP_SSL: false
 
   penpot-exporter:
-    image: "penpotapp/exporter:latest"
+    image: "penpotapp/exporter:${PENPOT_VERSION:-latest}"
     restart: always
+
+    depends_on:
+      penpot-redis:
+        condition: service_healthy
+
     networks:
       - penpot
 
     environment:
       # Don't touch it; this uses an internal docker network to
       # communicate with the frontend.
-      PENPOT_PUBLIC_URI: http://penpot-frontend
+      PENPOT_PUBLIC_URI: http://penpot-frontend:8080
 
       ## Redis is used for the websockets notifications.
       PENPOT_REDIS_URI: redis://penpot-redis/0
@@ -210,6 +227,13 @@ services:
     image: "postgres:15"
     restart: always
     stop_signal: SIGINT
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U penpot"]
+      interval: 2s
+      timeout: 10s
+      retries: 5
+      start_period: 2s
 
     volumes:
       - penpot_postgres_v15:/var/lib/postgresql/data
@@ -226,6 +250,14 @@ services:
   penpot-redis:
     image: redis:7.2
     restart: always
+
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+
     networks:
       - penpot
 
@@ -261,5 +293,3 @@ services:
   #   ports:
   #     - 9000:9000
   #     - 9001:9001
-
-

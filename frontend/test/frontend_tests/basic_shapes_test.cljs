@@ -9,6 +9,7 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.shapes :as dwsh]
    [cljs.test :as t :include-macros true]
@@ -34,13 +35,10 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               shape1' (get-in new-state [:workspace-data
-                                          :pages-index
-                                          (cthi/id :page1)
-                                          :objects
-                                          (cthi/id :shape1)])
-               fills'      (:fills shape1')
-               fill'       (first fills')]
+               objects (dsh/lookup-page-objects new-state)
+               shape1' (get objects (cthi/id :shape1))
+               fills'  (:fills shape1')
+               fill'   (first fills')]
 
            ;; ==== Check
            (t/is (some? shape1'))
@@ -48,7 +46,7 @@
            (t/is (= (:fill-color fill') "#fabada"))
            (t/is (= (:fill-opacity fill') 1))))))))
 
-(t/deftest test-update-stroke
+(t/deftest test-update-stroke-color
   ;; Old shapes without stroke-alignment are rendered as if it is centered
   (t/async
     done
@@ -62,21 +60,19 @@
 
           ;; ==== Action
           events
-          [(dc/change-stroke #{(cthi/id :shape1)} {:color "#FABADA"} 0)]]
+          [(dc/change-stroke-color #{(cthi/id :shape1)} {:color "#FABADA"} 0)]]
 
       (ths/run-store
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               shape1' (get-in new-state [:workspace-data
-                                          :pages-index
-                                          (cthi/id :page1)
-                                          :objects
-                                          (cthi/id :shape1)])
-               stroke'      (-> (:strokes shape1')
-                                first)]
+               objects (dsh/lookup-page-objects new-state)
+               shape1' (get objects (cthi/id :shape1))
+               stroke' (first (:strokes shape1'))]
 
-            ;; ==== Check
-           (println stroke')
+           ;; ==== Check
+           ;; (println stroke')
            (t/is (some? shape1'))
-           (t/is (= (:stroke-alignment stroke') :center))))))))
+           (t/is (= (:stroke-alignment stroke') :inner))
+           (t/is (= (:stroke-color stroke') "#FABADA"))
+           (t/is (= (:stroke-width stroke') 2))))))))

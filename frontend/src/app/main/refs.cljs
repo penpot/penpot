@@ -14,9 +14,9 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
-   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.tokens.selected-set :as dwts]
    [app.main.store :as st]
-   [app.main.ui.workspace.tokens.token-set :as wtts]
    [okulary.core :as l]))
 
 ;; ---- Global refs
@@ -53,7 +53,7 @@
 (def exception
   (l/derived :exception st/state))
 
-(def threads-ref
+(def threads
   (l/derived :comment-threads st/state))
 
 (def share-links
@@ -71,13 +71,44 @@
 (def files
   (l/derived :files st/state))
 
+(def file
+  (l/derived (fn [state]
+               (let [file-id (:current-file-id state)
+                     files   (:files state)]
+                 (get files file-id)))
+             st/state))
+
 (def shared-files
   "A derived state that points to the current list of shared
   files (without the content, only summary)"
   (l/derived :shared-files st/state))
 
+(defn select-libraries
+  [files file-id]
+  (persistent!
+   (reduce-kv (fn [result id file]
+                (if (or (= id file-id)
+                        (= (:library-of file) file-id))
+                  (assoc! result id file)
+                  result))
+              (transient {})
+              files)))
+
+;; NOTE: for performance reasons, prefer derefing refs/files and then
+;; use with-memo mechanism with `select-libraries` this will avoid
+;; executing the select-libraries reduce-kv on each state change and
+;; only execute it when files are changed. This ref exists for
+;; backward compatibility with the code, but it is considered
+;; DEPRECATED and all new code should not use it and old code should
+;; be gradually migrated to more efficient approach
 (def libraries
-  (l/derived :libraries st/state))
+  "A derived state that contanins the currently loaded shared
+  libraries with all its content; including the current file"
+  (l/derived (fn [state]
+               (let [files   (get state :files)
+                     file-id (get state :current-file-id)]
+                 (select-libraries files file-id)))
+             st/state))
 
 (defn extract-selected-files
   [files selected]
@@ -116,12 +147,19 @@
 (def workspace-drawing
   (l/derived :workspace-drawing st/state))
 
+(def workspace-selrect-transform
+  (l/derived :workspace-selrect-transform st/state))
+
+(def workspace-tokens
+  "All tokens related ephimeral state"
+  (l/derived :workspace-tokens st/state))
+
 ;; TODO: rename to workspace-selected (?)
 ;; Don't use directly from components, this is a proxy to improve performance of selected-shapes
 (def ^:private selected-shapes-data
   (l/derived
    (fn [state]
-     (let [objects  (wsh/lookup-page-objects state)
+     (let [objects  (dsh/lookup-page-objects state)
            selected (dm/get-in state [:workspace-local :selected])]
        {:objects objects :selected selected}))
    st/state (fn [v1 v2]
@@ -131,8 +169,8 @@
 (def selected-shapes
   (l/derived
    (fn [{:keys [objects selected]}]
-     (wsh/process-selected-shapes objects selected))
-   selected-shapes-data))
+     (dsh/process-selected-shapes objects selected))
+   selected-shapes-data =))
 
 (defn make-selected-ref
   [id]
@@ -217,80 +255,52 @@
 (def rulers?
   (l/derived #(contains? % :rulers) workspace-layout))
 
-(def workspace-file
-  "A ref to a striped vision of file (without data)."
-  (l/derived (fn [state]
-               (let [file (:workspace-file state)
-                     data (:workspace-data state)]
-                 (-> file
-                     (dissoc :data)
-                     ;; FIXME: still used in sitemaps but sitemaps
-                     ;; should declare its own lense for it
-                     (assoc :pages (:pages data)))))
-             st/state =))
-
+;; FIXME: rename to current-file-data
 (def workspace-data
-  (l/derived :workspace-data st/state))
+  "Currently working file data on workspace"
+  (l/derived dsh/lookup-file-data st/state))
 
 (def workspace-file-colors
-  (l/derived (fn [data]
-               (when data
-                 (->> (:colors data)
-                      (d/mapm #(assoc %2 :file-id (:id data))))))
+  (l/derived (fn [{:keys [id] :as data}]
+               (some-> (:colors data) (update-vals #(assoc % :file-id id))))
              workspace-data
              =))
 
-(def workspace-recent-colors
+(def recent-colors
+  "Recent colors for the currently selected file"
   (l/derived (fn [state]
                (when-let [file-id (:current-file-id state)]
                  (dm/get-in state [:recent-colors file-id])))
              st/state))
 
-(def workspace-recent-fonts
-  (l/derived (fn [data]
-               (get data :recent-fonts []))
-             workspace-data))
+(def recent-fonts
+  "Recent fonts for the currently selected file"
+  (l/derived (fn [state]
+               (when-let [file-id (:current-file-id state)]
+                 (dm/get-in state [:recent-fonts file-id])))
+             st/state))
 
 (def workspace-file-typography
   (l/derived :typographies workspace-data))
 
-(def workspace-local-library
-  (l/derived (fn [state]
-               (select-keys (:workspace-data state)
-                            [:id
-                             :colors
-                             :media
-                             :typographies
-                             :components]))
-             st/state =))
-
-(def workspace-libraries
-  (l/derived :workspace-libraries st/state))
-
 (def workspace-presence
   (l/derived :workspace-presence st/state))
 
-(def workspace-snap-data
-  (l/derived :workspace-snap-data st/state))
-
 (def workspace-page
-  (l/derived (fn [state]
-               (let [page-id (:current-page-id state)
-                     data    (:workspace-data state)]
-                 (dm/get-in data [:pages-index page-id])))
-             st/state))
+  "Ref to currently active page on workspace"
+  (l/derived dsh/lookup-page st/state))
 
 (def workspace-page-flows
   (l/derived #(-> % :flows not-empty) workspace-page))
 
-(defn workspace-page-objects-by-id
-  [page-id]
-  (l/derived #(wsh/lookup-page-objects % page-id) st/state =))
+(defn workspace-page-object-by-id
+  [page-id shape-id]
+  (l/derived #(dsh/lookup-shape % page-id shape-id) st/state =))
 
 ;; TODO: Looks like using the `=` comparator can be pretty expensive
 ;; on large pages, we are using this for some reason?
 (def workspace-page-objects
-  (l/derived wsh/lookup-page-objects st/state =))
+  (l/derived dsh/lookup-page-objects st/state =))
 
 (def workspace-read-only?
   (l/derived :read-only? workspace-global))
@@ -364,7 +374,7 @@
   (l/derived
    (fn [state]
      {:modifiers (:workspace-modifiers state)
-      :objects   (wsh/lookup-page-objects state)})
+      :objects   (dsh/lookup-page-objects state)})
    st/state
    (fn [a b]
      (and (= (:modifiers a) (:modifiers b))
@@ -395,11 +405,11 @@
   (l/derived #(get % frame-id) workspace-frame-modifiers =))
 
 (defn select-bool-children [id]
-  (l/derived (partial wsh/select-bool-children id) st/state =))
+  (l/derived #(dsh/select-bool-children % id) st/state =))
 
 (def selected-data
-  (l/derived #(let [selected (wsh/lookup-selected %)
-                    objects (wsh/lookup-page-objects %)]
+  (l/derived #(let [selected (dsh/lookup-selected %)
+                    objects (dsh/lookup-page-objects %)]
                 (hash-map :selected selected
                           :objects objects))
              st/state =))
@@ -431,7 +441,7 @@
   [ids]
   (l/derived
    (fn [state]
-     (let [objects  (wsh/lookup-page-objects state)]
+     (let [objects  (dsh/lookup-page-objects state)]
        (into []
              (comp (map (d/getf objects))
                    (filter (partial ctl/flex-layout-immediate-child? objects)))
@@ -469,11 +479,8 @@
 (def workspace-token-themes-no-hidden
   (l/derived #(remove ctob/hidden-temporary-theme? %) workspace-token-themes))
 
-(def workspace-selected-token-set-id
-  (l/derived wtts/get-selected-token-set-id st/state))
-
-(def workspace-token-set-group-selected?
-  (l/derived wtts/token-group-selected? st/state))
+(def selected-token-set-name
+  (l/derived (l/key :selected-token-set-name) workspace-tokens))
 
 (def workspace-ordered-token-sets
   (l/derived #(or (some-> % ctob/get-sets) []) tokens-lib))
@@ -484,24 +491,29 @@
 (def workspace-active-theme-paths
   (l/derived (d/nilf ctob/get-active-theme-paths) tokens-lib))
 
+(defn token-sets-at-path-all-active
+  [group-path]
+  (l/derived
+   (fn [lib]
+     (when lib
+       (ctob/sets-at-path-all-active? lib group-path)))
+   tokens-lib))
+
 (def workspace-active-theme-paths-no-hidden
   (l/derived #(disj % ctob/hidden-token-theme-path) workspace-active-theme-paths))
 
-(def workspace-active-set-names
-  (l/derived (d/nilf ctob/get-active-themes-set-names) tokens-lib))
-
+;; FIXME: deprecated, it should not be implemented with ref (still used in form)
 (def workspace-active-theme-sets-tokens
   (l/derived #(or (some-> % ctob/get-active-themes-set-tokens) {}) tokens-lib))
 
 (def workspace-selected-token-set-token
   (fn [token-name]
     (l/derived
-     #(some-> (wtts/get-selected-token-set %)
-              (ctob/get-token token-name))
+     #(dwts/get-selected-token-set-token % token-name)
      st/state)))
 
 (def workspace-selected-token-set-tokens
-  (l/derived #(or (wtts/get-selected-token-set-tokens %) {}) st/state))
+  (l/derived #(or (dwts/get-selected-token-set-tokens %) {}) st/state))
 
 (def plugins-permissions-peek
   (l/derived (fn [state]
@@ -617,13 +629,6 @@
 (defn workspace-grid-edition-id
   [id]
   (l/derived #(get % id) workspace-grid-edition))
-
-;; FIXME: remove
-(def current-file-id
-  (l/derived :current-file-id st/state))
-
-(def current-project-id
-  (l/derived :current-project-id st/state))
 
 (def workspace-preview-blend
   (l/derived :workspace-preview-blend st/state))

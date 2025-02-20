@@ -9,9 +9,9 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes.common :as gco]
-   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
+   [clojure.walk :as walk]
    [cuerdas.core :as str]))
 
 #?(:clj (set! *warn-on-reflection* true))
@@ -399,31 +399,51 @@
                    elements)]
     (into #{} (keep :name) elements)))
 
-(defn- extract-numeric-suffix
-  [basename]
-  (if-let [[_ p1 p2] (re-find #"(.*) ([0-9]+)$" basename)]
-    [p1 (+ 1 (d/parse-integer p2))]
-    [basename 1]))
+(defn- name-seq
+  "Creates a lazy, infinite sequence of names starting with `base-name`,
+   followed by variants with suffixes applied. The sequence follows this pattern:
+   - `base-name`
+   - `(str base-name (suffix-fn 1))`
+   - `(str base-name (suffix-fn 2))`
+   - `(str base-name (suffix-fn 3))`, etc."
+  [base-name suffix-fn]
+  (cons base-name
+        (map #(str/concat base-name (suffix-fn %))
+             (iterate inc 1))))
+
+(defn ^:private get-suffix
+  "Default suffix impelemtation"
+  [copy-count]
+  (str/concat " " copy-count))
 
 (defn generate-unique-name
-  "A unique name generator"
-  [used basename]
+  "Generates a unique name by selecting the first available name from a generated sequence.
+   The sequence consists of `base-name` and its variants, avoiding conflicts with `existing-names`.
+
+   Parameters:
+   - `base-name` - string used as the base for name generation.
+   - `existing-names` - a collection of existing names to check for uniqueness.
+   - Options:
+     - `:suffix-fn` - a function that generates suffixes, given an integer (default: `get-suffix`).
+     - `:immediate-suffix?` - if `true`, the base name is considered taken, and suffixing starts immediately.
+
+   Returns:
+   - A unique name not present in `existing-names`."
+  [base-name existing-names & {:keys [suffix-fn immediate-suffix?]
+                               :or {suffix-fn get-suffix}}]
   (dm/assert!
    "expected a set of strings"
-   (sm/check-set-of-strings! used))
+   (coll? existing-names))
 
   (dm/assert!
    "expected a string for `basename`."
-   (string? basename))
-
-  (if-not (contains? used basename)
-    basename
-    (let [[prefix initial] (extract-numeric-suffix basename)]
-      (loop [counter initial]
-        (let [candidate (str prefix " " counter)]
-          (if (contains? used candidate)
-            (recur (inc counter))
-            candidate))))))
+   (string? base-name))
+  (let [existing-name-set (cond-> (set existing-names)
+                            immediate-suffix? (conj base-name))
+        names (name-seq base-name suffix-fn)]
+    (->> names
+         (remove #(contains? existing-name-set %))
+         first)))
 
 (defn walk-pages
   "Go through all pages of a file and apply a function to each one"
@@ -533,6 +553,86 @@
        (get-position-on-parent objects)
        inc))
 
+(defn collect-shape-media-refs
+  "Collect all media refs on the provided shape. Returns a set of ids"
+  [shape]
+  (sequence
+   (keep :id)
+   ;; NOTE: because of some bug, we ended with
+   ;; many shape types having the ability to
+   ;; have fill-image attribute (which initially
+   ;; designed for :path shapes).
+   (concat [(:fill-image shape)
+            (:metadata shape)]
+           (map :fill-image (:fills shape))
+           (map :stroke-image (:strokes shape))
+           (->> (:content shape)
+                (tree-seq map? :children)
+                (mapcat :fills)
+                (map :fill-image)))))
+
+(def ^:private
+  xform:collect-media-refs
+  "A transducer for collect media-id usage across a container (page or
+  component)"
+  (comp
+   (map :objects)
+   (mapcat vals)
+   (mapcat collect-shape-media-refs)))
+
+(defn collect-used-media
+  "Given a fdata (file data), returns all media references used in the
+  file data"
+  [data]
+  (-> #{}
+      (into xform:collect-media-refs (vals (:pages-index data)))
+      (into xform:collect-media-refs (vals (:components data)))
+      (into (keys (:media data)))))
+
+(defn relink-media-refs
+  "A function responsible to analyze all file data and replace the
+  old :component-file reference with the new ones, using the provided
+  file-index."
+  [data lookup-index]
+  (letfn [(process-map-form [form]
+            (cond-> form
+              ;; Relink image shapes
+              (and (map? (:metadata form))
+                   (= :image (:type form)))
+              (update-in [:metadata :id] lookup-index)
+
+              ;; Relink paths with fill image
+              (map? (:fill-image form))
+              (update-in [:fill-image :id] lookup-index)
+
+              ;; This covers old shapes and the new :fills.
+              (uuid? (:fill-color-ref-file form))
+              (update :fill-color-ref-file lookup-index)
+
+              ;; This covers the old shapes and the new :strokes
+              (uuid? (:stroke-color-ref-file form))
+              (update :stroke-color-ref-file lookup-index)
+
+              ;; This covers all text shapes that have typography referenced
+              (uuid? (:typography-ref-file form))
+              (update :typography-ref-file lookup-index)
+
+              ;; This covers the component instance links
+              (uuid? (:component-file form))
+              (update :component-file lookup-index)
+
+              ;; This covers the shadows and grids (they have directly
+              ;; the :file-id prop)
+              (uuid? (:file-id form))
+              (update :file-id lookup-index)))
+
+          (process-form [form]
+            (if (map? form)
+              (process-map-form form)
+              form))]
+
+    (walk/postwalk process-form data)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SHAPES ORGANIZATION (PATH MANAGEMENT)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -640,6 +740,15 @@
   (let [path-split (split-path path)]
     (merge-path-item (first path-split) name)))
 
+
+(defn split-by-last-period
+  "Splits a string into two parts:
+   the text before and including the last period,
+   and the text after the last period."
+  [s]
+  (if-let [last-period (str/last-index-of s ".")]
+    [(subs s 0 (inc last-period)) (subs s (inc last-period))]
+    [s ""]))
 
 (defn get-frame-objects
   "Retrieves a new objects map only with the objects under frame-id (with frame-id)"

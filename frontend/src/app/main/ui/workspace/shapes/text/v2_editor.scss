@@ -62,6 +62,10 @@
   [data-itype="paragraph"] {
     white-space: nowrap;
   }
+
+  [data-itype="inline"] {
+    white-space-collapse: preserve;
+  }
 }
 
 // Vertical align.

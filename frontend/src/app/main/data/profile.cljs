@@ -14,11 +14,12 @@
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.media :as di]
+   [app.main.data.notifications :as ntf]
    [app.main.data.team :as-alias dtm]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.plugins.register :as plugins.register]
-   [app.util.i18n :as i18n]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -48,11 +49,11 @@
 
 ;; --- EVENT: fetch-profile
 
-(defn initialize-profile
+(defn set-profile
   "Initialize profile state, only logged-in profile data should be
   passed to this event"
   [{:keys [id] :as profile}]
-  (ptk/reify ::initialize-profile
+  (ptk/reify ::set-profile
     IDeref
     (-deref [_] profile)
 
@@ -72,6 +73,7 @@
 (def profile-fetched?
   (ptk/type? ::profile-fetched))
 
+;; FIXME: make it as general purpose handler, not only on profile
 (defn- on-fetch-profile-exception
   [cause]
   (let [data (ex-data cause)]
@@ -93,6 +95,20 @@
            (rx/map (partial ptk/data-event ::profile-fetched))
            (rx/catch on-fetch-profile-exception)))))
 
+(defn refresh-profile
+  []
+  (ptk/reify ::refresh-profile
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (rx/merge
+       (rx/of (fetch-profile))
+       (->> stream
+            (rx/filter profile-fetched?)
+            (rx/map deref)
+            (rx/filter is-authenticated?)
+            (rx/take 1)
+            (rx/map set-profile))))))
+
 ;; --- Update Profile
 
 (defn persist-profile
@@ -106,29 +122,34 @@
             params     (select-keys profile [:fullname :lang :theme])]
         (->> (rp/cmd! :update-profile params)
              (rx/tap on-success)
+             (rx/map set-profile)
              (rx/catch on-error))))))
 
 (defn update-profile
-  [data]
+  "Optimistic update of the current profile.
+
+  Props are ignored because there is a specific event for updating
+  props"
+  [profile]
   (dm/assert!
    "expected valid profile data"
-   (check-profile data))
+   (check-profile profile))
 
   (ptk/reify ::update-profile
     ptk/WatchEvent
     (watch [_ state _]
-      (let [data     (dissoc data :props)
-            profile  (:profile state)
-            profile' (d/deep-merge profile data)]
+      (let [profile' (get state :profile)
+            profile  (d/deep-merge profile' (dissoc profile :props))]
 
-        (rx/concat
-         (rx/of #(assoc % :profile profile'))
+        (rx/merge
+         (rx/of (set-profile profile))
 
-         (when (not= (:theme profile) (:theme profile'))
+         (when (not= (:theme profile)
+                     (:theme profile'))
            (rx/of (ptk/data-event ::ev/event
                                   {::ev/name "activate-theme"
                                    ::ev/origin "settings"
-                                   :theme (:theme profile')}))))))))
+                                   :theme (:theme profile)}))))))))
 
 ;; --- Toggle Theme
 
@@ -178,7 +199,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :cancel-email-change {})
-           (rx/map (constantly (fetch-profile)))))))
+           (rx/map (constantly (refresh-profile)))))))
 
 ;; --- Update Password (Form)
 
@@ -188,7 +209,6 @@
    [:password-2 :string]
    ;; Social registered users don't have old-password
    [:password-old {:optional true} [:maybe :string]]])
-
 
 (defn update-password
   [data]
@@ -214,6 +234,31 @@
                          (rx/empty)))
              (rx/ignore))))))
 
+(def ^:private schema:update-notifications
+  [:map {:title "NotificationsForm"}
+   [:dashboard-comments [::sm/one-of #{:all :partial :none}]]
+   [:email-comments [::sm/one-of #{:all :partial :none}]]
+   [:email-invites [::sm/one-of #{:all :none}]]])
+
+(def ^:private check-update-notifications-params
+  (sm/check-fn schema:update-notifications))
+
+(defn update-notifications
+  [data]
+  (assert (check-update-notifications-params data))
+  (ptk/reify ::update-notifications
+    ev/Event
+    (-data [_] {})
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:profile :props] assoc :notifications data))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :update-profile-notifications data)
+           (rx/map #(ntf/success (tr "dashboard.notifications.notifications-saved")))))))
+
 (defn update-profile-props
   [props]
   (ptk/reify ::update-profile-props
@@ -227,7 +272,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :update-profile-props {:props props})
-           (rx/map (constantly (fetch-profile)))))))
+           (rx/map (constantly (refresh-profile)))))))
 
 (defn mark-onboarding-as-viewed
   ([] (mark-onboarding-as-viewed nil))
@@ -239,7 +284,7 @@
              props   {:onboarding-viewed true
                       :release-notes-viewed version}]
          (->> (rp/cmd! :update-profile-props {:props props})
-              (rx/map (constantly (fetch-profile)))))))))
+              (rx/map (constantly (refresh-profile)))))))))
 
 (defn mark-questions-as-answered
   [onboarding-questions]
@@ -253,7 +298,7 @@
       (let [props {:onboarding-questions-answered true
                    :onboarding-questions onboarding-questions}]
         (->> (rp/cmd! :update-profile-props {:props props})
-             (rx/map (constantly (fetch-profile))))))))
+             (rx/map (constantly (refresh-profile))))))))
 
 ;; --- Update Photo
 
@@ -283,21 +328,8 @@
              (rx/map prepare)
              (rx/mapcat #(rp/cmd! :update-profile-photo %))
              (rx/tap on-success)
-             (rx/map (constantly (fetch-profile)))
+             (rx/map (constantly (refresh-profile)))
              (rx/catch on-error))))))
-
-(defn fetch-users
-  []
-  (letfn [(fetched [users state]
-            (->> users
-                 (d/index-by :id)
-                 (assoc state :users)))]
-    (ptk/reify ::fetch-team-users
-      ptk/WatchEvent
-      (watch [_ state _]
-        (let [team-id (:current-team-id state)]
-          (->> (rp/cmd! :get-team-users {:team-id team-id})
-               (rx/map #(partial fetched %))))))))
 
 (defn fetch-file-comments-users
   [{:keys [team-id]}]

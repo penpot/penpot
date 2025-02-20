@@ -12,6 +12,7 @@
    [app.common.schema :as sm]
    [app.common.types.components-list :as ctkl]
    [app.common.types.team :as ctt]
+   [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as-alias dps]
@@ -83,7 +84,8 @@
                 :controls :inline-actions
                 :type :inline
                 :level level
-                :actions [{:label "Refresh" :callback force-reload!}]
+                :accept {:label (tr "labels.refresh")
+                         :callback force-reload!}
                 :tag :notification))
 
         :maintenance
@@ -91,8 +93,8 @@
                 :content (tr "notifications.by-code.maintenance")
                 :controls :inline-actions
                 :type level
-                :actions [{:label (tr "labels.accept")
-                           :callback hide-notifications!}]
+                :accept {:label (tr "labels.accept")
+                         :callback hide-notifications!}
                 :tag :notification))
 
         (rx/of (ntf/dialog
@@ -111,8 +113,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [features (features/get-team-enabled-features state)
-            data     (:workspace-data state)
-            file     (:workspace-file state)]
+            file     (dsh/lookup-file state)
+            data     (get file :data)]
+
         (->> (if (and data file)
                (rx/of {:name             (:name file)
                        :components-count (count (ctkl/components-seq data))
@@ -307,7 +310,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (or team-id (:current-team-id state))]
-        (rx/of (rt/nav :dashboard-libraries {:team-id team-id}))))))
+        (rx/of (rt/nav :dashboard-fonts {:team-id team-id}))))))
 
 (defn go-to-dashboard-recent
   [& {:keys [team-id] :as options}]
@@ -367,14 +370,16 @@
     (watch [_ state _]
       (let [team-id (or team-id (:current-team-id state))
             file-id (or file-id (:current-file-id state))
-            ;: FIXME: why not :current-page-id
-            page-id (or page-id
-                        (dm/get-in state [:workspace-data :pages 0]))
+            page-id (or page-id (:current-page-id state)
+                        (-> (dsh/lookup-file-data state file-id)
+                            (get :pages)
+                            (first)))
+
             params  (-> (rt/get-params state)
                         (assoc :team-id team-id)
                         (assoc :file-id file-id)
                         (assoc :page-id page-id)
-                        (assoc :layout layout)
+                        (update :layout  #(or layout %))
                         (d/without-nils))]
         (rx/of (rt/nav :workspace params options))))))
 

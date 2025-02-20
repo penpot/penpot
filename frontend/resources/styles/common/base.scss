@@ -41,13 +41,6 @@ body {
   scrollbar-width: thin;
 }
 
-// Firefox-only hack
-@-moz-document url-prefix() {
-  * {
-    scrollbar-width: auto;
-  }
-}
-
 img {
   height: auto;
   width: 100%;

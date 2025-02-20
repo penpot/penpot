@@ -1,5 +1,7 @@
 import { withThemeByClassName } from "@storybook/addon-themes";
 
+import '../resources/public/css/ds.css';
+
 export const decorators = [
   withThemeByClassName({
     themes: {
@@ -21,7 +23,12 @@ const preview = {
         date: /Date$/i,
       },
     },
-    backgrounds: { disable: true },
+    backgrounds: {
+      values: [
+        { name: 'theme', value: 'var(--color-background-secondary)' },
+      ],
+      default: 'theme',
+    },
   },
 };
 

@@ -34,3 +34,4 @@
 (def sidebar              (mf/create-context nil))
 
 (def permissions          (mf/create-context nil))
+(def can-edit?            (mf/create-context nil))

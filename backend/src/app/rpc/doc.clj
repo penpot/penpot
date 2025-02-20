@@ -87,6 +87,7 @@
       (let [params  (:query-params request)
             pstyle  (:type params "js")
             context (assoc context :param-style pstyle)]
+
         {::yres/status 200
          ::yres/body (-> (io/resource "app/templates/api-doc.tmpl")
                          (tmpl/render context))}))
@@ -207,7 +208,7 @@
   (assert (sm/valid? ::rpc/methods (::rpc/methods params)) "expected valid methods"))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [methods] :as cfg}]
+  [_ {:keys [::rpc/methods] :as cfg}]
   [(let [context (prepare-doc-context methods)]
      [["/_doc"
        {:handler (doc-handler context)

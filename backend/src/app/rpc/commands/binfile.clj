@@ -7,10 +7,13 @@
 (ns app.rpc.commands.binfile
   (:refer-clojure :exclude [assert])
   (:require
+   [app.binfile.common :as bfc]
    [app.binfile.v1 :as bf.v1]
    [app.binfile.v3 :as bf.v3]
+   [app.common.features :as cfeat]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.config :as cf]
    [app.db :as db]
    [app.http.sse :as sse]
    [app.loggers.audit :as-alias audit]
@@ -19,6 +22,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.projects :as projects]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.tasks.file-gc]
    [app.util.services :as sv]
@@ -46,9 +50,9 @@
    (fn [_ output-stream]
      (try
        (-> cfg
-           (assoc ::bf.v1/ids #{file-id})
-           (assoc ::bf.v1/embed-assets embed-assets)
-           (assoc ::bf.v1/include-libraries include-libraries)
+           (assoc ::bfc/ids #{file-id})
+           (assoc ::bfc/embed-assets embed-assets)
+           (assoc ::bfc/include-libraries include-libraries)
            (bf.v1/export-files! output-stream))
        (catch Throwable cause
          (l/err :hint "exception on exporting file"
@@ -61,9 +65,9 @@
    (fn [_ output-stream]
      (try
        (-> cfg
-           (assoc ::bf.v3/ids #{file-id})
-           (assoc ::bf.v3/embed-assets embed-assets)
-           (assoc ::bf.v3/include-libraries include-libraries)
+           (assoc ::bfc/ids #{file-id})
+           (assoc ::bfc/embed-assets embed-assets)
+           (assoc ::bfc/include-libraries include-libraries)
            (bf.v3/export-files! output-stream))
        (catch Throwable cause
          (l/err :hint "exception on exporting file"
@@ -90,41 +94,30 @@
 
 ;; --- Command: import-binfile
 
-(defn- import-binfile-v1
-  [{:keys [::wrk/executor] :as cfg} {:keys [project-id profile-id name file]}]
-  (let [cfg (-> cfg
-                (assoc ::bf.v1/project-id project-id)
-                (assoc ::bf.v1/profile-id profile-id)
-                (assoc ::bf.v1/name name)
-                (assoc ::bf.v1/input (:path file)))]
-
-    ;; NOTE: the importation process performs some operations that are
-    ;; not very friendly with virtual threads, and for avoid
-    ;; unexpected blocking of other concurrent operations we dispatch
-    ;; that operation to a dedicated executor.
-    (px/invoke! executor (partial bf.v1/import-files! cfg))))
-
-(defn- import-binfile-v3
-  [{:keys [::wrk/executor] :as cfg} {:keys [project-id profile-id name file]}]
-  (let [cfg (-> cfg
-                (assoc ::bf.v3/project-id project-id)
-                (assoc ::bf.v3/profile-id profile-id)
-                (assoc ::bf.v3/name name)
-                (assoc ::bf.v3/input (:path file)))]
-    ;; NOTE: the importation process performs some operations that are
-    ;; not very friendly with virtual threads, and for avoid
-    ;; unexpected blocking of other concurrent operations we dispatch
-    ;; that operation to a dedicated executor.
-    (px/invoke! executor (partial bf.v3/import-files! cfg))))
-
 (defn- import-binfile
-  [{:keys [::db/pool] :as cfg} {:keys [project-id version] :as params}]
-  (let [result (case (int version)
-                 1 (import-binfile-v1 cfg params)
-                 3 (import-binfile-v3 cfg params))]
+  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [profile-id project-id version name file]}]
+  (let [team   (teams/get-team pool
+                               :profile-id profile-id
+                               :project-id project-id)
+        cfg    (-> cfg
+                   (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team))
+                   (assoc ::bfc/project-id project-id)
+                   (assoc ::bfc/profile-id profile-id)
+                   (assoc ::bfc/name name)
+                   (assoc ::bfc/input (:path file)))
+
+        ;; NOTE: the importation process performs some operations that are
+        ;; not very friendly with virtual threads, and for avoid
+        ;; unexpected blocking of other concurrent operations we dispatch
+        ;; that operation to a dedicated executor.
+        result (case (int version)
+                 1 (px/invoke! executor (partial bf.v1/import-files! cfg))
+                 3 (px/invoke! executor (partial bf.v3/import-files! cfg)))]
+
     (db/update! pool :project
                 {:modified-at (dt/now)}
                 {:id project-id})
+
     result))
 
 (def ^:private schema:import-binfile

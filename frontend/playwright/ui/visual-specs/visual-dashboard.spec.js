@@ -47,7 +47,7 @@ test("User goes to an empty libraries page", async ({ page }) => {
   await dashboardPage.setupLibrariesEmpty();
 
   await dashboardPage.goToDashboard();
-  await dashboardPage.libsLink.click();
+  await dashboardPage.librariesLink.click();
 
   await expect(dashboardPage.mainHeading).toHaveText("Libraries");
   await expect(dashboardPage.page).toHaveScreenshot();
@@ -100,7 +100,7 @@ test("User goes to a full library page", async ({ page }) => {
   await dashboardPage.setupDashboardFull();
 
   await dashboardPage.goToDashboard();
-  await dashboardPage.libsLink.click();
+  await dashboardPage.librariesLink.click();
 
   await expect(dashboardPage.mainHeading).toHaveText("Libraries");
   await expect(dashboardPage.page).toHaveScreenshot();

@@ -22,9 +22,8 @@
    [:theme {:optional true} [:string {:max 250}]]])
 
 (defn- on-success
-  [profile]
-  (st/emit! (ntf/success (tr "notifications.profile-saved"))
-            (du/initialize-profile profile)))
+  [_]
+  (st/emit! (ntf/success (tr "notifications.profile-saved"))))
 
 (defn- on-submit
   [form _event]

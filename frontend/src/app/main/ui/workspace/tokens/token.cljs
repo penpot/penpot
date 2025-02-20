@@ -1,6 +1,7 @@
 (ns app.main.ui.workspace.tokens.token
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -21,7 +22,9 @@
                         {:value parsed-value
                          :unit unit}))))
 
-(defn token-identifier [{:keys [name] :as _token}]
+;; FIXME: looks very redundant function
+(defn token-identifier
+  [{:keys [name] :as _token}]
   name)
 
 (defn attributes-map
@@ -43,28 +46,31 @@
 (defn token-attribute-applied?
   "Test if `token` is applied to a `shape` on single `token-attribute`."
   [token shape token-attribute]
-  (when-let [id (get-in shape [:applied-tokens token-attribute])]
+  (when-let [id (dm/get-in shape [:applied-tokens token-attribute])]
     (= (token-identifier token) id)))
 
 (defn token-applied?
-  "Test if `token` is applied to a `shape` with at least one of the one of the given `token-attributes`."
+  "Test if `token` is applied to a `shape` with at least one of the given `token-attributes`."
   [token shape token-attributes]
   (some #(token-attribute-applied? token shape %) token-attributes))
 
 (defn shapes-token-applied?
-  "Test if `token` is applied to to any of `shapes` with at least one of the one of the given `token-attributes`."
+  "Test if `token` is applied to to any of `shapes` with at least one of the given `token-attributes`."
   [token shapes token-attributes]
   (some #(token-applied? token % token-attributes) shapes))
 
-(defn shapes-ids-by-applied-attributes [token shapes token-attributes]
-  (reduce (fn [acc shape]
-            (let [applied-ids-by-attribute (->> (map #(when (token-attribute-applied? token shape %)
-                                                        [% #{(:id shape)}])
-                                                     token-attributes)
-                                                (filter some?)
-                                                (into {}))]
-              (merge-with into acc applied-ids-by-attribute)))
-          {} shapes))
+(defn shapes-ids-by-applied-attributes
+  [token shapes token-attributes]
+  (let [conj* (fnil conj #{})]
+    (reduce (fn [result shape]
+              (let [shape-id (dm/get-prop shape :id)]
+                (->> token-attributes
+                     (filter #(token-attribute-applied? token shape %))
+                     (reduce (fn [result attr]
+                               (update result attr conj* shape-id))
+                             result))))
+            {}
+            shapes)))
 
 (defn shapes-applied-all? [ids-by-attributes shape-ids attributes]
   (every? #(set/superset? (get ids-by-attributes %) shape-ids) attributes))
@@ -87,19 +93,6 @@
         [path [selector]] (split-at last-idx path-segments)]
     {:path (seq path)
      :selector selector}))
-
-(defn token-names-tree-id-map [tokens]
-  (reduce
-   (fn [acc [_ {:keys [name] :as token}]]
-     (when (string? name)
-       (let [temp-id (random-uuid)
-             token (assoc token :temp/id temp-id)]
-         (-> acc
-             (assoc-in (concat [:tree] (token-name->path name)) token)
-             (assoc-in [:ids-map temp-id] token)))))
-   {:tree {}
-    :ids-map {}}
-   tokens))
 
 (defn token-name-path-exists?
   "Traverses the path from `token-name` down a `token-tree` and checks if a token at that path exists.
@@ -135,8 +128,18 @@
 (defn color-token? [token]
   (= (:type token) :color))
 
-(defn resolved-value-hex [{:keys [resolved-value] :as token}]
+
+;; FIXME: this should be precalculated ?
+(defn is-reference? [token]
+  (str/includes? (:value token) "{"))
+
+(defn color-bullet-color [token-color-value]
+  (when-let [tc (tinycolor/valid-color token-color-value)]
+    (if (tinycolor/alpha tc)
+      {:color (tinycolor/->hex-string tc)
+       :opacity (tinycolor/alpha tc)}
+      (tinycolor/->hex-string tc))))
+
+(defn resolved-token-bullet-color [{:keys [resolved-value] :as token}]
   (when (and resolved-value (color-token? token))
-    (some->> (tinycolor/valid-color resolved-value)
-             (tinycolor/->hex)
-             (str "#"))))
+    (color-bullet-color resolved-value)))

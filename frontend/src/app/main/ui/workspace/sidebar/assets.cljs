@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.components-list :as ctkl]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.assets :as dwa]
@@ -19,10 +20,11 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
-   [app.main.ui.workspace.sidebar.assets.file-library :refer [file-library]]
+   [app.main.ui.workspace.sidebar.assets.file-library :refer [file-library*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (mf/defc assets-libraries*
@@ -30,38 +32,39 @@
    ::mf/props :obj
    ::mf/private true}
   [{:keys [filters]}]
-  (let [libraries (mf/deref refs/workspace-libraries)
-        libraries (mf/with-memo [libraries]
-                    (->> (vals libraries)
+  (let [file-id   (mf/use-ctx ctx/current-file-id)
+        files     (mf/deref refs/files)
+        libraries (mf/with-memo [files file-id]
+                    (->> (refs/select-libraries files file-id)
+                         (vals)
                          (remove :is-indirect)
+                         (remove #(= file-id (:id %)))
                          (map (fn [file]
                                 (update file :data dissoc :pages-index)))
                          (sort-by #(str/lower (:name %)))))]
+
     (for [file libraries]
-      [:& file-library
+      [:> file-library*
        {:key (dm/str (:id file))
         :file file
-        :local? false
-        :default-open? false
+        :is-local false
+        :is-default-open false
         :filters filters}])))
+
+(def ^:private ref:local-library
+  (l/derived (fn [file]
+               (update file :data dissoc :pages-index))
+             refs/file))
 
 (mf/defc assets-local-library
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [{:keys [filters]}]
-  ;; NOTE: as workspace-file is an incomplete view of file (it do not
-  ;; contain :data), we need to reconstruct it using workspace-data
-  (let [file   (mf/deref refs/workspace-file)
-        data   (mf/deref refs/workspace-data)
-        data   (mf/with-memo [data]
-                 (dissoc data :pages-index))
-        file   (mf/with-memo [file data]
-                 (assoc file :data data))]
-
-    [:& file-library
+  (let [file (mf/deref ref:local-library)]
+    [:> file-library*
      {:file file
-      :local? true
-      :default-open? true
+      :is-local true
+      :is-default-open true
       :filters filters}]))
 
 (defn- toggle-values
@@ -71,7 +74,7 @@
 (mf/defc assets-toolbox
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
-  [{:keys [size]}]
+  [{:keys [size file-id]}]
   (let [components-v2  (mf/use-ctx ctx/components-v2)
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
         filters*       (mf/use-state
@@ -87,6 +90,10 @@
         section        (:section filters)
         ordering       (:ordering filters)
         reverse-sort?  (= :desc ordering)
+        libs           (mf/deref refs/libraries)
+        num-libs       (count libs)
+        file           (get libs (:id file-id))
+        components     (mf/with-memo [file] (ctkl/components (:data file)))
 
         toggle-ordering
         (mf/use-fn
@@ -122,8 +129,9 @@
 
         show-libraries-dialog
         (mf/use-fn
+         (mf/deps file-id)
          (fn []
-           (modal/show! :libraries-dialog {})
+           (modal/show! :libraries-dialog {:file-id file-id})
            (modal/allow-click-outside!)))
 
         on-open-menu
@@ -156,12 +164,17 @@
     [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
-        [:button {:class (stl/css :libraries-button)
-                  :on-click show-libraries-dialog
-                  :data-testid "libraries"}
-         [:span {:class (stl/css :libraries-icon)}
-          i/library]
-         (tr "workspace.assets.libraries")])
+        (if (and (= num-libs 1) (empty? components))
+          [:button {:class (stl/css :add-library-button)
+                    :on-click show-libraries-dialog
+                    :data-testid "libraries"}
+           (tr "workspace.assets.add-library")]
+
+          [:button {:class (stl/css :libraries-button)
+                    :on-click show-libraries-dialog
+                    :data-testid "libraries"}
+           (tr "workspace.assets.manage-library")]))
+
 
       [:div {:class (stl/css :search-wrapper)}
        [:& search-bar {:on-change on-search-term-change

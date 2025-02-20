@@ -86,6 +86,11 @@
     (mf/with-effect [default-value]
       (swap! state* assoc :current-value default-value))
 
+    (mf/with-effect [is-open?]
+      (when (and (not= 0 (mf/ref-val dropdown-direction-change*)) (= false is-open?))
+        (reset! dropdown-direction* "down")
+        (mf/set-ref-val! dropdown-direction-change* 0)))
+
     (mf/with-effect [is-open? dropdown-element*]
       (let [dropdown-element (mf/ref-val dropdown-element*)]
         (when (and (= 0 (mf/ref-val dropdown-direction-change*)) dropdown-element)
@@ -97,6 +102,7 @@
           current-icon (:icon selected-option)
           current-icon-ref (i/key->icon current-icon)]
       [:div {:on-click open-dropdown
+             :role "combobox"
              :class (dm/str (stl/css-case :custom-select true
                                           :disabled disabled
                                           :icon (some? current-icon-ref))
@@ -111,11 +117,13 @@
          (for [[index item] (d/enumerate options)]
            (if (= :separator item)
              [:li {:class (dom/classnames (stl/css :separator) true)
+                   :role "option"
                    :key (dm/str current-id "-" index)}]
              (let [[value label icon] (as-key-value item)
                    icon-ref (i/key->icon icon)]
                [:li
                 {:key (dm/str current-id "-" index)
+                 :role "option"
                  :class (stl/css-case
                          :checked-element true
                          :disabled (:disabled item)

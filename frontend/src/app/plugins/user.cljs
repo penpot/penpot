@@ -18,26 +18,24 @@
 
 (defn- add-session-properties
   [user-proxy session-id]
-  (let [plugin-id (obj/get user-proxy "$plugin")]
-    (crc/add-properties!
-     user-proxy
-     {:name "$plugin" :enumerable false :get (constantly plugin-id)}
-     {:name "$session" :enumerable false :get (constantly session-id)}
+  (crc/add-properties!
+   user-proxy
+   {:name "$session" :enumerable false :get (constantly session-id)}
 
-     {:name "id"
-      :get (fn [_] (-> (u/locate-profile session-id) :id str))}
+   {:name "id"
+    :get (fn [_] (-> (u/locate-profile session-id) :id str))}
 
-     {:name "name"
-      :get (fn [_] (-> (u/locate-profile session-id) :fullname))}
+   {:name "name"
+    :get (fn [_] (-> (u/locate-profile session-id) :fullname))}
 
-     {:name "avatarUrl"
-      :get (fn [_] (cfg/resolve-profile-photo-url (u/locate-profile session-id)))}
+   {:name "avatarUrl"
+    :get (fn [_] (cfg/resolve-profile-photo-url (u/locate-profile session-id)))}
 
-     {:name "color"
-      :get (fn [_] (-> (u/locate-presence session-id) :color))}
+   {:name "color"
+    :get (fn [_] (-> (u/locate-presence session-id) :color))}
 
-     {:name "sessionId"
-      :get (fn [_] (str session-id))})))
+   {:name "sessionId"
+    :get (fn [_] (str session-id))}))
 
 
 (defn current-user-proxy? [p]
@@ -46,7 +44,8 @@
 (defn current-user-proxy
   [plugin-id session-id]
   (-> (obj/reify {:name "CurrentUserProxy"}
-        :$plugin {:enumerable false :get (fn [] plugin-id)})
+        :$plugin
+        {:enumerable false :get (fn [] plugin-id)})
       (add-session-properties session-id)))
 
 (defn active-user-proxy? [p]
@@ -55,7 +54,8 @@
 (defn active-user-proxy
   [plugin-id session-id]
   (-> (obj/reify {:name "ActiveUserProxy"}
-        :$plugin {:enumerable false :get (fn [] plugin-id)}
+        :$plugin
+        {:enumerable false :get (fn [] plugin-id)}
 
         :position
         {:get (fn [] (-> (u/locate-presence session-id) :point format/format-point))}
@@ -66,19 +66,16 @@
 
 (defn- add-user-properties
   [user-proxy data]
-  (let [plugin-id (obj/get user-proxy "$plugin")]
-    (crc/add-properties!
-     user-proxy
-     {:name "$plugin" :enumerable false :get (constantly plugin-id)}
+  (crc/add-properties!
+   user-proxy
+   {:name "id"
+    :get (fn [_] (-> data :id str))}
 
-     {:name "id"
-      :get (fn [_] (-> data :id str))}
+   {:name "name"
+    :get (fn [_] (-> data :fullname))}
 
-     {:name "name"
-      :get (fn [_] (-> data :fullname))}
-
-     {:name "avatarUrl"
-      :get (fn [_] (cfg/resolve-profile-photo-url data))})))
+   {:name "avatarUrl"
+    :get (fn [_] (cfg/resolve-profile-photo-url data))}))
 
 (defn user-proxy
   [plugin-id data]

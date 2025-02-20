@@ -8,12 +8,9 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.comments :as dcmt]
-   [app.main.data.common :as dcm]
-   [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
-   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -22,7 +19,6 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.timers :as tm]
    [rumext.v2 :as mf]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -63,6 +59,12 @@
            :on-click update-mode}
       [:span {:class (stl/css :label)}  (tr "labels.show-your-comments")]
       [:span {:class (stl/css :icon)} i/tick]]
+     [:li {:class (stl/css-case :dropdown-item true
+                                :selected (= :mentions cmode))
+           :data-value "mentions"
+           :on-click update-mode}
+      [:span {:class (stl/css :label)} (tr "labels.show-mentions")]
+      [:span {:class (stl/css :icon)} i/tick]]
      [:li {:class (stl/css :separator)}]
      [:li {:class (stl/css-case :dropdown-item true
                                 :selected (= :pending cshow))
@@ -71,9 +73,8 @@
       [:span {:class (stl/css :icon)} i/tick]]]))
 
 (mf/defc comments-sidebar*
-  {::mf/props :obj}
   [{:keys [profiles threads page-id from-viewer]}]
-  (let [threads-map (mf/deref refs/threads-ref)
+  (let [threads-map (mf/deref refs/threads)
         profile     (mf/deref refs/profile)
         profiles'   (mf/deref refs/profiles)
         profiles    (or profiles profiles')
@@ -113,16 +114,7 @@
         (mf/use-fn
          (mf/deps page-id)
          (fn [thread]
-           (when (not= page-id (:page-id thread))
-             (st/emit! (dcm/go-to-workspace :page-id (:page-id thread)
-                                            ::rt/new-window true)))
-           (tm/schedule
-            (fn []
-              (st/emit! (when (not= page-id (:page-id thread))
-                          (dw/select-for-drawing :comments))
-                        (dwcm/center-to-comment-thread thread)
-                        (-> (dcmt/open-thread thread)
-                            (with-meta {::ev/origin "workspace"})))))))]
+           (st/emit! (dwcm/navigate-to-comment thread))))]
 
     [:div  {:class (stl/css-case :comments-section true
                                  :from-viewer  from-viewer)}
@@ -137,9 +129,11 @@
      [:button {:class (stl/css :mode-dropdown-wrapper)
                :on-click toggle-mode-selector}
 
-      [:span {:class (stl/css :mode-label)} (case (:mode local)
-                                              (nil :all) (tr "labels.show-all-comments")
-                                              :yours     (tr "labels.show-your-comments"))]
+      [:span {:class (stl/css :mode-label)}
+       (case (:mode local)
+         (nil :all) (tr "labels.show-all-comments")
+         :yours     (tr "labels.show-your-comments")
+         :mentions     (tr "labels.show-mentions"))]
       [:div {:class (stl/css :arrow-icon)} i/arrow]]
 
      [:& dropdown {:show options?
@@ -150,12 +144,12 @@
 
       (if (seq tgroups)
         [:div {:class (stl/css :thread-groups)}
-         [:& cmt/comment-thread-group
+         [:> cmt/comment-sidebar-thread-group*
           {:group (first tgroups)
            :on-thread-click on-thread-click
            :profiles profiles}]
          (for [tgroup (rest tgroups)]
-           [:& cmt/comment-thread-group
+           [:> cmt/comment-sidebar-thread-group*
             {:group tgroup
              :on-thread-click on-thread-click
              :profiles profiles

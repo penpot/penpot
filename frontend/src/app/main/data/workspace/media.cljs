@@ -21,11 +21,11 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.changes :as dch]
+   [app.main.data.helpers :as dsh]
    [app.main.data.media :as dmm]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.svg-upload :as svg]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -266,9 +266,11 @@
               (on-success image)
               (dmm/notify-finished-loading))
 
+            file-id (:current-file-id state)
+
             prepare
             (fn [content]
-              {:file-id (get-in state [:workspace-file :id])
+              {:file-id file-id
                :name (if (dmm/file? content) (.-name content) (tr "media.image"))
                :is-local false
                :content content})]
@@ -399,22 +401,31 @@
   (ptk/reify ::process-img-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [file-data (wsh/get-local-file state)
-            page      (wsh/lookup-page state)
-            pos       (wsh/viewport-center state)]
+      (let [file-id (:current-file-id state)
+            page-id (:current-page-id state)
+
+            fdata   (dsh/lookup-file-data state file-id)
+            page    (dsh/get-page fdata page-id)
+            pos     (dsh/get-viewport-center state)]
+
         (->> (create-shapes-img pos media-obj)
-             (rx/map (partial add-shapes-and-component it file-data page (:name media-obj))))))))
+             (rx/map (partial add-shapes-and-component it fdata page (:name media-obj))))))))
 
 (defn- process-svg-component
   [svg-data]
   (ptk/reify ::process-svg-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [file-data (wsh/get-local-file state)
-            page      (wsh/lookup-page state)
-            pos       (wsh/viewport-center state)]
-        (->> (create-shapes-svg (:id file-data) (:objects page) pos svg-data)
-             (rx/map (partial add-shapes-and-component it file-data page (:name svg-data))))))))
+
+      (let [file-id (:current-file-id state)
+            page-id (:current-page-id state)
+
+            fdata   (dsh/lookup-file-data state file-id)
+            page    (dsh/get-page fdata page-id)
+            pos     (dsh/get-viewport-center state)]
+
+        (->> (create-shapes-svg file-id (:objects page) pos svg-data)
+             (rx/map (partial add-shapes-and-component it fdata page (:name svg-data))))))))
 
 (defn upload-media-components
   [params]
@@ -465,3 +476,24 @@
            (rx/take 1)
            (rx/map #(svg/add-svg-shapes id % position {:ignore-selection? true
                                                        :change-selection? false}))))))
+(defn create-svg-shape-with-images
+  [file-id id name svg-string position on-success on-error]
+  (ptk/reify ::create-svg-shape-with-images
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (svg->clj [name svg-string])
+           (rx/take 1)
+           (rx/mapcat
+            (fn [svg-data]
+              (->> (svg/upload-images svg-data file-id)
+                   (rx/map #(assoc svg-data :image-data %)))))
+           (rx/map
+            (fn [svg-data]
+              (svg/add-svg-shapes
+               id
+               svg-data
+               position
+               {:ignore-selection? true
+                :change-selection? false})))
+           (rx/tap on-success)
+           (rx/catch on-error)))))

@@ -30,6 +30,15 @@ and do not want to depend on any external provider, or need to do any special cu
 Or you can try <a href="#unofficial-self-host-options">other options</a>,
 offered by Penpot community.
 
+## Recommended settings
+To self-host Penpot, you’ll need a server with the following specifications:
+
+* **CPU:** 1-2 CPUs
+* **RAM:** 4 GiB of RAM
+* **Disk Space:** Disk requirements depend on your usage. Disk usage primarily involves the database and any files uploaded by users.
+
+This setup should be sufficient for a smooth experience with typical usage (your mileage may vary).
+
 ## Install with Elestio
 
 This section explains how to get Penpot up and running using <a href="https://elest.io/open-source/penpot"
@@ -166,6 +175,17 @@ docker compose -p penpot -f docker-compose.yaml up -d
 
 At the end it will start listening on http://localhost:9001
 
+<p class="advice">
+    If you don't change anything, by default this will use the latest image published in dockerhub.
+</p>
+
+If you want to have more control over the version (which is recommended), you can use the PENPOT_VERSION envvar in the common ways:
+- setting the value in the .env file
+- or passing the envvar in the command line
+
+```bash
+PENPOT_VERSION=2.4.3 docker compose -p penpot -f docker-compose.yaml up -d
+```
 
 ### Stop Penpot
 
@@ -175,23 +195,23 @@ If you want to stop running Penpot, just type
 docker compose -p penpot -f docker-compose.yaml down
 ```
 
-
 ### Configure Penpot with Docker
 
-The configuration is defined using environment variables in the <code class="language-bash">docker-compose.yaml</code>
-file. The default downloaded file already comes with the essential variables already set,
+The configuration is defined using flags and environment variables in the <code class="language-bash">docker-compose.yaml</code>
+file. The default downloaded file comes with the essential flags and variables already set,
 and other ones commented out with some explanations.
 
-#### Create users using CLI
+You can find all configuration options in the [Configuration][1] section.
 
-By default (or when <code class="language-bash">disable-email-verification</code> flag is used), the email verification process
-is completely disabled for new registrations but it is highly recommended enabling email
-verification or disabling registration if you are going to expose your penpot instance to
-the internet.
+### Using the CLI for administrative tasks
 
+Penpot provides a script (`manage.py`) with some administrative tasks to perform in the server.
 
-If you have registration disabled, you can create additional profiles using the
-command line interface:
+**NOTE**: this script will only work with the <code class="language-bash">enable-prepl-server</code>
+flag set in the docker-compose.yaml file. For older versions of docker-compose.yaml file,
+this flag is set in the backend service.
+
+For instance, if  the registration is disabled, the only way to create a new user is with this script:
 
 ```bash
 docker exec -ti penpot-penpot-backend-1 python3 manage.py create-profile
@@ -200,12 +220,6 @@ docker exec -ti penpot-penpot-backend-1 python3 manage.py create-profile
 **NOTE:** the exact container name depends on your docker version and platform.
 For example it could be <code class="language-bash">penpot-penpot-backend-1</code> or <code class="language-bash">penpot_penpot-backend-1</code>.
 You can check the correct name executing <code class="language-bash">docker ps</code>.
-
-**NOTE:** This script only will works when you properly have the <code class="language-bash">enable-prepl-server</code>
-flag set on backend (is set by default on the latest docker-compose.yaml file)
-
-You can find all configuration options in the [Configuration][1] section.
-
 
 ### Update Penpot
 
@@ -218,25 +232,31 @@ docker compose -f docker-compose.yaml pull
 
 This will fetch the latest images. When you do <code class="language-bash">docker compose up</code> again, the containers will be recreated with the latest version.
 
+<p class="advice">
+    It is strongly recommended to update the Penpot version in small increments, rather than updating between two distant versions.
+</p>
 
 **Important: Upgrade from version 1.x to 2.0**
 
-The migration to version 2.0, due to the incorporation of the new v2
-components, includes an additional process that runs automatically as
-soon as the application starts. If your on-premises Penpot instance
-contains a significant amount of data (such as hundreds of penpot
-files, especially those utilizing SVG components and assets
-extensively), this process may take a few minutes.
+The migration to version 2.0, due to the incorporation of the new v2 components, includes
+an additional process that runs automatically as soon as the application starts. If your
+on-premises Penpot instance contains a significant amount of data (such as hundreds of
+penpot files, especially those utilizing SVG components and assets extensively), this
+process may take a few minutes.
 
-In some cases, such as when the script encounters an error, it may be
-convenient to run the process manually. To do this, you can disable
-the automatic migration process using the <code class="language-bash">disable-v2-migration</code> flag
-in <code class="language-bash">PENPOT_FLAGS</code> environment variable. You can then execute the
+In some cases, such as when the script encounters an error, it may be convenient to run
+the process manually. To do this, you can disable the automatic migration process using
+the <code class="language-bash">disable-v2-migration</code> flag in <code
+class="language-bash">PENPOT_FLAGS</code> environment variable. You can then execute the
 migration process manually with the following command:
 
 ```bash
 docker exec -ti <container-name-or-id> ./run.sh app.migrations.v2
 ```
+
+**IMPORTANT:** this script should be executed on passing from 1.19.x to 2.0.x. Executing
+it on versions greater or equal to 2.1 of penpot will not work correctly. It is known that
+this script is removed since 2.4.3
 
 
 ### Backup Penpot
@@ -401,7 +421,7 @@ are using during you setup).
 There are some other options, **NOT SUPPORTED BY PENPOT**:
 
 * Install with <a href="https://community.penpot.app/t/how-to-develop-penpot-with-podman-penpotman/2113" target="_blank">Podman</a> instead of Docker.
-* Try the under development <a href="https://community.penpot.app/t/introducing-penpot-desktop/1468" target="_blank">Penpot Desktop app</a>.
+* Try the under development <a href="https://github.com/author-more/penpot-desktop/releases/latest" target="_blank">Penpot Desktop app</a>.
 * Try a simple Kubernetes Deployment option <a href="https://github.com/degola/penpot-kubernetes" target="_blank">penpot-kubernetes</a>.
 * Or try a fully manual installation if you have a really specific use case.. For help, you can look at the [Architecture][2] section and the <a href="https://github.com/penpot/penpot/tree/develop/docker/images" target="_blank">Docker configuration files</a>.
 
