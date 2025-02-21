@@ -1286,4 +1286,134 @@
              (t/is (not= with-prev-tokens-lib tokens-lib))
              (t/is (= @with-prev-tokens-lib @tokens-lib)))
            (t/testing "fresh tokens library is also equal"
-             (= @with-empty-tokens-lib @tokens-lib)))))))
+             (= @with-empty-tokens-lib @tokens-lib)))))
+
+     (t/testing "encode-default-theme-json"
+       (let [tokens-lib (-> (ctob/make-tokens-lib)
+                            (ctob/add-set (ctob/make-token-set :name "core"
+                                                               :tokens {"colors.red.600"
+                                                                        (ctob/make-token
+                                                                         {:name "colors.red.600"
+                                                                          :type :color
+                                                                          :value "#e53e3e"})
+                                                                        "spacing.multi-value"
+                                                                        (ctob/make-token
+                                                                         {:name "spacing.multi-value"
+                                                                          :type :spacing
+                                                                          :value "{dimension.sm} {dimension.xl}"
+                                                                          :description "You can have multiple values in a single spacing token"})
+                                                                        "button.primary.background"
+                                                                        (ctob/make-token
+                                                                         {:name "button.primary.background"
+                                                                          :type :color
+                                                                          :value "{accent.default}"})})))
+             result   (ctob/encode-dtcg tokens-lib)
+             expected {"$themes" []
+                       "$metadata" {"tokenSetOrder" ["core"]
+                                    "activeSets" #{},  "activeThemes" #{}}
+                       "core"
+                       {"colors" {"red" {"600" {"$value" "#e53e3e"
+                                                "$type" "color"
+                                                "$description" ""}}}
+                        "spacing"
+                        {"multi-value"
+                         {"$value" "{dimension.sm} {dimension.xl}"
+                          "$type" "spacing"
+                          "$description" "You can have multiple values in a single spacing token"}}
+                        "button"
+                        {"primary" {"background" {"$value" "{accent.default}"
+                                                  "$type" "color"
+                                                  "$description" ""}}}}}]
+
+         (t/is (= expected result))))
+
+     (t/testing "encode-default-theme-json-with-active-sets"
+       (let [tokens-lib (-> (ctob/make-tokens-lib)
+                            (ctob/add-set (ctob/make-token-set :name "core"
+                                                               :tokens {"colors.red.600"
+                                                                        (ctob/make-token
+                                                                         {:name "colors.red.600"
+                                                                          :type :color
+                                                                          :value "#e53e3e"})
+                                                                        "spacing.multi-value"
+                                                                        (ctob/make-token
+                                                                         {:name "spacing.multi-value"
+                                                                          :type :spacing
+                                                                          :value "{dimension.sm} {dimension.xl}"
+                                                                          :description "You can have multiple values in a single spacing token"})
+                                                                        "button.primary.background"
+                                                                        (ctob/make-token
+                                                                         {:name "button.primary.background"
+                                                                          :type :color
+                                                                          :value "{accent.default}"})}))
+                            (assoc-in ["$metadata" "activeSets"] "core"))
+             result   (ctob/encode-dtcg tokens-lib)
+             expected {"$themes" []
+                       "$metadata" {"tokenSetOrder" ["core"]
+                                    "activeSets" #{"core"},  "activeThemes" #{}}
+                       "core"
+                       {"colors" {"red" {"600" {"$value" "#e53e3e"
+                                                "$type" "color"
+                                                "$description" ""}}}
+                        "spacing"
+                        {"multi-value"
+                         {"$value" "{dimension.sm} {dimension.xl}"
+                          "$type" "spacing"
+                          "$description" "You can have multiple values in a single spacing token"}}
+                        "button"
+                        {"primary" {"background" {"$value" "{accent.default}"
+                                                  "$type" "color"
+                                                  "$description" ""}}}}}]
+
+         (t/is (= expected result))))
+     
+     (t/testing "encode-dtcg-json-with-active-theme-and-set"
+       (let [now (dt/now)
+             tokens-lib (-> (ctob/make-tokens-lib)
+                            (ctob/add-set (ctob/make-token-set :name "core"
+                                                               :tokens {"colors.red.600"
+                                                                        (ctob/make-token
+                                                                         {:name "colors.red.600"
+                                                                          :type :color
+                                                                          :value "#e53e3e"})
+                                                                        "spacing.multi-value"
+                                                                        (ctob/make-token
+                                                                         {:name "spacing.multi-value"
+                                                                          :type :spacing
+                                                                          :value "{dimension.sm} {dimension.xl}"
+                                                                          :description "You can have multiple values in a single spacing token"})
+                                                                        "button.primary.background"
+                                                                        (ctob/make-token
+                                                                         {:name "button.primary.background"
+                                                                          :type :color
+                                                                          :value "{accent.default}"})}))
+                            (ctob/add-theme (ctob/make-token-theme :name "theme-1"
+                                                                   :group "group-1"
+                                                                   :modified-at now
+                                                                   :sets #{"core"}))
+                            (assoc-in ["$metadata" "activeSets"] "core")
+                            (ctob/toggle-theme-active? "group-1" "theme-1"))
+             result   (ctob/encode-dtcg tokens-lib)
+             expected {"$themes" [{"description" ""
+                                   "group" "group-1"
+                                   "is-source" false
+                                   "modified-at" now
+                                   "name" "theme-1"
+                                   "selectedTokenSets" {"core" "enabled"}}]
+                       "$metadata" {"tokenSetOrder" ["core"]
+                                    "activeSets" #{"core"},
+                                    "activeThemes" #{"group-1/theme-1"}}
+                       "core"
+                       {"colors" {"red" {"600" {"$value" "#e53e3e"
+                                                "$type" "color"
+                                                "$description" ""}}}
+                        "spacing"
+                        {"multi-value"
+                         {"$value" "{dimension.sm} {dimension.xl}"
+                          "$type" "spacing"
+                          "$description" "You can have multiple values in a single spacing token"}}
+                        "button"
+                        {"primary" {"background" {"$value" "{accent.default}"
+                                                  "$type" "color"
+                                                  "$description" ""}}}}}]
+         (t/is (= expected result))))))
