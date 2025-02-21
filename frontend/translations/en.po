@@ -6218,7 +6218,7 @@ msgid "workspace.shape.menu.create-component"
 msgstr "Create component"
 
 msgid "workspace.shape.menu.add-variant"
-msgstr "Add variant"
+msgstr "Create variant"
 
 msgid "workspace.shape.menu.add-variant-property"
 msgstr "Add new property"

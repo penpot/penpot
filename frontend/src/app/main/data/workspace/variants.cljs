@@ -7,17 +7,24 @@
 (ns app.main.data.workspace.variants
   (:require
    [app.common.colors :as clr]
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
+   [app.common.logic.libraries :as cll]
    [app.common.logic.variants :as clv]
+   [app.common.types.component :as ctc]
+   [app.common.types.components-list :as ctkl]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
+   [app.util.dom :as dom]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -131,6 +138,70 @@
          (dch/commit-changes changes)
          (dwu/commit-undo-transaction undo-id))))))
 
+(defn focus-property
+  [shape-id prop-num]
+  (ptk/reify ::focus-property
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (dom/focus! (dom/get-element (str "variant-prop-" shape-id prop-num))))))
+
+
+(defn add-new-variant
+  "Create a new variant and add it to the variant-container"
+  [shape-id]
+  (ptk/reify ::add-new-variant
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id             (:current-page-id state)
+            data                (dsh/lookup-file-data state)
+            objects             (-> (dsh/get-page data page-id)
+                                    (get :objects))
+            shape               (get objects shape-id)
+            shape               (if (ctc/is-variant-container? shape)
+                                  (get objects (last (:shapes shape)))
+                                  shape)
+            component-id        (:component-id shape)
+            component           (ctkl/get-component data component-id)
+
+            new-component-id    (uuid/next)
+            new-shape-id        (uuid/next)
+
+            value               (str clv/value-prefix
+                                     (-> (clv/extract-properties-values data objects (:variant-id component))
+                                         last
+                                         :values
+                                         count
+                                         inc))
+
+            prop-num            (dec (count (:variant-properties component)))
+
+
+            [new-shape changes] (-> (pcb/empty-changes it page-id)
+                                    (pcb/with-library-data data)
+                                    (pcb/with-objects objects)
+                                    (pcb/with-page-id page-id)
+                                    (cll/generate-duplicate-component
+                                     {:data data}
+                                     component-id
+                                     new-component-id
+                                     true
+                                     {:new-shape-id new-shape-id :apply-changes-local-library? true}))
+
+            changes             (-> changes
+                                    (clv/generate-update-property-value new-component-id prop-num value)
+                                    (pcb/change-parent (:parent-id shape) [new-shape] 0))
+
+            undo-id             (js/Symbol)]
+        (rx/concat
+         (rx/of
+          (dwu/start-undo-transaction undo-id)
+          (dch/commit-changes changes)
+          (dwu/commit-undo-transaction undo-id)
+          (ptk/data-event :layout/update {:ids [(:parent-id shape)]})
+          (dws/select-shape new-shape-id))
+         (->> (rx/of (focus-property new-shape-id prop-num))
+              (rx/delay 250)))))))
+
 (defn transform-in-variant
   "Given the id of a main shape of a component, creates a variant structure for
    that component"
@@ -174,3 +245,55 @@
          (set-variant-id new-component-id variant-id)
          (add-new-property variant-id {:fill-values? true})
          (dwu/commit-undo-transaction undo-id))))))
+
+(defn add-component-or-variant
+  []
+  (ptk/reify ::add-component-or-variant
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [variants?             (features/active-feature? state "variants/v1")
+            objects               (dsh/lookup-page-objects state)
+            selected-ids          (dsh/lookup-selected state)
+            selected-shapes       (map (d/getf objects) selected-ids)
+            single?               (= 1 (count selected-ids))
+            first-shape          (first selected-shapes)
+
+            transform-in-variant? (and variants?
+                                       single?
+                                       (not (ctc/is-variant? first-shape))
+                                       (ctc/main-instance? first-shape))
+            add-new-variant?      (and variants?
+                                       (every? ctc/is-variant? selected-shapes))
+            undo-id              (js/Symbol)]
+        (cond
+          transform-in-variant?
+          (rx/of (transform-in-variant (:id first-shape)))
+
+          add-new-variant?
+          (rx/concat
+           (rx/of (dwu/start-undo-transaction undo-id))
+           (rx/from (map add-new-variant selected-ids))
+           (rx/of (dwu/commit-undo-transaction undo-id)))
+
+          :else
+          (rx/of (dwl/add-component)))))))
+
+(defn duplicate-or-add-variant
+  []
+  (ptk/reify ::duplicate-or-add-variant
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [variants?             (features/active-feature? state "variants/v1")
+            objects               (dsh/lookup-page-objects state)
+            selected-ids          (dsh/lookup-selected state)
+            selected-shapes       (map (d/getf objects) selected-ids)
+            add-new-variant?      (and variants?
+                                       (every? ctc/is-variant? selected-shapes))
+            undo-id              (js/Symbol)]
+        (if add-new-variant?
+          (rx/concat
+           (rx/of (dwu/start-undo-transaction undo-id))
+           (rx/from (map add-new-variant selected-ids))
+           (rx/of (dwu/commit-undo-transaction undo-id)))
+          (rx/of (dws/duplicate-selected true)))))))

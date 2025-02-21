@@ -100,10 +100,10 @@
 
 ;; ---- Components and instances creation ----
 
-(defn duplicate-component
+(defn- duplicate-component
   "Clone the root shape of the component and all children. Generate new
   ids from all of them."
-  [component new-component-id library-data]
+  [component new-component-id library-data force-id]
   (let [components-v2 (dm/get-in library-data [:options :components-v2])]
     (if components-v2
       (let [main-instance-page  (ctf/get-component-page library-data component)
@@ -139,7 +139,8 @@
                               (:parent-id main-instance-shape)
                               (:objects main-instance-page)
                               :update-new-shape update-new-shape
-                              :update-original-shape update-original-shape)
+                              :update-original-shape update-original-shape
+                              :force-id force-id)
 
             remap-frame
             (fn [shape]
@@ -179,7 +180,7 @@
 
 (defn generate-duplicate-component
   "Create a new component copied from the one with the given id."
-  [changes library component-id new-component-id components-v2]
+  [changes library component-id new-component-id components-v2 & {:keys [new-shape-id apply-changes-local-library?]}]
   (let [component          (ctkl/get-component (:data library) component-id)
         new-name           (:name component)
 
@@ -191,7 +192,7 @@
 
         [new-component-shape new-component-shapes  ; <- null in components-v2
          new-main-instance-shape new-main-instance-shapes]
-        (duplicate-component component new-component-id (:data library))]
+        (duplicate-component component new-component-id (:data library) new-shape-id)]
 
     [new-main-instance-shape
      (-> changes
@@ -207,7 +208,10 @@
                             []
                             (:id new-main-instance-shape)
                             (:id main-instance-page)
-                            (:annotation component))
+                            (:annotation component)
+                            (:variant-id component)
+                            (:variant-properties component)
+                            {:apply-changes-local-library? apply-changes-local-library?})
          ;; Update grid layout if the new main instance is inside
          (pcb/update-shapes
           [(:frame-id new-main-instance-shape)]

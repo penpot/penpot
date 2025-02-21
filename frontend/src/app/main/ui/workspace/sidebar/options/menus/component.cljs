@@ -288,11 +288,12 @@
     [:*
      (for [[pos prop] (map vector (range) properties)]
 
-       [:div {:key (str (:id shape) (:name prop)) :class (stl/css :variant-property-container)}
+       [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-container)}
         (if (ctk/main-instance? shape)
           [:*
            [:span {:class (stl/css :variant-property-name :variant-property-name-bg)} (:name prop)]
-           [:> combobox* {:default-selected (if (str/empty? (:value prop)) "--" (:value prop))
+           [:> combobox* {:id (str "variant-prop-" (:id shape) pos)
+                          :default-selected (if (str/empty? (:value prop)) "--" (:value prop))
                           :options (clj->js (get-options (:name prop)))
                           :on-change (partial change-property-value pos)}]]
 
@@ -740,7 +741,7 @@
 
 (mf/defc variant-menu*
   [{:keys [shapes]}]
-  (let [multi              (> (count shapes) 1)
+  (let [multi?             (> (count shapes) 1)
 
         shape              (first shapes)
         shape-name         (:name shape)
@@ -756,6 +757,11 @@
         first-variant      (get objects (first (:shapes shape)))
         variant-id         (:variant-id first-variant)
 
+        dashes-to-end      (mf/use-fn
+                            (fn [data]
+                              (let [dashes (if (some #(= % "--") data) ["--"] [])]
+                                (concat (remove #(= % "--") data) dashes))))
+
         properties         (mf/with-memo [data objects variant-id]
                              (->> (dwv/find-related-components data objects variant-id)
                                   (mapcat :variant-properties)
@@ -763,17 +769,20 @@
                                   (map-indexed (fn [index [k v]]
                                                  {:name k
                                                   :pos index
-                                                  :values (distinct
-                                                           (map #(if (str/empty? (:value %)) "--" (:value %)) v))}))))
+                                                  :values (->> v
+                                                               (map #(if (str/empty? (:value %)) "--" (:value %)))
+                                                               distinct
+                                                               dashes-to-end)}))))
+
 
         menu-open*         (mf/use-state false)
         menu-open?         (deref menu-open*)
 
 
         menu-entries       [{:title (tr "workspace.shape.menu.add-variant-property")
-                             :action #(st/emit! (dwv/add-new-property variant-id))}]
-
-        show-menu?         (seq menu-entries)
+                             :action #(st/emit! (dwv/add-new-property variant-id))}
+                            {:title (tr "workspace.shape.menu.add-variant")
+                             :action #(st/emit! (dwv/add-new-variant (:id shape)))}]
 
         on-menu-click
         (mf/use-fn
@@ -820,8 +829,8 @@
 
        [:div {:class (stl/css :element-content)}
         [:div {:class (stl/css-case :component-wrapper true
-                                    :with-actions show-menu?
-                                    :without-actions (not show-menu?))}
+                                    :with-actions (not multi?)
+                                    :without-actions multi?)}
          [:button {:class (stl/css-case :component-name-wrapper true
                                         :with-main true
                                         :swappeable false)}
@@ -831,12 +840,12 @@
           [:div {:class (stl/css :name-wrapper)}
            [:div {:class (stl/css :component-name)}
             [:span {:class (stl/css :component-name-inside)}
-             (if multi
+             (if multi?
                (tr "settings.multiple")
                (cfh/last-path shape-name))]]]]
 
 
-         (when show-menu?
+         (when-not multi?
            [:div {:class (stl/css :component-actions)}
             [:button {:class (stl/css-case :menu-btn true
                                            :selected menu-open?)
@@ -847,11 +856,11 @@
                                     :on-close on-menu-close
                                     :menu-entries menu-entries
                                     :main-instance true}]])]
-        (when-not multi
+        (when-not multi?
           [:*
-           (for [property properties]
+           (for [[pos property] (map vector (range) properties)]
              (let [val (str/join ", " (:values property))]
-               [:div {:key (str (:id shape) (:name property)) :class (stl/css :variant-property-row)}
+               [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-row)}
                 [:> input-with-values* {:name (:name property)
                                         :values val
                                         :data-position (:pos property)

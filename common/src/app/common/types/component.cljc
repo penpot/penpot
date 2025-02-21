@@ -333,6 +333,8 @@
   (let [parent (get objects (:parent-id shape))]
     ;; We don't want to change the structure of component copies
     (and (not (in-component-copy-not-head? shape))
+         ;; We don't want to duplicate variants
+         (not (is-variant? shape))
          ;; Non instance, non copy. We allow
          (or (not (instance-head? shape))
              (not (in-component-copy? parent))))))
