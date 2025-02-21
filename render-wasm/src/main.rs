@@ -1,4 +1,3 @@
-use skia::Rect;
 use skia_safe as skia;
 
 mod debug;
@@ -11,7 +10,7 @@ mod utils;
 mod view;
 
 use crate::mem::SerializableResult;
-use crate::shapes::{BoolType, ConstraintH, ConstraintV, Group, Kind, Path, TransformEntry, Type};
+use crate::shapes::{BoolType, ConstraintH, ConstraintV, TransformEntry, Type};
 
 use crate::state::State;
 use crate::utils::uuid_from_u32_quartet;
@@ -131,50 +130,10 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_kind_group(masked: bool) {
+pub extern "C" fn set_shape_masked_group(masked: bool) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        shape.set_kind(Kind::Group(Group::new(masked)));
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn set_shape_kind_circle() {
-    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-
-    if let Some(shape) = state.current_shape() {
-        shape.set_kind(Kind::Circle(Rect::new_empty()));
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn set_shape_kind_rect() {
-    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-
-    if let Some(shape) = state.current_shape() {
-        match shape.kind() {
-            Kind::Rect(_, _) => {}
-            _ => shape.set_kind(Kind::Rect(Rect::new_empty(), None)),
-        }
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn set_shape_kind_path() {
-    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-    if let Some(shape) = state.current_shape() {
-        shape.set_kind(Kind::Path(Path::default()));
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn set_shape_kind_bool() {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    if let Some(shape) = state.current_shape() {
-        match shape.kind() {
-            Kind::Bool(_, _) => {}
-            _ => shape.set_kind(Kind::Bool(BoolType::default(), Path::default())),
-        }
+        shape.set_masked(masked);
     }
 }
 
@@ -701,6 +660,101 @@ pub extern "C" fn clear_shape_shadows() {
         shape.clear_shadows();
     }
 }
+
+#[no_mangle]
+pub extern "C" fn set_flex_layout_data(
+    dir: u8,
+    row_gap: f32,
+    column_gap: f32,
+    align_items: u8,
+    align_content: u8,
+    justify_items: u8,
+    justify_content: u8,
+    wrap_type: u8,
+    padding_top: f32,
+    padding_right: f32,
+    padding_bottom: f32,
+    padding_left: f32,
+) {
+    let dir = shapes::Direction::from_u8(dir);
+    let align_items = shapes::AlignItems::from_u8(align_items);
+    let align_content = shapes::AlignContent::from_u8(align_content);
+    let justify_items = shapes::JustifyItems::from_u8(justify_items);
+    let justify_content = shapes::JustifyContent::from_u8(justify_content);
+    let wrap_type = shapes::WrapType::from_u8(wrap_type);
+
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.set_flex_layout_data(
+            dir,
+            row_gap,
+            column_gap,
+            align_items,
+            align_content,
+            justify_items,
+            justify_content,
+            wrap_type,
+            padding_top,
+            padding_right,
+            padding_bottom,
+            padding_left,
+        );
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn set_layout_child_data(
+    margin_top: f32,
+    margin_right: f32,
+    margin_bottom: f32,
+    margin_left: f32,
+    h_sizing: u8,
+    v_sizing: u8,
+    has_max_h: bool,
+    max_h: f32,
+    has_min_h: bool,
+    min_h: f32,
+    has_max_w: bool,
+    max_w: f32,
+    has_min_w: bool,
+    min_w: f32,
+    is_absolute: bool,
+    z_index: i32,
+) {
+    let h_sizing = shapes::Sizing::from_u8(h_sizing);
+    let v_sizing = shapes::Sizing::from_u8(v_sizing);
+    let max_h = if has_max_h { Some(max_h) } else { None };
+    let min_h = if has_min_h { Some(min_h) } else { None };
+    let max_w = if has_max_w { Some(max_w) } else { None };
+    let min_w = if has_min_w { Some(min_w) } else { None };
+
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.set_flex_layout_child_data(
+            margin_top,
+            margin_right,
+            margin_bottom,
+            margin_left,
+            h_sizing,
+            v_sizing,
+            max_h,
+            min_h,
+            max_w,
+            min_w,
+            is_absolute,
+            z_index,
+        );
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn set_grid_layout_data() {}
+
+#[no_mangle]
+pub extern "C" fn add_grid_track() {}
+
+#[no_mangle]
+pub extern "C" fn set_grid_cell() {}
 
 fn main() {
     init_gl();

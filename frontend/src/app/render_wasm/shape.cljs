@@ -110,35 +110,37 @@
   [self k v]
   (when ^boolean shape/*wasm-sync*
     (api/use-shape (:id self))
-    (let [masked (:masked-group self)]
-      (case k
-        :type         (api/set-shape-type v {:masked masked})
-        :bool-type    (api/set-shape-bool-type v)
-        :bool-content (api/set-shape-bool-content v)
-        :selrect      (api/set-shape-selrect v)
-        :show-content (if (= (:type self) :frame)
-                        (api/set-shape-clip-content (not v))
-                        (api/set-shape-clip-content false))
-        :rotation     (api/set-shape-rotation v)
-        :transform    (api/set-shape-transform v)
-        :fills        (api/set-shape-fills v)
-        :strokes      (api/set-shape-strokes v)
-        :blend-mode   (api/set-shape-blend-mode v)
-        :opacity      (api/set-shape-opacity v)
-        :hidden       (api/set-shape-hidden v)
-        :shapes       (api/set-shape-children v)
-        :blur         (api/set-shape-blur v)
-        :svg-attrs    (when (= (:type self) :path)
-                        (api/set-shape-path-attrs v))
-        :constraints-h (api/set-constraints-h v)
-        :constraints-v (api/set-constraints-v v)
-        :content      (cond
-                        (= (:type self) :path)
-                        (api/set-shape-path-content v)
+    (case k
+      :type         (api/set-shape-type v)
+      :bool-type    (api/set-shape-bool-type v)
+      :bool-content (api/set-shape-bool-content v)
+      :selrect      (api/set-shape-selrect v)
+      :show-content (if (= (:type self) :frame)
+                      (api/set-shape-clip-content (not v))
+                      (api/set-shape-clip-content false))
+      :rotation     (api/set-shape-rotation v)
+      :transform    (api/set-shape-transform v)
+      :fills        (api/set-shape-fills v)
+      :strokes      (api/set-shape-strokes v)
+      :blend-mode   (api/set-shape-blend-mode v)
+      :opacity      (api/set-shape-opacity v)
+      :hidden       (api/set-shape-hidden v)
+      :shapes       (api/set-shape-children v)
+      :blur         (api/set-shape-blur v)
+      :constraints-h (api/set-constraints-h v)
+      :constraints-v (api/set-constraints-v v)
 
-                        (= (:type self) :svg-raw)
-                        (api/set-shape-svg-raw-content (api/get-static-markup self)))
-        nil))
+      :svg-attrs    (when (= (:type self) :path)
+                      (api/set-shape-path-attrs v))
+      :masked-group (when (and (= (:type self) :group) (:masked-group self))
+                      (api/set-masked (:masked-group self)))
+      :content      (cond
+                      (= (:type self) :path)
+                      (api/set-shape-path-content v)
+
+                      (= (:type self) :svg-raw)
+                      (api/set-shape-svg-raw-content (api/get-static-markup self)))
+      nil)
     ;; when something synced with wasm
     ;; is modified, we need to request
     ;; a new render.

@@ -142,3 +142,75 @@ Shadow styles are serialized as `u8`:
 | 0     | Drop Shadow  |
 | 1     | Inner Shadow |
 | \_    | Drop Shadow  |
+
+## Layout - Direction
+
+| Value | Field  |
+| ----- | -------|
+| 0     | Row    |
+| 1     | Column |
+| \_    | error  |
+
+## Layout - Align Items
+
+| Value | Field   |
+| ----- | --------|
+| 0     | Start   |
+| 1     | End     |
+| 2     | Center  |
+| 3     | Stretch |
+| \_    | error   |
+
+## Layout - Align Content
+
+| Value | Field         |
+| ----- | ------------- |
+| 0     | Start         |
+| 1     | End           |
+| 2     | Center        |
+| 3     | Space between | 
+| 4     | Space around  |
+| 5     | Space evenly  |
+| 6     | Stretch       |
+| \_    | error         |
+
+## Layout - Justify items
+
+| Value | Field   |
+| ----- | --------|
+| 0     | Start   |
+| 1     | End     |
+| 2     | Center  |
+| 3     | Stretch |
+| \_    | error   |
+
+## Layout - Justify content
+
+
+| Value | Field         |
+| ----- | ------------- |
+| 0     | Start         |
+| 1     | End           |
+| 2     | Center        |
+| 3     | Space between | 
+| 4     | Space around  |
+| 5     | Space evenly  |
+| 6     | Stretch       |
+| \_    | error         |
+
+## Layout - Wrap type
+
+| Value | Field   |
+| ----- | ------- |
+| 0     | Wrap    |
+| 1     | No Wrap |
+| \_    | error   |
+
+## Layout - Sizing
+
+| Value | Field |
+| ----- | ------|
+| 0     | Fill  |
+| 1     | Fix   |
+| 2     | Auto  |
+| \_    | error |

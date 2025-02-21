@@ -221,8 +221,8 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
 mod tests {
     use super::*;
 
-    use crate::shapes::Type;
-    use skia::Point;
+    use crate::math::{Matrix, Point};
+    use crate::shapes::*;
 
     #[test]
     fn test_propagate_shape() {
@@ -235,7 +235,7 @@ mod tests {
 
         let parent_id = Uuid::new_v4();
         let mut parent = Shape::new(parent_id);
-        parent.set_shape_type(Type::Group);
+        parent.set_shape_type(Type::Group(Group::default()));
         parent.add_child(child_id);
         parent.set_selrect(1.0, 1.0, 5.0, 5.0);
         shapes.insert(parent_id, parent.clone());
