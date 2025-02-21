@@ -2364,6 +2364,10 @@ msgstr "Your account"
 msgid "labels.youtube"
 msgstr "YouTube"
 
+#: src/app/main/ui/workspace/tokens/errors.cljs
+msgid "labels.unknown-error"
+msgstr "Unknown error"
+
 #: src/app/main/ui/workspace/colorpicker.cljs:477, src/app/main/ui/workspace/colorpicker.cljs:478, src/app/main/ui/workspace/colorpicker.cljs:480
 msgid "media.choose-image"
 msgstr "Choose image"
@@ -6554,6 +6558,50 @@ msgstr "Token Set grouping is not supported yet."
 #: src/app/main/ui/workspace/tokens/sets_context_menu.cljs
 msgid "workspace.token.add-set-to-group"
 msgstr "Add set to this group"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+msgid "workspace.token.generic-error"
+msgstr "Error: "
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+msgid "workspace.token.reference-error"
+msgstr "Reference Errors: "
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+msgid "workspace.token.token-not-resolved"
+msgstr "Could not resolve reference token with the name: %s"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs
+msgid "workspace.token.error-parse"
+msgstr "Import Error: Could not parse JSON."
+
+#: src/app/main/ui/workspace/tokens/errors.cljs
+msgid "workspace.token.invalid-json"
+msgstr "Import Error: Invalid token data in JSON."
+
+#: src/app/main/ui/workspace/tokens/errors.cljs
+msgid "workspace.token.import-error"
+msgstr "Import Error:"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs
+msgid "workspace.token.self-reference"
+msgstr "Token has self reference"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs
+msgid "workspace.token.invalid-color"
+msgstr "Invalid color value: %s"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs
+msgid "workspace.token.missing-references"
+msgstr "Missing token references: "
+
+#: src/app/main/ui/workspace/tokens/errors.cljs
+msgid "workspace.token.invalid-value"
+msgstr "Invalid token value: %s"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs
+msgid "workspace.token.opacity-range"
+msgstr "Opacity must be between 0 and 100% or 0 and 1 (e.g. 50% or 0.5)."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
 msgid "workspace.token.label.group"
