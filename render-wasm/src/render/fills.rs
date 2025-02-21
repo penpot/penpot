@@ -15,7 +15,7 @@ fn draw_image_fill_in_container(
     }
 
     let size = image_fill.size();
-    let canvas = render_state.drawing_surface.canvas();
+    let canvas = render_state.surfaces.shape.canvas();
     let kind = &shape.kind;
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
@@ -91,7 +91,7 @@ fn draw_image_fill_in_container(
  * This SHOULD be the only public function in this module.
  */
 pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill) {
-    let canvas = render_state.drawing_surface.canvas();
+    let canvas = render_state.surfaces.shape.canvas();
     let selrect = shape.selrect;
     let path_transform = shape.to_path_transform();
     let kind = &shape.kind;

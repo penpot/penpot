@@ -17,13 +17,14 @@ fn render_debug_view(render_state: &mut RenderState) {
     scaled_rect.set_xywh(x, y, width, height);
 
     render_state
-        .debug_surface
+        .surfaces
+        .debug
         .canvas()
         .draw_rect(scaled_rect, &paint);
 }
 
 pub fn render_wasm_label(render_state: &mut RenderState) {
-    let canvas = render_state.render_surface.canvas();
+    let canvas = render_state.surfaces.current.canvas();
 
     let skia::ISize { width, height } = canvas.base_layer_size();
     let p = skia::Point::new(width as f32 - 100.0, height as f32 - 25.0);
@@ -57,7 +58,8 @@ pub fn render_debug_shape(render_state: &mut RenderState, element: &Shape, inter
     scaled_rect.set_xywh(x, y, width, height);
 
     render_state
-        .debug_surface
+        .surfaces
+        .debug
         .canvas()
         .draw_rect(scaled_rect, &paint);
 }
@@ -65,10 +67,10 @@ pub fn render_debug_shape(render_state: &mut RenderState, element: &Shape, inter
 pub fn render(render_state: &mut RenderState) {
     let paint = skia::Paint::default();
     render_debug_view(render_state);
-    render_state.debug_surface.draw(
-        &mut render_state.render_surface.canvas(),
+    render_state.surfaces.debug.draw(
+        &mut render_state.surfaces.current.canvas(),
         (0.0, 0.0),
-        skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
+        render_state.sampling_options,
         Some(&paint),
     );
 }

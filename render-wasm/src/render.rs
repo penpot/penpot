@@ -13,11 +13,13 @@ mod images;
 mod options;
 mod shadows;
 mod strokes;
+mod surfaces;
 
 use crate::shapes::{Corners, Kind, Shape};
 use cache::CachedSurfaceImage;
 use gpu_state::GpuState;
 use options::RenderOptions;
+use surfaces::Surfaces;
 
 pub use blend::BlendMode;
 pub use images::*;
@@ -53,12 +55,8 @@ pub struct NodeRenderState {
 pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub options: RenderOptions,
-    pub final_surface: skia::Surface,
-    pub render_surface: skia::Surface,
-    pub drawing_surface: skia::Surface,
-    pub shadow_surface: skia::Surface,
-    pub overlay_surface: skia::Surface,
-    pub debug_surface: skia::Surface,
+    pub surfaces: Surfaces,
+    pub sampling_options: skia::SamplingOptions,
     pub font_provider: skia::textlayout::TypefaceFontProvider,
     pub cached_surface_image: Option<CachedSurfaceImage>,
     pub viewbox: Viewbox,
@@ -77,38 +75,24 @@ impl RenderState {
     pub fn new(width: i32, height: i32) -> RenderState {
         // This needs to be done once per WebGL context.
         let mut gpu_state = GpuState::new();
-        let mut final_surface = gpu_state.create_target_surface(width, height);
-        let render_surface = final_surface
-            .new_surface_with_dimensions((width, height))
-            .unwrap();
-        let shadow_surface = final_surface
-            .new_surface_with_dimensions((width, height))
-            .unwrap();
-        let overlay_surface = final_surface
-            .new_surface_with_dimensions((width, height))
-            .unwrap();
-        let drawing_surface = final_surface
-            .new_surface_with_dimensions((width, height))
-            .unwrap();
-        let debug_surface = final_surface
-            .new_surface_with_dimensions((width, height))
-            .unwrap();
+        let surfaces = Surfaces::new(&mut gpu_state, (width, height));
         let mut font_provider = skia::textlayout::TypefaceFontProvider::new();
         let default_font = skia::FontMgr::default()
             .new_from_data(DEFAULT_FONT_BYTES, None)
             .expect("Failed to load font");
         font_provider.register_typeface(default_font, "robotomono-regular");
 
+        // This is used multiple times everywhere so instead of creating new instances every
+        // time we reuse this one.
+        let sampling_options =
+            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
+
         RenderState {
             gpu_state,
-            final_surface,
-            render_surface,
-            overlay_surface,
-            shadow_surface,
-            drawing_surface,
-            debug_surface,
+            surfaces,
             cached_surface_image: None,
             font_provider,
+            sampling_options,
             options: RenderOptions::default(),
             viewbox: Viewbox::new(width as f32, height as f32),
             images: ImageStore::new(),
@@ -160,68 +144,52 @@ impl RenderState {
         let dpr_width = (width as f32 * self.options.dpr()).floor() as i32;
         let dpr_height = (height as f32 * self.options.dpr()).floor() as i32;
 
-        let surface = self.gpu_state.create_target_surface(dpr_width, dpr_height);
-        self.final_surface = surface;
-        self.render_surface = self
-            .final_surface
-            .new_surface_with_dimensions((dpr_width, dpr_height))
-            .unwrap();
-        self.overlay_surface = self
-            .final_surface
-            .new_surface_with_dimensions((dpr_width, dpr_height))
-            .unwrap();
-        self.shadow_surface = self
-            .final_surface
-            .new_surface_with_dimensions((dpr_width, dpr_height))
-            .unwrap();
-        self.drawing_surface = self
-            .final_surface
-            .new_surface_with_dimensions((dpr_width, dpr_height))
-            .unwrap();
-        self.debug_surface = self
-            .final_surface
-            .new_surface_with_dimensions((dpr_width, dpr_height))
-            .unwrap();
-
+        self.surfaces
+            .resize(&mut self.gpu_state, dpr_width, dpr_height);
         self.viewbox.set_wh(width as f32, height as f32);
     }
 
     pub fn flush(&mut self) {
         self.gpu_state
             .context
-            .flush_and_submit_surface(&mut self.final_surface, None);
+            .flush_and_submit_surface(&mut self.surfaces.target, None);
     }
 
     pub fn reset_canvas(&mut self) {
-        self.drawing_surface.canvas().restore_to_count(1);
-        self.render_surface.canvas().restore_to_count(1);
-        self.drawing_surface
+        self.surfaces.shape.canvas().restore_to_count(1);
+        self.surfaces.current.canvas().restore_to_count(1);
+        self.surfaces
+            .shape
             .canvas()
             .clear(self.background_color)
             .reset_matrix();
-        self.render_surface
+        self.surfaces
+            .current
             .canvas()
             .clear(self.background_color)
             .reset_matrix();
-        self.shadow_surface
+        self.surfaces
+            .shadow
             .canvas()
             .clear(self.background_color)
             .reset_matrix();
-        self.overlay_surface
+        self.surfaces
+            .overlay
             .canvas()
             .clear(self.background_color)
             .reset_matrix();
-        self.debug_surface
+        self.surfaces
+            .debug
             .canvas()
             .clear(skia::Color::TRANSPARENT)
             .reset_matrix();
     }
 
     pub fn apply_render_to_final_canvas(&mut self) {
-        self.render_surface.draw(
-            &mut self.final_surface.canvas(),
+        self.surfaces.current.draw(
+            &mut self.surfaces.target.canvas(),
             (0.0, 0.0),
-            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
+            self.sampling_options,
             Some(&skia::Paint::default()),
         );
     }
@@ -229,36 +197,41 @@ impl RenderState {
     pub fn apply_drawing_to_render_canvas(&mut self) {
         self.gpu_state
             .context
-            .flush_and_submit_surface(&mut self.drawing_surface, None);
+            .flush_and_submit_surface(&mut self.surfaces.shape, None);
 
-        self.drawing_surface.draw(
-            &mut self.render_surface.canvas(),
+        self.surfaces.shape.draw(
+            &mut self.surfaces.current.canvas(),
             (0.0, 0.0),
-            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
+            self.sampling_options,
             Some(&skia::Paint::default()),
         );
 
         self.gpu_state
             .context
-            .flush_and_submit_surface(&mut self.render_surface, None);
+            .flush_and_submit_surface(&mut self.surfaces.current, None);
 
         self.gpu_state
             .context
-            .flush_and_submit_surface(&mut self.overlay_surface, None);
-        self.overlay_surface.draw(
-            &mut self.render_surface.canvas(),
+            .flush_and_submit_surface(&mut self.surfaces.overlay, None);
+
+        self.surfaces.overlay.draw(
+            &mut self.surfaces.current.canvas(),
             (0.0, 0.0),
-            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
+            self.sampling_options,
             None,
         );
 
-        self.shadow_surface.canvas().clear(skia::Color::TRANSPARENT);
-        self.overlay_surface
+        self.surfaces
+            .shadow
             .canvas()
             .clear(skia::Color::TRANSPARENT);
-        self.drawing_surface
+
+        self.surfaces
+            .overlay
             .canvas()
             .clear(skia::Color::TRANSPARENT);
+
+        self.surfaces.shape.canvas().clear(skia::Color::TRANSPARENT);
     }
 
     pub fn invalidate_cache_if_needed(&mut self) {
@@ -273,16 +246,18 @@ impl RenderState {
         modifiers: Option<&Matrix>,
         clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
     ) {
-        self.drawing_surface.canvas().save();
+        self.surfaces.shape.canvas().save();
         if let Some((bounds, corners, transform)) = clip_bounds {
-            self.drawing_surface.canvas().concat(&transform);
+            self.surfaces.shape.canvas().concat(&transform);
             if let Some(corners) = corners {
                 let rrect = RRect::new_rect_radii(bounds, &corners);
-                self.drawing_surface
+                self.surfaces
+                    .shape
                     .canvas()
                     .clip_rrect(rrect, skia::ClipOp::Intersect, true);
             } else {
-                self.drawing_surface
+                self.surfaces
+                    .shape
                     .canvas()
                     .clip_rect(bounds, skia::ClipOp::Intersect, true);
             }
@@ -292,10 +267,11 @@ impl RenderState {
                 paint.set_style(skia::PaintStyle::Stroke);
                 paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
                 paint.set_stroke_width(4.);
-                self.drawing_surface.canvas().draw_rect(bounds, &paint);
+                self.surfaces.shape.canvas().draw_rect(bounds, &paint);
             }
 
-            self.drawing_surface
+            self.surfaces
+                .shape
                 .canvas()
                 .concat(&transform.invert().unwrap_or(Matrix::default()));
         }
@@ -316,17 +292,17 @@ impl RenderState {
         match &shape.kind {
             Kind::SVGRaw(sr) => {
                 if let Some(modifiers) = modifiers {
-                    self.drawing_surface.canvas().concat(&modifiers);
+                    self.surfaces.shape.canvas().concat(&modifiers);
                 }
-                self.drawing_surface.canvas().concat(&matrix);
+                self.surfaces.shape.canvas().concat(&matrix);
                 if let Some(svg) = shape.svg.as_ref() {
-                    svg.render(self.drawing_surface.canvas())
+                    svg.render(self.surfaces.shape.canvas())
                 } else {
                     let font_manager = skia::FontMgr::from(self.font_provider.clone());
                     let dom_result = skia::svg::Dom::from_str(sr.content.to_string(), font_manager);
                     match dom_result {
                         Ok(dom) => {
-                            dom.render(self.drawing_surface.canvas());
+                            dom.render(self.surfaces.shape.canvas());
                             shape.set_svg(dom);
                         }
                         Err(e) => {
@@ -336,7 +312,7 @@ impl RenderState {
                 }
             }
             _ => {
-                self.drawing_surface.canvas().concat(&matrix);
+                self.surfaces.shape.canvas().concat(&matrix);
 
                 for fill in shape.fills().rev() {
                     fills::render(self, &shape, fill);
@@ -365,7 +341,7 @@ impl RenderState {
         };
 
         self.apply_drawing_to_render_canvas();
-        self.drawing_surface.canvas().restore();
+        self.surfaces.shape.canvas().restore();
     }
 
     pub fn start_render_loop(
@@ -380,11 +356,12 @@ impl RenderState {
             }
         }
         self.reset_canvas();
-        self.drawing_surface.canvas().scale((
+        self.surfaces.shape.canvas().scale((
             self.viewbox.zoom * self.options.dpr(),
             self.viewbox.zoom * self.options.dpr(),
         ));
-        self.drawing_surface
+        self.surfaces
+            .shape
             .canvas()
             .translate((self.viewbox.pan_x, self.viewbox.pan_y));
         //
@@ -446,7 +423,7 @@ impl RenderState {
             .map_or(true, |img| img.invalid)
         {
             self.cached_surface_image = Some(CachedSurfaceImage {
-                image: self.render_surface.image_snapshot(),
+                image: self.surfaces.current.image_snapshot(),
                 viewbox: self.viewbox,
                 invalid: false,
                 has_all_shapes: self.render_complete,
@@ -475,27 +452,29 @@ impl RenderState {
 
         let image = &cached.image;
         let paint = skia::Paint::default();
-        self.final_surface.canvas().save();
-        self.drawing_surface.canvas().save();
+        self.surfaces.target.canvas().save();
+        self.surfaces.shape.canvas().save();
 
         let navigate_zoom = self.viewbox.zoom / cached.viewbox.zoom;
         let navigate_x = cached.viewbox.zoom * (self.viewbox.pan_x - cached.viewbox.pan_x);
         let navigate_y = cached.viewbox.zoom * (self.viewbox.pan_y - cached.viewbox.pan_y);
 
-        self.final_surface
+        self.surfaces
+            .target
             .canvas()
             .scale((navigate_zoom, navigate_zoom));
-        self.final_surface.canvas().translate((
+        self.surfaces.target.canvas().translate((
             navigate_x * self.options.dpr(),
             navigate_y * self.options.dpr(),
         ));
-        self.final_surface.canvas().clear(self.background_color);
-        self.final_surface
+        self.surfaces.target.canvas().clear(self.background_color);
+        self.surfaces
+            .target
             .canvas()
             .draw_image(image, (0, 0), Some(&paint));
 
-        self.final_surface.canvas().restore();
-        self.drawing_surface.canvas().restore();
+        self.surfaces.target.canvas().restore();
+        self.surfaces.shape.canvas().restore();
 
         self.flush();
 
@@ -516,7 +495,7 @@ impl RenderState {
                 if group.masked {
                     let paint = skia::Paint::default();
                     let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-                    self.render_surface.canvas().save_layer(&layer_rec);
+                    self.surfaces.current.canvas().save_layer(&layer_rec);
                 }
             }
             _ => {}
@@ -533,7 +512,7 @@ impl RenderState {
             let mut mask_paint = skia::Paint::default();
             mask_paint.set_blend_mode(skia::BlendMode::DstIn);
             let mask_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
-            self.render_surface.canvas().save_layer(&mask_rec);
+            self.surfaces.current.canvas().save_layer(&mask_rec);
         }
 
         if let Some(image_filter) = element.image_filter(self.viewbox.zoom * self.options.dpr()) {
@@ -541,7 +520,7 @@ impl RenderState {
         }
 
         let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-        self.render_surface.canvas().save_layer(&layer_rec);
+        self.surfaces.current.canvas().save_layer(&layer_rec);
     }
 
     pub fn render_shape_exit(&mut self, element: &mut Shape, visited_mask: bool) {
@@ -552,13 +531,13 @@ impl RenderState {
             match element.kind {
                 Kind::Group(group) => {
                     if group.masked {
-                        self.render_surface.canvas().restore();
+                        self.surfaces.current.canvas().restore();
                     }
                 }
                 _ => {}
             }
         }
-        self.render_surface.canvas().restore();
+        self.surfaces.current.canvas().restore();
     }
 
     pub fn render_shape_tree(
