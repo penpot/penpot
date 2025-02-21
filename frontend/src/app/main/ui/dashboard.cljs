@@ -59,9 +59,6 @@
 
         permissions     (:permissions team)
 
-        dashboard-local (mf/deref refs/dashboard-local)
-        file-menu-open? (:menu-open dashboard-local)
-
         default-project-id
         (get default-project :id)
 
@@ -87,7 +84,6 @@
     (mf/use-effect on-resize)
 
     [:div {:class (stl/css :dashboard-content)
-           :style {:pointer-events (when file-menu-open? "none")}
            :on-click clear-selected-fn
            :ref container}
      (case section

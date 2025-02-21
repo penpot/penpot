@@ -55,8 +55,8 @@
           projects))
 
 (mf/defc file-menu*
-  {::mf/props :obj}
   [{:keys [files on-edit on-menu-close top left navigate origin parent-id can-edit]}]
+
   (assert (seq files) "missing `files` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
   (assert (fn? on-menu-close) "missing `on-menu-close` prop")
