@@ -26,6 +26,7 @@
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -121,7 +122,7 @@
    :duplicate            {:tooltip (ds/meta "D")
                           :command (ds/c-mod "d")
                           :subsections [:edit]
-                          :fn #(emit-when-no-readonly (dw/duplicate-selected true))}
+                          :fn #(emit-when-no-readonly (dwv/duplicate-or-add-variant))}
 
    :start-editing        {:tooltip (ds/enter)
                           :command "enter"
@@ -175,7 +176,7 @@
    :create-component     {:tooltip (ds/meta "K")
                           :command (ds/c-mod "k")
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly (dwl/add-component))}
+                          :fn #(emit-when-no-readonly (dwv/add-component-or-variant))}
 
    :detach-component     {:tooltip (ds/meta-shift "K")
                           :command (ds/c-mod "shift+k")
