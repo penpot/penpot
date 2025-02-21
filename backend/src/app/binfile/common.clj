@@ -307,7 +307,7 @@
 
         update-shapes
         (fn [data {:keys [page-id shape-id]}]
-          (d/update-in-when data [:pages-index page-id :objects shape-id] cfh/relink-media-refs lookup-index))
+          (d/update-in-when data [:pages-index page-id :objects shape-id] cfh/relink-refs lookup-index))
 
         file
         (update file :data #(reduce update-shapes % media-refs))]
@@ -375,7 +375,7 @@
   replace the old :component-file reference with the new
   ones, using the provided file-index."
   [data]
-  (cfh/relink-media-refs data lookup-index))
+  (cfh/relink-refs data lookup-index))
 
 (defn- relink-media
   "A function responsible of process the :media attr of file data and

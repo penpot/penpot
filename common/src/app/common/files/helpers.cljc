@@ -570,10 +570,9 @@
       (into xform:collect-media-refs (vals (:components data)))
       (into (keys (:media data)))))
 
-(defn relink-media-refs
-  "A function responsible to analyze all file data and replace the
-  old :component-file reference with the new ones, using the provided
-  file-index."
+(defn relink-refs
+  "A function responsible to analyze the file data or shape for references
+  and apply lookup-index on it."
   [data lookup-index]
   (letfn [(process-map-form [form]
             (cond-> form
@@ -724,7 +723,7 @@
 
 (defn split-by-last-period
   "Splits a string into two parts:
-   the text before and including the last period, 
+   the text before and including the last period,
    and the text after the last period."
   [s]
   (if-let [last-period (str/last-index-of s ".")]
