@@ -1,0 +1,11 @@
+{
+ "dark": 
+    {"small":
+        {"$value": "8",
+         "$type":"borderRadius",
+         "$description":""}},
+ "$themes": [],
+ "$metadata": 
+    {"tokenSetOrder": ["dark"],
+     "activeThemes": [],
+     "activeSets": ["dark"]}}
