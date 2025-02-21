@@ -92,7 +92,7 @@
         reverse-sort?  (= :desc ordering)
         libs           (mf/deref refs/libraries)
         num-libs       (count libs)
-        file           (get libs (:id file-id))
+        file           (get libs file-id)
         components     (mf/with-memo [file] (ctkl/components (:data file)))
 
         toggle-ordering
