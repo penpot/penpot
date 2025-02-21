@@ -326,7 +326,7 @@
   [k v]
   {k (assoc v
             ::min-age (cf/get-deletion-delay)
-            ::chunk-size 50)})
+            ::chunk-size 100)})
 
 (defmethod ig/init-key ::handler
   [_ cfg]
