@@ -34,7 +34,7 @@
 .themes-modal-wrapper {
   display: grid;
   grid-template-rows: 0fr minmax(0, 1fr);
-  gap: $s-24;
+  gap: $s-16;
   max-height: $s-688;
 }
 
@@ -44,6 +44,10 @@
 
 .themes-modal-title {
   color: var(--color-foreground-primary);
+}
+
+.themes-modal-description {
+  color: var(--color-foreground-secondary);
 }
 
 .back-btn {
@@ -126,6 +130,7 @@
 .theme-group-wrapper {
   display: flex;
   flex-direction: column;
+  margin-block-start: $s-6;
   overflow-y: auto;
   gap: $s-32;
 }
