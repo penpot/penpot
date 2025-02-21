@@ -1,7 +1,7 @@
 use crate::shapes::Shape;
 use skia_safe as skia;
 
-use super::RenderState;
+use super::{RenderState, SurfaceId};
 
 fn render_debug_view(render_state: &mut RenderState) {
     let mut paint = skia::Paint::default();
@@ -18,13 +18,12 @@ fn render_debug_view(render_state: &mut RenderState) {
 
     render_state
         .surfaces
-        .debug
-        .canvas()
+        .canvas(SurfaceId::Debug)
         .draw_rect(scaled_rect, &paint);
 }
 
 pub fn render_wasm_label(render_state: &mut RenderState) {
-    let canvas = render_state.surfaces.current.canvas();
+    let canvas = render_state.surfaces.canvas(SurfaceId::Current);
 
     let skia::ISize { width, height } = canvas.base_layer_size();
     let p = skia::Point::new(width as f32 - 100.0, height as f32 - 25.0);
@@ -59,18 +58,13 @@ pub fn render_debug_shape(render_state: &mut RenderState, element: &Shape, inter
 
     render_state
         .surfaces
-        .debug
-        .canvas()
+        .canvas(SurfaceId::Debug)
         .draw_rect(scaled_rect, &paint);
 }
 
 pub fn render(render_state: &mut RenderState) {
-    let paint = skia::Paint::default();
     render_debug_view(render_state);
-    render_state.surfaces.debug.draw(
-        &mut render_state.surfaces.current.canvas(),
-        (0.0, 0.0),
-        render_state.sampling_options,
-        Some(&paint),
-    );
+    render_state
+        .surfaces
+        .draw_into(SurfaceId::Debug, SurfaceId::Current, None);
 }
