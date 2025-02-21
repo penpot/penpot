@@ -275,7 +275,7 @@
       FOR UPDATE
      SKIP LOCKED")
 
-(defn- delete-file-change!
+(defn- delete-file-changes!
   [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
   (->> (db/plan conn [sql:get-file-change min-age chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id file-id deleted-at] :as xlog}]
@@ -299,11 +299,11 @@
    #'delete-file-data-fragments!
    #'delete-file-object-thumbnails!
    #'delete-file-thumbnails!
+   #'delete-file-changes!
    #'delete-files!
    #'delete-projects!
    #'delete-fonts!
-   #'delete-teams!
-   #'delete-file-change!])
+   #'delete-teams!])
 
 (defn- execute-proc!
   "A generic function that executes the specified proc iterativelly
