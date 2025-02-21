@@ -255,14 +255,8 @@ test.describe("Tokens: Tokens Tab", () => {
   });
 
   test("User edits theme and activates it in the sidebar", async ({ page }) => {
-    const {
-      workspacePage,
-      tokensUpdateCreateModal,
-      tokenThemesSetsSidebar,
-      tokensSidebar,
-      tokenContextMenuForToken,
-      tokenThemeUpdateCreateModal,
-    } = await setupTokensFile(page);
+    const { tokenThemesSetsSidebar, tokenThemeUpdateCreateModal } =
+      await setupTokensFile(page);
 
     await expect(tokenThemesSetsSidebar).toBeVisible();
 
@@ -315,7 +309,8 @@ test.describe("Tokens: Tokens Tab", () => {
     ).toBeVisible();
 
     await tokenThemeUpdateCreateModal
-      .getByRole("button", { name: "Close" })
+      .getByRole("button")
+      .getByText("close")
       .click();
     await expect(tokenThemeUpdateCreateModal).not.toBeVisible();
 
@@ -617,7 +612,7 @@ test.describe("Tokens: Themes modal", () => {
     ).toHaveCount(1);
   });
 
-  test("Create theme", async ({ page }) => {
+  test("Add new theme", async ({ page }) => {
     const { tokenThemeUpdateCreateModal, workspacePage } =
       await setupTokensFile(page);
 
@@ -625,7 +620,7 @@ test.describe("Tokens: Themes modal", () => {
 
     await tokenThemeUpdateCreateModal
       .getByRole("button", {
-        name: "Create theme",
+        name: "Add new theme",
       })
       .click();
 
