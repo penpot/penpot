@@ -6671,9 +6671,13 @@ msgstr "Curva (%s)"
 msgid "workspace.toolbar.ellipse"
 msgstr "Elipse (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:143, src/app/main/ui/workspace/top_toolbar.cljs:144
+#: src/app/main/ui/workspace/top_toolbar.cljs:128, src/app/main/ui/workspace/top_toolbar.cljs:144
 msgid "workspace.toolbar.frame"
 msgstr "Tablero (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:128, src/app/main/ui/workspace/top_toolbar.cljs:144
+msgid "workspace.toolbar.frame-first-time"
+msgstr "Crear tablero. Click y arrastrar para definir el tamaño. (%s)"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:60, src/app/main/ui/workspace/top_toolbar.cljs:61
 msgid "workspace.toolbar.image"
