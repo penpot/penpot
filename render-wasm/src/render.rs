@@ -154,24 +154,23 @@ impl RenderState {
     }
 
     pub fn reset_canvas(&mut self) {
-        self.surfaces.canvas(SurfaceId::Shape).restore_to_count(1);
+        self.surfaces.canvas(SurfaceId::Fills).restore_to_count(1);
+        self.surfaces.canvas(SurfaceId::Strokes).restore_to_count(1);
         self.surfaces.canvas(SurfaceId::Current).restore_to_count(1);
-        self.surfaces
-            .canvas(SurfaceId::Shape)
-            .clear(self.background_color)
-            .reset_matrix();
-        self.surfaces
-            .canvas(SurfaceId::Current)
-            .clear(self.background_color)
-            .reset_matrix();
-        self.surfaces
-            .canvas(SurfaceId::Shadow)
-            .clear(self.background_color)
-            .reset_matrix();
-        self.surfaces
-            .canvas(SurfaceId::Overlay)
-            .clear(self.background_color)
-            .reset_matrix();
+
+        self.surfaces.apply_mut(
+            &[
+                SurfaceId::Fills,
+                SurfaceId::Strokes,
+                SurfaceId::Current,
+                SurfaceId::Shadow,
+                SurfaceId::Overlay,
+            ],
+            |s| {
+                s.canvas().clear(self.background_color).reset_matrix();
+            },
+        );
+
         self.surfaces
             .canvas(SurfaceId::Debug)
             .clear(skia::Color::TRANSPARENT)
@@ -179,15 +178,28 @@ impl RenderState {
     }
 
     pub fn apply_render_to_final_canvas(&mut self) {
-        self.surfaces
-            .draw_into(SurfaceId::Current, SurfaceId::Target, None);
+        self.surfaces.draw_into(
+            SurfaceId::Current,
+            SurfaceId::Target,
+            Some(&skia::Paint::default()),
+        );
     }
 
     pub fn apply_drawing_to_render_canvas(&mut self) {
         self.surfaces
-            .flush_and_submit(&mut self.gpu_state, SurfaceId::Shape);
+            .flush_and_submit(&mut self.gpu_state, SurfaceId::Fills);
+        self.surfaces.draw_into(
+            SurfaceId::Fills,
+            SurfaceId::Current,
+            Some(&skia::Paint::default()),
+        );
         self.surfaces
-            .draw_into(SurfaceId::Shape, SurfaceId::Current, None);
+            .flush_and_submit(&mut self.gpu_state, SurfaceId::Strokes);
+        self.surfaces.draw_into(
+            SurfaceId::Strokes,
+            SurfaceId::Current,
+            Some(&skia::Paint::default()),
+        );
 
         self.surfaces
             .flush_and_submit(&mut self.gpu_state, SurfaceId::Current);
@@ -196,17 +208,17 @@ impl RenderState {
         self.surfaces
             .draw_into(SurfaceId::Overlay, SurfaceId::Current, None);
 
-        self.surfaces
-            .canvas(SurfaceId::Shadow)
-            .clear(skia::Color::TRANSPARENT);
-
-        self.surfaces
-            .canvas(SurfaceId::Overlay)
-            .clear(skia::Color::TRANSPARENT);
-
-        self.surfaces
-            .canvas(SurfaceId::Shape)
-            .clear(skia::Color::TRANSPARENT);
+        self.surfaces.apply_mut(
+            &[
+                SurfaceId::Shadow,
+                SurfaceId::Overlay,
+                SurfaceId::Fills,
+                SurfaceId::Strokes,
+            ],
+            |s| {
+                s.canvas().clear(skia::Color::TRANSPARENT);
+            },
+        );
     }
 
     pub fn invalidate_cache_if_needed(&mut self) {
@@ -221,22 +233,27 @@ impl RenderState {
         modifiers: Option<&Matrix>,
         clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
     ) {
-        self.surfaces.canvas(SurfaceId::Shape).save();
+        let surface_ids = &[SurfaceId::Fills, SurfaceId::Strokes];
+        self.surfaces.apply_mut(surface_ids, |s| {
+            s.canvas().save();
+        });
+
+        // set clipping
         if let Some((bounds, corners, transform)) = clip_bounds {
-            self.surfaces.canvas(SurfaceId::Shape).concat(&transform);
+            self.surfaces
+                .apply_mut(&[SurfaceId::Fills, SurfaceId::Strokes], |s| {
+                    s.canvas().concat(&transform);
+                });
+
             if let Some(corners) = corners {
                 let rrect = RRect::new_rect_radii(bounds, &corners);
-                self.surfaces.canvas(SurfaceId::Shape).clip_rrect(
-                    rrect,
-                    skia::ClipOp::Intersect,
-                    true,
-                );
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas().clip_rrect(rrect, skia::ClipOp::Intersect, true);
+                });
             } else {
-                self.surfaces.canvas(SurfaceId::Shape).clip_rect(
-                    bounds,
-                    skia::ClipOp::Intersect,
-                    true,
-                );
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas().clip_rect(bounds, skia::ClipOp::Intersect, true);
+                });
             }
 
             if self.options.is_debug_visible() {
@@ -245,13 +262,14 @@ impl RenderState {
                 paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
                 paint.set_stroke_width(4.);
                 self.surfaces
-                    .canvas(SurfaceId::Shape)
+                    .canvas(SurfaceId::Fills)
                     .draw_rect(bounds, &paint);
             }
 
-            self.surfaces
-                .canvas(SurfaceId::Shape)
-                .concat(&transform.invert().unwrap_or(Matrix::default()));
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas()
+                    .concat(&transform.invert().unwrap_or(Matrix::default()));
+            });
         }
 
         // Clone so we don't change the value in the global state
@@ -262,7 +280,6 @@ impl RenderState {
         }
 
         let center = shape.center();
-
         let mut matrix = shape.transform;
         matrix.post_translate(center);
         matrix.pre_translate(-center);
@@ -270,17 +287,17 @@ impl RenderState {
         match &shape.shape_type {
             Type::SVGRaw(sr) => {
                 if let Some(modifiers) = modifiers {
-                    self.surfaces.canvas(SurfaceId::Shape).concat(&modifiers);
+                    self.surfaces.canvas(SurfaceId::Fills).concat(&modifiers);
                 }
-                self.surfaces.canvas(SurfaceId::Shape).concat(&matrix);
+                self.surfaces.canvas(SurfaceId::Fills).concat(&matrix);
                 if let Some(svg) = shape.svg.as_ref() {
-                    svg.render(self.surfaces.canvas(SurfaceId::Shape))
+                    svg.render(self.surfaces.canvas(SurfaceId::Fills))
                 } else {
                     let font_manager = skia::FontMgr::from(self.font_provider.clone());
                     let dom_result = skia::svg::Dom::from_str(sr.content.to_string(), font_manager);
                     match dom_result {
                         Ok(dom) => {
-                            dom.render(self.surfaces.canvas(SurfaceId::Shape));
+                            dom.render(self.surfaces.canvas(SurfaceId::Fills));
                             shape.set_svg(dom);
                         }
                         Err(e) => {
@@ -290,7 +307,10 @@ impl RenderState {
                 }
             }
             _ => {
-                self.surfaces.canvas(SurfaceId::Shape).concat(&matrix);
+                self.surfaces
+                    .apply_mut(&[SurfaceId::Fills, SurfaceId::Strokes], |s| {
+                        s.canvas().concat(&matrix);
+                    });
 
                 for fill in shape.fills().rev() {
                     fills::render(self, &shape, fill);
@@ -319,7 +339,10 @@ impl RenderState {
         };
 
         self.apply_drawing_to_render_canvas();
-        self.surfaces.canvas(SurfaceId::Shape).restore();
+        self.surfaces
+            .apply_mut(&[SurfaceId::Fills, SurfaceId::Strokes], |s| {
+                s.canvas().restore();
+            });
     }
 
     pub fn start_render_loop(
@@ -328,20 +351,23 @@ impl RenderState {
         modifiers: &HashMap<Uuid, Matrix>,
         timestamp: i32,
     ) -> Result<(), String> {
+        let surface_ids = &[SurfaceId::Fills, SurfaceId::Strokes];
+
         if self.render_in_progress {
             if let Some(frame_id) = self.render_request_id {
                 self.cancel_animation_frame(frame_id);
             }
         }
         self.reset_canvas();
-        self.surfaces.canvas(SurfaceId::Shape).scale((
-            self.viewbox.zoom * self.options.dpr(),
-            self.viewbox.zoom * self.options.dpr(),
-        ));
-        self.surfaces
-            .canvas(SurfaceId::Shape)
-            .translate((self.viewbox.pan_x, self.viewbox.pan_y));
-        //
+        self.surfaces.apply_mut(surface_ids, |s| {
+            s.canvas().scale((
+                self.viewbox.zoom * self.options.dpr(),
+                self.viewbox.zoom * self.options.dpr(),
+            ));
+            s.canvas()
+                .translate((self.viewbox.pan_x, self.viewbox.pan_y));
+        });
+
         self.pending_nodes = vec![NodeRenderState {
             id: Uuid::nil(),
             visited_children: false,
@@ -430,7 +456,8 @@ impl RenderState {
         let image = &cached.image;
         let paint = skia::Paint::default();
         self.surfaces.canvas(SurfaceId::Target).save();
-        self.surfaces.canvas(SurfaceId::Shape).save();
+        self.surfaces.canvas(SurfaceId::Fills).save();
+        self.surfaces.canvas(SurfaceId::Strokes).save();
 
         let navigate_zoom = self.viewbox.zoom / cached.viewbox.zoom;
         let navigate_x = cached.viewbox.zoom * (self.viewbox.pan_x - cached.viewbox.pan_x);
@@ -451,7 +478,8 @@ impl RenderState {
             .draw_image(image, (0, 0), Some(&paint));
 
         self.surfaces.canvas(SurfaceId::Target).restore();
-        self.surfaces.canvas(SurfaceId::Shape).restore();
+        self.surfaces.canvas(SurfaceId::Fills).restore();
+        self.surfaces.canvas(SurfaceId::Strokes).restore();
 
         self.flush();
 

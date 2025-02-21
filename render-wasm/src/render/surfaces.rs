@@ -1,10 +1,12 @@
 use super::gpu_state::GpuState;
 use skia_safe as skia;
 
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {
     Target,
     Current,
-    Shape,
+    Fills,
+    Strokes,
     Shadow,
     Overlay,
     Debug,
@@ -15,8 +17,10 @@ pub struct Surfaces {
     target: skia::Surface,
     // keeps the current render
     current: skia::Surface,
-    // keeps the current shape
-    shape: skia::Surface,
+    // keeps the current shape's fills
+    shape_fills: skia::Surface,
+    // keeps the current shape's strokes
+    shape_strokes: skia::Surface,
     // used for rendering shadows
     shadow: skia::Surface,
     // for drawing the things that are over shadows.
@@ -37,7 +41,8 @@ impl Surfaces {
         let current = target.new_surface_with_dimensions((width, height)).unwrap();
         let shadow = target.new_surface_with_dimensions((width, height)).unwrap();
         let overlay = target.new_surface_with_dimensions((width, height)).unwrap();
-        let shape = target.new_surface_with_dimensions((width, height)).unwrap();
+        let shape_fills = target.new_surface_with_dimensions((width, height)).unwrap();
+        let shape_strokes = target.new_surface_with_dimensions((width, height)).unwrap();
         let debug = target.new_surface_with_dimensions((width, height)).unwrap();
 
         Surfaces {
@@ -45,7 +50,8 @@ impl Surfaces {
             current,
             shadow,
             overlay,
-            shape,
+            shape_fills,
+            shape_strokes,
             debug,
             sampling_options,
         }
@@ -76,13 +82,21 @@ impl Surfaces {
             .draw(self.canvas(to), (0.0, 0.0), sampling_options, paint);
     }
 
+    pub fn apply_mut(&mut self, ids: &[SurfaceId], mut f: impl FnMut(&mut skia::Surface) -> ()) {
+        for id in ids {
+            let surface = self.get_mut(*id);
+            f(surface);
+        }
+    }
+
     fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
         match id {
             SurfaceId::Target => &mut self.target,
             SurfaceId::Current => &mut self.current,
             SurfaceId::Shadow => &mut self.shadow,
             SurfaceId::Overlay => &mut self.overlay,
-            SurfaceId::Shape => &mut self.shape,
+            SurfaceId::Fills => &mut self.shape_fills,
+            SurfaceId::Strokes => &mut self.shape_strokes,
             SurfaceId::Debug => &mut self.debug,
         }
     }
@@ -93,7 +107,7 @@ impl Surfaces {
         self.current = self.target.new_surface_with_dimensions(dim).unwrap();
         self.overlay = self.target.new_surface_with_dimensions(dim).unwrap();
         self.shadow = self.target.new_surface_with_dimensions(dim).unwrap();
-        self.shape = self.target.new_surface_with_dimensions(dim).unwrap();
+        self.shape_fills = self.target.new_surface_with_dimensions(dim).unwrap();
         self.debug = self.target.new_surface_with_dimensions(dim).unwrap();
     }
 }

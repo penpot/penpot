@@ -64,7 +64,9 @@ pub fn render_debug_shape(render_state: &mut RenderState, element: &Shape, inter
 
 pub fn render(render_state: &mut RenderState) {
     render_debug_view(render_state);
-    render_state
-        .surfaces
-        .draw_into(SurfaceId::Debug, SurfaceId::Current, None);
+    render_state.surfaces.draw_into(
+        SurfaceId::Debug,
+        SurfaceId::Current,
+        Some(&skia::Paint::default()),
+    );
 }

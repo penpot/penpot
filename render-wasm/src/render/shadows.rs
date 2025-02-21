@@ -7,11 +7,16 @@ pub fn render_drop_shadow(render_state: &mut RenderState, shadow: &Shadow, scale
     let shadow_paint = shadow.to_paint(scale);
     render_state
         .surfaces
-        .draw_into(SurfaceId::Shape, SurfaceId::Shadow, Some(&shadow_paint));
-
+        .draw_into(SurfaceId::Fills, SurfaceId::Shadow, Some(&shadow_paint));
     render_state
         .surfaces
-        .draw_into(SurfaceId::Shadow, SurfaceId::Current, None);
+        .draw_into(SurfaceId::Strokes, SurfaceId::Shadow, Some(&shadow_paint));
+
+    render_state.surfaces.draw_into(
+        SurfaceId::Shadow,
+        SurfaceId::Current,
+        Some(&skia::Paint::default()),
+    );
 
     render_state
         .surfaces
@@ -24,7 +29,7 @@ pub fn render_inner_shadow(render_state: &mut RenderState, shadow: &Shadow, scal
 
     render_state
         .surfaces
-        .draw_into(SurfaceId::Shape, SurfaceId::Shadow, Some(&shadow_paint)); // , ShadowPaint
+        .draw_into(SurfaceId::Fills, SurfaceId::Shadow, Some(&shadow_paint));
 
     render_state
         .surfaces
