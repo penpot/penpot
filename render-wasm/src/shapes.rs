@@ -1,4 +1,4 @@
-use skia_safe::{self as skia, Matrix, Point, Rect};
+use skia_safe::{self as skia};
 
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -7,10 +7,14 @@ use crate::render::BlendMode;
 
 mod blurs;
 mod bools;
+mod corners;
 mod fills;
+mod frames;
 mod groups;
+mod layouts;
 mod modifiers;
 mod paths;
+mod rects;
 mod shadows;
 mod strokes;
 mod svgraw;
@@ -18,58 +22,84 @@ mod transform;
 
 pub use blurs::*;
 pub use bools::*;
+pub use corners::*;
 pub use fills::*;
+pub use frames::*;
 pub use groups::*;
+pub use layouts::*;
 pub use modifiers::*;
 pub use paths::*;
+pub use rects::*;
 pub use shadows::*;
 pub use strokes::*;
 pub use svgraw::*;
 pub use transform::*;
 
-use crate::math::Bounds;
-
-pub type CornerRadius = Point;
-pub type Corners = [CornerRadius; 4];
+use crate::math;
+use crate::math::{Bounds, Matrix, Point};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
-    Frame,
-    Group,
-    Bool,
-    Rect,
-    Path,
+    Frame(Frame),
+    Group(Group),
+    Bool(Bool),
+    Rect(Rect),
+    Path(Path),
     Text,
     Circle,
-    SvgRaw,
-    Image,
+    SVGRaw(SVGRaw),
 }
 
 impl Type {
     pub fn from(value: u8) -> Self {
         match value {
-            0 => Type::Frame,
-            1 => Type::Group,
-            2 => Type::Bool,
-            3 => Type::Rect,
-            4 => Type::Path,
+            0 => Type::Frame(Frame::default()),
+            1 => Type::Group(Group::default()),
+            2 => Type::Bool(Bool::default()),
+            3 => Type::Rect(Rect::default()),
+            4 => Type::Path(Path::default()),
             5 => Type::Text,
             6 => Type::Circle,
-            7 => Type::SvgRaw,
-            8 => Type::Image,
-            _ => Type::Rect,
+            7 => Type::SVGRaw(SVGRaw::default()),
+            _ => Type::Rect(Rect::default()),
         }
     }
-}
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Kind {
-    Rect(Rect, Option<Corners>),
-    Circle(Rect),
-    Path(Path),
-    Bool(BoolType, Path),
-    SVGRaw(SVGRaw),
-    Group(Group),
+    pub fn corners(&self) -> Option<Corners> {
+        match self {
+            Type::Rect(Rect { corners, .. }) => *corners,
+            Type::Frame(Frame { corners, .. }) => *corners,
+            _ => None,
+        }
+    }
+
+    pub fn set_corners(&mut self, corners: Corners) {
+        match self {
+            Type::Rect(data) => {
+                data.corners = Some(corners);
+            }
+            Type::Frame(data) => {
+                data.corners = Some(corners);
+            }
+            _ => {}
+        }
+    }
+
+    pub fn path(&self) -> Option<&Path> {
+        match self {
+            Type::Path(path) => Some(path),
+            Type::Bool(Bool { path, .. }) => Some(path),
+            _ => None,
+        }
+    }
+
+    pub fn path_mut(&mut self) -> Option<&mut Path> {
+        match self {
+            Type::Path(path) => Some(path),
+            Type::Bool(Bool { path, .. }) => Some(path),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Copy)]
@@ -124,8 +154,7 @@ pub struct Shape {
     pub id: Uuid,
     pub shape_type: Type,
     pub children: Vec<Uuid>,
-    pub kind: Kind,
-    pub selrect: Rect,
+    pub selrect: math::Rect,
     pub transform: Matrix,
     pub rotation: f32,
     pub constraint_h: Option<ConstraintH>,
@@ -139,17 +168,17 @@ pub struct Shape {
     pub hidden: bool,
     pub svg: Option<skia::svg::Dom>,
     pub svg_attrs: HashMap<String, String>,
-    shadows: Vec<Shadow>,
+    pub shadows: Vec<Shadow>,
+    pub layout_item: Option<LayoutItem>,
 }
 
 impl Shape {
     pub fn new(id: Uuid) -> Self {
         Self {
             id,
-            shape_type: Type::Rect,
+            shape_type: Type::Rect(Rect::default()),
             children: Vec::<Uuid>::new(),
-            kind: Kind::Rect(Rect::new_empty(), None),
-            selrect: Rect::new_empty(),
+            selrect: math::Rect::new_empty(),
             transform: Matrix::default(),
             rotation: 0.,
             constraint_h: None,
@@ -164,6 +193,7 @@ impl Shape {
             svg: None,
             svg_attrs: HashMap::new(),
             shadows: vec![],
+            layout_item: None,
         }
     }
 
@@ -172,28 +202,20 @@ impl Shape {
     }
 
     pub fn is_frame(&self) -> bool {
-        self.shape_type == Type::Frame
+        matches!(self.shape_type, Type::Frame(_))
     }
 
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
         self.selrect.set_ltrb(left, top, right, bottom);
-        match self.kind {
-            Kind::Rect(_, corners) => {
-                self.kind = Kind::Rect(self.selrect.to_owned(), corners);
-            }
-            Kind::Circle(_) => {
-                self.kind = Kind::Circle(self.selrect.to_owned());
+    }
+
+    pub fn set_masked(&mut self, masked: bool) {
+        match &mut self.shape_type {
+            Type::Group(data) => {
+                data.masked = masked;
             }
             _ => {}
-        };
-    }
-
-    pub fn set_kind(&mut self, kind: Kind) {
-        self.kind = kind;
-    }
-
-    pub fn kind(&self) -> Kind {
-        self.kind.clone()
+        }
     }
 
     pub fn set_clip(&mut self, value: bool) {
@@ -230,6 +252,78 @@ impl Shape {
 
     pub fn set_hidden(&mut self, value: bool) {
         self.hidden = value;
+    }
+
+    pub fn set_flex_layout_child_data(
+        &mut self,
+        margin_top: f32,
+        margin_right: f32,
+        margin_bottom: f32,
+        margin_left: f32,
+        h_sizing: Sizing,
+        v_sizing: Sizing,
+        max_h: Option<f32>,
+        min_h: Option<f32>,
+        max_w: Option<f32>,
+        min_w: Option<f32>,
+        is_absolute: bool,
+        z_index: i32,
+    ) {
+        self.layout_item = Some(LayoutItem {
+            margin_top,
+            margin_right,
+            margin_bottom,
+            margin_left,
+            h_sizing,
+            v_sizing,
+            max_h,
+            min_h,
+            max_w,
+            min_w,
+            is_absolute,
+            z_index,
+        });
+    }
+
+    pub fn set_flex_layout_data(
+        &mut self,
+        direction: Direction,
+        row_gap: f32,
+        column_gap: f32,
+        align_items: AlignItems,
+        align_content: AlignContent,
+        justify_items: JustifyItems,
+        justify_content: JustifyContent,
+        wrap_type: WrapType,
+        padding_top: f32,
+        padding_right: f32,
+        padding_bottom: f32,
+        padding_left: f32,
+    ) {
+        match &mut self.shape_type {
+            Type::Frame(data) => {
+                let layout_data = LayoutData {
+                    direction,
+                    align_items,
+                    align_content,
+                    justify_items,
+                    justify_content,
+                    padding_top,
+                    padding_right,
+                    padding_bottom,
+                    padding_left,
+                };
+
+                let flex_data = FlexData {
+                    row_gap,
+                    column_gap,
+                    wrap_type,
+                };
+
+                data.layout = Some(Layout::FlexLayout(layout_data, flex_data));
+            }
+            _ => {}
+        }
     }
 
     pub fn set_blur(&mut self, blur_type: u8, hidden: bool, value: f32) {
@@ -306,31 +400,34 @@ impl Shape {
     }
 
     pub fn set_path_segments(&mut self, buffer: Vec<RawPathData>) -> Result<(), String> {
-        let p = Path::try_from(buffer)?;
-        let kind = match &self.kind {
-            Kind::Bool(bool_type, _) => Kind::Bool(*bool_type, p),
-            _ => Kind::Path(p),
-        };
-        self.kind = kind;
+        let path = Path::try_from(buffer)?;
 
+        match &mut self.shape_type {
+            Type::Bool(Bool { bool_type, .. }) => {
+                self.shape_type = Type::Bool(Bool {
+                    bool_type: *bool_type,
+                    path,
+                });
+            }
+            Type::Path(_) => {
+                self.shape_type = Type::Path(path);
+            }
+            _ => {}
+        };
         Ok(())
     }
 
     pub fn set_path_attr(&mut self, name: String, value: String) {
-        match &mut self.kind {
-            Kind::Path(_) => {
+        match self.shape_type {
+            Type::Path(_) => {
                 self.set_svg_attr(name, value);
             }
-            Kind::Rect(_, _)
-            | Kind::Circle(_)
-            | Kind::SVGRaw(_)
-            | Kind::Bool(_, _)
-            | Kind::Group(_) => unreachable!("This shape should have path attrs"),
+            _ => unreachable!("This shape should have path attrs"),
         };
     }
 
     pub fn set_svg_raw_content(&mut self, content: String) -> Result<(), String> {
-        self.kind = Kind::SVGRaw(SVGRaw::from_content(content));
+        self.shape_type = Type::SVGRaw(SVGRaw::from_content(content));
         Ok(())
     }
 
@@ -339,37 +436,21 @@ impl Shape {
     }
 
     pub fn set_bool_type(&mut self, bool_type: BoolType) {
-        let kind = match &self.kind {
-            Kind::Bool(_, path) => Kind::Bool(bool_type, path.clone()),
-            _ => Kind::Bool(bool_type, Path::default()),
+        self.shape_type = match &self.shape_type {
+            Type::Bool(Bool { path, .. }) => Type::Bool(Bool {
+                bool_type,
+                path: path.clone(),
+            }),
+            _ => Type::Bool(Bool {
+                bool_type,
+                path: Path::default(),
+            }),
         };
-
-        self.kind = kind;
     }
 
     pub fn set_corners(&mut self, raw_corners: (f32, f32, f32, f32)) {
-        match self.kind {
-            Kind::Rect(_, _) => {
-                let (r1, r2, r3, r4) = raw_corners;
-                let are_straight_corners = r1.abs() <= f32::EPSILON
-                    && r2.abs() <= f32::EPSILON
-                    && r3.abs() <= f32::EPSILON
-                    && r4.abs() <= f32::EPSILON;
-
-                let corners = if are_straight_corners {
-                    None
-                } else {
-                    Some([
-                        (r1, r1).into(),
-                        (r2, r2).into(),
-                        (r3, r3).into(),
-                        (r4, r4).into(),
-                    ])
-                };
-
-                self.kind = Kind::Rect(self.selrect, corners);
-            }
-            _ => {}
+        if let Some(corners) = make_corners(raw_corners) {
+            self.shape_type.set_corners(corners);
         }
     }
 
@@ -415,7 +496,7 @@ impl Shape {
         bounds
     }
 
-    pub fn selrect(&self) -> Rect {
+    pub fn selrect(&self) -> math::Rect {
         self.selrect
     }
 
@@ -432,9 +513,9 @@ impl Shape {
     }
 
     pub fn children_ids(&self) -> Vec<Uuid> {
-        if let Kind::Bool(_, _) = self.kind {
+        if let Type::Bool(_) = self.shape_type {
             vec![]
-        } else if let Kind::Group(group) = self.kind {
+        } else if let Type::Group(group) = self.shape_type {
             if group.masked {
                 self.children[1..self.children.len()].to_vec()
             } else {
@@ -462,7 +543,7 @@ impl Shape {
     }
 
     pub fn is_recursive(&self) -> bool {
-        !matches!(self.kind, Kind::SVGRaw(_))
+        !matches!(self.shape_type, Type::SVGRaw(_))
     }
 
     pub fn add_shadow(&mut self, shadow: Shadow) {
@@ -486,14 +567,13 @@ impl Shape {
     }
 
     pub fn to_path_transform(&self) -> Option<Matrix> {
-        match self.kind {
-            Kind::Path(_) | Kind::Bool(_, _) => {
+        match self.shape_type {
+            Type::Path(_) | Type::Bool(_) => {
                 let center = self.center();
                 let mut matrix = Matrix::new_identity();
                 matrix.pre_translate(center);
                 matrix.pre_concat(&self.transform.invert()?);
                 matrix.pre_translate(-center);
-
                 Some(matrix)
             }
             _ => None,
@@ -510,7 +590,7 @@ impl Shape {
         let width = bounds.width();
         let height = bounds.height();
 
-        self.selrect = Rect::from_xywh(
+        self.selrect = math::Rect::from_xywh(
             center.x - width / 2.0,
             center.y - height / 2.0,
             width,
@@ -519,28 +599,12 @@ impl Shape {
     }
 
     pub fn apply_transform(&mut self, transform: &Matrix) {
-        match &self.kind {
-            Kind::Rect(_, c) => {
-                let c = c.clone();
-                self.transform_selrect(&transform);
-                self.kind = Kind::Rect(self.selrect, c);
-            }
-            Kind::Circle(_) => {
-                self.transform_selrect(&transform);
-                self.kind = Kind::Circle(self.selrect);
-            }
-            Kind::Path(path) => {
-                let mut path = path.clone();
-                self.transform_selrect(&transform);
-                path.transform(&transform);
-                self.kind = Kind::Path(path);
-            }
-            Kind::Bool(bool_type, path) => {
-                let bool_type = *bool_type;
-                let mut path = path.clone();
-                self.transform_selrect(&transform);
-                path.transform(&transform);
-                self.kind = Kind::Bool(bool_type, path);
+        self.transform_selrect(&transform);
+        match &mut self.shape_type {
+            shape_type @ (Type::Path(_) | Type::Bool(_)) => {
+                if let Some(path) = shape_type.path_mut() {
+                    path.transform(&transform);
+                }
             }
             _ => {}
         }
@@ -565,19 +629,45 @@ mod tests {
     }
 
     #[test]
+    fn test_set_corners() {
+        let mut shape = any_shape();
+        shape.set_corners((10.0, 20.0, 30.0, 40.0));
+        if let Type::Rect(Rect { corners, .. }) = shape.shape_type {
+            assert_eq!(
+                corners,
+                Some([
+                    Point { x: 10.0, y: 10.0 },
+                    Point { x: 20.0, y: 20.0 },
+                    Point { x: 30.0, y: 30.0 },
+                    Point { x: 40.0, y: 40.0 }
+                ])
+            );
+        } else {
+            assert!(false);
+        }
+    }
+
+    #[test]
+    fn test_set_masked() {
+        let mut shape = any_shape();
+        shape.set_shape_type(Type::Group(Group { masked: false }));
+        shape.set_masked(true);
+
+        if let Type::Group(Group { masked, .. }) = shape.shape_type {
+            assert_eq!(masked, true);
+        } else {
+            assert!(false);
+        }
+    }
+
+    #[test]
     fn test_apply_transform() {
         let mut shape = Shape::new(Uuid::new_v4());
-        shape.set_shape_type(Type::Rect);
+        shape.set_shape_type(Type::Rect(Rect::default()));
         shape.set_selrect(0.0, 10.0, 10.0, 0.0);
-        shape.apply_transform(Matrix::scale((2.0, 2.0)));
+        shape.apply_transform(&Matrix::scale((2.0, 2.0)));
 
-        match shape.kind {
-            Kind::Rect(r, _) => {
-                //println!(">>>{r:?}");
-                assert_eq!(r.width(), 20.0);
-                assert_eq!(r.height(), 20.0);
-            }
-            _ => assert!(false),
-        }
+        assert_eq!(shape.selrect().width(), 20.0);
+        assert_eq!(shape.selrect().height(), 20.0);
     }
 }

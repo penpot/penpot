@@ -15,7 +15,7 @@ mod shadows;
 mod strokes;
 mod surfaces;
 
-use crate::shapes::{Corners, Kind, Shape};
+use crate::shapes::{Corners, Shape, Type};
 use cache::CachedSurfaceImage;
 use gpu_state::GpuState;
 use options::RenderOptions;
@@ -289,8 +289,8 @@ impl RenderState {
         matrix.post_translate(center);
         matrix.pre_translate(-center);
 
-        match &shape.kind {
-            Kind::SVGRaw(sr) => {
+        match &shape.shape_type {
+            Type::SVGRaw(sr) => {
                 if let Some(modifiers) = modifiers {
                     self.surfaces.shape.canvas().concat(&modifiers);
                 }
@@ -490,8 +490,8 @@ impl RenderState {
         // the content and the second one rendering the mask so we need to do
         // an extra save_layer to keep all the masked group separate from other
         // already drawn elements.
-        match element.kind {
-            Kind::Group(group) => {
+        match element.shape_type {
+            Type::Group(group) => {
                 if group.masked {
                     let paint = skia::Paint::default();
                     let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
@@ -528,8 +528,8 @@ impl RenderState {
             // Because masked groups needs two rendering passes (first drawing
             // the content and then drawing the mask), we need to do an
             // extra restore.
-            match element.kind {
-                Kind::Group(group) => {
+            match element.shape_type {
+                Type::Group(group) => {
                     if group.masked {
                         self.surfaces.current.canvas().restore();
                     }
@@ -567,8 +567,8 @@ impl RenderState {
             let render_complete = self.viewbox.area.contains(element.selrect());
             if visited_children {
                 if !visited_mask {
-                    match element.kind {
-                        Kind::Group(group) => {
+                    match element.shape_type {
+                        Type::Group(group) => {
                             // When we're dealing with masked groups we need to
                             // do a separate extra step to draw the mask (the last
                             // element of a masked group) and blend (using
@@ -637,8 +637,9 @@ impl RenderState {
                         if let Some(modifiers) = modifiers.get(&element.id) {
                             transform.post_concat(&modifiers);
                         }
-                        let corners = match element.kind {
-                            Kind::Rect(_, corners) => corners,
+                        let corners = match &element.shape_type {
+                            Type::Rect(data) => data.corners,
+                            Type::Frame(data) => data.corners,
                             _ => None,
                         };
                         (bounds, corners, transform)

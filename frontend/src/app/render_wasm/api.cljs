@@ -12,6 +12,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.math :as mth]
    [app.common.svg.path :as path]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.refs :as refs]
@@ -120,23 +121,12 @@
     :image   8))
 
 (defn set-shape-type
-  [type {:keys [masked]}]
-  (h/call internal-module "_set_shape_type" (translate-shape-type type))
-  (cond
-    (= type :circle)
-    (h/call internal-module "_set_shape_kind_circle")
+  [type]
+  (h/call internal-module "_set_shape_type" (translate-shape-type type)))
 
-    (= type :path)
-    (h/call internal-module "_set_shape_kind_path")
-
-    (= type :bool)
-    (h/call internal-module "_set_shape_kind_bool")
-
-    (= type :group)
-    (h/call internal-module "_set_shape_kind_group" masked)
-
-    :else
-    (h/call internal-module "_set_shape_kind_rect")))
+(defn set-masked
+  [masked]
+  (h/call internal-module "_set_shape_masked_group" masked))
 
 (defn set-shape-selrect
   [selrect]
@@ -509,6 +499,139 @@
     (h/call internal-module "_set_shape_corners" r1 r2 r3 r4)))
 
 
+(defn translate-layout-flex-dir
+  [flex-dir]
+  (case flex-dir
+    :row    0
+    :column 1))
+
+(defn translate-layout-align-items
+  [align-items]
+  (case align-items
+    :start   0
+    :end     1
+    :center  2
+    :stretch 3))
+
+(defn translate-layout-align-content
+  [align-content]
+  (case align-content
+    :start         0
+    :end           1
+    :center        2
+    :space-between 3
+    :space-around  4
+    :space-evenly  5
+    :stretch       6))
+
+(defn translate-layout-justify-items
+  [justify-items]
+  (case justify-items
+    :start   0
+    :end     1
+    :center  2
+    :stretch 3))
+
+(defn translate-layout-justify-content
+  [justify-content]
+  (case justify-content
+    :start         0
+    :end           1
+    :center        2
+    :space-between 3
+    :space-around  4
+    :space-evenly  5
+    :stretch       6))
+
+(defn translate-layout-wrap-type
+  [wrap-type]
+  (case wrap-type
+    :wrap   0
+    :nowrap 1))
+
+(defn set-flex-layout
+  [shape]
+  (let [dir (-> (or (dm/get-prop shape :layout-flex-dir) :row) translate-layout-flex-dir)
+        gap (dm/get-prop shape :layout-gap)
+        row-gap (or (dm/get-prop gap :row-gap) 0)
+        column-gap (or (dm/get-prop gap :column-gap) 0)
+
+        align-items (-> (or (dm/get-prop shape :layout-align-items) :start) translate-layout-align-items)
+        align-content (-> (or (dm/get-prop shape :layout-align-content) :stretch) translate-layout-align-content)
+        justify-items (-> (or (dm/get-prop shape :layout-justify-items) :start) translate-layout-justify-items)
+        justify-content (-> (or (dm/get-prop shape :layout-justify-content) :stretch) translate-layout-justify-content)
+        wrap-type (-> (or (dm/get-prop shape :layout-wrap-type) :nowrap) translate-layout-wrap-type)
+
+        padding (dm/get-prop shape :layout-padding)
+        padding-top (or (dm/get-prop padding :p1) 0)
+        padding-right (or (dm/get-prop padding :p2) 0)
+        padding-bottom (or (dm/get-prop padding :p3) 0)
+        padding-left (or (dm/get-prop padding :p4) 0)]
+    (h/call internal-module
+            "_set_flex_layout_data"
+            dir
+            row-gap
+            column-gap
+            align-items
+            align-content
+            justify-items
+            justify-content
+            wrap-type
+            padding-top
+            padding-right
+            padding-bottom
+            padding-left)))
+
+(defn set-grid-layout
+  [_shape])
+
+(defn translate-layout-sizing
+  [value]
+  (case value
+    :fill 0
+    :fix  1
+    :auto 2))
+
+(defn set-layout-child
+  [shape]
+  (let [margins (dm/get-prop shape :layout-item-margin)
+        margin-top (or (dm/get-prop margins :m1) 0)
+        margin-right (or (dm/get-prop margins :m2) 0)
+        margin-bottom (or (dm/get-prop margins :m3) 0)
+        margin-left (or (dm/get-prop margins :m4) 0)
+
+        h-sizing (-> (dm/get-prop shape :layout-item-h-sizing) (or :auto) translate-layout-sizing)
+        v-sizing (-> (dm/get-prop shape :layout-item-v-sizing) (or :auto) translate-layout-sizing)
+
+        max-h (dm/get-prop shape :layout-item-max-h)
+        has-max-h (some? max-h)
+        min-h (dm/get-prop shape :layout-item-min-h)
+        has-min-h (some? min-h)
+        max-w (dm/get-prop shape :layout-item-max-w)
+        has-max-w (some? max-w)
+        min-w (dm/get-prop shape :layout-item-min-w)
+        has-min-w (some? min-w)
+        is-absolute (boolean (dm/get-prop shape :layout-item-absolute))
+        z-index (-> (dm/get-prop shape :layout-item-z-index) (or 0))]
+    (h/call internal-module
+            "_set_layout_child_data"
+            margin-top
+            margin-right
+            margin-bottom
+            margin-left
+            h-sizing
+            v-sizing
+            has-max-h
+            (or max-h 0)
+            has-min-h
+            (or min-h 0)
+            has-max-w
+            (or max-w 0)
+            has-min-w
+            (or min-w 0)
+            is-absolute
+            z-index)))
+
 (defn- translate-shadow-style
   [style]
   (case style
@@ -581,7 +704,7 @@
                   shadows      (dm/get-prop shape :shadow)]
 
               (use-shape id)
-              (set-shape-type type {:masked masked})
+              (set-shape-type type)
               (set-shape-clip-content clip-content)
               (set-shape-selrect selrect)
               (set-constraints-h constraint-h)
@@ -592,6 +715,8 @@
               (set-shape-opacity opacity)
               (set-shape-hidden hidden)
               (set-shape-children children)
+              (when (and (= type :group) masked)
+                (set-masked masked))
               (when (some? blur)
                 (set-shape-blur blur))
               (when (and (some? content) (= type :path))
@@ -602,6 +727,16 @@
               (when (some? bool-content) (set-shape-bool-content bool-content))
               (when (some? corners) (set-shape-corners corners))
               (when (some? shadows) (set-shape-shadows shadows))
+
+              (when (ctl/any-layout-immediate-child? objects shape)
+                (set-layout-child shape))
+
+              (when (ctl/flex-layout? shape)
+                (set-flex-layout shape))
+
+              (when (ctl/grid-layout? shape)
+                (set-grid-layout shape))
+
               (let [pending' (concat (set-shape-fills fills) (set-shape-strokes strokes))]
                 (recur (inc index) (into pending pending'))))
             pending))]

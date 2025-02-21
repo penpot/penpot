@@ -1,4 +1,9 @@
-use skia_safe::{Matrix, Point, Vector};
+use skia_safe as skia;
+
+pub type Rect = skia::Rect;
+pub type Matrix = skia::Matrix;
+pub type Vector = skia::Vector;
+pub type Point = skia::Point;
 
 pub trait VectorExt {
     fn new_points(a: &Point, b: &Point) -> Vector;
