@@ -75,7 +75,7 @@
           (update :data blob/decode)
           (update :data feat.fdata/process-pointers deref)
           (update :data feat.fdata/process-objects (partial into {}))
-          (update :data assoc ::id file-id)
+          (update :data assoc :id file-id)
           (update :data blob/encode)))))
 
 (defn- generate-snapshot-label
