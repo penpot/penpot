@@ -221,8 +221,7 @@
                              (aget buffer 0)
                              (aget buffer 1)
                              (aget buffer 2)
-                             (aget buffer 3)
-                             image-size)
+                             (aget buffer 3))
                      true))))))
 
 (defn set-shape-fills

@@ -348,24 +348,29 @@ impl Shape {
     }
 
     pub fn set_corners(&mut self, raw_corners: (f32, f32, f32, f32)) {
-        let (r1, r2, r3, r4) = raw_corners;
-        let are_straight_corners = r1.abs() <= f32::EPSILON
-            && r2.abs() <= f32::EPSILON
-            && r3.abs() <= f32::EPSILON
-            && r4.abs() <= f32::EPSILON;
+        match self.kind {
+            Kind::Rect(_, _) => {
+                let (r1, r2, r3, r4) = raw_corners;
+                let are_straight_corners = r1.abs() <= f32::EPSILON
+                    && r2.abs() <= f32::EPSILON
+                    && r3.abs() <= f32::EPSILON
+                    && r4.abs() <= f32::EPSILON;
 
-        let corners = if are_straight_corners {
-            None
-        } else {
-            Some([
-                (r1, r1).into(),
-                (r2, r2).into(),
-                (r3, r3).into(),
-                (r4, r4).into(),
-            ])
-        };
+                let corners = if are_straight_corners {
+                    None
+                } else {
+                    Some([
+                        (r1, r1).into(),
+                        (r2, r2).into(),
+                        (r3, r3).into(),
+                        (r4, r4).into(),
+                    ])
+                };
 
-        self.kind = Kind::Rect(self.selrect, corners);
+                self.kind = Kind::Rect(self.selrect, corners);
+            }
+            _ => {}
+        }
     }
 
     pub fn set_svg(&mut self, svg: skia::svg::Dom) {
@@ -494,6 +499,52 @@ impl Shape {
             _ => None,
         }
     }
+
+    fn transform_selrect(&mut self, transform: &Matrix) {
+        let mut center = self.selrect.center();
+        center = transform.map_point(center);
+
+        let bounds = self.bounds().transform(&transform);
+        self.transform = bounds.transform_matrix().unwrap_or(Matrix::default());
+
+        let width = bounds.width();
+        let height = bounds.height();
+
+        self.selrect = Rect::from_xywh(
+            center.x - width / 2.0,
+            center.y - height / 2.0,
+            width,
+            height,
+        );
+    }
+
+    pub fn apply_transform(&mut self, transform: &Matrix) {
+        match &self.kind {
+            Kind::Rect(_, c) => {
+                let c = c.clone();
+                self.transform_selrect(&transform);
+                self.kind = Kind::Rect(self.selrect, c);
+            }
+            Kind::Circle(_) => {
+                self.transform_selrect(&transform);
+                self.kind = Kind::Circle(self.selrect);
+            }
+            Kind::Path(path) => {
+                let mut path = path.clone();
+                self.transform_selrect(&transform);
+                path.transform(&transform);
+                self.kind = Kind::Path(path);
+            }
+            Kind::Bool(bool_type, path) => {
+                let bool_type = *bool_type;
+                let mut path = path.clone();
+                self.transform_selrect(&transform);
+                path.transform(&transform);
+                self.kind = Kind::Bool(bool_type, path);
+            }
+            _ => {}
+        }
+    }
 }
 
 #[cfg(test)]
@@ -511,5 +562,22 @@ mod tests {
 
         shape.add_fill(Fill::Solid(Color::TRANSPARENT));
         assert_eq!(shape.fills.get(0), Some(&Fill::Solid(Color::TRANSPARENT)))
+    }
+
+    #[test]
+    fn test_apply_transform() {
+        let mut shape = Shape::new(Uuid::new_v4());
+        shape.set_shape_type(Type::Rect);
+        shape.set_selrect(0.0, 10.0, 10.0, 0.0);
+        shape.apply_transform(Matrix::scale((2.0, 2.0)));
+
+        match shape.kind {
+            Kind::Rect(r, _) => {
+                //println!(">>>{r:?}");
+                assert_eq!(r.width(), 20.0);
+                assert_eq!(r.height(), 20.0);
+            }
+            _ => assert!(false),
+        }
     }
 }

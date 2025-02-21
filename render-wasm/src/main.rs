@@ -332,21 +332,19 @@ pub extern "C" fn store_font(family_name_size: u32, font_size: u32) {
 }
 
 #[no_mangle]
-pub extern "C" fn store_image(a: u32, b: u32, c: u32, d: u32, size: u32) {
+pub extern "C" fn store_image(a: u32, b: u32, c: u32, d: u32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     let id = uuid_from_u32_quartet(a, b, c, d);
+    let image_bytes = mem::bytes();
 
-    unsafe {
-        let image_bytes =
-            Vec::<u8>::from_raw_parts(mem::buffer_ptr(), size as usize, size as usize);
-        match state.render_state().add_image(id, &image_bytes) {
-            Err(msg) => {
-                eprintln!("{}", msg);
-            }
-            _ => {}
+    match state.render_state().add_image(id, &image_bytes) {
+        Err(msg) => {
+            eprintln!("{}", msg);
         }
-        mem::free_bytes();
+        _ => {}
     }
+
+    mem::free_bytes();
 }
 
 #[no_mangle]
