@@ -969,7 +969,7 @@
        (let [objects   (dsh/lookup-page-objects state)
              selected  (or ids (dsh/lookup-selected state {:omit-blocked? true}))
              shapes    (->> selected
-                            (map #(get objects %))
+                            (map (d/getf objects))
                             (remove ctk/is-variant-container?))
              selected  (->> shapes (map :id))
              selrect   (gsh/shapes->rect shapes)

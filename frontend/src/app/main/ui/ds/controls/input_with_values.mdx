@@ -13,7 +13,7 @@ The `input-with-values*` acts as an input with an addition of a series of values
 ## Technical notes
 
 * You need to pass the mandatory string properties `name` and `values`
-* You can pass a function property `on-blur` that will be called with the new value when the component lost focus (including when the user press enter or esc)
+* You can pass a function property `on-blur` that will be called with the blur event when the component lost focus (including when the user press enter or esc)
 
 ```clj
 [:> input-with-values*

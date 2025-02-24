@@ -100,10 +100,8 @@
              shapes (->> ordered-indexes
                          (map (d/getf objects))
                          (remove cph/frame-shape?)
-                         (remove #(ctn/has-any-copy-parent? objects %))
-                         (remove #(->> %
-                                       (get objects)
-                                       (ctc/is-variant?))))]
+                         (remove ctc/is-variant?)
+                         (remove #(ctn/has-any-copy-parent? objects %)))]
 
          (when-not (empty? shapes)
            (let [[boolean-data index] (create-bool-data bool-type name (reverse shapes) objects)

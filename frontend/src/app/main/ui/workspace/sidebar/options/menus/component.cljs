@@ -756,13 +756,15 @@
         first-variant      (get objects (first (:shapes shape)))
         variant-id         (:variant-id first-variant)
 
-        properties         (->> (dwv/find-related-components data objects variant-id)
-                                (mapcat :variant-properties)
-                                (group-by :name)
-                                (map (fn [[k v]]
-                                       {:name k
-                                        :values (distinct
-                                                 (map #(if (str/empty? (:value %)) "--" (:value %)) v))})))
+        properties         (mf/with-memo [data objects variant-id]
+                             (->> (dwv/find-related-components data objects variant-id)
+                                  (mapcat :variant-properties)
+                                  (group-by :name)
+                                  (map-indexed (fn [index [k v]]
+                                                 {:name k
+                                                  :pos index
+                                                  :values (distinct
+                                                           (map #(if (str/empty? (:value %)) "--" (:value %)) v))}))))
 
         menu-open*         (mf/use-state false)
         menu-open?         (deref menu-open*)
@@ -789,15 +791,22 @@
         update-property-name
         (mf/use-fn
          (mf/deps variant-id)
-         (fn [pos new-name]
-           (st/emit! (dwv/update-property-name variant-id pos new-name))))
+         (fn [event]
+           (let [new-name (dom/get-target-val event)
+                 pos (-> (dom/get-current-target event)
+                         (dom/get-data "position")
+                         int)]
+             (st/emit! (dwv/update-property-name variant-id pos new-name)))))
 
         remove-property
         (mf/use-fn
-         (mf/deps variant-id)
-         (fn [pos]
-           (when (> (count properties) 1)
-             (st/emit! (dwv/remove-property variant-id pos)))))]
+         (mf/deps variant-id properties)
+         (fn [event]
+           (let [pos (-> (dom/get-current-target event)
+                         (dom/get-data "position")
+                         int)]
+             (when (> (count properties) 1)
+               (st/emit! (dwv/remove-property variant-id pos))))))]
     (when (seq shapes)
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
@@ -840,12 +849,16 @@
                                     :main-instance true}]])]
         (when-not multi
           [:*
-           (for [[pos property] (map vector (range) properties)]
+           (for [property properties]
              (let [val (str/join ", " (:values property))]
                [:div {:key (str (:id shape) (:name property)) :class (stl/css :variant-property-row)}
-                [:> input-with-values* {:name (:name property) :values val :on-blur (partial update-property-name pos)}]
+                [:> input-with-values* {:name (:name property)
+                                        :values val
+                                        :data-position (:pos property)
+                                        :on-blur update-property-name}]
                 [:> icon-button* {:variant "ghost"
                                   :aria-label (tr "workspace.shape.menu.remove-variant-property")
-                                  :on-click (partial remove-property pos)
+                                  :on-click remove-property
+                                  :data-position (:pos property)
                                   :icon "remove"
                                   :disabled (<= (count properties) 1)}]]))])]])))

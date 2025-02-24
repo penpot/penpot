@@ -321,7 +321,7 @@
         single?         (= (count shapes) 1)
 
         objects         (deref refs/workspace-page-objects)
-        any-in-copy?    (some true? (map #(ctn/has-any-copy-parent? objects %) shapes))
+        any-in-copy?    (some #(ctn/has-any-copy-parent? objects %) shapes)
         any-is-variant? (some ctk/is-variant? shapes)
 
         ;; components can't be ungrouped

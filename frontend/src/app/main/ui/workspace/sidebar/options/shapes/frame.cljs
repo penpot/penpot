@@ -33,6 +33,9 @@
         ids        (mf/with-memo [shape-id]
                      [shape-id])
 
+        shapes     (mf/with-memo [shape]
+                     [shape])
+
         stroke-values           (select-keys shape stroke-attrs)
         layer-values            (select-keys shape layer-attrs)
         measure-values          (select-measure-keys shape)
@@ -80,14 +83,14 @@
                          :type shape-type
                          :shape shape}]
 
-     [:& component-menu {:shapes [shape]}]
+     [:& component-menu {:shapes shapes}]
 
      (when is-variant?
-       [:> variant-menu* {:shapes [shape]}])
+       [:> variant-menu* {:shapes shapes}])
 
      [:& layout-container-menu
       {:type shape-type
-       :ids [(:id shape)]
+       :ids ids
        :values layout-container-values
        :multiple false}]
 

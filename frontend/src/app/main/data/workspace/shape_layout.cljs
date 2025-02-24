@@ -172,8 +172,7 @@
             is-mask?        (and single? has-mask?)
             has-component?  (some true? (map ctc/instance-root? selected-shapes))
             is-component?   (and single? has-component?)
-
-            has-variant?    (some true? (map ctc/is-variant? selected-shapes))
+            has-variant?    (some ctc/is-variant? selected-shapes)
 
             new-shape-id (uuid/next)
             undo-id      (js/Symbol)]
