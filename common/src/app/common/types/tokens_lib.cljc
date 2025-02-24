@@ -286,11 +286,10 @@
   Optionally use `update-token-fn` option to transform the token."
   [tokens & {:keys [update-token-fn]
              :or {update-token-fn identity}}]
-  (reduce
-   (fn [acc [_ token]]
-     (let [path (split-token-path (:name token))]
-       (assoc-in acc path (update-token-fn token))))
-   {} tokens))
+  (reduce-kv (fn [acc _ token]
+               (let [path (split-token-path (:name token))]
+                 (assoc-in acc path (update-token-fn token))))
+             {} tokens))
 
 (defn backtrace-tokens-tree
   "Convert tokens into a nested tree with their `:name` as the path.
