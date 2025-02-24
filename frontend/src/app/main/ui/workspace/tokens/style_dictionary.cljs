@@ -9,6 +9,7 @@
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.warnings :as wtw]
+   [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]
@@ -209,7 +210,6 @@
   [err]
   (let [[header-1 header-2 & errors] (str/split err "\n")]
     (when (and
-          ;; TODO: This needs translations
            (= header-1 "Error: ")
            (= header-2 "Reference Errors:"))
       errors)))
@@ -248,7 +248,7 @@
   (->> (map (fn [err]
               (case (:error/code err)
                 ;; TODO: This needs translations
-                :error.style-dictionary/missing-reference (str "Could not resolve reference token with the name: " (:error/value err))
+                :error.style-dictionary/missing-reference (tr "workspace.token.token-not-resolved" (:error/value err))
                 nil))
             errors)
        (str/join "\n")))

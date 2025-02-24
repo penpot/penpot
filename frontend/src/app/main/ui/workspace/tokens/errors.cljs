@@ -1,48 +1,48 @@
 (ns app.main.ui.workspace.tokens.errors
   (:require
+   [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]))
 
 (def error-codes
   {:error.import/json-parse-error
    {:error/code :error.import/json-parse-error
-    :error/message "Import Error: Could not parse json"}
+    :error/fn #(tr "workspace.token.error-parse")}
 
    :error.import/invalid-json-data
    {:error/code :error.import/invalid-json-data
-    :error/message "Import Error: Invalid token data in json."}
+    :error/fn #(tr "workspace.token.import-error")}
 
    :error.import/style-dictionary-reference-errors
    {:error/code :error.import/style-dictionary-reference-errors
-    :error/fn #(str "Import Error:\n\n" (str/join "\n\n" %))}
+    :error/fn #(str (tr "workspace.token.import-error") "\n\n" (str/join "\n\n" %))}
 
    :error.import/style-dictionary-unknown-error
    {:error/code :error.import/style-dictionary-reference-errors
-    :error/message "Import Error:"}
+    :error/fn #(tr "workspace.token.import-error")}
 
    :error.token/direct-self-reference
    {:error/code :error.token/direct-self-reference
-    :error/message "Token has self reference"}
+    :error/fn #(tr "workspace.token.self-reference")}
 
    :error.token/invalid-color
    {:error/code :error.token/invalid-color
-    :error/fn #(str "Invalid color value: " %)}
+    :error/fn #(str (tr "workspace.token.invalid-color" %))}
 
    :error.style-dictionary/missing-reference
    {:error/code :error.style-dictionary/missing-reference
-    :error/fn #(str "Missing token references: " (str/join " " %))}
+    :error/fn #(str (tr "workspace.token.missing-references") (str/join " " %))}
 
    :error.style-dictionary/invalid-token-value
    {:error/code :error.style-dictionary/invalid-token-value
-    :error/fn #(str "Invalid token value: " %)}
+    :error/fn #(str (tr "workspace.token.invalid-value" %))}
 
    :error.style-dictionary/invalid-token-value-opacity
    {:error/code :error.style-dictionary/invalid-token-value-opacity
-    :error/fn #(str/join "\n" [(str "Invalid token value: " % ".") "Opacity must be between 0 and 100% or 0 and 1  (e.g. 50% or 0.5)"])}
-
+    :error/fn #(str/join "\n" [(str (tr "workspace.token.invalid-value" %) ".") (tr "workspace.token.opacity-range")])}
 
    :error/unknown
    {:error/code :error/unknown
-    :error/message "Unknown error"}})
+    :error/fn #(tr "labels.unknown-error")}})
 
 (defn get-error-code [error-key]
   (get error-codes error-key (:error/unknown error-codes)))
