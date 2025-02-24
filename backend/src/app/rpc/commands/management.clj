@@ -396,45 +396,49 @@
 ;; --- COMMAND: Clone Template
 
 (defn clone-template
-  [cfg {:keys [project-id profile-id] :as params} template]
-  (db/tx-run! cfg (fn [{:keys [::db/conn ::wrk/executor] :as cfg}]
-                    ;; NOTE: the importation process performs some operations
-                    ;; that are not very friendly with virtual threads, and for
-                    ;; avoid unexpected blocking of other concurrent operations
-                    ;; we dispatch that operation to a dedicated executor.
-                    (let [template (tmp/tempfile-from template
-                                                      :prefix "penpot.template."
-                                                      :suffix ""
-                                                      :min-age "30m")
+  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [project-id profile-id] :as params} template]
 
-                          format   (bfc/parse-file-format template)
-                          team     (teams/get-team conn
-                                                   :profile-id profile-id
-                                                   :project-id project-id)
-                          cfg      (-> cfg
-                                       (assoc ::bfc/project-id project-id)
-                                       (assoc ::bfc/profile-id profile-id)
-                                       (assoc ::bfc/input template)
-                                       (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team)))
+  ;; NOTE: the importation process performs some operations
+  ;; that are not very friendly with virtual threads, and for
+  ;; avoid unexpected blocking of other concurrent operations
+  ;; we dispatch that operation to a dedicated executor.
+  (let [template (tmp/tempfile-from template
+                                    :prefix "penpot.template."
+                                    :suffix ""
+                                    :min-age "30m")
 
-                          result   (if (= format :binfile-v3)
-                                     (px/invoke! executor (partial bf.v3/import-files! cfg))
-                                     (px/invoke! executor (partial bf.v1/import-files! cfg)))]
+        format   (bfc/parse-file-format template)
+        team     (teams/get-team pool
+                                 :profile-id profile-id
+                                 :project-id project-id)
 
-                      (db/update! conn :project
-                                  {:modified-at (dt/now)}
-                                  {:id project-id})
+        cfg      (-> cfg
+                     (assoc ::bfc/project-id project-id)
+                     (assoc ::bfc/profile-id profile-id)
+                     (assoc ::bfc/input template)
+                     (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team)))
 
-                      (let [props (audit/clean-props params)]
-                        (doseq [file-id result]
-                          (let [props (assoc props :id file-id)
-                                event (-> (audit/event-from-rpc-params params)
-                                          (assoc ::audit/profile-id profile-id)
-                                          (assoc ::audit/name "create-file")
-                                          (assoc ::audit/props props))]
-                            (audit/submit! cfg event))))
+        result   (if (= format :binfile-v3)
+                   (px/invoke! executor (partial bf.v3/import-files! cfg))
+                   (px/invoke! executor (partial bf.v1/import-files! cfg)))]
 
-                      result))))
+    (db/tx-run! cfg
+                (fn [{:keys [::db/conn] :as cfg}]
+                  (db/update! conn :project
+                              {:modified-at (dt/now)}
+                              {:id project-id}
+                              {::db/return-keys false})
+
+                  (let [props (audit/clean-props params)]
+                    (doseq [file-id result]
+                      (let [props (assoc props :id file-id)
+                            event (-> (audit/event-from-rpc-params params)
+                                      (assoc ::audit/profile-id profile-id)
+                                      (assoc ::audit/name "create-file")
+                                      (assoc ::audit/props props))]
+                        (audit/submit! cfg event))))))
+
+    result))
 
 (def ^:private
   schema:clone-template

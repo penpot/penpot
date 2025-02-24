@@ -273,15 +273,14 @@
 
 (sv/defmethod ::clone-file-media-object
   {::doc/added "1.17"
-   ::sm/params schema:clone-file-media-object}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
-  (db/with-atomic [conn pool]
-    (files/check-edition-permissions! conn profile-id file-id)
-    (-> (assoc cfg :conn conn)
-        (clone-file-media-object params))))
+   ::sm/params schema:clone-file-media-object
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  (files/check-edition-permissions! conn profile-id file-id)
+  (clone-file-media-object cfg params))
 
 (defn clone-file-media-object
-  [{:keys [conn]} {:keys [id file-id is-local]}]
+  [{:keys [::db/conn]} {:keys [id file-id is-local]}]
   (let [mobj (db/get-by-id conn :file-media-object id)]
     (db/insert! conn :file-media-object
                 {:id (uuid/next)

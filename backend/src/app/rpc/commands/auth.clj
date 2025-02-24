@@ -149,7 +149,7 @@
 ;; ---- COMMAND: Recover Profile
 
 (defn recover-profile
-  [{:keys [::db/pool] :as cfg} {:keys [token password]}]
+  [{:keys [::db/conn] :as cfg} {:keys [token password]}]
   (letfn [(validate-token [token]
             (let [tdata (tokens/verify (::setup/props cfg) {:token token :iss :password-recovery})]
               (:profile-id tdata)))
@@ -159,10 +159,10 @@
               (db/update! conn :profile {:password pwd :is-active true} {:id profile-id})
               nil))]
 
-    (db/with-atomic [conn pool]
-      (->> (validate-token token)
-           (update-password conn))
-      nil)))
+    (->> (validate-token token)
+         (update-password conn))
+
+    nil))
 
 (def schema:recover-profile
   [:map {:title "recover-profile"}
@@ -173,7 +173,8 @@
   {::rpc/auth false
    ::doc/added "1.15"
    ::sm/params schema:recover-profile
-   ::climit/id :auth/global}
+   ::climit/id :auth/global
+   ::db/transaction true}
   [cfg params]
   (recover-profile cfg params))
 

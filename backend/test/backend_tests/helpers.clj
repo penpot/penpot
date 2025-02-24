@@ -138,14 +138,13 @@
                  "  FROM information_schema.tables "
                  " WHERE table_schema = 'public' "
                  "   AND table_name != 'migrations';")]
-    (db/with-atomic [conn *pool*]
-      (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
-      (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
-      (let [result (->> (db/exec! conn [sql])
-                        (map :table-name))]
-        (doseq [table result]
-          (db/exec! conn [(str "delete from " table ";")]))))
-
+    (db/transact! *pool* (fn [conn]
+                           (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
+                           (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
+                           (let [result (->> (db/exec! conn [sql])
+                                             (map :table-name))]
+                             (doseq [table result]
+                               (db/exec! conn [(str "delete from " table ";")])))))
     (next)))
 
 (defn clean-storage

@@ -803,17 +803,17 @@
     [:id ::sm/uuid]
     [:name [:string {:max 250}]]
     [:created-at ::dt/instant]
-    [:modified-at ::dt/instant]]}
+    [:modified-at ::dt/instant]]
 
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
-  (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id id)
-    (let [file (rename-file conn params)]
-      (rph/with-meta
-        (select-keys file [:id :name :created-at :modified-at])
-        {::audit/props {:project-id (:project-id file)
-                        :created-at (:created-at file)
-                        :modified-at (:modified-at file)}}))))
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  (check-edition-permissions! conn profile-id id)
+  (let [file (rename-file conn params)]
+    (rph/with-meta
+      (select-keys file [:id :name :created-at :modified-at])
+      {::audit/props {:project-id (:project-id file)
+                      :created-at (:created-at file)
+                      :modified-at (:modified-at file)}})))
 
 ;; --- MUTATION COMMAND: set-file-shared
 
@@ -1005,15 +1005,17 @@
   {::doc/added "1.17"
    ::webhooks/event? true
    ::sm/params schema:link-file-to-library}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id library-id] :as params}]
+  [cfg {:keys [::rpc/profile-id file-id library-id] :as params}]
   (when (= file-id library-id)
     (ex/raise :type :validation
               :code :invalid-library
               :hint "A file cannot be linked to itself"))
-  (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id file-id)
-    (check-edition-permissions! conn profile-id library-id)
-    (link-file-to-library conn params)))
+
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn]}]
+                (check-edition-permissions! conn profile-id file-id)
+                (check-edition-permissions! conn profile-id library-id)
+                (link-file-to-library conn params))))
 
 ;; --- MUTATION COMMAND: unlink-file-from-library
 
@@ -1031,12 +1033,12 @@
 (sv/defmethod ::unlink-file-from-library
   {::doc/added "1.17"
    ::webhooks/event? true
-   ::sm/params schema:unlink-file-to-library}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
-  (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id file-id)
-    (unlink-file-from-library conn params)
-    nil))
+   ::sm/params schema:unlink-file-to-library
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  (check-edition-permissions! conn profile-id file-id)
+  (unlink-file-from-library conn params)
+  nil)
 
 ;; --- MUTATION COMMAND: update-sync
 
@@ -1056,12 +1058,11 @@
 (sv/defmethod ::update-file-library-sync-status
   "Update the synchronization status of a file->library link"
   {::doc/added "1.17"
-   ::sm/params schema:update-file-library-sync-status}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
-  (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id file-id)
-    (update-sync conn params)))
-
+   ::sm/params schema:update-file-library-sync-status
+   ::db/transaction true}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id] :as params}]
+  (check-edition-permissions! conn profile-id file-id)
+  (update-sync conn params))
 
 ;; --- MUTATION COMMAND: ignore-sync
 
@@ -1082,9 +1083,9 @@
 (sv/defmethod ::ignore-file-library-sync-status
   "Ignore updates in linked files"
   {::doc/added "1.17"
-   ::sm/params schema:ignore-file-library-sync-status}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
-  (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id file-id)
-    (->  (ignore-sync conn params)
-         (update :features db/decode-pgarray #{}))))
+   ::sm/params schema:ignore-file-library-sync-status
+   ::db/transaction true}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id] :as params}]
+  (check-edition-permissions! conn profile-id file-id)
+  (->  (ignore-sync conn params)
+       (update :features db/decode-pgarray #{})))

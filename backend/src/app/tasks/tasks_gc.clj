@@ -26,18 +26,14 @@
   {k (assoc v ::min-age (cf/get-deletion-delay))})
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [::db/pool ::min-age] :as cfg}]
+  [_ {:keys [::min-age] :as cfg}]
   (fn [{:keys [props] :as task}]
     (let [min-age (or (:min-age props) min-age)]
-      (db/with-atomic [conn pool]
-        (let [interval (db/interval min-age)
-              result   (db/exec-one! conn [sql:delete-completed-tasks interval])
-              result   (db/get-update-count result)]
-
-          (l/debug :hint "task finished" :total result)
-
-          (when (:rollback? props)
-            (db/rollback! conn))
-
-          result)))))
-
+      (-> cfg
+          (assoc ::db/rollback (:rollback? props))
+          (db/tx-run! (fn [{:keys [::db/conn]}]
+                        (let [interval (db/interval min-age)
+                              result   (db/exec-one! conn [sql:delete-completed-tasks interval])
+                              result   (db/get-update-count result)]
+                          (l/debug :hint "task finished" :total result)
+                          result)))))))

@@ -101,38 +101,46 @@
   "Mark the profile blocked and removes all the http sessiones
   associated with the profile-id."
   [email]
-  (db/with-atomic [conn (:app.db/pool main/system)]
-    (when-let [profile (db/get* conn :profile
-                                {:email (str/lower email)}
-                                {:columns [:id :email]})]
-      (when-not (:is-blocked profile)
-        (db/update! conn :profile {:is-active true} {:id (:id profile)})
-        :activated))))
+  (some-> main/system
+          (db/tx-run!
+           (fn [{:keys [::db/conn] :as system}]
+             (when-let [profile (db/get* conn :profile
+                                         {:email (str/lower email)}
+                                         {:columns [:id :email]})]
+               (when-not (:is-blocked profile)
+                 (db/update! conn :profile {:is-active true} {:id (:id profile)})
+                 :activated))))))
 
 (defn mark-profile-as-blocked!
   "Mark the profile blocked and removes all the http sessiones
   associated with the profile-id."
   [email]
-  (db/with-atomic [conn (:app.db/pool main/system)]
-    (when-let [profile (db/get* conn :profile
-                                {:email (str/lower email)}
-                                {:columns [:id :email]})]
-      (when-not (:is-blocked profile)
-        (db/update! conn :profile {:is-blocked true} {:id (:id profile)})
-        (db/delete! conn :http-session {:profile-id (:id profile)})
-        :blocked))))
+  (some-> main/system
+          (db/tx-run!
+           (fn [{:keys [::db/conn] :as system}]
+             (when-let [profile (db/get* conn :profile
+                                         {:email (str/lower email)}
+                                         {:columns [:id :email]})]
+               (when-not (:is-blocked profile)
+                 (db/update! conn :profile {:is-blocked true} {:id (:id profile)})
+                 (db/delete! conn :http-session {:profile-id (:id profile)})
+                 :blocked))))))
 
 (defn reset-password!
   "Reset a password to a specific one for a concrete user or all users
   if email is `:all` keyword."
   [& {:keys [email password] :or {password "123123"} :as params}]
-  (us/verify! (contains? params :email) "`email` parameter is mandatory")
-  (db/with-atomic [conn (:app.db/pool main/system)]
-    (let [password (derive-password password)]
-      (if (= email :all)
-        (db/exec! conn ["update profile set password=?" password])
-        (let [email (str/lower email)]
-          (db/exec! conn ["update profile set password=? where email=?" password email]))))))
+  (when-not email
+    (throw (IllegalArgumentException. "email is mandatory")))
+
+  (some-> main/system
+          (db/tx-run!
+           (fn [{:keys [::db/conn] :as system}]
+             (let [password (derive-password password)]
+               (if (= email :all)
+                 (db/exec! conn ["update profile set password=?" password])
+                 (let [email (str/lower email)]
+                   (db/exec! conn ["update profile set password=? where email=?" password email]))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FEATURES
