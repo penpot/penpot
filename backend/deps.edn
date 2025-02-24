@@ -35,7 +35,7 @@
   org.postgresql/postgresql {:mvn/version "42.7.5"}
   org.xerial/sqlite-jdbc {:mvn/version "3.48.0.0"}
 
-  com.zaxxer/HikariCP {:mvn/version "6.0.0"}
+  com.zaxxer/HikariCP {:mvn/version "6.2.1"}
 
   io.whitfin/siphash {:mvn/version "2.0.0"}
 
@@ -59,7 +59,7 @@
 
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
-  software.amazon.awssdk/s3 {:mvn/version "2.30.7"}
+  software.amazon.awssdk/s3 {:mvn/version "2.30.26"}
   }
 
  :paths ["src" "resources" "target/classes"]
