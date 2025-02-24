@@ -87,11 +87,22 @@
    (let [page-id   (or (get options :page-id)
                        (get state :current-page-id))
          objects   (dsh/lookup-page-objects state page-id)
-         is-text?  #(= :text (:type (get objects %)))
-         text-ids  (filter is-text? ids)
-         shape-ids (remove is-text? ids)
 
-         undo-id   (js/Symbol)
+         ;; FIXME: move to a helper in common
+         [text-ids shape-ids]
+         (loop [ids (seq ids)
+                text-ids []
+                shape-ids []]
+           (if-let [id (first ids)]
+             (let [shape (get objects id)]
+               (if (cfh/text-shape? shape)
+                 (recur (rest ids)
+                        (conj text-ids id)
+                        shape-ids)
+                 (recur (rest ids)
+                        text-ids
+                        (conj shape-ids id))))
+             [text-ids shape-ids]))
 
          attrs
          (cond-> {}
