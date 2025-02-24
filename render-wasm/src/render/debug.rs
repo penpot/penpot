@@ -24,7 +24,7 @@ fn render_debug_view(render_state: &mut RenderState) {
 }
 
 pub fn render_wasm_label(render_state: &mut RenderState) {
-    let canvas = render_state.surfaces.current.canvas();
+    let canvas = render_state.surfaces.target.canvas();
 
     let skia::ISize { width, height } = canvas.base_layer_size();
     let mut paint = skia::Paint::default();
@@ -110,7 +110,7 @@ pub fn render(render_state: &mut RenderState) {
     render_debug_viewbox_tiles(render_state);
     render_debug_tiles(render_state);
     render_state.surfaces.debug.draw(
-        &mut render_state.surfaces.current.canvas(),
+        &mut render_state.surfaces.target.canvas(),
     (0.0, 0.0),
         render_state.sampling_options,
         Some(&paint),

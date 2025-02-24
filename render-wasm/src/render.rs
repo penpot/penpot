@@ -203,13 +203,33 @@ impl RenderState {
             .reset_matrix();
     }
 
-    pub fn apply_render_to_final_canvas(&mut self) {
+    pub fn apply_render_to_final_canvas(&mut self, x: f32, y: f32, size: f32) {
+        // self.surfaces.current.draw(
+        //     &mut self.surfaces.target.canvas(),
+        //     (y, y),
+        //     self.sampling_options,
+        //     Some(&skia::Paint::default()),
+        // );
+
+        self.surfaces.target.canvas().save();
+        self.surfaces.target.canvas().clip_rect(
+            skia_safe::Rect::from_xywh(x, y, size, size), 
+            skia_safe::ClipOp::Intersect, 
+            true
+        );
         self.surfaces.current.draw(
             &mut self.surfaces.target.canvas(),
-            (0.0, 0.0),
+            (0, 0),
             self.sampling_options,
             Some(&skia::Paint::default()),
         );
+        self.surfaces.target.canvas().restore(); // Restaura el clipping original
+        
+        let mut p = skia::Paint::default();
+        p.set_stroke_width(4.);
+        p.set_style(skia::PaintStyle::Stroke);
+        self.surfaces.target.canvas().draw_rect(&skia_safe::Rect::from_xywh(x, y, size, size), &p);
+
     }
 
     pub fn apply_drawing_to_render_canvas(&mut self) {
@@ -538,6 +558,17 @@ impl RenderState {
                 let tile = (x, y);
                 self.render_in_progress = true;
                 let _ = self.start_render_loop_tile(tree, modifiers, tile, timestamp);
+
+                // let image = self.surfaces.current.image_snapshot();
+                // let mut context = self.surfaces.current.direct_context();
+                // let encoded_image = image.encode(context.as_mut(), skia::EncodedImageFormat::PNG, None).unwrap();
+                // let base64_image = base64::encode(&encoded_image.as_bytes());
+                // println!("data:image/png;base64,{}", base64_image);
+                //TODO: get_tile_rect
+                let (x1, y1) = tiles::get_tile_pos(self.viewbox, (x, y));
+                let size =  tiles::get_tile_size(self.viewbox);
+                self.apply_render_to_final_canvas(x1, y1, size);
+                self.flush();
             }
         }
         self.render_complete = true;
@@ -546,9 +577,15 @@ impl RenderState {
         }
 
         debug::render_wasm_label(self);
-        self.apply_render_to_final_canvas();
-        self.flush();
+        // self.apply_render_to_final_canvas(0, 0);
 
+        // let image = self.surfaces.target.image_snapshot();
+        // let mut context = self.surfaces.target.direct_context();
+        // let encoded_image = image.encode(context.as_mut(), skia::EncodedImageFormat::PNG, None).unwrap();
+        // let base64_image = base64::encode(&encoded_image.as_bytes());
+        // println!("data:image/png;base64,{}", base64_image);
+
+        self.flush();
         Ok(())
     }
 
