@@ -130,10 +130,8 @@
          transform-attrs #(transform % attrs)]
 
      (rx/concat
-      (rx/of (dwu/start-undo-transaction undo-id))
       (rx/from (map #(dwt/update-text-with-function % transform-attrs options) text-ids))
-      (rx/of (dwsh/update-shapes shape-ids transform-attrs options))
-      (rx/of (dwu/commit-undo-transaction undo-id))))))
+      (rx/of (dwsh/update-shapes shape-ids transform-attrs options))))))
 
 (defn swap-attrs [shape attr index new-index]
   (let [first (get-in shape [attr index])
@@ -158,6 +156,15 @@
          (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
          (rx/of (dwsh/update-shapes shape-ids transform-attrs)))))))
 
+
+(defn update-shape-fill
+  [position shape attrs]
+  (update shape :fills
+          (fn [fills]
+            (if (nil? fills)
+              [attrs]
+              (assoc fills position attrs)))))
+
 (defn change-fill
   ([ids color position]
    (change-fill ids color position nil))
@@ -165,12 +172,12 @@
    (ptk/reify ::change-fill
      ptk/WatchEvent
      (watch [_ state _]
-       (let [change-fn (fn [shape attrs]
-                         (-> shape
-                             (cond-> (not (contains? shape :fills))
-                               (assoc :fills []))
-                             (assoc-in [:fills position] (into {} attrs))))]
-         (transform-fill state ids color change-fn options))))))
+       (let [change-fn (partial update-shape-fill position)
+             undo-id   (js/Symbol)]
+         (rx/concat
+          (rx/of (dwu/start-undo-transaction undo-id))
+          (transform-fill state ids color change-fn options)
+          (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn change-fill-and-clear
   ([ids color] (change-fill-and-clear ids color nil))
@@ -178,8 +185,11 @@
    (ptk/reify ::change-fill-and-clear
      ptk/WatchEvent
      (watch [_ state _]
-       (let [set (fn [shape attrs] (assoc shape :fills [attrs]))]
-         (transform-fill state ids color set options))))))
+       (let [change-fn (fn [shape attrs] (assoc shape :fills [attrs]))
+             undo-id   (js/Symbol)]
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (transform-fill state ids color change-fn options)
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (defn add-fill
   ([ids color] (add-fill ids color nil))
@@ -196,10 +206,16 @@
    (ptk/reify ::add-fill
      ptk/WatchEvent
      (watch [_ state _]
-       (let [add (fn [shape attrs]
-                   (-> shape
-                       (update :fills #(into [attrs] %))))]
-         (transform-fill state ids color add options))))))
+       (let [change-fn
+             (fn [shape attrs]
+               (-> shape
+                   (update :fills #(into [attrs] %))))
+             undo-id
+             (js/Symbol)]
+
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (transform-fill state ids color change-fn options)
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (defn remove-fill
   ([ids color position] (remove-fill ids color position nil))
@@ -216,30 +232,40 @@
    (ptk/reify ::remove-fill
      ptk/WatchEvent
      (watch [_ state _]
-       (let [remove-fill-by-index (fn [values index] (->> (d/enumerate values)
-                                                          (filterv (fn [[idx _]] (not= idx index)))
-                                                          (mapv second)))
+       (let [remove-fill-by-index
+             (fn [values index]
+               (->> (d/enumerate values)
+                    (filterv (fn [[idx _]] (not= idx index)))
+                    (mapv second)))
 
-             remove (fn [shape _] (update shape :fills remove-fill-by-index position))]
-         (transform-fill state ids color remove options))))))
+             change-fn
+             (fn [shape _] (update shape :fills remove-fill-by-index position))
+
+             undo-id
+             (js/Symbol)]
+
+         (rx/concat
+          (rx/of (dwu/start-undo-transaction undo-id))
+          (transform-fill state ids color change-fn options)
+          (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn remove-all-fills
   ([ids color] (remove-all-fills ids color nil))
   ([ids color options]
 
-   (dm/assert!
-    "expected a valid color struct"
-    (ctc/check-color! color))
+   (assert (ctc/check-color! color) "expected a valid color struct")
+   (assert (every? uuid? ids) "expected a valid coll of uuid's")
 
-   (dm/assert!
-    "expected a valid coll of uuid's"
-    (every? uuid? ids))
 
    (ptk/reify ::remove-all-fills
      ptk/WatchEvent
      (watch [_ state _]
-       (let [remove-all (fn [shape _] (assoc shape :fills []))]
-         (transform-fill state ids color remove-all options))))))
+       (let [change-fn (fn [shape _] (assoc shape :fills []))
+             undo-id   (js/Symbol)]
+         (rx/concat
+          (rx/of (dwu/start-undo-transaction undo-id))
+          (transform-fill state ids color change-fn options)
+          (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn change-hide-fill-on-export
   [ids hide-fill-on-export]
