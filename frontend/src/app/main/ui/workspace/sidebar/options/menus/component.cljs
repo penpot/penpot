@@ -322,10 +322,11 @@
            :key (str "swap-item-" (:id item))
            :on-click on-select}
      (when visible?
-       [:& cmm/component-item-thumbnail {:file-id (:file-id item)
-                                         :root-shape root-shape
-                                         :component item
-                                         :container container}])
+       [:> cmm/component-item-thumbnail*
+        {:file-id (:file-id item)
+         :root-shape root-shape
+         :component item
+         :container container}])
      [:span  {:class (stl/css-case :component-name true
                                    :selected (= (:id item) component-id))}
       (if is-search (:full-name item) (:name item))]]))
