@@ -9,6 +9,7 @@
   (:refer-clojure :exclude [read])
   (:require
    [app.binfile.common :as bfc]
+   [app.binfile.migrations :as bfm]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -735,7 +736,7 @@
                    (bfc/process-file))]
 
 
-      (bfc/register-pending-migrations! cfg file)
+      (bfm/register-pending-migrations! cfg file)
       (bfc/save-file! cfg file ::db/return-keys false)
 
       file-id')))
@@ -915,7 +916,7 @@
                             (import-file-media cfg)
                             (import-file-thumbnails cfg)
 
-                            (bfc/apply-pending-migrations! cfg)
+                            (bfm/apply-pending-migrations! cfg)
 
                             ids)))))))
 

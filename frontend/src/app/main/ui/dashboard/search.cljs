@@ -11,7 +11,7 @@
    [app.main.data.dashboard :as dd]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.dashboard.grid :refer [grid]]
+   [app.main.ui.dashboard.grid :refer [grid*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -77,7 +77,7 @@
          [:div {:class (stl/css :text)} (tr "dashboard.no-matches-for" search-term)]]
 
         :else
-        [:& grid {:files result
-                  :selected-files selected
-                  :origin :search
-                  :limit limit}])]]))
+        [:> grid* {:files result
+                   :selected-files selected
+                   :origin :search
+                   :limit limit}])]]))

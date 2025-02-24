@@ -20,7 +20,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
-   [app.features.components-v2 :as feat.compv2]
    [app.features.fdata :as feat.fdata]
    [app.features.file-migrations :as feat.fmigr]
    [app.loggers.audit :as-alias audit]
@@ -307,7 +306,7 @@
 
         update-shapes
         (fn [data {:keys [page-id shape-id]}]
-          (d/update-in-when data [:pages-index page-id :objects shape-id] cfh/relink-media-refs lookup-index))
+          (d/update-in-when data [:pages-index page-id :objects shape-id] cfh/relink-refs lookup-index))
 
         file
         (update file :data #(reduce update-shapes % media-refs))]
@@ -375,7 +374,7 @@
   replace the old :component-file reference with the new
   ones, using the provided file-index."
   [data]
-  (cfh/relink-media-refs data lookup-index))
+  (cfh/relink-refs data lookup-index))
 
 (defn- relink-media
   "A function responsible of process the :media attr of file data and
@@ -523,38 +522,3 @@
           (l/error :hint "file schema validation error" :cause result))))
 
     (insert-file! cfg file opts)))
-
-(defn register-pending-migrations!
-  "All features that are enabled and requires explicit migration are
-  added to the state for a posterior migration step."
-  [cfg {:keys [id features] :as file}]
-  (doseq [feature (-> (::features cfg)
-                      (set/difference cfeat/no-migration-features)
-                      (set/difference cfeat/backend-only-features)
-                      (set/difference features))]
-    (vswap! *state* update :pending-to-migrate (fnil conj []) [feature id]))
-
-  file)
-
-(defn apply-pending-migrations!
-  "Apply alredy registered pending migrations to files"
-  [cfg]
-  (doseq [[feature file-id] (-> *state* deref :pending-to-migrate)]
-    (case feature
-      "components/v2"
-      (feat.compv2/migrate-file! cfg file-id
-                                 :validate? (::validate cfg true)
-                                 :skip-on-graphic-error? true)
-
-      "fdata/shape-data-type"
-      nil
-
-      ;; There is no migration needed, but we don't want to allow
-      ;; copy paste nor import of variant files into no-variant teams
-      "variants/v1"
-      nil
-
-      (ex/raise :type :internal
-                :code :no-migration-defined
-                :hint (str/ffmt "no migation for feature '%' on file importation" feature)
-                :feature feature))))

@@ -589,10 +589,9 @@
       (into xform:collect-media-refs (vals (:components data)))
       (into (keys (:media data)))))
 
-(defn relink-media-refs
-  "A function responsible to analyze all file data and replace the
-  old :component-file reference with the new ones, using the provided
-  file-index."
+(defn relink-refs
+  "A function responsible to analyze the file data or shape for references
+  and apply lookup-index on it."
   [data lookup-index]
   (letfn [(process-map-form [form]
             (cond-> form

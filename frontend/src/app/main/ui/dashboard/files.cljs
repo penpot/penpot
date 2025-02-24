@@ -13,7 +13,7 @@
    [app.main.data.project :as dpj]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.dashboard.grid :refer [grid]]
+   [app.main.ui.dashboard.grid :refer [grid*]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.pin-button :refer [pin-button*]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
@@ -198,11 +198,11 @@
                                 :subtitle (if is-draft-proyect
                                             (tr "dashboard.empty-placeholder-drafts-subtitle")
                                             (tr "dashboard.empty-placeholder-files-subtitle"))}]
-        [:& grid {:project project
-                  :files files
-                  :selected-files selected-files
-                  :can-edit can-edit?
-                  :origin :files
-                  :create-fn create-file
-                  :limit limit}])]]))
+        [:> grid* {:project project
+                   :files files
+                   :selected-files selected-files
+                   :can-edit can-edit?
+                   :origin :files
+                   :create-fn create-file
+                   :limit limit}])]]))
 
