@@ -81,6 +81,24 @@
           (assoc-in [:workspace-global :picked-color-select] value)
           (assoc-in [:workspace-global :picked-shift?] shift?)))))
 
+
+(defn- split-text-shapes
+  "Split text shapes from non-text shapes"
+  [objects ids]
+  (loop [ids (seq ids)
+         text-ids []
+         shape-ids []]
+    (if-let [id (first ids)]
+      (let [shape (get objects id)]
+        (if (cfh/text-shape? shape)
+          (recur (rest ids)
+                 (conj text-ids id)
+                 shape-ids)
+                 (recur (rest ids)
+                        text-ids
+                        (conj shape-ids id))))
+      [text-ids shape-ids])))
+
 (defn transform-fill
   ([state ids color transform] (transform-fill state ids color transform nil))
   ([state ids color transform options]
@@ -88,21 +106,8 @@
                        (get state :current-page-id))
          objects   (dsh/lookup-page-objects state page-id)
 
-         ;; FIXME: move to a helper in common
          [text-ids shape-ids]
-         (loop [ids (seq ids)
-                text-ids []
-                shape-ids []]
-           (if-let [id (first ids)]
-             (let [shape (get objects id)]
-               (if (cfh/text-shape? shape)
-                 (recur (rest ids)
-                        (conj text-ids id)
-                        shape-ids)
-                 (recur (rest ids)
-                        text-ids
-                        (conj shape-ids id))))
-             [text-ids shape-ids]))
+         (split-text-shapes objects ids)
 
          attrs
          (cond-> {}
