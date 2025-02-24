@@ -97,6 +97,7 @@
             (th/db-query :file-change
                          {:file-id (:id file)}
                          {:order-by [:created-at]})]
+
         (t/is (= 2 (count rows)))
         (t/is (= "user" (:created-by row1)))
         (t/is (= "system" (:created-by row2)))))

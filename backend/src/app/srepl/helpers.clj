@@ -15,7 +15,8 @@
    [app.features.components-v2 :as feat.comp-v2]
    [app.main :as main]
    [app.rpc.commands.files :as files]
-   [app.rpc.commands.files-snapshot :as fsnap]))
+   [app.rpc.commands.files-snapshot :as fsnap]
+   [app.util.time :as dt]))
 
 (def ^:dynamic *system* nil)
 
@@ -96,8 +97,11 @@
   (let [conn (db/get-connection system)]
     (->> (feat.comp-v2/get-and-lock-team-files conn team-id)
          (reduce (fn [result file-id]
-                   (fsnap/create-file-snapshot! system nil file-id label)
-                   (inc result))
+                   (let [file (fsnap/get-file-snapshots system file-id)]
+                     (fsnap/create-file-snapshot! system file
+                                                  {:label label
+                                                   :created-by :admin})
+                     (inc result)))
                  0))))
 
 (defn restore-team-snapshot!
@@ -143,7 +147,10 @@
         (cfv/validate-file-schema! file'))
 
       (when (string? label)
-        (fsnap/create-file-snapshot! system nil file-id label))
+        (fsnap/create-file-snapshot! system file
+                                     {:label label
+                                      :deleted-at (dt/in-future {:days 30})
+                                      :created-by :admin}))
 
       (let [file' (update file' :revn inc)]
         (bfc/update-file! system file')
