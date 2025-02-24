@@ -8,7 +8,7 @@ use super::Shape;
 
 pub type Tile = (i32, i32);
 
-const TILE_SIZE: f32 = 512.;
+pub const TILE_SIZE: f32 = 512.;
 
 pub fn get_tile_dimensions() -> skia::ISize {
   (TILE_SIZE as i32, TILE_SIZE as i32).into()
@@ -34,6 +34,7 @@ pub fn get_tile_pos(viewbox: Viewbox, (x, y): Tile) -> (f32, f32) {
 }
 
 pub fn get_tile_size(viewbox: Viewbox) -> f32 {
+  //TODO: why 1. / ?
   1. / viewbox.zoom * TILE_SIZE
 }
 

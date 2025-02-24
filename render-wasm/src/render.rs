@@ -203,7 +203,7 @@ impl RenderState {
             .reset_matrix();
     }
 
-    pub fn apply_render_to_final_canvas(&mut self, x: f32, y: f32, size: f32) {
+    pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect) {
         // self.surfaces.current.draw(
         //     &mut self.surfaces.target.canvas(),
         //     (y, y),
@@ -213,7 +213,7 @@ impl RenderState {
 
         self.surfaces.target.canvas().save();
         self.surfaces.target.canvas().clip_rect(
-            skia_safe::Rect::from_xywh(x, y, size, size), 
+            rect, 
             skia_safe::ClipOp::Intersect, 
             true
         );
@@ -228,7 +228,7 @@ impl RenderState {
         let mut p = skia::Paint::default();
         p.set_stroke_width(4.);
         p.set_style(skia::PaintStyle::Stroke);
-        self.surfaces.target.canvas().draw_rect(&skia_safe::Rect::from_xywh(x, y, size, size), &p);
+        self.surfaces.target.canvas().draw_rect(&rect, &p);
 
     }
 
@@ -559,15 +559,8 @@ impl RenderState {
                 self.render_in_progress = true;
                 let _ = self.start_render_loop_tile(tree, modifiers, tile, timestamp);
 
-                // let image = self.surfaces.current.image_snapshot();
-                // let mut context = self.surfaces.current.direct_context();
-                // let encoded_image = image.encode(context.as_mut(), skia::EncodedImageFormat::PNG, None).unwrap();
-                // let base64_image = base64::encode(&encoded_image.as_bytes());
-                // println!("data:image/png;base64,{}", base64_image);
-                //TODO: get_tile_rect
-                let (x1, y1) = tiles::get_tile_pos(self.viewbox, (x, y));
-                let size =  tiles::get_tile_size(self.viewbox);
-                self.apply_render_to_final_canvas(x1, y1, size);
+                let tile_rect = tiles::get_tile_rect(self.viewbox, tile);
+                self.apply_render_to_final_canvas(tile_rect);
                 self.flush();
             }
         }
