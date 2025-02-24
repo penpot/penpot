@@ -170,10 +170,24 @@
       (f shape-ids {:color hex :opacity opacity} 0 {:ignore-touched true
                                                     :page-id page-id}))))
 
+(defn- value->color
+  "Transform a token color value into penpot color data structure"
+  [color]
+  (when-let [tc (tinycolor/valid-color color)]
+    (let [hex (tinycolor/->hex-string tc)
+          opacity (tinycolor/alpha tc)]
+      {:color hex :opacity opacity})))
+
 (defn update-fill
   ([value shape-ids attributes] (update-fill value shape-ids attributes nil))
   ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
-   (update-color wdc/change-fill value shape-ids page-id)))
+   (ptk/reify ::update-fill
+     ptk/WatchEvent
+     (watch [_ state _]
+       (when-let [color (value->color value)]
+         (let [update-fn (partial wdc/update-shape-fill 0)]
+           (wdc/transform-fill state shape-ids color update-fn {:ignore-touched true
+                                                                :page-id page-id})))))))
 
 (defn update-stroke-color
   ([value shape-ids attributes] (update-stroke-color value shape-ids attributes nil))
