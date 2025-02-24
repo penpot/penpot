@@ -12,6 +12,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
+   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -151,6 +152,18 @@
                           all-attr-labels)]
     (concat multi-items single-items)))
 
+(defn update-shape-layout-padding [value shape-ids attributes]
+  (st/emit!
+   (when (= (count attributes) 1)
+     (dwsl/update-layout shape-ids {:layout-padding-type :multiple}))
+   (wtch/update-layout-padding value shape-ids attributes)))
+
+(defn update-shape-layout-margin [value shape-ids attributes]
+  (st/emit!
+   (when (= (count attributes) 1)
+     (dwsl/update-layout shape-ids {:layout-item-margin-type :multiple}))
+   (wtch/update-layout-item-margin value shape-ids attributes)))
+
 (defn spacing-attribute-actions [{:keys [token selected-shapes] :as context-data}]
   (let [padding-items (layout-spacing-items {:token token
                                              :selected-shapes selected-shapes
@@ -162,7 +175,7 @@
                                                                       :p4 "Padding left"}
                                              :vertical-attr-labels {:p1 "Padding top"
                                                                     :p3 "Padding bottom"}
-                                             :on-update-shape wtch/update-layout-padding})
+                                             :on-update-shape update-shape-layout-padding})
         margin-items (layout-spacing-items {:token token
                                             :selected-shapes selected-shapes
                                             :all-attr-labels {:m1 "Margin top"
@@ -173,7 +186,7 @@
                                                                      :m4 "Margin left"}
                                             :vertical-attr-labels {:m1 "Margin top"
                                                                    :m3 "Margin bottom"}
-                                            :on-update-shape wtch/update-layout-item-margin})
+                                            :on-update-shape update-shape-layout-margin})
         gap-items (all-or-sepearate-actions {:attribute-labels {:column-gap "Column Gap"
                                                                 :row-gap "Row Gap"}
                                              :on-update-shape wtch/update-layout-spacing}
