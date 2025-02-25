@@ -193,20 +193,29 @@
          new-main-instance-shape new-main-instance-shapes]
         (duplicate-component component new-component-id (:data library))]
 
-    (-> changes
-        (pcb/with-page main-instance-page)
-        (pcb/with-objects (:objects main-instance-page))
-        (pcb/add-objects new-main-instance-shapes {:ignore-touched true})
-        (pcb/add-component (if components-v2
-                             new-component-id
-                             (:id new-component-shape))
-                           (:path component)
-                           new-name
-                           new-component-shapes
-                           []
-                           (:id new-main-instance-shape)
-                           (:id main-instance-page)
-                           (:annotation component)))))
+    [new-main-instance-shape
+     (-> changes
+         (pcb/with-page main-instance-page)
+         (pcb/with-objects (:objects main-instance-page))
+         (pcb/add-objects new-main-instance-shapes {:ignore-touched true})
+         (pcb/add-component (if components-v2
+                              new-component-id
+                              (:id new-component-shape))
+                            (:path component)
+                            new-name
+                            new-component-shapes
+                            []
+                            (:id new-main-instance-shape)
+                            (:id main-instance-page)
+                            (:annotation component))
+         ;; Update grid layout if the new main instance is inside
+         (pcb/update-shapes
+          [(:frame-id new-main-instance-shape)]
+          (fn [shape objects]
+            (cond-> shape
+              (ctl/grid-layout? shape)
+              (ctl/assign-cells objects)))
+          {:with-objects? true}))]))
 
 
 (defn generate-instantiate-component
