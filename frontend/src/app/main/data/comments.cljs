@@ -14,7 +14,6 @@
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
-   [app.main.data.team :as dtm]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -411,12 +410,8 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)]
-        (rx/merge
-         (->> (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id})
-              (rx/map comment-threads-fetched))
-
-         ;; Refresh team members
-         (rx/of (dtm/fetch-members)))))))
+        (->> (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id})
+             (rx/map comment-threads-fetched))))))
 
 (defn retrieve-comments
   [thread-id]
