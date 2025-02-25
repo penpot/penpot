@@ -1,5 +1,5 @@
 use crate::shapes::{Fill, ImageFill, Shape, Type};
-use skia_safe::{self as skia, RRect};
+use skia_safe::{self as skia, RRect, SamplingOptions};
 
 use super::RenderState;
 use crate::math::Rect;
@@ -85,7 +85,8 @@ fn draw_image_fill_in_container(
 
     // Draw the image with the calculated destination rectangle
     if let Some(image) = image {
-        canvas.draw_image_rect(image, None, dest_rect, &paint);
+        let sampling = SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Linear);
+        canvas.draw_image_rect_with_sampling_options(image, None, dest_rect, sampling, &paint);
     }
 
     // Restore the canvas to remove the clipping
