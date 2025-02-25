@@ -282,8 +282,9 @@
               ;; and interrupt any ongoing update-thumbnail process
               ;; related to current frame-id
               (->> all-commits-s
-                   (rx/map (fn [frame-id]
-                             (clear-thumbnail file-id page-id frame-id "frame"))))
+                   (rx/mapcat (fn [frame-id]
+                                (rx/of (clear-thumbnail file-id page-id frame-id "frame")
+                                       (clear-thumbnail file-id page-id frame-id "component")))))
 
               ;; Generate thumbnails in batches, once user becomes
               ;; inactive for some instant.
