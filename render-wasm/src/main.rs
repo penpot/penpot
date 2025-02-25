@@ -546,20 +546,22 @@ pub extern "C" fn add_shape_stroke_radial_fill(
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_stroke_stops(ptr: *mut shapes::RawStopData, n_stops: u32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+pub extern "C" fn add_shape_stroke_stops() {
+    let bytes = mem::bytes();
+
+    let entries: Vec<_> = bytes
+        .chunks(size_of::<shapes::RawStopData>())
+        .map(|data| shapes::RawStopData::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
 
     if let Some(shape) = state.current_shape() {
-        let len = n_stops as usize;
-
-        unsafe {
-            let buffer = Vec::<shapes::RawStopData>::from_raw_parts(ptr, len, len);
-            shape
-                .add_stroke_gradient_stops(buffer)
-                .expect("could not add gradient stops");
-            mem::free_bytes();
-        }
+        shape
+            .add_stroke_gradient_stops(entries)
+            .expect("could not add gradient stops");
     }
+    mem::free_bytes();
 }
 
 // Extracts a string from the bytes slice until the next null byte (0) and returns the result as a `String`.

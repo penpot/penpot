@@ -347,7 +347,7 @@
                                                                          offset (:offset stop)]
                                                                      [r g b a (* 100 offset)]))
                                                                  stops)))))
-                (h/call internal-module "_add_shape_stroke_stops" stops-ptr n-stops))
+                (h/call internal-module "_add_shape_stroke_stops"))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
