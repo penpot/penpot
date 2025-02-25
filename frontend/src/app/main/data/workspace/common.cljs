@@ -7,6 +7,8 @@
 (ns app.main.data.workspace.common
   (:require
    [app.common.logging :as log]
+   [app.config :as cf]
+   [app.main.data.profile :as du]
    [app.main.data.workspace.layout :as dwl]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -29,6 +31,15 @@
   [e]
   (= e :interrupt))
 
+(defn set-workspace-visited
+  []
+  (ptk/reify ::set-workspace-visited
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile (:profile state)
+            props   (get profile :props)]
+        (when (and (cf/external-feature-flag "boards-03" "test") (not (:workspace-visited props)))
+          (rx/of (du/update-profile-props {:workspace-visited true})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UNDO

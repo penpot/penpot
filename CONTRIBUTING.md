@@ -84,6 +84,7 @@ Where type is:
 - :whale: `:whale:` a commit for docker related stuff
 - :paperclip: `:paperclip:` a commit with other not relevant changes
 - :arrow_up: `:arrow_up:` a commit with dependencies updates
+- :arrow_down: `:arrow_down:` a commit with dependencies downgrades
 - :fire: `:fire:` a commit that removes files or code
 
 More info:

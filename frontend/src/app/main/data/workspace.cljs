@@ -51,6 +51,7 @@
    [app.main.data.workspace.collapse :as dwco]
    [app.main.data.workspace.colors :as dwcl]
    [app.main.data.workspace.comments :as dwcm]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.fix-broken-shapes :as fbs]
@@ -393,7 +394,7 @@
 
 (defn finalize-workspace
   [file-id]
-  (ptk/reify ::finalize-file
+  (ptk/reify ::finalize-workspace
     ptk/UpdateEvent
     (update [_ state]
       (-> state
@@ -416,6 +417,7 @@
                (dpj/finalize-project project-id)
                (dwsl/finalize-shape-layout)
                (dwcl/stop-picker)
+               (dwc/set-workspace-visited)
                (modal/hide)
                (ntf/hide))))))
 
