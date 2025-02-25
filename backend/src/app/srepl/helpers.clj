@@ -89,14 +89,13 @@
         AND id IS NOT NULL")
 
 (defn enable-team-feature!
-  [team-id feature & {:keys [debug] :or {debug false}}]
-  (when (and (not debug) (not (contains? cfeat/supported-features feature)))
+  [team-id feature & {:keys [skip-check] :or {skip-check false}}]
+  (when (and (not skip-check) (not (contains? cfeat/supported-features feature)))
     (ex/raise :type :assertion
               :code :feature-not-supported
               :hint (str "feature '" feature "' not supported")))
 
-  (let [team-id (h/parse-uuid team-id)
-        feature (str feature)]
+  (let [team-id (h/parse-uuid team-id)]
     (db/tx-run! main/system
                 (fn [{:keys [::db/conn]}]
                   (let [team     (-> (db/get conn :team {:id team-id})
@@ -109,14 +108,13 @@
                       :enabled))))))
 
 (defn disable-team-feature!
-  [team-id feature & {:keys [debug] :or {debug false}}]
-  (when (and (not debug) (not (contains? cfeat/supported-features feature)))
+  [team-id feature & {:keys [skip-check] :or {skip-check false}}]
+  (when (and (not skip-check) (not (contains? cfeat/supported-features feature)))
     (ex/raise :type :assertion
               :code :feature-not-supported
               :hint (str "feature '" feature "' not supported")))
 
-  (let [team-id (h/parse-uuid team-id)
-        feature (str feature)]
+  (let [team-id (h/parse-uuid team-id)]
     (db/tx-run! main/system
                 (fn [{:keys [::db/conn]}]
                   (let [team     (-> (db/get conn :team {:id team-id})

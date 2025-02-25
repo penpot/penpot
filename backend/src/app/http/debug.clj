@@ -433,8 +433,8 @@
 (defn- add-team-feature
   [{:keys [params] :as request}]
   (let [team-id (some-> params :team-id d/parse-uuid)
-        feature (some-> params :feature d/read-string)
-        debug   (contains? params :debug)]
+        feature (some-> params :feature str)
+        skip-check (contains? params :skip-check)]
 
     (when-not (contains? params :force)
       (ex/raise :type :validation
@@ -446,7 +446,7 @@
                 :code :invalid-team-id
                 :hint "provided invalid team id"))
 
-    (srepl/enable-team-feature! team-id feature :debug debug)
+    (srepl/enable-team-feature! team-id feature :skip-check skip-check)
 
     {::yres/status  200
      ::yres/headers {"content-type" "text/plain"}
@@ -454,9 +454,9 @@
 
 (defn- remove-team-feature
   [{:keys [params] :as request}]
-  (let [team-id (some-> params :team-id d/parse-uuid)
-        feature (some-> params :feature d/read-string)
-        debug   (contains? params :debug)]
+  (let [team-id   (some-> params :team-id d/parse-uuid)
+        feature   (some-> params :feature str)
+        skip-check (contains? params :skip-check)]
 
     (when-not (contains? params :force)
       (ex/raise :type :validation
@@ -468,7 +468,7 @@
                 :code :invalid-team-id
                 :hint "provided invalid team id"))
 
-    (srepl/disable-team-feature! team-id feature :debug debug)
+    (srepl/disable-team-feature! team-id feature :skip-check skip-check)
 
     {::yres/status  200
      ::yres/headers {"content-type" "text/plain"}
@@ -545,9 +545,9 @@
     ["/actions/reset-file-version"
      {:handler (partial reset-file-version cfg)}]
     ["/actions/add-team-feature"
-     {:handler (partial add-team-feature cfg)}]
+     {:handler (partial add-team-feature)}]
     ["/actions/remove-team-feature"
-     {:handler (partial remove-team-feature cfg)}]
+     {:handler (partial remove-team-feature)}]
     ["/file/export" {:handler (partial export-handler cfg)}]
     ["/file/import" {:handler (partial import-handler cfg)}]
     ["/file/data" {:handler (partial file-data-handler cfg)}]
