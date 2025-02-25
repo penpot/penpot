@@ -286,11 +286,12 @@
         component (thc/get-component file :component1)
 
         ;; ==== Action
-        changes (cll/generate-duplicate-component (pcb/empty-changes)
-                                                  file
-                                                  (:id component)
-                                                  (uuid/next)
-                                                  true)
+        [_ changes]
+        (cll/generate-duplicate-component (pcb/empty-changes)
+                                          file
+                                          (:id component)
+                                          (uuid/next)
+                                          true)
 
         file'   (thf/apply-changes file changes)
 

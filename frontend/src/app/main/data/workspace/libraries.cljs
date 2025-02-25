@@ -529,10 +529,13 @@
        (let [libraries          (dsh/lookup-libraries state)
              library            (get libraries library-id)
              components-v2      (features/active-feature? state "components/v2")
-             changes (-> (pcb/empty-changes it nil)
-                         (cll/generate-duplicate-component library component-id new-component-id components-v2))]
 
-         (rx/of (dch/commit-changes changes)))))))
+             [main-instance changes]
+             (-> (pcb/empty-changes it nil)
+                 (cll/generate-duplicate-component library component-id new-component-id components-v2))]
+         (rx/of
+          (ptk/data-event :layout/update {:ids [(:id main-instance)]})
+          (dch/commit-changes changes)))))))
 
 (defn delete-component
   "Delete the component with the given id, from the current file library."
