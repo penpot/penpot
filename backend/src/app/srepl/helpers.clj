@@ -10,12 +10,15 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
+   [app.common.features :as cfeat]
    [app.common.files.validate :as cfv]
    [app.db :as db]
    [app.features.components-v2 :as feat.comp-v2]
    [app.main :as main]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-snapshot :as fsnap]
+   [app.srepl.helpers :as h]
    [app.util.time :as dt]))
 
 (def ^:dynamic *system* nil)
@@ -84,6 +87,44 @@
    ) SELECT * FROM files
       WHERE file_id = ANY(?)
         AND id IS NOT NULL")
+
+(defn enable-team-feature!
+  [team-id feature & {:keys [skip-check] :or {skip-check false}}]
+  (when (and (not skip-check) (not (contains? cfeat/supported-features feature)))
+    (ex/raise :type :assertion
+              :code :feature-not-supported
+              :hint (str "feature '" feature "' not supported")))
+
+  (let [team-id (h/parse-uuid team-id)]
+    (db/tx-run! main/system
+                (fn [{:keys [::db/conn]}]
+                  (let [team     (-> (db/get conn :team {:id team-id})
+                                     (update :features db/decode-pgarray #{}))
+                        features (conj (:features team) feature)]
+                    (when (not= features (:features team))
+                      (db/update! conn :team
+                                  {:features (db/create-array conn "text" features)}
+                                  {:id team-id})
+                      :enabled))))))
+
+(defn disable-team-feature!
+  [team-id feature & {:keys [skip-check] :or {skip-check false}}]
+  (when (and (not skip-check) (not (contains? cfeat/supported-features feature)))
+    (ex/raise :type :assertion
+              :code :feature-not-supported
+              :hint (str "feature '" feature "' not supported")))
+
+  (let [team-id (h/parse-uuid team-id)]
+    (db/tx-run! main/system
+                (fn [{:keys [::db/conn]}]
+                  (let [team     (-> (db/get conn :team {:id team-id})
+                                     (update :features db/decode-pgarray #{}))
+                        features (disj (:features team) feature)]
+                    (when (not= features (:features team))
+                      (db/update! conn :team
+                                  {:features (db/create-array conn "text" features)}
+                                  {:id team-id})
+                      :disabled))))))
 
 (defn search-file-snapshots
   "Get a seq parirs of file-id and snapshot-id for a set of files
