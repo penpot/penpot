@@ -161,6 +161,43 @@
   (enable-objects-map-feature-on-file! file-id opts)
   (enable-pointer-map-feature-on-file! file-id opts))
 
+(defn enable-team-feature!
+  [team-id feature & {:keys [skip-check] :or {skip-check false}}]
+  (when (and (not skip-check) (not (contains? cfeat/supported-features feature)))
+    (ex/raise :type :assertion
+              :code :feature-not-supported
+              :hint (str "feature '" feature "' not supported")))
+
+  (let [team-id (h/parse-uuid team-id)]
+    (db/tx-run! main/system
+                (fn [{:keys [::db/conn]}]
+                  (let [team     (-> (db/get conn :team {:id team-id})
+                                     (update :features db/decode-pgarray #{}))
+                        features (conj (:features team) feature)]
+                    (when (not= features (:features team))
+                      (db/update! conn :team
+                                  {:features (db/create-array conn "text" features)}
+                                  {:id team-id})
+                      :enabled))))))
+
+(defn disable-team-feature!
+  [team-id feature & {:keys [skip-check] :or {skip-check false}}]
+  (when (and (not skip-check) (not (contains? cfeat/supported-features feature)))
+    (ex/raise :type :assertion
+              :code :feature-not-supported
+              :hint (str "feature '" feature "' not supported")))
+
+  (let [team-id (h/parse-uuid team-id)]
+    (db/tx-run! main/system
+                (fn [{:keys [::db/conn]}]
+                  (let [team     (-> (db/get conn :team {:id team-id})
+                                     (update :features db/decode-pgarray #{}))
+                        features (disj (:features team) feature)]
+                    (when (not= features (:features team))
+                      (db/update! conn :team
+                                  {:features (db/create-array conn "text" features)}
+                                  {:id team-id})
+                      :disabled))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; NOTIFICATIONS
