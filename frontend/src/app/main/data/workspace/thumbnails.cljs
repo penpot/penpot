@@ -296,6 +296,6 @@
              ;; find a better way to handle this.
              (->> notifier-s
                   (rx/take 1)
-                  (rx/of (dwc/set-workspace-visited)))
+                  (rx/map dwc/set-workspace-visited))
 
              (rx/take-until stopper-s))))))

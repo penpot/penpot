@@ -125,7 +125,11 @@
 
         profile (mf/deref refs/profile)
         props   (get profile :props)
-        test-tooltip-board-text (if (and (cf/external-feature-flag "boards-03" "test") (not (:workspace-visited props))) (tr "workspace.toolbar.frame-first-time" (sc/get-tooltip :draw-frame)) (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame)))]
+        test-tooltip-board-text
+        (if (and (cf/external-feature-flag "boards-03" "test")
+                 (not (:workspace-visited props)))
+          (tr "workspace.toolbar.frame-first-time" (sc/get-tooltip :draw-frame))
+          (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame)))]
 
     (when-not ^boolean read-only?
       [:aside {:class (stl/css-case :main-toolbar true
