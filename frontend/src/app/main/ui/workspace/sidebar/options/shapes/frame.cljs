@@ -33,6 +33,9 @@
         ids        (mf/with-memo [shape-id]
                      [shape-id])
 
+        shapes     (mf/with-memo [shape]
+                     [shape])
+
         stroke-values           (select-keys shape stroke-attrs)
         layer-values            (select-keys shape layer-attrs)
         measure-values          (select-measure-keys shape)
@@ -71,58 +74,59 @@
         variants?                 (features/use-feature "variants/v1")
         is-variant?               (when variants? (:is-variant-container shape))]
 
-    (if is-variant?
-      [:> variant-menu* {:shapes [shape]}]
-      [:*
-       [:& layer-menu {:ids ids
-                       :type shape-type
-                       :values layer-values}]
-       [:> measures-menu* {:ids ids
-                           :values measure-values
-                           :type shape-type
-                           :shape shape}]
+    [:*
+     [:& layer-menu {:ids ids
+                     :type shape-type
+                     :values layer-values}]
+     [:> measures-menu* {:ids ids
+                         :values measure-values
+                         :type shape-type
+                         :shape shape}]
 
-       [:& component-menu {:shapes [shape]}]
+     [:& component-menu {:shapes shapes}]
 
-       [:& layout-container-menu
-        {:type shape-type
-         :ids [(:id shape)]
-         :values layout-container-values
-         :multiple false}]
+     (when is-variant?
+       [:> variant-menu* {:shapes shapes}])
 
-       (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
-         [:& grid-cell/options
-          {:shape (first parents)
-           :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
+     [:& layout-container-menu
+      {:type shape-type
+       :ids ids
+       :values layout-container-values
+       :multiple false}]
 
-       (when (or is-layout-child? is-layout-container?)
-         [:& layout-item-menu
-          {:ids ids
-           :type shape-type
-           :values layout-item-values
-           :is-flex-parent? is-flex-parent?
-           :is-grid-parent? is-grid-parent?
-           :is-flex-layout? is-flex-layout?
-           :is-grid-layout? is-grid-layout?
-           :is-layout-child? is-layout-child?
-           :is-layout-container? is-layout-container?
-           :shape shape}])
+     (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
+       [:& grid-cell/options
+        {:shape (first parents)
+         :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
 
-       (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
-         [:& constraints-menu {:ids ids
-                               :values constraint-values}])
+     (when (or is-layout-child? is-layout-container?)
+       [:& layout-item-menu
+        {:ids ids
+         :type shape-type
+         :values layout-item-values
+         :is-flex-parent? is-flex-parent?
+         :is-grid-parent? is-grid-parent?
+         :is-flex-layout? is-flex-layout?
+         :is-grid-layout? is-grid-layout?
+         :is-layout-child? is-layout-child?
+         :is-layout-container? is-layout-container?
+         :shape shape}])
 
-       [:& fill-menu {:ids ids
+     (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
+       [:& constraints-menu {:ids ids
+                             :values constraint-values}])
+
+     [:& fill-menu {:ids ids
+                    :type shape-type
+                    :values (select-keys shape fill-attrs-shape)}]
+     [:& stroke-menu {:ids ids
                       :type shape-type
-                      :values (select-keys shape fill-attrs-shape)}]
-       [:& stroke-menu {:ids ids
-                        :type shape-type
-                        :values stroke-values}]
-       [:> color-selection-menu* {:type shape-type
-                                  :shapes shapes-with-children
-                                  :file-id file-id
-                                  :libraries shared-libs}]
-       [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
-       [:& blur-menu {:ids ids
-                      :values (select-keys shape [:blur])}]
-       [:& frame-grid {:shape shape}]])))
+                      :values stroke-values}]
+     [:> color-selection-menu* {:type shape-type
+                                :shapes shapes-with-children
+                                :file-id file-id
+                                :libraries shared-libs}]
+     [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
+     [:& blur-menu {:ids ids
+                    :values (select-keys shape [:blur])}]
+     [:& frame-grid {:shape shape}]]))

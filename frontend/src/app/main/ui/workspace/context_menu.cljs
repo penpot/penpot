@@ -317,11 +317,12 @@
   {::mf/props :obj
    ::mf/private true}
   [{:keys [shapes]}]
-  (let [multiple?    (> (count shapes) 1)
-        single?      (= (count shapes) 1)
+  (let [multiple?       (> (count shapes) 1)
+        single?         (= (count shapes) 1)
 
-        objects      (deref refs/workspace-page-objects)
-        any-in-copy? (some true? (map #(ctn/has-any-copy-parent? objects %) shapes))
+        objects         (deref refs/workspace-page-objects)
+        any-in-copy?    (some #(ctn/has-any-copy-parent? objects %) shapes)
+        any-is-variant? (some ctk/is-variant? shapes)
 
         ;; components can't be ungrouped
         has-frame? (->> shapes (d/seek #(and (cfh/frame-shape? %) (not (ctk/instance-head? %)) (not (ctk/is-variant-container? %)))))
@@ -340,7 +341,7 @@
         #(st/emit! (dwsh/create-artboard-from-selection))]
 
     [:*
-     (when (not any-in-copy?)
+     (when (not (or any-in-copy? any-is-variant?))
        [:*
         (when (or has-bool? has-group? has-mask? has-frame?)
           [:> menu-entry* {:title (tr "workspace.shape.menu.ungroup")
@@ -503,6 +504,8 @@
         has-grid?
         (and single? (every? ctl/grid-layout? shapes))
 
+        any-is-variant? (some ctk/is-variant? shapes)
+
         on-add-layout
         (mf/use-fn
          (fn [event]
@@ -532,16 +535,17 @@
                              :shortcut (sc/get-tooltip :toggle-layout-grid)
                              :on-click on-remove-layout}])]
 
-         [:div
-          [:> menu-separator* {}]
-          [:> menu-entry* {:title (tr "workspace.shape.menu.add-flex")
-                           :shortcut (sc/get-tooltip :toggle-layout-flex)
-                           :value "flex"
-                           :on-click on-add-layout}]
-          [:> menu-entry* {:title (tr "workspace.shape.menu.add-grid")
-                           :shortcut (sc/get-tooltip :toggle-layout-grid)
-                           :value "grid"
-                           :on-click on-add-layout}]]))]))
+         (when (or single? (not any-is-variant?))
+           [:div
+            [:> menu-separator* {}]
+            [:> menu-entry* {:title (tr "workspace.shape.menu.add-flex")
+                             :shortcut (sc/get-tooltip :toggle-layout-flex)
+                             :value "flex"
+                             :on-click on-add-layout}]
+            [:> menu-entry* {:title (tr "workspace.shape.menu.add-grid")
+                             :shortcut (sc/get-tooltip :toggle-layout-grid)
+                             :value "grid"
+                             :on-click on-add-layout}]])))]))
 
 (mf/defc context-menu-component*
   {:mf/private true}
@@ -593,6 +597,7 @@
   [{:keys [mdata]}]
   (let [{:keys [disable-booleans disable-flatten]} mdata
         shapes (mf/deref refs/selected-objects)
+        is-not-variant-container? (->> shapes (d/seek #(not (ctk/is-variant-container? %))))
         props  (mf/props
                 {:shapes shapes
                  :disable-booleans disable-booleans
@@ -601,7 +606,8 @@
       [:*
        [:> context-menu-edit* props]
        [:> context-menu-layer-position* props]
-       [:> context-menu-flip* props]
+       (when is-not-variant-container?
+         [:> context-menu-flip* props])
        [:> context-menu-thumbnail* props]
        [:> context-menu-rename* props]
        [:> context-menu-group* props]
@@ -609,7 +615,8 @@
        [:> context-menu-path* props]
        [:> context-menu-layer-options* props]
        [:> context-menu-prototype* props]
-       [:> context-menu-layout* props]
+       (when is-not-variant-container?
+         [:> context-menu-layout* props])
        [:> context-menu-component* props]
        [:> context-menu-delete* props]])))
 

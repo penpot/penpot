@@ -11,6 +11,7 @@
    [app.common.files.helpers :as cph]
    [app.common.geom.shapes :as gsh]
    [app.common.svg.path.shapes-to-path :as stp]
+   [app.common.types.component :as ctc]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
@@ -99,6 +100,7 @@
              shapes (->> ordered-indexes
                          (map (d/getf objects))
                          (remove cph/frame-shape?)
+                         (remove ctc/is-variant?)
                          (remove #(ctn/has-any-copy-parent? objects %)))]
 
          (when-not (empty? shapes)
