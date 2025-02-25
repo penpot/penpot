@@ -16,7 +16,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc comments-layer*
-  [{:keys [vbox vport zoom drawing file-id]}]
+  [{:keys [vbox vport zoom drawing file-id page-id]}]
   (let [vbox-x      (dm/get-prop vbox :x)
         vbox-y      (dm/get-prop vbox :y)
         vport-w     (dm/get-prop vport :width)
@@ -31,8 +31,9 @@
         threads-map (mf/deref refs/threads)
 
         threads
-        (mf/with-memo [threads-map local profile]
+        (mf/with-memo [threads-map local profile page-id]
           (->> (vals threads-map)
+               (filter #(= (:page-id %) page-id))
                (dcm/apply-filters local profile)))
 
         viewport
