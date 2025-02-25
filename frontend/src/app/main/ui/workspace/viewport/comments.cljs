@@ -16,7 +16,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc comments-layer*
-  [{:keys [vbox vport zoom drawing file-id]}]
+  [{:keys [vbox vport zoom file-id]}]
   (let [vbox-x      (dm/get-prop vbox :x)
         vbox-y      (dm/get-prop vbox :y)
         vport-w     (dm/get-prop vport :width)
@@ -72,7 +72,7 @@
                :viewport viewport
                :zoom zoom}])))
 
-       (when-let [draft (:comment drawing)]
+       (when-let [draft (:draft local)]
          [:> cmt/comment-floating-thread-draft*
           {:draft draft
            :on-cancel on-draft-cancel
