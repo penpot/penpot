@@ -58,7 +58,8 @@
    [:welcome-file-id {:optional true} [:maybe ::sm/boolean]]
    [:release-notes-viewed {:optional true}
     [::sm/text {:max 100}]]
-   [:notifications {:optional true} schema:props-notifications]])
+   [:notifications {:optional true} schema:props-notifications]
+   [:workspace-visited {:optional true} ::sm/boolean]])
 
 (def schema:profile
   [:map {:title "Profile"}

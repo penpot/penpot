@@ -6664,9 +6664,13 @@ msgstr "Curve (%s)"
 msgid "workspace.toolbar.ellipse"
 msgstr "Ellipse (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:143, src/app/main/ui/workspace/top_toolbar.cljs:144
+#: src/app/main/ui/workspace/top_toolbar.cljs:128, src/app/main/ui/workspace/top_toolbar.cljs:144
 msgid "workspace.toolbar.frame"
 msgstr "Board (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:128, src/app/main/ui/workspace/top_toolbar.cljs:144
+msgid "workspace.toolbar.frame-first-time"
+msgstr "Create board. Click and drag to define its size. (%s)"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:60, src/app/main/ui/workspace/top_toolbar.cljs:61
 msgid "workspace.toolbar.image"
