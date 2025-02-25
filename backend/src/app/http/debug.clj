@@ -24,7 +24,7 @@
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.setup :as-alias setup]
-   [app.srepl.helpers :as srepl]
+   [app.srepl.main :as srepl]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
    [app.util.blob :as blob]
