@@ -107,11 +107,9 @@ pub extern "C" fn resize_viewbox(width: i32, height: i32) {
 #[no_mangle]
 pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+    state.rebuild_tiles_if_needed(zoom);
     let render_state = state.render_state();
     render_state.invalidate_cache_if_needed();
-    if zoom != render_state.viewbox.zoom {
-        render_state.invalidate_tiles();
-    }
     render_state.viewbox.set_all(zoom, x, y);
 }
 

@@ -203,7 +203,8 @@ impl RenderState {
             .reset_matrix();
     }
 
-    pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect) {
+    // TODO: remove x,y params
+    pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect, x: i32, y: i32) {
         // self.surfaces.current.draw(
         //     &mut self.surfaces.target.canvas(),
         //     (y, y),
@@ -223,13 +224,23 @@ impl RenderState {
             self.sampling_options,
             Some(&skia::Paint::default()),
         );
-        self.surfaces.target.canvas().restore(); // Restaura el clipping original
+        self.surfaces.target.canvas().restore();
         
         let mut p = skia::Paint::default();
         p.set_stroke_width(4.);
         p.set_style(skia::PaintStyle::Stroke);
         self.surfaces.target.canvas().draw_rect(&rect, &p);
 
+        let point = skia::Point::new(rect.x() + 10., rect.y() + 20.);
+        p.set_stroke_width(1.);
+        let str = format!("{}:{}", x, y);
+        self.surfaces.target.canvas().draw_str(str, point, &self.debug_font, &p);
+
+        // let image = self.surfaces.target.image_snapshot();
+        // let mut context = self.surfaces.target.direct_context();
+        // let encoded_image = image.encode(context.as_mut(), skia::EncodedImageFormat::PNG, None).unwrap();
+        // let base64_image = base64::encode(&encoded_image.as_bytes());
+        // println!("data:image/png;base64,{}", base64_image);        
     }
 
     pub fn apply_drawing_to_render_canvas(&mut self) {
@@ -544,6 +555,7 @@ impl RenderState {
             .translate((self.viewbox.pan_x, self.viewbox.pan_y));
 
         let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox);
+        let tile_size = tiles::get_tile_size(self.viewbox);
         /*
         // TODO: Instead of rendering only the visible area
         // we could apply an offset to the viewbox to render
@@ -553,14 +565,22 @@ impl RenderState {
         ex + interest_delta
         ey + interest_delta
         */
+
+        // let offset_x = (self.viewbox.area.left % tile_size);
+        // let offset_y = (self.viewbox.area.top % tile_size);
+
+        let offset_x = (self.viewbox.area.left % tiles::TILE_SIZE) * self.viewbox.zoom * self.options.dpr();
+        let offset_y = (self.viewbox.area.top % tiles::TILE_SIZE) * self.viewbox.zoom * self.options.dpr();
+
         for y in sy..=ey {
             for x in sx..=ex {
                 let tile = (x, y);
                 self.render_in_progress = true;
                 let _ = self.start_render_loop_tile(tree, modifiers, tile, timestamp);
 
-                let tile_rect = tiles::get_tile_rect(self.viewbox, tile);
-                self.apply_render_to_final_canvas(tile_rect);
+                //let tile_rect = tiles::get_tile_rect(self.viewbox, tile);
+                let tile_rect = Rect::from_xywh((x as f32 * tile_size) - offset_x, (y as f32 * tile_size) - offset_y, tile_size, tile_size);
+                self.apply_render_to_final_canvas(tile_rect, x, y);
                 self.flush();
             }
         }
@@ -591,9 +611,7 @@ impl RenderState {
     ) -> Result<(), String> {
         self.current_tile = tile;
 
-        println!("Renderizando tile {}:{} {}", tile.0, tile.1, self.render_in_progress);
-        println!("Area {:?}", self.render_area);
-
+        // println!("Renderizando tile {}:{} {}", tile.0, tile.1, self.render_in_progress);
         // NOTE: No debería afectar
         // if self.render_in_progress {
         //     if let Some(frame_id) = self.render_request_id {
@@ -613,7 +631,7 @@ impl RenderState {
 
         // If the tile is empty or it doesn't exists
         if !self.tiles.has_tile_at(tile) {
-            println!("Salimos porque el tile está vacío {}:{}", tile.0, tile.1);
+            // println!("Salimos porque el tile está vacío {}:{}", tile.0, tile.1);
             return Ok(())
         }
 
@@ -672,6 +690,7 @@ impl RenderState {
         }
 
         self.render_area = tiles::get_tile_rect(self.viewbox, tile);
+        // println!("Renderizando tile {}:{} {:?}", tile.0, tile.1, self.render_area);
         self.render_shape_tree(tree, modifiers, self.render_area, timestamp)?;
         // self.render_in_progress = true;
         // self.process_animation_frame(tree, modifiers, timestamp)?;
@@ -875,4 +894,19 @@ impl RenderState {
         println!("invalidate_tiles");
         self.tiles.invalidate_tiles();
     }
+
+    pub fn rebuild_tiles(&mut self, tree: &mut HashMap<Uuid, Shape>, zoom: f32) {
+      if zoom != self.viewbox.zoom {
+        println!("rebuild_tiles");
+        self.tiles.invalidate_tiles();
+        let mut nodes = vec![Uuid::nil()];
+        while let Some(shape_id) = nodes.pop() {
+            let shape = tree.get(&shape_id).unwrap();
+            self.update_tile_for(&shape);
+            for child_id in shape.children_ids().iter() {
+              nodes.push(*child_id);
+            }
+        }
+      }
+  }    
 }

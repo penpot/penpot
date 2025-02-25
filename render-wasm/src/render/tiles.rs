@@ -34,8 +34,10 @@ pub fn get_tile_pos(viewbox: Viewbox, (x, y): Tile) -> (f32, f32) {
 }
 
 pub fn get_tile_size(viewbox: Viewbox) -> f32 {
-  //TODO: why 1. / ?
-  1. / viewbox.zoom * TILE_SIZE
+  // TODO: why 1. / ?
+  // TODO:  * self.options.dpr() too?
+  // 1. / viewbox.zoom * TILE_SIZE
+  viewbox.zoom * TILE_SIZE
 }
 
 pub fn get_tile_rect(viewbox: Viewbox, tile: Tile) -> skia::Rect {
