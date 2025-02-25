@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-02-25 02:04+0000\n"
-"Last-Translator: Andy Li <andyli2456@gmail.com>\n"
+"PO-Revision-Date: 2025-02-26 03:05+0000\n"
+"Last-Translator: william chen <william.fromtw@gmail.com>\n"
 "Language-Team: Chinese (Traditional Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hant/>\n"
 "Language: zh_Hant\n"
@@ -4471,3 +4471,1498 @@ msgstr "未找到 @%s 的聯絡人"
 #: src/app/main/ui/workspace/colorpicker.cljs:470
 msgid "media.keep-aspect-ratio"
 msgstr "維持長寬比"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:179
+msgid "shortcuts.snap-pixel-grid"
+msgstr "對齊到像素網格"
+
+#: src/app/main/ui/dashboard/team.cljs:779
+msgid "title.team-invitations"
+msgstr "邀請 - %s - Penpot"
+
+#: src/app/main/ui/workspace/context_menu.cljs:751
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "建立版面"
+
+#: src/app/main/ui/workspace/context_menu.cljs:713
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "在下方新增 1 行"
+
+#: src/app/main/ui/workspace/context_menu.cljs:712
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "在上方新增 1 行"
+
+#: src/app/main/ui/workspace/context_menu.cljs:714
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "刪除列"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:423
+msgid "workspace.options.interaction-easing-ease-in"
+msgstr "緩慢開始"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:144
+msgid "workspace.options.layer-options.blend-mode.color-dodge"
+msgstr "顏色增亮"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.direction.column"
+msgstr "欄位"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:143
+msgid "workspace.options.text-options.grow-fixed"
+msgstr "固定"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
+msgid "shortcuts.text-align-justify"
+msgstr "左右對齊"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:193
+msgid "shortcuts.toggle-guides"
+msgstr "顯示/隱藏導引線"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:201
+msgid "shortcuts.toggle-snap-guides"
+msgstr "對齊到導引線"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:200
+msgid "shortcuts.toggle-rulers"
+msgstr "顯示/隱藏尺規"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:202
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "對齊到標尺指導線"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:204
+msgid "shortcuts.toggle-theme"
+msgstr "更改主題"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:205
+msgid "shortcuts.toggle-visibility"
+msgstr "顯示 / 隱藏"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:211
+msgid "shortcuts.v-distribute"
+msgstr "垂直分佈"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:212
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "縮小焦距"
+
+#: src/app/main/ui/workspace/right_header.cljs:48, src/app/main/ui/workspace/right_header.cljs:53
+msgid "workspace.header.unsaved"
+msgstr "變更尚未儲存"
+
+#: src/app/main/ui/workspace/libraries.cljs:391
+msgid "workspace.libraries.more-templates-link"
+msgstr "這裡有更多範本"
+
+#: src/app/main/ui/workspace/libraries.cljs:355
+msgid "workspace.libraries.shared-library-btn"
+msgstr "連接圖庫"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:173
+msgid "workspace.options.component.create-annotation"
+msgstr "建立註解"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:599
+msgid "workspace.options.component.main"
+msgstr "主要"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:368
+msgid "workspace.options.interaction-while-hovering"
+msgstr "滑鼠懸停時"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:377
+msgid "workspace.options.interaction-toggle-overlay"
+msgstr "切換覆蓋層"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:55
+msgid "workspace.options.interaction-toggle-overlay-dest"
+msgstr "切換覆蓋層：%s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:731
+msgid "workspace.options.interactions"
+msgstr "互動"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:149
+msgid "workspace.options.layer-options.blend-mode.exclusion"
+msgstr "排除"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:735
+msgid "workspace.options.interactions.add-interaction"
+msgstr "新增互動"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:145
+msgid "workspace.options.layer-options.blend-mode.overlay"
+msgstr "疊層"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:146
+msgid "workspace.options.layer-options.blend-mode.soft-light"
+msgstr "柔光"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout.margin"
+msgstr "邊距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout.margin-all"
+msgstr "所有邊"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout.margin-simple"
+msgstr "簡單邊距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.padding-all"
+msgstr "所有邊界"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.space-around"
+msgstr "圍繞間距"
+
+#: src/app/main/ui/workspace/nudge.cljs:53
+msgid "modals.small-nudge"
+msgstr "小幅微調"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:87
+msgid "shortcuts.bool-union"
+msgstr "布林聯集"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:86
+msgid "shortcuts.bool-intersection"
+msgstr "布林交集"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
+msgid "shortcuts.text-align-left"
+msgstr "左對齊"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:206
+msgid "shortcuts.toggle-zoom-style"
+msgstr "切換縮放模式"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:515
+msgid "workspace.libraries.colors.save-color"
+msgstr "儲存顏色樣式"
+
+#: src/app/main/ui/workspace/libraries.cljs:294
+msgid "workspace.libraries.in-this-file"
+msgstr "此檔案中的圖庫"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:85
+msgid "workspace.options.blur-options.title.multiple"
+msgstr "選擇模糊效果"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:460
+msgid "workspace.options.component.swap.empty"
+msgstr "這個圖庫目前沒有資源"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:610
+msgid "workspace.options.interaction-background"
+msgstr "新增背景疊加層"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:40, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:370
+msgid "workspace.options.interaction-mouse-enter"
+msgstr "滑鼠移入"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:53
+msgid "workspace.options.interaction-open-overlay-dest"
+msgstr "開啟覆蓋層：%s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:39, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:369
+msgid "workspace.options.interaction-while-pressing"
+msgstr "當按住時"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:445
+msgid "workspace.options.show-in-viewer"
+msgstr "在檢視模式中顯示"
+
+#: src/app/main/ui/workspace/header.cljs
+#, unused
+msgid "workspace.header.save-error"
+msgstr "儲存時出錯"
+
+#: src/app/main/ui/comments.cljs:657, src/app/main/ui/comments.cljs:690, src/app/main/ui/comments.cljs:759
+msgid "labels.post"
+msgstr "發佈"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:180
+msgid "shortcuts.start-editing"
+msgstr "開始編輯"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:181
+msgid "shortcuts.start-measure"
+msgstr "開始測量"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:186
+msgid "shortcuts.text-align-right"
+msgstr "右對齊"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:203
+msgid "shortcuts.toggle-textpalette"
+msgstr "切換文字調色板"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:214
+msgid "shortcuts.zoom-selected"
+msgstr "縮放至選取範圍"
+
+#: src/app/main/ui/settings/notifications.cljs:64
+msgid "title.settings.notifications"
+msgstr "通知 - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs:1043
+msgid "title.team-webhooks"
+msgstr "Webhooks - %s - Penpot"
+
+#: src/app/main/ui/viewer/interactions.cljs:298
+msgid "viewer.header.dont-show-interactions"
+msgstr "隱藏互動"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:50
+msgid "workspace.align.hleft"
+msgstr "左對齊 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:91
+msgid "workspace.align.vcenter"
+msgstr "垂直居中對齊 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "workspace.assets.selected-count"
+msgid_plural "workspace.assets.selected-count"
+msgstr[0] "選取了 %s 項目"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "workspace.assets.shared-library"
+msgstr "共享圖庫"
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:404
+msgid "workspace.assets.typography.add-typography"
+msgstr "新增字體排版"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:525
+msgid "workspace.assets.typography.letter-spacing"
+msgstr "字距"
+
+#: src/app/main/ui/workspace/context_menu.cljs:378, src/app/main/ui/workspace/context_menu.cljs:663
+msgid "workspace.focus.focus-off"
+msgstr "退出焦點模式"
+
+#: src/app/main/ui/workspace/context_menu.cljs:377
+msgid "workspace.focus.focus-on"
+msgstr "啟用焦點模式"
+
+#: src/app/util/color.cljs:34
+msgid "workspace.gradients.linear"
+msgstr "線性漸層"
+
+#: src/app/main/ui/workspace/main_menu.cljs:243
+msgid "workspace.header.menu.disable-dynamic-alignment"
+msgstr "關閉動態對齊"
+
+#: src/app/main/ui/workspace/main_menu.cljs:228
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "禁用對齊至導向線"
+
+#: src/app/main/ui/workspace/main_menu.cljs:198
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "啟用等比縮放"
+
+#: src/app/main/ui/workspace/header.cljs
+#, unused
+msgid "workspace.header.menu.enable-scale-text"
+msgstr "啟用文字縮放"
+
+#: src/app/main/ui/workspace/main_menu.cljs:326
+msgid "workspace.header.menu.hide-rules"
+msgstr "隱藏尺規"
+
+#: src/app/main/ui/workspace/main_menu.cljs:373
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "隱藏字型面板"
+
+#: src/app/main/ui/workspace/main_menu.cljs:910
+msgid "workspace.header.menu.option.power-up"
+msgstr "升級您的計劃"
+
+#: src/app/main/ui/workspace/main_menu.cljs:471
+msgid "workspace.header.menu.redo"
+msgstr "復原上一步操作"
+
+#: src/app/main/ui/workspace/main_menu.cljs:283
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "切換到明亮主題"
+
+#: src/app/main/ui/workspace/main_menu.cljs:457
+msgid "workspace.header.menu.undo"
+msgstr "撤回"
+
+#: src/app/main/ui/viewer/header.cljs:79, src/app/main/ui/workspace/right_header.cljs:109
+msgid "workspace.header.zoom"
+msgstr "縮放"
+
+#: src/app/main/ui/workspace/right_header.cljs:136
+msgid "workspace.header.zoom-selected"
+msgstr "縮放至選取範圍"
+
+#: src/app/main/ui/workspace/libraries.cljs:374
+msgid "workspace.libraries.empty.add-some"
+msgstr "或增加這些來試試："
+
+#: src/app/main/ui/workspace/libraries.cljs:483
+msgid "workspace.libraries.library-updates"
+msgstr "圖庫更新"
+
+#: src/app/main/ui/workspace/libraries.cljs:363
+msgid "workspace.libraries.loading"
+msgstr "載入中…"
+
+#: src/app/main/ui/workspace/libraries.cljs:481
+msgid "workspace.libraries.no-libraries-need-sync"
+msgstr "沒有需要更新的共享圖庫"
+
+#: src/app/main/ui/workspace/libraries.cljs:337
+msgid "workspace.libraries.search-shared-libraries"
+msgstr "搜尋共享圖庫"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:311
+msgid "workspace.libraries.text.multiple-typography"
+msgstr "多種字體樣式"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:314
+msgid "workspace.libraries.text.multiple-typography-tooltip"
+msgstr "解除所有字體樣式的連結"
+
+#: src/app/main/ui/workspace/libraries.cljs:326
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "取消圖庫連接"
+
+#: src/app/main/ui/workspace/libraries.cljs:579
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "查看所有變更"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+msgid "workspace.options.blur-options.add-blur"
+msgstr "加入模糊效果"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:234
+msgid "workspace.options.export.remove-export"
+msgstr "移除匯出"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:274
+msgid "workspace.options.grid.params.margin"
+msgstr "邊距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:151
+msgid "workspace.options.fill.add-fill"
+msgstr "新增填充顏色"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:343, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:344
+msgid "workspace.options.fit-content"
+msgstr "調整畫布以符合內容大小"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:178
+msgid "workspace.options.flows.flow"
+msgstr "流程"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:215, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:292
+msgid "workspace.options.grid.params.use-default"
+msgstr "使用預設"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs:193, src/app/main/ui/workspace/sidebar/options.cljs:196
+msgid "workspace.options.inspect"
+msgstr "檢視"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interaction-in"
+msgstr "進場"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:60, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:380
+msgid "workspace.options.interaction-open-url"
+msgstr "開啟URL"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:406
+msgid "workspace.options.interaction-pos-top-center"
+msgstr "頂部中心"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:404
+msgid "workspace.options.interaction-pos-top-left"
+msgstr "左上角"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:405
+msgid "workspace.options.interaction-pos-top-right"
+msgstr "右上角"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:59, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:379
+msgid "workspace.options.interaction-prev-screen"
+msgstr "上一個畫面"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:58, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:385, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:399, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:400
+msgid "workspace.options.interaction-self"
+msgstr "自身"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:141
+msgid "workspace.options.layer-options.blend-mode.color-burn"
+msgstr "顏色加深"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:147
+msgid "workspace.options.layer-options.blend-mode.hard-light"
+msgstr "強光"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:140
+msgid "workspace.options.layer-options.blend-mode.multiply"
+msgstr "圖層混合"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout-item.title.layout-item-max-w"
+msgstr "最大寬度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.direction.column-reverse"
+msgstr "反轉欄位"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.space-between"
+msgstr "元素間距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:110
+msgid "workspace.options.radius-top-right"
+msgstr "右上角"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:49
+msgid "workspace.options.selection-fill"
+msgstr "選取填充"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:146
+msgid "workspace.options.shadow-options.drop-shadow"
+msgstr "陰影效果"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:192
+msgid "workspace.options.stroke-color"
+msgstr "描邊顏色"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:117
+msgid "workspace.options.text-options.align-bottom"
+msgstr "對齊底部"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:113
+msgid "workspace.options.text-options.align-middle"
+msgstr "對齊中間"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:57
+msgid "workspace.options.text-options.text-align-right"
+msgstr "右對齊 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#, unused
+msgid "workspace.options.text-options.titlecase"
+msgstr "標題大小寫"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:378
+msgid "workspace.options.interaction-close-overlay"
+msgstr "關閉疊加層"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:155
+msgid "workspace.options.more-lib-colors"
+msgstr "更多圖層顏色"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:165
+msgid "workspace.options.stroke-width"
+msgstr "描邊寬度"
+
+#: src/app/main/ui/viewer/header.cljs:195
+msgid "viewer.header.fullscreen"
+msgstr "全螢幕"
+
+#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
+msgid "workspace.libraries.typography"
+msgstr "%s 字體樣式"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:142
+msgid "workspace.options.layer-options.blend-mode.lighten"
+msgstr "變亮"
+
+#: src/app/main/ui/workspace/main_menu.cljs:244
+msgid "workspace.header.menu.enable-dynamic-alignment"
+msgstr "啟用動態對齊"
+
+#: src/app/main/ui/viewer/header.cljs:102
+msgid "workspace.header.zoom-fit"
+msgstr "填滿 - 按比例縮小以適合"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interaction-out"
+msgstr "離開"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:336
+msgid "workspace.assets.local-library"
+msgstr "本地圖庫"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:137
+msgid "workspace.assets.group-name"
+msgstr "群組名稱"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:128
+msgid "workspace.assets.rename-group"
+msgstr "重新命名群組"
+
+#: src/app/main/ui/workspace/main_menu.cljs:901
+msgid "workspace.header.menu.option.help-info"
+msgstr "幫助和資訊"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:182
+msgid "workspace.options.flows.add-flow-start"
+msgstr "新增流程起點"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:164
+msgid "workspace.options.flows.flow-starts"
+msgstr "流程起點"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:50
+msgid "workspace.options.group-fill"
+msgstr "群組填充"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:42, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:373
+msgid "workspace.options.interaction-after-delay"
+msgstr "延遲執行"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:412
+msgid "workspace.options.interaction-animation-dissolve"
+msgstr "淡出"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:418
+msgid "workspace.options.interaction-animation-push"
+msgstr "推動"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:413
+msgid "workspace.options.interaction-animation-slide"
+msgstr "滑動"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:667
+msgid "workspace.options.interaction-duration"
+msgstr "持續時間"
+
+#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:41, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:215, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:217
+msgid "workspace.options.shadow-options.spread"
+msgstr "擴散"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:299
+msgid "workspace.options.shadow-options.title.group"
+msgstr "群組陰影"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#, unused
+msgid "workspace.options.stroke-cap.circle-marker"
+msgstr "圓形標記"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:43
+msgid "workspace.options.stroke"
+msgstr "邊框"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
+msgid "shortcuts.stop-measure"
+msgstr "停止測量"
+
+#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
+msgid "workspace.libraries.graphics"
+msgstr "%s 圖形"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:500
+msgid "workspace.options.interaction-preserve-scroll"
+msgstr "保持滾動位置"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:66
+msgid "workspace.align.hright"
+msgstr "右對齊 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:548
+msgid "workspace.assets.duplicate-main"
+msgstr "複製主要資源"
+
+#: src/app/main/ui/workspace/main_menu.cljs:197
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "關閉等比縮放"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.direction.row"
+msgstr "列"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.padding-simple"
+msgstr "簡單內邊距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:61
+msgid "workspace.options.text-options.text-align-justify"
+msgstr "對齊兩端 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:127
+msgid "workspace.assets.create-group"
+msgstr "建立群組"
+
+#: src/app/main/ui/viewer/header.cljs:116
+msgid "workspace.header.zoom-full-screen"
+msgstr "全螢幕"
+
+#: src/app/main/ui/workspace/right_header.cljs:260
+msgid "workspace.header.viewer"
+msgstr "檢視模式 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:375
+msgid "workspace.options.interaction-navigate-to"
+msgstr "導航至"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, unused
+msgid "workspace.options.layer-options.title.group"
+msgstr "群組圖層"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, unused
+msgid "workspace.options.layer-options.title.multiple"
+msgstr "選擇圖層"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, unused
+msgid "workspace.options.layer-options.title"
+msgstr "圖層"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:41
+msgid "workspace.options.selection-stroke"
+msgstr "選取描邊"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:85
+msgid "shortcuts.bool-exclude"
+msgstr "布林排除"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:510
+msgid "workspace.assets.components.add-component"
+msgstr "新增元件"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:211
+msgid "workspace.assets.sort"
+msgstr "排序"
+
+#, unused
+msgid "workspace.assets.typography.text-styles"
+msgstr "文字樣式"
+
+#: src/app/main/ui/workspace/main_menu.cljs:342
+msgid "workspace.header.menu.hide-guides"
+msgstr "隱藏導向線"
+
+#: src/app/main/ui/workspace/main_menu.cljs:359
+msgid "workspace.header.menu.hide-palette"
+msgstr "隱藏顏色調色盤"
+
+#: src/app/main/ui/workspace/color_palette.cljs:141
+msgid "workspace.libraries.colors.empty-palette"
+msgstr "您的圖庫中還沒有顏色樣式"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:600
+msgid "workspace.options.component.copy"
+msgstr "複製"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:187
+msgid "workspace.options.export.add-export"
+msgstr "新增匯出"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:154
+msgid "workspace.options.flows.remove-flow"
+msgstr "移除流程"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:521
+msgid "workspace.options.interaction-relative-to"
+msgstr "相對於"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interactions.remove-interaction"
+msgstr "移除互動"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:180, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:318
+msgid "workspace.options.shadow-options.remove-shadow"
+msgstr "移除陰影"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:176
+msgid "workspace.options.shadow-options.toggle-shadow"
+msgstr "切換陰影"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:305
+msgid "workspace.options.size-presets"
+msgstr "尺寸預設"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:184
+msgid "workspace.options.stroke.remove-stroke"
+msgstr "移除描邊"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:151
+msgid "workspace.options.text-options.grow-auto-height"
+msgstr "自動高度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:147
+msgid "workspace.options.text-options.grow-auto-width"
+msgstr "自動寬度"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:207
+msgid "shortcuts.underline"
+msgstr "顯示/隱藏底線"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:208
+msgid "shortcuts.undo"
+msgstr "撤回"
+
+#: src/app/main/ui/settings/access_tokens.cljs:281
+msgid "title.settings.access-tokens"
+msgstr "個人資料 - 存取權杖(token)"
+
+#: src/app/main/ui/viewer/header.cljs:352
+msgid "viewer.header.inspect-section"
+msgstr "檢視 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:74
+msgid "workspace.align.hdistribute"
+msgstr "水平間距分佈 (%s)"
+
+#: src/app/main/ui/workspace/context_menu.cljs:743
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "合併單元格"
+
+#: src/app/main/ui/workspace/context_menu.cljs:706
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "在右邊新增 1 列"
+
+#: src/app/main/ui/workspace/main_menu.cljs:401
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "顯示像素網格"
+
+#: src/app/main/ui/workspace/main_menu.cljs:327
+msgid "workspace.header.menu.show-rules"
+msgstr "顯示尺規"
+
+#: src/app/main/ui/workspace/main_menu.cljs:374
+msgid "workspace.header.menu.show-textpalette"
+msgstr "顯示字型面板"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:62
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "定位"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:431
+msgid "workspace.options.clip-content"
+msgstr "裁切內容"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:422
+msgid "workspace.options.interaction-easing-ease"
+msgstr "緩衝"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
+msgid "workspace.options.interaction-close-outside"
+msgstr "點擊外部時關閉"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:484
+msgid "workspace.options.interaction-destination"
+msgstr "終點"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:528
+msgid "workspace.options.layout-item.layout-item-max-w"
+msgstr "Max.Width"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:545
+msgid "workspace.options.layout-item.layout-item-min-h"
+msgstr "Min.Height"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:128
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "箭頭"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:171
+msgid "workspace.options.stroke.add-stroke"
+msgstr "新增描邊顏色"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:49
+msgid "workspace.options.text-options.text-align-left"
+msgstr "左對齊 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:753
+msgid "workspace.options.use-play-button"
+msgstr "使用標題上的播放按鈕來執行原型檢視。"
+
+#: src/app/main/ui/workspace/plugins.cljs:442
+msgid "workspace.plugins.try-out.try"
+msgstr "嘗試外掛"
+
+#: src/app/main/ui/workspace/main_menu.cljs:388
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "隱藏版面名稱"
+
+#: src/app/main/ui/dashboard/libraries.cljs:42
+msgid "title.dashboard.shared-libraries"
+msgstr "共享圖庫 - %s - Penpot"
+
+#: src/app/main/ui/workspace/header.cljs
+#, unused
+msgid "workspace.header.menu.disable-scale-text"
+msgstr "關閉文字縮放"
+
+#: src/app/main/ui/workspace/main_menu.cljs:284
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "切換到深色主題"
+
+#: src/app/main/ui/workspace/text_palette.cljs:161
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "您的圖庫中還沒有字體樣式"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:416
+msgid "workspace.options.component.swap"
+msgstr "替換元件"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:172
+msgid "workspace.options.component.edit-annotation"
+msgstr "建立註解"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:153
+msgid "workspace.options.layer-options.blend-mode.luminosity"
+msgstr "亮度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.gap"
+msgstr "間距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "反轉列"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:126
+msgid "workspace.options.radius-bottom-right"
+msgstr "右下角"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:749
+msgid "workspace.options.select-a-shape"
+msgstr "選擇一個形狀、畫板或組合，並拖動連接至其他畫板。"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#, unused
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "三角箭頭"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:129
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "三角"
+
+#: src/app/main/ui/viewer/interactions.cljs:317
+msgid "viewer.header.show-interactions-on-click"
+msgstr "點擊時顯示互動"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:474
+msgid "workspace.options.interaction-action"
+msgstr "動作"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:680
+msgid "workspace.options.interaction-easing"
+msgstr "緩衝效果"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:403
+msgid "workspace.options.interaction-pos-center"
+msgstr "置中"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:148
+msgid "workspace.options.layer-options.blend-mode.difference"
+msgstr "差值"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.padding"
+msgstr "內邊距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.packed"
+msgstr "緊湊排版"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:147
+msgid "workspace.options.shadow-options.inner-shadow"
+msgstr "內陰影"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:131
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "圓形"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:189
+msgid "shortcuts.toggle-assets"
+msgstr "切換資產"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:192
+msgid "shortcuts.toggle-fullscreen"
+msgstr "切換全螢幕"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:226
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1個元件"
+
+#: src/app/main/ui/workspace/main_menu.cljs:343
+msgid "workspace.header.menu.show-guides"
+msgstr "顯示導向線"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:213
+msgid "shortcuts.zoom-lense-increase"
+msgstr "放大焦距"
+
+#: src/app/main/ui/viewer.cljs:573
+msgid "viewer.empty-state"
+msgstr "此頁面未找到看板 。"
+
+#: src/app/main/ui/dashboard/team.cljs:997
+msgid "webhooks.last-delivery.success"
+msgstr "上次交付成功。"
+
+#: src/app/main/ui/viewer/header.cljs:334
+msgid "viewer.header.interactions-section"
+msgstr "互動 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:138
+msgid "workspace.assets.create-group-hint"
+msgstr "您的項目將自動命名為「群組名稱 / 項目名稱」"
+
+#: src/app/main/ui/workspace/context_menu.cljs:711
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "複製列"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:528
+msgid "workspace.focus.focus-mode"
+msgstr "焦點模式"
+
+#: src/app/util/color.cljs:35
+msgid "workspace.gradients.radial"
+msgstr "放射狀漸層"
+
+#: src/app/main/ui/workspace/main_menu.cljs:400
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "隱藏像素網格"
+
+#: src/app/main/ui/workspace/main_menu.cljs:855
+msgid "workspace.header.menu.option.edit"
+msgstr "編輯"
+
+#: src/app/main/ui/workspace/main_menu.cljs:389
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "顯示版面名稱"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+#, unused
+msgid "workspace.libraries.colors.rgb-complementary"
+msgstr "RGB 互補色"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:38, src/app/main/ui/workspace/sidebar/options/page.cljs:45
+msgid "workspace.options.canvas-background"
+msgstr "畫布背景"
+
+#: src/app/main/ui/workspace/main_menu.cljs:360
+msgid "workspace.header.menu.show-palette"
+msgstr "顯示顏色調色盤"
+
+#: src/app/main/ui/viewer/header.cljs:109
+msgid "workspace.header.zoom-fill"
+msgstr "填滿 - 按比例縮放以填滿"
+
+#: src/app/main/ui/workspace/right_header.cljs:129
+msgid "workspace.header.zoom-fit-all"
+msgstr "縮放至適合顯示全部"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:273, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:607
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "編輯網格"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:59
+msgid "workspace.layout_grid.editor.title"
+msgstr "編輯網格"
+
+#: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:88, src/app/main/ui/workspace/colorpicker/libraries.cljs:48, src/app/main/ui/workspace/text_palette_ctx_menu.cljs:49
+msgid "workspace.libraries.colors.file-library"
+msgstr "檔案圖庫"
+
+#: src/app/main/ui/workspace/libraries.cljs:387
+msgid "workspace.libraries.more-templates"
+msgstr "您可以搜尋 "
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.flows.flow-start"
+msgstr "流程起點"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.grid-title"
+msgstr "網格"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:229
+msgid "workspace.options.grid.params.type.stretch"
+msgstr "延展"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:183
+msgid "workspace.options.guides.toggle-guide"
+msgstr "切換輔助線"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:57
+msgid "workspace.options.interaction-close-overlay-dest"
+msgstr "關閉疊加層：%s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:150
+msgid "workspace.options.layer-options.blend-mode.hue"
+msgstr "色調"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:191, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:197
+msgid "workspace.options.layer-options.toggle-layer"
+msgstr "切換圖層可見性"
+
+#: src/app/main/ui/workspace/context_menu.cljs:537
+msgid "workspace.shape.menu.add-flex"
+msgstr "新增彈性布局"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:178
+msgid "workspace.options.text-options.strikethrough"
+msgstr "刪除線 (%s)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:271, src/app/main/ui/workspace/nudge.cljs:47
+msgid "modals.nudge-title"
+msgstr "微調量"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:84
+msgid "shortcuts.bool-difference"
+msgstr "布林差集"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
+msgid "shortcuts.thumbnail-set"
+msgstr "設定縮圖"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:497, src/app/main/ui/workspace/sidebar/shortcuts.cljs:506
+msgid "shortcuts.title"
+msgstr "鍵盤快速鍵"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
+msgid "shortcuts.text-align-center"
+msgstr "居中對齊"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:196
+msgid "shortcuts.toggle-layout-flex"
+msgstr "新增/移除彈性佈局"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:197
+msgid "shortcuts.toggle-layout-grid"
+msgstr "新增/移除網格佈局"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:210
+msgid "shortcuts.unmask"
+msgstr "解除遮罩"
+
+#: src/app/main/ui/dashboard/fonts.cljs:39
+msgid "title.dashboard.font-providers"
+msgstr "字體提供者 - %s - Penpot"
+
+#: src/app/main/ui/viewer.cljs:578
+msgid "viewer.frame-not-found"
+msgstr "未找到看板 。"
+
+#: src/app/main/ui/viewer/header.cljs:343
+msgid "viewer.header.comments-section"
+msgstr "留言(%s)"
+
+#: src/app/main/ui/viewer/interactions.cljs:306
+msgid "viewer.header.show-interactions"
+msgstr "顯示互動"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:58
+msgid "workspace.align.hcenter"
+msgstr "水平居中對齊 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:99
+msgid "workspace.align.vbottom"
+msgstr "底部對齊 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:104
+msgid "workspace.align.vdistribute"
+msgstr "垂直間距分佈 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:83
+msgid "workspace.align.vtop"
+msgstr "頂部對齊 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:146
+msgid "workspace.assets.box-filter-all"
+msgstr "所有資源"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:494
+msgid "workspace.assets.colors.add-color"
+msgstr "新增顏色"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:195
+msgid "workspace.assets.filter"
+msgstr "篩選資源"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:505
+msgid "workspace.assets.grid-view"
+msgstr "網格視圖"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:174, src/app/main/ui/workspace/sidebar/assets.cljs:179
+msgid "workspace.assets.add-library"
+msgstr "新增圖庫"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
+msgid "workspace.assets.list-view"
+msgstr "列表視圖"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:320
+msgid "workspace.assets.not-found"
+msgstr "未找到資源"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:111
+msgid "workspace.assets.open-library"
+msgstr "開啟圖庫檔案"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:192
+msgid "workspace.assets.search"
+msgstr "搜尋資源"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:535
+msgid "workspace.assets.typography.go-to-edit"
+msgstr "前往樣式圖庫檔案進行編輯"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:521
+msgid "workspace.assets.typography.line-height"
+msgstr "行高"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:529
+msgid "workspace.assets.typography.text-transform"
+msgstr "文字變換"
+
+#: src/app/main/ui/workspace/context_menu.cljs:748
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "建立區域"
+
+#: src/app/main/ui/workspace/context_menu.cljs:705
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "在左邊新增 1 列"
+
+#: src/app/main/ui/workspace/context_menu.cljs:707
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "刪除欄位"
+
+#: src/app/main/ui/workspace/context_menu.cljs:708
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "刪除欄位和圖形"
+
+#: src/app/main/ui/workspace/context_menu.cljs:704
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "複製欄位"
+
+#: src/app/main/ui/workspace/context_menu.cljs:715
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "刪除列和圖形"
+
+#, unused
+msgid "workspace.focus.selection"
+msgstr "選取"
+
+#: src/app/main/ui/workspace/main_menu.cljs:258
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "關閉對齊至像素"
+
+#: src/app/main/ui/workspace/main_menu.cljs:229
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr "對齊至導向線"
+
+#: src/app/main/ui/workspace/main_menu.cljs:212
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "關閉對齊至尺規導向線"
+
+#: src/app/main/ui/workspace/main_menu.cljs:259
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "啟用對齊至像素"
+
+#: src/app/main/ui/workspace/main_menu.cljs:213
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "對齊至尺規導向線"
+
+#: src/app/main/ui/workspace/right_header.cljs:255
+msgid "workspace.header.share"
+msgstr "共享"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1295
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "離開"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:478
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "顯示四邊內距選項"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:65
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "完成"
+
+#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
+msgid "workspace.libraries.colors"
+msgstr "%s 顏色"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1321
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "定位網格佈局"
+
+#: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:111, src/app/main/ui/workspace/colorpicker/libraries.cljs:47
+msgid "workspace.libraries.colors.recent-colors"
+msgstr "最近使用的顏色"
+
+#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
+msgid "workspace.libraries.components"
+msgstr "%s 元件"
+
+#: src/app/main/ui/workspace/libraries.cljs:300
+msgid "workspace.libraries.file-library"
+msgstr "檔案圖庫"
+
+#: src/app/main/ui/workspace/libraries.cljs:394
+msgid "workspace.libraries.no-matches-for"
+msgstr "沒有找到符合 '%s' 的"
+
+#: src/app/main/ui/workspace/libraries.cljs:384
+msgid "workspace.libraries.no-shared-libraries-available"
+msgstr "目前沒有可用的共享圖庫"
+
+#: src/app/main/ui/workspace/libraries.cljs:368
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "您的團隊中沒有共享圖庫，您可以尋找"
+
+#: src/app/main/ui/workspace/libraries.cljs:372
+msgid "workspace.libraries.empty.some-templates"
+msgstr "這裡的一些範本"
+
+#: src/app/main/ui/workspace/libraries.cljs:333
+msgid "workspace.libraries.shared-libraries"
+msgstr "共享圖庫"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:745
+msgid "workspace.options.add-interaction"
+msgstr "按一下 + 按鈕來新增互動。"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.remove-blur"
+msgstr "移除模糊效果"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:86
+msgid "workspace.options.blur-options.title.group"
+msgstr "群組模糊效果"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:108
+msgid "workspace.options.blur-options.toggle-blur"
+msgstr "切換模糊效果"
+
+#: src/app/main/ui/viewer/inspect/annotation.cljs:19, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:181
+msgid "workspace.options.component.annotation"
+msgstr "註解"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:142, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:153
+msgid "workspace.options.constraints.scale"
+msgstr "縮放"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:164
+msgid "workspace.options.fill.remove-fill"
+msgstr "移除填充顏色"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:263
+msgid "workspace.options.grid.params.gutter"
+msgstr "網格間距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:200, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:241
+msgid "workspace.options.grid.params.color"
+msgstr "顏色"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:42
+msgid "workspace.options.group-stroke"
+msgstr "群組描邊"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:323
+msgid "workspace.options.guides.add-guide"
+msgstr "新增輔助線"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:187
+msgid "workspace.options.guides.remove-guide"
+msgstr "移除輔助線"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:320
+msgid "workspace.options.guides.title"
+msgstr "輔助線"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:425
+msgid "workspace.options.interaction-easing-ease-in-out"
+msgstr "先慢後快再慢"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:424
+msgid "workspace.options.interaction-easing-ease-out"
+msgstr "逐漸減速"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:41, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:371
+msgid "workspace.options.interaction-mouse-leave"
+msgstr "滑鼠移出"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:51
+msgid "workspace.options.interaction-navigate-to-dest"
+msgstr "導航至：%s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:36, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:366
+msgid "workspace.options.interaction-on-click"
+msgstr "點擊觸發"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:52, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:386
+msgid "workspace.options.interaction-none"
+msgstr "（尚未設置）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:697
+msgid "workspace.options.interaction-offset-effect"
+msgstr "位移效果"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:376
+msgid "workspace.options.interaction-open-overlay"
+msgstr "開啟覆蓋層"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:409
+msgid "workspace.options.interaction-pos-bottom-center"
+msgstr "底部中心"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:407
+msgid "workspace.options.interaction-pos-bottom-left"
+msgstr "左下角"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:408
+msgid "workspace.options.interaction-pos-bottom-right"
+msgstr "右下角"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:451
+msgid "workspace.options.interaction-trigger"
+msgstr "觸發"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:139
+msgid "workspace.options.layer-options.blend-mode.darken"
+msgstr "變暗"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:138
+msgid "workspace.options.layer-options.blend-mode.normal"
+msgstr "正常"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:151
+msgid "workspace.options.layer-options.blend-mode.saturation"
+msgstr "飽和度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:143
+msgid "workspace.options.layer-options.blend-mode.screen"
+msgstr "螢幕疊加"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout-item.advanced-ops"
+msgstr "進階選項"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:512
+msgid "workspace.options.layout-item.layout-item-min-w"
+msgstr "Min.Width"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout-item.title.layout-item-max-h"
+msgstr "最大高度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:118
+msgid "workspace.options.radius-bottom-left"
+msgstr "左下角"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:102
+msgid "workspace.options.radius-top-left"
+msgstr "左上角"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:135
+msgid "workspace.options.radius.hide-all-corners"
+msgstr "合併獨立圓角半徑"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:136
+msgid "workspace.options.radius.show-single-corners"
+msgstr "顯示獨立圓角半徑"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:183
+msgid "workspace.options.search-font"
+msgstr "搜尋字型"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:305
+msgid "workspace.options.shadow-options.add-shadow"
+msgstr "新增陰影"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:242
+msgid "workspace.options.shadow-options.color"
+msgstr "陰影顏色"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:298
+msgid "workspace.options.shadow-options.title.multiple"
+msgstr "選取陰影"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#, unused
+msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "箭頭線"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#, unused
+msgid "workspace.options.stroke-cap.diamond-marker"
+msgstr "鑽石標記"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:132
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "鑽石"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:134
+msgid "workspace.options.stroke-cap.round"
+msgstr "圓角"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#, unused
+msgid "workspace.options.stroke-cap.square-marker"
+msgstr "方形標記"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:130
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "矩形"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:108
+msgid "workspace.options.stroke.mixed"
+msgstr "混合"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:109
+msgid "workspace.options.text-options.align-top"
+msgstr "對齊頂部"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389
+msgid "workspace.options.text-options.letter-spacing"
+msgstr "字母間距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:371
+msgid "workspace.options.text-options.line-height"
+msgstr "線高"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:190
+msgid "workspace.options.text-options.title-group"
+msgstr "群組文字"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:189
+msgid "workspace.options.text-options.title-selection"
+msgstr "選取文字"
