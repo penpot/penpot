@@ -30,6 +30,16 @@
 
 (dm/export clv/find-related-components)
 
+(defn is-secondary-variant?
+  [component data]
+  (if-let [variant-id (:variant-id component)]
+    (let [page-id (:main-instance-page component)
+          objects (-> (dsh/get-page data page-id)
+                      (get :objects))
+          shapes  (dm/get-in objects [variant-id :shapes])]
+      (not= (:main-instance-id component) (last shapes)))
+    false))
+
 (defn update-property-name
   "Update the variant property name on the position pos
    in all the components with this variant-id"

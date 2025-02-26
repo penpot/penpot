@@ -14,6 +14,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -343,8 +344,9 @@
 
         filtered-components
         (mf/with-memo [filters library]
-          (-> (into [] (ctkl/components-seq library))
-              (cmm/apply-filters filters)))
+          (as-> (into [] (ctkl/components-seq library)) $
+            (cmm/apply-filters $ filters)
+            (remove #(dwv/is-secondary-variant? % library) $)))
 
         filtered-media
         (mf/with-memo [filters media]
