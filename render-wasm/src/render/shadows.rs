@@ -8,6 +8,7 @@ pub fn render_drop_shadow(render_state: &mut RenderState, shadow: &Shadow, scale
     render_state
         .surfaces
         .draw_into(SurfaceId::Fills, SurfaceId::Shadow, Some(&shadow_paint));
+
     render_state
         .surfaces
         .draw_into(SurfaceId::Strokes, SurfaceId::Shadow, Some(&shadow_paint));
@@ -24,16 +25,27 @@ pub fn render_drop_shadow(render_state: &mut RenderState, shadow: &Shadow, scale
         .clear(skia::Color::TRANSPARENT);
 }
 
-pub fn render_inner_shadow(render_state: &mut RenderState, shadow: &Shadow, scale: f32) {
+pub fn render_inner_shadow(
+    render_state: &mut RenderState,
+    shadow: &Shadow,
+    scale: f32,
+    render_over_fills: bool,
+) {
     let shadow_paint = shadow.to_paint(scale);
 
-    render_state
-        .surfaces
-        .draw_into(SurfaceId::Fills, SurfaceId::Shadow, Some(&shadow_paint));
+    if render_over_fills {
+        render_state
+            .surfaces
+            .draw_into(SurfaceId::Fills, SurfaceId::Shadow, Some(&shadow_paint));
+    } else {
+        render_state
+            .surfaces
+            .draw_into(SurfaceId::Strokes, SurfaceId::Shadow, Some(&shadow_paint));
+    }
 
     render_state
         .surfaces
-        .draw_into(SurfaceId::Shadow, SurfaceId::Overlay, None); // , None
+        .draw_into(SurfaceId::Shadow, SurfaceId::Overlay, None);
 
     render_state
         .surfaces
