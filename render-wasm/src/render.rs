@@ -68,6 +68,7 @@ pub(crate) struct RenderState {
     // Stack of nodes pending to be rendered.
     pub pending_nodes: Vec<NodeRenderState>,
     pub render_complete: bool,
+    pub sampling_options: skia::SamplingOptions,
 }
 
 impl RenderState {
@@ -100,6 +101,7 @@ impl RenderState {
             render_in_progress: false,
             pending_nodes: vec![],
             render_complete: true,
+            sampling_options,
         }
     }
 
