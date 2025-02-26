@@ -75,7 +75,9 @@ pub extern "C" fn set_canvas_background(raw_color: u32) {
 pub extern "C" fn render(timestamp: i32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     // state.start_render_loop(timestamp).expect("Error rendering");
-    state.start_render_loop_tiles(timestamp).expect("Error rendering tiles");
+    state
+        .start_render_loop_tiles(timestamp)
+        .expect("Error rendering tiles");
 }
 
 #[no_mangle]

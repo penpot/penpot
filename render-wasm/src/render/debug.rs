@@ -6,7 +6,12 @@ use super::{tiles, RenderState};
 const DEBUG_SCALE: f32 = 0.2;
 
 fn get_debug_rect(rect: Rect) -> Rect {
-    skia::Rect::from_xywh(100. + rect.x() * DEBUG_SCALE, 100. + rect.y() * DEBUG_SCALE, rect.width() * DEBUG_SCALE, rect.height() * DEBUG_SCALE)
+    skia::Rect::from_xywh(
+        100. + rect.x() * DEBUG_SCALE,
+        100. + rect.y() * DEBUG_SCALE,
+        rect.width() * DEBUG_SCALE,
+        rect.height() * DEBUG_SCALE,
+    )
 }
 
 fn render_debug_view(render_state: &mut RenderState) {
@@ -16,11 +21,7 @@ fn render_debug_view(render_state: &mut RenderState) {
     paint.set_stroke_width(1.);
 
     let rect = get_debug_rect(render_state.viewbox.area.clone());
-    render_state
-        .surfaces
-        .debug
-        .canvas()
-        .draw_rect(rect, &paint);
+    render_state.surfaces.debug.canvas().draw_rect(rect, &paint);
 }
 
 pub fn render_wasm_label(render_state: &mut RenderState) {
@@ -30,7 +31,11 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
     let mut paint = skia::Paint::default();
     paint.set_color(skia::Color::from_argb(100, 0, 0, 0));
 
-    let str = if render_state.options.is_debug_visible() { "WASM RENDERER (DEBUG)" } else { "WASM RENDERER" };
+    let str = if render_state.options.is_debug_visible() {
+        "WASM RENDERER (DEBUG)"
+    } else {
+        "WASM RENDERER"
+    };
     let (scalar, _) = render_state.debug_font.measure_str(str, None);
     let p = skia::Point::new(width as f32 - 25.0 - scalar, height as f32 - 25.0);
 
@@ -48,11 +53,7 @@ pub fn render_debug_shape(render_state: &mut RenderState, element: &Shape, inter
     paint.set_stroke_width(1.);
 
     let rect = get_debug_rect(element.selrect());
-    render_state
-        .surfaces
-        .debug
-        .canvas()
-        .draw_rect(rect, &paint);
+    render_state.surfaces.debug.canvas().draw_rect(rect, &paint);
 }
 
 // Renders the tiles in the viewbox
@@ -67,7 +68,12 @@ pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
     let (sx, sy, ex, ey) = tiles::get_tiles_for_rect(render_state.viewbox.area, tile_size);
     for y in sy..=ey {
         for x in sx..=ex {
-            let rect = Rect::from_xywh(x as f32 * tile_size, y as f32 * tile_size, tile_size, tile_size);
+            let rect = Rect::from_xywh(
+                x as f32 * tile_size,
+                y as f32 * tile_size,
+                tile_size,
+                tile_size,
+            );
             let debug_rect = get_debug_rect(rect);
             let p = skia::Point::new(debug_rect.x(), debug_rect.y() - 1.);
             let str = format!("{}:{}", x, y);
@@ -94,7 +100,12 @@ pub fn render_debug_tiles(render_state: &mut RenderState) {
                 continue;
             }
 
-            let rect = Rect::from_xywh(x as f32 * tile_size, y as f32 * tile_size, tile_size, tile_size);
+            let rect = Rect::from_xywh(
+                x as f32 * tile_size,
+                y as f32 * tile_size,
+                tile_size,
+                tile_size,
+            );
             let debug_rect = get_debug_rect(rect);
             let p = skia::Point::new(debug_rect.x(), debug_rect.y() - 1.);
             let str = format!("{}:{} {}", x, y, shape_count);
@@ -111,7 +122,7 @@ pub fn render(render_state: &mut RenderState) {
     render_debug_tiles(render_state);
     render_state.surfaces.debug.draw(
         &mut render_state.surfaces.target.canvas(),
-    (0.0, 0.0),
+        (0.0, 0.0),
         render_state.sampling_options,
         Some(&paint),
     );

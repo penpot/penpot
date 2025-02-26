@@ -45,7 +45,8 @@ impl<'a> State<'a> {
     }
 
     pub fn start_render_loop_tiles(&mut self, timestamp: i32) -> Result<(), String> {
-        self.render_state.start_render_loop_tiles(&mut self.shapes, &self.modifiers, timestamp)?;
+        self.render_state
+            .start_render_loop_tiles(&mut self.shapes, &self.modifiers, timestamp)?;
         Ok(())
     }
 
@@ -85,12 +86,12 @@ impl<'a> State<'a> {
                 if !shape.id.is_nil() {
                     self.render_state.update_tile_for(&shape);
                 }
-            },
+            }
             None => { /* TODO: Esto debería lanzar una excepción? */ }
         }
     }
 
     pub fn rebuild_tiles_if_needed(&mut self, zoom: f32) {
-      self.render_state.rebuild_tiles(&mut self.shapes, zoom);
+        self.render_state.rebuild_tiles(&mut self.shapes, zoom);
     }
 }

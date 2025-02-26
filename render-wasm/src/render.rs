@@ -13,8 +13,8 @@ mod images;
 mod options;
 mod shadows;
 mod strokes;
-mod tiles;
 mod surfaces;
+mod tiles;
 
 use crate::shapes::{Corners, Kind, Shape};
 use cache::CachedSurfaceImage;
@@ -98,7 +98,8 @@ impl RenderState {
 
         let debug_font = skia::Font::new(debug_typeface, 10.0);
 
-        let surface_pool = surfaces::SurfacePool::new(&mut surfaces.target, tiles::get_tile_dimensions());
+        let surface_pool =
+            surfaces::SurfacePool::new(&mut surfaces.target, tiles::get_tile_dimensions());
         let tiles = tiles::Tiles::new(surface_pool);
 
         RenderState {
@@ -118,7 +119,7 @@ impl RenderState {
             render_area: Rect::new_empty(),
             pending_nodes: vec![],
             current_tile: (0, 0),
-            tiles
+            tiles,
         }
     }
 
@@ -213,11 +214,10 @@ impl RenderState {
         // );
 
         self.surfaces.target.canvas().save();
-        self.surfaces.target.canvas().clip_rect(
-            rect, 
-            skia_safe::ClipOp::Intersect, 
-            true
-        );
+        self.surfaces
+            .target
+            .canvas()
+            .clip_rect(rect, skia_safe::ClipOp::Intersect, true);
         self.surfaces.current.draw(
             &mut self.surfaces.target.canvas(),
             (0, 0),
@@ -225,7 +225,7 @@ impl RenderState {
             Some(&skia::Paint::default()),
         );
         self.surfaces.target.canvas().restore();
-        
+
         let mut p = skia::Paint::default();
         p.set_stroke_width(4.);
         p.set_style(skia::PaintStyle::Stroke);
@@ -234,13 +234,16 @@ impl RenderState {
         let point = skia::Point::new(rect.x() + 10., rect.y() + 20.);
         p.set_stroke_width(1.);
         let str = format!("{}:{}", x, y);
-        self.surfaces.target.canvas().draw_str(str, point, &self.debug_font, &p);
+        self.surfaces
+            .target
+            .canvas()
+            .draw_str(str, point, &self.debug_font, &p);
 
         // let image = self.surfaces.target.image_snapshot();
         // let mut context = self.surfaces.target.direct_context();
         // let encoded_image = image.encode(context.as_mut(), skia::EncodedImageFormat::PNG, None).unwrap();
         // let base64_image = base64::encode(&encoded_image.as_bytes());
-        // println!("data:image/png;base64,{}", base64_image);        
+        // println!("data:image/png;base64,{}", base64_image);
     }
 
     pub fn apply_drawing_to_render_canvas(&mut self) {
@@ -280,10 +283,7 @@ impl RenderState {
             .canvas()
             .clear(skia::Color::TRANSPARENT);
 
-        self.surfaces
-            .shape
-            .canvas()
-            .clear(skia::Color::TRANSPARENT);
+        self.surfaces.shape.canvas().clear(skia::Color::TRANSPARENT);
     }
 
     pub fn invalidate_cache_if_needed(&mut self) {
@@ -543,14 +543,15 @@ impl RenderState {
         &mut self,
         tree: &mut HashMap<Uuid, Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
-        timestamp: i32
+        timestamp: i32,
     ) -> Result<(), String> {
         self.reset_canvas();
         self.surfaces.shape.canvas().scale((
             self.viewbox.zoom * self.options.dpr(),
             self.viewbox.zoom * self.options.dpr(),
         ));
-        self.surfaces.shape
+        self.surfaces
+            .shape
             .canvas()
             .translate((self.viewbox.pan_x, self.viewbox.pan_y));
 
@@ -566,11 +567,15 @@ impl RenderState {
         ey + interest_delta
         */
 
+        // TODO this works only for 100% zoom
         // let offset_x = (self.viewbox.area.left % tile_size);
         // let offset_y = (self.viewbox.area.top % tile_size);
 
-        let offset_x = (self.viewbox.area.left % tiles::TILE_SIZE) * self.viewbox.zoom * self.options.dpr();
-        let offset_y = (self.viewbox.area.top % tiles::TILE_SIZE) * self.viewbox.zoom * self.options.dpr();
+        // TODO this is broken for zoom variations
+        let offset_x =
+            (self.viewbox.area.left % tiles::TILE_SIZE) * self.viewbox.zoom * self.options.dpr();
+        let offset_y =
+            (self.viewbox.area.top % tiles::TILE_SIZE) * self.viewbox.zoom * self.options.dpr();
 
         for y in sy..=ey {
             for x in sx..=ex {
@@ -578,8 +583,14 @@ impl RenderState {
                 self.render_in_progress = true;
                 let _ = self.start_render_loop_tile(tree, modifiers, tile, timestamp);
 
+                // TODO: may we should have a different method like get_tile_rect_with_offset
                 //let tile_rect = tiles::get_tile_rect(self.viewbox, tile);
-                let tile_rect = Rect::from_xywh((x as f32 * tile_size) - offset_x, (y as f32 * tile_size) - offset_y, tile_size, tile_size);
+                let tile_rect = Rect::from_xywh(
+                    (x as f32 * tile_size) - offset_x,
+                    (y as f32 * tile_size) - offset_y,
+                    tile_size,
+                    tile_size,
+                );
                 self.apply_render_to_final_canvas(tile_rect, x, y);
                 self.flush();
             }
@@ -590,14 +601,6 @@ impl RenderState {
         }
 
         debug::render_wasm_label(self);
-        // self.apply_render_to_final_canvas(0, 0);
-
-        // let image = self.surfaces.target.image_snapshot();
-        // let mut context = self.surfaces.target.direct_context();
-        // let encoded_image = image.encode(context.as_mut(), skia::EncodedImageFormat::PNG, None).unwrap();
-        // let base64_image = base64::encode(&encoded_image.as_bytes());
-        // println!("data:image/png;base64,{}", base64_image);
-
         self.flush();
         Ok(())
     }
@@ -607,52 +610,22 @@ impl RenderState {
         tree: &mut HashMap<Uuid, Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         tile: (i32, i32),
-        timestamp: i32
+        timestamp: i32,
     ) -> Result<(), String> {
         self.current_tile = tile;
-
-        // println!("Renderizando tile {}:{} {}", tile.0, tile.1, self.render_in_progress);
-        // NOTE: No debería afectar
-        // if self.render_in_progress {
-        //     if let Some(frame_id) = self.render_request_id {
-        //         self.cancel_animation_frame(frame_id);
-        //     }
-        // }
-
-        // NOTE: I've moved this to start_render_loop_tiles
-        // self.reset_canvas();
-        // self.surfaces.shape.canvas().scale((
-        //     self.viewbox.zoom * self.options.dpr(),
-        //     self.viewbox.zoom * self.options.dpr(),
-        // ));
-        // self.surfaces.shape
-        //     .canvas()
-        //     .translate((self.viewbox.pan_x, self.viewbox.pan_y));
+        if self.render_in_progress {
+            if let Some(frame_id) = self.render_request_id {
+                self.cancel_animation_frame(frame_id);
+            }
+        }
 
         // If the tile is empty or it doesn't exists
         if !self.tiles.has_tile_at(tile) {
             // println!("Salimos porque el tile está vacío {}:{}", tile.0, tile.1);
-            return Ok(())
+            return Ok(());
         }
 
-        // TODO: Check if this should use `self.pending_nodes.push` or the
-        // assignment.
-        // self.pending_nodes = vec![NodeRenderState {
-        //     id: Uuid::nil(),
-        //     visited_children: false,
-        //     clip_bounds: None,
-        //     visited_mask: false,
-        //     mask: false,
-        // }];
         if let Some(shapes) = self.tiles.get_tile_at(tile) {
-            self.pending_nodes = vec![NodeRenderState {
-                id: Uuid::nil(),
-                visited_children: false,
-                clip_bounds: None,
-                visited_mask: false,
-                mask: false,
-            }];
-            /*
             for shape_id in shapes.iter() {
                 let element = tree.get_mut(&shape_id).ok_or(
                     "Error: Element with root_id {node_render_state.id} not found in the tree."
@@ -686,15 +659,10 @@ impl RenderState {
                     mask: false,
                 })
             }
-            */
         }
 
         self.render_area = tiles::get_tile_rect(self.viewbox, tile);
-        // println!("Renderizando tile {}:{} {:?}", tile.0, tile.1, self.render_area);
         self.render_shape_tree(tree, modifiers, self.render_area, timestamp)?;
-        // self.render_in_progress = true;
-        // self.process_animation_frame(tree, modifiers, timestamp)?;
-        // self.render_complete = true;
         Ok(())
     }
 
@@ -896,17 +864,17 @@ impl RenderState {
     }
 
     pub fn rebuild_tiles(&mut self, tree: &mut HashMap<Uuid, Shape>, zoom: f32) {
-      if zoom != self.viewbox.zoom {
-        println!("rebuild_tiles");
-        self.tiles.invalidate_tiles();
-        let mut nodes = vec![Uuid::nil()];
-        while let Some(shape_id) = nodes.pop() {
-            let shape = tree.get(&shape_id).unwrap();
-            self.update_tile_for(&shape);
-            for child_id in shape.children_ids().iter() {
-              nodes.push(*child_id);
+        if zoom != self.viewbox.zoom {
+            println!("rebuild_tiles");
+            self.tiles.invalidate_tiles();
+            let mut nodes = vec![Uuid::nil()];
+            while let Some(shape_id) = nodes.pop() {
+                let shape = tree.get(&shape_id).unwrap();
+                self.update_tile_for(&shape);
+                for child_id in shape.children_ids().iter() {
+                    nodes.push(*child_id);
+                }
             }
         }
-      }
-  }    
+    }
 }
