@@ -4784,7 +4784,7 @@ msgstr "O añadir algunas de éstas para probar:"
 
 #: src/app/main/ui/workspace/libraries.cljs:368
 msgid "workspace.libraries.empty.no-libraries"
-msgstr "No hay Biblioteacas Compartidas en tu equipo, puedes buscar"
+msgstr "No hay Bibliotecas Compartidas en tu equipo, puedes buscar"
 
 #: src/app/main/ui/workspace/libraries.cljs:372
 msgid "workspace.libraries.empty.some-templates"

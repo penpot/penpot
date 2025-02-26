@@ -92,7 +92,6 @@
                (update :comments-local assoc :open id))
              (update :comments-local assoc :options nil)
              (update :comments-local dissoc :draft)
-             (update :workspace-drawing dissoc :comment)
              (update-in [:comments id] assoc (:id comment) comment))))
 
      ptk/WatchEvent
@@ -148,7 +147,6 @@
             (update :comments-local assoc :open id)
             (update :comments-local assoc :options nil)
             (update :comments-local dissoc :draft)
-            (update :workspace-drawing dissoc :comment)
             (update-in [:comments id] assoc (:id comment) comment))))
 
     ptk/WatchEvent
@@ -417,8 +415,8 @@
          (->> (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id})
               (rx/map comment-threads-fetched))
 
-         ;; Refresh team members
-         (rx/of (dtm/fetch-members)))))))
+         (when (:workspace-local state)
+           (rx/of (dtm/fetch-members))))))))
 
 (defn retrieve-comments
   [thread-id]
@@ -496,7 +494,7 @@
       (-> state
           (update :comments-local assoc :open id)
           (update :comments-local assoc :options nil)
-          (update :workspace-drawing dissoc :comment)))))
+          (update :comments-local dissoc :draft)))))
 
 (defn close-thread
   []
@@ -504,8 +502,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :comments-local dissoc :open :draft :options)
-          (update :workspace-drawing dissoc :comment)))))
+          (update :comments-local dissoc :open :draft :options)))))
 
 (defn update-filters
   [{:keys [mode show list] :as params}]
@@ -546,7 +543,6 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :workspace-drawing assoc :comment params)
           (update :comments-local assoc :draft params)))))
 
 (defn update-draft-thread
@@ -555,7 +551,6 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (d/update-in-when [:workspace-drawing :comment] merge data)
           (d/update-in-when [:comments-local :draft] merge data)))))
 
 (defn toggle-comment-options

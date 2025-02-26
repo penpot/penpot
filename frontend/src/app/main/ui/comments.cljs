@@ -132,10 +132,11 @@
 
 (defn- blank-content?
   [content]
-  (or (str/blank? content)
-      (str/empty? content)
-      ;; If only one char and it's the zero-width whitespace
-      (and (= 1 (count content)) (= (first content) zero-width-space))))
+  (let [content (str/trim content)]
+    (or (str/blank? content)
+        (str/empty? content)
+        (and (= (count content) 1)
+             (= (first content) zero-width-space)))))
 
 ;; Component that renders the component content
 (mf/defc comment-content*

@@ -171,7 +171,7 @@
 (declare go-to-frame-auto)
 
 (defn bundle-fetched
-  [{:keys [project file share-links libraries users permissions thumbnails] :as bundle}]
+  [{:keys [project file team share-links libraries users permissions thumbnails] :as bundle}]
   (let [pages (->> (dm/get-in file [:data :pages])
                    (map (fn [page-id]
                           (let [data (get-in file [:data :pages-index page-id])]
@@ -183,15 +183,19 @@
     (ptk/reify ::bundle-fetched
       ptk/UpdateEvent
       (update [_ state]
-        (-> state
-            (assoc :share-links share-links)
-            (assoc :viewer {:libraries (d/index-by :id libraries)
-                            :users (d/index-by :id users)
-                            :permissions permissions
-                            :project project
-                            :pages pages
-                            :thumbnails thumbnails
-                            :file file})))
+        (let [team-id (:id team)
+              team    {:members users}]
+          (-> state
+              (assoc :share-links share-links)
+              (assoc :current-team-id team-id)
+              (assoc :teams {team-id team})
+              (assoc :viewer {:libraries (d/index-by :id libraries)
+                              :users (d/index-by :id users)
+                              :permissions permissions
+                              :project project
+                              :pages pages
+                              :thumbnails thumbnails
+                              :file file}))))
 
       ptk/WatchEvent
       (watch [_ state _]

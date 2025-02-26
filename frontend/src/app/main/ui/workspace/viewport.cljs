@@ -304,8 +304,7 @@
                                       :page-id page-id
                                       :file-id file-id
                                       :vport vport
-                                      :zoom zoom
-                                      :drawing drawing}])
+                                      :zoom zoom}])
 
       (when picking-color?
         [:& pixel-overlay/pixel-overlay {:vport vport
