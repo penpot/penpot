@@ -198,7 +198,7 @@
     [:div {:class (stl/css :edit-theme-inputs-wrapper)}
      [:div {:class (stl/css :group-input-wrapper)}
       [:label {:for "groups-dropdown" :class (stl/css :label)}
-       [:span (tr "workspace.token.label.group")]
+       [:span {:class (stl/css :main-label)} (tr "workspace.token.label.group")]
        [:span {:class (stl/css :label-optional)} (dm/str "(" "" (tr "workspace.token.label.group-optional") "" ")")]]
       [:> combobox* {:id (dm/str "groups-dropdown")
                      :placeholder (tr "workspace.token.label.group-placeholder")
