@@ -49,3 +49,57 @@ impl Surfaces {
         self.set(gpu_state.create_target_surface(new_width, new_height));
     }
 }
+
+pub struct SurfaceRef {
+    pub in_use: bool,
+    pub surface: skia::Surface,
+}
+
+pub struct SurfacePool {
+    pub surfaces: Vec<SurfaceRef>,
+    pub index: usize,
+}
+
+impl SurfaceRef {
+    pub fn allocated(&mut self) {
+        self.in_use = true;
+    }
+
+    pub fn deallocated(&mut self) {
+        self.in_use = false;
+    }
+}
+
+impl SurfacePool {
+    pub fn new(surface: &mut skia::Surface, dims: skia::ISize) -> Self {
+        let mut surfaces = Vec::new();
+        for _ in 0..32 {
+            surfaces.push(surface.new_surface_with_dimensions(dims).unwrap())
+        }
+
+        SurfacePool {
+            index: 0,
+            surfaces: surfaces
+                .into_iter()
+                .map(|surface| SurfaceRef {
+                    surface: surface,
+                    in_use: false,
+                })
+                .collect(),
+        }
+    }
+
+    pub fn allocate(&mut self) -> Result<skia::Surface, String> {
+        let start = self.index;
+        let len = self.surfaces.len();
+        loop {
+            self.index = (self.index + 1) % len;
+            if self.index == start {
+                return Err("Not enough surfaces in the pool".into());
+            }
+            if let Some(surface_ref) = self.surfaces.get(self.index) {
+                return Ok(surface_ref.surface.clone());
+            }
+        }
+    }
+}
