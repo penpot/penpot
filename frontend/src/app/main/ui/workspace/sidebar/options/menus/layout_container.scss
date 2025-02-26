@@ -22,7 +22,7 @@
       padding: 0;
       margin: 0;
       .layout-options {
-        width: $s-92;
+        width: fit-content;
       }
       .layout-option {
         white-space: nowrap;
@@ -310,7 +310,7 @@
 .layout-options {
   @extend .dropdown-wrapper;
   @include flexColumn;
-  right: 0;
+  right: var(--sp-s);
   left: initial;
 
   button {
