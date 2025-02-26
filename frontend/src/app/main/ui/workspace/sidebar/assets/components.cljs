@@ -35,7 +35,8 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [app.common.types.component :as ctc]))
 
 (def drag-data* (atom {:is-local false}))
 
@@ -311,6 +312,14 @@
                                      (seq (:colors selected))
                                      (seq (:typographies selected)))
 
+        any-variant?             (mf/with-memo [selected components current-component-id]
+                                   (let [selected-and-current     (-> (d/nilv selected [])
+                                                                      (conj current-component-id)
+                                                                      set)]
+                                     (->> components
+                                          (filter #(contains? selected-and-current (:id %)))
+                                          (some ctc/is-variant?))))
+
         groups                   (mf/with-memo [components reverse-sort?]
                                    (grp/group-assets components reverse-sort?))
 
@@ -543,7 +552,7 @@
                     {:name    (tr "workspace.assets.rename")
                      :id      "assets-rename-component"
                      :handler on-rename})
-                  (when (and is-local (not (or multi-assets? read-only?)))
+                  (when (and is-local (not (or multi-assets? read-only? any-variant?)))
                     {:name    (if components-v2
                                 (tr "workspace.assets.duplicate-main")
                                 (tr "workspace.assets.duplicate"))
@@ -554,7 +563,7 @@
                     {:name    (tr "workspace.assets.delete")
                      :id      "assets-delete-component"
                      :handler on-delete})
-                  (when (and is-local (not (or multi-assets? read-only?)))
+                  (when (and is-local (not (or multi-assets? read-only? any-variant?)))
                     {:name   (tr "workspace.assets.group")
                      :id     "assets-group-component"
                      :handler on-group})

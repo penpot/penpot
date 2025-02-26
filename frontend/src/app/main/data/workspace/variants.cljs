@@ -44,6 +44,16 @@
                  :values (distinct
                           (map #(if (str/empty? (:value %)) "--" (:value %)) v))})))))
 
+(defn is-secondary-variant?
+  [component data]
+  (if-let [variant-id (:variant-id component)]
+    (let [page-id (:main-instance-page component)
+          objects (-> (dsh/get-page data page-id)
+                      (get :objects))
+          shapes  (dm/get-in objects [variant-id :shapes])]
+      (= (:main-instance-id component) (first shapes)))
+    false))
+
 (defn update-property-name
   "Update the variant property name on the position pos
    in all the components with this variant-id"
