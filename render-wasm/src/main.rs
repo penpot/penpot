@@ -109,27 +109,11 @@ pub extern "C" fn resize_viewbox(width: i32, height: i32) {
 #[no_mangle]
 pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-    state.rebuild_tiles_if_needed(zoom);
+    // state.rebuild_tiles_if_needed(zoom);
     let render_state = state.render_state();
     render_state.invalidate_cache_if_needed();
     render_state.viewbox.set_all(zoom, x, y);
 }
-
-/*
-#[no_mangle]
-pub extern "C" fn set_view_zoom(zoom: f32) {
-    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-    let render_state = state.render_state();
-    render_state.viewbox.set_zoom(zoom);
-    render_state.invalidate_tiles();
-}
-
-#[no_mangle]
-pub extern "C" fn set_view_xy(x: f32, y: f32) {
-    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-    state.render_state().viewbox.set_pan_xy(x, y);
-}
-*/
 
 #[no_mangle]
 pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {

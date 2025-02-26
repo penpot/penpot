@@ -457,44 +457,35 @@ impl RenderState {
         let area = self.render_area;
         if self.render_in_progress {
             self.render_shape_tree(tree, modifiers, area, timestamp)?;
-            // if self.render_in_progress {
-            //     if let Some(frame_id) = self.render_request_id {
-            //         self.cancel_animation_frame(frame_id);
-            //     }
-            //     self.render_request_id = Some(self.request_animation_frame());
-            // }
+            if self.render_in_progress {
+                if let Some(frame_id) = self.render_request_id {
+                    self.cancel_animation_frame(frame_id);
+                }
+                self.render_request_id = Some(self.request_animation_frame());
+            }
         }
 
         // self.render_in_progress can have changed
-        // if self.render_in_progress {
-        //     if self.cached_surface_image.is_some() {
-        //         self.render_from_cache()?;
-        //     }
-        //     return Ok(());
-        // }
+        if self.render_in_progress {
+            if self.cached_surface_image.is_some() {
+                self.render_from_cache()?;
+            }
+            return Ok(());
+        }
 
         // Chech if cached_surface_image is not set or is invalid
-        // if self
-        //     .cached_surface_image
-        //     .as_ref()
-        //     .map_or(true, |img| img.invalid)
-        // {
-        //     self.cached_surface_image = Some(CachedSurfaceImage {
-        //         image: self.surfaces.current.image_snapshot(),
-        //         viewbox: self.viewbox,
-        //         invalid: false,
-        //         has_all_shapes: self.render_complete,
-        //     });
-        // }
-
-        // NOTE: Esto lo he sacado al start_render_loop_tiles
-        // if self.options.is_debug_visible() {
-        //     debug::render(self);
-        // }
-
-        // debug::render_wasm_label(self);
-        // self.apply_render_to_final_canvas();
-        // self.flush();
+        if self
+            .cached_surface_image
+            .as_ref()
+            .map_or(true, |img| img.invalid)
+        {
+            self.cached_surface_image = Some(CachedSurfaceImage {
+                image: self.surfaces.current.image_snapshot(),
+                viewbox: self.viewbox,
+                invalid: false,
+                has_all_shapes: self.render_complete,
+            });
+        }
         Ok(())
     }
 
@@ -621,7 +612,6 @@ impl RenderState {
 
         // If the tile is empty or it doesn't exists
         if !self.tiles.has_tile_at(tile) {
-            // println!("Salimos porque el tile está vacío {}:{}", tile.0, tile.1);
             return Ok(());
         }
 
@@ -662,7 +652,7 @@ impl RenderState {
         }
 
         self.render_area = tiles::get_tile_rect(self.viewbox, tile);
-        self.render_shape_tree(tree, modifiers, self.render_area, timestamp)?;
+        self.process_animation_frame(tree, modifiers, timestamp)?;
         Ok(())
     }
 
@@ -854,18 +844,15 @@ impl RenderState {
     }
 
     pub fn update_tile_for(&mut self, shape: &Shape) {
-        println!("update_tile_for {}", shape.id);
         self.tiles.update_tile_for(self.viewbox, &shape);
     }
 
     pub fn invalidate_tiles(&mut self) {
-        println!("invalidate_tiles");
         self.tiles.invalidate_tiles();
     }
 
-    pub fn rebuild_tiles(&mut self, tree: &mut HashMap<Uuid, Shape>, zoom: f32) {
+    pub fn rebuild_tiles_if_needed(&mut self, tree: &mut HashMap<Uuid, Shape>, zoom: f32) {
         if zoom != self.viewbox.zoom {
-            println!("rebuild_tiles");
             self.tiles.invalidate_tiles();
             let mut nodes = vec![Uuid::nil()];
             while let Some(shape_id) = nodes.pop() {
