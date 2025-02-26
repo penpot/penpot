@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-02-26 03:05+0000\n"
+"PO-Revision-Date: 2025-02-27 04:02+0000\n"
 "Last-Translator: william chen <william.fromtw@gmail.com>\n"
 "Language-Team: Chinese (Traditional Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hant/>\n"
@@ -2998,11 +2998,11 @@ msgstr "更新團隊"
 
 #: src/app/main/ui/workspace/nudge.cljs:60
 msgid "modals.big-nudge"
-msgstr "Big nudge"
+msgstr "大距離微調"
 
 #: src/app/main/ui/workspace/colorpicker.cljs:243
 msgid "media.solid"
-msgstr "Solid"
+msgstr "實心的"
 
 #: src/app/main/ui/settings/access_tokens.cljs:127
 msgid "modals.create-access-token.name.placeholder"
@@ -4084,7 +4084,7 @@ msgstr "線性 (Linear)"
 #: src/app/main/ui/workspace/colorpicker.cljs:229
 #, unused
 msgid "media.radial"
-msgstr "Radial"
+msgstr "放射狀的"
 
 #: src/app/main/data/workspace/media.cljs:274, src/app/main/ui/components/color_bullet.cljs:34, src/app/main/ui/components/color_bullet.cljs:47, src/app/main/ui/ds/utilities/swatch.cljs:40, src/app/main/ui/ds/utilities/swatch.cljs:53, src/app/main/ui/viewer/inspect/attributes/common.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:247, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:239
 msgid "media.image"
@@ -4092,7 +4092,7 @@ msgstr "圖片"
 
 #: src/app/main/ui/viewer/inspect/attributes/common.cljs:77
 msgid "media.image.short"
-msgstr "img"
+msgstr "圖"
 
 #: src/app/main/data/common.cljs:134
 msgid "modals.add-shared-confirm-empty.hint"
@@ -5966,3 +5966,789 @@ msgstr "群組文字"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:189
 msgid "workspace.options.text-options.title-selection"
 msgstr "選取文字"
+
+#: src/app/main/ui/workspace/context_menu.cljs:531
+msgid "workspace.shape.menu.remove-grid"
+msgstr "移除網格佈局"
+
+#: src/app/main/ui/workspace/sidebar/collapsable_button.cljs:25, src/app/main/ui/workspace/sidebar/collapsable_button.cljs:29
+msgid "workspace.sidebar.expand"
+msgstr "展開側邊欄"
+
+#: src/app/main/ui/workspace/plugins.cljs:372
+msgid "workspace.plugins.permissions-update.title"
+msgstr "更新此外掛"
+
+#: src/app/main/ui/workspace/main_menu.cljs:889
+msgid "workspace.plugins.menu.title"
+msgstr "外掛"
+
+#: src/app/main/ui/workspace/plugins.cljs:376
+msgid "workspace.plugins.permissions-update.warning"
+msgstr "此外掛自您上次打開以來已被修改。現在它還需要存取以下內容："
+
+#: src/app/main/ui/workspace/plugins.cljs:283
+msgid "workspace.plugins.permissions.allow-download"
+msgstr "開始檔案下載。"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:170, src/app/main/ui/workspace/top_toolbar.cljs:171
+msgid "workspace.toolbar.text"
+msgstr "文字（%s）"
+
+#: src/app/main/ui/workspace/palette.cljs:173, src/app/main/ui/workspace/palette.cljs:174
+msgid "workspace.toolbar.text-palette"
+msgstr "字體（%s）"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:220, src/app/main/ui/workspace/top_toolbar.cljs:221
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "切換工具欄"
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:36
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "檢視程式碼（僅供檢視）"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:145
+msgid "workspace.undo.entry.delete"
+msgstr "刪除 %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:144
+msgid "workspace.undo.entry.modify"
+msgstr "修改 %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:125
+msgid "workspace.undo.entry.single.component"
+msgstr "元件"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:130
+msgid "workspace.undo.entry.single.media"
+msgstr "圖形資產"
+
+#: src/app/main/ui/ds/product/autosaved_milestone.cljs:53
+msgid "workspace.versions.expand-snapshot"
+msgstr "展開快照"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:310
+msgid "workspace.versions.filter.mine"
+msgstr "我的版本"
+
+#: src/app/main/ui/workspace/sidebar.cljs:284
+msgid "workspace.versions.tab.actions"
+msgstr "操作"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:361
+msgid "workspace.versions.warning.text"
+msgstr "自動儲存的版本將保留 %s 天。"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:211
+msgid "workspace.path.actions.make-curve"
+msgstr "\"轉為曲線 (%s)\""
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:442
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "分離實例"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:447
+msgid "workspace.shape.menu.reset-overrides"
+msgstr "重設覆蓋"
+
+#: src/app/main/ui/workspace/context_menu.cljs:419
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "轉換為路徑"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:309, src/app/main/ui/workspace/sidebar/layers.cljs:355
+msgid "workspace.sidebar.layers.groups"
+msgstr "群組"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:331
+msgid "workspace.undo.empty"
+msgstr "目前為止沒有歷史變更記錄"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:351
+msgid "workspace.options.width"
+msgstr "寬度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:85
+msgid "exclude"
+msgstr "排除"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:80
+msgid "intersection"
+msgstr "交集"
+
+#: src/app/main/ui/settings/access_tokens.cljs:152
+msgid "modals.create-access-token.token"
+msgstr "權杖(token)"
+
+#: src/app/main/ui/workspace/plugins.cljs:83
+msgid "workspace.plugins.button-open"
+msgstr "開啟"
+
+#: src/app/main/ui/workspace/plugins.cljs:192
+msgid "workspace.plugins.error.url"
+msgstr "此外掛不存在，或 URL 不正確。"
+
+#: src/app/main/ui/workspace/plugins.cljs:257
+msgid "workspace.plugins.permissions.library-write"
+msgstr "讀取以及修改您的圖庫與資源。"
+
+#: src/app/main/ui/workspace/plugins.cljs:316
+msgid "workspace.plugins.permissions.title"
+msgstr "'%s' 外掛需要訪問以下內容："
+
+#: src/app/main/ui/workspace/plugins.cljs:250
+msgid "workspace.plugins.permissions.user-read"
+msgstr "讀取當前使用者的個人資料資訊。"
+
+#: src/app/main/ui/workspace/plugins.cljs:214
+msgid "workspace.plugins.plugin-list-link"
+msgstr "外掛列表"
+
+#: src/app/main/ui/workspace/plugins.cljs:177
+msgid "workspace.plugins.title"
+msgstr "外掛"
+
+#: src/app/main/ui/workspace/context_menu.cljs:210
+msgid "workspace.shape.menu.copy-text"
+msgstr "複製為純文字"
+
+#: src/app/main/ui/workspace/context_menu.cljs:364
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "選擇面板"
+
+#: src/app/main/ui/workspace/context_menu.cljs:561
+msgid "workspace.shape.menu.create-component"
+msgstr "建立元件"
+
+#: src/app/main/ui/workspace/context_menu.cljs:565
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "建立多個元件"
+
+#: src/app/main/ui/workspace/context_menu.cljs:282
+msgid "workspace.shape.menu.flip-horizontal"
+msgstr "水平翻轉"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, unused
+msgid "workspace.shape.menu.go-main"
+msgstr "前往主要元件檔案"
+
+#: src/app/main/ui/workspace/context_menu.cljs:217
+msgid "workspace.shape.menu.paste-props"
+msgstr "貼上屬性"
+
+#: src/app/main/ui/workspace/right_header.cljs:246, src/app/main/ui/workspace/right_header.cljs:247
+msgid "workspace.sidebar.history"
+msgstr "歷史紀錄"
+
+#: src/app/main/ui/viewer/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:101
+msgid "workspace.sidebar.options.svg-attrs.title"
+msgstr "匯入的 SVG 屬性"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:128
+msgid "workspace.token.applied-to"
+msgstr "應用於"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:341
+msgid "workspace.token.back-to-themes"
+msgstr "返回主題列表"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:228
+msgid "workspace.token.delete"
+msgstr "刪除權杖(token)"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:225
+msgid "workspace.token.duplicate"
+msgstr "複製權杖(token)"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:212
+msgid "workspace.token.edit"
+msgstr "編輯權杖(token)"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:481
+msgid "workspace.token.enter-token-description"
+msgstr "新增描述（選填）"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:463
+msgid "workspace.token.enter-token-value"
+msgstr "輸入權杖(token)值或別名"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
+msgid "workspace.token.label.group"
+msgstr "群組"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:89
+msgid "workspace.token.no-permisions-set"
+msgstr "您需要是編輯者才能啟用/停用集"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:200
+msgid "workspace.token.no-permission-themes"
+msgstr "您需要是編輯者才能使用主題"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:120
+msgid "workspace.token.ref-not-valid"
+msgstr "參照無效或不在任何啟用的集內"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:203
+msgid "workspace.token.save-theme"
+msgstr "儲存主題"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:200, src/app/main/ui/workspace/tokens/sets.cljs:305
+msgid "workspace.token.select-set"
+msgstr "選擇集。"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:346
+msgid "workspace.token.set-selection-theme"
+msgstr "定義此主題選項應使用哪些權杖(token)集："
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
+msgid "workspace.token.themes"
+msgstr "主題"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:123
+msgid "workspace.token.theme"
+msgstr "主題"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:482
+msgid "workspace.token.token-description"
+msgstr "描述"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:279
+msgid "workspace.token.tokens-section-title"
+msgstr "權杖(TOKENS) -  %s"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:348
+msgid "workspace.token.tools"
+msgstr "工具"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:458
+msgid "workspace.token.warning-name-change"
+msgstr "重新命名此權杖(token)將會中斷對其舊名稱的任何參照。"
+
+#: src/app/main/ui/workspace/palette.cljs:165, src/app/main/ui/workspace/palette.cljs:166
+msgid "workspace.toolbar.color-palette"
+msgstr "色彩調色板（%s）"
+
+#: src/app/main/ui/workspace/right_header.cljs:235, src/app/main/ui/workspace/right_header.cljs:236
+msgid "workspace.toolbar.comments"
+msgstr "留言 (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:143, src/app/main/ui/workspace/top_toolbar.cljs:144
+msgid "workspace.toolbar.frame"
+msgstr "版面（%s）"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+#, unused
+msgid "workspace.toolbar.shortcuts"
+msgstr "捷徑（%s）"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:111
+msgid "workspace.undo.entry.multiple.component"
+msgstr "元件"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:115
+msgid "workspace.undo.entry.multiple.media"
+msgstr "圖形資源"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:137
+msgid "workspace.undo.entry.single.typography"
+msgstr "字型排版資產"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:203
+msgid "workspace.versions.button.pin"
+msgstr "固定版本"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:308
+msgid "workspace.versions.filter.label"
+msgstr "版本篩選"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:316
+msgid "workspace.versions.filter.user"
+msgstr "%s的版本"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:322
+msgid "workspace.versions.loading"
+msgstr "載入中..."
+
+#: src/app/main/ui/workspace/sidebar.cljs:281
+msgid "workspace.versions.tab.history"
+msgstr "歷史紀錄"
+
+#: src/app/main/ui/ds/product/autosaved_milestone.cljs:67, src/app/main/ui/ds/product/user_milestone.cljs:74
+msgid "workspace.versions.version-menu"
+msgstr "開啟版本選單"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:146
+msgid "workspace.undo.entry.move"
+msgstr "移除物件"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:182
+msgid "workspace.path.actions.merge-nodes"
+msgstr "合併節點（%s）"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:438
+msgid "workspace.shape.menu.create-annotation"
+msgstr "建立注釋"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:181, src/app/main/ui/workspace/top_toolbar.cljs:182
+msgid "workspace.toolbar.curve"
+msgstr "曲線（%s）"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:204
+msgid "workspace.path.actions.make-corner"
+msgstr "到角落 (%s)"
+
+#: src/app/main/ui/workspace/context_menu.cljs:265
+msgid "workspace.shape.menu.back"
+msgstr "送到最底層"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:161, src/app/main/ui/workspace/top_toolbar.cljs:162
+msgid "workspace.toolbar.ellipse"
+msgstr "橢圓（%s）"
+
+#: src/app/main/ui/workspace/context_menu.cljs:278
+msgid "workspace.shape.menu.flip-vertical"
+msgstr "垂直翻轉"
+
+#: src/app/main/ui/workspace/context_menu.cljs:355
+msgid "workspace.shape.menu.mask"
+msgstr "遮罩"
+
+#: src/app/main/ui/workspace/context_menu.cljs:528
+msgid "workspace.shape.menu.remove-flex"
+msgstr "移除彈性佈局"
+
+#: src/app/main/data/workspace/libraries.cljs:1221
+msgid "workspace.updates.more-info"
+msgstr "更多資訊"
+
+#: src/app/main/ui/workspace/context_menu.cljs:262
+msgid "workspace.shape.menu.backward"
+msgstr "向後移動"
+
+#: src/app/main/ui/workspace/plugins.cljs:436
+msgid "workspace.plugins.try-out.cancel"
+msgstr "不是現在"
+
+#: src/app/main/ui/workspace/plugins.cljs:86
+msgid "workspace.plugins.remove-plugin"
+msgstr "移除外掛"
+
+#: src/app/main/ui/workspace/context_menu.cljs:256
+msgid "workspace.shape.menu.forward"
+msgstr "向前移動"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:151
+msgid "workspace.token.delete-theme-title"
+msgstr "刪除主題"
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:39
+msgid "workspace.top-bar.read-only.done"
+msgstr "完成"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:110
+msgid "workspace.undo.entry.multiple.color"
+msgstr "顏色資源"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:259
+msgid "workspace.versions.restore-warning"
+msgstr "請問您想要還原此版本嗎?"
+
+#, unused
+msgid "workspace.versions.snapshot-menu"
+msgstr "開啟快照選單"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:196
+msgid "workspace.path.actions.separate-nodes"
+msgstr "分離節點（%s）"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:218
+msgid "workspace.path.actions.snap-nodes"
+msgstr "對齊節點（%s）"
+
+#: src/app/main/ui/workspace/plugins.cljs:188
+msgid "workspace.plugins.install"
+msgstr "安裝"
+
+#: src/app/main/ui/workspace/plugins.cljs:196
+msgid "workspace.plugins.error.manifest"
+msgstr "外掛清單有誤。"
+
+#: src/app/main/ui/workspace/plugins.cljs:270
+msgid "workspace.plugins.permissions.comment-write"
+msgstr "閱讀並修改您的留言，並以您的名義回覆。"
+
+#: src/app/main/ui/workspace/plugins.cljs:243
+msgid "workspace.plugins.permissions.content-read"
+msgstr "使用者有權存取閱讀的檔案內容。"
+
+#: src/app/main/ui/workspace/plugins.cljs:276
+msgid "workspace.plugins.permissions.comment-read"
+msgstr "閱讀您的留言和回覆。"
+
+#: src/app/main/ui/workspace/plugins.cljs:323
+msgid "workspace.plugins.permissions.disclaimer"
+msgstr "請注意，此外掛由外部廠商建立，因此在授權存取之前，請確保您信任它。我們重視您"
+"的資料隱私與安全。如有任何疑慮，請聯絡我們的客服。"
+
+#: src/app/main/ui/workspace/context_menu.cljs:541
+msgid "workspace.shape.menu.add-grid"
+msgstr "新增網格佈局"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1004, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1030
+msgid "workspace.shape.menu.add-layout"
+msgstr "新增佈局"
+
+#: src/app/main/ui/workspace/context_menu.cljs:489
+msgid "workspace.shape.menu.flow-start"
+msgstr "流程開始"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:249
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "增加頁面"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:84
+msgid "workspace.token.active-themes"
+msgstr "%s 個啟用的主題"
+
+#: src/app/main/ui/workspace/left_header.cljs:92
+msgid "workspace.sitemap"
+msgstr "網站地圖"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+#, unused
+msgid "workspace.token.add set"
+msgstr "新增集"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:191, src/app/main/ui/workspace/tokens/sidebar.cljs:218
+msgid "workspace.token.create-one"
+msgstr "建立一個。"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
+msgid "workspace.token.create-theme-title"
+msgstr "建立主題"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:431
+msgid "workspace.token.create-token"
+msgstr "建立新的 %s 權杖(token)"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
+msgid "workspace.token.no-themes-currently"
+msgstr "現主時您沒有任何主題。"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
+msgid "workspace.token.num-sets"
+msgstr "%s 集"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+#, unused
+msgid "workspace.token.theme-name"
+msgstr "主題 %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:198
+msgid "workspace.versions.button.restore"
+msgstr "還原版本"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:133, src/app/main/ui/workspace/top_toolbar.cljs:134
+msgid "workspace.toolbar.move"
+msgstr "移動（%s）"
+
+#: src/app/main/ui/workspace/context_menu.cljs:428, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:75
+msgid "workspace.shape.menu.difference"
+msgstr "差異"
+
+#: src/app/main/ui/workspace/context_menu.cljs:441, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:89
+msgid "workspace.shape.menu.flatten"
+msgstr "扁平化"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:308, src/app/main/ui/workspace/sidebar/layers.cljs:341
+msgid "workspace.sidebar.layers.frames"
+msgstr "版面"
+
+#: src/app/main/ui/workspace/context_menu.cljs:259
+msgid "workspace.shape.menu.front"
+msgstr "帶到最前面"
+
+#: src/app/main/ui/workspace/context_menu.cljs:360
+msgid "workspace.shape.menu.unmask"
+msgstr "取消遮罩"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:143
+msgid "workspace.undo.entry.new"
+msgstr "新增 %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:184
+msgid "workspace.versions.autosaved.entry"
+msgstr "%s 個自動儲存版本"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:336
+msgid "workspace.versions.empty"
+msgstr "目前沒有版本"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:309
+msgid "workspace.versions.filter.all"
+msgstr "所有版本"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
+msgid "workspace.token.label.theme"
+msgstr "主題"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:182
+msgid "workspace.versions.autosaved.version"
+msgstr "自動儲存 %s"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:123
+msgid "workspace.token.value-not-valid"
+msgstr "該值無效"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:56
+msgid "workspace.token.token-name-validation-error"
+msgstr ""
+" 不是有效的權杖(token)名稱。\n"
+"權杖名稱應該只包含字母和數字，並由 . 字元分隔，且不得以 $ 符號開頭。"
+
+#: src/app/main/ui/workspace/sidebar.cljs:134, src/app/main/ui/workspace/sidebar.cljs:143
+msgid "workspace.toolbar.assets"
+msgstr "資源"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:114
+msgid "workspace.undo.entry.multiple.group"
+msgstr "群組"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:159
+msgid "workspace.path.actions.move-nodes"
+msgstr "移動節點（%s）"
+
+#: src/app/main/ui/workspace/plugins.cljs:209
+msgid "workspace.plugins.empty-plugins"
+msgstr "尚未安裝任何外掛"
+
+#: src/app/main/ui/workspace/plugins.cljs:202
+#, markdown
+msgid "workspace.plugins.discover"
+msgstr "探索更多外掛(%s)"
+
+#: src/app/main/data/plugins.cljs:86, src/app/main/ui/workspace/main_menu.cljs:743, src/app/main/ui/workspace/plugins.cljs:82
+msgid "workspace.plugins.error.need-editor"
+msgstr "您需要具備編輯者權限才能使用此外掛"
+
+#: src/app/main/ui/workspace/plugins.cljs:218
+msgid "workspace.plugins.installed-plugins"
+msgstr "安裝外掛"
+
+#: src/app/main/ui/workspace/main_menu.cljs:698
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "外掛管理員"
+
+#: src/app/main/ui/workspace/plugins.cljs:263
+msgid "workspace.plugins.permissions.library-read"
+msgstr "讀取您的圖庫與資源。"
+
+#: src/app/main/ui/workspace/context_menu.cljs:205
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "複製為 CSS（巢狀層級）"
+
+#: src/app/main/ui/workspace/context_menu.cljs:188
+msgid "workspace.shape.menu.copy-link"
+msgstr "複製連結到剪貼簿"
+
+#: src/app/main/ui/workspace/context_menu.cljs:201
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "複製/貼上為 ..."
+
+#, unused
+msgid "workspace.plugins.success"
+msgstr "外掛已正確載入。"
+
+#: src/app/main/ui/workspace/plugins.cljs:429
+msgid "workspace.plugins.try-out.message"
+msgstr "想看看嗎？它將在您當前的團隊中以新草稿開啟。（如果不想，您隨時可以在任何檔案"
+"的已安裝外掛中找到它。）"
+
+#: src/app/main/ui/workspace/plugins.cljs:425
+msgid "workspace.plugins.try-out.title"
+msgstr "'%s' 外掛已為您的使用者安裝！"
+
+#: src/app/main/ui/workspace/context_menu.cljs:203
+msgid "workspace.shape.menu.copy-css"
+msgstr "複製為 CSS"
+
+#: src/app/main/ui/workspace/plugins.cljs:183
+msgid "workspace.plugins.search-placeholder"
+msgstr "寫入外掛網址"
+
+#: src/app/main/ui/workspace/context_menu.cljs:213
+msgid "workspace.shape.menu.copy-props"
+msgstr "複製屬性"
+
+#: src/app/main/ui/workspace/context_menu.cljs:487
+msgid "workspace.shape.menu.delete-flow-start"
+msgstr "刪除流程開始"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:443
+msgid "workspace.shape.menu.detach-instance"
+msgstr "分離實例"
+
+#: src/app/main/ui/workspace/context_menu.cljs:434
+msgid "workspace.shape.menu.exclude"
+msgstr "排除"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1022
+msgid "workspace.shape.menu.remove-layout"
+msgstr "移除佈局"
+
+#: src/app/main/ui/workspace/context_menu.cljs:431
+msgid "workspace.shape.menu.intersection"
+msgstr "交集"
+
+#: src/app/main/ui/workspace/context_menu.cljs:312
+msgid "workspace.shape.menu.rename"
+msgstr "重新命名"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:450
+msgid "workspace.shape.menu.restore-main"
+msgstr "還原主要元件"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:435
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "在資源面板中顯示"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:453, src/app/main/ui/workspace/sidebar/assets/components.cljs:563
+msgid "workspace.shape.menu.show-main"
+msgstr "顯示主要元件"
+
+#: src/app/main/ui/workspace/context_menu.cljs:425, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:70
+msgid "workspace.shape.menu.union"
+msgstr "合併"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, unused
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "更新主要元件"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:456
+msgid "workspace.shape.menu.update-main"
+msgstr "更新主要元件"
+
+#: src/app/main/ui/components/tab_container.cljs:52, src/app/main/ui/workspace/sidebar.cljs:51
+msgid "workspace.sidebar.collapse"
+msgstr "摺疊側邊欄"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:525, src/app/main/ui/workspace/sidebar.cljs:127, src/app/main/ui/workspace/sidebar.cljs:131, src/app/main/ui/workspace/sidebar.cljs:140
+msgid "workspace.sidebar.layers"
+msgstr "層級"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:291
+msgid "workspace.sidebar.layers.search"
+msgstr "搜尋圖層"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:314, src/app/main/ui/workspace/sidebar/layers.cljs:425
+msgid "workspace.sidebar.layers.shapes"
+msgstr "形狀"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:383
+msgid "workspace.sidebar.layers.components"
+msgstr "元件"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:310, src/app/main/ui/workspace/sidebar/layers.cljs:369
+msgid "workspace.sidebar.layers.masks"
+msgstr "遮罩"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:430
+msgid "workspace.token.edit-token"
+msgstr "編輯權杖(token)"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:51
+msgid "workspace.token.create-new-theme"
+msgstr "立即建立您的第一個主題。"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:333
+msgid "workspace.token.edit-theme-title"
+msgstr "編輯主題"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:72
+msgid "workspace.token.edit-themes"
+msgstr "編輯主題"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+#, unused
+msgid "workspace.token.grouping-set-alert"
+msgstr "權杖(token)集分組尚未支援。"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
+msgid "workspace.token.new-theme"
+msgstr "新增主題"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:401, src/app/main/ui/workspace/tokens/sets.cljs:405
+msgid "workspace.token.no-sets-create"
+msgstr "目前尚未定義任何集，請先建立一個。"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:215, src/app/main/ui/workspace/tokens/sidebar.cljs:221
+msgid "workspace.token.no-sets-yet"
+msgstr "目前尚未定義任何集。"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:187
+msgid "workspace.token.no-themes"
+msgstr "目前尚未定義主題。"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:114
+msgid "workspace.token.original-value"
+msgstr "原始值：%s"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:88
+msgid "workspace.token.no-active-theme"
+msgstr "目前沒有啟用的主題"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
+msgid "workspace.token.no-sets"
+msgstr "沒有集"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+#, unused
+msgid "workspace.token-set.not-active"
+msgstr "權杖集未啟用"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:205, src/app/main/ui/workspace/tokens/form.cljs:208, src/app/main/ui/workspace/tokens/token_pill.cljs:115
+msgid "workspace.token.resolved-value"
+msgstr "解析後的值：%s"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:60, src/app/main/ui/workspace/top_toolbar.cljs:61
+msgid "workspace.toolbar.image"
+msgstr "圖片（%s）"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:190, src/app/main/ui/workspace/top_toolbar.cljs:191
+msgid "workspace.toolbar.path"
+msgstr "路徑（%s）"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:201, src/app/main/ui/workspace/top_toolbar.cljs:202
+msgid "workspace.toolbar.plugins"
+msgstr "外掛（%s）"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:152, src/app/main/ui/workspace/top_toolbar.cljs:153
+msgid "workspace.toolbar.rect"
+msgstr "矩形（%s）"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:327, src/app/main/ui/workspace/sidebar/versions.cljs:329
+msgid "workspace.versions.button.save"
+msgstr "儲存版本"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:437
+msgid "workspace.token.enter-token-name"
+msgstr "輸入 %s 權杖(token)名稱"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:440
+msgid "workspace.token.token-name"
+msgstr "名稱"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:464
+msgid "workspace.token.token-value"
+msgstr "值"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:365
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr "如果您希望提高此限制量，請來信至 [support@penpot.app](%s)"
+
+#: src/app/main/ui/workspace/plugins.cljs:237
+msgid "workspace.plugins.permissions.content-write"
+msgstr "使用者有權存取閱讀以及修改檔案內容。"
