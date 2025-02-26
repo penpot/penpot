@@ -209,7 +209,7 @@ impl RenderState {
 
     // TODO: remove x,y params, I'm using them to debug the tile system
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect, x: i32, y: i32) {
-        println!("---apply_render_to_final_canvas {:?} {:?} {:?}", x, y, rect);
+        println!("---apply_render_to_final_canvas {:?} {:?}", x, y);
         self.surfaces.target.canvas().save();
         self.surfaces
             .target
@@ -462,6 +462,7 @@ impl RenderState {
         modifiers: &HashMap<Uuid, Matrix>,
         timestamp: i32,
     ) -> Result<(), String> {
+        println!("process_animation_frame");
         if self.render_in_progress {
             self.render_shape_tree(tree, modifiers, timestamp)?;
             if self.render_in_progress {
@@ -471,6 +472,12 @@ impl RenderState {
                 self.render_request_id = Some(self.request_animation_frame());
             }
         }
+
+        // let image = self.surfaces.target.image_snapshot();
+        // let mut context = self.surfaces.target.direct_context();
+        // let encoded_image = image.encode(context.as_mut(), skia::EncodedImageFormat::PNG, None).unwrap();
+        // let base64_image = base64::encode(&encoded_image.as_bytes());
+        // println!("data:image/png;base64,{}", base64_image);
 
         // self.render_in_progress can have changed
         if self.render_in_progress {
