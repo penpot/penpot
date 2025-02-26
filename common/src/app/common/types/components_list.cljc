@@ -34,12 +34,14 @@
   (assoc component :modified-at (dt/now)))
 
 (defn add-component
-  [fdata {:keys [id name path main-instance-id main-instance-page shapes annotation]}]
+  [fdata {:keys [id name path main-instance-id main-instance-page shapes annotation variant-id variant-properties]}]
   (let [components-v2  (dm/get-in fdata [:options :components-v2])
         fdata          (update fdata :components assoc id (touch {:id id :name name :path path}))]
     (if components-v2
       (cond-> (update-in fdata [:components id] assoc :main-instance-id main-instance-id :main-instance-page main-instance-page)
-        annotation (update-in [:components id] assoc :annotation annotation))
+        annotation (update-in [:components id] assoc :annotation annotation)
+        variant-id (update-in [:components id] assoc :variant-id variant-id)
+        variant-properties (update-in [:components id] assoc :variant-properties variant-properties))
 
       (let [wrap-object-fn cfeat/*wrap-with-objects-map-fn*]
         (assoc-in fdata [:components id :objects]
