@@ -6522,6 +6522,42 @@ msgstr "Delete theme"
 msgid "workspace.token.duplicate"
 msgstr "Duplicate token"
 
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:235
+msgid "workspace.token.axis"
+msgstr "Axis"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:235
+msgid "workspace.token.size"
+msgstr "Size"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:235
+msgid "workspace.token.min-size"
+msgstr "Min. size"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:235
+msgid "workspace.token.max-size"
+msgstr "Max. size"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:235
+msgid "workspace.token.gaps"
+msgstr "Gaps"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:235
+msgid "workspace.token.paddings"
+msgstr "Paddings"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:235
+msgid "workspace.token.margins"
+msgstr "Margins"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:235
+msgid "workspace.token.radius"
+msgstr "Radius"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:235
+msgid "workspace.token.color"
+msgstr "Color"
+
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:218
 msgid "workspace.token.edit"
 msgstr "Edit token"
