@@ -877,10 +877,12 @@
   (let [gl      (unchecked-get internal-module "GL")
         flags   (debug-flags)
         context (.getContext ^js canvas "webgl2" canvas-options)
-
         ;; Register the context with emscripten
         handle  (.registerContext ^js gl context #js {"majorVersion" 2})]
     (.makeContextCurrent ^js gl handle)
+
+    ;; Force the WEBGL_debug_renderer_info extension as emscripten does not enable it
+    (.getExtension context "WEBGL_debug_renderer_info")
 
     ;; Initialize Wasm Render Engine
     (h/call internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
