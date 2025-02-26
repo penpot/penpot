@@ -85,7 +85,13 @@ fn draw_image_fill_in_container(
 
     // Draw the image with the calculated destination rectangle
     if let Some(image) = image {
-        canvas.draw_image_rect(image, None, dest_rect, &paint);
+        canvas.draw_image_rect_with_sampling_options(
+            image,
+            None,
+            dest_rect,
+            render_state.sampling_options,
+            &paint,
+        );
     }
 
     // Restore the canvas to remove the clipping
