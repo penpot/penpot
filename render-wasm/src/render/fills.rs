@@ -1,8 +1,8 @@
-use crate::shapes::{Fill, ImageFill, Shape, Type};
 use skia_safe::{self as skia, RRect};
 
-use super::RenderState;
+use super::{RenderState, SurfaceId};
 use crate::math::Rect;
+use crate::shapes::{Fill, ImageFill, Shape, Type};
 
 fn draw_image_fill_in_container(
     render_state: &mut RenderState,
@@ -16,7 +16,7 @@ fn draw_image_fill_in_container(
     }
 
     let size = image_fill.size();
-    let canvas = render_state.surfaces.shape.canvas();
+    let canvas = render_state.surfaces.canvas(SurfaceId::Fills);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
     let paint = fill.to_paint(container);
@@ -96,7 +96,7 @@ fn draw_image_fill_in_container(
  * This SHOULD be the only public function in this module.
  */
 pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill) {
-    let canvas = render_state.surfaces.shape.canvas();
+    let canvas = render_state.surfaces.canvas(SurfaceId::Fills);
     let selrect = shape.selrect;
     let path_transform = shape.to_path_transform();
 
