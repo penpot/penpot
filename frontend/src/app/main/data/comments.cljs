@@ -413,8 +413,8 @@
          (->> (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id})
               (rx/map comment-threads-fetched))
 
-         ;; Refresh team members
-         (rx/of (dtm/fetch-members)))))))
+         (when (:workspace-local state)
+           (rx/of (dtm/fetch-members))))))))
 
 (defn retrieve-comments
   [thread-id]
