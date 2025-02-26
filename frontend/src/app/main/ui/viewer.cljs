@@ -320,7 +320,7 @@
         frames    (:frames page)
         frame     (get frames index)
 
-        fullscreen? (mf/deref header/fullscreen-ref)
+        fullscreen? (mf/deref refs/viewer-fullscreen)
         overlays    (mf/deref current-overlays-ref)
 
         orig-frame
@@ -544,7 +544,8 @@
      {:class (stl/css-case
               :force-visible (:show-thumbnails local)
               :viewer-layout (not= section :inspect)
-              :inspect-layout (= section :inspect))
+              :inspect-layout (= section :inspect)
+              :viewer-layout-fullscreen (mf/deref refs/viewer-fullscreen))
       :data-fullscreen fullscreen?
       :data-force-visible (:show-thumbnails local)}
 
@@ -565,7 +566,7 @@
       [:section#viewer-section {:ref viewer-section-ref
                                 :data-viewer-section true
                                 :class (stl/css-case :viewer-section true
-                                                     :fulscreen fullscreen?)
+                                                     :viewer-section-fulscreen fullscreen?)
                                 :on-click click-on-screen}
        (cond
          (empty? frames)

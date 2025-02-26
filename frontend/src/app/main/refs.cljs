@@ -644,3 +644,8 @@
 
 (def persistence-state
   (l/derived (comp :status :persistence) st/state))
+
+(def viewer-fullscreen
+  (l/derived
+   (fn [state]
+     (dm/get-in state [:viewer-local :fullscreen?])) st/state))

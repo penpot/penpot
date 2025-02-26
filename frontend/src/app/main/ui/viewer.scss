@@ -14,6 +14,10 @@
   user-select: none;
 }
 
+.viewer-layout-fullscreen {
+  display: initial;
+}
+
 .viewer-content {
   overflow: hidden;
   grid-row: 2 / span 1;
@@ -67,6 +71,10 @@
   height: calc(100vh - $s-48);
   flex-flow: wrap;
   overflow: auto;
+}
+
+.viewer-section-fulscreen {
+  height: 100vh;
 }
 
 .inspect-layout .viewer-section {

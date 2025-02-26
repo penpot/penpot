@@ -13,6 +13,7 @@
 ### :bug: Bugs fixed
 
 - Fix opacity in frame containers [Github #5858](https://github.com/penpot/penpot/pull/5858)
+- Fix problem with fullscreen viewer [Github #4567](https://github.com/penpot/penpot/issues/4567)
 
 
 ## 2.5.0 (Unreleased)

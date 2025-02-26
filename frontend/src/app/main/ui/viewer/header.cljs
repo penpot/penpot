@@ -12,6 +12,7 @@
    [app.main.data.shortcuts :as scd]
    [app.main.data.viewer :as dv]
    [app.main.data.viewer.shortcuts :as sc]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.exports.assets :refer [export-progress-widget]]
@@ -21,13 +22,7 @@
    [app.main.ui.viewer.interactions :refer [flows-menu* interactions-menu*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
-
-(def fullscreen-ref
-  (l/derived (fn [state]
-               (dm/get-in state [:viewer-local :fullscreen?]))
-             st/state))
 
 (defn open-login-dialog
   []
@@ -121,7 +116,7 @@
 
 (mf/defc header-options
   [{:keys [section zoom page file index permissions interactions-mode share]}]
-  (let [fullscreen?    (mf/deref fullscreen-ref)
+  (let [fullscreen?    (mf/deref refs/viewer-fullscreen)
 
         toggle-fullscreen
         (mf/use-fn
@@ -308,7 +303,7 @@
 
 
     [:header {:class (stl/css-case :viewer-header true
-                                   :fullscreen (mf/deref fullscreen-ref))
+                                   :fullscreen (mf/deref refs/viewer-fullscreen))
               :on-click close-thumbnails}
      [:div {:class (stl/css :nav-zone)}
       ;; If the user doesn't have permission we disable the link
