@@ -36,7 +36,7 @@
      :shape-ids shape-ids
      :selected-pred #(seq (% ids-by-attributes))}))
 
-(defn generic-attribute-actions [attributes title {:keys [token selected-shapes on-update-shape]}]
+(defn generic-attribute-actions [attributes title {:keys [token selected-shapes on-update-shape hint]}]
   (let [on-update-shape-fn (or on-update-shape
                                (-> (wtch/get-token-properties token)
                                    (:on-update-shape)))
@@ -48,6 +48,7 @@
                         :shape-ids shape-ids}]
 
              {:title title
+              :hint hint
               :selected? selected?
               :action (fn []
                         (if selected?
@@ -55,8 +56,8 @@
                           (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape-fn)))))}))
          attributes)))
 
-(defn all-or-sepearate-actions [{:keys [attribute-labels on-update-shape-all on-update-shape]}
-                                {:keys [token selected-shapes]}]
+(defn all-or-separate-actions [{:keys [attribute-labels on-update-shape-all on-update-shape hint]}
+                               {:keys [token selected-shapes]}]
   (let [attributes (set (keys attribute-labels))
         {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)
         all-action (let [props {:attributes attributes
@@ -64,6 +65,7 @@
                                 :shape-ids shape-ids}]
                      {:title (tr "labels.all")
                       :selected? all-selected?
+                      :hint hint
                       :action #(if all-selected?
                                  (st/emit! (wtch/unapply-token props))
                                  (st/emit! (wtch/apply-token (assoc props :on-update-shape (or on-update-shape-all on-update-shape)))))})
@@ -84,7 +86,7 @@
                             attribute-labels)]
     (concat [all-action] single-actions)))
 
-(defn layout-spacing-items [{:keys [token selected-shapes all-attr-labels horizontal-attr-labels vertical-attr-labels on-update-shape]}]
+(defn layout-spacing-items [{:keys [token selected-shapes all-attr-labels horizontal-attr-labels vertical-attr-labels on-update-shape hint]}]
   (let [horizontal-attrs (into #{} (keys horizontal-attr-labels))
         vertical-attrs (into #{} (keys vertical-attr-labels))
         attrs (set/union horizontal-attrs vertical-attrs)
@@ -97,6 +99,7 @@
                             (every? selected-pred vertical-attrs))
         multi-items [{:title (tr "labels.all")
                       :selected? all-selected?
+                      :hint hint
                       :action (fn []
                                 (let [props {:attributes attrs
                                              :token token
@@ -171,6 +174,7 @@
                                                                :p2 "Padding right"
                                                                :p3 "Padding bottom"
                                                                :p4 "Padding left"}
+                                             :hint (tr "workspace.token.paddings")
                                              :horizontal-attr-labels {:p2 "Padding right"
                                                                       :p4 "Padding left"}
                                              :vertical-attr-labels {:p1 "Padding top"
@@ -182,15 +186,17 @@
                                                               :m2 "Margin right"
                                                               :m3 "Margin bottom"
                                                               :m4 "Margin left"}
+                                            :hint (tr "workspace.token.margins")
                                             :horizontal-attr-labels {:m2 "Margin right"
                                                                      :m4 "Margin left"}
                                             :vertical-attr-labels {:m1 "Margin top"
                                                                    :m3 "Margin bottom"}
                                             :on-update-shape update-shape-layout-margin})
-        gap-items (all-or-sepearate-actions {:attribute-labels {:column-gap "Column Gap"
-                                                                :row-gap "Row Gap"}
-                                             :on-update-shape wtch/update-layout-spacing}
-                                            context-data)]
+        gap-items (all-or-separate-actions {:attribute-labels {:column-gap "Column Gap"
+                                                               :row-gap "Row Gap"}
+                                            :hint (tr "workspace.token.gaps")
+                                            :on-update-shape wtch/update-layout-spacing}
+                                           context-data)]
     (concat gap-items
             [:separator]
             padding-items
@@ -199,20 +205,23 @@
 
 (defn sizing-attribute-actions [context-data]
   (concat
-   (all-or-sepearate-actions {:attribute-labels {:width "Width"
-                                                 :height "Height"}
-                              :on-update-shape wtch/update-shape-dimensions}
-                             context-data)
+   (all-or-separate-actions {:attribute-labels {:width "Width"
+                                                :height "Height"}
+                             :hint (tr "workspace.token.size")
+                             :on-update-shape wtch/update-shape-dimensions}
+                            context-data)
    [:separator]
-   (all-or-sepearate-actions {:attribute-labels {:layout-item-min-w "Min Width"
-                                                 :layout-item-min-h "Min Height"}
-                              :on-update-shape wtch/update-layout-sizing-limits}
-                             context-data)
+   (all-or-separate-actions {:attribute-labels {:layout-item-min-w "Min Width"
+                                                :layout-item-min-h "Min Height"}
+                             :hint (tr "workspace.token.min-size")
+                             :on-update-shape wtch/update-layout-sizing-limits}
+                            context-data)
    [:separator]
-   (all-or-sepearate-actions {:attribute-labels {:layout-item-max-w "Max Width"
-                                                 :layout-item-max-h "Max Height"}
-                              :on-update-shape wtch/update-layout-sizing-limits}
-                             context-data)))
+   (all-or-separate-actions {:attribute-labels {:layout-item-max-w "Max Width"
+                                                :layout-item-max-h "Max Height"}
+                             :hint (tr "workspace.token.max-size")
+                             :on-update-shape wtch/update-layout-sizing-limits}
+                            context-data)))
 
 (defn update-shape-radius-for-corners [value shape-ids attributes]
   (st/emit!
@@ -221,14 +230,15 @@
 
 (def shape-attribute-actions-map
   (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")]
-    {:border-radius (partial all-or-sepearate-actions {:attribute-labels {:r1 "Top Left"
-                                                                          :r2 "Top Right"
-                                                                          :r4 "Bottom Left"
-                                                                          :r3 "Bottom Right"}
-                                                       :on-update-shape-all wtch/update-shape-radius-all
-                                                       :on-update-shape update-shape-radius-for-corners})
+    {:border-radius (partial all-or-separate-actions {:attribute-labels {:r1 "Top Left"
+                                                                         :r2 "Top Right"
+                                                                         :r4 "Bottom Left"
+                                                                         :r3 "Bottom Right"}
+                                                      :hint (tr "workspace.token.radius")
+                                                      :on-update-shape-all wtch/update-shape-radius-all
+                                                      :on-update-shape update-shape-radius-for-corners})
      :color (fn [context-data]
-              [(generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape wtch/update-fill))
+              [(generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape wtch/update-fill :hint (tr "workspace.token.color")))
                (generic-attribute-actions #{:stroke-color} "Stroke" (assoc context-data :on-update-shape wtch/update-stroke-color))])
      :spacing spacing-attribute-actions
      :sizing sizing-attribute-actions
@@ -244,7 +254,7 @@
                     [:separator]
                     (stroke-width (assoc context-data :on-update-shape wtch/update-stroke-width))
                     [:separator]
-                    (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape wtch/update-shape-position))
+                    (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape wtch/update-shape-position :hint (tr "workspace.token.axis")))
                     (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape wtch/update-shape-position))))}))
 
 (defn default-actions [{:keys [token selected-token-set-name]}]
@@ -297,9 +307,10 @@
 
 (mf/defc menu-entry
   {::mf/props :obj}
-  [{:keys [title value on-click selected? children submenu-offset submenu-direction no-selectable]}]
+  [{:keys [title value hint on-click selected? children submenu-offset submenu-direction no-selectable]}]
   (let [submenu-ref (mf/use-ref nil)
         hovering?   (mf/use-ref false)
+        hint? (and hint (seq hint))
         on-pointer-enter
         (mf/use-fn
          (fn []
@@ -331,18 +342,21 @@
          (when (= submenu-direction "up")
            (dom/set-css-property! submenu-node "top" "unset")))))
 
-    [:li {:class (stl/css :context-menu-item)
+    [:li {:class (stl/css-case
+                  :context-menu-item true
+                  :context-menu-item-selected (and (not no-selectable) selected?)
+                  :context-menu-item-unselected (and (not no-selectable) (not selected?))
+                  :context-menu-item-hint-wrapper hint?)
           :ref set-dom-node
           :data-value value
           :on-click on-click
           :on-pointer-enter on-pointer-enter
           :on-pointer-leave on-pointer-leave}
-     (when selected?
+     (when hint
+       [:span {:class (stl/css :context-menu-item-hint)} hint])
+     (when (not no-selectable)
        [:> icon* {:icon-id "tick" :size "s" :class (stl/css :icon-wrapper)}])
-     [:span {:class (stl/css-case :item-text true
-                                  :item-with-icon-space (and
-                                                         (not selected?)
-                                                         (not no-selectable)))}
+     [:span {:class (stl/css :item-text)}
       title]
      (when children
        [:*
@@ -368,11 +382,12 @@
                     (submenu-actions-selection-actions context-data)
                     (selection-actions context-data))
                   (default-actions context-data))]
-    (for [[index {:keys [title action selected? submenu no-selectable] :as entry}] (d/enumerate entries)]
+    (for [[index {:keys [title action selected? hint submenu no-selectable] :as entry}] (d/enumerate entries)]
       [:* {:key (dm/str title " " index)}
        (cond
          (= :separator entry) [:li {:class (stl/css :separator)}]
          submenu [:& menu-entry {:title title
+                                 :hint hint
                                  :no-selectable true
                                  :submenu-direction submenu-direction
                                  :submenu-offset submenu-offset}
@@ -380,6 +395,7 @@
          :else [:& menu-entry
                 {:title title
                  :on-click action
+                 :hint hint
                  :no-selectable no-selectable
                  :selected? selected?}])])))
 
