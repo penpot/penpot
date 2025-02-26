@@ -187,7 +187,7 @@ impl RenderState {
         );
     }
 
-    pub fn apply_drawing_to_render_canvas(&mut self) {
+    pub fn apply_drawing_to_render_canvas(&mut self, shape: &Shape) {
         self.surfaces
             .flush_and_submit(&mut self.gpu_state, SurfaceId::Fills);
         self.surfaces.draw_into(
@@ -195,6 +195,18 @@ impl RenderState {
             SurfaceId::Current,
             Some(&skia::Paint::default()),
         );
+
+        let render_overlay_below_strokes = shape.fills().len() > 0;
+        if render_overlay_below_strokes {
+            self.surfaces
+                .flush_and_submit(&mut self.gpu_state, SurfaceId::Overlay);
+            self.surfaces.draw_into(
+                SurfaceId::Overlay,
+                SurfaceId::Current,
+                Some(&skia::Paint::default()),
+            );
+        }
+
         self.surfaces
             .flush_and_submit(&mut self.gpu_state, SurfaceId::Strokes);
         self.surfaces.draw_into(
@@ -203,12 +215,20 @@ impl RenderState {
             Some(&skia::Paint::default()),
         );
 
-        self.surfaces
-            .flush_and_submit(&mut self.gpu_state, SurfaceId::Current);
-        self.surfaces
-            .flush_and_submit(&mut self.gpu_state, SurfaceId::Overlay);
+        if !render_overlay_below_strokes {
+            self.surfaces
+                .flush_and_submit(&mut self.gpu_state, SurfaceId::Overlay);
+            self.surfaces.draw_into(
+                SurfaceId::Overlay,
+                SurfaceId::Current,
+                Some(&skia::Paint::default()),
+            );
+        }
+
         self.surfaces
             .draw_into(SurfaceId::Overlay, SurfaceId::Current, None);
+        self.surfaces
+            .flush_and_submit(&mut self.gpu_state, SurfaceId::Current);
 
         self.surfaces.apply_mut(
             &[
@@ -327,6 +347,7 @@ impl RenderState {
                         self,
                         shadow,
                         self.viewbox.zoom * self.options.dpr(),
+                        shape.fills().len() > 0,
                     );
                 }
 
@@ -340,7 +361,7 @@ impl RenderState {
             }
         };
 
-        self.apply_drawing_to_render_canvas();
+        self.apply_drawing_to_render_canvas(&shape);
         self.surfaces
             .apply_mut(&[SurfaceId::Fills, SurfaceId::Strokes], |s| {
                 s.canvas().restore();
@@ -628,7 +649,7 @@ impl RenderState {
             if !node_render_state.id.is_nil() {
                 self.render_shape(element, modifiers.get(&element.id), clip_bounds);
             } else {
-                self.apply_drawing_to_render_canvas();
+                self.apply_drawing_to_render_canvas(&element);
             }
 
             // Set the node as visited_children before processing children
