@@ -209,7 +209,7 @@ impl RenderState {
 
     // TODO: remove x,y params, I'm using them to debug the tile system
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect, x: i32, y: i32) {
-        println!("---apply_render_to_final_canvas {:?} {:?} {:?}", x, y, rect);  
+        println!("---apply_render_to_final_canvas {:?} {:?} {:?}", x, y, rect);
         self.surfaces.target.canvas().save();
         self.surfaces
             .target
@@ -242,11 +242,7 @@ impl RenderState {
         // let base64_image = base64::encode(&encoded_image.as_bytes());
         // println!("data:image/png;base64,{}", base64_image);
 
-        self.surfaces
-          .current
-          .canvas()
-          .clear(self.background_color);
-
+        self.surfaces.current.canvas().clear(self.background_color);
     }
 
     pub fn apply_drawing_to_render_canvas(&mut self) {
@@ -399,7 +395,7 @@ impl RenderState {
         self.surfaces.shape.canvas().restore();
     }
 
-    pub fn start_render_loop(
+    pub fn start_render_loop_tiles(
         &mut self,
         tree: &mut HashMap<Uuid, Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
@@ -410,6 +406,7 @@ impl RenderState {
                 self.cancel_animation_frame(frame_id);
             }
         }
+        println!("start_render_loop_tiles");
         self.reset_canvas();
         self.surfaces.shape.canvas().scale((
             self.viewbox.zoom * self.options.dpr(),
@@ -420,20 +417,28 @@ impl RenderState {
             .canvas()
             .translate((self.viewbox.pan_x, self.viewbox.pan_y));
 
-        // TODO: Check if this should use `self.pending_nodes.push` or the
-        // assignment.
-        self.pending_nodes = vec![NodeRenderState {
-            id: Uuid::nil(),
-            visited_children: false,
-            clip_bounds: None,
-            visited_mask: false,
-            mask: false,
-        }];
-
-        self.render_area = self.viewbox.area;
+        let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox);
+        /*
+        // TODO: Instead of rendering only the visible area
+        // we could apply an offset to the viewbox to render
+        // more tiles.
+        sx - interest_delta
+        sy - interest_delta
+        ex + interest_delta
+        ey + interest_delta
+        */
+        self.pending_tiles = vec![];
+        for y in sy..=ey {
+            for x in sx..=ex {
+                let tile = (x, y);
+                self.pending_tiles.push(tile);
+            }
+        }
+        self.pending_nodes = vec![];
         self.render_in_progress = true;
         self.process_animation_frame(tree, modifiers, timestamp)?;
-        self.render_complete = true;
+        // TODO: check if render complete should be removed
+        // self.render_complete = true;
         Ok(())
     }
 
@@ -531,113 +536,6 @@ impl RenderState {
 
         Ok(())
     }
-
-    pub fn start_render_loop_tiles(
-        &mut self,
-        tree: &mut HashMap<Uuid, Shape>,
-        modifiers: &HashMap<Uuid, Matrix>,
-        timestamp: i32,
-    ) -> Result<(), String> {
-        if self.render_in_progress {
-            if let Some(frame_id) = self.render_request_id {
-                self.cancel_animation_frame(frame_id);
-            }
-        }
-        println!("start_render_loop_tiles");
-        self.reset_canvas();
-        self.surfaces.shape.canvas().scale((
-            self.viewbox.zoom * self.options.dpr(),
-            self.viewbox.zoom * self.options.dpr(),
-        ));
-        self.surfaces
-            .shape
-            .canvas()
-            .translate((self.viewbox.pan_x, self.viewbox.pan_y));
-
-        let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox);
-        /*
-        // TODO: Instead of rendering only the visible area
-        // we could apply an offset to the viewbox to render
-        // more tiles.
-        sx - interest_delta
-        sy - interest_delta
-        ex + interest_delta
-        ey + interest_delta
-        */
-        self.pending_tiles = vec![];
-        for y in sy..=ey {
-            for x in sx..=ex {
-                let tile = (x, y);
-                self.pending_tiles.push(tile);
-            }
-        }
-        self.pending_nodes = vec![];
-        self.render_in_progress = true;
-        self.process_animation_frame(tree, modifiers, timestamp)?;
-        // TODO: check if render complete should be removed
-        // self.render_complete = true;
-        Ok(())
-    }
-
-    // pub fn start_render_loop_tile(
-    //     &mut self,
-    //     tree: &mut HashMap<Uuid, Shape>,
-    //     modifiers: &HashMap<Uuid, Matrix>,
-    //     tile: (i32, i32),
-    //     timestamp: i32,
-    // ) -> Result<(), String> {
-    //     self.current_tile = tile;
-    //     if self.render_in_progress {
-    //         if let Some(frame_id) = self.render_request_id {
-    //             self.cancel_animation_frame(frame_id);
-    //         }
-    //     }
-
-    //     // If the tile is empty or it doesn't exists
-    //     if !self.tiles.has_tile_at(tile) {
-    //         return Ok(());
-    //     }
-
-    //     if let Some(shapes) = self.tiles.get_tile_at(tile) {
-    //         for shape_id in shapes.iter() {
-    //             let element = tree.get_mut(&shape_id).ok_or(
-    //                 "Error: Element with root_id {node_render_state.id} not found in the tree."
-    //                     .to_string(),
-    //             )?;
-
-    //             let children_clip_bounds = if element.is_recursive() {
-    //                 (!element.id.is_nil() & element.clip()).then(|| {
-    //                     let bounds = element.selrect();
-    //                     let mut transform = element.transform;
-    //                     transform.post_translate(bounds.center());
-    //                     transform.pre_translate(-bounds.center());
-    //                     if let Some(modifiers) = modifiers.get(&element.id) {
-    //                         transform.post_concat(&modifiers);
-    //                     }
-    //                     let corners = match element.kind {
-    //                         Kind::Rect(_, corners) => corners,
-    //                         _ => None,
-    //                     };
-    //                     (bounds, corners, transform)
-    //                 })
-    //             } else {
-    //                 None
-    //             };
-
-    //             self.pending_nodes.push(NodeRenderState {
-    //                 id: *shape_id,
-    //                 visited_children: false,
-    //                 clip_bounds: children_clip_bounds,
-    //                 visited_mask: false,
-    //                 mask: false,
-    //             })
-    //         }
-    //     }
-
-    //     self.render_area = tiles::get_tile_rect(self.viewbox, tile);
-    //     self.process_animation_frame(tree, modifiers, timestamp)?;
-    //     Ok(())
-    // }
 
     pub fn render_shape_enter(&mut self, element: &mut Shape, mask: bool) {
         // Masked groups needs two rendering passes, the first one rendering
