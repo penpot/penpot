@@ -592,7 +592,6 @@ impl RenderState {
         self.surfaces.current.canvas().restore();
     }
 
-    // TODO: remove area parameter?
     pub fn render_shape_tree(
         &mut self,
         tree: &mut HashMap<Uuid, Shape>,
