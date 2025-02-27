@@ -201,10 +201,6 @@ impl Shape {
         self.shape_type = shape_type;
     }
 
-    pub fn is_frame(&self) -> bool {
-        matches!(self.shape_type, Type::Frame(_))
-    }
-
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
         self.selrect.set_ltrb(left, top, right, bottom);
     }
