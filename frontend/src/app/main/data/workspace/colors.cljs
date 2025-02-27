@@ -352,7 +352,7 @@
      ptk/WatchEvent
      (watch [_ _ _]
        (rx/of (let [options (assoc options :changed-sub-attr [:stroke-color])]
-                (dwsh/update-shapes ids (partial update-shape-stroke-color index color) options)))))))
+                (dwsh/update-shapes ids #(update-shape-stroke-color % index color) options)))))))
 
 (defn change-stroke-attrs
   ([ids attrs index] (change-stroke-attrs ids attrs index nil))

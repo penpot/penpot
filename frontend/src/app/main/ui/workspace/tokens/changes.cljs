@@ -200,6 +200,7 @@
      (dwsh/update-shapes shape-ids
                          #(wdc/update-shape-stroke-color % 0 color)
                          {:page-id page-id
+                          :ignore-touched true
                           :changed-sub-attr [:stroke-color]}))))
 
 (defn update-fill-stroke
