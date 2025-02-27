@@ -1717,9 +1717,20 @@
                (map #(dm/get-in copy-container [:objects %]))
                (keep
                 (fn [copy-shape]
+                  (.log js/console "COPY" (clj->js copy-shape))
                   (let [main-shape (ctf/get-ref-shape main-container main-component copy-shape)]
+                    (.log js/console "MAIN" (clj->js main-shape))
                     [(:id main-shape) (:id copy-shape)]))))
               (:shapes shape-copy))
+
+        ;; _ (prn "update-grid-copy-attrs" ids-map)
+        remove-orphan-cells
+        (fn [cells {:keys [shapes]}]
+          (let [child? (set shapes)]
+            (-> cells
+                (update-vals
+                 (fn [cell]
+                   (update cell :shapes #(filterv child? %)))))))
 
         new-changes
         (-> (pcb/empty-changes)
@@ -1729,10 +1740,24 @@
              [(:id shape-copy)]
              (fn [shape-copy]
                ;; Take cells from main and remap the shapes to assign it to the copy
-               (let [copy-cells (:layout-grid-cells shape-copy)
-                     main-cells (-> (ctl/remap-grid-cells shape-main ids-map) :layout-grid-cells)]
-                 (assoc shape-copy :layout-grid-cells (ctl/merge-cells copy-cells main-cells omit-touched?))))
+               (let [copy-cells (-> shape-copy :layout-grid-cells (remove-orphan-cells shape-copy))
+                     main-cells (-> shape-main (ctl/remap-grid-cells ids-map) :layout-grid-cells)
+
+                     result
+                     (-> shape-copy
+                         (assoc :layout-grid-cells
+                                (ctl/merge-cells copy-cells main-cells omit-touched?)))]
+                 ;; (.log js/console ">NEW" (clj->js result))
+
+                 #_(.log js/console
+                       ">>>UPDATE_ATTRS"
+                       "BEF" (clj->js [(map str (:shapes shape-copy))
+                                       (map str (-> shape-copy :layout-grid-cells first second :shapes))])
+                       "AFT" (clj->js [(map str (:shapes result))
+                                       (map str (-> result :layout-grid-cells first second :shapes))]))
+                 result))
              {:ignore-touched true}))]
+    ;; (.log js/console ">new-changes" (clj->js new-changes))
     (pcb/concat-changes changes new-changes)))
 
 (defn- update-grid-main-attrs

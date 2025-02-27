@@ -1642,11 +1642,16 @@
   "Given target cells update with source cells while trying to keep target as
   untouched as possible"
   [target-cells source-cells omit-touched?]
-  (if (not omit-touched?)
-    source-cells
-
+  (if omit-touched?
     (letfn [(get-data [cells id]
-              (dissoc (get cells id) :shapes :row :column :row-span :column-span))]
+              (dissoc (get cells id) :row :column :row-span :column-span))
+
+            (merge-cells [source-cell target-cell]
+              (-> source-cell
+                  (d/patch-object
+                   (dissoc target-cell :shapes :row :column :row-span :column-span))
+                  (cond-> (d/not-empty? (:shapes target-cell))
+                    (assoc :shapes (:shapes target-cell)))))]
       (let [deleted-cells
             (into #{}
                   (filter #(not (contains? source-cells %)))
@@ -1664,5 +1669,6 @@
              (reduce
               (fn [cells id]
                 (-> cells
-                    (d/update-when id d/patch-object (get-data target-cells id))))
-              source-cells))))))
+                    (d/update-when id merge-cells (get target-cells id))))
+              source-cells))))
+    source-cells))

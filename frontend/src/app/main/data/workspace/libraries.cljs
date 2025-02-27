@@ -1019,12 +1019,13 @@
                 (pcb/set-undo-group undo-group)
                 (cll/generate-component-swap objects shape ldata page libraries id-new-component index target-cell keep-props-values))]
 
-        (rx/of
-         (dwu/start-undo-transaction undo-id)
-         (dch/commit-changes changes)
-         (dws/select-shape (:id new-shape) true)
-         (ptk/data-event :layout/update {:ids all-parents :undo-group undo-group})
-         (dwu/commit-undo-transaction undo-id))))))
+        (rx/concat
+         (rx/of
+          (dwu/start-undo-transaction undo-id)
+          (dch/commit-changes changes)
+          (dws/select-shape (:id new-shape) true)
+          (ptk/data-event :layout/update {:ids all-parents :undo-group undo-group})
+          (dwu/commit-undo-transaction undo-id)))))))
 
 (defn component-multi-swap
   "Swaps several components with another one"

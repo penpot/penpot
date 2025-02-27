@@ -248,6 +248,8 @@
     (if (and components-v2 (not (:deleted component)))
       (let [component-page (get-component-page file-data component)]
         (when component-page
+          (.log js/console (clj->js [(:objects component-page)
+                                     (get (:objects component-page) shape-id)]))
           (let [child (cfh/get-child (:objects component-page)
                                      (:main-instance-id component)
                                      shape-id)]
@@ -267,6 +269,9 @@
 (defn get-ref-shape
   "Retrieve the shape in the component that is referenced by the instance shape."
   [file-data component shape & {:keys [with-context?] :or {with-context? false}}]
+  (.log js/console "  >" (clj->js file-data))
+  (.log js/console "  >" (clj->js component))
+  (.log js/console "  >" (clj->js shape))
   (when (:shape-ref shape)
     (get-component-shape file-data component (:shape-ref shape) :with-context? with-context?)))
 
