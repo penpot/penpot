@@ -170,18 +170,42 @@
       (f shape-ids {:color hex :opacity opacity} 0 {:ignore-touched true
                                                     :page-id page-id}))))
 
+(defn- value->color
+  "Transform a token color value into penpot color data structure"
+  [color]
+  (when-let [tc (tinycolor/valid-color color)]
+    (let [hex (tinycolor/->hex-string tc)
+          opacity (tinycolor/alpha tc)]
+      {:color hex :opacity opacity})))
+
 (defn update-fill
-  ([value shape-ids attributes] (update-fill value shape-ids attributes nil))
-  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
-   (update-color wdc/change-fill value shape-ids page-id)))
+  ([value shape-ids attributes]
+   (update-fill value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id] ;; The attributes param is needed to have the same arity that other update functions
+   (ptk/reify ::update-fill
+     ptk/WatchEvent
+     (watch [_ state _]
+       (when-let [color (value->color value)]
+         (let [update-fn #(wdc/assoc-shape-fill %1 0 %2)]
+           (wdc/transform-fill state shape-ids color update-fn {:ignore-touched true
+                                                                :page-id page-id})))))))
 
 (defn update-stroke-color
-  ([value shape-ids attributes] (update-stroke-color value shape-ids attributes nil))
-  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
-   (update-color wdc/change-stroke-color value shape-ids page-id)))
+  ([value shape-ids attributes]
+   (update-stroke-color value shape-ids attributes nil))
+
+   ;; The attributes param is needed to have the same arity that other update functions
+  ([value shape-ids _attributes page-id]
+   (when-let [color (value->color value)]
+     (dwsh/update-shapes shape-ids
+                         #(wdc/update-shape-stroke-color % 0 color)
+                         {:page-id page-id
+                          :ignore-touched true
+                          :changed-sub-attr [:stroke-color]}))))
 
 (defn update-fill-stroke
-  ([value shape-ids attributes] (update-fill-stroke value shape-ids attributes nil))
+  ([value shape-ids attributes]
+   (update-fill-stroke value shape-ids attributes nil))
   ([value shape-ids attributes page-id]
    (ptk/reify ::update-fill-stroke
      ptk/WatchEvent

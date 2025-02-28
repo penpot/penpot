@@ -200,7 +200,7 @@
         result))))
 
 (defn get-parent-seq
-  "Returns a vector of parents of the specified shape."
+  "Returns a lazy seq of parents of the specified shape."
   ([objects shape-id]
    (get-parent-seq objects (get objects shape-id) shape-id))
 

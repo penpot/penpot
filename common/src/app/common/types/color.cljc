@@ -118,10 +118,10 @@
 (def valid-color?
   (sm/lazy-validator schema:color))
 
-(def check-color!
+(def check-color
   (sm/check-fn schema:color :hint "expected valid color struct"))
 
-(def check-recent-color!
+(def check-recent-color
   (sm/check-fn schema:recent-color))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
