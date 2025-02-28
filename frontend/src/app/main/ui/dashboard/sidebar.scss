@@ -446,21 +446,40 @@
 
 .upgrade-top-section {
   @include buttonStyle;
-  display: flex;
+  display: grid;
   color: var(--color-foreground-secondary);
-  justify-content: space-between;
+  grid-template-columns: 1fr auto;
+}
+
+.upgrade-top-section .content {
+  display: flex;
+  flex-direction: column;
+}
+
+.icon-dropdown {
+  @include flexCenter;
+  height: 100%;
+  width: $s-16;
+}
+
+.icon-dropdown svg {
+  @extend .button-icon-small;
+  stroke: var(--icon-foreground);
+  transform: rotate(90deg);
 }
 
 .upgrade-bottom-section {
   @include buttonStyle;
-  display: flex;
+  border-block-start: $s-1 solid var(--color-background-quaternary);
+  display: grid;
   color: var(--color-foreground-secondary);
-  justify-content: space-between;
+  grid-template-columns: 1fr auto;
+  margin-block-start: $s-12;
+  padding-block-start: $s-12;
 }
-
-.upgrade-dropdown-btn {
-  display: flex;
-  flex-direction: column;
+.upgrade-bottom-section .content {
+  display: inline;
+  text-align: left;
 }
 
 .upgrade-title {
@@ -476,4 +495,12 @@
 .upgrade-highlight {
   @include t.use-typography("body-small");
   color: var(--color-accent-tertiary);
+}
+
+.upgrade-inline {
+  margin-inline-start: $s-4;
+}
+
+.upgrade-bottom {
+  align-self: end;
 }

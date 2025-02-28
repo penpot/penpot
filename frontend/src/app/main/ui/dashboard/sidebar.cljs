@@ -984,18 +984,18 @@
                :on-click handle-power-up-click}
 
      [:button {:class (stl/css :upgrade-top-section)}
-      [:div {:class (stl/css :upgrade-dropdown-btn)}
-       [:span {:class (stl/css :upgrade-title)} (tr "dashboard.upgrade-plan.penpot-free")]
+      [:div {:class (stl/css :content)}
+       [:span {:class (stl/css :upgrade-title)} "Professional plan"]
        [:span {:class (stl/css :upgrade-text)} (tr "dashboard.upgrade-plan.no-limits")]]
-      [:div {:class (stl/css :upgrade-highlight)}
-       (tr "dashboard.upgrade-plan.power-up")]
+      [:span {:class (stl/css :icon-dropdown)}  i/arrow]
      ]
 
       (when show-power-up-data[:button {:class (stl/css :upgrade-bottom-section)}
-                               [:div {:class (stl/css :upgrade-dropdown-btn)}
-                                [:span {:class (stl/css :upgrade-text)} "Get advanced security, activity logs, dedicated support and more with Enterprise plan."]]
-                               [:div {:class (stl/css :upgrade-highlight)}
-                                "Take a look"]])]
+                               [:div {:class (stl/css :content)}
+                                [:span {:class (stl/css :upgrade-text)} "Get extra storage, autosaved versions, file backup and more with the"]
+                                [:span {:class (stl/css :upgrade-highlight :upgrade-inline)} "Unlimited plan"]]
+                               [:div {:class (stl/css :upgrade-highlight :upgrade-bottom)}
+                                "Upgrade"]])]
 
      (when (and team profile)
        [:& comments-section
