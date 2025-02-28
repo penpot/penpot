@@ -18,6 +18,7 @@ mod rects;
 mod shadows;
 mod strokes;
 mod svgraw;
+mod text;
 mod transform;
 
 pub use blurs::*;
@@ -33,6 +34,7 @@ pub use rects::*;
 pub use shadows::*;
 pub use strokes::*;
 pub use svgraw::*;
+pub use text::*;
 pub use transform::*;
 
 use crate::math;
@@ -45,9 +47,9 @@ pub enum Type {
     Bool(Bool),
     Rect(Rect),
     Path(Path),
-    Text,
     Circle,
     SVGRaw(SVGRaw),
+    Text(TextContent),
 }
 
 impl Type {
@@ -58,7 +60,7 @@ impl Type {
             2 => Type::Bool(Bool::default()),
             3 => Type::Rect(Rect::default()),
             4 => Type::Path(Path::default()),
-            5 => Type::Text,
+            5 => Type::Text(TextContent::default()),
             6 => Type::Circle,
             7 => Type::SVGRaw(SVGRaw::default()),
             _ => Type::Rect(Rect::default()),
@@ -207,6 +209,14 @@ impl Shape {
 
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
         self.selrect.set_ltrb(left, top, right, bottom);
+        match &self.shape_type {
+            Type::Text(text) => {
+                let mut new_text = text.clone();
+                new_text.set_xywh(left, top, right - left, bottom - top);
+                self.shape_type = Type::Text(new_text);
+            }
+            _ => {}
+        }
     }
 
     pub fn set_masked(&mut self, masked: bool) {
@@ -577,6 +587,33 @@ impl Shape {
                 Some(matrix)
             }
             _ => None,
+        }
+    }
+
+    pub fn add_text_leaf(&mut self, text_str: &str) -> Result<(), String> {
+        match self.shape_type {
+            Type::Text(ref mut text) => {
+                text.add_leaf(text_str)?;
+                Ok(())
+            }
+            _ => Err("Shape is not a text".to_string()),
+        }
+    }
+
+    pub fn add_text_paragraph(&mut self) -> Result<(), String> {
+        match self.shape_type {
+            Type::Text(ref mut text) => {
+                text.add_paragraph();
+                Ok(())
+            }
+            _ => Err("Shape is not a text".to_string()),
+        }
+    }
+
+    pub fn clear_text(&mut self) {
+        match self.shape_type {
+            Type::Text(_) => self.shape_type = Type::Text(TextContent::default()),
+            _ => {}
         }
     }
 
