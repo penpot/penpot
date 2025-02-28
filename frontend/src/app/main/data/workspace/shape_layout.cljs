@@ -194,7 +194,7 @@
                 (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
                 (create-layout-from-id new-shape-id type)
                 (dwsh/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
-                (dwsh/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))
+                (dwsh/update-shapes selected ctl/toggle-fix-if-auto)
                 (dwsh/delete-shapes page-id selected)
                 (ptk/data-event :layout/update {:ids [new-shape-id]})
                 (dwu/commit-undo-transaction undo-id)))
@@ -205,7 +205,7 @@
               (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
               (create-layout-from-id new-shape-id type)
               (dwsh/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
-              (dwsh/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))))
+              (dwsh/update-shapes selected ctl/toggle-fix-if-auto)))
 
            (rx/of (ptk/data-event :layout/update {:ids [new-shape-id]})
                   (dwu/commit-undo-transaction undo-id))))))))
