@@ -38,9 +38,9 @@ impl<'a> State<'a> {
         &mut self.render_state
     }
 
-    pub fn start_render_loop_tiles(&mut self, timestamp: i32) -> Result<(), String> {
+    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
         self.render_state
-            .start_render_loop_tiles(&mut self.shapes, &self.modifiers, timestamp)?;
+            .start_render_loop(&mut self.shapes, &self.modifiers, timestamp)?;
         Ok(())
     }
 
