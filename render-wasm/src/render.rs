@@ -224,8 +224,6 @@ impl RenderState {
         );
         self.surfaces.target.canvas().restore();
 
-        self.debug_target_surface_rect(rect);
-
         let mut p = skia::Paint::default();
         p.set_stroke_width(4.);
         p.set_style(skia::PaintStyle::Stroke);
