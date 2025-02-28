@@ -161,6 +161,37 @@ jobs:
             yarn run playwright install --with-deps chromium
             yarn run test:e2e -x --workers=4
 
+  test-performance:
+    docker:
+      - image: penpotapp/devenv:latest
+
+    working_directory: ~/repo
+    resource_class: large
+
+    environment:
+      JAVA_OPTS: -Xmx6g -Xms2g
+      NODE_OPTIONS: --max-old-space-size=4096
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "frontend/deps.edn"}}
+
+      - run:
+          name: "performance tests"
+          working_directory: "./frontend"
+          command: |
+            yarn install
+            yarn run build:app:assets
+            yarn run build:app
+            yarn run build:app:libs
+            yarn run build:wasm
+            yarn run playwright install --with-deps chromium
+            yarn run test:perf -x --workers=2
+
   test-backend:
     docker:
       - image: penpotapp/devenv:latest

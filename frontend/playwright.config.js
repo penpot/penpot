@@ -46,6 +46,11 @@ export default defineConfig({
       testDir: "./playwright/ui/specs",
     },
     {
+      name: "performance",
+      use: { ...devices["Desktop Chrome"] },
+      testDir: "./playwright/ui/performance-specs",
+    },
+    {
       name: "ds",
       use: { ...devices["Desktop Chrome"] },
       testDir: "./playwright/ui/visual-specs",
