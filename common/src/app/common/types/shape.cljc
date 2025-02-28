@@ -148,7 +148,7 @@
 
 (sm/register! ::stroke schema:stroke)
 
-(def check-stroke!
+(def check-stroke
   (sm/check-fn schema:stroke))
 
 (def schema:shape-base-attrs

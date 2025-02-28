@@ -158,13 +158,14 @@
          (when ^boolean dragging?
            [:div {:class (stl/css :dragging)}])]
 
-        [:& cmm/component-item-thumbnail {:file-id file-id
-                                          :class (stl/css-case :thumbnail true
-                                                               :asset-list-thumbnail (not listing-thumbs?))
-                                          :root-shape root-shape
-                                          :component component
-                                          :container container
-                                          :is-hidden (not visible?)}]])]))
+        [:> cmm/component-item-thumbnail*
+         {:file-id file-id
+          :class (stl/css-case :thumbnail true
+                               :asset-list-thumbnail (not listing-thumbs?))
+          :root-shape root-shape
+          :component component
+          :container container
+          :is-hidden (not visible?)}]])]))
 
 (mf/defc components-group
   {::mf/wrap-props false}

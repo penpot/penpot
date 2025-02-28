@@ -282,9 +282,8 @@
           (:id target-asset)
           (cfh/merge-path-item prefix (:name target-asset))))))))
 
-(mf/defc component-item-thumbnail
+(mf/defc component-item-thumbnail*
   "Component that renders the thumbnail image or the original SVG."
-  {::mf/props :obj}
   [{:keys [file-id root-shape component container class is-hidden]}]
   (let [page-id (:main-instance-page component)
         root-id (:main-instance-id component)
