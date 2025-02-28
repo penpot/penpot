@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.types.tokens-lib :as ctob]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -35,16 +34,15 @@
 
 (mf/defc menu*
   {::mf/private true}
-  [{:keys [is-group path]}]
+  [{:keys [is-group id path]}]
   (let [create-set-at-path
         (mf/use-fn (mf/deps path) #(st/emit! (dt/start-token-set-creation path)))
 
         on-edit
         (mf/use-fn
-         (mf/deps path)
+         (mf/deps id)
          (fn []
-           (let [name (ctob/join-set-path path)]
-             (st/emit! (dt/start-token-set-edition name)))))
+           (st/emit! (dt/start-token-set-edition id))))
 
         on-delete
         (mf/use-fn
@@ -59,7 +57,7 @@
 
 (mf/defc token-set-context-menu*
   []
-  (let [{:keys [position is-group path]}
+  (let [{:keys [position is-group id path]}
         (mf/deref ref:token-sets-context-menu)
 
         position-top
@@ -78,4 +76,6 @@
             :style {:top position-top
                     :left position-left}
             :on-context-menu prevent-default}
-      [:> menu* {:is-group is-group :path path}]]]))
+      [:> menu* {:is-group is-group
+                 :id id
+                 :path path}]]]))

@@ -149,7 +149,7 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps is-editing can-edit?)
+         (mf/deps is-editing id tree-path can-edit?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
@@ -157,6 +157,7 @@
              (st/emit! (dt/assign-token-set-context-menu
                         {:position (dom/get-client-position event)
                          :is-group true
+                         :id id
                          :path tree-path})))))
 
         on-collapse-click
@@ -247,7 +248,7 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps is-editing tree-path can-edit?)
+         (mf/deps is-editing id tree-path can-edit?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
@@ -255,6 +256,7 @@
              (st/emit! (dt/assign-token-set-context-menu
                         {:position (dom/get-client-position event)
                          :is-group false
+                         :id id
                          :path tree-path})))))
 
         on-double-click
