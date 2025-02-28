@@ -877,10 +877,9 @@
              ;; FIXME: performance rect
              bbox       (-> shape :points grc/points->rect)
              parent     (cfh/get-parent objects id)
-             delta      (if (and (:layout-item-absolute shape)
-                                 (ctl/flex-layout-immediate-child? objects shape))
-                          (get-relative-delta position bbox parent)
-                          (get-delta position bbox))
+             delta      (if-not (:relative? options)
+                          (get-delta position bbox)
+                          (get-relative-delta position bbox parent))
              modif-tree (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
          (rx/of (dwm/apply-modifiers {:modifiers modif-tree
                                       :page-id page-id
