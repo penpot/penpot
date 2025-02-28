@@ -29,7 +29,8 @@ pub use images::*;
 const DEFAULT_FONT_BYTES: &[u8] =
     include_bytes!("../../frontend/resources/fonts/RobotoMono-Regular.ttf");
 
-const MAX_BLOCKING_TIME_MS: i32 = 32;
+// const MAX_BLOCKING_TIME_MS: i32 = 32;
+const MAX_BLOCKING_TIME_MS: i32 = 400;
 const NODE_BATCH_THRESHOLD: i32 = 10;
 
 extern "C" {
@@ -210,41 +211,20 @@ impl RenderState {
 
     // TODO: remove x,y params, I'm using them to debug the tile system
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect, x: i32, y: i32) {
-        println!("---apply_render_to_final_canvas {:?} {:?}", x, y);
-        // self.surfaces.target.canvas().save();
-        // self.surfaces
-        //     .target
-        //     .canvas()
-        //     .clip_rect(rect, skia_safe::ClipOp::Intersect, true);
-        // self.surfaces.current.draw(
-        //     &mut self.surfaces.target.canvas(),
-        //     (0.0, 0.0),
-        //     self.sampling_options,
-        //     Some(&skia::Paint::default()),
-        // );
-        // self.surfaces.target.canvas().restore();
-
-        let int_rect = skia::IRect::from_ltrb(
-            rect.left as i32,
-            rect.top as i32,
-            rect.right as i32,
-            rect.bottom as i32,
+        self.surfaces.target.canvas().save();
+        self.surfaces
+            .target
+            .canvas()
+            .clip_rect(rect, skia_safe::ClipOp::Intersect, true);
+        self.surfaces.current.draw(
+            &mut self.surfaces.target.canvas(),
+            (0.0, 0.0),
+            self.sampling_options,
+            Some(&skia::Paint::default()),
         );
+        self.surfaces.target.canvas().restore();
 
-        let mut context = self.surfaces.target.direct_context();
-        if let Some(image) = self.surfaces.current.image_snapshot_with_bounds(int_rect) {
-            let encoded_image = image
-                .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
-                .unwrap();
-            let base64_image = base64::encode(&encoded_image.as_bytes());
-            // println!("data:image/png;base64,{}", base64_image);
-            self.surfaces.target.canvas().draw_image_rect(
-                image,
-                None,
-                rect,
-                &skia::Paint::default(),
-            );
-        }
+        self.debug_target_surface_rect(rect);
 
         let mut p = skia::Paint::default();
         p.set_stroke_width(4.);
@@ -259,13 +239,6 @@ impl RenderState {
             .canvas()
             .draw_str(str, point, &self.debug_font, &p);
 
-        // let image = self.surfaces.target.image_snapshot();
-        // let mut context = self.surfaces.target.direct_context();
-        // let encoded_image = image.encode(context.as_mut(), skia::EncodedImageFormat::PNG, None).unwrap();
-        // let base64_image = base64::encode(&encoded_image.as_bytes());
-        // println!("data:image/png;base64,{}", base64_image);
-
-        // self.surfaces.current.canvas().clear(self.background_color);
     }
 
     pub fn apply_drawing_to_render_canvas(&mut self) {
@@ -465,6 +438,8 @@ impl RenderState {
         Ok(())
     }
 
+    //TODO REMOVE
+
     pub fn request_animation_frame(&mut self) -> i32 {
         let script =
             std::ffi::CString::new("requestAnimationFrame(_process_animation_frame)").unwrap();
@@ -479,15 +454,78 @@ impl RenderState {
         }
     }
 
+    pub fn debug_target_surface(&mut self) {
+        let image = self.surfaces.target.image_snapshot();
+        let mut context = self.surfaces.target.direct_context();
+        let encoded_image = image.encode(context.as_mut(), skia::EncodedImageFormat::PNG, None).unwrap();
+        let base64_image = base64::encode(&encoded_image.as_bytes());
+        let script = std::ffi::CString::new(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')")).unwrap();
+        unsafe { emscripten_run_script_int(script.as_ptr()) };      
+    }
+
+
+    pub fn debug_target_surface_rect(&mut self, rect: skia::Rect) {
+        let int_rect = skia::IRect::from_ltrb(
+            rect.left as i32,
+            rect.top as i32,
+            rect.right as i32,
+            rect.bottom as i32,
+        );
+        let mut context = self.surfaces.target.direct_context();
+        if let Some(image) = self.surfaces.current.image_snapshot_with_bounds(int_rect) {
+            let encoded_image = image
+                .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
+                .unwrap();
+            let base64_image = base64::encode(&encoded_image.as_bytes());
+            let script = std::ffi::CString::new(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')")).unwrap();
+            unsafe { emscripten_run_script_int(script.as_ptr()) };      
+        }
+    }
+
     pub fn process_animation_frame(
         &mut self,
         tree: &mut HashMap<Uuid, Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         timestamp: i32,
     ) -> Result<(), String> {
-        println!("process_animation_frame");
+        println!("process_animation_frame starttttt");
+
+        // //Test just to see if we can keep target data in different animation frames
+        // if let Some(next_tile) = self.pending_tiles.pop() {
+
+        //     // If the tile is empty or it doesn't exists we don't do anything with it
+        //     // TODO: let's see if the double if is required
+        //     let offset_x =
+        //         (self.viewbox.area.left % tiles::TILE_SIZE) * self.viewbox.zoom * self.options.dpr();
+        //     let offset_y =
+        //         (self.viewbox.area.top % tiles::TILE_SIZE) * self.viewbox.zoom * self.options.dpr();
+        //     let tile_size = tiles::get_tile_size(self.viewbox);
+        //     // TODO: may we should have a different method like get_tile_rect_with_offset
+        //     //let tile_rect = tiles::get_tile_rect(self.viewbox, tile);
+        //     let tile_rect = Rect::from_xywh(
+        //         (next_tile.0 as f32 * tile_size) - offset_x,
+        //         (next_tile.1 as f32 * tile_size) - offset_y,
+        //         tile_size,
+        //         tile_size,
+        //     );
+
+        //     let paint = skia::Paint::default();
+        //     let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);          
+        //     self.surfaces.target.canvas().save_layer(&layer_rec);
+        //     let mut p = skia::Paint::default();
+        //     p.set_stroke_width(4.);
+        //     p.set_style(skia::PaintStyle::Stroke);
+        //     self.surfaces.target.canvas().draw_rect(&tile_rect, &p);
+        //     self.surfaces.target.canvas().restore();
+        //     self.flush();
+        //     self.render_request_id = Some(self.request_animation_frame())
+        // }
+
+        // self.flush();
         if self.render_in_progress {
             self.render_shape_tree(tree, modifiers, timestamp)?;
+            self.flush();
+
             if self.render_in_progress {
                 if let Some(frame_id) = self.render_request_id {
                     self.cancel_animation_frame(frame_id);
@@ -496,22 +534,13 @@ impl RenderState {
             }
         }
 
-        // let image = self.surfaces.target.image_snapshot();
-        // let mut context = self.surfaces.target.direct_context();
-        // let encoded_image = image.encode(context.as_mut(), skia::EncodedImageFormat::PNG, None).unwrap();
-        // let base64_image = base64::encode(&encoded_image.as_bytes());
-        // println!("data:image/png;base64,{}", base64_image);
-
-        println!("FLUSH!:");
-        self.flush();
-
         // self.render_in_progress can have changed
-        if self.render_in_progress {
-            // if self.cached_surface_image.is_some() {
-            //     self.render_from_cache()?;
-            // }
-            return Ok(());
-        }
+        // if self.render_in_progress {
+        //     if self.cached_surface_image.is_some() {
+        //         self.render_from_cache()?;
+        //     }
+        //     return Ok(());
+        // }
 
         // Chech if cached_surface_image is not set or is invalid
         // if self
