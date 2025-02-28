@@ -1,4 +1,5 @@
-use skia_safe::{self as skia, Contains, Matrix, RRect, Rect};
+use skia_safe::{self as skia, Contains, Matrix, RRect, Rect, RoundOut};
+
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -210,18 +211,40 @@ impl RenderState {
     // TODO: remove x,y params, I'm using them to debug the tile system
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect, x: i32, y: i32) {
         println!("---apply_render_to_final_canvas {:?} {:?}", x, y);
-        self.surfaces.target.canvas().save();
-        self.surfaces
-            .target
-            .canvas()
-            .clip_rect(rect, skia_safe::ClipOp::Intersect, true);
-        self.surfaces.current.draw(
-            &mut self.surfaces.target.canvas(),
-            (0, 0),
-            self.sampling_options,
-            Some(&skia::Paint::default()),
+        // self.surfaces.target.canvas().save();
+        // self.surfaces
+        //     .target
+        //     .canvas()
+        //     .clip_rect(rect, skia_safe::ClipOp::Intersect, true);
+        // self.surfaces.current.draw(
+        //     &mut self.surfaces.target.canvas(),
+        //     (0.0, 0.0),
+        //     self.sampling_options,
+        //     Some(&skia::Paint::default()),
+        // );
+        // self.surfaces.target.canvas().restore();
+
+        let int_rect = skia::IRect::from_ltrb(
+            rect.left as i32,
+            rect.top as i32,
+            rect.right as i32,
+            rect.bottom as i32,
         );
-        self.surfaces.target.canvas().restore();
+
+        let mut context = self.surfaces.target.direct_context();
+        if let Some(image) = self.surfaces.current.image_snapshot_with_bounds(int_rect) {
+            let encoded_image = image
+                .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
+                .unwrap();
+            let base64_image = base64::encode(&encoded_image.as_bytes());
+            // println!("data:image/png;base64,{}", base64_image);
+            self.surfaces.target.canvas().draw_image_rect(
+                image,
+                None,
+                rect,
+                &skia::Paint::default(),
+            );
+        }
 
         let mut p = skia::Paint::default();
         p.set_stroke_width(4.);
@@ -242,7 +265,7 @@ impl RenderState {
         // let base64_image = base64::encode(&encoded_image.as_bytes());
         // println!("data:image/png;base64,{}", base64_image);
 
-        self.surfaces.current.canvas().clear(self.background_color);
+        // self.surfaces.current.canvas().clear(self.background_color);
     }
 
     pub fn apply_drawing_to_render_canvas(&mut self) {
@@ -395,7 +418,7 @@ impl RenderState {
         self.surfaces.shape.canvas().restore();
     }
 
-    pub fn start_render_loop_tiles(
+    pub fn start_render_loop(
         &mut self,
         tree: &mut HashMap<Uuid, Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
@@ -406,7 +429,7 @@ impl RenderState {
                 self.cancel_animation_frame(frame_id);
             }
         }
-        println!("start_render_loop_tiles");
+        println!("start_render_loop");
         self.reset_canvas();
         self.surfaces.shape.canvas().scale((
             self.viewbox.zoom * self.options.dpr(),
@@ -478,6 +501,9 @@ impl RenderState {
         // let encoded_image = image.encode(context.as_mut(), skia::EncodedImageFormat::PNG, None).unwrap();
         // let base64_image = base64::encode(&encoded_image.as_bytes());
         // println!("data:image/png;base64,{}", base64_image);
+
+        println!("FLUSH!:");
+        self.flush();
 
         // self.render_in_progress can have changed
         if self.render_in_progress {
