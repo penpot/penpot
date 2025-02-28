@@ -960,7 +960,16 @@
         (mf/use-fn
          (fn []
            (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
-           (dom/open-new-window "https://penpot.app/pricing")))]
+           (dom/open-new-window "https://penpot.app/pricing")))
+
+        show-power-up-data* (mf/use-state false)
+        show-power-up-data (deref show-power-up-data*)
+
+        handle-power-up-click
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! show-power-up-data* not)))]
 
     [:*
      [:button {:class (stl/css :upgrade-plan-section)
@@ -970,6 +979,24 @@
        [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
       [:div {:class (stl/css :power-up)}
        (tr "dashboard.upgrade-plan.power-up")]]
+
+     [:div {:class (stl/css :upgrade-section)
+               :on-click handle-power-up-click}
+
+     [:button {:class (stl/css :upgrade-top-section)}
+      [:div {:class (stl/css :upgrade-dropdown-btn)}
+       [:span {:class (stl/css :upgrade-title)} (tr "dashboard.upgrade-plan.penpot-free")]
+       [:span {:class (stl/css :upgrade-text)} (tr "dashboard.upgrade-plan.no-limits")]]
+      [:div {:class (stl/css :upgrade-highlight)}
+       (tr "dashboard.upgrade-plan.power-up")]
+     ]
+
+      (when show-power-up-data[:button {:class (stl/css :upgrade-bottom-section)}
+                               [:div {:class (stl/css :upgrade-dropdown-btn)}
+                                [:span {:class (stl/css :upgrade-text)} "Get advanced security, activity logs, dedicated support and more with Enterprise plan."]]
+                               [:div {:class (stl/css :upgrade-highlight)}
+                                "Take a look"]])]
+
      (when (and team profile)
        [:& comments-section
         {:profile profile
