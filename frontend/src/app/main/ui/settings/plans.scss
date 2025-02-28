@@ -1,0 +1,74 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+
+.dashboard-section {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+}
+
+.dashboard-content {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  max-width: $s-500;
+  margin-bottom: $s-32;
+  width: $s-580;
+  margin: $s-160 auto $s-120 auto;
+  justify-content: center;
+}
+
+.membership {
+  align-items: center;
+  display: flex;
+  margin-block-start: $s-8;
+}
+
+.membership.first {
+  margin-block-start: $s-16;
+}
+
+.membership-date {
+  @include bodySmallTypography;
+  color: var(--color-foreground-secondary);
+}
+
+.crown-icon,
+.user-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}
+
+.title-section {
+  @include bigTitleTipography;
+  color: var(--color-foreground-primary);
+  margin-block-end: $s-44;
+}
+
+.plan-section-title {
+  @include headlineSmallTypography;
+  color: var(--color-foreground-primary);
+}
+
+.plan-card {
+  border: $s-1 solid var(--color-foreground-secondary);
+  border-radius: $s-8;
+  margin-block-start: $s-16;
+  padding: $s-16;
+}
+
+.plan-title {
+  @include medTitleTipography;
+  color: var(--color-foreground-primary);
+}
+
+.benefit {
+  @include bodyMediumTypography;
+  color: var(--color-foreground-secondary);
+}

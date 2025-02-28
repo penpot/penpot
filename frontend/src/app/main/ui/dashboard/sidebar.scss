@@ -434,46 +434,68 @@
   color: var(--color-accent-tertiary);
 }
 
-.upgrade-section {
+.cta-power-up {
   display: flex;
   border: $b-1 solid var(--color-background-quaternary);
   border-radius: var(--sp-s);
   flex-direction: column;
   margin: var(--sp-m);
   padding: var(--sp-m);
-  transition: all 200ms ease;
 }
 
-.upgrade-top-section {
+.cta-top-section {
   @include buttonStyle;
-  display: flex;
+  display: grid;
   color: var(--color-foreground-secondary);
-  justify-content: space-between;
+  grid-template-columns: 1fr auto;
 }
 
-.upgrade-bottom-section {
-  @include buttonStyle;
-  display: flex;
-  color: var(--color-foreground-secondary);
-  justify-content: space-between;
-}
-
-.upgrade-dropdown-btn {
+.cta-top-section .content {
   display: flex;
   flex-direction: column;
 }
 
-.upgrade-title {
+.icon-dropdown {
+  @include flexCenter;
+  height: 100%;
+  width: $s-16;
+}
+
+.icon-dropdown svg {
+  @extend .button-icon-small;
+  stroke: var(--icon-foreground);
+  transform: rotate(90deg);
+}
+
+.cta-bottom-section {
+  border-block-start: $s-1 solid var(--color-background-quaternary);
+  display: grid;
+  color: var(--color-foreground-secondary);
+  grid-template-columns: 1fr auto;
+  margin-block-start: $s-12;
+  padding-block-start: $s-12;
+}
+.cta-bottom-section .content {
+  @include buttonStyle;
+  color: var(--color-foreground-secondary);
+  display: inline;
+  text-align: left;
+}
+
+.cta-text,
+.cta-title {
   @include t.use-typography("body-medium");
   text-align: left;
 }
 
-.upgrade-text {
-  @include t.use-typography("body-small");
-  text-align: left;
-}
-
-.upgrade-highlight {
+.cta-bottom-section .content strong,
+.cta-highlight {
   @include t.use-typography("body-small");
   color: var(--color-accent-tertiary);
+}
+
+.cta-link {
+  @include buttonStyle;
+  align-self: end;
+  margin-inline-start: $s-4;
 }

@@ -34,6 +34,7 @@
     ["/password"      :settings-password]
     ["/feedback"      :settings-feedback]
     ["/options"       :settings-options]
+    ["/plans"          :settings-plans]
     ["/access-tokens" :settings-access-tokens]
     ["/notifications" :settings-notifications]]
 

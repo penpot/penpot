@@ -193,6 +193,7 @@
         :settings-password
         :settings-options
         :settings-feedback
+        :settings-plans
         :settings-access-tokens
         :settings-notifications)
        [:? [:& settings-page {:route route}]]
