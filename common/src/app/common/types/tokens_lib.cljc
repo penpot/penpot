@@ -13,6 +13,7 @@
    [app.common.time :as dt]
    [app.common.transit :as t]
    [app.common.types.token :as cto]
+   [app.common.uuid :as uuid]
    [clojure.set :as set]
    [clojure.walk :as walk]
    [cuerdas.core :as str]))
@@ -549,7 +550,8 @@
 
 (def schema:token-theme-attrs
   [:map {:title "TokenTheme"}
-   [:name :string]
+   [:name :string] 
+  ;;  [:id :uuid] when migration is ready activate this
    [:group :string]
    [:description [:maybe :string]]
    [:is-source [:maybe :boolean]]
@@ -582,12 +584,12 @@
 (defn make-token-theme
   [& {:as attrs}]
   (-> attrs
-      (dissoc :id)
       (update :group d/nilv top-level-theme-group-name)
       (update :is-source d/nilv false)
       (update :modified-at #(or % (dt/now)))
       (update :sets set)
       (update :description d/nilv "")
+      (update :id d/nilv (uuid/next))
       (check-token-theme-attrs)
       (map->TokenTheme)))
 
@@ -1352,7 +1354,10 @@ Will return a value that matches this schema:
                     :active-themes #{}))
 
   ([& {:keys [sets themes active-themes]}]
-   (let [active-themes (d/nilv active-themes #{})]
+   (let [active-themes (d/nilv active-themes #{})
+         themes (if (empty? themes)
+                  (update themes hidden-token-theme-group d/oassoc hidden-token-theme-name (make-hidden-token-theme))
+                  themes)]
      (TokensLib.
       (check-token-sets sets)
       (check-token-themes themes)

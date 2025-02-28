@@ -1225,6 +1225,14 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
+(defmethod migrate-data "fake-68"
+  [data _]
+  ;; Cuando se haga una consulta de tokens:
+  ;; 1. Comprobar si en la library existe el hidden theme, sino crearlo antes de 
+  ;; 2. Por cada theme q consultemos debemos añadir un id si no lo tiene antes de devolver la info
+  
+  )
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
