@@ -1067,6 +1067,44 @@ msgstr "Penpot Gratis"
 msgid "dashboard.upgrade-plan.power-up"
 msgstr "Mejora"
 
+msgid "dashboard.power-up.professional.top-title"
+msgstr "Plan Professional"
+
+#, markdown
+msgid "dashboard.power-up.professional.bottom-description"
+msgstr "Consigue editores y almacenamiento adicionales, copias de seguridad de archivos y mucho más con el **Plan ilimitado**"
+
+msgid "dashboard.power-up.unlimited-plan"
+msgstr "Plan ilimitado"
+
+msgid "dashboard.power-up.unlimited.top-description"
+msgstr "Editores adicionales, almacenamiento y versión autoguardada, copia de seguridad de archivos y mucho más."
+
+#, markdown
+msgid "dashboard.power-up.unlimited.bottom-description"
+msgstr "Obtenga seguridad avanzada, registros de actividad, asistencia dedicada y mucho más con el **Plan de empresa**"
+
+msgid "dashboard.power-up.enterprise-plan"
+msgstr "Plan Enterprise"
+
+msgid "dashboard.power-up.unlimited.cta"
+msgstr "Echa un vistazo"
+
+msgid "dashboard.power-up.enterprise.description"
+msgstr "Seguridad avanzada, registros de actividad, asistencia dedicada y mucho más."
+
+msgid "dashboard.power-up.trial.top-title"
+msgstr "Plan Unlimited (Prueba)"
+
+msgid "dashboard.power-up.trial.top-description"
+msgstr "Editores adicionales, almacenamiento y versión autoguardada, copia de seguridad de archivos y mucho más."
+
+msgid "dashboard.power-up.trial.bottom-description"
+msgstr "¿Disfrutas de la prueba? Desbloquea el acceso completo para siempre."
+
+msgid "dashboard.power-up.subscribe"
+msgstr "Suscríbete"
+
 #: src/app/main/ui/dashboard/team.cljs:909
 msgid "dashboard.webhooks.active"
 msgstr "Activo"
@@ -2338,6 +2376,9 @@ msgstr "Sets"
 #: src/app/main/ui/dashboard/sidebar.cljs:539, src/app/main/ui/dashboard/team.cljs:95, src/app/main/ui/dashboard/team.cljs:109, src/app/main/ui/settings/options.cljs:80, src/app/main/ui/settings/sidebar.cljs:105
 msgid "labels.settings"
 msgstr "Configuración"
+
+msgid "labels.subscription"
+msgstr "Suscripción"
 
 #: src/app/main/ui/viewer/header.cljs:206
 msgid "labels.share"
@@ -4283,6 +4324,72 @@ msgstr "Contraseña - Penpot"
 #: src/app/main/ui/settings/profile.cljs:124
 msgid "title.settings.profile"
 msgstr "Perfil - Penpot"
+
+msgid "settings.subscription.section-plan"
+msgstr "Tu suscripción"
+
+msgid "settings.subscription.other-plans"
+msgstr "Otros planes de penpot"
+
+msgid "settings.subscription.professional"
+msgstr "Professional"
+
+msgid "settings.subscription.unlimited"
+msgstr "Unlimited"
+
+msgid "settings.subscription.enterprise"
+msgstr "Enterprise"
+
+msgid "settings.subscription.support-us-since"
+msgstr "Nos apoyas desde %s"
+
+msgid "settings.subscription.member-since"
+msgstr "Miembro de penpot desde %s"
+
+msgid "settings.subscription.price-editor-month"
+msgstr "editor por mes"
+
+msgid "settings.subscription.price-organization-month"
+msgstr "organización por mes"
+
+msgid "settings.subscription.professional.projects-files"
+msgstr "Proyectos, archivos y borradores ilimitados"
+
+msgid "settings.subscription.professional.teams-editors"
+msgstr "Equipos ilimitados de hasta 8 redactores"
+
+msgid "settings.subscription.professional.storage"
+msgstr "10 GB de almacenamiento y versiones de autoguardado de 7 días"
+
+msgid "settings.subscription.benefits.all-professional-benefits"
+msgstr "Todas las prestaciones del plan Professional y:"
+
+msgid "settings.subscription.benefits.all-unlimited-benefits"
+msgstr "Todas las prestaciones del plan Unlimited y:"
+
+msgid "settings.subscription.unlimited.teams"
+msgstr "Equipos ilimitados, independientemente de su tamaño"
+
+msgid "settings.subscription.unlimited.bill"
+msgstr "Factura mensual limitada"
+
+msgid "settings.subscription.unlimited.storage"
+msgstr "25 GB de almacenamiento y 30 días de autoguardado de versiones y copias de seguridad de archivos"
+
+msgid "settings.subscription.ulimited.try-it-free"
+msgstr "Pruébalo gratis durante 14 días"
+
+msgid "settings.subscription.manage-your-subscription"
+msgstr "Gestionar tu suscripción"
+
+msgid "settings.subscription.enterprise.support"
+msgstr "Apoyo específico"
+
+msgid "settings.subscription.enterprise.security"
+msgstr "Seguridad avanzada"
+
+msgid "settings.subscription.enterprise.logs"
+msgstr "Registros de actividad"
 
 #: src/app/main/ui/dashboard/team.cljs:779
 msgid "title.team-invitations"

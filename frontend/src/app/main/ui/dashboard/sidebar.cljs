@@ -849,6 +849,33 @@
           [:span {:class (stl/css :empty-text)} (tr "dashboard.no-projects-placeholder")]])]]
      [:div {:class (stl/css-case :separator true :overflow-separator overflow?)}]]))
 
+(mf/defc cta-power-up*
+  {::mf/props :obj}
+  [{:keys [top-title top-description bottom-description cta-text cta-link has-dropdown]}]
+  (let [show-data* (mf/use-state false)
+        show-data (deref show-data*)
+        handle-click
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! show-data* not)))]
+
+    [:div {:class (stl/css :cta-power-up)
+           :on-click handle-click}
+     [:button {:class (stl/css :cta-top-section)}
+      [:div {:class (stl/css :content)}
+       [:span {:class (stl/css :cta-title)} top-title]
+       [:span {:class (stl/css :cta-text)} top-description]]
+      (when has-dropdown [:span {:class (stl/css :icon-dropdown)}  i/arrow])]
+
+     (when (and has-dropdown show-data)
+       [:div {:class (stl/css :cta-bottom-section)}
+        [:> i18n/tr-html* {:content bottom-description
+                           :class (stl/css :content)
+                           :tag-name "button"}]
+        [:button {:class (stl/css :cta-highlight :cta-link) :on-click cta-link}
+         cta-text]])]))
+
 (mf/defc profile-section*
   {::mf/props :obj}
   [{:keys [profile team]}]
@@ -959,16 +986,62 @@
         (mf/use-fn
          (fn []
            (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
-           (dom/open-new-window "https://penpot.app/pricing")))]
+           (dom/open-new-window "https://penpot.app/pricing")))
+
+        go-to-subscription
+        (mf/use-fn
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (st/emit! (rt/nav :settings-subscription))))
+
+
+        ;; TODO subscription cases professional/unlimited/enterprise
+        subscription-name :unlimited
+        subscription-is-trial false]
 
     [:*
-     [:button {:class (stl/css :upgrade-plan-section)
-               :on-click on-power-up-click}
-      [:div {:class (stl/css :penpot-free)}
-       [:span (tr "dashboard.upgrade-plan.penpot-free")]
-       [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
-      [:div {:class (stl/css :power-up)}
-       (tr "dashboard.upgrade-plan.power-up")]]
+     (if (contains? cf/flags :subscriptions)
+       (case subscription-name
+         :professional
+         [:> cta-power-up*
+          {:top-title (tr "dashboard.power-up.professional.top-title")
+           :top-description (tr "dashboard.upgrade-plan.no-limits")
+           :bottom-description (tr "dashboard.power-up.professional.bottom-description")
+           :cta-text (tr "dashboard.upgrade-plan.power-up")
+           :cta-link go-to-subscription
+           :has-dropdown true}]
+
+         :unlimited
+         (if subscription-is-trial
+           [:> cta-power-up*
+            {:top-title (tr "dashboard.power-up.trial.top-title")
+             :top-description (tr "dashboard.power-up.trial.top-description")
+             :bottom-description (tr "dashboard.power-up.trial.bottom-description")
+             :cta-text (tr "dashboard.power-up.subscribe")}]
+
+           [:> cta-power-up*
+            {:top-title (tr "dashboard.power-up.unlimited-plan")
+             :top-description (tr "dashboard.power-up.unlimited.top-description")
+             :bottom-description (tr "dashboard.power-up.unlimited.bottom-description")
+             :cta-text (tr "dashboard.power-up.unlimited.cta")
+             :cta-link go-to-subscription
+             :has-dropdown true}])
+
+         :enterprise
+         [:> cta-power-up*
+          {:top-title (tr "dashboard.power-up.enterprise-plan")
+           :top-description (tr "dashboard.power-up.enterprise.description")
+           :has-dropdown false}])
+
+       [:button {:class (stl/css :upgrade-plan-section)
+                 :on-click on-power-up-click}
+        [:div {:class (stl/css :penpot-free)}
+         [:span (tr "dashboard.upgrade-plan.penpot-free")]
+         [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
+        [:div {:class (stl/css :power-up)}
+         (tr "dashboard.upgrade-plan.power-up")]])
+
      (when (and team profile)
        [:& comments-section
         {:profile profile
