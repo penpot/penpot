@@ -29,8 +29,7 @@ pub use images::*;
 const DEFAULT_FONT_BYTES: &[u8] =
     include_bytes!("../../frontend/resources/fonts/RobotoMono-Regular.ttf");
 
-// const MAX_BLOCKING_TIME_MS: i32 = 32;
-const MAX_BLOCKING_TIME_MS: i32 = 400;
+const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
 
 extern "C" {
