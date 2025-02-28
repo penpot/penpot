@@ -123,7 +123,7 @@
 
      (dm/assert!
       "expect valid color structure"
-      (ctc/check-color color))
+      (ctc/check-color! color))
 
      (ptk/reify ::add-color
        ev/Event
@@ -140,8 +140,10 @@
 
 (defn add-recent-color
   [color]
-  (assert (ctc/check-recent-color color)
-          "expected valid recent color structure")
+
+  (dm/assert!
+   "expected valid recent color structure"
+   (ctc/check-recent-color! color))
 
   (ptk/reify ::add-recent-color
     ptk/UpdateEvent
@@ -180,7 +182,7 @@
 
     (dm/assert!
      "expected valid color data structure"
-     (ctc/check-color color))
+     (ctc/check-color! color))
 
     (dm/assert!
      "expected file-id"
@@ -198,7 +200,7 @@
 
     (dm/assert!
      "expected valid color data structure"
-     (ctc/check-color color))
+     (ctc/check-color! color))
 
     (dm/assert!
      "expected file-id"

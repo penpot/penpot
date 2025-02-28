@@ -10,13 +10,12 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.warnings :as wtw]
    [app.util.i18n :refer [tr]]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
-(l/set-level! :debug)
+(l/set-level! "app.main.ui.workspace.tokens.style-dictionary" :warn)
 
 ;; === Style Dictionary
 
@@ -159,10 +158,9 @@
     config)
 
   (build-dictionary [_]
-    (let [config' (clj->js config)]
-      (-> (sd. config')
-          (.buildAllPlatforms "json")
-          (p/then #(.-allTokens ^js %))))))
+    (-> (sd. (clj->js config))
+        (.buildAllPlatforms "json")
+        (p/then #(.-allTokens ^js %)))))
 
 (defn resolve-tokens-tree+
   ([tokens-tree get-token]
@@ -304,14 +302,11 @@
   (let [state* (mf/use-state tokens)]
     (mf/with-effect [tokens interactive?]
       (when (seq tokens)
-        (let [tpoint  (dt/tpoint-ms)
-              promise (if interactive?
+        (let [promise (if interactive?
                         (resolve-tokens-interactive+ tokens)
                         (resolve-tokens+ tokens))]
 
           (->> promise
                (p/fmap (fn [resolved-tokens]
-                         (let [elapsed (tpoint)]
-                           (l/dbg :hint "use-resolved-tokens*" :elapsed elapsed)
-                           (reset! state* resolved-tokens))))))))
+                         (reset! state* resolved-tokens)))))))
     @state*))
