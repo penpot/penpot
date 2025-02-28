@@ -4,24 +4,21 @@
    [app.common.types.tokens-lib :as ctob]))
 
 (defn generate-update-active-sets
-  "Copy the active sets from the currently active themes and move them to the hidden token theme and update the theme with `update-hidden-theme-fn`.
-
+  "Copy the active sets from the currently active themes and move them to the hidden token theme and update the theme with `update-theme-fn`.
   Use this for managing sets active state without having to modify a user created theme (\"no themes selected\" state in the ui)."
-  [changes tokens-lib update-hidden-theme-fn]
+  [changes tokens-lib update-theme-fn]
   (let [prev-active-token-themes (ctob/get-active-theme-paths tokens-lib)
         active-token-set-names   (ctob/get-active-themes-set-names tokens-lib)
 
-        prev-hidden-token-theme (ctob/get-hidden-theme tokens-lib)
-        hidden-token-theme      (-> (or (some-> prev-hidden-token-theme (ctob/set-sets active-token-set-names))
-                                        (ctob/make-hidden-token-theme :sets active-token-set-names))
-                                    (update-hidden-theme-fn))
+        prev-hidden-token-theme  (ctob/get-hidden-theme tokens-lib)
+
+        hidden-token-theme       (-> (some-> prev-hidden-token-theme (ctob/set-sets active-token-set-names))
+                                     (update-theme-fn))
 
         changes (-> changes
                     (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} prev-active-token-themes))
 
-        changes (if prev-hidden-token-theme
-                  (pcb/update-token-theme changes hidden-token-theme prev-hidden-token-theme)
-                  (pcb/add-token-theme changes hidden-token-theme))]
+        changes (pcb/update-token-theme changes hidden-token-theme prev-hidden-token-theme)]
     changes))
 
 (defn generate-toggle-token-set

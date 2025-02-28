@@ -582,7 +582,6 @@
 (defn make-token-theme
   [& {:as attrs}]
   (-> attrs
-      (dissoc :id)
       (update :group d/nilv top-level-theme-group-name)
       (update :is-source d/nilv false)
       (update :modified-at #(or % (dt/now)))
@@ -633,6 +632,10 @@
 
 (def valid-active-token-themes?
   (sm/validator schema:active-themes))
+
+(defn update-themes
+  [themes token-theme]
+  (update themes (:group token-theme) d/oassoc (:name token-theme) token-theme))
 
 ;; === Import / Export from DTCG format
 
@@ -735,7 +738,6 @@
                                      (= path new-editing-set-path) (assoc :new? true))]
                             (cons item (mapcat #(walk % (assoc opts :parent path :depth (inc depth))) v'))))))))))]
     (walk (or nodes (d/ordered-map)) nil)))
-
 
 (defn sets-tree-seq
   "Get tokens sets tree as a flat list
@@ -1250,28 +1252,24 @@ Will return a value that matches this schema:
                                       (update "sets" keys)))))
           active-sets (get metadata "activeSets")
           active-themes (get metadata "activeThemes")
-          themes-data (if (and (seq active-sets)
-                               (empty? active-themes))
-                        (conj themes-data {"name" hidden-token-theme-name
-                                           "group" ""
-                                           "description" nil
-                                           "is-source" true
-                                           "modified-at" (dt/now)
-                                           "sets" active-sets})
-                        themes-data)
           active-themes (if (empty? active-themes)
                           #{hidden-token-theme-path}
                           active-themes)
+
           set-order (get metadata "tokenSetOrder")
           name->pos (into {} (map-indexed (fn [idx itm] [itm idx]) set-order))
           sets-data' (sort-by (comp name->pos first) sets-data)
           lib (make-tokens-lib)
-          lib' (reduce
-                (fn [lib [set-name tokens]]
-                  (add-set lib (make-token-set
-                                :name set-name
-                                :tokens (flatten-nested-tokens-json tokens ""))))
-                lib sets-data')]
+          lib' (->> sets-data'
+                    (reduce (fn [lib [set-name tokens]]
+                              (add-set lib (make-token-set
+                                            :name set-name
+                                            :tokens (flatten-nested-tokens-json tokens ""))))
+                            lib))
+          lib' (cond-> lib'
+                 (and (seq active-sets) (empty? active-themes))
+                 (update-theme hidden-token-theme-group hidden-token-theme-name
+                               #(assoc % :sets active-sets)))]
       (if-let [themes-data (seq themes-data)]
         (as-> lib' $
           (reduce
@@ -1352,7 +1350,10 @@ Will return a value that matches this schema:
                     :active-themes #{}))
 
   ([& {:keys [sets themes active-themes]}]
-   (let [active-themes (d/nilv active-themes #{})]
+   (let [active-themes (d/nilv active-themes #{})
+         themes (if (empty? themes)
+                  (update themes hidden-token-theme-group d/oassoc hidden-token-theme-name (make-hidden-token-theme))
+                  themes)]
      (TokensLib.
       (check-token-sets sets)
       (check-token-themes themes)
