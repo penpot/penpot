@@ -812,3 +812,10 @@
    (fn [{:keys [::db/conn]}]
      (doseq [thread-id threads]
        (upsert-comment-thread-status! conn profile-id thread-id)))))
+
+
+(defn create-component [params]
+  (let [component-name (generate-component-name "Component")]
+    (if (is-name-unique? component-name)
+      (save-component component-name params)
+      (throw (ex-info "Component name already exists" {}))))
