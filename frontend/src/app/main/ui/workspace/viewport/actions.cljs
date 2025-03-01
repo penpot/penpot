@@ -557,3 +557,9 @@
                   (not @disable-paste)
                   (not read-only?))
          (st/emit! (dw/paste-from-event event @in-viewport?)))))))
+
+
+(defn save-component [name]
+  (if (is-name-unique? name)
+    (save-component-to-backend name)
+    (show-error "Component name already exists")))
