@@ -155,3 +155,6 @@
      [:& blur-menu
       {:ids ids
        :values (select-keys shape [:blur])}]]))
+
+(defn get-existing-component-names []
+  (map :name (get-components)))

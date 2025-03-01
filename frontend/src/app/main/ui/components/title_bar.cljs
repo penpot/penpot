@@ -56,3 +56,7 @@
   [{:keys [class title]}]
   [:div {:class (dm/str (stl/css :title-bar) " " class)}
    [:div {:class (stl/css :title-only :inspect-title)} title]])
+
+
+(defn is-name-unique? [name]
+  (not (some #(= name %) (get-existing-component-names))))
