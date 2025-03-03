@@ -831,9 +831,7 @@ impl RenderState {
             self.tiles.invalidate_tiles();
             let mut nodes = vec![Uuid::nil()];
             while let Some(shape_id) = nodes.pop() {
-                println!("----1");
                 if let Some(shape) = tree.get(&shape_id) {
-                  println!("----2 {:?}", shape);
                   self.update_tile_for(&shape);
                   for child_id in shape.children_ids().iter() {
                       nodes.push(*child_id);
