@@ -178,37 +178,6 @@ impl RenderState {
             .flush_and_submit_surface(&mut self.surfaces.target, None);
     }
 
-    pub fn reset_canvas(&mut self) {
-        self.surfaces.target.canvas().clear(self.background_color);
-        self.surfaces.shape.canvas().restore_to_count(1);
-        self.surfaces.current.canvas().restore_to_count(1);
-        self.surfaces
-            .shape
-            .canvas()
-            .clear(self.background_color)
-            .reset_matrix();
-        self.surfaces
-            .current
-            .canvas()
-            .clear(self.background_color)
-            .reset_matrix();
-        self.surfaces
-            .shadow
-            .canvas()
-            .clear(self.background_color)
-            .reset_matrix();
-        self.surfaces
-            .overlay
-            .canvas()
-            .clear(self.background_color)
-            .reset_matrix();
-        self.surfaces
-            .debug
-            .canvas()
-            .clear(skia::Color::TRANSPARENT)
-            .reset_matrix();
-    }
-
     // TODO: remove x,y params, I'm using them to debug the tile system
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect, x: i32, y: i32) {
         let canvas = self.surfaces.target.canvas();
@@ -399,7 +368,7 @@ impl RenderState {
                 self.cancel_animation_frame(frame_id);
             }
         }
-        self.reset_canvas();
+        self.surfaces.reset(self.background_color);
         self.surfaces.shape.canvas().scale((
             self.viewbox.zoom * self.options.dpr(),
             self.viewbox.zoom * self.options.dpr(),

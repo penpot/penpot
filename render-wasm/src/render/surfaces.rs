@@ -48,6 +48,32 @@ impl Surfaces {
     pub fn resize(&mut self, gpu_state: &mut GpuState, new_width: i32, new_height: i32) {
         self.set(gpu_state.create_target_surface(new_width, new_height));
     }
+
+    pub fn reset(&mut self, color: skia::Color) {
+        self.target.canvas().clear(color);
+        self.shape.canvas().restore_to_count(1);
+        self.current.canvas().restore_to_count(1);
+        self.shape
+            .canvas()
+            .clear(color)
+            .reset_matrix();
+        self.current
+            .canvas()
+            .clear(color)
+            .reset_matrix();
+        self.shadow
+            .canvas()
+            .clear(color)
+            .reset_matrix();
+        self.overlay
+            .canvas()
+            .clear(color)
+            .reset_matrix();
+        self.debug
+            .canvas()
+            .clear(skia::Color::TRANSPARENT)
+            .reset_matrix();
+    }
 }
 
 pub struct SurfaceRef {
