@@ -581,6 +581,7 @@
 (defn top-level-theme-group? [group]
   (= group top-level-theme-group-name))
 
+;; TODO: Asegurarse de q alla donde se crea un theme se use este helper
 (defn make-token-theme
   [& {:as attrs}]
   (-> attrs
@@ -635,6 +636,10 @@
 
 (def valid-active-token-themes?
   (sm/validator schema:active-themes))
+
+(defn update-themes 
+  [themes token-theme]
+  (update themes (:group token-theme) d/oassoc (:name token-theme) token-theme))
 
 ;; === Import / Export from DTCG format
 
@@ -737,7 +742,6 @@
                                      (= path new-editing-set-path) (assoc :new? true))]
                             (cons item (mapcat #(walk % (assoc opts :parent path :depth (inc depth))) v'))))))))))]
     (walk (or nodes (d/ordered-map)) nil)))
-
 
 (defn sets-tree-seq
   "Get tokens sets tree as a flat list
@@ -1057,7 +1061,7 @@ Will return a value that matches this schema:
   (add-theme [_ token-theme]
     (let [token-theme (check-token-theme token-theme)]
       (TokensLib. sets
-                  (update themes (:group token-theme) d/oassoc (:name token-theme) token-theme)
+                  (update-themes themes token-theme)
                   active-themes)))
 
   (update-theme [this group name f]
@@ -1254,6 +1258,7 @@ Will return a value that matches this schema:
           active-themes (get metadata "activeThemes")
           themes-data (if (and (seq active-sets)
                                (empty? active-themes))
+                        ;; is this neccessary??
                         (conj themes-data {"name" hidden-token-theme-name
                                            "group" ""
                                            "description" nil
@@ -1354,9 +1359,9 @@ Will return a value that matches this schema:
                     :active-themes #{}))
 
   ([& {:keys [sets themes active-themes]}]
-   (let [active-themes (d/nilv active-themes #{})
+   (let [active-themes (d/nilv active-themes #{}) 
          themes (if (empty? themes)
-                  (update themes hidden-token-theme-group d/oassoc hidden-token-theme-name (make-hidden-token-theme))
+                  (update-themes themes (make-hidden-token-theme))
                   themes)]
      (TokensLib.
       (check-token-sets sets)

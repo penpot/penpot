@@ -17,6 +17,7 @@
   [:is-source :boolean]
   [:modified-at {:optional true} ::sm/inst]
   [:sets :any]])
+;; We will add theme id
 
 (sm/register!
  ^{::sm/type ::token-set}

@@ -12,6 +12,8 @@
         active-token-set-names   (ctob/get-active-themes-set-names tokens-lib)
 
         prev-hidden-token-theme (ctob/get-hidden-theme tokens-lib)
+        
+        ;; TODO: This shouldn't be neccessary 
         hidden-token-theme      (-> (or (some-> prev-hidden-token-theme (ctob/set-sets active-token-set-names))
                                         (ctob/make-hidden-token-theme :sets active-token-set-names))
                                     (update-hidden-theme-fn))
@@ -19,6 +21,7 @@
         changes (-> changes
                     (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} prev-active-token-themes))
 
+        ;; TODO: This shouldn't be neccessary 
         changes (if prev-hidden-token-theme
                   (pcb/update-token-theme changes hidden-token-theme prev-hidden-token-theme)
                   (pcb/add-token-theme changes hidden-token-theme))]

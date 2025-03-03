@@ -258,10 +258,12 @@
             changes
             (pcb/add-token-set (pcb/empty-changes) token-set)
 
-            changes
-            (-> changes
-                (pcb/add-token-theme hidden-theme)
-                (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} #{}))]
+            ;; TODO: review this
+            ;; changes
+            ;; (-> changes
+            ;;     ;; (pcb/add-token-theme hidden-theme)
+            ;;     (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} #{}))
+            ]
 
         (rx/of (set-selected-token-set-name set-name)
                (dch/commit-changes changes))))))
