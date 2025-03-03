@@ -178,6 +178,10 @@ impl RenderState {
             .flush_and_submit_surface(&mut self.surfaces.target, None);
     }
 
+    pub fn reset_canvas(&mut self) {
+        self.surfaces.reset(self.background_color);
+    }
+
     // TODO: remove x,y params, I'm using them to debug the tile system
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect, x: i32, y: i32) {
         let canvas = self.surfaces.target.canvas();
@@ -368,7 +372,7 @@ impl RenderState {
                 self.cancel_animation_frame(frame_id);
             }
         }
-        self.surfaces.reset(self.background_color);
+        self.reset_canvas();
         self.surfaces.shape.canvas().scale((
             self.viewbox.zoom * self.options.dpr(),
             self.viewbox.zoom * self.options.dpr(),
