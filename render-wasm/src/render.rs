@@ -185,7 +185,6 @@ impl RenderState {
     // TODO: remove x,y params, I'm using them to debug the tile system
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect, x: i32, y: i32) {
         let canvas = self.surfaces.target.canvas();
-
         canvas.save();
         canvas.clip_rect(rect, skia_safe::ClipOp::Intersect, true);
         self.surfaces.current.draw(
@@ -204,10 +203,7 @@ impl RenderState {
         let point = skia::Point::new(rect.x() + 10., rect.y() + 20.);
         p.set_stroke_width(1.);
         let str = format!("{}:{}", x, y);
-        self.surfaces
-            .target
-            .canvas()
-            .draw_str(str, point, &self.debug_font, &p);
+        canvas.draw_str(str, point, &self.debug_font, &p);
 
     }
 
@@ -383,6 +379,7 @@ impl RenderState {
             .translate((self.viewbox.pan_x, self.viewbox.pan_y));
 
         let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox);
+        debug::render_debug_tiles_for_viewbox(self, sx, sy, ex, ey);
         /*
         // TODO: Instead of rendering only the visible area
         // we could apply an offset to the viewbox to render
@@ -714,21 +711,23 @@ impl RenderState {
         // let offset_x = (self.viewbox.area.left % tile_size);
         // let offset_y = (self.viewbox.area.top % tile_size);
 
+        let (tile_x, tile_y) = self.current_tile;
+        let zoom = self.viewbox.zoom * self.options.dpr();
         // TODO this is broken for zoom variations
         let offset_x =
-            (self.viewbox.area.left % tiles::TILE_SIZE); // * self.viewbox.zoom * self.options.dpr();
+            self.viewbox.area.left * zoom; // * zoom * self.options.dpr();
         let offset_y =
-            (self.viewbox.area.top % tiles::TILE_SIZE); // * self.viewbox.zoom * self.options.dpr();
+            self.viewbox.area.top * zoom; // * self.viewbox.zoom * self.options.dpr();
         // let tile_size = tiles::get_tile_size(self.viewbox);
         // TODO: may we should have a different method like get_tile_rect_with_offset
         //let tile_rect = tiles::get_tile_rect(self.viewbox, tile);
         let tile_rect = Rect::from_xywh(
-            (self.current_tile.0 as f32 * tiles::TILE_SIZE) - offset_x,
-            (self.current_tile.1 as f32 * tiles::TILE_SIZE) - offset_y,
+            ((tile_x as f32 * tiles::TILE_SIZE) - offset_x) % tiles::TILE_SIZE,
+            ((tile_y as f32 * tiles::TILE_SIZE) - offset_y) % tiles::TILE_SIZE,
             tiles::TILE_SIZE,
             tiles::TILE_SIZE,
         );
-        self.apply_render_to_final_canvas(tile_rect, self.current_tile.0, self.current_tile.1);
+        self.apply_render_to_final_canvas(tile_rect, tile_x, tile_y);
         // self.debug_target_surface_rect(tile_rect);
 
         // If we finish processing every node rendering is complete

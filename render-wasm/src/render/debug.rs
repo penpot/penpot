@@ -56,6 +56,16 @@ pub fn render_debug_shape(render_state: &mut RenderState, element: &Shape, inter
     render_state.surfaces.debug.canvas().draw_rect(rect, &paint);
 }
 
+pub fn render_debug_tiles_for_viewbox(render_state: &mut RenderState, sx: i32, sy: i32, ex: i32, ey: i32) {
+    let canvas = render_state.surfaces.debug.canvas();
+    let mut paint = skia::Paint::default();
+    paint.set_style(skia::PaintStyle::Stroke);
+    paint.set_color(skia::Color::from_rgb(255, 0, 127));
+    paint.set_stroke_width(1.);
+    let str_rect = format!("{} {} {} {}", sx, sy, ex, ey);
+    canvas.draw_str(str_rect, skia::Point::new(100.0, 150.0), &render_state.debug_font, &paint);
+}
+
 // Renders the tiles in the viewbox
 pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
     let canvas = render_state.surfaces.debug.canvas();
