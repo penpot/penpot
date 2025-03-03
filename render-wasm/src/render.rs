@@ -399,7 +399,6 @@ impl RenderState {
                 self.cancel_animation_frame(frame_id);
             }
         }
-        println!("start_render_loop");
         self.reset_canvas();
         self.surfaces.shape.canvas().scale((
             self.viewbox.zoom * self.options.dpr(),
@@ -429,6 +428,7 @@ impl RenderState {
         }
         self.pending_nodes = vec![];
         self.render_in_progress = true;
+        self.apply_drawing_to_render_canvas();
         self.process_animation_frame(tree, modifiers, timestamp)?;
         // TODO: check if render complete should be removed
         // self.render_complete = true;
@@ -485,40 +485,6 @@ impl RenderState {
         modifiers: &HashMap<Uuid, Matrix>,
         timestamp: i32,
     ) -> Result<(), String> {
-        println!("process_animation_frame starttttt");
-
-        // //Test just to see if we can keep target data in different animation frames
-        // if let Some(next_tile) = self.pending_tiles.pop() {
-
-        //     // If the tile is empty or it doesn't exists we don't do anything with it
-        //     // TODO: let's see if the double if is required
-        //     let offset_x =
-        //         (self.viewbox.area.left % tiles::TILE_SIZE) * self.viewbox.zoom * self.options.dpr();
-        //     let offset_y =
-        //         (self.viewbox.area.top % tiles::TILE_SIZE) * self.viewbox.zoom * self.options.dpr();
-        //     let tile_size = tiles::get_tile_size(self.viewbox);
-        //     // TODO: may we should have a different method like get_tile_rect_with_offset
-        //     //let tile_rect = tiles::get_tile_rect(self.viewbox, tile);
-        //     let tile_rect = Rect::from_xywh(
-        //         (next_tile.0 as f32 * tile_size) - offset_x,
-        //         (next_tile.1 as f32 * tile_size) - offset_y,
-        //         tile_size,
-        //         tile_size,
-        //     );
-
-        //     let paint = skia::Paint::default();
-        //     let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);          
-        //     self.surfaces.target.canvas().save_layer(&layer_rec);
-        //     let mut p = skia::Paint::default();
-        //     p.set_stroke_width(4.);
-        //     p.set_style(skia::PaintStyle::Stroke);
-        //     self.surfaces.target.canvas().draw_rect(&tile_rect, &p);
-        //     self.surfaces.target.canvas().restore();
-        //     self.flush();
-        //     self.render_request_id = Some(self.request_animation_frame())
-        // }
-
-        // self.flush();
         if self.render_in_progress {
             self.render_shape_tree(tree, modifiers, timestamp)?;
             self.flush();
@@ -714,22 +680,16 @@ impl RenderState {
             }
 
             // If we didn't visited_children this shape, then we need to do
-            if !node_render_state.id.is_nil() {
-                if !element.selrect().intersects(self.render_area) || element.hidden() {
-                    debug::render_debug_shape(self, element, false);
-                    self.render_complete = render_complete;
-                    continue;
-                } else {
-                    debug::render_debug_shape(self, element, true);
-                }
+            if !element.selrect().intersects(self.render_area) || element.hidden() {
+                debug::render_debug_shape(self, element, false);
+                self.render_complete = render_complete;
+                continue;
+            } else {
+                debug::render_debug_shape(self, element, true);
             }
 
             self.render_shape_enter(element, mask);
-            if !node_render_state.id.is_nil() {
-                self.render_shape(element, modifiers.get(&element.id), clip_bounds);
-            } else {
-                self.apply_drawing_to_render_canvas();
-            }
+            self.render_shape(element, modifiers.get(&element.id), clip_bounds);
 
             // Set the node as visited_children before processing children
             self.pending_nodes.push(NodeRenderState {
@@ -742,7 +702,7 @@ impl RenderState {
 
             if element.is_recursive() {
                 let children_clip_bounds =
-                    (!node_render_state.id.is_nil() & element.clip()).then(|| {
+                    (element.clip()).then(|| {
                         let bounds = element.selrect();
                         let mut transform = element.transform;
                         transform.post_translate(bounds.center());
@@ -796,6 +756,7 @@ impl RenderState {
             tile_size,
         );
         self.apply_render_to_final_canvas(tile_rect, self.current_tile.0, self.current_tile.1);
+        // self.debug_target_surface_rect(tile_rect);
 
         // If we finish processing every node rendering is complete
         // let's check if there are more pending nodes
@@ -814,7 +775,7 @@ impl RenderState {
                         // TODO: this code is duplicated from some lines before, refactor to a common function
 
                         let children_clip_bounds = if element.is_recursive() {
-                            (!element.id.is_nil() & element.clip()).then(|| {
+                            (element.clip()).then(|| {
                                 let bounds = element.selrect();
                                 let mut transform = element.transform;
                                 transform.post_translate(bounds.center());
@@ -838,7 +799,7 @@ impl RenderState {
                             clip_bounds: children_clip_bounds,
                             visited_mask: false,
                             mask: false,
-                        })
+                        });
                     }
                 }
             }
