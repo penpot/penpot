@@ -743,17 +743,17 @@ impl RenderState {
 
         // TODO this is broken for zoom variations
         let offset_x =
-            (self.viewbox.area.left % tiles::TILE_SIZE) * self.viewbox.zoom * self.options.dpr();
+            (self.viewbox.area.left % tiles::TILE_SIZE); // * self.viewbox.zoom * self.options.dpr();
         let offset_y =
-            (self.viewbox.area.top % tiles::TILE_SIZE) * self.viewbox.zoom * self.options.dpr();
-        let tile_size = tiles::get_tile_size(self.viewbox);
+            (self.viewbox.area.top % tiles::TILE_SIZE); // * self.viewbox.zoom * self.options.dpr();
+        // let tile_size = tiles::get_tile_size(self.viewbox);
         // TODO: may we should have a different method like get_tile_rect_with_offset
         //let tile_rect = tiles::get_tile_rect(self.viewbox, tile);
         let tile_rect = Rect::from_xywh(
-            (self.current_tile.0 as f32 * tile_size) - offset_x,
-            (self.current_tile.1 as f32 * tile_size) - offset_y,
-            tile_size,
-            tile_size,
+            (self.current_tile.0 as f32 * tiles::TILE_SIZE) - offset_x,
+            (self.current_tile.1 as f32 * tiles::TILE_SIZE) - offset_y,
+            tiles::TILE_SIZE,
+            tiles::TILE_SIZE,
         );
         self.apply_render_to_final_canvas(tile_rect, self.current_tile.0, self.current_tile.1);
         // self.debug_target_surface_rect(tile_rect);
