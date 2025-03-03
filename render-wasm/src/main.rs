@@ -131,6 +131,15 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn set_parent(a: u32, b: u32, c: u32, d: u32) {
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    if let Some(shape) = state.current_shape() {
+        shape.set_parent(id);
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn set_shape_masked_group(masked: bool) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {

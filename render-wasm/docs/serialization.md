@@ -145,11 +145,13 @@ Shadow styles are serialized as `u8`:
 
 ## Layout - Direction
 
-| Value | Field  |
-| ----- | -------|
-| 0     | Row    |
-| 1     | Column |
-| \_    | error  |
+| Value | Field         |
+| ----- | ------------- |
+| 0     | Row           |
+| 0     | RowReverse    |
+| 1     | Column        |
+| 1     | ColumnReverse |
+| \_    | error         |
 
 ## Layout - Align Items
 

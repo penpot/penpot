@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use skia_safe::{self as skia};
 
 use std::collections::HashMap;
@@ -154,6 +156,7 @@ pub type Color = skia::Color;
 #[allow(dead_code)]
 pub struct Shape {
     pub id: Uuid,
+    pub parent_id: Option<Uuid>,
     pub shape_type: Type,
     pub children: Vec<Uuid>,
     pub selrect: math::Rect,
@@ -178,6 +181,7 @@ impl Shape {
     pub fn new(id: Uuid) -> Self {
         Self {
             id,
+            parent_id: None,
             shape_type: Type::Rect(Rect::default()),
             children: Vec::<Uuid>::new(),
             selrect: math::Rect::new_empty(),
@@ -199,12 +203,29 @@ impl Shape {
         }
     }
 
+    pub fn set_parent(&mut self, id: Uuid) {
+        self.parent_id = Some(id);
+    }
+
     pub fn set_shape_type(&mut self, shape_type: Type) {
         self.shape_type = shape_type;
     }
 
     pub fn is_frame(&self) -> bool {
         matches!(self.shape_type, Type::Frame(_))
+    }
+
+    pub fn is_group_like(&self) -> bool {
+        matches!(self.shape_type, Type::Group(_)) || matches!(self.shape_type, Type::Bool(_))
+    }
+
+    pub fn has_layout(&self) -> bool {
+        match self.shape_type {
+            Type::Frame(Frame {
+                layout: Some(_), ..
+            }) => true,
+            _ => false,
+        }
     }
 
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {

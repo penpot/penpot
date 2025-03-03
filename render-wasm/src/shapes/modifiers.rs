@@ -1,220 +1,229 @@
 use std::collections::HashMap;
 
-use skia::Matrix;
-use skia_safe as skia;
+mod constraints;
+mod flex_layout;
+mod grid_layout;
 
-use std::collections::HashSet;
 use uuid::Uuid;
 
-use crate::math::Bounds;
-use crate::shapes::{ConstraintH, ConstraintV, Shape, TransformEntry};
+use crate::math::{Bounds, Matrix, Point};
+use crate::shapes::{
+    ConstraintH, ConstraintV, Frame, Group, Layout, Modifier, Shape, TransformEntry, Type,
+};
 use crate::state::State;
 
-fn calculate_resize(
-    constraint_h: ConstraintH,
-    constraint_v: ConstraintV,
-    parent_before: &Bounds,
-    parent_after: &Bounds,
-    child_before: &Bounds,
-    child_after: &Bounds,
-) -> Option<(f32, f32)> {
-    let scale_width = match constraint_h {
-        ConstraintH::Left | ConstraintH::Right | ConstraintH::Center => {
-            parent_before.width() / parent_after.width()
-        }
-        ConstraintH::LeftRight => {
-            let left = parent_before.left(child_before.nw);
-            let right = parent_before.right(child_before.ne);
-            let target_width = parent_after.width() - left - right;
-            target_width / child_after.width()
-        }
-        _ => 1.0,
-    };
+trait GetBounds {
+    fn find(&self, shape: &Shape) -> Bounds;
+}
 
-    let scale_height = match constraint_v {
-        ConstraintV::Top | ConstraintV::Bottom | ConstraintV::Center => {
-            parent_before.height() / parent_after.height()
-        }
-        ConstraintV::TopBottom => {
-            let top = parent_before.top(child_before.nw);
-            let bottom = parent_before.bottom(child_before.sw);
-            let target_height = parent_after.height() - top - bottom;
-            target_height / child_after.height()
-        }
-        _ => 1.0,
-    };
-
-    if (scale_width - 1.0).abs() < f32::EPSILON && (scale_height - 1.0).abs() < f32::EPSILON {
-        None
-    } else {
-        Some((scale_width, scale_height))
+impl GetBounds for HashMap<Uuid, Bounds> {
+    fn find(&self, shape: &Shape) -> Bounds {
+        self.get(&shape.id)
+            .map(|b| b.clone())
+            .unwrap_or(shape.bounds())
     }
 }
 
-fn calculate_displacement(
-    constraint_h: ConstraintH,
-    constraint_v: ConstraintV,
-    parent_before: &Bounds,
-    parent_after: &Bounds,
-    child_before: &Bounds,
-    child_after: &Bounds,
-) -> Option<(f32, f32)> {
-    let delta_x = match constraint_h {
-        ConstraintH::Left | ConstraintH::LeftRight => {
-            let target_left = parent_before.left(child_before.nw);
-            let current_left = parent_after.left(child_after.nw);
-            target_left - current_left
-        }
-        ConstraintH::Right => {
-            let target_right = parent_before.right(child_before.ne);
-            let current_right = parent_after.right(child_after.ne);
-            current_right - target_right
-        }
-        ConstraintH::Center => {
-            let delta_width = parent_after.width() - parent_before.width();
-            let target_left = parent_before.left(child_before.nw);
-            let current_left = parent_after.left(child_after.nw);
-            target_left - current_left + delta_width / 2.0
-        }
-        _ => 0.0,
-    };
-
-    let delta_y = match constraint_v {
-        ConstraintV::Top | ConstraintV::TopBottom => {
-            let target_top = parent_before.top(child_before.nw);
-            let current_top = parent_after.top(child_after.nw);
-            target_top - current_top
-        }
-        ConstraintV::Bottom => {
-            let target_bottom = parent_before.bottom(child_before.ne);
-            let current_bottom = parent_after.bottom(child_after.ne);
-            current_bottom - target_bottom
-        }
-        ConstraintV::Center => {
-            let delta_height = parent_after.height() - parent_before.height();
-            let target_top = parent_before.top(child_before.nw);
-            let current_top = parent_after.top(child_after.nw);
-            target_top - current_top + delta_height / 2.0
-        }
-        _ => 0.0,
-    };
-
-    if delta_x.abs() < f32::EPSILON && delta_y.abs() < f32::EPSILON {
-        None
-    } else {
-        Some((delta_x, delta_y))
-    }
-}
-
-fn propagate_shape(
-    shapes: &HashMap<Uuid, Shape>,
+fn propagate_children(
     shape: &Shape,
+    shapes: &HashMap<Uuid, Shape>,
+    parent_bounds_before: &Bounds,
+    parent_bounds_after: &Bounds,
     transform: Matrix,
-) -> Vec<TransformEntry> {
+    bounds: &HashMap<Uuid, Bounds>,
+) -> Vec<Modifier> {
     if shape.children.len() == 0 {
         return vec![];
     }
 
-    let parent_bounds_before = shape.bounds();
-    let parent_bounds_after = parent_bounds_before.transform(&transform);
     let mut result = Vec::new();
 
     for child_id in shape.children.iter() {
-        if let Some(child) = shapes.get(child_id) {
-            let constraint_h = child.constraint_h(if shape.is_frame() {
-                ConstraintH::Left
-            } else {
-                ConstraintH::Scale
-            });
+        let Some(child) = shapes.get(child_id) else {
+            continue;
+        };
 
-            let constraint_v = child.constraint_v(if shape.is_frame() {
-                ConstraintV::Top
-            } else {
-                ConstraintV::Scale
-            });
-            // if the constrains are scale & scale or the transform has only moves we
-            // can propagate as is
-            if (constraint_h == ConstraintH::Scale && constraint_v == ConstraintV::Scale)
-                || transform.is_translate()
-            {
-                result.push(TransformEntry::new(child_id.clone(), transform));
-                continue;
-            }
+        let child_bounds = bounds.find(child);
 
-            if let Some(child_bounds_before) = parent_bounds_before.box_bounds(&child.bounds()) {
-                let mut transform = transform;
-                let mut child_bounds_after = child_bounds_before.transform(&transform);
+        let constraint_h = match &shape.shape_type {
+            Type::Frame(Frame {
+                layout: Some(_), ..
+            }) => ConstraintH::Left,
+            Type::Frame(_) => child.constraint_h(ConstraintH::Left),
+            _ => child.constraint_h(ConstraintH::Scale),
+        };
 
-                // Scale shape
-                if let Some((scale_width, scale_height)) = calculate_resize(
-                    constraint_h,
-                    constraint_v,
-                    &parent_bounds_before,
-                    &parent_bounds_after,
-                    &child_bounds_before,
-                    &child_bounds_after,
-                ) {
-                    let center = child.center();
+        let constraint_v = match &shape.shape_type {
+            Type::Frame(Frame {
+                layout: Some(_), ..
+            }) => ConstraintV::Top,
+            Type::Frame(_) => child.constraint_v(ConstraintV::Top),
+            _ => child.constraint_v(ConstraintV::Scale),
+        };
 
-                    let mut parent_transform = parent_bounds_after
-                        .transform_matrix()
-                        .unwrap_or(Matrix::default());
-                    parent_transform.post_translate(center);
-                    parent_transform.pre_translate(-center);
+        let transform = constraints::propagate_shape_constraints(
+            &parent_bounds_before,
+            &parent_bounds_after,
+            &child_bounds,
+            constraint_h,
+            constraint_v,
+            transform,
+        );
 
-                    let parent_transform_inv = &parent_transform.invert().unwrap();
-                    let origin = parent_transform_inv.map_point(child_bounds_after.nw);
-
-                    let mut scale = Matrix::scale((scale_width, scale_height));
-                    scale.post_translate(origin);
-                    scale.post_concat(&parent_transform);
-                    scale.pre_translate(-origin);
-                    scale.pre_concat(&parent_transform_inv);
-
-                    child_bounds_after.transform_mut(&scale);
-                    transform.post_concat(&scale);
-                }
-
-                // Translate position
-                if let Some((delta_x, delta_y)) = calculate_displacement(
-                    constraint_h,
-                    constraint_v,
-                    &parent_bounds_before,
-                    &parent_bounds_after,
-                    &child_bounds_before,
-                    &child_bounds_after,
-                ) {
-                    let th = parent_bounds_after.hv(delta_x);
-                    let tv = parent_bounds_after.vv(delta_y);
-                    transform.post_concat(&Matrix::translate(th + tv));
-                }
-
-                result.push(TransformEntry::new(child_id.clone(), transform));
-            }
-        }
+        result.push(Modifier::transform(*child_id, transform));
     }
 
     result
 }
 
+fn reflow_flex_children(
+    _shape: &Shape,
+    _shapes: &HashMap<Uuid, Shape>,
+    _bounds: &HashMap<Uuid, Bounds>,
+) -> Vec<Modifier> {
+    let result = Vec::new();
+
+    /*
+    for child_id in shape.children.iter() {
+        let Some(child) = shapes.get(child_id) else {
+            continue;
+        };
+
+        let child_bounds = bounds.find(child);
+
+    }
+    */
+    result
+}
+
+fn reflow_grid_children(
+    _shape: &Shape,
+    _shapes: &HashMap<Uuid, Shape>,
+    _bounds: &HashMap<Uuid, Bounds>,
+) -> Vec<Modifier> {
+    // TODO
+    Vec::new()
+}
+
+fn calculate_group_bounds(
+    shape: &Shape,
+    shapes: &HashMap<Uuid, Shape>,
+    bounds: &HashMap<Uuid, Bounds>,
+) -> Option<Bounds> {
+    let shape_bounds = bounds.find(&shape);
+    let mut result = Vec::<Point>::new();
+    for child_id in shape.children.iter() {
+        let Some(child) = shapes.get(child_id) else {
+            continue;
+        };
+
+        let child_bounds = bounds.find(child);
+        result.append(&mut child_bounds.points());
+    }
+
+    shape_bounds.from_points(result)
+}
+
 pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec<TransformEntry> {
-    let mut entries = modifiers.clone();
-    let mut processed = HashSet::<Uuid>::new();
-    let mut result = Vec::<TransformEntry>::new();
+    let shapes = &state.shapes;
+    let mut entries: Vec<_> = modifiers
+        .iter()
+        .map(|entry| Modifier::Transform(entry.clone()))
+        .collect();
+    let mut modifiers = HashMap::<Uuid, Matrix>::new();
+    let mut bounds = HashMap::<Uuid, Bounds>::new();
 
     // Propagate the transform to children
-    while let Some(entry) = entries.pop() {
-        if !processed.contains(&entry.id) {
-            if let Some(shape) = state.shapes.get(&entry.id) {
-                let mut children = propagate_shape(&state.shapes, shape, entry.transform);
+    while let Some(modifier) = entries.pop() {
+        match modifier {
+            Modifier::Transform(entry) => {
+                let Some(shape) = state.shapes.get(&entry.id) else {
+                    continue;
+                };
+
+                let shape_bounds_before = bounds.find(&shape);
+                let shape_bounds_after = shape_bounds_before.transform(&entry.transform);
+
+                let mut children = propagate_children(
+                    shape,
+                    shapes,
+                    &shape_bounds_before,
+                    &shape_bounds_after,
+                    entry.transform,
+                    &bounds,
+                );
+
                 entries.append(&mut children);
-                processed.insert(entry.id);
-                result.push(entry.clone());
+                bounds.insert(shape.id, shape_bounds_after);
+
+                let default_matrix = Matrix::default();
+                let mut shape_modif = modifiers.get(&shape.id).unwrap_or(&default_matrix).clone();
+                shape_modif.post_concat(&entry.transform);
+                modifiers.insert(shape.id, shape_modif);
+
+                if let Some(parent) = shape.parent_id.and_then(|id| shapes.get(&id)) {
+                    if parent.has_layout() || parent.is_group_like() {
+                        entries.push(Modifier::reflow(parent.id));
+                    }
+                }
+            }
+            Modifier::Reflow(id) => {
+                let Some(shape) = state.shapes.get(&id) else {
+                    continue;
+                };
+
+                match &shape.shape_type {
+                    Type::Frame(Frame {
+                        layout: Some(Layout::FlexLayout(_layout_data, _flex_data)),
+                        ..
+                    }) => {
+                        let mut children = reflow_flex_children(shape, shapes, &bounds);
+                        entries.append(&mut children);
+                    }
+                    Type::Frame(Frame {
+                        layout: Some(Layout::GridLayout(_layout_data, _grid_data)),
+                        ..
+                    }) => {
+                        let mut children = reflow_grid_children(shape, shapes, &bounds);
+                        entries.append(&mut children);
+                    }
+                    Type::Group(Group { masked: true }) => {
+                        if let Some(child) = shapes.get(&shape.children[0]) {
+                            let child_bounds = bounds.find(&child);
+                            bounds.insert(shape.id, child_bounds);
+                        }
+                    }
+                    Type::Group(_) => {
+                        if let Some(shape_bounds) = calculate_group_bounds(shape, shapes, &bounds) {
+                            bounds.insert(shape.id, shape_bounds);
+                        }
+                    }
+                    Type::Bool(_) => {
+                        // TODO: How to calculate from rust the new box? we need to calculate the
+                        // new path... impossible right now. I'm going to use for the moment the group
+                        // calculation
+                        if let Some(shape_bounds) = calculate_group_bounds(shape, shapes, &bounds) {
+                            bounds.insert(shape.id, shape_bounds);
+                        }
+                    }
+                    _ => {
+                        // Other shapes don't have to be reflown
+                    }
+                }
+
+                if let Some(parent) = shape.parent_id.and_then(|id| shapes.get(&id)) {
+                    if parent.has_layout() || parent.is_group_like() {
+                        entries.push(Modifier::reflow(parent.id));
+                    }
+                }
             }
         }
     }
 
-    result
+    modifiers
+        .iter()
+        .map(|(key, val)| TransformEntry::new(*key, *val))
+        .collect()
 }
 
 #[cfg(test)]
@@ -246,8 +255,47 @@ mod tests {
         transform.post_translate(Point::new(x, y));
         transform.pre_translate(Point::new(-x, -y));
 
-        let result = propagate_shape(&shapes, &parent, transform);
+        let bounds_before = parent.bounds();
+        let bounds_after = bounds_before.transform(&transform);
+
+        let result = propagate_children(
+            &parent,
+            &shapes,
+            &bounds_before,
+            &bounds_after,
+            transform,
+            &HashMap::<Uuid, Bounds>::new(),
+        );
 
         assert_eq!(result.len(), 1);
+    }
+
+    #[test]
+    fn test_group_bounds() {
+        let mut shapes = HashMap::<Uuid, Shape>::new();
+
+        let child1_id = Uuid::new_v4();
+        let mut child1 = Shape::new(child1_id);
+        child1.set_selrect(3.0, 3.0, 2.0, 2.0);
+        shapes.insert(child1_id, child1);
+
+        let child2_id = Uuid::new_v4();
+        let mut child2 = Shape::new(child2_id);
+        child2.set_selrect(0.0, 0.0, 1.0, 1.0);
+        shapes.insert(child2_id, child2);
+
+        let parent_id = Uuid::new_v4();
+        let mut parent = Shape::new(parent_id);
+        parent.set_shape_type(Type::Group(Group::default()));
+        parent.add_child(child1_id);
+        parent.add_child(child2_id);
+        parent.set_selrect(0.0, 0.0, 3.0, 3.0);
+        shapes.insert(parent_id, parent.clone());
+
+        let bounds =
+            calculate_group_bounds(&parent, &shapes, HashMap::<Uuid, Bounds>::new()).unwrap();
+
+        assert_eq!(bounds.width(), 3.0);
+        assert_eq!(bounds.height(), 3.0);
     }
 }

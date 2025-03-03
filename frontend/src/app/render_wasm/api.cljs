@@ -103,6 +103,15 @@
             (aget buffer 2)
             (aget buffer 3))))
 
+(defn set-parent-id
+  [id]
+  (let [buffer (uuid/get-u32 id)]
+    (h/call internal-module "_set_parent"
+            (aget buffer 0)
+            (aget buffer 1)
+            (aget buffer 2)
+            (aget buffer 3))))
+
 (defn set-shape-clip-content
   [clip-content]
   (h/call internal-module "_set_shape_clip_content" clip-content))
@@ -502,8 +511,10 @@
 (defn translate-layout-flex-dir
   [flex-dir]
   (case flex-dir
-    :row    0
-    :column 1))
+    :row            0
+    :row-reverse    1
+    :column         2
+    :column-reverse 3))
 
 (defn translate-layout-align-items
   [align-items]
@@ -706,6 +717,7 @@
           (if (< index total-shapes)
             (let [shape        (nth shapes index)
                   id           (dm/get-prop shape :id)
+                  parent-id    (dm/get-prop shape :parent-id)
                   type         (dm/get-prop shape :type)
                   masked       (dm/get-prop shape :masked-group)
                   selrect      (dm/get-prop shape :selrect)
@@ -736,6 +748,7 @@
                   shadows      (dm/get-prop shape :shadow)]
 
               (use-shape id)
+              (set-parent-id parent-id)
               (set-shape-type type)
               (set-shape-clip-content clip-content)
               (set-shape-selrect selrect)
