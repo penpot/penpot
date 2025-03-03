@@ -14,8 +14,21 @@
 
 - Fix opacity in frame containers [Github #5858](https://github.com/penpot/penpot/pull/5858)
 
+## 2.5.1
 
-## 2.5.0 (Unreleased)
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features
+
+- Improve Nginx entryponit to get the resolvers dinamically by default
+
+### :bug: Bugs fixed
+
+## 2.5.0
 
 ### :rocket: Epics and highlights
 

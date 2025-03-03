@@ -280,6 +280,67 @@ Postgres database and another one for the assets uploaded by your users (images 
 clips). There may be more volumes if you enable other features, as explained in the file
 itself.
 
+### Configure the proxy
+
+Your host configuration needs to make a proxy to http://localhost:9001.
+
+#### Example with NGINX
+
+```bash
+server {
+  listen 80;
+  server_name penpot.mycompany.com;
+  return 301 https://$host$request_uri;
+}
+
+server {
+  listen 443 ssl;
+  server_name penpot.mycompany.com;
+
+  # This value should be in sync with the corresponding in the docker-compose.yml
+  # PENPOT_HTTP_SERVER_MAX_BODY_SIZE: 31457280
+  client_max_body_size 31457280;
+
+  # Logs: Configure your logs following the best practices inside your company
+  access_log /path/to/penpot.access.log;
+  error_log /path/to/penpot.error.log;
+
+  # TLS: Configure your TLS following the best practices inside your company
+  ssl_certificate /path/to/fullchain;
+  ssl_certificate_key /path/to/privkey;
+
+  # Websockets
+  location /ws/notifications {
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+    proxy_pass http://localhost:9001/ws/notifications;
+  }
+
+  # Proxy pass
+  location / {
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Scheme $scheme;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_redirect off;
+    proxy_pass http://localhost:9001/;
+  }
+}
+```
+
+#### Example with CADDY SERVER
+
+```bash
+penpot.mycompany.com {
+        reverse_proxy :9001
+        tls /path/to/fullchain.pem /path/to/privkey.pem
+        log {
+            output file /path/to/penpot.log
+        }
+}
+```
+
 ### Troubleshooting
 
 Knowing how to do Penpot troubleshooting can be very useful; on the one hand, it helps to create issues easier to resolve, since they include relevant information from the beginning which also makes them get solved faster; on the other hand, many times troubleshooting gives the necessary information to resolve a problem autonomously, without even creating an issue.
@@ -349,7 +410,6 @@ you need.
 
 Therefore, your prerequisite will be to have a Kubernetes cluster on which we can install
 Helm.
-
 
 ### What is Helm
 
