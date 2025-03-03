@@ -66,6 +66,8 @@ pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
 
     let tile_size = tiles::get_tile_size(render_state.viewbox);
     let (sx, sy, ex, ey) = tiles::get_tiles_for_rect(render_state.viewbox.area, tile_size);
+    let str_rect = format!("{} {} {} {}", sx, sy, ex, ey);
+    canvas.draw_str(str_rect, skia::Point::new(100.0, 100.0), &render_state.debug_font, &paint);
     for y in sy..=ey {
         for x in sx..=ex {
             let rect = Rect::from_xywh(
@@ -113,6 +115,7 @@ pub fn render_debug_tiles(render_state: &mut RenderState) {
             canvas.draw_rect(&debug_rect, &paint);
         }
     }
+
 }
 
 pub fn render(render_state: &mut RenderState) {

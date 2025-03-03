@@ -179,6 +179,7 @@ impl RenderState {
     }
 
     pub fn reset_canvas(&mut self) {
+        self.surfaces.target.canvas().clear(self.background_color);
         self.surfaces.shape.canvas().restore_to_count(1);
         self.surfaces.current.canvas().restore_to_count(1);
         self.surfaces
@@ -210,23 +211,22 @@ impl RenderState {
 
     // TODO: remove x,y params, I'm using them to debug the tile system
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect, x: i32, y: i32) {
-        self.surfaces.target.canvas().save();
-        self.surfaces
-            .target
-            .canvas()
-            .clip_rect(rect, skia_safe::ClipOp::Intersect, true);
+        let canvas = self.surfaces.target.canvas();
+
+        canvas.save();
+        canvas.clip_rect(rect, skia_safe::ClipOp::Intersect, true);
         self.surfaces.current.draw(
-            &mut self.surfaces.target.canvas(),
+            &canvas,
             (0.0, 0.0),
             self.sampling_options,
             Some(&skia::Paint::default()),
         );
-        self.surfaces.target.canvas().restore();
+        canvas.restore();
 
         let mut p = skia::Paint::default();
         p.set_stroke_width(4.);
         p.set_style(skia::PaintStyle::Stroke);
-        self.surfaces.target.canvas().draw_rect(&rect, &p);
+        canvas.draw_rect(&rect, &p);
 
         let point = skia::Point::new(rect.x() + 10., rect.y() + 20.);
         p.set_stroke_width(1.);
@@ -457,7 +457,7 @@ impl RenderState {
         let encoded_image = image.encode(context.as_mut(), skia::EncodedImageFormat::PNG, None).unwrap();
         let base64_image = base64::encode(&encoded_image.as_bytes());
         let script = std::ffi::CString::new(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')")).unwrap();
-        unsafe { emscripten_run_script_int(script.as_ptr()) };      
+        unsafe { emscripten_run_script_int(script.as_ptr()) };
     }
 
 
@@ -475,7 +475,7 @@ impl RenderState {
                 .unwrap();
             let base64_image = base64::encode(&encoded_image.as_bytes());
             let script = std::ffi::CString::new(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')")).unwrap();
-            unsafe { emscripten_run_script_int(script.as_ptr()) };      
+            unsafe { emscripten_run_script_int(script.as_ptr()) };
         }
     }
 
