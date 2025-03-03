@@ -209,12 +209,16 @@ impl Shape {
 
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
         self.selrect.set_ltrb(left, top, right, bottom);
-        match &self.shape_type {
-            Type::Text(text) => {
-                let mut new_text = text.clone();
-                new_text.set_xywh(left, top, right - left, bottom - top);
-                self.shape_type = Type::Text(new_text);
+        match self.shape_type {
+            Type::Text(ref mut text) => {
+                text.set_xywh(left, top, right - left, bottom - top);
+                println!("set selrect {:?}", self.shape_type);
             }
+            // Type::Text() => {
+            //     let mut new_text = text.clone();
+            //     new_text.set_xywh(left, top, right - left, bottom - top);
+            //     self.shape_type = Type::Text(new_text);
+            // }
             _ => {}
         }
     }
@@ -353,7 +357,7 @@ impl Shape {
     }
 
     pub fn add_fill(&mut self, f: Fill) {
-        self.fills.push(f)
+        self.fills.push(f);
     }
 
     pub fn clear_fills(&mut self) {
@@ -612,7 +616,10 @@ impl Shape {
 
     pub fn clear_text(&mut self) {
         match self.shape_type {
-            Type::Text(_) => self.shape_type = Type::Text(TextContent::default()),
+            Type::Text(_) => {
+                let new_text_content = TextContent::new(self.selrect);
+                self.shape_type = Type::Text(new_text_content);
+            }
             _ => {}
         }
     }

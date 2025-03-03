@@ -30,7 +30,7 @@ pub extern "C" fn add_text_leaf() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         let res = shape.add_text_leaf(&text);
-        println!("{:?}", shape);
+        // println!("{:?}", shape);
         if let Err(err) = res {
             eprintln!("{}", err);
         }
