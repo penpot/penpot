@@ -423,12 +423,13 @@ impl RenderState {
     pub fn debug_target_surface(&mut self) {
         let image = self.surfaces.target.image_snapshot();
         let mut context = self.surfaces.target.direct_context();
-        let encoded_image = image.encode(context.as_mut(), skia::EncodedImageFormat::PNG, None).unwrap();
+        let encoded_image = image
+            .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
+            .unwrap();
         let base64_image = base64::encode(&encoded_image.as_bytes());
         let script = std::ffi::CString::new(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')")).unwrap();
         unsafe { emscripten_run_script_int(script.as_ptr()) };
     }
-
 
     pub fn debug_target_surface_rect(&mut self, rect: skia::Rect) {
         let int_rect = skia::IRect::from_ltrb(
@@ -670,21 +671,20 @@ impl RenderState {
             });
 
             if element.is_recursive() {
-                let children_clip_bounds =
-                    (element.clip()).then(|| {
-                        let bounds = element.selrect();
-                        let mut transform = element.transform;
-                        transform.post_translate(bounds.center());
-                        transform.pre_translate(-bounds.center());
-                        if let Some(modifiers) = modifiers.get(&element.id) {
-                            transform.post_concat(&modifiers);
-                        }
-                        let corners = match element.kind {
-                            Kind::Rect(_, corners) => corners,
-                            _ => None,
-                        };
-                        (bounds, corners, transform)
-                    });
+                let children_clip_bounds = (element.clip()).then(|| {
+                    let bounds = element.selrect();
+                    let mut transform = element.transform;
+                    transform.post_translate(bounds.center());
+                    transform.pre_translate(-bounds.center());
+                    if let Some(modifiers) = modifiers.get(&element.id) {
+                        transform.post_concat(&modifiers);
+                    }
+                    let corners = match element.kind {
+                        Kind::Rect(_, corners) => corners,
+                        _ => None,
+                    };
+                    (bounds, corners, transform)
+                });
 
                 for child_id in element.children_ids().iter().rev() {
                     self.pending_nodes.push(NodeRenderState {
@@ -708,7 +708,7 @@ impl RenderState {
         let (tile_x, tile_y) = self.current_tile;
         let zoom = self.viewbox.zoom * self.options.dpr();
         let offset_x = self.viewbox.area.left * zoom;
-        let offset_y = self.viewbox.area.top * zoom; 
+        let offset_y = self.viewbox.area.top * zoom;
         // TODO: move this to tiles logic?
         let tile_rect = Rect::from_xywh(
             ((tile_x as f32 * tiles::TILE_SIZE) - offset_x),
@@ -786,16 +786,14 @@ impl RenderState {
         self.tiles.invalidate_tiles();
     }
 
-    pub fn rebuild_tiles_if_needed(&mut self, tree: &mut HashMap<Uuid, Shape>, zoom: f32) {
-        if zoom != self.viewbox.zoom {
-            self.tiles.invalidate_tiles();
-            let mut nodes = vec![Uuid::nil()];
-            while let Some(shape_id) = nodes.pop() {
-                if let Some(shape) = tree.get(&shape_id) {
-                  self.update_tile_for(&shape);
-                  for child_id in shape.children_ids().iter() {
-                      nodes.push(*child_id);
-                  }
+    pub fn rebuild_tiles(&mut self, tree: &mut HashMap<Uuid, Shape>) {
+        self.tiles.invalidate_tiles();
+        let mut nodes = vec![Uuid::nil()];
+        while let Some(shape_id) = nodes.pop() {
+            if let Some(shape) = tree.get(&shape_id) {
+                self.update_tile_for(&shape);
+                for child_id in shape.children_ids().iter() {
+                    nodes.push(*child_id);
                 }
             }
         }

@@ -53,22 +53,10 @@ impl Surfaces {
         self.target.canvas().clear(color);
         self.shape.canvas().restore_to_count(1);
         self.current.canvas().restore_to_count(1);
-        self.shape
-            .canvas()
-            .clear(color)
-            .reset_matrix();
-        self.current
-            .canvas()
-            .clear(color)
-            .reset_matrix();
-        self.shadow
-            .canvas()
-            .clear(color)
-            .reset_matrix();
-        self.overlay
-            .canvas()
-            .clear(color)
-            .reset_matrix();
+        self.shape.canvas().clear(color).reset_matrix();
+        self.current.canvas().clear(color).reset_matrix();
+        self.shadow.canvas().clear(color).reset_matrix();
+        self.overlay.canvas().clear(color).reset_matrix();
         self.debug
             .canvas()
             .clear(skia::Color::TRANSPARENT)

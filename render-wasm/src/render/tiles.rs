@@ -225,10 +225,9 @@ impl Tiles {
 
     pub fn update_tile_for(&mut self, viewbox: Viewbox, shape: &Shape) {
         let tile_size = get_tile_size(viewbox);
-        let (sx, sy, ex, ey) = get_tiles_for_rect(shape.selrect, tile_size);
-        println!("update_tile_for {} {} {} {} {}", shape.id, sx, sy, ex, ey);
-        for x in sx..=ex {
-            for y in sy..=ey {
+        let (rsx, rsy, rex, rey) = get_tiles_for_rect(shape.selrect, tile_size);
+        for x in rsx..=rex {
+            for y in rsy..=rey {
                 let tile = (x, y);
                 self.shapes.add_shape_at(tile, shape.id);
             }

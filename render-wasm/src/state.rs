@@ -85,8 +85,7 @@ impl<'a> State<'a> {
         }
     }
 
-    pub fn rebuild_tiles_if_needed(&mut self, zoom: f32) {
-        self.render_state
-            .rebuild_tiles_if_needed(&mut self.shapes, zoom);
+    pub fn rebuild_tiles(&mut self) {
+        self.render_state.rebuild_tiles(&mut self.shapes);
     }
 }
