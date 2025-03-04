@@ -212,13 +212,7 @@ impl Shape {
         match self.shape_type {
             Type::Text(ref mut text) => {
                 text.set_xywh(left, top, right - left, bottom - top);
-                println!("set selrect {:?}", self.shape_type);
             }
-            // Type::Text() => {
-            //     let mut new_text = text.clone();
-            //     new_text.set_xywh(left, top, right - left, bottom - top);
-            //     self.shape_type = Type::Text(new_text);
-            // }
             _ => {}
         }
     }

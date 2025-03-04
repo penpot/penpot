@@ -78,7 +78,7 @@ fn draw_image_fill_in_container(
             canvas.clip_rect(container, skia::ClipOp::Intersect, true);
         }
         Type::Group(_) => unreachable!("A group should not have fills"),
-        Type::Text(_) => unimplemented!("todo"),
+        Type::Text(_) => unimplemented!("TODO"),
     }
 
     // Draw the image with the calculated destination rectangle

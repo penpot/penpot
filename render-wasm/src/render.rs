@@ -338,7 +338,6 @@ impl RenderState {
                 }
             }
             Type::Text(text_content) => {
-                // self.surfaces.canvas(SurfaceId::Fills).concat(&matrix);
                 text::render(self, text_content);
             }
             _ => {
