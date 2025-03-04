@@ -733,7 +733,6 @@ impl RenderState {
                         )?;
 
                         // TODO: this code is duplicated from some lines before, refactor to a common function
-
                         let children_clip_bounds = if element.is_recursive() {
                             (element.clip()).then(|| {
                                 let bounds = element.selrect();
