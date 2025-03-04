@@ -290,15 +290,35 @@
                                 {:ignore-touched true
                                  :page-id page-id}))))))))
 
+(defn- immediate-flex-absolute-child? [objects id]
+  (let [shape (get objects id)]
+    (boolean
+     (and (:layout-item-absolute shape)
+          (ctsl/flex-layout-immediate-child? objects shape)))))
+
 (defn update-shape-position
   ([value shape-ids attributes] (update-shape-position value shape-ids attributes nil))
   ([value shape-ids attributes page-id]
    (ptk/reify ::update-shape-position
      ptk/WatchEvent
-     (watch [_ _ _]
+     (watch [_ state _]
        (when (number? value)
-         (rx/concat
-          (map #(dwt/update-position % (zipmap attributes (repeat value)) {:ignore-touched true :page-id page-id}) shape-ids)))))))
+         (let [page-id' (or page-id (get state :current-page-id))
+               objects (dsh/lookup-page-objects state page-id')
+               {canvas-children-ids false
+                flex-children-ids true} (group-by #(immediate-flex-absolute-child? objects %) shape-ids)]
+           (rx/concat
+            (concat
+             (map #(dwt/update-position % (zipmap attributes (repeat value))
+                                        {:ignore-touched true
+                                         :page-id page-id'})
+                  canvas-children-ids)
+             (map #(dwt/update-position % (zipmap attributes (repeat value))
+                                        {:ignore-touched true
+                                         :page-id page-id'
+                                         :relative? true})
+                  flex-children-ids)))))))))
+
 
 (defn update-layout-sizing-limits
   ([value shape-ids attributes] (update-layout-sizing-limits value shape-ids attributes nil))
@@ -399,4 +419,3 @@
 
 (defn token-attributes [token-type]
   (dm/get-in token-properties [token-type :attributes]))
-
