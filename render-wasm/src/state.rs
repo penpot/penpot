@@ -11,20 +11,18 @@ use crate::shapes::Shape;
 /// It is created by [init] and passed to the other exported functions.
 /// Note that rust-skia data structures are not thread safe, so a state
 /// must not be shared between different Web Workers.
-pub(crate) struct State<'a> {
+pub(crate) struct State {
     pub render_state: RenderState,
     pub current_id: Option<Uuid>,
-    pub current_shape: Option<&'a mut Shape>,
     pub shapes: HashMap<Uuid, Shape>,
     pub modifiers: HashMap<Uuid, skia::Matrix>,
 }
 
-impl<'a> State<'a> {
+impl State {
     pub fn new(width: i32, height: i32, capacity: usize) -> Self {
         State {
             render_state: RenderState::new(width, height),
             current_id: None,
-            current_shape: None,
             shapes: HashMap::with_capacity(capacity),
             modifiers: HashMap::new(),
         }
@@ -32,10 +30,6 @@ impl<'a> State<'a> {
 
     pub fn resize(&mut self, width: i32, height: i32) {
         self.render_state.resize(width, height);
-    }
-
-    pub fn render_state(&'a mut self) -> &'a mut RenderState {
-        &mut self.render_state
     }
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
@@ -54,18 +48,24 @@ impl<'a> State<'a> {
         let _ = self.render_state.render_from_cache();
     }
 
-    pub fn use_shape(&'a mut self, id: Uuid) {
+    pub fn use_shape(&mut self, id: Uuid) {
         if !self.shapes.contains_key(&id) {
             let new_shape = Shape::new(id);
             self.shapes.insert(id, new_shape);
         }
-
         self.current_id = Some(id);
-        self.current_shape = self.shapes.get_mut(&id);
     }
 
-    pub fn current_shape(&'a mut self) -> Option<&'a mut Shape> {
-        self.current_shape.as_deref_mut()
+    pub fn current_shape(&mut self) -> Option<&mut Shape> {
+        self.current_id.and_then(move |id| self.shapes.get_mut(&id))
+    }
+
+    pub fn with_current_shape<F, R>(&mut self, f: F) -> Option<R>
+    where
+        F: FnOnce(&mut Shape) -> R,
+    {
+        self.current_id
+            .and_then(move |id| self.shapes.get_mut(&id).map(f))
     }
 
     pub fn set_background_color(&mut self, color: skia::Color) {
