@@ -183,84 +183,119 @@ title: 10· Design Tokens
         </ul>
     </li>
 </ul>
-
-<h3 id="design-tokens-"></h3>
-<p></p>
-<h4></h4>
-<p></p>
+<p>If you are working with flex-layout boards, you can also apply the token to an element’s size by selecting:</p>
 <ul>
-    <li></li>
-    <li></li>
+    <li><strong>Min width</strong> defines the smallest allowed horizontal size of an element, allowing larger sizes;</li>
+    <li><strong>Min height</strong> defines the smallest allowed vertical size of an element, allowing larger sizes;</li>
+    <li><strong>Max width</strong> defines the largest allowed horizontal size of an element, allowing smaller sizes;</li>
+    <li><strong>Max height</strong> defines the largest allowed vertical size of an element, allowing smaller sizes.</li>
 </ul>
 
-<h3 id="design-tokens-"></h3>
-<p></p>
-<h4></h4>
-<p></p>
+<h3 id="design-tokens-spacing">Spacing</h3>
+<p>The spacing token defines the distance between design elements and supports numeric values, which include negative values and multiple values. Spacing tokens must be applied to Flex Layout boards. </p>
+<p class="advice">If you apply the token to a board before flex-layout is applied to it, you may have to remove and re-apply the token for it to take effect.</p>
+<h4>Applying Spacing Tokens</h4>
+<p>To apply the spacing token to an element, select the element and choose the token from the list:</p>
 <ul>
-    <li></li>
-    <li></li>
+    <li>Clicking on a spacing token will apply it to all gaps (row and column).</li>
+    <li>Right-clicking on a spacing token, allows you to specify which property of the element the token should apply to. In this menu, properties are divided by blocks. In each property you can choose to apply to ‘All’ sides in a specific property, or choose to apply them to individual sides:</li>
+    <li>
+        <ul>
+            <li><strong>Gaps:</strong>Applies spaces between child elements within a parent container (both column and row gaps). This only works on flex and grid layouts.</li>
+            <li>
+                <strong>Paddings & Margins:</strong>
+                <ul>
+                    <li><strong>Horizontal</strong>l applies to the left and right of the container;</li>
+                    <li><strong>Vertical</strong> and to the top and bottom sides of the container;</li>
+                    <li><strong>Top, right, bottom or left</strong> apply space to individual sides of the element.</li>
+                </ul>
+            </li>
+        </ul>
+    </li>
 </ul>
+<h4>Stroke Width</h4>
+<p>The stroke width token, also known as the border width token, defines the thickness of a stroke around a design element. It can be applied to boards, groups, rectangles and text elements.</p>
 
-<h3 id="design-tokens-"></h3>
-<p></p>
-<h4></h4>
-<p></p>
+
+<h2 id="design-tokens-sets">Token Sets</h2>
+<p>Token Sets allow you to split your tokens up into multiple files in order to create organized groups or collections of tokens. It enables efficient management and customization within design files. For example you can group all your color sets, sizing sets or platform-specific sets. The purpose of tokens sets is to organize them in a way that matches your needs.</p>
+<p>When you create your first token, a default set is created. You can rename, group or move it later. As you create new token sets, they’ll be added sequentially after existing ones. You can reorder token sets by dragging and dropping them.</p>
+<p class="advice">The order of the token sets is essential! If you have tokens with the same name (and different  values) across multiple sets, the tokens that are in the set that appears last in the list will override the previous ones - similar to how Cascading Style Sheets work.</p>
+<p>When creating a token set, it’s recommended that you assign it a unique name to ensure clarity. Token set names are not included in individual token names by default so it is possible to have tokens with the same name belonging to different token sets.</p>
+<p>Token sets can be enabled or disabled. If a set is disabled, its tokens will be excluded from the token resolution process.</p>
+
+<h3 id="design-tokens-sets-create">Creating Token Sets</h3>
+<p>There are two ways to create a token set at the <strong>Tokens</strong> tab:</p>
+<ol>
+    <li>Click on the <strong>+</strong> next to <strong>Sets</strong>;</li>
+    <li>Click on the <strong>Create one</strong> button.</li>
+</ol>
+<p>You’ll then need to name your token set. Set names should be specific, as it is not possible to create multiple token sets with the same name.</p>
+<p>When a token set is selected, the tokens within the selected set are displayed on the panel below.</p>
+
+
+<h3 id="design-tokens-sets-delete">Deleting and Renaming a Token Set</h3>
+<p>Token sets can be renamed or deleted by right-clicking on the token set and:</p>
+<ol>
+    <li>Selecting <strong>Rename</strong>, entering a new name, and hitting Enter.</li>
+    <li>Selecting <strong>Delete</strong>.</li>
+</ol>
+
+<h3 id="design-tokens-sets-create-within"></h3>
+<p>Once you have created a token set, you can start creating tokens within that token set. To do so, simply select the token set and create a new token.</p>
+<p class="advice">If a token with the same name already exists in another set, a new token can still be created in the current set.</p>
+
+<h3 id="design-tokens-groups">Creating Token Groups</h3>
+<p>You can create a token set group by simply naming your token sets to have a folder path. For example, you can create a <strong><i>Light</i></strong> group with a <strong><i>Global</i></strong> set and a <strong><i>Colors</i></strong> set using: <code class="language-js">Light/Global</code>, <code class="language-js">Light/Colors</code>. </p>
+
+<h2 id="design-tokens-themes">Token Themes</h2>
+<p>Themes are a way to configure your sets to be applied in a specific context, such as a brand, a mode or a touchpoint. Themes enable switching between different styles dynamically by applying different token values depending on the selected theme</p>
+<p>Themes are multidimensional, this means that you can have more than one theme active at the same time, combining the values of the active themes.</p>
+<h4>Theme groups</h4>
+<p>Using Theme Groups you can categorise your themes into groups. This will allow you to generate a number of combinations involving color themes, brands, platforms, density, and more. Using groups will reduce the need to create an excessive number of individual themes with every combination.</p>
+
+<p>For example:</p>
+<p><i>Group - theme options</i></p>
 <ul>
-    <li></li>
-    <li></li>
+    <li><strong>Mode</strong> - Light, Dark</li>
+    <li><strong>Brand</strong> - RedPlanet, YellowCab</li>
+    <li><strong>Contrast</strong> - High, Low, Dim</li>
+    <li><strong>Platform</strong> - Web, App</li>
 </ul>
+<p>When you have various themes inside a group, only one of the themes in this group can be active.</p>
+<p>Having your sets clubbed under groups makes it more accessible to switch from a matrix of themes.</p>
 
-<h3 id="design-tokens-"></h3>
-<p></p>
-<h4></h4>
-<p></p>
-<ul>
-    <li></li>
-    <li></li>
-</ul>
+<h3 id="design-tokens-themes-create">Creating Token Themes</h3>
+<p>To create a new theme, click the <strong>Create one</strong> button in the Themes section. You can create a group (this is optional) or add an existing one, and then you then need to assign a name to your theme and click on <strong>Save Theme</strong>.</p>
+<p>Your new theme will now appear on the Theme lists. You’ll need to enable the tokens sets that you want to include in the theme, clicking on the button “no active sets”. Here you can also activate and deactivate it, as well as delete the theme.</p>
 
-<h3 id="design-tokens-"></h3>
-<p></p>
-<h4></h4>
-<p></p>
-<ul>
-    <li></li>
-    <li></li>
-</ul>
+<h3 id="design-tokens-themes-edit">Editing Themes</h3>
+<p>In the <strong>Themes</strong> section, you can find a dropdown to activate and deactivate themes. If there are no active themes, the dropdown shows a message of: “no theme active”.</p>
+<p>To edit existing themes, you can click on the <strong>Edit</strong> button next to the dropdown in the <strong>Themes</strong> section or open the dropdown and select <strong>Edit themes</strong>:</p>
+<p>This action will open a modal window where you can activate or deactivate themes, as well as select which Token sets should be part of the theme.</p>
+<ol>
+    <li>You can enable and disable the themes.</li>
+    <li>Configure the token sets you want to be included in the theme.</li>
+    <li>Deletes the theme.</li>
+    <li>Creates a new theme.</li>
+</ol>
 
-<h3 id="design-tokens-"></h3>
-<p></p>
-<h4></h4>
-<p></p>
-<ul>
-    <li></li>
-    <li></li>
-</ul>
+<h3 id="design-tokens-themes-group">Grouping Themes</h3>
+<p>You can categorize your themes into groups. This allows you to generate a matrix of potential combinations involving color themes, brands, modes, and more.</p>
+<ol>
+    <li>Select a particular group.</li>
+    <li>Select the theme from the group.</li>
+    <li>You can define what token sets should be used as part of this theme option.</li>
+    <li>Click save theme to see the changes.</li>
+    <li>Cancel to clear the edits.</li>
+    <li>Delete.</li>
+</ol>
 
-<h3 id="design-tokens-"></h3>
-<p></p>
-
-<h3 id="design-tokens-"></h3>
-<p></p>
-
-<h3 id="design-tokens-"></h3>
-<p></p>
-
-<h3 id="design-tokens-"></h3>
-<p></p>
-
-<h3 id="design-tokens-"></h3>
-<p></p>
-
-<h2 id="design-tokens-"></h2>
-<p></p>
-
-<h2 id="design-tokens-"></h2>
-<p></p>
-
-<h2 id="design-tokens-"></h2>
-<p></p>
-
-<h2 id="design-tokens-"></h2>
-<p></p>
+<h2 id="design-tokens-import-export">Importing and Exporting Tokens</h2>
+<p>You can export Tokens from Penpot and import them from your computer to a Penpot file. Tokens can be imported from the <strong>Tools</strong> option at the bottom of the <strong>Tokens</strong> tab.</p>
+<p>The <strong>Import</strong> functionality allows you to upload and replace the global token set using a single file, while the <strong>Export</strong> functionality lets you download the current global token set using a single file to your system.</p>
+<p>These features support JSON files formatted according to specific guidelines and preserve the ability to undo changes if needed.</p>
+<ol>
+    <li><strong>Import:</strong> At the <strong>Tools</strong> option, select <strong>Import</strong>, then select your <code class="language-js">tokens.json</code> file. </li>
+    <li><strong>Export:</strong> At the <strong>Tools</strong> option, select <strong>Export</strong>. This will export all the tokens, including token sets and themes.</li>
+</ol>
