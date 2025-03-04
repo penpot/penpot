@@ -59,14 +59,14 @@
 
 .level-warning {
   --notification-bg-color: var(--color-background-warning);
-  --notification-fg-color: var(--color-foreground-warning);
+  --notification-fg-color: var(--color-foreground-primary);
   --notification-border-color: var(--color-accent-warning);
   --notification-icon-color: var(--color-accent-warning);
 }
 
 .level-success {
   --notification-bg-color: var(--color-background-success);
-  --notification-fg-color: var(--color-foreground-success);
+  --notification-fg-color: var(--color-foreground-primary);
   --notification-border-color: var(--color-accent-success);
   --notification-icon-color: var(--color-accent-success);
 }
