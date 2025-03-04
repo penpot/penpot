@@ -417,7 +417,9 @@
 
         do-add-variant
         #(when variants?
-           (st/emit! (dwv/transform-in-variant id)))
+           (if (ctk/is-variant? shape)
+             (st/emit! (dwv/add-new-variant id))
+             (st/emit! (dwv/transform-in-variant id))))
 
         do-show-local-component
         #(st/emit! (dwl/go-to-local-component :id component-id))
