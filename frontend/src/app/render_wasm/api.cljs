@@ -657,6 +657,38 @@
           (h/call internal-module "_add_shape_shadow" rgba blur spread x y (translate-shadow-style style) hidden)
           (recur (inc index)))))))
 
+(defn utf8->buffer [text]
+  (let [encoder (js/TextEncoder.)]
+    (.encode encoder text)))
+
+(defn set-shape-text-content [content]
+  (h/call internal-module "_clear_shape_text")
+  (let [paragraph-set (first (dm/get-prop content :children))
+        paragraphs (dm/get-prop paragraph-set :children)
+        total-paragraphs (count paragraphs)]
+
+    (loop [index 0]
+      (when (< index total-paragraphs)
+        (let [paragraph (nth paragraphs index)
+              leaves (dm/get-prop paragraph :children)
+              total-leaves (count leaves)]
+          (h/call internal-module "_add_text_paragraph")
+          (loop [index-leaves 0]
+            (when (< index-leaves total-leaves)
+              (let [leaf (nth leaves index-leaves)
+                    text (dm/get-prop leaf :text)
+                    buffer (utf8->buffer text)
+                      ;; set up buffer array from
+                    size (.-byteLength buffer)
+                    ptr (h/call internal-module "_alloc_bytes" size)
+                    heap (gobj/get ^js internal-module "HEAPU8")
+                    mem (js/Uint8Array. (.-buffer heap) ptr size)]
+
+                (.set mem buffer)
+                (h/call internal-module "_add_text_leaf")
+                (recur (inc index-leaves))))))
+        (recur (inc index))))))
+
 (defn set-view-box
   [zoom vbox]
   (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
@@ -727,6 +759,8 @@
               (when (some? bool-content) (set-shape-bool-content bool-content))
               (when (some? corners) (set-shape-corners corners))
               (when (some? shadows) (set-shape-shadows shadows))
+              (when (and (= type :text) (some? content))
+                (set-shape-text-content content))
 
               (when (ctl/any-layout-immediate-child? objects shape)
                 (set-layout-child shape))

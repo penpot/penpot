@@ -8,14 +8,15 @@ mod shapes;
 mod state;
 mod utils;
 mod view;
+mod wasm;
 
 use crate::mem::SerializableResult;
 use crate::shapes::{BoolType, ConstraintH, ConstraintV, TransformEntry, Type};
 
-use crate::state::State;
 use crate::utils::uuid_from_u32_quartet;
+use state::State;
 
-static mut STATE: Option<Box<State>> = None;
+pub(crate) static mut STATE: Option<Box<State>> = None;
 
 extern "C" {
     fn emscripten_GetProcAddress(

@@ -1,4 +1,4 @@
-use skia_safe::{self as skia, Contains, Matrix, RRect, Rect};
+use skia_safe::{self as skia, Contains, FontMgr, Matrix, RRect, Rect};
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -14,6 +14,7 @@ mod options;
 mod shadows;
 mod strokes;
 mod surfaces;
+mod text;
 
 use crate::shapes::{Corners, Shape, Type};
 use cache::CachedSurfaceImage;
@@ -56,7 +57,10 @@ pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub options: RenderOptions,
     pub surfaces: Surfaces,
+    // TODO: we should probably have only one of these
     pub font_provider: skia::textlayout::TypefaceFontProvider,
+    pub font_collection: skia::textlayout::FontCollection,
+    // ----
     pub cached_surface_image: Option<CachedSurfaceImage>,
     pub viewbox: Viewbox,
     pub images: ImageStore,
@@ -84,6 +88,10 @@ impl RenderState {
             .new_from_data(DEFAULT_FONT_BYTES, None)
             .expect("Failed to load font");
         font_provider.register_typeface(default_font, "robotomono-regular");
+        let mut font_collection = skia::textlayout::FontCollection::new();
+        let font_manager = FontMgr::from(font_provider.clone());
+        font_collection.set_default_font_manager(FontMgr::default(), None);
+        font_collection.set_dynamic_font_manager(font_manager);
 
         // This is used multiple times everywhere so instead of creating new instances every
         // time we reuse this one.
@@ -93,6 +101,7 @@ impl RenderState {
             surfaces,
             cached_surface_image: None,
             font_provider,
+            font_collection,
             options: RenderOptions::default(),
             viewbox: Viewbox::new(width as f32, height as f32),
             images: ImageStore::new(),
@@ -327,6 +336,9 @@ impl RenderState {
                         }
                     }
                 }
+            }
+            Type::Text(text_content) => {
+                text::render(self, text_content);
             }
             _ => {
                 self.surfaces
