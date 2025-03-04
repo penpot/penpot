@@ -1666,3 +1666,12 @@
                 (-> cells
                     (d/update-when id d/patch-object (get-data target-cells id))))
               source-cells))))))
+
+(defn toggle-fix-if-auto
+  "Changes the sizing to fix if it's fill"
+  [shape]
+  (cond-> shape
+    (= (:layout-item-h-sizing shape) :fill)
+    (assoc :layout-item-h-sizing :fix)
+    (= (:layout-item-v-sizing shape) :fill)
+    (assoc :layout-item-v-sizing :fix)))
