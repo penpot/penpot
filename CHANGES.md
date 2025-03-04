@@ -10,6 +10,8 @@
 
 ### :sparkles: New features
 
+- "Mark All as Read" Functionality in Dashboard [Taiga #9235](https://tree.taiga.io/project/penpot/us/9235)
+
 ### :bug: Bugs fixed
 
 - Fix opacity in frame containers [Github #5858](https://github.com/penpot/penpot/pull/5858)
