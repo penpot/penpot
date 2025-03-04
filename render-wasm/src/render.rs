@@ -3,6 +3,7 @@ use skia_safe::{self as skia, Contains, Matrix, RRect, Rect, RoundOut};
 use std::collections::HashMap;
 use uuid::Uuid;
 
+use crate::{run_script_int, run_script};
 use crate::view::Viewbox;
 
 mod blend;
@@ -32,14 +33,8 @@ const DEFAULT_FONT_BYTES: &[u8] =
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
 
-extern "C" {
-    fn emscripten_run_script(script: *const i8);
-    fn emscripten_run_script_int(script: *const i8) -> i32;
-}
-
 fn get_time() -> i32 {
-    let script = std::ffi::CString::new("performance.now()").unwrap();
-    unsafe { emscripten_run_script_int(script.as_ptr()) }
+    run_script_int!("performance.now()")
 }
 
 pub struct NodeRenderState {
@@ -407,17 +402,11 @@ impl RenderState {
     //TODO REMOVE
 
     pub fn request_animation_frame(&mut self) -> i32 {
-        let script =
-            std::ffi::CString::new("requestAnimationFrame(_process_animation_frame)").unwrap();
-        unsafe { emscripten_run_script_int(script.as_ptr()) }
+        run_script_int!("requestAnimationFrame(_process_animation_frame)")
     }
 
     pub fn cancel_animation_frame(&mut self, frame_id: i32) {
-        let cancel_script = format!("cancelAnimationFrame({})", frame_id);
-        let c_cancel_script = std::ffi::CString::new(cancel_script).unwrap();
-        unsafe {
-            emscripten_run_script(c_cancel_script.as_ptr());
-        }
+        run_script!(format!("cancelAnimationFrame({})", frame_id))
     }
 
     pub fn debug_target_surface(&mut self) {
@@ -427,8 +416,7 @@ impl RenderState {
             .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
             .unwrap();
         let base64_image = base64::encode(&encoded_image.as_bytes());
-        let script = std::ffi::CString::new(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')")).unwrap();
-        unsafe { emscripten_run_script_int(script.as_ptr()) };
+        run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
     }
 
     pub fn debug_target_surface_rect(&mut self, rect: skia::Rect) {
@@ -444,8 +432,7 @@ impl RenderState {
                 .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
                 .unwrap();
             let base64_image = base64::encode(&encoded_image.as_bytes());
-            let script = std::ffi::CString::new(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')")).unwrap();
-            unsafe { emscripten_run_script_int(script.as_ptr()) };
+            run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
         }
     }
 

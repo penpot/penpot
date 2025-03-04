@@ -1,6 +1,7 @@
 use skia::Rect;
 use skia_safe as skia;
 
+mod emscripten;
 mod debug;
 mod math;
 mod mem;
@@ -18,25 +19,11 @@ use crate::utils::uuid_from_u32_quartet;
 
 static mut STATE: Option<Box<State>> = None;
 
-extern "C" {
-    fn emscripten_GetProcAddress(
-        name: *const ::std::os::raw::c_char,
-    ) -> *const ::std::os::raw::c_void;
-}
-
-fn init_gl() {
-    unsafe {
-        gl::load_with(|addr| {
-            let addr = std::ffi::CString::new(addr).unwrap();
-            emscripten_GetProcAddress(addr.into_raw() as *const _) as *const _
-        });
-    }
-}
-
 /// This is called from JS after the WebGL context has been created.
 #[no_mangle]
 pub extern "C" fn init(width: i32, height: i32) {
     let state_box = Box::new(State::new(width, height, 2048));
+    // call_debugger!();
     unsafe {
         STATE = Some(state_box);
     }
@@ -112,7 +99,7 @@ pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     render_state.viewbox.set_all(zoom, x, y);
     if rebuild_tiles {
         let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-        state.rebuild_tiles();    
+        state.rebuild_tiles();
     }
 }
 
@@ -692,5 +679,5 @@ pub extern "C" fn clear_shape_shadows() {
 }
 
 fn main() {
-    init_gl();
+    init_gl!();
 }
