@@ -62,7 +62,7 @@
         on-navigate
         (mf/use-callback
          (fn [thread]
-           (st/emit! (-> (dwcm/navigate thread)
+           (st/emit! (-> (dwcm/navigate-to-comment-from-dashboard thread)
                          (with-meta {::ev/origin "dashboard"})))))
 
         on-read-all

@@ -91,6 +91,17 @@
   border-radius: $br-circle;
 }
 
+.avatar-text {
+  border-radius: $br-circle;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $fs-12;
+  background-color: var(--color-background-quaternary);
+}
+
 .avatar-mask {
   border-radius: $br-circle;
   position: absolute;

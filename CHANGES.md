@@ -10,7 +10,8 @@
 
 ### :sparkles: New features
 
-- "Mark All as Read" Functionality in Dashboard [Taiga #9235](https://tree.taiga.io/project/penpot/us/9235)
+- [COMMENTS] "Mark All as Read" Functionality in Dashboard [Taiga #9235](https://tree.taiga.io/project/penpot/us/9235)
+- [COMMENTS] Bubble Groups [Taiga #9236](https://tree.taiga.io/project/penpot/us/9236)
 - Change templates carrousel [Taiga #9803](https://tree.taiga.io/project/penpot/us/9803)
 
 ### :bug: Bugs fixed

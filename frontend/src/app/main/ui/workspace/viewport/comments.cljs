@@ -16,6 +16,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc comments-layer*
+  {::mf/wrap [mf/memo]}
   [{:keys [vbox vport zoom file-id page-id]}]
   (let [vbox-x      (dm/get-prop vbox :x)
         vbox-y      (dm/get-prop vbox :y)
@@ -59,11 +60,18 @@
                :height (dm/str vport-h "px")}}
       [:div {:class (stl/css :threads)
              :style {:transform (dm/fmt "translate(%px, %px)" pos-x pos-y)}}
-       (for [item threads]
-         [:> cmt/comment-floating-bubble* {:thread item
-                                           :zoom zoom
-                                           :is-open (= (:id item) (:open local))
-                                           :key (:seqn item)}])
+
+       (for [thread-group (cmt/group-bubbles zoom threads)]
+         (let [group? (> (count thread-group) 1)
+               thread (first thread-group)]
+           (if group?
+             [:> cmt/comment-floating-group* {:thread-group thread-group
+                                              :zoom zoom
+                                              :key (:seqn thread)}]
+             [:> cmt/comment-floating-bubble* {:thread thread
+                                               :zoom zoom
+                                               :is-open (= (:id thread) (:open local))
+                                               :key (:seqn thread)}])))
 
        (when-let [id (:open local)]
          (when-let [thread (get threads-map id)]
