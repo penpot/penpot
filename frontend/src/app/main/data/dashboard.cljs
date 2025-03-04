@@ -21,6 +21,7 @@
    [app.main.data.websocket :as dws]
    [app.main.features :as features]
    [app.main.repo :as rp]
+   [app.main.store :as st]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.sse :as sse]
    [app.util.time :as dt]
@@ -40,6 +41,14 @@
 (defn initialize
   []
   (ptk/reify ::initialize
+    ev/Event
+    (-data [_]
+      (let [route  (dm/get-in @st/state [:route :data :name])
+            params (dm/get-in @st/state [:route :path-params])]
+        (assoc params
+               ::ev/name "navigate"
+               :route (name route))))
+
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper    (rx/filter (ptk/type? ::finalize) stream)

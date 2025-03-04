@@ -81,6 +81,7 @@
    [app.main.features.pointer-map :as fpmap]
    [app.main.repo :as rp]
    [app.main.router :as rt]
+   [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
    [app.render-wasm :as wasm]
@@ -221,6 +222,14 @@
 (defn- workspace-initialized
   [file-id]
   (ptk/reify ::workspace-initialized
+    ev/Event
+    (-data [_]
+      (let [route  (dm/get-in @st/state [:route :data :name])
+            params (dm/get-in @st/state [:route :path-params])]
+        (assoc params
+               ::ev/name "navigate"
+               :route (name route))))
+
     ptk/UpdateEvent
     (update [_ state]
       (-> state
