@@ -23,6 +23,7 @@
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
+   [app.main.store :as st]
    [app.util.globals :as ug]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -63,6 +64,14 @@
    (sm/check schema:initialize params))
 
   (ptk/reify ::initialize
+    ev/Event
+    (-data [_]
+      (let [route  (dm/get-in @st/state [:route :data :name])
+            params (dm/get-in @st/state [:route :path-params])]
+        (assoc params
+               ::ev/name "navigate"
+               :route (name route))))
+
     ptk/UpdateEvent
     (update [_ state]
       (-> state

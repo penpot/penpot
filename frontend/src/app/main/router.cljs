@@ -10,7 +10,6 @@
    [app.common.data.macros :as dm]
    [app.common.uri :as u]
    [app.config :as cf]
-   [app.main.data.event :as ev]
    [app.util.browser-history :as bhistory]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -64,17 +63,6 @@
 (defn navigated
   [match]
   (ptk/reify ::navigated
-    IDeref
-    (-deref [_] match)
-
-    ev/Event
-    (-data [_]
-      (let [route  (dm/get-in match [:data :name])
-            params (get match :path-params)]
-        (assoc params
-               ::ev/name "navigate"
-               :route (name route))))
-
     ptk/UpdateEvent
     (update [_ state]
       (-> state

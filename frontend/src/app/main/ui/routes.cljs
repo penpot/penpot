@@ -10,6 +10,7 @@
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.event :as ev]
    [app.main.data.team :as dtm]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -135,6 +136,19 @@
   []
   (ptk/reify ::init-routes
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (rt/initialize-router routes)
-             (rt/initialize-history on-navigate)))))
+    (watch [_ _ stream]
+      (rx/merge
+       (->> stream
+            (rx/filter (ptk/type? ::rt/navigated))
+            (rx/take 1)
+            (rx/map
+             (fn []
+               (let [route  (dm/get-in @st/state [:route :data :name])
+                     params (dm/get-in @st/state [:route :path-params])]
+                 (ptk/event
+                  ::ev/event
+                  (assoc params
+                         ::ev/name "navigate"
+                         :route (name route)))))))
+       (rx/of (rt/initialize-router routes)
+              (rt/initialize-history on-navigate))))))
