@@ -1072,6 +1072,31 @@
 
         [:> mentions-panel*]])]))
 
+(mf/defc comment-floating-group*
+  {::mf/wrap [mf/memo]}
+  [{:keys [thread-group zoom]}]
+  (let [positions (mapv :position thread-group)
+
+        position  (gpt/center-points positions)
+        pos-x     (* (:x position) zoom)
+        pos-y     (* (:y position) zoom)
+
+        unread?   (some #(pos? (:count-unread-comments %)) thread-group)
+        name      (str (count thread-group))
+
+        test-id   (str/join "-" (map :seqn (sort-by :seqn thread-group)))]
+
+    [:div {:style {:top (dm/str pos-y "px")
+                   :left (dm/str pos-x "px")}
+           :class (stl/css :floating-preview-wrapper)}
+     [:> comment-avatar*
+      {:image (cfg/resolve-profile-photo-url {:name name})
+       :class (stl/css :avatar-lg)
+       :data-testid (dm/str "floating-thread-bubble-" test-id)
+       :variant (cond
+                  unread? "unread"
+                  :else "read")}]]))
+
 (mf/defc comment-floating-bubble*
   {::mf/wrap [mf/memo]}
   [{:keys [thread zoom is-open on-click origin position-modifier]}]

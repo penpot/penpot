@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.geom.point :as gpt]
    [app.main.data.comments :as dcm]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
@@ -15,7 +16,35 @@
    [app.main.ui.comments :as cmt]
    [rumext.v2 :as mf]))
 
+(def overlap-distance 32)
+
+(defn- overlap-thread?
+  [thread-1 thread-2 zoom]
+  (let [d     (gpt/distance (:position thread-1) (:position thread-2))
+        dz    (* d zoom)]
+    (< dz overlap-distance)))
+
+(defn find-group [thread threads zoom visited]
+  (reduce (fn [group t]
+            (if (and (not (visited t)) (overlap-thread? thread t zoom))
+              (let [new-visited (conj visited t)]
+                (conj (find-group t threads zoom new-visited) t))
+              group))
+          []
+          threads))
+
+(defn group-threads [threads zoom]
+  (let [visited (atom #{})
+        groups (atom [])]
+    (doseq [thread threads]
+      (when (not (contains? @visited thread))
+        (let [group (find-group thread threads zoom @visited)]
+          (swap! groups conj group)
+          (swap! visited into (set group)))))
+    @groups))
+
 (mf/defc comments-layer*
+  {::mf/wrap [mf/memo]}
   [{:keys [vbox vport zoom file-id page-id]}]
   (let [vbox-x      (dm/get-prop vbox :x)
         vbox-y      (dm/get-prop vbox :y)
@@ -59,11 +88,18 @@
                :height (dm/str vport-h "px")}}
       [:div {:class (stl/css :threads)
              :style {:transform (dm/fmt "translate(%px, %px)" pos-x pos-y)}}
-       (for [item threads]
-         [:> cmt/comment-floating-bubble* {:thread item
-                                           :zoom zoom
-                                           :is-open (= (:id item) (:open local))
-                                           :key (:seqn item)}])
+
+       (for [thread-group (group-threads threads zoom)]
+         (let [group? (> (count thread-group) 1)
+               thread (first thread-group)]
+           (if group?
+             [:> cmt/comment-floating-group* {:thread-group thread-group
+                                              :zoom zoom
+                                              :key (:seqn thread)}]
+             [:> cmt/comment-floating-bubble* {:thread thread
+                                               :zoom zoom
+                                               :is-open (= (:id thread) (:open local))
+                                               :key (:seqn thread)}])))
 
        (when-let [id (:open local)]
          (when-let [thread (get threads-map id)]
