@@ -36,3 +36,14 @@
                                     #{"base-name 1" "base-name 2"}
                                     :immediate-suffix? true)
           "base-name 3")))
+
+
+(deftest test-generate-component-name
+  (testing "Generates unique component names"
+    (is (= "Component-01" (generate-component-name "Component")))
+    (is (= "Component-02" (generate-component-name "Component")))))
+
+(deftest test-is-name-unique?
+  (testing "Checks if a component name is unique"
+    (is (true? (is-name-unique? "Component-01")))
+    (is (false? (is-name-unique? "Component-02")))))

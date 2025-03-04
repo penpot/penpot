@@ -613,3 +613,9 @@
       (ex/print-throwable cause)
       (px/sleep 500)
       (System/exit -1))))
+
+
+(defn generate-component-name [component-type]
+  (let [existing-names (get-existing-component-names)
+        next-id (inc (count existing-names))]
+    (str component-type "-" (format "%02d" next-id))))

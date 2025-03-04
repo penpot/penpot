@@ -564,3 +564,9 @@
                     {:name   (tr "workspace.shape.menu.show-main")
                      :id     "assets-show-main-component"
                      :handler on-show-main})]}]]]))
+
+
+(defn component-name-input []
+  (let [component-name (generate-component-name "Component")]
+    [:input {:value component-name
+             :on-change #(update-component-name %)}]))

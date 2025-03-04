@@ -63,3 +63,8 @@
     #_(thf/pprint-file f4)
 
     (t/is (= (:name f1) "Test file"))))
+
+(deftest test-component-name-input
+  (testing "Displays auto-generated component names"
+    (let [component-name (generate-component-name "Component")]
+      (is (= "Component-01" component-name)))))
