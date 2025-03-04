@@ -276,9 +276,15 @@
    (ptk/reify ::update-layout
      ptk/WatchEvent
      (watch [_ _ _]
-       (let [undo-id (js/Symbol)]
+       (let [undo-id       (js/Symbol)
+             padding-attrs (-> (get changes :layout-padding)
+                               keys
+                               set)]
          (rx/of (dwu/start-undo-transaction undo-id)
-                (dwsh/update-shapes ids (d/patch-object changes) options)
+                (dwsh/update-shapes ids (d/patch-object changes)
+                                    (cond-> options
+                                      (seq padding-attrs)
+                                      (assoc :changed-sub-attr padding-attrs)))
                 (ptk/data-event :layout/update {:ids ids})
                 (dwu/commit-undo-transaction undo-id)))))))
 
@@ -533,14 +539,20 @@
    (ptk/reify ::update-layout-child
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id (or (get options :page-id)
-                         (get state :current-page-id))
-             objects (dsh/lookup-page-objects state page-id)
+       (let [page-id      (or (get options :page-id)
+                              (get state :current-page-id))
+             objects      (dsh/lookup-page-objects state page-id)
              children-ids (->> ids (mapcat #(cfh/get-children-ids objects %)))
-             parent-ids (->> ids (map #(cfh/get-parent-id objects %)))
-             undo-id (js/Symbol)]
+             parent-ids   (->> ids (map #(cfh/get-parent-id objects %)))
+             undo-id      (js/Symbol)
+             margin-attrs (-> (get changes :layout-item-margin)
+                              keys
+                              set)]
          (rx/of (dwu/start-undo-transaction undo-id)
-                (dwsh/update-shapes ids (d/patch-object changes) options)
+                (dwsh/update-shapes ids (d/patch-object changes)
+                                    (cond-> options
+                                      (seq margin-attrs)
+                                      (assoc :changed-sub-attr margin-attrs)))
                 (dwsh/update-shapes children-ids (partial fix-child-sizing objects changes) options)
                 (dwsh/update-shapes
                  parent-ids
