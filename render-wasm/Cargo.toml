@@ -12,7 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 gl = "0.14.0"
-skia-safe = { version = "0.80.1", default-features = false, features = ["gl", "svg", "textlayout", "binary-cache"]}
+skia-safe = { version = "0.81.0", default-features = false, features = ["gl", "svg", "textlayout", "binary-cache"]}
 uuid = { version = "1.11.0", features = ["v4"] }
 
 [dev-dependencies]

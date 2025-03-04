@@ -224,9 +224,9 @@ checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
 name = "bindgen"
-version = "0.70.1"
+version = "0.71.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f49d8fed880d473ea71efb9bf597651e77201bdd4893efe54c9e5d65ae04ce6f"
+checksum = "5f58bf3d7db68cfbac37cfc485a8d711e87e064c3d0fe0435b92f7a407f9d6b3"
 dependencies = [
  "bitflags 2.6.0",
  "cexpr",
@@ -1515,9 +1515,9 @@ dependencies = [
 
 [[package]]
 name = "rustc-hash"
-version = "1.1.0"
+version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
+checksum = "357703d41365b4b27c590e3ed91eabb1b663f07c4c084095e60cbed4362dff0d"
 
 [[package]]
 name = "rustix"
@@ -1643,9 +1643,9 @@ checksum = "56199f7ddabf13fe5074ce809e7d3f42b42ae711800501b5b16ea82ad029c39d"
 
 [[package]]
 name = "skia-bindings"
-version = "0.80.0"
+version = "0.81.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "179ebe08aee2634b22ef4d2a1a9370aaa39dfe619a702fc0793d491a26c05cbb"
+checksum = "0974d1fad6818b1c84390a8cd26b48a4f48f1dfd2658e130fb0db5ebbb50aa1c"
 dependencies = [
  "bindgen",
  "cc",
@@ -1659,9 +1659,9 @@ dependencies = [
 
 [[package]]
 name = "skia-safe"
-version = "0.80.1"
+version = "0.81.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41f1a96bec5198699d49e9c6a46aea27033958521c971d9186ae015a0dbecb7b"
+checksum = "0cade7bc92e092138e3b726ce57162b3e0f4f3099c616b32af740a13ca18cb2a"
 dependencies = [
  "base64",
  "bitflags 2.6.0",
