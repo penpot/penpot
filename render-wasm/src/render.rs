@@ -204,7 +204,6 @@ impl RenderState {
         p.set_stroke_width(1.);
         let str = format!("{}:{}", x, y);
         canvas.draw_str(str, point, &self.debug_font, &p);
-
     }
 
     pub fn apply_drawing_to_render_canvas(&mut self) {
@@ -706,29 +705,18 @@ impl RenderState {
             i += 1;
         }
 
-        //Let's render to final canvas what we have
-        // TODO this works only for 100% zoom
-        // let offset_x = (self.viewbox.area.left % tile_size);
-        // let offset_y = (self.viewbox.area.top % tile_size);
-
         let (tile_x, tile_y) = self.current_tile;
         let zoom = self.viewbox.zoom * self.options.dpr();
-        // TODO this is broken for zoom variations
-        let offset_x =
-            self.viewbox.area.left * zoom; // * zoom * self.options.dpr();
-        let offset_y =
-            self.viewbox.area.top * zoom; // * self.viewbox.zoom * self.options.dpr();
-        // let tile_size = tiles::get_tile_size(self.viewbox);
-        // TODO: may we should have a different method like get_tile_rect_with_offset
-        //let tile_rect = tiles::get_tile_rect(self.viewbox, tile);
+        let offset_x = self.viewbox.area.left * zoom;
+        let offset_y = self.viewbox.area.top * zoom; 
+        // TODO: move this to tiles logic?
         let tile_rect = Rect::from_xywh(
-            ((tile_x as f32 * tiles::TILE_SIZE) - offset_x) % tiles::TILE_SIZE,
-            ((tile_y as f32 * tiles::TILE_SIZE) - offset_y) % tiles::TILE_SIZE,
+            ((tile_x as f32 * tiles::TILE_SIZE) - offset_x),
+            ((tile_y as f32 * tiles::TILE_SIZE) - offset_y),
             tiles::TILE_SIZE,
             tiles::TILE_SIZE,
         );
         self.apply_render_to_final_canvas(tile_rect, tile_x, tile_y);
-        // self.debug_target_surface_rect(tile_rect);
 
         // If we finish processing every node rendering is complete
         // let's check if there are more pending nodes
