@@ -27,6 +27,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.shortcuts :as sc]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -555,8 +556,10 @@
         can-make-component         (every? true? (map #(ctn/valid-shape-for-component? objects %) shapes))
         heads                      (filter ctk/instance-head? shapes)
         components-menu-entries    (cmm/generate-components-menu-entries heads true)
+        variant-container?         (and single? (ctk/is-variant-container? (first shapes)))
         do-add-component           #(st/emit! (dwl/add-component))
-        do-add-multiple-components #(st/emit! (dwl/add-multiple-components))]
+        do-add-multiple-components #(st/emit! (dwl/add-multiple-components))
+        do-add-variant             #(st/emit! (dwv/add-new-variant (:id (first shapes))))]
     [:*
      (when can-make-component ;; We don't want to change the structure of component copies
        [:*
@@ -577,7 +580,13 @@
                            :title (:title entry)
                            :shortcut (when (contains? entry :shortcut)
                                        (sc/get-tooltip (:shortcut entry)))
-                           :on-click (:action entry)}])])]))
+                           :on-click (:action entry)}])])
+
+     (when variant-container?
+       [:> menu-separator*]
+       [:> menu-entry* {:title (tr "workspace.shape.menu.add-variant")
+                        :shortcut (sc/get-tooltip :create-component)
+                        :on-click do-add-variant}])]))
 
 (mf/defc context-menu-delete*
   {::mf/props :obj

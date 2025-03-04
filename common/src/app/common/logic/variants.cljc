@@ -61,6 +61,17 @@
     (into assigned new-properties)))
 
 
+(defn extract-properties-values
+  [data objects variant-id]
+  (->> (find-related-components data objects variant-id)
+       (mapcat :variant-properties)
+       (group-by :name)
+       (map (fn [[k v]]
+              {:name k
+               :values (distinct
+                        (map #(if (str/empty? (:value %)) "--" (:value %)) v))}))))
+
+
 (defn generate-update-property-name
   [changes variant-id pos new-name]
   (let [data               (pcb/get-library-data changes)

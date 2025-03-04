@@ -471,5 +471,6 @@
                          :action do-update-component})
                       (when (and variants? (not multi) main-instance?)
                         {:title (tr "workspace.shape.menu.add-variant")
+                         :shortcut :create-component
                          :action do-add-variant})]]
     (filter (complement nil?) menu-entries)))

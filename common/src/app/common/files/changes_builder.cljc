@@ -155,13 +155,14 @@
     (dm/get-in data [:pages-index uuid/zero :objects])))
 
 (defn- apply-changes-local
-  [changes]
+  [changes & {:keys [apply-to-library?]}]
   (dm/assert!
    "expected valid changes"
    (check-changes! changes))
 
   (if-let [file-data (::file-data (meta changes))]
-    (let [index         (::applied-changes-count (meta changes))
+    (let [library-data  (::library-data (meta changes))
+          index         (::applied-changes-count (meta changes))
           redo-changes  (:redo-changes changes)
           new-changes   (if (< index (count redo-changes))
                           (->> (subvec (:redo-changes changes) index)
@@ -169,28 +170,12 @@
                                          (assoc :page-id uuid/zero)
                                          (dissoc :component-id))))
                           [])
-          new-file-data (cfc/process-changes file-data new-changes)]
+          new-file-data (cfc/process-changes file-data new-changes)
+          new-library-data (if apply-to-library?
+                             (cfc/process-changes library-data new-changes)
+                             library-data)]
       (vary-meta changes assoc ::file-data new-file-data
-                 ::applied-changes-count (count redo-changes)))
-    changes))
-
-(defn apply-changes-local-library
-  [changes]
-  (dm/assert!
-   "expected valid changes"
-   (check-changes! changes))
-
-  (if-let [library-data (::library-data (meta changes))]
-    (let [index         (::applied-changes-count (meta changes))
-          redo-changes  (:redo-changes changes)
-          new-changes   (if (< index (count redo-changes))
-                          (->> (subvec (:redo-changes changes) index)
-                               (map #(-> %
-                                         (assoc :page-id uuid/zero)
-                                         (dissoc :component-id))))
-                          [])
-          new-library-data (cfc/process-changes library-data new-changes)]
-      (vary-meta changes assoc ::library-data new-library-data
+                 ::library-data new-library-data
                  ::applied-changes-count (count redo-changes)))
     changes))
 
@@ -932,8 +917,10 @@
 
 (defn add-component
   ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page]
-   (add-component changes id path name new-shapes updated-shapes main-instance-id main-instance-page nil))
+   (add-component changes id path name new-shapes updated-shapes main-instance-id main-instance-page nil nil nil))
   ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page annotation]
+   (add-component changes id path name new-shapes updated-shapes main-instance-id main-instance-page annotation nil nil))
+  ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page annotation variant-id variant-properties & {:keys [apply-changes-local-library?]}]
    (assert-page-id! changes)
    (assert-objects! changes)
    (let [page-id (::page-id (meta changes))
@@ -972,7 +959,9 @@
                                       :name name
                                       :main-instance-id main-instance-id
                                       :main-instance-page main-instance-page
-                                      :annotation annotation}
+                                      :annotation annotation
+                                      :variant-id variant-id
+                                      :variant-properties variant-properties}
                                (some? new-shapes)  ;; this will be null in components-v2
                                (assoc :shapes (vec new-shapes))))
                        (into (map mk-change) updated-shapes))))
@@ -987,7 +976,7 @@
                                    (map mk-change))
                              updated-shapes))))
 
-         (apply-changes-local)))))
+         (apply-changes-local {:apply-to-library? apply-changes-local-library?})))))
 
 (defn update-component
   [changes id update-fn & {:keys [apply-changes-local-library?]}]
@@ -1019,7 +1008,7 @@
                                       :variant-properties (:variant-properties prev-component)
                                       :objects (:objects prev-component)})
           (cond-> apply-changes-local-library?
-            (apply-changes-local-library)))
+            (apply-changes-local {:apply-to-library? true})))
       changes)))
 
 (defn delete-component
