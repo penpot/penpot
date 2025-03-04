@@ -859,12 +859,26 @@
           (rx/of (reorder-selected-layout-child direction))
           (rx/of (nudge-selected-shapes direction shift?)))))))
 
+(defn- get-delta [position bbox]
+  (let [cpos (gpt/point (:x bbox) (:y bbox))
+        pos (gpt/point (or (:x position) (:x bbox))
+                       (or (:y position) (:y bbox)))]
+    (gpt/subtract pos cpos)))
+
+(defn- get-relative-delta [position bbox parent]
+  (let [parent-bbox (-> parent :points grc/points->rect)
+        relative-cpos (gpt/subtract (gpt/point (:x bbox) (:y bbox))
+                                    (gpt/point (:x parent-bbox) (:y parent-bbox)))
+        cpos (gpt/point (:x relative-cpos) (:y relative-cpos))
+        pos (gpt/point (or (:x position) (:x relative-cpos))
+                       (or (:y position) (:y relative-cpos)))]
+    (gpt/subtract pos cpos)))
+
 (defn update-position
   "Move shapes to a new position"
   ([id position] (update-position id position nil))
   ([id position options]
    (dm/assert! (uuid? id))
-
    (ptk/reify ::update-position
      ptk/WatchEvent
      (watch [_ state _]
@@ -874,15 +888,11 @@
              shape      (get objects id)
              ;; FIXME: performance rect
              bbox       (-> shape :points grc/points->rect)
-
-             cpos       (gpt/point (:x bbox) (:y bbox))
-             pos        (gpt/point (or (:x position) (:x bbox))
-                                   (or (:y position) (:y bbox)))
-
-             delta      (gpt/subtract pos cpos)
-
+             parent     (cfh/get-parent objects id)
+             delta      (if-not (:relative? options)
+                          (get-delta position bbox)
+                          (get-relative-delta position bbox parent))
              modif-tree (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
-
          (rx/of (dwm/apply-modifiers {:modifiers modif-tree
                                       :page-id page-id
                                       :ignore-constraints false
