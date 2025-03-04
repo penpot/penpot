@@ -17,6 +17,7 @@
    [app.main.data.comments :as dcm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.comments :as dwcm]
+   [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -1071,6 +1072,75 @@
         [:> comment-reply-form* {:on-submit on-submit}]
 
         [:> mentions-panel*]])]))
+
+(def overlap-distance 32)
+
+(defn- overlap?
+  [zoom thread-1 thread-2]
+  (let [d  (gpt/distance (:position thread-1) (:position thread-2))
+        dz (* d zoom)]
+    (< dz overlap-distance)))
+
+(defn- dfs
+  [zoom circles visited groups]
+  (if (empty? circles)
+    groups
+    (let [current (first circles)
+          remaining (rest circles)
+          overlapping-group (some #(when (some (partial overlap? zoom current) %) %) groups)]
+      (if overlapping-group
+        (dfs zoom remaining visited (map (fn [group]
+                                           (if (= group overlapping-group)
+                                             (cons current group)
+                                             group))
+                                         groups))
+        (dfs zoom remaining visited (cons [current] groups))))))
+
+(defn group-bubbles
+  [zoom circles]
+  (dfs zoom circles [] []))
+
+(defn- calculate-zoom-ungrouped-bubbles
+  [zoom threads]
+  (let [num-threads         (count threads)
+        num-grouped-threads (count (group-bubbles zoom threads))]
+    (if (= num-threads num-grouped-threads)
+      zoom
+      (calculate-zoom-ungrouped-bubbles (* zoom 1.75) threads))))
+
+(mf/defc comment-floating-group*
+  {::mf/wrap [mf/memo]}
+  [{:keys [thread-group zoom]}]
+  (let [positions (mapv :position thread-group)
+
+        position  (gpt/center-points positions)
+        pos-x     (* (:x position) zoom)
+        pos-y     (* (:y position) zoom)
+
+        unread?   (some #(pos? (:count-unread-comments %)) thread-group)
+        name      (str (count thread-group))
+
+        test-id   (str/join "-" (map :seqn (sort-by :seqn thread-group)))
+
+        on-click
+        (mf/use-fn
+         (mf/deps thread-group position)
+         (fn []
+           (let [updated-zoom (calculate-zoom-ungrouped-bubbles zoom thread-group)
+                 scale-zoom   (/ updated-zoom zoom)]
+             (st/emit! (dwz/set-zoom position scale-zoom)))))]
+
+    [:div {:style {:top (dm/str pos-y "px")
+                   :left (dm/str pos-x "px")}
+           :on-click on-click
+           :class (stl/css :floating-preview-wrapper :floating-preview-bubble)}
+     [:> comment-avatar*
+      {:image (cfg/resolve-profile-photo-url {:name name})
+       :class (stl/css :avatar-lg)
+       :data-testid (dm/str "floating-thread-bubble-" test-id)
+       :variant (cond
+                  unread? "unread"
+                  :else "read")}]]))
 
 (mf/defc comment-floating-bubble*
   {::mf/wrap [mf/memo]}
