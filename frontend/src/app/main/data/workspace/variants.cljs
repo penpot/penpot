@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.variants :as clv]
    [app.common.types.component :as ctc]
@@ -211,40 +212,68 @@
     (watch [_ state _]
       (let [variant-id (uuid/next)
             variant-vec [variant-id]
-            new-component-id (uuid/next)
             file-id      (:current-file-id state)
             page-id      (:current-page-id state)
             objects      (dsh/lookup-page-objects state file-id page-id)
             main         (get objects main-instance-id)
             main-id      (:id main)
+            component-id (:component-id main)
+            cpath        (cfh/split-path (:name main))
+            name         (first cpath)
+            num-props    (max 1 (dec (count cpath)))
+            cont-props   {:layout-item-h-sizing :auto
+                          :layout-item-v-sizing :auto
+                          :layout-padding {:p1 30 :p2 30 :p3 30 :p4 30}
+                          :layout-gap     {:row-gap 0 :column-gap 20}
+                          :name name
+                          :r1 20
+                          :r2 20
+                          :r3 20
+                          :r4 20
+                          :is-variant-container true}
+            main-props   {:layout-item-h-sizing :fix
+                          :layout-item-v-sizing :fix
+                          :variant-id variant-id
+                          :name name}
+            stroke-props {:stroke-alignment :inner
+                          :stroke-style :solid
+                          :stroke-color "#bb97d8" ;; todo use color var?
+                          :stroke-opacity 1
+                          :stroke-width 2}
             undo-id      (js/Symbol)]
 
-        (rx/of
-         (dwu/start-undo-transaction undo-id)
-         (dwsh/create-artboard-from-selection variant-id)
-         (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
-         (dwsl/create-layout-from-id variant-id :flex)
-         (dwsh/update-shapes variant-vec #(assoc % :layout-item-h-sizing :auto
-                                                 :layout-item-v-sizing :auto
-                                                 :layout-padding {:p1 30 :p2 30 :p3 30 :p4 30}
-                                                 :layout-gap     {:row-gap 0 :column-gap 20}
-                                                 :name (:name main)
-                                                 :r1 20
-                                                 :r2 20
-                                                 :r3 20
-                                                 :r4 20
-                                                 :is-variant-container true))
-         (dwsh/update-shapes [main-id] #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix :variant-id variant-id))
-         (cl/add-stroke variant-vec {:stroke-alignment :inner
-                                     :stroke-style :solid
-                                     :stroke-color "#bb97d8" ;; todo use color var?
-                                     :stroke-opacity 1
-                                     :stroke-width 2})
-         (dwl/duplicate-component file-id (:component-id main) new-component-id)
-         (set-variant-id (:component-id main) variant-id)
-         (set-variant-id new-component-id variant-id)
-         (add-new-property variant-id {:fill-values? true})
-         (dwu/commit-undo-transaction undo-id))))))
+
+        (rx/concat
+         (rx/of
+          (dwu/start-undo-transaction undo-id)
+
+          (when (not= name (:name main))
+            (dwl/rename-component component-id name))
+
+          ;; Create variant container
+          (dwsh/create-artboard-from-selection variant-id)
+          (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
+          (dwsl/create-layout-from-id variant-id :flex)
+          (dwsh/update-shapes variant-vec #(merge % cont-props))
+          (dwsh/update-shapes [main-id] #(merge % main-props))
+          (cl/add-stroke variant-vec stroke-props)
+          (set-variant-id component-id variant-id))
+
+         ;; Add the necessary number of new properties, with default values
+         (rx/from
+          (repeatedly num-props
+                      #(add-new-property variant-id {:fill-values? true})))
+
+         ;; When the component has path, set the path items as properties values
+         (when (> (count cpath) 1)
+           (rx/from
+            (map
+             #(update-property-value component-id % (nth cpath (inc %)))
+             (range num-props))))
+
+         (rx/of
+          (add-new-variant main-instance-id)
+          (dwu/commit-undo-transaction undo-id)))))))
 
 (defn add-component-or-variant
   []
