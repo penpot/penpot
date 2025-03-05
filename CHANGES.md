@@ -16,6 +16,7 @@
 
 - Fix opacity in frame containers [Github #5858](https://github.com/penpot/penpot/pull/5858)
 - Avoid resizing on click [Taiga #10213](https://tree.taiga.io/project/penpot/issue/10213)
+- Hide horizontal scroll from dashboard sidebar [Taiga #10422](https://tree.taiga.io/project/penpot/issue/10422)
 
 ## 2.5.2
 
