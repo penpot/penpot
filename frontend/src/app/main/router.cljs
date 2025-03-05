@@ -220,10 +220,7 @@
               (rx/of nil nil)
               (rx/create
                (fn [subs]
-                 (let [key (e/listen history "navigate"
-                                     (fn [o]
-                                       (.log js/console ">" o)
-                                       (rx/push! subs (.-token ^js o))))]
+                 (let [key (e/listen history "navigate" (fn [o] (rx/push! subs (.-token ^js o))))]
                    (fn []
                      (bhistory/disable! history)
                      (e/unlistenByKey key))))))
