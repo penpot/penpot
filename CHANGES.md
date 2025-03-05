@@ -18,6 +18,7 @@
 - Avoid resizing on click [Taiga #10213](https://tree.taiga.io/project/penpot/issue/10213)
 - Hide horizontal scroll from dashboard sidebar [Taiga #10422](https://tree.taiga.io/project/penpot/issue/10422)
 - Fix cut and paste a copy a cmponent inside its parent [Taiga #10365](https://tree.taiga.io/project/penpot/us/10365)
+- Fix duplicate page with component over frame [Taiga #8151](https://tree.taiga.io/project/penpot/issue/8151) and [Taiga #9698](https://tree.taiga.io/project/penpot/issue/9698)
 
 ## 2.5.2
 
