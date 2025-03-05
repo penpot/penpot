@@ -88,7 +88,7 @@
              :plugin-url plugin))))
 
 (defn on-navigate
-  [router path]
+  [router path send-event-info?]
   (let [location        (.-location js/document)
         [base-path qs]  (str/split path "?")
         location-path   (dm/str (.-origin location) (.-pathname location))
@@ -102,7 +102,7 @@
       (st/emit! (rt/assign-exception {:type :not-found}))
 
       (some? match)
-      (st/emit! (rt/navigated match))
+      (st/emit! (rt/navigated match send-event-info?))
 
       :else
       ;; We just recheck with an additional profile request; this
