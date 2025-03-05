@@ -16,6 +16,20 @@
 
 - Fix opacity in frame containers [Github #5858](https://github.com/penpot/penpot/pull/5858)
 
+## 2.5.2
+
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features
+
+### :bug: Bugs fixed
+
+- Navigate tracking event firing multiple times [Taiga #10415](https://tree.taiga.io/project/penpot/issue/10415)
+
 ## 2.5.1
 
 ### :rocket: Epics and highlights
