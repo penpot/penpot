@@ -60,16 +60,18 @@
   [:and
 
    [:map {:title "QuestionsFormStep1"}
-    [:planning ::sm/text]
+    #_[:planning ::sm/text]
     [:expected-use [:enum "work" "education" "personal"]]
-    [:planning-other {:optional true}
-     [::sm/text {:max 512}]]]
+    [:role
+     [:enum "ux" "developer" "student-teacher" "designer" "marketing" "manager" "other"]]
+    #_[:planning-other {:optional true}
+       [::sm/text {:max 512}]]]
 
-   [:fn {:error/field :planning-other}
-    (fn [{:keys [planning planning-other]}]
-      (or (not= planning "other")
-          (and (= planning "other")
-               (not (str/blank? planning-other)))))]])
+   #_[:fn {:error/field :planning-other}
+      (fn [{:keys [planning planning-other]}]
+        (or (not= planning "other")
+            (and (= planning "other")
+                 (not (str/blank? planning-other)))))]])
 
 (mf/defc step-1
   {::mf/props :obj}
@@ -80,27 +82,37 @@
                     {:label (tr "onboarding.questions.use.education") :value "education"}
                     {:label (tr "onboarding.questions.use.personal") :value "personal"}]))
 
-        planning-options
+        #_planning-options
+        #_(mf/with-memo []
+            (-> (shuffle [{:label (tr "labels.select-option")
+                           :value "" :key "questions:what-brings-you-here"
+                           :disabled true}
+                          {:label (tr "onboarding.questions.reasons.exploring")
+                           :value "discover-more-about-penpot"
+                           :key "discover-more-about-penpot"}
+                          {:label (tr "onboarding.questions.reasons.fit")
+                           :value "test-penpot-to-see-if-its-a-fit-for-team"
+                           :key "test-penpot-to-see-if-its-a-fit-for-team"}
+                          {:label (tr "onboarding.questions.reasons.alternative")
+                           :value "alternative-to-figma"
+                           :key "alternative-to-figma"}
+                          {:label (tr "onboarding.questions.reasons.testing")
+                           :value "try-out-before-using-penpot-on-premise"
+                           :key "try-out-before-using-penpot-on-premise"}])
+                (conj {:label (tr "labels.other-short") :value "other"})))
+        role-options
         (mf/with-memo []
-          (-> (shuffle [{:label (tr "labels.select-option")
-                         :value "" :key "questions:what-brings-you-here"
-                         :disabled true}
-                        {:label (tr "onboarding.questions.reasons.exploring")
-                         :value "discover-more-about-penpot"
-                         :key "discover-more-about-penpot"}
-                        {:label (tr "onboarding.questions.reasons.fit")
-                         :value "test-penpot-to-see-if-its-a-fit-for-team"
-                         :key "test-penpot-to-see-if-its-a-fit-for-team"}
-                        {:label (tr "onboarding.questions.reasons.alternative")
-                         :value "alternative-to-figma"
-                         :key "alternative-to-figma"}
-                        {:label (tr "onboarding.questions.reasons.testing")
-                         :value "try-out-before-using-penpot-on-premise"
-                         :key "try-out-before-using-penpot-on-premise"}])
+          (-> (shuffle [{:label (tr "labels.select-option") :value "" :key "role" :disabled true}
+                        {:label (tr "labels.product-design") :value "ux" :key "ux"}
+                        {:label (tr "labels.developer") :value "developer"  :key "developer"}
+                        {:label (tr "labels.student-teacher") :value "student-teacher" :key "student"}
+                        {:label (tr "labels.graphic-design") :value "designer" :key "design"}
+                        {:label (tr "labels.marketing") :value "marketing" :key "marketing"}
+                        {:label (tr "labels.product-management") :value "manager" :key "manager"}])
               (conj {:label (tr "labels.other-short") :value "other"})))
 
-        current-planning
-        (dm/get-in @form [:data :planning])]
+        #_ current-planning
+        #_ (dm/get-in @form [:data :planning])]
 
     [:& step-container {:form form
                         :step 1
@@ -124,22 +136,28 @@
                             :name :expected-use
                             :class (stl/css :radio-btns)}]
 
-      [:h3 {:class (stl/css :modal-subtitle)}
-       (tr "onboarding.questions.step1.question2")]
+      [:h3 {:class (stl/css :modal-subtitle)} (tr "onboarding.questions.step3.question1")]
+      [:& fm/select {:options role-options
+                     :select-class (stl/css :select-class)
+                     :default ""
+                     :name :role}]
 
-      [:& fm/select
-       {:options planning-options
-        :select-class (stl/css :select-class)
-        :default ""
-        :name :planning
-        :dropdown-class (stl/css :question-dropdown)}]
+      #_[:h3 {:class (stl/css :modal-subtitle)}
+         (tr "onboarding.questions.step1.question2")]
 
-      (when (= current-planning "other")
-        [:& fm/input {:name :planning-other
-                      :class (stl/css :input-spacing)
-                      :placeholder (tr "labels.other")
-                      :show-error false
-                      :label ""}])]]))
+      #_[:& fm/select
+         {:options planning-options
+          :select-class (stl/css :select-class)
+          :default ""
+          :name :planning
+          :dropdown-class (stl/css :question-dropdown)}]
+
+      #_(when (= current-planning "other")
+          [:& fm/input {:name :planning-other
+                        :class (stl/css :input-spacing)
+                        :placeholder (tr "labels.other")
+                        :show-error false
+                        :label ""}])]]))
 
 (def ^:private schema:questions-form-2
   [:and
@@ -216,21 +234,21 @@
    [:map {:title "QuestionsFormStep3"}
     [:team-size
      [:enum "more-than-50" "31-50" "11-30" "2-10" "freelancer" "personal-project"]]
-    [:role
+    #_[:role
      [:enum "ux" "developer" "student-teacher" "designer" "marketing" "manager" "other"]]
-    [:responsability
+    #_ [:responsability
      [:enum "team-leader" "team-member" "freelancer" "ceo-founder" "director" "other"]]
 
-    [:role-other {:optional true} [::sm/text {:max 512}]]
-    [:responsability-other {:optional true} [::sm/text {:max 512}]]]
+    #_[:role-other {:optional true} [::sm/text {:max 512}]]
+    #_ [:responsability-other {:optional true} [::sm/text {:max 512}]]]
 
-   [:fn {:error/field :role-other}
+   #_[:fn {:error/field :role-other}
     (fn [{:keys [role role-other]}]
       (or (not= role "other")
           (and (= role "other")
                (not (str/blank? role-other)))))]
 
-   [:fn {:error/field :responsability-other}
+   #_[:fn {:error/field :responsability-other}
     (fn [{:keys [responsability responsability-other]}]
       (or (not= responsability "other")
           (and (= responsability "other")
@@ -239,8 +257,8 @@
 (mf/defc step-3
   {::mf/props :obj}
   [{:keys [on-next on-prev form]}]
-  (let [role-options
-        (mf/with-memo []
+  (let [#_role-options
+        #_(mf/with-memo []
           (-> (shuffle [{:label (tr "labels.select-option") :value "" :key "role" :disabled true}
                         {:label (tr "labels.product-design") :value "ux" :key "ux"}
                         {:label (tr "labels.developer") :value "developer"  :key "developer"}
@@ -250,8 +268,8 @@
                         {:label (tr "labels.product-management") :value "manager" :key "manager"}])
               (conj {:label (tr "labels.other-short") :value "other"})))
 
-        responsability-options
-        (mf/with-memo []
+        #_ responsability-options
+        #_(mf/with-memo []
           (-> (shuffle [{:label (tr "labels.select-option") :value "" :key "responsability" :disabled true}
                         {:label (tr "labels.team-leader") :value "team-leader"}
                         {:label (tr "labels.team-member") :value "team-member"}
@@ -270,11 +288,30 @@
            {:label (tr "onboarding.questions.team-size.freelancer") :value "freelancer" :key "freelancer"}
            {:label (tr "onboarding.questions.team-size.personal-project") :value "personal-project" :key "personal-project"}])
 
-        current-role
-        (dm/get-in @form [:data :role])
+        #_current-role
+        #_(dm/get-in @form [:data :role])
 
-        current-responsability
-        (dm/get-in @form [:data :responsability])]
+        #_current-responsability
+        #_(dm/get-in @form [:data :responsability])
+
+        planning-options
+        (mf/with-memo []
+            (-> (shuffle [{:label (tr "labels.select-option")
+                           :value "" :key "questions:what-brings-you-here"
+                           :disabled true}
+                          {:label (tr "onboarding.questions.reasons.exploring")
+                           :value "discover-more-about-penpot"
+                           :key "discover-more-about-penpot"}
+                          {:label (tr "onboarding.questions.reasons.fit")
+                           :value "test-penpot-to-see-if-its-a-fit-for-team"
+                           :key "test-penpot-to-see-if-its-a-fit-for-team"}
+                          {:label (tr "onboarding.questions.reasons.alternative")
+                           :value "alternative-to-figma"
+                           :key "alternative-to-figma"}
+                          {:label (tr "onboarding.questions.reasons.testing")
+                           :value "try-out-before-using-penpot-on-premise"
+                           :key "try-out-before-using-penpot-on-premise"}])
+                (conj {:label (tr "labels.other-short") :value "other"})))]
 
     [:& step-container {:form form
                         :step 3
@@ -286,20 +323,29 @@
      [:h1 {:class (stl/css :modal-title)}
       (tr "onboarding.questions.step3.title")]
      [:div {:class (stl/css :modal-question)}
-      [:h3 {:class (stl/css :modal-subtitle)} (tr "onboarding.questions.step3.question1")]
-      [:& fm/select {:options role-options
-                     :select-class (stl/css :select-class)
-                     :default ""
-                     :name :role}]
+      [:h3 {:class (stl/css :modal-subtitle)}
+       (tr "onboarding.questions.step1.question2")]
 
-      (when (= current-role "other")
-        [:& fm/input {:name :role-other
-                      :class (stl/css :input-spacing)
-                      :placeholder (tr "labels.other")
-                      :show-error false
-                      :label ""}])]
+      [:& fm/select
+       {:options planning-options
+        :select-class (stl/css :select-class)
+        :default ""
+        :name :planning
+        :dropdown-class (stl/css :question-dropdown)}]
+      #_[:h3 {:class (stl/css :modal-subtitle)} (tr "onboarding.questions.step3.question1")]
+      #_[:& fm/select {:options role-options
+                       :select-class (stl/css :select-class)
+                       :default ""
+                       :name :role}]
 
-     [:div {:class (stl/css :modal-question)}
+      #_(when (= current-role "other")
+          [:& fm/input {:name :role-other
+                        :class (stl/css :input-spacing)
+                        :placeholder (tr "labels.other")
+                        :show-error false
+                        :label ""}])]
+
+     #_[:div {:class (stl/css :modal-question)}
       [:h3 {:class (stl/css :modal-subtitle)} (tr "onboarding.questions.step3.question2")]
       [:& fm/select {:options responsability-options
                      :select-class (stl/css :select-class)
@@ -443,6 +489,7 @@
   (let [container   (mf/use-ref)
         step        (mf/use-state 1)
         clean-data  (mf/use-state {})
+        show-step-3 (mf/use-state false)
 
         ;; Forms are initialized here because we can go back and forth between the steps
         ;; and we want to keep the filled info
@@ -469,6 +516,10 @@
         on-next
         (mf/use-fn
          (fn [form]
+           (when (:expected-use (:clean-data @form))
+             (if (= (:expected-use (:clean-data @form)) "work")
+               (reset! show-step-3 true)
+               (reset! show-step-3 false)))
            (swap! step inc)
            (swap! clean-data merge (:clean-data @form))))
 
@@ -493,6 +544,11 @@
       (case @step
         1 [:& step-1 {:on-next on-next :on-prev on-prev :form step-1-form}]
         2 [:& step-2 {:on-next on-next :on-prev on-prev :form step-2-form}]
-        3 [:& step-3 {:on-next on-next :on-prev on-prev :form step-3-form}]
-        4 [:& step-4 {:on-next on-next :on-prev on-prev :form step-4-form}]
-        5 [:& step-5 {:on-next on-submit :on-prev on-prev :form step-5-form}])]]))
+        3 (if @show-step-3
+            [:& step-3 {:on-next on-next :on-prev on-prev :form step-3-form}]
+            [:& step-4 {:on-next on-next :on-prev on-prev :form step-4-form}])
+        4 (if @show-step-3
+            [:& step-4 {:on-next on-next :on-prev on-prev :form step-4-form}]
+            [:& step-5 {:on-next on-submit :on-prev on-prev :form step-5-form}])
+        (when @show-step-3
+          5 [:& step-5 {:on-next on-submit :on-prev on-prev :form step-5-form}]))]]))
