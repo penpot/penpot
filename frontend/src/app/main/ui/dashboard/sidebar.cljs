@@ -979,22 +979,22 @@
       [:div {:class (stl/css :power-up)}
        (tr "dashboard.upgrade-plan.power-up")]]
 
-     [:div {:class (stl/css :upgrade-section)
-               :on-click handle-power-up-click}
+     (when (contains? cf/flags :subscriptions)
+       [:div {:class (stl/css :upgrade-section)
+              :on-click handle-power-up-click}
+        [:button {:class (stl/css :upgrade-top-section)}
+         [:div {:class (stl/css :content)}
+          [:span {:class (stl/css :upgrade-title)} "Professional plan"]
+          [:span {:class (stl/css :upgrade-text)} (tr "dashboard.upgrade-plan.no-limits")]]
+         [:span {:class (stl/css :icon-dropdown)}  i/arrow]]
 
-     [:button {:class (stl/css :upgrade-top-section)}
-      [:div {:class (stl/css :content)}
-       [:span {:class (stl/css :upgrade-title)} "Professional plan"]
-       [:span {:class (stl/css :upgrade-text)} (tr "dashboard.upgrade-plan.no-limits")]]
-      [:span {:class (stl/css :icon-dropdown)}  i/arrow]
-     ]
-
-      (when show-power-up-data[:button {:class (stl/css :upgrade-bottom-section)}
-                               [:div {:class (stl/css :content)}
-                                [:span {:class (stl/css :upgrade-text)} "Get extra storage, autosaved versions, file backup and more with the"]
-                                [:span {:class (stl/css :upgrade-highlight :upgrade-inline)} "Unlimited plan"]]
-                               [:div {:class (stl/css :upgrade-highlight :upgrade-bottom)}
-                                "Upgrade"]])]
+        (when show-power-up-data
+          [:button {:class (stl/css :upgrade-bottom-section)}
+           [:div {:class (stl/css :content)}
+            [:span {:class (stl/css :upgrade-text)} "Get extra storage, autosaved versions, file backup and more with the"]
+            [:span {:class (stl/css :upgrade-highlight :upgrade-inline)} "Unlimited plan"]]
+           [:div {:class (stl/css :upgrade-highlight :upgrade-bottom)}
+            "Upgrade"]])])
 
      (when (and team profile)
        [:& comments-section

@@ -440,7 +440,6 @@
   flex-direction: column;
   margin: var(--sp-m);
   padding: var(--sp-m);
-  transition: all 200ms ease;
 }
 
 .upgrade-top-section {
@@ -496,6 +495,7 @@
   color: var(--color-accent-tertiary);
 }
 
+.upgrade-bottom,
 .upgrade-inline {
   margin-inline-start: $s-4;
 }
