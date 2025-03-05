@@ -62,18 +62,21 @@
 ;; --- Navigate (Event)
 
 (defn navigated
-  [match]
+  [match send-event-info?]
   (ptk/reify ::navigated
     IDeref
     (-deref [_] match)
 
-    ev/Event
-    (-data [_]
-      (let [route  (dm/get-in match [:data :name])
-            params (get match :query-params)]
-        (assoc params
-               ::ev/name "navigate"
-               :route (name route))))
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (when send-event-info?
+        (let [route  (dm/get-in match [:data :name])
+              params (get match :query-params)]
+          (rx/of (ptk/event
+                  ::ev/event
+                  (assoc params
+                         ::ev/name "navigate"
+                         :route (name route)))))))
 
     ptk/UpdateEvent
     (update [_ state]
@@ -189,7 +192,7 @@
 ;; Check the urls to see if we need to send the navigated event.
 ;; If two paths are the same we only send the event when there is a
 ;; change in the parameters `file-id`, `page-id` or `team-id`
-(defn- send-navigate?
+(defn- send-event-info?
   [old-url new-url]
   (let [params [:file-id :page-id :team-id]
         new-uri (u/uri new-url)
@@ -215,7 +218,7 @@
       (let [stopper (rx/filter (ptk/type? ::initialize-history) stream)
             history (:history state)
             router  (:router state)]
-        (ts/schedule #(on-change router (.getToken ^js history)))
+        (ts/schedule #(on-change router (.getToken ^js history) true))
         (->> (rx/concat
               (rx/of nil nil)
               (rx/create
@@ -228,7 +231,6 @@
              (rx/take-until stopper)
              (rx/subs!
               (fn [[old-url new-url]]
-                (if (nil? old-url)
-                  (when (some? new-url) (on-change router new-url))
-                  (when (send-navigate? old-url new-url)
-                    (on-change router new-url))))))))))
+                (when (some? new-url)
+                  (let [send? (or (nil? old-url) (send-event-info? old-url new-url))]
+                    (on-change router new-url send?))))))))))
