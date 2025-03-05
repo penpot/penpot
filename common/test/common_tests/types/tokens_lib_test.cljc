@@ -12,9 +12,7 @@
    [app.common.time :as dt]
    [app.common.transit :as tr]
    [app.common.types.tokens-lib :as ctob]
-   [clojure.test :as t]
-   [app.common.pprint :as pp]
-   ))
+   [clojure.test :as t]))
 
 (defn setup-virtual-time
   [next]
@@ -78,7 +76,6 @@
       (t/is (= (:description token-set1) ""))
       (t/is (some? (:modified-at token-set1)))
       (t/is (empty? (:tokens token-set1)))
-
       (t/is (= (:name token-set2) "test-token-set-2"))
       (t/is (= (:description token-set2) "test description"))
       (t/is (= (:modified-at token-set2) now))
@@ -505,8 +502,8 @@
           token-themes' (ctob/get-themes tokens-lib')
           token-theme'  (ctob/get-theme tokens-lib' "" "test-token-theme")]
 
-      (t/is (= (ctob/theme-count tokens-lib') 1))
-      (t/is (= (first token-themes') token-theme))
+      (t/is (= (ctob/theme-count tokens-lib') 2))
+      (t/is (= (second token-themes') token-theme))
       (t/is (= token-theme' token-theme))))
 
   (t/testing "update-token-theme"
@@ -526,7 +523,7 @@
           token-theme   (ctob/get-theme tokens-lib "" "test-token-theme")
           token-theme'  (ctob/get-theme tokens-lib' "" "test-token-theme")]
 
-      (t/is (= (ctob/theme-count tokens-lib') 1))
+      (t/is (= (ctob/theme-count tokens-lib') 2))
       (t/is (= (:name token-theme') "test-token-theme"))
       (t/is (= (:description token-theme') "some description"))
       (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
@@ -544,7 +541,7 @@
           token-theme   (ctob/get-theme tokens-lib "" "test-token-theme")
           token-theme'  (ctob/get-theme tokens-lib' "" "updated-name")]
 
-      (t/is (= (ctob/theme-count tokens-lib') 1))
+      (t/is (= (ctob/theme-count tokens-lib') 2))
       (t/is (= (:name token-theme') "updated-name"))
       (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
 
@@ -558,7 +555,7 @@
 
           token-theme'  (ctob/get-theme tokens-lib' "" "updated-name")]
 
-      (t/is (= (ctob/theme-count tokens-lib') 0))
+      (t/is (= (ctob/theme-count tokens-lib') 1))
       (t/is (nil? token-theme'))))
 
   (t/testing "toggle-set-in-theme"
@@ -592,7 +589,7 @@
 
       (t/is (ctob/valid-tokens-lib? tokens-lib'))
       (t/is (= (ctob/set-count tokens-lib') 1))
-      (t/is (= (ctob/theme-count tokens-lib') 1))))
+      (t/is (= (ctob/theme-count tokens-lib') 2))))
 
   #?(:clj
      (t/testing "fressian-serialization"
@@ -608,7 +605,7 @@
 
          (t/is (ctob/valid-tokens-lib? tokens-lib'))
          (t/is (= (ctob/set-count tokens-lib') 1))
-         (t/is (= (ctob/theme-count tokens-lib') 1))))))
+         (t/is (= (ctob/theme-count tokens-lib') 2))))))
 
 (t/deftest grouping
   (t/testing "split-and-join"
@@ -1056,8 +1053,7 @@
             themes-tree' (ctob/get-theme-tree tokens-lib')
             group1'      (get themes-tree' "group1")
             token-theme  (get-in themes-tree ["group1" "token-theme-2"])
-            token-theme' (get-in themes-tree' ["group1" "token-theme-2"])
-            _ (pp/pprint group1')]
+            token-theme' (get-in themes-tree' ["group1" "token-theme-2"])]
 
         (t/is (= (ctob/theme-count tokens-lib') 5))
         (t/is (= (count group1') 2))
