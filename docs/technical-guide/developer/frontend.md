@@ -302,6 +302,17 @@ Ensure your development environment docker image is up to date.
 
 **NOTE** You can learn more about how to set up, start and stop our development environment [here](/technical-guide/developer/devenv)
 
+#### Release mode
+
+This is not required, but it may be convenient to compile Penpot in release mode before running the tests. This way they will be much quicker and stable. For this, go to the frontend window in the tmux session (<code class="language-bash">Ctrl + b 1</code>), interrupt the watch process with <code class="language-bash">Ctrl + C</code> and type:
+
+```bash
+yarn run build:app
+```
+
+Obviously, in this mode if you make changes to the source code, you will need to repeat the build manually each time. It may be useful to use wath mode when debugging a single test, and use release mode to run all the suite.
+
+
 ### Running the integration tests
 
 #### Headless mode
@@ -343,6 +354,8 @@ npx playwright test --ui
 > ⚠️ **WARNING:** It is important to be in the right folder (<code class="language-bash">frontend</code>) to launch the command above, or you may have errors trying to run the tests.
 
 > ❗️ **IMPORTANT**: You might need to [install Playwright's browsers and dependencies](https://playwright.dev/docs/intro) in your host machine with: <code class="language-bash">npx playwright install --with-deps</code>. In case you are using a Linux distribution other than Ubuntu, [you might need to install the dependencies manually](https://github.com/microsoft/playwright/issues/11122).
+
+> You will also need yarn in your host nodejs. For this, do <code class="language-bash">corepack enable</code> and then just <code class="language-bash">yarn</code>.
 
 ### How to write a test
 
