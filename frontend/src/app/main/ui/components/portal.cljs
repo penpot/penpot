@@ -6,10 +6,11 @@
 
 (ns app.main.ui.components.portal
   (:require
+   [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
 (mf/defc portal-on-document*
   [{:keys [children]}]
   (mf/portal
    (mf/html [:* children])
-   (.-body js/document)))
+   (dom/get-body)))

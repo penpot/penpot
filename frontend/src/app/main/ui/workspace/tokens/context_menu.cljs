@@ -446,17 +446,22 @@
             (mf/set-ref-val! dropdown-direction-change* (inc (mf/ref-val dropdown-direction-change*)))))))
 
     ;; FIXME: perf optimization
-    [:& dropdown {:show is-open?
-                  :on-close #(st/emit! (dt/assign-token-context-menu nil))}
-     [:div {:class (stl/css :token-context-menu)
-            :data-testid "tokens-context-menu-for-token"
-            :ref dropdown-ref
-            :data-direction dropdown-direction
-            :style {:--bottom (if (= dropdown-direction "up")
-                                "40px"
-                                "unset")
-                    :--top (dm/str top "px")
-                    :left (dm/str left "px")}
-            :on-context-menu prevent-default}
-      (when mdata
-        [:& token-context-menu-tree (assoc mdata :width @width :direction dropdown-direction)])]]))
+
+    (when is-open?
+      (mf/portal
+       (mf/html
+        [:& dropdown {:show is-open?
+                      :on-close #(st/emit! (dt/assign-token-context-menu nil))}
+         [:div {:class (stl/css :token-context-menu)
+                :data-testid "tokens-context-menu-for-token"
+                :ref dropdown-ref
+                :data-direction dropdown-direction
+                :style {:--bottom (if (= dropdown-direction "up")
+                                    "40px"
+                                    "unset")
+                        :--top (dm/str top "px")
+                        :left (dm/str left "px")}
+                :on-context-menu prevent-default}
+          (when mdata
+            [:& token-context-menu-tree (assoc mdata :width @width :direction dropdown-direction)])]])
+       (dom/get-body)))))

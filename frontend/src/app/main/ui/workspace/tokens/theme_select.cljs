@@ -139,4 +139,4 @@
            [:& theme-options {:active-theme-paths active-theme-paths
                               :themes themes
                               :on-close on-close-dropdown}]]])
-        (.-body js/document)))]))
+        (dom/get-body)))]))
