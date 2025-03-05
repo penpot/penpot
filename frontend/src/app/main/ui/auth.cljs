@@ -13,7 +13,7 @@
    [app.main.ui.auth.login :refer [login-page]]
    [app.main.ui.auth.recovery :refer [recovery-page]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
-   [app.main.ui.auth.register :refer [register-page register-success-page register-validate-page terms-register]]
+   [app.main.ui.auth.register :refer [register-page register-success-page terms-register]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -23,9 +23,11 @@
   {::mf/props :obj}
   [{:keys [route]}]
   (let [section (dm/get-in route [:data :name])
-        show-login-icon (and
-                         (not= section :auth-register-validate)
-                         (not= section :auth-register-success))
+        show-login-icon (not= section :auth-register-validate)
+        is-register (or
+                     (= section :auth-register)
+                     (= section :auth-register-validate)
+                     (= section :auth-register-success))
         params  (:query-params route)
         error   (:error params)]
 
@@ -36,7 +38,9 @@
       (when error
         (st/emit! (da/show-redirect-error error))))
 
-    [:main {:class (stl/css :auth-section)}
+    [:main {:class (stl/css-case
+                    :auth-section true
+                    :register is-register)}
      (when show-login-icon
        [:h1 {:class (stl/css :logo-container)}
         [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]])
@@ -48,9 +52,6 @@
       (case section
         :auth-register
         [:& register-page {:params params}]
-
-        :auth-register-validate
-        [:& register-validate-page {:params params}]
 
         :auth-register-success
         [:& register-success-page {:params params}]

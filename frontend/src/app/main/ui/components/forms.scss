@@ -293,7 +293,6 @@
     border-radius: $br-8;
     color: var(--input-foreground-color-active);
     background-color: var(--input-background-color);
-    border: $s-1 solid var(--input-border-color-active);
     &:focus {
       outline: none;
       border: $s-1 solid var(--input-border-color-focus);
