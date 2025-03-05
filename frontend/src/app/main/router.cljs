@@ -70,7 +70,7 @@
     ev/Event
     (-data [_]
       (let [route  (dm/get-in match [:data :name])
-            params (get match :path-params)]
+            params (get match :query-params)]
         (assoc params
                ::ev/name "navigate"
                :route (name route))))
@@ -186,6 +186,21 @@
 
 ;; --- History API
 
+;; Check the urls to see if we need to send the navigated event.
+;; If two paths are the same we only send the event when there is a
+;; change in the parameters `file-id`, `page-id` or `team-id`
+(defn- send-navigate?
+  [old-url new-url]
+  (let [params [:file-id :page-id :team-id]
+        new-uri (u/uri new-url)
+        new-path (:path new-uri)
+        new-params (-> new-uri :query u/query-string->map (select-keys params))
+        old-uri (u/uri old-url)
+        old-path (:path old-uri)
+        old-params (-> old-uri :query u/query-string->map (select-keys params))]
+    (or (not= old-path new-path)
+        (not= new-params old-params))))
+
 (defn initialize-history
   [on-change]
   (ptk/reify ::initialize-history
@@ -201,10 +216,22 @@
             history (:history state)
             router  (:router state)]
         (ts/schedule #(on-change router (.getToken ^js history)))
-        (->> (rx/create (fn [subs]
-                          (let [key (e/listen history "navigate" (fn [o] (rx/push! subs (.-token ^js o))))]
-                            (fn []
-                              (bhistory/disable! history)
-                              (e/unlistenByKey key)))))
+        (->> (rx/concat
+              (rx/of nil nil)
+              (rx/create
+               (fn [subs]
+                 (let [key (e/listen history "navigate"
+                                     (fn [o]
+                                       (.log js/console ">" o)
+                                       (rx/push! subs (.-token ^js o))))]
+                   (fn []
+                     (bhistory/disable! history)
+                     (e/unlistenByKey key))))))
+             (rx/buffer 2 1)
              (rx/take-until stopper)
-             (rx/subs! #(on-change router %)))))))
+             (rx/subs!
+              (fn [[old-url new-url]]
+                (if (nil? old-url)
+                  (when (some? new-url) (on-change router new-url))
+                  (when (send-navigate? old-url new-url)
+                    (on-change router new-url))))))))))
