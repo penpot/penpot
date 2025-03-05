@@ -22,6 +22,16 @@
     display: flex;
     justify-content: center;
   }
+
+  &.register {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .login-illustration {
+      display: none;
+    }
+  }
 }
 
 .logo-container {

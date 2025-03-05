@@ -444,6 +444,8 @@
         error      (get-in @form [:errors input-name])
         focus?     (mf/use-state false)
 
+        auto-focus?  (get props :auto-focus? false)
+
         items      (mf/use-state
                     (fn []
                       (let [initial (get-in @form [:data input-name])]
@@ -562,7 +564,7 @@
      [:input {:id (name input-name)
               :class in-klass
               :type "text"
-              :auto-focus true
+              :auto-focus auto-focus?
               :on-focus on-focus
               :on-blur on-blur
               :on-key-down on-key-down

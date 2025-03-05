@@ -18,6 +18,7 @@
 - Add set selection in create Token themes flow [Taiga #10746](https://tree.taiga.io/project/penpot/issue/10746)
 - Display indicator on not active sets [Taiga #10668](https://tree.taiga.io/project/penpot/issue/10668)
 - Create `input*` wrapper component, and `label*`, `input-field*` and `hint-message*` components [Taiga #10713](https://tree.taiga.io/project/penpot/us/10713)
+- Optimize profiling for better user experience [Taiga #10028](https://tree.taiga.io/project/penpot/us/10028)
 
 ### :bug: Bugs fixed
 

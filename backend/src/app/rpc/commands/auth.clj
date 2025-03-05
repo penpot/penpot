@@ -269,7 +269,7 @@
 (defn create-profile!
   "Create the profile entry on the database with limited set of input
   attrs (all the other attrs are filled with default values)."
-  [conn {:keys [email] :as params}]
+  [conn {:keys [email newsletter-updates newsletter-news] :as params}]
   (dm/assert! ::sm/email email)
   (let [id        (or (:id params) (uuid/next))
         props     (-> (audit/extract-utm-params params)
@@ -278,7 +278,9 @@
                               :viewed-walkthrough? false
                               :nudge {:big 10 :small 1}
                               :v2-info-shown true
-                              :release-notes-viewed (:main cf/version)})
+                              :release-notes-viewed (:main cf/version)
+                              :newsletter-news? (or newsletter-news false)
+                              :newsletter-updates? (or newsletter-updates false)})
                       (db/tjson))
 
         password  (or (:password params) "!")
@@ -358,7 +360,7 @@
                 :extra-data ptoken})))
 
 (defn register-profile
-  [{:keys [::db/conn ::wrk/executor] :as cfg} {:keys [token fullname theme] :as params}]
+  [{:keys [::db/conn ::wrk/executor] :as cfg} {:keys [token fullname theme accept-newsletter-updates accept-newsletter-news] :as params}]
   (let [theme      (when (= theme "light") theme)
         claims     (tokens/verify (::setup/props cfg) {:token token :iss :prepared-register})
         params     (-> claims
@@ -378,6 +380,8 @@
                                              (not (contains? cf/flags :email-verification)))
                                params    (-> params
                                              (assoc :is-active is-active)
+                                             (assoc :newsletter-updates accept-newsletter-updates)
+                                             (assoc :newsletter-news accept-newsletter-news)
                                              (update :password #(profile/derive-password cfg %)))
                                profile   (->> (create-profile! conn params)
                                               (create-profile-rels! conn))]

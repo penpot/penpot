@@ -12,7 +12,7 @@
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-methods]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
-   [app.main.ui.auth.register :refer [register-methods register-validate-form register-success-page terms-register]]
+   [app.main.ui.auth.register :refer [register-methods register-success-page terms-register]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -99,16 +99,6 @@
             [:a {:on-click set-section
                  :data-value "login"}
              (tr "auth.login-here")]]]]
-
-         :register-validate
-         [:div {:class (stl/css :form-container)}
-          [:& register-validate-form {:params {:token @register-token}
-                                      :on-success-callback success-email-sent}]
-          [:div {:class (stl/css :links)}
-           [:div {:class (stl/css :register)}
-            [:a {:on-click set-section
-                 :data-value "register"}
-             (tr "labels.go-back")]]]]
 
          :recovery-request
          [:& recovery-request-page {:go-back-callback go-back-to-login
