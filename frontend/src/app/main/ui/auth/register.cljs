@@ -26,11 +26,33 @@
 
 ;; --- PAGE: Register
 
+(mf/defc terms-and-privacy
+  {::mf/props :obj
+   ::mf/private true}
+  []
+  (let [terms-label
+        (mf/html
+         [:> i18n/tr-html*
+          {:tag-name "div"
+           :content (tr "auth.terms-and-privacy-agreement"
+                        cf/terms-of-service-uri
+                        cf/privacy-policy-uri)}])]
+
+    [:div {:class (stl/css :fields-row :input-visible :accept-terms-and-privacy-wrapper)}
+     [:& fm/input {:name :accept-terms-and-privacy
+                   :class (stl/css :checkbox-terms-and-privacy)
+                   :type "checkbox"
+                   :default-checked false
+                   :label terms-label}]]))
+
 (def ^:private schema:register-form
   [:map {:title "RegisterForm"}
    [:password ::sm/password]
+   [:fullname [::sm/text {:max 250}]]
    [:email ::sm/email]
-   [:invitation-token {:optional true} ::sm/text]])
+   [:accept-terms-and-privacy {:optional (not (contains? cf/flags :terms-and-privacy-checkbox))}
+    [:and :boolean [:= true]]]
+   [:token {:optional true} ::sm/text]])
 
 (mf/defc register-form
   {::mf/props :obj}
@@ -65,23 +87,60 @@
 
                (st/emit! (ntf/error (tr "errors.generic")))))))
 
+        on-success
+        (mf/use-fn
+         (mf/deps on-success-callback)
+         (fn [params]
+           (if (fn? on-success-callback)
+             (on-success-callback (:email params))
+
+             (cond
+               (some? (:token params))
+               (let [token (:token params)]
+                 (st/emit! (rt/nav :auth-verify-token {:token token})))
+
+               (:is-active params)
+               (st/emit! (da/login-from-register))
+
+               :else
+               (do
+                 (swap! storage/user assoc ::email (:email params))
+                 (st/emit! (rt/nav :auth-register-success)))))))
+
+        on-register-profile
+        (mf/use-fn
+         (mf/deps on-success on-error)
+         (fn [form]
+           (reset! submitted? true)
+           (let [create-welcome-file?
+                 (cf/external-feature-flag "onboarding-03" "test")
+
+                 params
+                 (cond-> form
+                   create-welcome-file? (assoc :create-welcome-file true))]
+             (->> (rp/cmd! :register-profile params)
+                  (rx/finalize #(reset! submitted? false))
+                  (rx/subs! on-success on-error)))))
+
         on-submit
         (mf/use-fn
          (mf/deps on-success-callback)
          (fn [form _event]
            (reset! submitted? true)
-           (let [cdata      (:clean-data @form)
-                 on-success (fn [data]
-                              (if (fn? on-success-callback)
-                                (on-success-callback data)
-                                (st/emit! (rt/nav :auth-register-validate data))))]
-
+           (let [cdata      (:clean-data @form)]
              (->> (rp/cmd! :prepare-register-profile cdata)
-                  (rx/map #(merge % params))
+                  (rx/map #(merge % cdata))
                   (rx/finalize #(reset! submitted? false))
-                  (rx/subs! on-success (partial on-error form))))))]
+                  (rx/subs! on-register-profile)))))]
 
     [:& fm/form {:on-submit on-submit :form form}
+     [:div {:class (stl/css :fields-row)}
+
+      [:& fm/input {:name :fullname
+                    :label (tr "auth.fullname")
+                    :type "text"
+                    :show-success? true
+                    :class (stl/css :form-field)}]]
      [:div {:class (stl/css :fields-row)}
       [:& fm/input {:type "text"
                     :name :email
@@ -96,6 +155,9 @@
                     :show-success? true
                     :type "password"
                     :class (stl/css :form-field)}]]
+
+     (when (contains? cf/flags :terms-and-privacy-checkbox)
+       [:& terms-and-privacy])
 
      [:> fm/submit-button*
       {:label (tr "auth.register-submit")
@@ -120,8 +182,6 @@
   [:div {:class (stl/css :auth-form-wrapper :register-form)}
    [:h1 {:class (stl/css :auth-title)
          :data-testid "registration-title"} (tr "auth.register-title")]
-   [:p {:class (stl/css :auth-tagline)}
-    (tr "auth.register-tagline")]
 
    (when (contains? cf/flags :demo-warning)
      [:& login/demo-warning])
@@ -144,122 +204,7 @@
                      :class (stl/css :demo-account-link)}
          (tr "auth.create-demo-account")]]])]])
 
-;; --- PAGE: register validation
-
-(mf/defc terms-and-privacy
-  {::mf/props :obj
-   ::mf/private true}
-  []
-  (let [terms-label
-        (mf/html
-         [:> i18n/tr-html*
-          {:tag-name "div"
-           :content (tr "auth.terms-and-privacy-agreement"
-                        cf/terms-of-service-uri
-                        cf/privacy-policy-uri)}])]
-
-    [:div {:class (stl/css :fields-row :input-visible :accept-terms-and-privacy-wrapper)}
-     [:& fm/input {:name :accept-terms-and-privacy
-                   :class (stl/css :checkbox-terms-and-privacy)
-                   :type "checkbox"
-                   :default-checked false
-                   :label terms-label}]]))
-
-(def ^:private schema:register-validate-form
-  [:map {:title "RegisterValidateForm"}
-   [:token ::sm/text]
-   [:fullname [::sm/text {:max 250}]]
-   [:accept-terms-and-privacy {:optional (not (contains? cf/flags :terms-and-privacy-checkbox))}
-    [:and :boolean [:= true]]]])
-
-(mf/defc register-validate-form
-  {::mf/props :obj
-   ::mf/private true}
-  [{:keys [params on-success-callback]}]
-  (let [form       (fm/use-form :schema schema:register-validate-form :initial params)
-
-        submitted?
-        (mf/use-state false)
-
-        on-success
-        (mf/use-fn
-         (mf/deps on-success-callback)
-         (fn [params]
-           (if (fn? on-success-callback)
-             (on-success-callback (:email params))
-
-             (cond
-               (some? (:invitation-token params))
-               (let [token (:invitation-token params)]
-                 (st/emit! (rt/nav :auth-verify-token {:token token})))
-
-               (:is-active params)
-               (st/emit! (da/login-from-register))
-
-               :else
-               (do
-                 (swap! storage/user assoc ::email (:email params))
-                 (st/emit! (rt/nav :auth-register-success)))))))
-
-        on-error
-        (mf/use-fn
-         (fn [_]
-           (st/emit! (ntf/error (tr "errors.generic")))))
-
-        on-submit
-        (mf/use-fn
-         (mf/deps on-success on-error)
-         (fn [form _]
-           (reset! submitted? true)
-           (let [create-welcome-file?
-                 (cf/external-feature-flag "onboarding-03" "test")
-
-                 params
-                 (cond-> (:clean-data @form)
-                   create-welcome-file? (assoc :create-welcome-file true))]
-
-             (->> (rp/cmd! :register-profile params)
-                  (rx/finalize #(reset! submitted? false))
-                  (rx/subs! on-success on-error)))))]
-
-    [:& fm/form {:on-submit on-submit
-                 :form form
-                 :class (stl/css :register-validate-form)}
-
-     [:div {:class (stl/css :fields-row)}
-      [:& fm/input {:name :fullname
-                    :label (tr "auth.fullname")
-                    :type "text"
-                    :show-success? true
-                    :class (stl/css :form-field)}]]
-
-     (when (contains? cf/flags :terms-and-privacy-checkbox)
-       [:& terms-and-privacy])
-
-     [:> fm/submit-button*
-      {:label (tr "auth.register-submit")
-       :disabled @submitted?
-       :class (stl/css :register-btn)}]]))
-
-
-(mf/defc register-validate-page
-  {::mf/props :obj}
-  [{:keys [params]}]
-  [:div {:class (stl/css :auth-form-wrapper)}
-   [:h1 {:class (stl/css :logo-container)}
-    [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]]
-   [:div {:class (stl/css :auth-title-wrapper)}
-    [:h2 {:class (stl/css :auth-title)
-          :data-testid "register-title"} (tr "auth.register-account-title")]
-    [:div {:class (stl/css :auth-subtitle)} (tr "auth.register-account-tagline")]]
-
-   [:& register-validate-form {:params params}]
-
-   [:div {:class (stl/css :links)}
-    [:div {:class (stl/css :go-back)}
-     [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {}))
-                  :class (stl/css :go-back-link)}
-      (tr "labels.go-back")]]]])
+;; --- PAGE: register success page
 
 (mf/defc register-success-page
   {::mf/props :obj}
