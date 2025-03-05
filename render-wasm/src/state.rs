@@ -59,12 +59,11 @@ impl<'a> State<'a> {
             let new_shape = Shape::new(id);
             self.shapes.insert(id, new_shape);
         }
-
         self.current_id = Some(id);
         self.current_shape = self.shapes.get_mut(&id);
     }
 
-    pub fn current_shape(&'a mut self) -> Option<&'a mut Shape> {
+    pub fn current_shape(&mut self) -> Option<&mut Shape> {
         self.current_shape.as_deref_mut()
     }
 
