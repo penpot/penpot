@@ -121,7 +121,11 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
-    await expect(tokensTabPanel.getByLabel("primary")).toBeEnabled();
+    await expect(
+      tokensTabPanel.getByRole("button", {
+        name: "color.primary",
+      }),
+    ).toBeEnabled();
 
     // Create token referencing the previous one with keyboard
 
@@ -138,8 +142,11 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(submitButton).toBeEnabled();
     await nameField.press("Enter");
 
-    const referenceToken = tokensTabPanel.getByLabel("color.secondary");
-    await expect(referenceToken).toBeEnabled();
+    await expect(
+      tokensTabPanel.getByRole("button", {
+        name: "color.secondary",
+      }),
+    ).toBeEnabled();
 
     // Tokens tab panel should have two tokens with the color red / #ff0000
     await expect(tokensTabPanel.getByTitle("#ff0000")).toHaveCount(2);
