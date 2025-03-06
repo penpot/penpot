@@ -1057,7 +1057,6 @@
 
         (t/is (= (ctob/theme-count tokens-lib') 5))
         (t/is (= (count group1') 2))
-        ;; Dont understand this change
         (t/is (= (d/index-of (keys group1') "token-theme-2") 0))
         (t/is (= (:name token-theme') "token-theme-2"))
         (t/is (= (:group token-theme') "group1"))
