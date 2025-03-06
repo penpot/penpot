@@ -454,35 +454,6 @@ impl RenderState {
         run_script!(format!("cancelAnimationFrame({})", frame_id))
     }
 
-    //TODO REMOVE?
-
-    // pub fn debug_target_surface(&mut self) {
-    //     let image = self.surfaces.target.image_snapshot();
-    //     let mut context = self.surfaces.target.direct_context();
-    //     let encoded_image = image
-    //         .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
-    //         .unwrap();
-    //     let base64_image = base64::encode(&encoded_image.as_bytes());
-    //     run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
-    // }
-
-    // pub fn debug_target_surface_rect(&mut self, rect: skia::Rect) {
-    //     let int_rect = skia::IRect::from_ltrb(
-    //         rect.left as i32,
-    //         rect.top as i32,
-    //         rect.right as i32,
-    //         rect.bottom as i32,
-    //     );
-    //     let mut context = self.surfaces.target.direct_context();
-    //     if let Some(image) = self.surfaces.current.image_snapshot_with_bounds(int_rect) {
-    //         let encoded_image = image
-    //             .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
-    //             .unwrap();
-    //         let base64_image = base64::encode(&encoded_image.as_bytes());
-    //         run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
-    //     }
-    // }
-
     pub fn process_animation_frame(
         &mut self,
         tree: &mut HashMap<Uuid, Shape>,

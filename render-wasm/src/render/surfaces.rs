@@ -66,6 +66,28 @@ impl Surfaces {
         self.get_mut(id).image_snapshot()
     }
 
+    pub fn base64_snapshot(&mut self, id: SurfaceId) -> String {
+        let surface = self.get_mut(id);
+        let image = surface.image_snapshot();
+        let mut context = surface.direct_context();
+        let encoded_image = image
+            .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
+            .unwrap();
+        base64::encode(&encoded_image.as_bytes())
+    }
+
+    pub fn base64_snapshot_rect(&mut self, id: SurfaceId, irect: skia::IRect) -> Option<String> {
+        let surface = self.get_mut(id);
+        if let Some(image) = surface.image_snapshot_with_bounds(irect) {
+            let mut context = surface.direct_context();
+            let encoded_image = image
+                .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
+                .unwrap();
+            return Some(base64::encode(&encoded_image.as_bytes()));
+        }
+        None
+    }
+
     pub fn canvas(&mut self, id: SurfaceId) -> &skia::Canvas {
         self.get_mut(id).canvas()
     }

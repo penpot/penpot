@@ -3,6 +3,8 @@ use skia_safe::{self as skia, Rect};
 
 use super::{tiles, RenderState, SurfaceId};
 
+use crate::run_script;
+
 const DEBUG_SCALE: f32 = 0.2;
 
 fn get_debug_rect(rect: Rect) -> Rect {
@@ -158,4 +160,22 @@ pub fn render(render_state: &mut RenderState) {
         SurfaceId::Target,
         Some(&skia::Paint::default()),
     );
+}
+
+pub fn console_debug_surface(render_state: &mut RenderState, id: SurfaceId) {
+    let base64_image = render_state.surfaces.base64_snapshot(id);
+    run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
+}
+
+pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId, rect: skia::Rect) {
+    let int_rect = skia::IRect::from_ltrb(
+        rect.left as i32,
+        rect.top as i32,
+        rect.right as i32,
+        rect.bottom as i32,
+    );
+    let base64_image = render_state.surfaces.base64_snapshot_rect(id, int_rect);
+    if let Some(base64_image) = base64_image {
+        run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
+    }
 }
