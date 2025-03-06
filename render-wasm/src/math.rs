@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use skia_safe as skia;
 
 pub type Rect = skia::Rect;
@@ -24,7 +26,7 @@ pub struct Bounds {
     pub sw: Point,
 }
 
-fn vec_min_max(arr: &[Option<f32>]) -> Option<(f32, f32)> {
+fn vec_min_max(arr: &Vec<Option<f32>>) -> Option<(f32, f32)> {
     let mut minv: Option<f32> = None;
     let mut maxv: Option<f32> = None;
 
@@ -96,25 +98,29 @@ impl Bounds {
     }
 
     pub fn box_bounds(&self, other: &Self) -> Option<Self> {
+        self.from_points(other.points())
+    }
+
+    pub fn from_points(&self, points: Vec<Point>) -> Option<Self> {
         let hv = self.horizontal_vec();
         let vv = self.vertical_vec();
 
         let hr = Ray::new(self.nw, hv);
         let vr = Ray::new(self.nw, vv);
 
-        let (min_ht, max_ht) = vec_min_max(&[
-            intersect_rays_t(&hr, &Ray::new(other.nw, vv)),
-            intersect_rays_t(&hr, &Ray::new(other.ne, vv)),
-            intersect_rays_t(&hr, &Ray::new(other.sw, vv)),
-            intersect_rays_t(&hr, &Ray::new(other.se, vv)),
-        ])?;
+        let (min_ht, max_ht) = vec_min_max(
+            &points
+                .iter()
+                .map(|p| intersect_rays_t(&hr, &Ray::new(*p, vv)))
+                .collect(),
+        )?;
 
-        let (min_vt, max_vt) = vec_min_max(&[
-            intersect_rays_t(&vr, &Ray::new(other.nw, hv)),
-            intersect_rays_t(&vr, &Ray::new(other.ne, hv)),
-            intersect_rays_t(&vr, &Ray::new(other.sw, hv)),
-            intersect_rays_t(&vr, &Ray::new(other.se, hv)),
-        ])?;
+        let (min_vt, max_vt) = vec_min_max(
+            &points
+                .iter()
+                .map(|p| intersect_rays_t(&vr, &Ray::new(*p, hv)))
+                .collect(),
+        )?;
 
         let nw = intersect_rays(&Ray::new(hr.t(min_ht), vv), &Ray::new(vr.t(min_vt), hv))?;
         let ne = intersect_rays(&Ray::new(hr.t(max_ht), vv), &Ray::new(vr.t(min_vt), hv))?;
@@ -122,6 +128,10 @@ impl Bounds {
         let se = intersect_rays(&Ray::new(hr.t(max_ht), vv), &Ray::new(vr.t(max_vt), hv))?;
 
         Some(Self { nw, ne, se, sw })
+    }
+
+    pub fn points(&self) -> Vec<Point> {
+        vec![self.nw, self.ne, self.se, self.sw]
     }
 
     pub fn left(&self, p: Point) -> f32 {
@@ -222,6 +232,11 @@ impl Bounds {
         }
 
         result
+    }
+
+    pub fn center(&self) -> Point {
+        // Calculates the centroid of the four points
+        Point::new(self.nw.x + self.se.x / 2.0, self.nw.y + self.se.y / 2.0)
     }
 
     pub fn transform_matrix(&self) -> Option<Matrix> {
@@ -364,12 +379,19 @@ mod tests {
 
     #[test]
     fn test_vec_min_max() {
-        assert_eq!(None, vec_min_max(&[]));
-        assert_eq!(None, vec_min_max(&[None, None]));
-        assert_eq!(Some((1.0, 1.0)), vec_min_max(&[None, Some(1.0)]));
+        assert_eq!(None, vec_min_max(&vec![]));
+        assert_eq!(None, vec_min_max(&vec![None, None]));
+        assert_eq!(Some((1.0, 1.0)), vec_min_max(&vec![None, Some(1.0)]));
         assert_eq!(
             Some((0.0, 1.0)),
-            vec_min_max(&[Some(0.3), None, Some(0.0), Some(0.7), Some(1.0), Some(0.1)])
+            vec_min_max(&vec![
+                Some(0.3),
+                None,
+                Some(0.0),
+                Some(0.7),
+                Some(1.0),
+                Some(0.1)
+            ])
         );
     }
 

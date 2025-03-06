@@ -137,7 +137,7 @@ impl WrapType {
 #[derive(Debug, Clone, PartialEq)]
 pub struct GridTrack {}
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Sizing {
     Fill,
     Fix,
@@ -168,11 +168,42 @@ pub struct LayoutData {
     pub padding_left: f32,
 }
 
+impl LayoutData {
+    pub fn is_reverse(&self) -> bool {
+        match &self.direction {
+            Direction::RowReverse | Direction::ColumnReverse => true,
+            _ => false,
+        }
+    }
+    pub fn is_row(&self) -> bool {
+        match &self.direction {
+            Direction::RowReverse | Direction::Row => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_column(&self) -> bool {
+        match &self.direction {
+            Direction::ColumnReverse | Direction::Column => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct FlexData {
     pub row_gap: f32,
     pub column_gap: f32,
     pub wrap_type: WrapType,
+}
+
+impl FlexData {
+    pub fn is_wrap(&self) -> bool {
+        match self.wrap_type {
+            WrapType::Wrap => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -182,7 +213,7 @@ pub struct GridData {
     // layout-grid-cells       ;; map of id->grid-cell
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub struct LayoutItem {
     pub margin_top: f32,
     pub margin_right: f32,
