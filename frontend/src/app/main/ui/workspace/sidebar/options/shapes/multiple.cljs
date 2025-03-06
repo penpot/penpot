@@ -292,7 +292,7 @@
 
         page-id (unchecked-get props "page-id")
         file-id (unchecked-get props "file-id")
-        shared-libs (unchecked-get props "shared-libs")
+        shared-libs (unchecked-get props "libraries")
 
         show-caps (some #(and (= :path (:type %)) (gsh/open-path? %)) shapes)
 
