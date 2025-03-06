@@ -310,8 +310,8 @@
                 (rx/map #(gpt/length %))
                 (rx/filter #(> % (/ 10 zoom)))
                 (rx/take 1)
-                (rx/mapcat (fn [] modifiers-stream))
-                (rx/take-until stopper))
+                (rx/take-until stopper)
+                (rx/mapcat (fn [] modifiers-stream)))
 
            (rx/of
             (if (features/active-feature? state "render-wasm/v1")
