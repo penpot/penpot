@@ -196,7 +196,8 @@ impl RenderState {
         );
 
         // println!("---- {x} {y}");
-        // debug::console_debug_surface_rect(self, SurfaceId::Current, rect);
+        // debug::console_debug_surface(self, SurfaceId::Current);
+        self.surfaces.canvas(SurfaceId::Current).clear(self.background_color);
 
         let mut canvas = self.surfaces.canvas(SurfaceId::Target);
 
