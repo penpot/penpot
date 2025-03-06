@@ -154,7 +154,7 @@
   (let [data (::file-data (meta changes))]
     (dm/get-in data [:pages-index uuid/zero :objects])))
 
-(defn- apply-changes-local
+(defn apply-changes-local
   [changes]
   (dm/assert!
    "expected valid changes"

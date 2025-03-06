@@ -747,42 +747,35 @@
     (let [omit-touched?        (not reset?)
           clear-remote-synced? (and initial-root? reset?)
           set-remote-synced?   (and (not initial-root?) reset?)
-          changes (cond-> changes
-                    :always
-                    (update-attrs shape-inst
-                                  shape-main
-                                  root-inst
-                                  root-main
-                                  container
-                                  omit-touched?)
+          changes
+          (cond-> changes
+            :always
+            (update-attrs shape-inst
+                          shape-main
+                          root-inst
+                          root-main
+                          container
+                          omit-touched?)
 
-                    (ctl/flex-layout? shape-main)
-                    (update-flex-child-copy-attrs shape-main
-                                                  shape-inst
-                                                  library
-                                                  component
-                                                  container
-                                                  omit-touched?)
+            (ctl/flex-layout? shape-main)
+            (update-flex-child-copy-attrs shape-main
+                                          shape-inst
+                                          library
+                                          component
+                                          container
+                                          omit-touched?)
 
-                    (ctl/grid-layout? shape-main)
-                    (update-grid-copy-attrs shape-main
-                                            shape-inst
-                                            library
-                                            component
-                                            container
-                                            omit-touched?)
+            reset?
+            (change-touched shape-inst
+                            shape-main
+                            container
+                            {:reset-touched? true})
 
-                    reset?
-                    (change-touched shape-inst
-                                    shape-main
-                                    container
-                                    {:reset-touched? true})
+            clear-remote-synced?
+            (change-remote-synced shape-inst container nil)
 
-                    clear-remote-synced?
-                    (change-remote-synced shape-inst container nil)
-
-                    set-remote-synced?
-                    (change-remote-synced shape-inst container true))
+            set-remote-synced?
+            (change-remote-synced shape-inst container true))
 
           component-container (find-main-container container shape-inst shape-main library component)
 
@@ -859,23 +852,36 @@
                    (d/index-of children-inst child-inst)
                    (d/index-of children-main child-main)
                    container
-                   omit-touched?))]
+                   omit-touched?))
 
-      (compare-children changes
-                        children-inst
-                        children-main
-                        container
-                        component-container
-                        file
-                        libraries
-                        only-inst
-                        only-main
-                        both
-                        swapped
-                        moved
-                        false
-                        reset?
-                        components-v2))))
+          changes
+          (compare-children changes
+                            children-inst
+                            children-main
+                            container
+                            component-container
+                            file
+                            libraries
+                            only-inst
+                            only-main
+                            both
+                            swapped
+                            moved
+                            false
+                            reset?
+                            components-v2)
+
+          changes
+          (cond-> changes
+            (ctl/grid-layout? shape-inst)
+            (update-grid-copy-attrs
+             (:id shape-inst)
+             shape-main
+             library
+             component
+             omit-touched?))]
+
+      changes)))
 
 (defn generate-rename-component
   "Generate the changes for rename the component with the given id, in the current file library."
@@ -1710,30 +1716,36 @@
 
 (defn- update-grid-copy-attrs
   "Synchronizes the `layout-grid-cells` property from the main shape to the copies"
-  [changes shape-main shape-copy main-container main-component copy-container omit-touched?]
-  (let [ids-map
-        (into {}
-              (comp
-               (map #(dm/get-in copy-container [:objects %]))
-               (keep
-                (fn [copy-shape]
-                  (let [main-shape (ctf/get-ref-shape main-container main-component copy-shape)]
-                    [(:id main-shape) (:id copy-shape)]))))
-              (:shapes shape-copy))
+  [changes shape-copy-id shape-main main-container main-component omit-touched?]
+  (-> changes
+      (pcb/apply-changes-local)
+      (pcb/update-shapes
+       [shape-copy-id]
+       (fn [shape-copy objects]
+         (let [ids-map
+               (into {}
+                     (comp
+                      (map #(get objects %))
+                      (keep
+                       (fn [copy-shape]
+                         (let [main-shape (ctf/get-ref-shape main-container main-component copy-shape)]
+                           [(:id main-shape) (:id copy-shape)]))))
+                     (:shapes shape-copy))
 
-        new-changes
-        (-> (pcb/empty-changes)
-            (pcb/with-container copy-container)
-            (pcb/with-objects (:objects copy-container))
-            (pcb/update-shapes
-             [(:id shape-copy)]
-             (fn [shape-copy]
+               remove-orphan-cells
+               (fn [cells {:keys [shapes]}]
+                 (let [child? (set shapes)]
+                   (-> cells
+                       (update-vals
+                        (fn [cell]
+                          (update cell :shapes #(filterv child? %)))))))
                ;; Take cells from main and remap the shapes to assign it to the copy
-               (let [copy-cells (:layout-grid-cells shape-copy)
-                     main-cells (-> (ctl/remap-grid-cells shape-main ids-map) :layout-grid-cells)]
-                 (assoc shape-copy :layout-grid-cells (ctl/merge-cells copy-cells main-cells omit-touched?))))
-             {:ignore-touched true}))]
-    (pcb/concat-changes changes new-changes)))
+               copy-cells (-> shape-copy :layout-grid-cells (remove-orphan-cells shape-copy))
+               main-cells (-> shape-main (ctl/remap-grid-cells ids-map) :layout-grid-cells)]
+           (-> shape-copy
+               (assoc :layout-grid-cells
+                      (ctl/merge-cells copy-cells main-cells omit-touched?)))))
+       {:ignore-touched true :with-objects? true})))
 
 (defn- update-grid-main-attrs
   "Synchronizes the `layout-grid-cells` property from the copy to the main shape"
