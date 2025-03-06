@@ -33,12 +33,12 @@
   overflow-y: auto;
 }
 
-.token-context-submenu[data-direction="up"] {
-  bottom: var(--dist);
+.token-context-submenu {
+  display: none;
 }
 
-.token-context-submenu[data-direction="down"] {
-  top: var(--dist);
+.token-context-submenu-top {
+  bottom: 80px;
 }
 
 .token-context-submenu {

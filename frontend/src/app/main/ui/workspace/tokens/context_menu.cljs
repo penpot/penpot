@@ -307,47 +307,46 @@
 
 (mf/defc menu-entry
   {::mf/props :obj}
-  [{:keys [title value hint on-click selected? children submenu-offset submenu-direction no-selectable]}]
+  [{:keys [title value hint on-click selected? children submenu-offset no-selectable]}]
   (let [submenu-ref (mf/use-ref nil)
         hovering?   (mf/use-ref false)
+        parent-menu-dom-element-pos* (mf/use-state nil)
+        parent-menu-dom-element-pos (deref parent-menu-dom-element-pos*)
+        is-submenu-outside* (mf/use-state false)
+        is-submenu-outside? (deref is-submenu-outside*)
         hint? (and hint (seq hint))
         on-pointer-enter
         (mf/use-fn
+         (mf/deps is-submenu-outside?)
          (fn []
            (mf/set-ref-val! hovering? true)
            (when-let [submenu-node (mf/ref-val submenu-ref)]
-             (dom/set-css-property! submenu-node "display" "block"))))
+             (dom/set-css-property! submenu-node "display" "block")
+             (reset! is-submenu-outside* (dom/is-element-outside? submenu-node)))))
 
         on-pointer-leave
         (mf/use-fn
+         (mf/deps is-submenu-outside?)
          (fn []
            (mf/set-ref-val! hovering? false)
            (when-let [submenu-node (mf/ref-val submenu-ref)]
              (timers/schedule 50 #(when-not (mf/ref-val hovering?)
-                                    (dom/set-css-property! submenu-node "display" "none"))))))
+                                    (dom/set-css-property! submenu-node "display" "none")
+                                    (reset! is-submenu-outside* false))))))
 
-        set-dom-node
+        get-parent-menu-entry-position
         (mf/use-fn
-         (fn [dom]
-           (let [submenu-node (mf/ref-val submenu-ref)]
-             (when (and (some? dom) (some? submenu-node) (= submenu-direction "up"))
-               (dom/set-css-property! submenu-node "top" "unset"))
-             (when (and (some? dom) (some? submenu-node) (= submenu-direction "down"))
-               (dom/set-css-property! submenu-node "top" (dm/str (.-offsetTop dom) "px"))))))]
+         (fn [parent-menu-dom-element]
 
-    (mf/use-effect
-     (mf/deps submenu-direction)
-     (fn []
-       (let [submenu-node (mf/ref-val submenu-ref)]
-         (when (= submenu-direction "up")
-           (dom/set-css-property! submenu-node "top" "unset")))))
+           (when (some? parent-menu-dom-element)
+             (reset! parent-menu-dom-element-pos* (dm/str (.-offsetTop parent-menu-dom-element) "px")))))]
 
     [:li {:class (stl/css-case
                   :context-menu-item true
                   :context-menu-item-selected (and (not no-selectable) selected?)
                   :context-menu-item-unselected (and (not no-selectable) (not selected?))
                   :context-menu-item-hint-wrapper hint?)
-          :ref set-dom-node
+          :ref get-parent-menu-entry-position
           :data-value value
           :on-click on-click
           :on-pointer-enter on-pointer-enter
@@ -361,21 +360,17 @@
      (when children
        [:*
         [:> icon* {:icon-id "arrow" :size "s"}]
-        [:ul {:class (stl/css :token-context-submenu)
-              :data-direction submenu-direction
-              :ref submenu-ref
-              ;; Under review: This distances are arbitrary,
-              ;; https://tree.taiga.io/project/penpot/task/9627
-              :style {:display "none"
-                      :--dist (if (= submenu-direction "down")
-                                "-80px"
-                                "80px")
-                      :left (dm/str submenu-offset "px")}
+        [:ul {:ref submenu-ref
+              :class (stl/css-case
+                      :token-context-submenu true
+                      :token-context-submenu-top is-submenu-outside?)
+              :style {:left (dm/str submenu-offset "px")
+                      :top (if is-submenu-outside? "unset" parent-menu-dom-element-pos)}
               :on-context-menu prevent-default}
          children]])]))
 
 (mf/defc menu-tree
-  [{:keys [selected-shapes submenu-offset submenu-direction type errors] :as context-data}]
+  [{:keys [selected-shapes submenu-offset type errors] :as context-data}]
   (let [entries (if (and (not (some? errors))
                          (seq selected-shapes))
                   (if (some? type)
@@ -389,7 +384,6 @@
          submenu [:& menu-entry {:title title
                                  :hint hint
                                  :no-selectable true
-                                 :submenu-direction submenu-direction
                                  :submenu-offset submenu-offset}
                   [:& menu-tree (assoc context-data :type submenu)]]
          :else [:& menu-entry
@@ -400,7 +394,7 @@
                  :selected? selected?}])])))
 
 (mf/defc token-context-menu-tree
-  [{:keys [width direction errors] :as mdata}]
+  [{:keys [width errors] :as mdata}]
   (let [objects (mf/deref refs/workspace-page-objects)
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)
@@ -409,7 +403,6 @@
         selected-token-set-name (mf/deref refs/selected-token-set-name)]
     [:ul {:class (stl/css :context-list)}
      [:& menu-tree {:submenu-offset width
-                    :submenu-direction direction
                     :token token
                     :errors errors
                     :selected-token-set-name selected-token-set-name
@@ -463,5 +456,5 @@
                         :left (dm/str left "px")}
                 :on-context-menu prevent-default}
           (when mdata
-            [:& token-context-menu-tree (assoc mdata :width @width :direction dropdown-direction)])]])
+            [:& token-context-menu-tree (assoc mdata :width @width)])]])
        (dom/get-body)))))
