@@ -12,6 +12,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix margin lost on layout creation [taiga #7582](https://tree.taiga.io/project/penpot/issue/7582)
 - Navigate tracking event firing multiple times [Taiga #10415](https://tree.taiga.io/project/penpot/issue/10415)
 - Fix problem with selection colors [Taiga #](https://tree.taiga.io/project/penpot/issue/10376)
 
