@@ -198,7 +198,7 @@ impl RenderState {
         let mut canvas = self.surfaces.canvas(SurfaceId::Target);
 
         let mut p = skia::Paint::default();
-        p.set_stroke_width(4.);
+        p.set_stroke_width(2.);
         p.set_style(skia::PaintStyle::Stroke);
         canvas.draw_rect(&rect, &p);
 
@@ -724,11 +724,12 @@ impl RenderState {
         let offset_x = self.viewbox.area.left * zoom;
         let offset_y = self.viewbox.area.top * zoom;
         // TODO: move this to tiles logic?
+        // This extra -1 and +2 are to avoid empty space between tiles
         let tile_rect = Rect::from_xywh(
-            ((tile_x as f32 * tiles::TILE_SIZE) - offset_x),
-            ((tile_y as f32 * tiles::TILE_SIZE) - offset_y),
-            tiles::TILE_SIZE,
-            tiles::TILE_SIZE,
+            ((tile_x as f32 * tiles::TILE_SIZE) - offset_x) - 1.,
+            ((tile_y as f32 * tiles::TILE_SIZE) - offset_y) - 1.,
+            tiles::TILE_SIZE + 2.,
+            tiles::TILE_SIZE + 2.,
         );
         self.apply_render_to_final_canvas(tile_rect, tile_x, tile_y);
 
