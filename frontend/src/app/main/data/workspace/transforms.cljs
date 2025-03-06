@@ -275,31 +275,43 @@
                       (->> (snap/closest-snap-point page-id shapes objects layout zoom focus point)
                            (rx/map #(conj current %)))))
                    (rx/map #(resize shape initial-position layout %))
-                   (rx/share))]
+                   (rx/share))
+
+
+              modifiers-stream
+              (rx/merge
+               (->> resize-events-stream
+                    (rx/mapcat
+                     (fn [modifiers]
+                       (let [modif-tree (dwm/create-modif-tree ids modifiers)]
+                         (if (features/active-feature? state "render-wasm/v1")
+                           (rx/of
+                            (dwm/set-selrect-transform modifiers)
+                            (dwm/set-wasm-modifiers modif-tree (contains? layout :scale-text)))
+
+                           (rx/of (dwm/set-modifiers modif-tree (contains? layout :scale-text)))))))
+                    (rx/take-until stopper))
+
+               ;; The last event we need to use the old method so the elements are correctly positioned until
+               ;; all the logic is implemented in wasm
+               (if (features/active-feature? state "render-wasm/v1")
+                 (->> resize-events-stream
+                      (rx/take-until stopper)
+                      (rx/last)
+                      (rx/map #(dwm/apply-modifiers {:modifiers (dwm/create-modif-tree ids %)
+                                                     :ignore-constraints (contains? layout :scale-text)})))
+                 (rx/empty)))]
 
           (rx/concat
-           (rx/merge
-            (->> resize-events-stream
-                 (rx/mapcat
-                  (fn [modifiers]
-                    (let [modif-tree (dwm/create-modif-tree ids modifiers)]
-                      (if (features/active-feature? state "render-wasm/v1")
-                        (rx/of
-                         (dwm/set-selrect-transform modifiers)
-                         (dwm/set-wasm-modifiers modif-tree (contains? layout :scale-text)))
-
-                        (rx/of (dwm/set-modifiers modif-tree (contains? layout :scale-text)))))))
-                 (rx/take-until stopper))
-
-            ;; The last event we need to use the old method so the elements are correctly positioned until
-            ;; all the logic is implemented in wasm
-            (if (features/active-feature? state "render-wasm/v1")
-              (->> resize-events-stream
-                   (rx/take-until stopper)
-                   (rx/last)
-                   (rx/map #(dwm/apply-modifiers {:modifiers (dwm/create-modif-tree ids %)
-                                                  :ignore-constraints (contains? layout :scale-text)})))
-              (rx/empty)))
+           ;; This initial stream waits for some pixels to be move before making the resize
+           ;; if you make a click in the border will not make a resize
+           (->> ms/mouse-position
+                (rx/map #(gpt/to-vec initial-position %))
+                (rx/map #(gpt/length %))
+                (rx/filter #(> % (/ 10 zoom)))
+                (rx/take 1)
+                (rx/mapcat (fn [] modifiers-stream))
+                (rx/take-until stopper))
 
            (rx/of
             (if (features/active-feature? state "render-wasm/v1")
