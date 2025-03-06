@@ -24,7 +24,7 @@ pub struct Bounds {
     pub sw: Point,
 }
 
-fn vec_min_max(arr: &[Option<f32>]) -> Option<(f32, f32)> {
+fn vec_min_max(arr: &Vec<Option<f32>>) -> Option<(f32, f32)> {
     let mut minv: Option<f32> = None;
     let mut maxv: Option<f32> = None;
 
@@ -95,26 +95,30 @@ impl Bounds {
         self.sw = mtx.map_point(self.sw);
     }
 
-    pub fn box_bounds(&self, other: &Self) -> Option<Self> {
+    // pub fn box_bounds(&self, other: &Self) -> Option<Self> {
+    //     self.from_points(other.points())
+    // }
+
+    pub fn from_points(&self, points: Vec<Point>) -> Option<Self> {
         let hv = self.horizontal_vec();
         let vv = self.vertical_vec();
 
         let hr = Ray::new(self.nw, hv);
         let vr = Ray::new(self.nw, vv);
 
-        let (min_ht, max_ht) = vec_min_max(&[
-            intersect_rays_t(&hr, &Ray::new(other.nw, vv)),
-            intersect_rays_t(&hr, &Ray::new(other.ne, vv)),
-            intersect_rays_t(&hr, &Ray::new(other.sw, vv)),
-            intersect_rays_t(&hr, &Ray::new(other.se, vv)),
-        ])?;
+        let (min_ht, max_ht) = vec_min_max(
+            &points
+                .iter()
+                .map(|p| intersect_rays_t(&hr, &Ray::new(*p, vv)))
+                .collect(),
+        )?;
 
-        let (min_vt, max_vt) = vec_min_max(&[
-            intersect_rays_t(&vr, &Ray::new(other.nw, hv)),
-            intersect_rays_t(&vr, &Ray::new(other.ne, hv)),
-            intersect_rays_t(&vr, &Ray::new(other.sw, hv)),
-            intersect_rays_t(&vr, &Ray::new(other.se, hv)),
-        ])?;
+        let (min_vt, max_vt) = vec_min_max(
+            &points
+                .iter()
+                .map(|p| intersect_rays_t(&vr, &Ray::new(*p, hv)))
+                .collect(),
+        )?;
 
         let nw = intersect_rays(&Ray::new(hr.t(min_ht), vv), &Ray::new(vr.t(min_vt), hv))?;
         let ne = intersect_rays(&Ray::new(hr.t(max_ht), vv), &Ray::new(vr.t(min_vt), hv))?;
@@ -122,6 +126,10 @@ impl Bounds {
         let se = intersect_rays(&Ray::new(hr.t(max_ht), vv), &Ray::new(vr.t(max_vt), hv))?;
 
         Some(Self { nw, ne, se, sw })
+    }
+
+    pub fn points(&self) -> Vec<Point> {
+        vec![self.nw, self.ne, self.se, self.sw]
     }
 
     pub fn left(&self, p: Point) -> f32 {
@@ -224,6 +232,11 @@ impl Bounds {
         result
     }
 
+    pub fn center(&self) -> Point {
+        // Calculates the centroid of the four points
+        Point::new(self.nw.x + self.se.x / 2.0, self.nw.y + self.se.y / 2.0)
+    }
+
     pub fn transform_matrix(&self) -> Option<Matrix> {
         let w2 = self.width() / 2.0;
         let h2 = self.height() / 2.0;
@@ -320,6 +333,40 @@ pub fn intersect_rays(ray1: &Ray, ray2: &Ray) -> Option<Point> {
     }
 }
 
+/*
+ * Creates a resizing matrix with width/height relative to the parent
+ * box and keepin the same transform as the parent.
+ */
+pub fn resize_matrix(
+    parent_bounds: &Bounds,
+    child_bounds: &Bounds,
+    new_width: f32,
+    new_height: f32,
+) -> Matrix {
+    let mut result = Matrix::default();
+    let scale_width = new_width / child_bounds.width();
+    let scale_height = new_height / child_bounds.height();
+
+    let center = child_bounds.center();
+    let mut parent_transform = parent_bounds
+        .transform_matrix()
+        .unwrap_or(Matrix::default());
+
+    parent_transform.post_translate(center);
+    parent_transform.pre_translate(-center);
+
+    let parent_transform_inv = &parent_transform.invert().unwrap();
+    let origin = parent_transform_inv.map_point(child_bounds.nw);
+
+    let mut scale = Matrix::scale((scale_width, scale_height));
+    scale.post_translate(origin);
+    scale.post_concat(&parent_transform);
+    scale.pre_translate(-origin);
+    scale.pre_concat(&parent_transform_inv);
+    result.post_concat(&scale);
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -364,12 +411,19 @@ mod tests {
 
     #[test]
     fn test_vec_min_max() {
-        assert_eq!(None, vec_min_max(&[]));
-        assert_eq!(None, vec_min_max(&[None, None]));
-        assert_eq!(Some((1.0, 1.0)), vec_min_max(&[None, Some(1.0)]));
+        assert_eq!(None, vec_min_max(&vec![]));
+        assert_eq!(None, vec_min_max(&vec![None, None]));
+        assert_eq!(Some((1.0, 1.0)), vec_min_max(&vec![None, Some(1.0)]));
         assert_eq!(
             Some((0.0, 1.0)),
-            vec_min_max(&[Some(0.3), None, Some(0.0), Some(0.7), Some(1.0), Some(0.1)])
+            vec_min_max(&vec![
+                Some(0.3),
+                None,
+                Some(0.0),
+                Some(0.7),
+                Some(1.0),
+                Some(0.1)
+            ])
         );
     }
 

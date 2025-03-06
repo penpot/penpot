@@ -6,6 +6,21 @@ use crate::utils::{uuid_from_u32_quartet, uuid_to_u32_quartet};
 use skia::Matrix;
 
 #[derive(PartialEq, Debug, Clone)]
+pub enum Modifier {
+    Transform(TransformEntry),
+    Reflow(Uuid),
+}
+
+impl Modifier {
+    pub fn transform(id: Uuid, transform: Matrix) -> Self {
+        Modifier::Transform(TransformEntry { id, transform })
+    }
+    pub fn reflow(id: Uuid) -> Self {
+        Modifier::Reflow(id)
+    }
+}
+
+#[derive(PartialEq, Debug, Clone)]
 #[repr(C)]
 pub struct TransformEntry {
     pub id: Uuid,
