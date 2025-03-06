@@ -850,6 +850,33 @@
           [:span {:class (stl/css :empty-text)} (tr "dashboard.no-projects-placeholder")]])]]
      [:div {:class (stl/css-case :separator true :overflow-separator overflow?)}]]))
 
+(mf/defc cta-power-up
+  {::mf/props :obj}
+  [{:keys [top-title top-description bottom-description highlight-text cta-link has-dropdown]}]
+  (let [show-power-up-data* (mf/use-state false)
+        show-power-up-data (deref show-power-up-data*)
+        handle-power-up-click
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! show-power-up-data* not)))]
+
+    [:div {:class (stl/css :upgrade-section)
+           :on-click handle-power-up-click}
+     [:button {:class (stl/css :upgrade-top-section)}
+      [:div {:class (stl/css :content)}
+       [:span {:class (stl/css :upgrade-title)} top-title]
+       [:span {:class (stl/css :upgrade-text)} top-description]]
+      [:span {:class (stl/css :icon-dropdown)}  i/arrow]]
+
+     (when (and has-dropdown show-power-up-data)
+       [:button {:class (stl/css :upgrade-bottom-section)}
+        [:div {:class (stl/css :content)}
+         [:span {:class (stl/css :upgrade-text)} bottom-description]
+         [:span {:class (stl/css :upgrade-highlight :upgrade-inline)} highlight-text]]
+        [:div {:class (stl/css :upgrade-highlight :upgrade-bottom)}
+         cta-link]])]))
+
 (mf/defc profile-section*
   {::mf/props :obj}
   [{:keys [profile team]}]
@@ -981,21 +1008,13 @@
        (tr "dashboard.upgrade-plan.power-up")]]
 
      (when (contains? cf/flags :subscriptions)
-       [:div {:class (stl/css :upgrade-section)
-              :on-click handle-power-up-click}
-        [:button {:class (stl/css :upgrade-top-section)}
-         [:div {:class (stl/css :content)}
-          [:span {:class (stl/css :upgrade-title)} "Professional plan"]
-          [:span {:class (stl/css :upgrade-text)} (tr "dashboard.upgrade-plan.no-limits")]]
-         [:span {:class (stl/css :icon-dropdown)}  i/arrow]]
-
-        (when show-power-up-data
-          [:button {:class (stl/css :upgrade-bottom-section)}
-           [:div {:class (stl/css :content)}
-            [:span {:class (stl/css :upgrade-text)} "Get extra storage, autosaved versions, file backup and more with the"]
-            [:span {:class (stl/css :upgrade-highlight :upgrade-inline)} "Unlimited plan"]]
-           [:div {:class (stl/css :upgrade-highlight :upgrade-bottom)}
-            "Upgrade"]])])
+       [:& cta-power-up
+        {:top-title "Professional plan"
+         :top-description (tr "dashboard.upgrade-plan.no-limits")
+         :bottom-description "Get extra storage, autosaved versions, file backup and more with the"
+         :highlight-text "Unlimited plan"
+         :cta-link "Upgrade"
+         :has-dropdown true}])
 
      (when (and team profile)
        [:& comments-section
