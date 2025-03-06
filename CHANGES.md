@@ -12,8 +12,9 @@
 
 ### :bug: Bugs fixed
 
+- Fix scroll on storybook docs [taiga #9962](https://tree.taiga.io/project/penpot/issue/9962)
 - Navigate tracking event firing multiple times [Taiga #10415](https://tree.taiga.io/project/penpot/issue/10415)
-- Fix problem with selection colors [Taiga #](https://tree.taiga.io/project/penpot/issue/10376)
+- Fix problem with selection colors [Taiga #10376](https://tree.taiga.io/project/penpot/issue/10376)
 
 ## 2.5.1
 
