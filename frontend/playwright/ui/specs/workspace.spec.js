@@ -178,6 +178,7 @@ test("Bug 10179 - Drag & drop doesn't add colors to the Recent Colors palette", 
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.goToWorkspace();
+  await workspacePage.moveButton.click();
 
   await workspacePage.page.keyboard.press("Alt+p");
 
