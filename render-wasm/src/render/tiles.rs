@@ -5,6 +5,7 @@ use uuid::Uuid;
 use super::Shape;
 use crate::render::surfaces::SurfacePool;
 use crate::view::Viewbox;
+use indexmap::IndexSet;
 
 pub type Tile = (i32, i32);
 
@@ -89,7 +90,7 @@ impl TileSurfaceCache {
 
 // This structure is usseful to keep all the shape uuids by shape id.
 pub struct TileHashMap {
-    grid: HashMap<Tile, HashSet<Uuid>>,
+    grid: HashMap<Tile, IndexSet<Uuid>>,
     index: HashMap<Uuid, HashSet<Tile>>,
 }
 
@@ -105,7 +106,7 @@ impl TileHashMap {
         return self.grid.contains_key(&tile);
     }
 
-    pub fn get_shapes_at(&mut self, tile: Tile) -> Option<&HashSet<Uuid>> {
+    pub fn get_shapes_at(&mut self, tile: Tile) -> Option<&IndexSet<Uuid>> {
         return self.grid.get(&tile);
     }
 
@@ -115,7 +116,7 @@ impl TileHashMap {
 
     pub fn add_shape_at(&mut self, tile: Tile, shape_id: Uuid) {
         if !self.grid.contains_key(&tile) {
-            self.grid.insert(tile, HashSet::new());
+            self.grid.insert(tile, IndexSet::new());
         }
 
         if !self.index.contains_key(&shape_id) {
@@ -217,13 +218,17 @@ impl Tiles {
         self.shapes.has_shapes_at(tile)
     }
 
-    pub fn get_tile_at(&mut self, tile: Tile) -> Option<&HashSet<Uuid>> {
+    pub fn get_tile_at(&mut self, tile: Tile) -> Option<&IndexSet<Uuid>> {
         self.shapes.get_shapes_at(tile)
     }
 
     pub fn update_tile_for(&mut self, viewbox: Viewbox, shape: &Shape) {
         let tile_size = get_tile_size(viewbox);
         let (rsx, rsy, rex, rey) = get_tiles_for_rect(shape.selrect, tile_size);
+        println!(
+            "update_tile_for {:?} {:?} {:?} {:?} {:?}",
+            shape.id, rsx, rsy, rex, rey
+        );
         for x in rsx..=rex {
             for y in rsy..=rey {
                 let tile = (x, y);

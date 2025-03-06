@@ -195,6 +195,9 @@ impl RenderState {
             rect,
         );
 
+        // println!("---- {x} {y}");
+        // debug::console_debug_surface_rect(self, SurfaceId::Current, rect);
+
         let mut canvas = self.surfaces.canvas(SurfaceId::Target);
 
         let mut p = skia::Paint::default();
@@ -768,6 +771,7 @@ impl RenderState {
                             None
                         };
 
+                        println!("next_tile {:?} {:?}", next_tile, shape_id);
                         self.pending_nodes.push(NodeRenderState {
                             id: *shape_id,
                             visited_children: false,
