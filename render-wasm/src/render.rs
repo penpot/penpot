@@ -770,8 +770,6 @@ impl RenderState {
                         } else {
                             None
                         };
-
-                        println!("next_tile {:?} {:?}", next_tile, shape_id);
                         self.pending_nodes.push(NodeRenderState {
                             id: *shape_id,
                             visited_children: false,
