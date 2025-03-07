@@ -71,8 +71,6 @@ pub(crate) struct RenderState {
     // Stack of nodes pending to be rendered.
     pub pending_nodes: Vec<NodeRenderState>,
     pub current_tile: tiles::Tile,
-    //TODO render_complete: remove with tiles?
-    pub render_complete: bool,
     pub sampling_options: skia::SamplingOptions,
     pub render_area: Rect,
     pub tiles: tiles::TileHashMap,
@@ -148,7 +146,6 @@ impl RenderState {
             render_in_progress: false,
             pending_nodes: vec![],
             current_tile: (0, 0),
-            render_complete: true,
             sampling_options,
             render_area: Rect::new_empty(),
             tiles,
@@ -472,7 +469,6 @@ impl RenderState {
                 self.pending_tiles.push(tile);
             }
         }
-        //TODO: ¿y si el primero ya está cacheado?
         if let Some(next_tile) = self.pending_tiles.pop() {
             self.current_tile = next_tile;
             self.render_area = tiles::get_tile_rect(self.viewbox, self.current_tile);
@@ -504,8 +500,6 @@ impl RenderState {
         self.render_in_progress = true;
         self.apply_drawing_to_render_canvas(None);
         self.process_animation_frame(tree, modifiers, timestamp)?;
-        // TODO: check if render complete should be removed
-        // self.render_complete = true;
         Ok(())
     }
 
@@ -553,7 +547,6 @@ impl RenderState {
         //         image: self.surfaces.snapshot(SurfaceId::Current),
         //         viewbox: self.viewbox,
         //         invalid: false,
-        //         has_all_shapes: self.render_complete,
         //     });
         // }
         Ok(())
@@ -713,10 +706,6 @@ impl RenderState {
                         .to_string(),
                 )?;
 
-                // FIXME: I think this name is ambiguous because render_in_progress indicates that the
-                // render is still in progress but render_complete indicates that every element in the
-                // shape tree is rendered. Maybe could this be called render_full or is_full_render?
-                let render_complete = self.render_area.contains(element.selrect());
                 if visited_children {
                     if !visited_mask {
                         match element.shape_type {
@@ -755,7 +744,6 @@ impl RenderState {
                 // If we didn't visited_children this shape, then we need to do
                 if !element.selrect().intersects(self.render_area) || element.hidden() {
                     debug::render_debug_shape(self, element, false);
-                    self.render_complete = render_complete;
                     continue;
                 } else {
                     debug::render_debug_shape(self, element, true);
