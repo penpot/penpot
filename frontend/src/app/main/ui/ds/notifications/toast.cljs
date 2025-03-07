@@ -18,7 +18,7 @@
   [:map
    [:class {:optional true} :string]
    [:type  {:optional true} [:maybe [:enum :toast :context]]]
-   [:level {:optional true} [:maybe [:enum :info :warning :error :success]]]
+   [:level {:optional true} [:maybe [:enum :default :info :warning :error :success]]]
    [:appearance {:optional true} [:enum :neutral :ghost]]
    [:is-html {:optional true} :boolean]
    [:on-close {:optional true} fn?]])
@@ -30,7 +30,7 @@
   (let [class (dm/str class " " (stl/css :toast))
         level (if (string? level)
                 (keyword level)
-                (d/nilv level :info))
+                (d/nilv level :default))
         type (if (string? type)
                (keyword type)
                (d/nilv type :context))
@@ -51,6 +51,7 @@
      [:> "button" {:on-click on-close
                    :aria-label "Close"
                    :class (stl/css-case :close-button true
+                                        :level-default  (= level :default)
                                         :level-warning  (= level :warning)
                                         :level-error    (= level :error)
                                         :level-success  (= level :success)

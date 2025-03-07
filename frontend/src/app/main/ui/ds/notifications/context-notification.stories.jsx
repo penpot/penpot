@@ -40,7 +40,7 @@ export default {
   render: ({ ...args }) => <ContextNotification {...args} />,
 };
 
-export const Default = {};
+export const Base = {};
 
 export const WithLongerText = {
   args: {
@@ -60,6 +60,15 @@ export const WithHTML = {
   },
   parameters: {
     controls: { exclude: ["isHtml"] },
+  },
+};
+
+export const Default = {
+  args: {
+    level: "default",
+  },
+  parameters: {
+    controls: { exclude: ["level", "isHtml"] },
   },
 };
 
