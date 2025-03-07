@@ -1,6 +1,7 @@
 use skia_safe as skia;
 
 mod debug;
+mod emscripten;
 mod math;
 mod mem;
 mod render;
@@ -18,25 +19,11 @@ use state::State;
 
 pub(crate) static mut STATE: Option<Box<State>> = None;
 
-extern "C" {
-    fn emscripten_GetProcAddress(
-        name: *const ::std::os::raw::c_char,
-    ) -> *const ::std::os::raw::c_void;
-}
-
-fn init_gl() {
-    unsafe {
-        gl::load_with(|addr| {
-            let addr = std::ffi::CString::new(addr).unwrap();
-            emscripten_GetProcAddress(addr.into_raw() as *const _) as *const _
-        });
-    }
-}
-
 /// This is called from JS after the WebGL context has been created.
 #[no_mangle]
 pub extern "C" fn init(width: i32, height: i32) {
     let state_box = Box::new(State::new(width, height, 2048));
+    // call_debugger!();
     unsafe {
         STATE = Some(state_box);
     }
@@ -80,7 +67,7 @@ pub extern "C" fn render(timestamp: i32) {
 #[no_mangle]
 pub extern "C" fn render_from_cache() {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-    state.render_from_cache();
+    // state.render_from_cache();
 }
 
 #[no_mangle]
@@ -107,20 +94,13 @@ pub extern "C" fn resize_viewbox(width: i32, height: i32) {
 pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     let render_state = state.render_state();
+    let rebuild_tiles = zoom != render_state.viewbox.zoom;
     render_state.invalidate_cache_if_needed();
     render_state.viewbox.set_all(zoom, x, y);
-}
-
-#[no_mangle]
-pub extern "C" fn set_view_zoom(zoom: f32) {
-    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-    state.render_state().viewbox.set_zoom(zoom);
-}
-
-#[no_mangle]
-pub extern "C" fn set_view_xy(x: f32, y: f32) {
-    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-    state.render_state().viewbox.set_pan_xy(x, y);
+    if rebuild_tiles {
+        let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+        state.rebuild_tiles();
+    }
 }
 
 #[no_mangle]
@@ -158,9 +138,7 @@ pub unsafe extern "C" fn set_shape_type(shape_type: u8) {
 #[no_mangle]
 pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-    if let Some(shape) = state.current_shape() {
-        shape.set_selrect(left, top, right, bottom);
-    }
+    state.set_selrect_for_current_shape(left, top, right, bottom);
 }
 
 #[no_mangle]
@@ -758,5 +736,5 @@ pub extern "C" fn add_grid_track() {}
 pub extern "C" fn set_grid_cell() {}
 
 fn main() {
-    init_gl();
+    init_gl!();
 }
