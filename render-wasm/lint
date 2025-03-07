@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+_SCRIPT_DIR=$(dirname $0);
+
+pushd $_SCRIPT_DIR;
 
 # Enable debugging if the script is run with --debug
 if [[ "$1" == "--debug" ]]; then
@@ -33,7 +36,7 @@ ALLOWED_RULES="
         -A clippy::unwrap_or_default \
         -A clippy::useless_format \
         -A clippy::wrong_self_convention \
-        -A dead_code"
+        -D static_mut_refs"
 
 # ./lint --fix
 if [[ "$1" == "--fix" ]]; then
@@ -48,3 +51,4 @@ else
         -- -D warnings \
         $ALLOWED_RULES
 fi
+popd
