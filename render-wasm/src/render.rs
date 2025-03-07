@@ -458,7 +458,7 @@ impl RenderState {
         if self
             .cached_surface_image
             .as_ref()
-            .map_or(true, |img| img.invalid)
+            .is_none_or(|img| img.invalid)
         {
             self.cached_surface_image = Some(CachedSurfaceImage {
                 image: self.surfaces.snapshot(SurfaceId::Current),
