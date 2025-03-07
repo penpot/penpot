@@ -9,14 +9,18 @@ pub enum Layout {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Direction {
     Row,
+    RowReverse,
     Column,
+    ColumnReverse,
 }
 
 impl Direction {
     pub fn from_u8(value: u8) -> Self {
         match value {
             0 => Self::Row,
-            1 => Self::Column,
+            1 => Self::RowReverse,
+            2 => Self::Column,
+            3 => Self::ColumnReverse,
             _ => unreachable!(),
         }
     }

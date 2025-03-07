@@ -502,8 +502,10 @@
 (defn translate-layout-flex-dir
   [flex-dir]
   (case flex-dir
-    :row    0
-    :column 1))
+    :row            0
+    :row-reverse    1
+    :column         2
+    :column-reverse 3))
 
 (defn translate-layout-align-items
   [align-items]
