@@ -9,6 +9,7 @@
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features
+- When the workspace is empty, set default the board creation tool [Taiga #9425](https://tree.taiga.io/project/penpot/us/9425)
 
 ### :bug: Bugs fixed
 
