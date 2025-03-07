@@ -47,7 +47,6 @@ pub fn get_tile_rect(viewbox: Viewbox, tile: Tile) -> skia::Rect {
     skia::Rect::from_xywh(tx, ty, ts, ts)
 }
 
-
 // This structure is usseful to keep all the shape uuids by shape id.
 pub struct TileHashMap {
     grid: HashMap<Tile, IndexSet<Uuid>>,

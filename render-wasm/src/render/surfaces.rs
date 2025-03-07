@@ -41,7 +41,7 @@ impl Surfaces {
         gpu_state: &mut GpuState,
         (width, height): (i32, i32),
         sampling_options: skia::SamplingOptions,
-        tile_dims: skia::ISize
+        tile_dims: skia::ISize,
     ) -> Self {
         let mut target = gpu_state.create_target_surface(width, height);
         let current = target.new_surface_with_dimensions((width, height)).unwrap();
@@ -61,7 +61,7 @@ impl Surfaces {
             shape_strokes,
             debug,
             sampling_options,
-            tiles
+            tiles,
         }
     }
 
@@ -194,7 +194,12 @@ impl Surfaces {
         let sampling_options = self.sampling_options;
         let mut tile_surface = self.tiles.get_or_create(tile).unwrap();
         let surface = self.get_mut(id);
-        surface.draw(tile_surface.canvas(), (-rect.x(), -rect.y()), sampling_options, Some(&skia::Paint::default()));
+        surface.draw(
+            tile_surface.canvas(),
+            (-rect.x(), -rect.y()),
+            sampling_options,
+            Some(&skia::Paint::default()),
+        );
     }
 
     pub fn has_cached_tile_surface(&mut self, tile: Tile) -> bool {
@@ -204,7 +209,12 @@ impl Surfaces {
     pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect) {
         let sampling_options = self.sampling_options;
         let tile_surface = self.tiles.get(tile).unwrap();
-        tile_surface.draw(self.target.canvas(), (rect.x(), rect.y()), sampling_options, Some(&skia::Paint::default()));
+        tile_surface.draw(
+            self.target.canvas(),
+            (rect.x(), rect.y()),
+            sampling_options,
+            Some(&skia::Paint::default()),
+        );
     }
 }
 

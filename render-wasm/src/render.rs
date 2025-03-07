@@ -79,13 +79,39 @@ pub(crate) struct RenderState {
     pub pending_tiles: Vec<tiles::Tile>,
 }
 
+fn children_clip_bounds(
+    element: &mut Shape,
+    modifiers: Option<&Matrix>,
+) -> Option<(Rect, Option<Corners>, Matrix)> {
+    (element.clip()).then(|| {
+        let bounds = element.selrect();
+        let mut transform = element.transform;
+        transform.post_translate(bounds.center());
+        transform.pre_translate(-bounds.center());
+        if let Some(modifiers) = modifiers {
+            transform.post_concat(&modifiers);
+        }
+        let corners = match &element.shape_type {
+            Type::Rect(data) => data.corners,
+            Type::Frame(data) => data.corners,
+            _ => None,
+        };
+        (bounds, corners, transform)
+    })
+}
+
 impl RenderState {
     pub fn new(width: i32, height: i32) -> RenderState {
         // This needs to be done once per WebGL context.
         let mut gpu_state = GpuState::new();
         let sampling_options =
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
-        let mut surfaces = Surfaces::new(&mut gpu_state, (width, height), sampling_options, tiles::get_tile_dimensions());
+        let mut surfaces = Surfaces::new(
+            &mut gpu_state,
+            (width, height),
+            sampling_options,
+            tiles::get_tile_dimensions(),
+        );
         let mut font_provider = skia::textlayout::TypefaceFontProvider::new();
         let default_font = skia::FontMgr::default()
             .new_from_data(DEFAULT_FONT_BYTES, None)
@@ -194,17 +220,16 @@ impl RenderState {
         );
 
         // This caches the current surface into the corresponding tile.
-        self.surfaces.cache_tile_surface(
-            (x, y),
-            SurfaceId::Current,
-            rect
-        );
+        self.surfaces
+            .cache_tile_surface((x, y), SurfaceId::Current, rect);
 
         // debug::console_debug_tile_surface(self, (x, y));
 
         // println!("---- {x} {y}");
         // debug::console_debug_surface(self, SurfaceId::Current);
-        self.surfaces.canvas(SurfaceId::Current).clear(self.background_color);
+        self.surfaces
+            .canvas(SurfaceId::Current)
+            .clear(self.background_color);
 
         let mut canvas = self.surfaces.canvas(SurfaceId::Target);
 
@@ -448,7 +473,21 @@ impl RenderState {
                 self.pending_tiles.push(tile);
             }
         }
-        self.pending_nodes = vec![];
+
+        let element = tree.get_mut(&Uuid::nil()).ok_or(
+            "Error: Element with root_id {node_render_state.id} not found in the tree."
+                .to_string(),
+        )?;
+        self.pending_nodes = vec![NodeRenderState {
+            id: Uuid::nil(),
+            visited_children: false,
+            clip_bounds: children_clip_bounds(element, modifiers.get(&element.id)),
+            visited_mask: false,
+            mask: false,
+        }];        
+        
+        self.current_tile = (0, 0);
+        self.render_area = tiles::get_tile_rect(self.viewbox, self.current_tile);
         self.render_in_progress = true;
         self.apply_drawing_to_render_canvas(None);
         self.process_animation_frame(tree, modifiers, timestamp)?;
@@ -695,22 +734,8 @@ impl RenderState {
             });
 
             if element.is_recursive() {
-                let children_clip_bounds = (element.clip()).then(|| {
-                    let bounds = element.selrect();
-                    let mut transform = element.transform;
-                    transform.post_translate(bounds.center());
-                    transform.pre_translate(-bounds.center());
-                    if let Some(modifiers) = modifiers.get(&element.id) {
-                        transform.post_concat(&modifiers);
-                    }
-                    let corners = match &element.shape_type {
-                        Type::Rect(data) => data.corners,
-                        Type::Frame(data) => data.corners,
-                        _ => None,
-                    };
-                    (bounds, corners, transform)
-                });
-
+                let children_clip_bounds =
+                    children_clip_bounds(element, modifiers.get(&element.id));
                 for child_id in element.children_ids().iter().rev() {
                     self.pending_nodes.push(NodeRenderState {
                         id: *child_id,
@@ -768,23 +793,8 @@ impl RenderState {
                                     .to_string(),
                             )?;
 
-                            // TODO: this code is duplicated from some lines before, refactor to a common function
                             let children_clip_bounds = if element.is_recursive() {
-                                (element.clip()).then(|| {
-                                    let bounds = element.selrect();
-                                    let mut transform = element.transform;
-                                    transform.post_translate(bounds.center());
-                                    transform.pre_translate(-bounds.center());
-                                    if let Some(modifiers) = modifiers.get(&element.id) {
-                                        transform.post_concat(&modifiers);
-                                    }
-                                    let corners = match &element.shape_type {
-                                        Type::Rect(data) => data.corners,
-                                        Type::Frame(data) => data.corners,
-                                        _ => None,
-                                    };
-                                    (bounds, corners, transform)
-                                })
+                                children_clip_bounds(element, modifiers.get(&element.id))
                             } else {
                                 None
                             };
