@@ -84,7 +84,6 @@ impl<'a> State<'a> {
             None => { /* TODO: Esto debería lanzar una excepción? */ }
         }
     }
-
     pub fn rebuild_tiles(&mut self) {
         self.render_state.rebuild_tiles(&mut self.shapes);
     }

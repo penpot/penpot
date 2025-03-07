@@ -221,7 +221,7 @@ impl RenderState {
 
         // This caches the current surface into the corresponding tile.
         self.surfaces
-            .cache_tile_surface((x, y), SurfaceId::Current, rect);
+            .cache_tile_surface((x, y), SurfaceId::Current, rect, self.background_color);
 
         // println!("apply_render_to_final_canvas {x} {y}");
         // debug::console_debug_tile_surface(self, (x, y));
@@ -478,7 +478,8 @@ impl RenderState {
             self.render_area = tiles::get_tile_rect(self.viewbox, self.current_tile);
 
             let element = tree.get_mut(&Uuid::nil()).ok_or(
-                "Error: Element with root_id {node_render_state.id} not found in the tree.".to_string(),
+                "Error: Element with root_id {node_render_state.id} not found in the tree."
+                    .to_string(),
             )?;
             self.pending_nodes = vec![];
             if let Some(shapes) = self.tiles.get_shapes_at(self.current_tile) {
@@ -677,21 +678,32 @@ impl RenderState {
         }
 
         if self.surfaces.has_cached_tile_surface(self.current_tile) {
-            println!("cached {:?}", self.current_tile);
             let (tile_x, tile_y) = self.current_tile;
             let zoom = self.viewbox.zoom * self.options.dpr();
             let offset_x = self.viewbox.area.left * zoom;
-            let offset_y = self.viewbox.area.top * zoom;            
+            let offset_y = self.viewbox.area.top * zoom;
             let tile_rect = Rect::from_xywh(
                 (tile_x as f32 * tiles::TILE_SIZE) - offset_x,
                 (tile_y as f32 * tiles::TILE_SIZE) - offset_y,
                 tiles::TILE_SIZE,
                 tiles::TILE_SIZE,
             );
-            self.surfaces.draw_cached_tile_surface(self.current_tile, tile_rect);
-        }
-        else {
-            let mut i = 0;          
+            self.surfaces
+                .draw_cached_tile_surface(self.current_tile, tile_rect);
+            // TODO: remove this when finish development
+            let mut canvas = self.surfaces.canvas(SurfaceId::Target);
+
+            let mut p = skia::Paint::default();
+            p.set_stroke_width(2.);
+            p.set_style(skia::PaintStyle::Stroke);
+            canvas.draw_rect(&tile_rect, &p);
+
+            let point = skia::Point::new(tile_rect.x() + 10., tile_rect.y() + 20.);
+            p.set_stroke_width(1.);
+            let str = format!("Cached {}:{}", tile_x, tile_y);
+            canvas.draw_str(str, point, &self.debug_font, &p);
+        } else {
+            let mut i = 0;
             while let Some(node_render_state) = self.pending_nodes.pop() {
                 let NodeRenderState {
                     id: node_id,
@@ -799,7 +811,6 @@ impl RenderState {
                 tiles::TILE_SIZE,
                 tiles::TILE_SIZE,
             );
-            println!("not cached {:?}", self.current_tile);
             self.apply_render_to_final_canvas(tile_rect, tile_x, tile_y);
         }
 
@@ -853,10 +864,20 @@ impl RenderState {
     pub fn update_tile_for(&mut self, shape: &Shape) {
         let tile_size = tiles::get_tile_size(self.viewbox);
         let (rsx, rsy, rex, rey) = tiles::get_tiles_for_rect(shape.selrect, tile_size);
+
+        // Update tiles where the shape was
+        if let Some(tiles) = self.tiles.get_tiles_of(shape.id) {
+            for tile in tiles.iter() {
+                self.surfaces.clear_cached_tile_surface(*tile);
+            }
+        }
+
+        // Update tiles matching the actual selrect
         for x in rsx..=rex {
             for y in rsy..=rey {
                 let tile = (x, y);
                 self.tiles.add_shape_at(tile, shape.id);
+                self.surfaces.clear_cached_tile_surface(tile);
             }
         }
     }

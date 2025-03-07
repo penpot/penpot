@@ -190,10 +190,17 @@ impl Surfaces {
             .reset_matrix();
     }
 
-    pub fn cache_tile_surface(&mut self, tile: Tile, id: SurfaceId, rect: skia::Rect) {
+    pub fn cache_tile_surface(
+        &mut self,
+        tile: Tile,
+        id: SurfaceId,
+        rect: skia::Rect,
+        color: skia::Color,
+    ) {
         let sampling_options = self.sampling_options;
         let mut tile_surface = self.tiles.get_or_create(tile).unwrap();
         let surface = self.get_mut(id);
+        tile_surface.canvas().clear(color);
         surface.draw(
             tile_surface.canvas(),
             (-rect.x(), -rect.y()),
@@ -204,6 +211,10 @@ impl Surfaces {
 
     pub fn has_cached_tile_surface(&mut self, tile: Tile) -> bool {
         self.tiles.has(tile)
+    }
+
+    pub fn clear_cached_tile_surface(&mut self, tile: Tile) -> bool {
+        self.tiles.remove(tile)
     }
 
     pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect) {
@@ -303,7 +314,6 @@ impl TileSurfaceCache {
         Ok(self.grid.get_mut(&tile).unwrap())
     }
 
-    /*
     pub fn remove(&mut self, tile: Tile) -> bool {
         if !self.grid.contains_key(&tile) {
             return false;
@@ -311,7 +321,6 @@ impl TileSurfaceCache {
         self.grid.remove(&tile);
         true
     }
-    */
 
     pub fn clear(&mut self) {
         self.grid.clear();
