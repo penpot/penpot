@@ -756,8 +756,6 @@ impl RenderState {
                     tiles::TILE_SIZE,
                 );
                 self.surfaces.draw_cached_tile_surface(next_tile, tile_rect);
-                println!("{:?} {:?}", next_tile, tile_rect);
-                // debug::console_debug_tile_surface(self, next_tile);
             } else {
                 // If the tile is empty or it doesn't exists we don't do anything with it
                 // TODO: let's see if the double if is required

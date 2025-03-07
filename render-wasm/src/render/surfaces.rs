@@ -204,7 +204,7 @@ impl Surfaces {
     pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect) {
         let sampling_options = self.sampling_options;
         let tile_surface = self.tiles.get(tile).unwrap();
-        self.target.draw(tile_surface.canvas(), (rect.x(), rect.y()), sampling_options, Some(&skia::Paint::default()));
+        tile_surface.draw(self.target.canvas(), (rect.x(), rect.y()), sampling_options, Some(&skia::Paint::default()));
     }
 }
 
