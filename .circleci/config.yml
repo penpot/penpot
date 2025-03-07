@@ -264,6 +264,12 @@ jobs:
             cargo fmt --check
 
       - run:
+          name: "lint"
+          working_directory: "./render-wasm"
+          command: |
+            ./lint
+
+      - run:
           name: "cargo tests"
           working_directory: "./render-wasm"
           command: |
