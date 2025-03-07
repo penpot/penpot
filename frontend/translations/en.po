@@ -1055,6 +1055,54 @@ msgstr "Penpot Free"
 msgid "dashboard.upgrade-plan.power-up"
 msgstr "Power up"
 
+msgid "dashboard.power-up.professional.top-title"
+msgstr "Professional plan"
+
+msgid "dashboard.power-up.professional.top-description"
+msgstr "No limits on creativity"
+
+msgid "dashboard.power-up.professional.bottom-description"
+msgstr "Get extra editors and storage, file backup and more with the "
+
+msgid "dashboard.power-up.professional.bottom-highlight"
+msgstr "Unlimited plan"
+
+msgid "dashboard.power-up.professional.cta"
+msgstr "Power up"
+
+msgid "dashboard.power-up.unlimited.top-title"
+msgstr "Unlimited plan"
+
+msgid "dashboard.power-up.unlimited.top-description"
+msgstr "Extra storage and autosaved version..."
+
+msgid "dashboard.power-up.unlimited.bottom-description"
+msgstr "Get dvanced security, activity logs, dedicated support and more with"
+
+msgid "dashboard.power-up.unlimited.bottom-highlight"
+msgstr "Enterprise plan"
+
+msgid "dashboard.power-up.unlimited.cta"
+msgstr "Take a look"
+
+msgid "dashboard.power-up.enterprise.top-title"
+msgstr "Enterprise plan"
+
+msgid "dashboard.power-up.enterprise.top-description"
+msgstr "Advanced security, activity logs and more."
+
+msgid "dashboard.power-up.trial.top-title"
+msgstr "Unlimited plan (trial)"
+
+msgid "dashboard.power-up.trial.top-description"
+msgstr "Extra editors, storage and autosaved version, file backup and more."
+
+msgid "dashboard.power-up.trial.bottom-description"
+msgstr "Enjoying your trial? Unlock full access forever."
+
+msgid "dashboard.power-up.trial.cta"
+msgstr "Power up"
+
 #: src/app/main/ui/dashboard/team.cljs:909
 msgid "dashboard.webhooks.active"
 msgstr "Is active"
