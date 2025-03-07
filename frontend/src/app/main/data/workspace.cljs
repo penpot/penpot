@@ -478,8 +478,7 @@
         (rx/of (initialize-page* file-id page-id page)
                (dwth/watch-state-changes file-id page-id)
                (dwl/watch-component-changes)
-               (when (cf/external-feature-flag "boards-02" "test")
-                 (select-frame-tool file-id page-id)))
+               (select-frame-tool file-id page-id))
         (rx/of (dcm/go-to-workspace :file-id file-id ::rt/replace true))))))
 
 (defn finalize-page
