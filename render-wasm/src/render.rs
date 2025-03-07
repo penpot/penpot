@@ -223,9 +223,9 @@ impl RenderState {
         self.surfaces
             .cache_tile_surface((x, y), SurfaceId::Current, rect);
 
+        // println!("apply_render_to_final_canvas {x} {y}");
         // debug::console_debug_tile_surface(self, (x, y));
 
-        // println!("---- {x} {y}");
         // debug::console_debug_surface(self, SurfaceId::Current);
         self.surfaces
             .canvas(SurfaceId::Current)
@@ -473,21 +473,38 @@ impl RenderState {
                 self.pending_tiles.push(tile);
             }
         }
+        //TODO: ¿y si el primero ya está cacheado?
+        if let Some(next_tile) = self.pending_tiles.pop() {
+            self.current_tile = next_tile;
+            self.render_area = tiles::get_tile_rect(self.viewbox, self.current_tile);
 
-        let element = tree.get_mut(&Uuid::nil()).ok_or(
-            "Error: Element with root_id {node_render_state.id} not found in the tree."
-                .to_string(),
-        )?;
-        self.pending_nodes = vec![NodeRenderState {
-            id: Uuid::nil(),
-            visited_children: false,
-            clip_bounds: children_clip_bounds(element, modifiers.get(&element.id)),
-            visited_mask: false,
-            mask: false,
-        }];        
-        
-        self.current_tile = (0, 0);
-        self.render_area = tiles::get_tile_rect(self.viewbox, self.current_tile);
+            let element = tree.get_mut(&Uuid::nil()).ok_or(
+                "Error: Element with root_id {node_render_state.id} not found in the tree.".to_string(),
+            )?;
+            self.pending_nodes = vec![];
+            if let Some(shapes) = self.tiles.get_shapes_at(self.current_tile) {
+                for shape_id in shapes.iter() {
+                    let element = tree.get_mut(&Uuid::nil()).ok_or(
+                        "Error: Element with root_id {node_render_state.id} not found in the tree."
+                            .to_string(),
+                    )?;
+
+                    let children_clip_bounds = if element.is_recursive() {
+                        children_clip_bounds(element, modifiers.get(&element.id))
+                    } else {
+                        None
+                    };
+                    self.pending_nodes.push(NodeRenderState {
+                        id: *shape_id,
+                        visited_children: false,
+                        clip_bounds: children_clip_bounds,
+                        visited_mask: false,
+                        mask: false,
+                    });
+                }
+            }
+        }
+
         self.render_in_progress = true;
         self.apply_drawing_to_render_canvas(None);
         self.process_animation_frame(tree, modifiers, timestamp)?;
@@ -659,132 +676,139 @@ impl RenderState {
         if !self.render_in_progress {
             return Ok(());
         }
-        let mut i = 0;
-        while let Some(node_render_state) = self.pending_nodes.pop() {
-            let NodeRenderState {
-                id: node_id,
-                visited_children,
-                clip_bounds,
-                visited_mask,
-                mask,
-            } = node_render_state;
-            let element = tree.get_mut(&node_id).ok_or(
-                "Error: Element with root_id {node_render_state.id} not found in the tree."
-                    .to_string(),
-            )?;
 
-            // FIXME: I think this name is ambiguous because render_in_progress indicates that the
-            // render is still in progress but render_complete indicates that every element in the
-            // shape tree is rendered. Maybe could this be called render_full or is_full_render?
-            let render_complete = self.render_area.contains(element.selrect());
-            if visited_children {
-                if !visited_mask {
-                    match element.shape_type {
-                        Type::Group(group) => {
-                            // When we're dealing with masked groups we need to
-                            // do a separate extra step to draw the mask (the last
-                            // element of a masked group) and blend (using
-                            // the blend mode 'destination-in') the content
-                            // of the group and the mask.
-                            if group.masked {
-                                self.pending_nodes.push(NodeRenderState {
-                                    id: node_id,
-                                    visited_children: true,
-                                    clip_bounds: None,
-                                    visited_mask: true,
-                                    mask: false,
-                                });
-                                if let Some(&mask_id) = element.mask_id() {
+        if self.surfaces.has_cached_tile_surface(self.current_tile) {
+            let (tile_x, tile_y) = self.current_tile;
+            let zoom = self.viewbox.zoom * self.options.dpr();
+            let offset_x = self.viewbox.area.left * zoom;
+            let offset_y = self.viewbox.area.top * zoom;            
+            let tile_rect = Rect::from_xywh(
+                (tile_x as f32 * tiles::TILE_SIZE) - offset_x,
+                (tile_y as f32 * tiles::TILE_SIZE) - offset_y,
+                tiles::TILE_SIZE,
+                tiles::TILE_SIZE,
+            );
+            self.surfaces.draw_cached_tile_surface(self.current_tile, tile_rect);
+        }
+        else {
+            let mut i = 0;          
+            while let Some(node_render_state) = self.pending_nodes.pop() {
+                let NodeRenderState {
+                    id: node_id,
+                    visited_children,
+                    clip_bounds,
+                    visited_mask,
+                    mask,
+                } = node_render_state;
+                let element = tree.get_mut(&node_id).ok_or(
+                    "Error: Element with root_id {node_render_state.id} not found in the tree."
+                        .to_string(),
+                )?;
+
+                // FIXME: I think this name is ambiguous because render_in_progress indicates that the
+                // render is still in progress but render_complete indicates that every element in the
+                // shape tree is rendered. Maybe could this be called render_full or is_full_render?
+                let render_complete = self.render_area.contains(element.selrect());
+                if visited_children {
+                    if !visited_mask {
+                        match element.shape_type {
+                            Type::Group(group) => {
+                                // When we're dealing with masked groups we need to
+                                // do a separate extra step to draw the mask (the last
+                                // element of a masked group) and blend (using
+                                // the blend mode 'destination-in') the content
+                                // of the group and the mask.
+                                if group.masked {
                                     self.pending_nodes.push(NodeRenderState {
-                                        id: mask_id,
-                                        visited_children: false,
+                                        id: node_id,
+                                        visited_children: true,
                                         clip_bounds: None,
-                                        visited_mask: false,
-                                        mask: true,
+                                        visited_mask: true,
+                                        mask: false,
                                     });
+                                    if let Some(&mask_id) = element.mask_id() {
+                                        self.pending_nodes.push(NodeRenderState {
+                                            id: mask_id,
+                                            visited_children: false,
+                                            clip_bounds: None,
+                                            visited_mask: false,
+                                            mask: true,
+                                        });
+                                    }
                                 }
                             }
+                            _ => {}
                         }
-                        _ => {}
+                    }
+                    self.render_shape_exit(element, visited_mask);
+                    continue;
+                }
+
+                // If we didn't visited_children this shape, then we need to do
+                if !element.selrect().intersects(self.render_area) || element.hidden() {
+                    debug::render_debug_shape(self, element, false);
+                    self.render_complete = render_complete;
+                    continue;
+                } else {
+                    debug::render_debug_shape(self, element, true);
+                }
+
+                self.render_shape_enter(element, mask);
+                self.render_shape(element, modifiers.get(&element.id), clip_bounds);
+
+                // Set the node as visited_children before processing children
+                self.pending_nodes.push(NodeRenderState {
+                    id: node_id,
+                    visited_children: true,
+                    clip_bounds: None,
+                    visited_mask: false,
+                    mask: mask,
+                });
+
+                if element.is_recursive() {
+                    let children_clip_bounds =
+                        children_clip_bounds(element, modifiers.get(&element.id));
+                    for child_id in element.children_ids().iter().rev() {
+                        self.pending_nodes.push(NodeRenderState {
+                            id: *child_id,
+                            visited_children: false,
+                            clip_bounds: children_clip_bounds,
+                            visited_mask: false,
+                            mask: false,
+                        });
                     }
                 }
-                self.render_shape_exit(element, visited_mask);
-                continue;
-            }
 
-            // If we didn't visited_children this shape, then we need to do
-            if !element.selrect().intersects(self.render_area) || element.hidden() {
-                debug::render_debug_shape(self, element, false);
-                self.render_complete = render_complete;
-                continue;
-            } else {
-                debug::render_debug_shape(self, element, true);
-            }
-
-            self.render_shape_enter(element, mask);
-            self.render_shape(element, modifiers.get(&element.id), clip_bounds);
-
-            // Set the node as visited_children before processing children
-            self.pending_nodes.push(NodeRenderState {
-                id: node_id,
-                visited_children: true,
-                clip_bounds: None,
-                visited_mask: false,
-                mask: mask,
-            });
-
-            if element.is_recursive() {
-                let children_clip_bounds =
-                    children_clip_bounds(element, modifiers.get(&element.id));
-                for child_id in element.children_ids().iter().rev() {
-                    self.pending_nodes.push(NodeRenderState {
-                        id: *child_id,
-                        visited_children: false,
-                        clip_bounds: children_clip_bounds,
-                        visited_mask: false,
-                        mask: false,
-                    });
+                // We try to avoid doing too many calls to get_time
+                if i % NODE_BATCH_THRESHOLD == 0 && get_time() - timestamp > MAX_BLOCKING_TIME_MS {
+                    return Ok(());
                 }
-            }
 
-            // We try to avoid doing too many calls to get_time
-            if i % NODE_BATCH_THRESHOLD == 0 && get_time() - timestamp > MAX_BLOCKING_TIME_MS {
-                return Ok(());
+                i += 1;
             }
-
-            i += 1;
+            // TODO: this login is very similar to the beginning
+            let (tile_x, tile_y) = self.current_tile;
+            let zoom = self.viewbox.zoom * self.options.dpr();
+            let offset_x = self.viewbox.area.left * zoom;
+            let offset_y = self.viewbox.area.top * zoom;
+            // TODO: move this to tiles logic?
+            // This extra -1 and +2 are to avoid empty space between tiles
+            let tile_rect = Rect::from_xywh(
+                (tile_x as f32 * tiles::TILE_SIZE) - offset_x,
+                (tile_y as f32 * tiles::TILE_SIZE) - offset_y,
+                tiles::TILE_SIZE,
+                tiles::TILE_SIZE,
+            );
+            self.apply_render_to_final_canvas(tile_rect, tile_x, tile_y);
         }
-
-        let (tile_x, tile_y) = self.current_tile;
-        let zoom = self.viewbox.zoom * self.options.dpr();
-        let offset_x = self.viewbox.area.left * zoom;
-        let offset_y = self.viewbox.area.top * zoom;
-        // TODO: move this to tiles logic?
-        // This extra -1 and +2 are to avoid empty space between tiles
-        let tile_rect = Rect::from_xywh(
-            (tile_x as f32 * tiles::TILE_SIZE) - offset_x,
-            (tile_y as f32 * tiles::TILE_SIZE) - offset_y,
-            tiles::TILE_SIZE,
-            tiles::TILE_SIZE,
-        );
-        self.apply_render_to_final_canvas(tile_rect, tile_x, tile_y);
 
         // If we finish processing every node rendering is complete
         // let's check if there are more pending nodes
         if let Some(next_tile) = self.pending_tiles.pop() {
-            if self.surfaces.has_cached_tile_surface(next_tile) {
-                let (tile_x, tile_y) = next_tile;
-                let tile_rect = Rect::from_xywh(
-                    (tile_x as f32 * tiles::TILE_SIZE) - offset_x,
-                    (tile_y as f32 * tiles::TILE_SIZE) - offset_y,
-                    tiles::TILE_SIZE,
-                    tiles::TILE_SIZE,
-                );
-                self.surfaces.draw_cached_tile_surface(next_tile, tile_rect);
-            } else {
+            self.current_tile = next_tile;
+            if !self.surfaces.has_cached_tile_surface(next_tile) {
                 // If the tile is empty or it doesn't exists we don't do anything with it
                 // TODO: let's see if the double if is required
-                self.current_tile = next_tile;
                 if self.tiles.has_shapes_at(next_tile) {
                     if let Some(shapes) = self.tiles.get_shapes_at(next_tile) {
                         for shape_id in shapes.iter() {
