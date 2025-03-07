@@ -17,7 +17,7 @@
    [:class {:optional true} :string]
    [:type  {:optional true} [:maybe [:enum :toast :context]]]
    [:appearance {:optional true} [:enum :neutral :ghost]]
-   [:level {:optional true} [:maybe [:enum :info :warning :error :success]]]
+   [:level {:optional true} [:maybe [:enum :default :info :warning :error :success]]]
    [:is-html {:optional true} :boolean]])
 
 (mf/defc context-notification*
@@ -28,13 +28,14 @@
   [{:keys [class type appearance level is-html children] :rest props}]
   (let [class (dm/str class " " (stl/css-case :contextual-notification true
                                               :contain-html is-html
+                                              :level-default  (= level :default)
                                               :level-warning  (= level :warning)
                                               :level-error    (= level :error)
                                               :level-success  (= level :success)
                                               :level-info     (= level :info)))
         level (if (string? level)
                 (keyword level)
-                (d/nilv level :info))
+                (d/nilv level :default))
         type (if (string? type)
                (keyword type)
                (d/nilv type :context))

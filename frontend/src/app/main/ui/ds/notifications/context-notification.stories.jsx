@@ -21,7 +21,7 @@ export default {
       control: { type: "select" },
     },
     level: {
-      options: ["info", "error", "warning", "success"],
+      options: ["default", "info", "error", "warning", "success"],
       control: { type: "select" },
     },
   },
@@ -30,7 +30,7 @@ export default {
     isHtml: false,
     type: "context",
     appearance: "neutral",
-    level: "info",
+    level: "default",
   },
   parameters: {
     controls: {

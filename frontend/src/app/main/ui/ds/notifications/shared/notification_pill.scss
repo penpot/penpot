@@ -43,6 +43,13 @@
   background-color: transparent;
 }
 
+.level-default {
+  --notification-bg-color: var(--color-background-default);
+  --notification-fg-color: var(--color-foreground-primary);
+  --notification-border-color: var(--color-accent-default);
+  --notification-icon-color: var(--color-icon-default);
+}
+
 .level-info {
   --notification-bg-color: var(--color-background-info);
   --notification-fg-color: var(--color-foreground-primary);
