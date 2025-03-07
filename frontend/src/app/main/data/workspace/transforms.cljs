@@ -859,12 +859,21 @@
           (rx/of (reorder-selected-layout-child direction))
           (rx/of (nudge-selected-shapes direction shift?)))))))
 
+(defn- get-relative-delta [position bbox frame]
+  (let [frame-bbox (-> frame :points grc/points->rect)
+        relative-cpos (gpt/subtract (gpt/point (:x bbox) (:y bbox))
+                                    (gpt/point (:x frame-bbox)
+                                               (:y frame-bbox)))
+        cpos (gpt/point (:x relative-cpos) (:y relative-cpos))
+        pos (gpt/point (or (:x position) (:x relative-cpos))
+                       (or (:y position) (:y relative-cpos)))]
+    (gpt/subtract pos cpos)))
+
 (defn update-position
   "Move shapes to a new position"
   ([id position] (update-position id position nil))
   ([id position options]
    (dm/assert! (uuid? id))
-
    (ptk/reify ::update-position
      ptk/WatchEvent
      (watch [_ state _]
@@ -874,15 +883,9 @@
              shape      (get objects id)
              ;; FIXME: performance rect
              bbox       (-> shape :points grc/points->rect)
-
-             cpos       (gpt/point (:x bbox) (:y bbox))
-             pos        (gpt/point (or (:x position) (:x bbox))
-                                   (or (:y position) (:y bbox)))
-
-             delta      (gpt/subtract pos cpos)
-
+             frame      (cfh/get-frame objects shape)
+             delta      (get-relative-delta position bbox frame)
              modif-tree (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
-
          (rx/of (dwm/apply-modifiers {:modifiers modif-tree
                                       :page-id page-id
                                       :ignore-constraints false

@@ -295,10 +295,15 @@
   ([value shape-ids attributes page-id]
    (ptk/reify ::update-shape-position
      ptk/WatchEvent
-     (watch [_ _ _]
+     (watch [_ state _]
        (when (number? value)
-         (rx/concat
-          (map #(dwt/update-position % (zipmap attributes (repeat value)) {:ignore-touched true :page-id page-id}) shape-ids)))))))
+         (let [page-id' (or page-id (get state :current-page-id))]
+           (rx/concat
+            (map #(dwt/update-position % (zipmap attributes (repeat value))
+                                       {:ignore-touched true
+                                        :page-id page-id'})
+                 shape-ids))))))))
+
 
 (defn update-layout-sizing-limits
   ([value shape-ids attributes] (update-layout-sizing-limits value shape-ids attributes nil))
@@ -399,4 +404,3 @@
 
 (defn token-attributes [token-type]
   (dm/get-in token-properties [token-type :attributes]))
-

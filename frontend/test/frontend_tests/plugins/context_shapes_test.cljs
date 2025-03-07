@@ -8,8 +8,6 @@
   (:require
    [app.common.math :as m]
    [app.common.test-helpers.files :as cthf]
-   [app.common.test-helpers.ids-map :as cthi]
-   [app.common.test-helpers.shapes :as cths]
    [app.common.uuid :as uuid]
    [app.main.store :as st]
    [app.plugins.api :as api]
@@ -24,7 +22,6 @@
         ^js context (api/create-context "TEST")
 
         _       (set! st/state store)
-        context (api/create-context "TEST")
 
         ^js file    (. context -currentFile)
         ^js page    (. context -currentPage)
