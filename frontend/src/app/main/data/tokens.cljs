@@ -253,18 +253,21 @@
                 (ctob/add-token token))
 
             hidden-theme
-            (ctob/make-hidden-token-theme :sets [set-name])
+            (ctob/make-hidden-token-theme)
+
+            hidden-theme-with-set
+            (ctob/enable-set hidden-theme set-name)
 
             changes
             (pcb/add-token-set (pcb/empty-changes) token-set)
 
             changes
             (-> changes
-                (pcb/add-token-theme hidden-theme)
+                (pcb/update-token-theme hidden-theme-with-set hidden-theme)
                 (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} #{}))]
 
-        (rx/of (set-selected-token-set-name set-name)
-               (dch/commit-changes changes))))))
+        (rx/of (dch/commit-changes changes)
+               (set-selected-token-set-name set-name))))))
 
 (defn create-token
   [params]

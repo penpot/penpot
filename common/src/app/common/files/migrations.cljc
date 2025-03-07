@@ -29,6 +29,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.types.shape.shadow :as ctss]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -1225,6 +1226,17 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
+(defmethod migrate-data "Add hidden theme"
+  [data _]
+  (letfn [(update-tokens-lib [tokens-lib]
+            (let [hidden-theme (ctob/get-hidden-theme tokens-lib)]
+              (if (nil? hidden-theme)
+                (ctob/add-theme tokens-lib (ctob/make-hidden-token-theme))
+                tokens-lib)))]
+    (if (contains? data :tokensLib)
+      (update data :tokens-lib update-tokens-lib)
+      data)))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1278,4 +1290,5 @@
          "legacy-62"
          "legacy-65"
          "legacy-66"
-         "legacy-67"]))
+         "legacy-67"
+         "Add hidden theme"]))

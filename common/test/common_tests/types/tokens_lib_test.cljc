@@ -76,7 +76,6 @@
       (t/is (= (:description token-set1) ""))
       (t/is (some? (:modified-at token-set1)))
       (t/is (empty? (:tokens token-set1)))
-
       (t/is (= (:name token-set2) "test-token-set-2"))
       (t/is (= (:description token-set2) "test description"))
       (t/is (= (:modified-at token-set2) now))
@@ -503,8 +502,8 @@
           token-themes' (ctob/get-themes tokens-lib')
           token-theme'  (ctob/get-theme tokens-lib' "" "test-token-theme")]
 
-      (t/is (= (ctob/theme-count tokens-lib') 1))
-      (t/is (= (first token-themes') token-theme))
+      (t/is (= (ctob/theme-count tokens-lib') 2))
+      (t/is (= (second token-themes') token-theme))
       (t/is (= token-theme' token-theme))))
 
   (t/testing "update-token-theme"
@@ -524,7 +523,7 @@
           token-theme   (ctob/get-theme tokens-lib "" "test-token-theme")
           token-theme'  (ctob/get-theme tokens-lib' "" "test-token-theme")]
 
-      (t/is (= (ctob/theme-count tokens-lib') 1))
+      (t/is (= (ctob/theme-count tokens-lib') 2))
       (t/is (= (:name token-theme') "test-token-theme"))
       (t/is (= (:description token-theme') "some description"))
       (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
@@ -542,7 +541,7 @@
           token-theme   (ctob/get-theme tokens-lib "" "test-token-theme")
           token-theme'  (ctob/get-theme tokens-lib' "" "updated-name")]
 
-      (t/is (= (ctob/theme-count tokens-lib') 1))
+      (t/is (= (ctob/theme-count tokens-lib') 2))
       (t/is (= (:name token-theme') "updated-name"))
       (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
 
@@ -556,7 +555,7 @@
 
           token-theme'  (ctob/get-theme tokens-lib' "" "updated-name")]
 
-      (t/is (= (ctob/theme-count tokens-lib') 0))
+      (t/is (= (ctob/theme-count tokens-lib') 1))
       (t/is (nil? token-theme'))))
 
   (t/testing "toggle-set-in-theme"
@@ -590,7 +589,7 @@
 
       (t/is (ctob/valid-tokens-lib? tokens-lib'))
       (t/is (= (ctob/set-count tokens-lib') 1))
-      (t/is (= (ctob/theme-count tokens-lib') 1))))
+      (t/is (= (ctob/theme-count tokens-lib') 2))))
 
   #?(:clj
      (t/testing "fressian-serialization"
@@ -606,7 +605,7 @@
 
          (t/is (ctob/valid-tokens-lib? tokens-lib'))
          (t/is (= (ctob/set-count tokens-lib') 1))
-         (t/is (= (ctob/theme-count tokens-lib') 1))))))
+         (t/is (= (ctob/theme-count tokens-lib') 2))))))
 
 (t/deftest grouping
   (t/testing "split-and-join"
@@ -990,7 +989,7 @@
             [node-group0 node-group1 node-group2]
             (ctob/get-children themes-tree)
 
-            [node-theme1]
+            [hidden-theme node-theme1]
             (ctob/get-children (second node-group0))
 
             [node-theme2 node-theme3]
@@ -999,19 +998,24 @@
             [node-theme4]
             (ctob/get-children (second node-group2))]
 
-        (t/is (= (count themes-list) 4))
-        (t/is (= (:name (nth themes-list 0)) "token-theme-1"))
-        (t/is (= (:name (nth themes-list 1)) "token-theme-2"))
-        (t/is (= (:name (nth themes-list 2)) "token-theme-3"))
-        (t/is (= (:name (nth themes-list 3)) "token-theme-4"))
-        (t/is (= (:group (nth themes-list 0)) ""))
-        (t/is (= (:group (nth themes-list 1)) "group1"))
+        (t/is (= (count themes-list) 5))
+        (t/is (= (:name (nth themes-list 0)) "__PENPOT__HIDDEN__TOKEN__THEME__"))
+        (t/is (= (:name (nth themes-list 1)) "token-theme-1"))
+        (t/is (= (:name (nth themes-list 2)) "token-theme-2"))
+        (t/is (= (:name (nth themes-list 3)) "token-theme-3"))
+        (t/is (= (:name (nth themes-list 4)) "token-theme-4"))
+        (t/is (= (:group (nth themes-list 1)) ""))
         (t/is (= (:group (nth themes-list 2)) "group1"))
-        (t/is (= (:group (nth themes-list 3)) "group2"))
+        (t/is (= (:group (nth themes-list 3)) "group1"))
+        (t/is (= (:group (nth themes-list 4)) "group2"))
 
         (t/is (= (first node-group0) ""))
         (t/is (= (ctob/group? (second node-group0)) true))
-        (t/is (= (count (second node-group0)) 1))
+        (t/is (= (count (second node-group0)) 2))
+
+        (t/is (= (first hidden-theme) "__PENPOT__HIDDEN__TOKEN__THEME__"))
+        (t/is (= (ctob/group? (second hidden-theme)) false))
+        (t/is (= (:name (second hidden-theme)) "__PENPOT__HIDDEN__TOKEN__THEME__"))
 
         (t/is (= (first node-theme1) "token-theme-1"))
         (t/is (= (ctob/group? (second node-theme1)) false))
@@ -1051,7 +1055,7 @@
             token-theme  (get-in themes-tree ["group1" "token-theme-2"])
             token-theme' (get-in themes-tree' ["group1" "token-theme-2"])]
 
-        (t/is (= (ctob/theme-count tokens-lib') 4))
+        (t/is (= (ctob/theme-count tokens-lib') 5))
         (t/is (= (count group1') 2))
         (t/is (= (d/index-of (keys group1') "token-theme-2") 0))
         (t/is (= (:name token-theme') "token-theme-2"))
@@ -1088,7 +1092,7 @@
             token-theme  (get-in themes-tree ["group1" "token-theme-2"])
             token-theme' (get-in themes-tree' ["group1" "updated-name"])]
 
-        (t/is (= (ctob/theme-count tokens-lib') 4))
+        (t/is (= (ctob/theme-count tokens-lib') 5))
         (t/is (= (count group1') 2))
         (t/is (= (d/index-of (keys group1') "updated-name") 0))
         (t/is (= (:name token-theme') "updated-name"))
@@ -1117,7 +1121,7 @@
             token-theme  (get-in themes-tree ["group1" "token-theme-2"])
             token-theme' (get-in themes-tree' ["group2" "updated-name"])]
 
-        (t/is (= (ctob/theme-count tokens-lib') 3))
+        (t/is (= (ctob/theme-count tokens-lib') 4))
         (t/is (= (count group1') 1))
         (t/is (= (count group2') 1))
         (t/is (= (d/index-of (keys group2') "updated-name") 0))
@@ -1137,7 +1141,7 @@
             themes-tree' (ctob/get-theme-tree tokens-lib')
             token-theme' (get-in themes-tree' ["group1" "token-theme-2"])]
 
-        (t/is (= (ctob/theme-count tokens-lib') 1))
+        (t/is (= (ctob/theme-count tokens-lib') 2))
         (t/is (= (count themes-tree') 1))
         (t/is (nil? token-theme'))))))
 
