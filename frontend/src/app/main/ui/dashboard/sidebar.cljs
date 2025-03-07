@@ -850,32 +850,33 @@
           [:span {:class (stl/css :empty-text)} (tr "dashboard.no-projects-placeholder")]])]]
      [:div {:class (stl/css-case :separator true :overflow-separator overflow?)}]]))
 
-(mf/defc cta-power-up
+(mf/defc cta-power-up*
   {::mf/props :obj}
-  [{:keys [top-title top-description bottom-description highlight-text cta-link has-dropdown]}]
-  (let [show-power-up-data* (mf/use-state false)
-        show-power-up-data (deref show-power-up-data*)
-        handle-power-up-click
+  [{:keys [top-title top-description bottom-description bottom-highlight cta-text has-dropdown]}]
+  (let [show-data* (mf/use-state false)
+        show-data (deref show-data*)
+        handle-click
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (swap! show-power-up-data* not)))]
+           (swap! show-data* not)))]
 
-    [:div {:class (stl/css :upgrade-section)
-           :on-click handle-power-up-click}
-     [:button {:class (stl/css :upgrade-top-section)}
+    [:div {:class (stl/css :cta-power-up)
+           :on-click handle-click}
+     [:button {:class (stl/css :cta-top-section)}
       [:div {:class (stl/css :content)}
-       [:span {:class (stl/css :upgrade-title)} top-title]
-       [:span {:class (stl/css :upgrade-text)} top-description]]
+       [:span {:class (stl/css :cta-title)} top-title]
+       [:span {:class (stl/css :cta-text)} top-description]]
       [:span {:class (stl/css :icon-dropdown)}  i/arrow]]
 
-     (when (and has-dropdown show-power-up-data)
-       [:button {:class (stl/css :upgrade-bottom-section)}
+     (when (and has-dropdown show-data)
+       [:button {:class (stl/css :cta-bottom-section)}
         [:div {:class (stl/css :content)}
-         [:span {:class (stl/css :upgrade-text)} bottom-description]
-         [:span {:class (stl/css :upgrade-highlight :upgrade-inline)} highlight-text]]
-        [:div {:class (stl/css :upgrade-highlight :upgrade-bottom)}
-         cta-link]])]))
+         [:span {:class (stl/css :cta-text)} bottom-description]
+         (when bottom-highlight
+           [:span {:class (stl/css :cta-highlight :cta-inline)} bottom-highlight])]
+        [:div {:class (stl/css :cta-highlight :cta-bottom)}
+         cta-text]])]))
 
 (mf/defc profile-section*
   {::mf/props :obj}
@@ -983,37 +984,57 @@
         (mf/use-fn
          #(on-click :settings-profile %))
 
-        on-power-up-click
-        (mf/use-fn
-         (fn []
-           (dom/open-new-window "https://penpot.app/pricing")))
-
-        show-power-up-data* (mf/use-state false)
-        show-power-up-data (deref show-power-up-data*)
-
-        handle-power-up-click
-        (mf/use-fn
-         (fn [event]
-           (dom/stop-propagation event)
-           (swap! show-power-up-data* not)))]
+        ;; on-power-up-click
+        ;; (mf/use-fn
+        ;;  (fn []
+        ;;    (dom/open-new-window "https://penpot.app/pricing")))
+        subscription-type :unlimited
+        ]
 
     [:*
-     [:button {:class (stl/css :upgrade-plan-section)
-               :on-click on-power-up-click}
-      [:div {:class (stl/css :penpot-free)}
-       [:span (tr "dashboard.upgrade-plan.penpot-free")]
-       [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
-      [:div {:class (stl/css :power-up)}
-       (tr "dashboard.upgrade-plan.power-up")]]
+    ;;  [:button {:class (stl/css :upgrade-plan-section)
+    ;;            :on-click on-power-up-click}
+    ;;   [:div {:class (stl/css :penpot-free)}
+    ;;    [:span (tr "dashboard.upgrade-plan.penpot-free")]
+    ;;    [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
+    ;;   [:div {:class (stl/css :power-up)}
+    ;;    (tr "dashboard.upgrade-plan.power-up")]
+    ;;   ]
 
      (when (contains? cf/flags :subscriptions)
-       [:& cta-power-up
-        {:top-title "Professional plan"
-         :top-description (tr "dashboard.upgrade-plan.no-limits")
-         :bottom-description "Get extra storage, autosaved versions, file backup and more with the"
-         :highlight-text "Unlimited plan"
-         :cta-link "Upgrade"
-         :has-dropdown true}])
+       ;; poner cases para professonal/unlimited/enterprise/trial
+       (case subscription-type
+         :professional
+         [:> cta-power-up*
+          {:top-title (tr "dashboard.power-up.professional.top-title")
+           :top-description (tr "dashboard.power-up.professional.top-description")
+           :bottom-description (tr "dashboard.power-up.professional.bottom-description")
+           :bottom-highlight (tr "dashboard.power-up.professional.bottom-highlight")
+           :cta-text (tr "dashboard.power-up.professional.cta")
+           :has-dropdown true}]
+
+         :unlimited
+         [:> cta-power-up*
+          {:top-title (tr "dashboard.power-up.unlimited.top-title")
+           :top-description (tr "dashboard.power-up.unlimited.top-description")
+           :bottom-description (tr "dashboard.power-up.unlimited.bottom-description")
+           :bottom-highlight (tr "dashboard.power-up.unlimited.bottom-highlight")
+           :cta-text (tr "dashboard.power-up.unlimited.cta")
+           :has-dropdown true}]
+
+         :enterprise
+         [:> cta-power-up*
+          {:top-title (tr "dashboard.power-up.enterprise.top-title")
+           :top-description (tr "dashboard.power-up.enterprise.top-description")
+           :has-dropdown false}]
+
+         :trial
+         [:> cta-power-up*
+          {:top-title (tr "dashboard.power-up.trial.top-title")
+           :top-description (tr "dashboard.power-up.trial.top-description")
+           :bottom-description (tr "dashboard.power-up.trial.bottom-description")
+           :cta-text (tr "dashboard.power-up.trial.cta")
+           :has-dropdown true}]))
 
      (when (and team profile)
        [:& comments-section
