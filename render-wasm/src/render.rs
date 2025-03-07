@@ -477,14 +477,10 @@ impl RenderState {
             self.current_tile = next_tile;
             self.render_area = tiles::get_tile_rect(self.viewbox, self.current_tile);
 
-            let element = tree.get_mut(&Uuid::nil()).ok_or(
-                "Error: Element with root_id {node_render_state.id} not found in the tree."
-                    .to_string(),
-            )?;
             self.pending_nodes = vec![];
             if let Some(shapes) = self.tiles.get_shapes_at(self.current_tile) {
                 for shape_id in shapes.iter() {
-                    let element = tree.get_mut(&Uuid::nil()).ok_or(
+                    let element = tree.get_mut(&shape_id).ok_or(
                         "Error: Element with root_id {node_render_state.id} not found in the tree."
                             .to_string(),
                     )?;
