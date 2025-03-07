@@ -633,10 +633,6 @@
 (def valid-active-token-themes?
   (sm/validator schema:active-themes))
 
-(defn update-themes
-  [themes token-theme]
-  (update themes (:group token-theme) d/oassoc (:name token-theme) token-theme))
-
 ;; === Import / Export from DTCG format
 
 (def ^:private legacy-node?
