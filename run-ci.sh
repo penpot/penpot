@@ -45,6 +45,7 @@ cd ..
 echo "################ test render-wasm ################"
 cd render-wasm
 cargo fmt --check
+./lint
 ./test
 cd ..
 

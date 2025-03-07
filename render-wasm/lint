@@ -33,6 +33,7 @@ ALLOWED_RULES="
         -A clippy::unwrap_or_default \
         -A clippy::useless_format \
         -A clippy::wrong_self_convention \
+        -D static_mut_refs \
         -A dead_code"
 
 # ./lint --fix
