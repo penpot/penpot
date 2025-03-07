@@ -15,6 +15,7 @@
   [level]
   (case level
     :info i/info
+    :default i/msg-neutral
     :warning i/msg-neutral
     :error i/delete-text
     :success i/status-tick
@@ -22,7 +23,7 @@
 
 (def ^:private schema:notification-pill
   [:map
-   [:level [:enum :info :warning :error :success]]
+   [:level [:enum :default :info :warning :error :success]]
    [:type  [:enum :toast :context]]
    [:appearance {:optional true} [:enum :neutral :ghost]]
    [:is-html {:optional true} :boolean]])
@@ -36,6 +37,7 @@
                             :appearance-ghost (= appearance :ghost)
                             :type-toast (= type :toast)
                             :type-context (= type :context)
+                            :level-default  (= level :default)
                             :level-warning  (= level :warning)
                             :level-error    (= level :error)
                             :level-success  (= level :success)
