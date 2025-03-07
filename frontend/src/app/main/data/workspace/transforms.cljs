@@ -859,10 +859,11 @@
           (rx/of (reorder-selected-layout-child direction))
           (rx/of (nudge-selected-shapes direction shift?)))))))
 
-(defn- get-relative-delta [position bbox parent]
-  (let [parent-bbox (-> parent :points grc/points->rect)
+(defn- get-relative-delta [position bbox frame]
+  (let [frame-bbox (-> frame :points grc/points->rect)
         relative-cpos (gpt/subtract (gpt/point (:x bbox) (:y bbox))
-                                    (gpt/point (:x parent-bbox) (:y parent-bbox)))
+                                    (gpt/point (:x frame-bbox)
+                                               (:y frame-bbox)))
         cpos (gpt/point (:x relative-cpos) (:y relative-cpos))
         pos (gpt/point (or (:x position) (:x relative-cpos))
                        (or (:y position) (:y relative-cpos)))]
