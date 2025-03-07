@@ -216,6 +216,10 @@ impl Surfaces {
             Some(&skia::Paint::default()),
         );
     }
+
+    pub fn clear_tiles(&mut self) {
+        self.tiles.clear();
+    }
 }
 
 pub struct SurfaceRef {

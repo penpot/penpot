@@ -225,7 +225,6 @@ impl RenderState {
 
         // println!("apply_render_to_final_canvas {x} {y}");
         // debug::console_debug_tile_surface(self, (x, y));
-
         // debug::console_debug_surface(self, SurfaceId::Current);
         self.surfaces
             .canvas(SurfaceId::Current)
@@ -678,6 +677,7 @@ impl RenderState {
         }
 
         if self.surfaces.has_cached_tile_surface(self.current_tile) {
+            println!("cached {:?}", self.current_tile);
             let (tile_x, tile_y) = self.current_tile;
             let zoom = self.viewbox.zoom * self.options.dpr();
             let offset_x = self.viewbox.area.left * zoom;
@@ -799,6 +799,7 @@ impl RenderState {
                 tiles::TILE_SIZE,
                 tiles::TILE_SIZE,
             );
+            println!("not cached {:?}", self.current_tile);
             self.apply_render_to_final_canvas(tile_rect, tile_x, tile_y);
         }
 
@@ -865,7 +866,9 @@ impl RenderState {
     }
 
     pub fn rebuild_tiles(&mut self, tree: &mut HashMap<Uuid, Shape>) {
+        //TODO: I don't like having these two clears
         self.tiles.clear();
+        self.surfaces.clear_tiles();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
