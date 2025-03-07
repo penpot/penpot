@@ -3,7 +3,6 @@ use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
 use super::Shape;
-use crate::render::surfaces::SurfacePool;
 use crate::view::Viewbox;
 use indexmap::IndexSet;
 
@@ -48,45 +47,6 @@ pub fn get_tile_rect(viewbox: Viewbox, tile: Tile) -> skia::Rect {
     skia::Rect::from_xywh(tx, ty, ts, ts)
 }
 
-pub struct TileSurfaceCache {
-    pool: SurfacePool,
-    grid: HashMap<Tile, skia::Surface>,
-}
-
-impl TileSurfaceCache {
-    pub fn new(pool: SurfacePool) -> Self {
-        TileSurfaceCache {
-            pool,
-            grid: HashMap::new(),
-        }
-    }
-
-    pub fn has(&mut self, tile: Tile) -> bool {
-        return self.grid.contains_key(&tile);
-    }
-
-    pub fn get_or_create(&mut self, tile: Tile) -> Result<skia::Surface, String> {
-        let surface = self.pool.allocate()?;
-        self.grid.insert(tile, surface.clone());
-        Ok(surface)
-    }
-
-    pub fn set(&mut self, tile: Tile, surface: skia::Surface) {
-        self.grid.insert(tile, surface);
-    }
-
-    pub fn remove(&mut self, tile: Tile) -> bool {
-        if !self.grid.contains_key(&tile) {
-            return false;
-        }
-        self.grid.remove(&tile);
-        true
-    }
-
-    pub fn clear(&mut self) {
-        self.grid.clear();
-    }
-}
 
 // This structure is usseful to keep all the shape uuids by shape id.
 pub struct TileHashMap {
@@ -175,6 +135,7 @@ impl TileHashMap {
     }
 }
 
+/*
 pub struct Tiles {
     surfaces: TileSurfaceCache,
     shapes: TileHashMap,
@@ -201,8 +162,17 @@ impl Tiles {
         self.shapes.clear();
     }
 
-    pub fn get_or_create_surface_at(&mut self, tile: Tile) -> Result<skia::Surface, String> {
-        self.surfaces.get_or_create(tile)
+    pub fn has_cached_surface(&mut self, tile: Tile) -> bool {
+        self.surfaces.has(tile)
+    }
+
+    pub fn cached_surface(&mut self, tile: Tile) -> Result<&mut skia::Surface, String> {
+        self.surfaces.get(tile)
+    }
+
+    pub fn cache_surface(&mut self, tile: Tile, surface: &mut skia::Surface, sampling: skia::SamplingOptions) {
+        let mut tile_surface = self.surfaces.get_or_create(tile).unwrap();
+        surface.draw(tile_surface.canvas(), (0, 0), sampling, Some(&skia::Paint::default()));
     }
 
     pub fn get_tile_shape_count(&mut self, tile: Tile) -> usize {
@@ -233,3 +203,4 @@ impl Tiles {
         }
     }
 }
+*/

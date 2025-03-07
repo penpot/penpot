@@ -1,5 +1,7 @@
-use super::gpu_state::GpuState;
-use skia_safe as skia;
+use super::{gpu_state::GpuState, tiles::Tile};
+use skia_safe::{self as skia, sampling_options};
+
+use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {
@@ -28,6 +30,8 @@ pub struct Surfaces {
     overlay: skia::Surface,
     // for drawing debug info.
     debug: skia::Surface,
+    // for drawing tiles.
+    tiles: TileSurfaceCache,
 
     sampling_options: skia::SamplingOptions,
 }
@@ -37,6 +41,7 @@ impl Surfaces {
         gpu_state: &mut GpuState,
         (width, height): (i32, i32),
         sampling_options: skia::SamplingOptions,
+        tile_dims: skia::ISize
     ) -> Self {
         let mut target = gpu_state.create_target_surface(width, height);
         let current = target.new_surface_with_dimensions((width, height)).unwrap();
@@ -45,7 +50,8 @@ impl Surfaces {
         let shape_fills = target.new_surface_with_dimensions((width, height)).unwrap();
         let shape_strokes = target.new_surface_with_dimensions((width, height)).unwrap();
         let debug = target.new_surface_with_dimensions((width, height)).unwrap();
-
+        let pool = SurfacePool::new(&mut target, tile_dims);
+        let tiles = TileSurfaceCache::new(pool);
         Surfaces {
             target,
             current,
@@ -55,6 +61,7 @@ impl Surfaces {
             shape_strokes,
             debug,
             sampling_options,
+            tiles
         }
     }
 
@@ -64,6 +71,16 @@ impl Surfaces {
 
     pub fn snapshot(&mut self, id: SurfaceId) -> skia::Image {
         self.get_mut(id).image_snapshot()
+    }
+
+    pub fn base64_snapshot_tile(&mut self, tile: Tile) -> String {
+        let surface = self.tiles.get(tile).unwrap();
+        let image = surface.image_snapshot();
+        let mut context = surface.direct_context();
+        let encoded_image = image
+            .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
+            .unwrap();
+        base64::encode(&encoded_image.as_bytes())
     }
 
     pub fn base64_snapshot(&mut self, id: SurfaceId) -> String {
@@ -126,7 +143,8 @@ impl Surfaces {
         }
     }
 
-    fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
+    // TODO: Review this because it should be private.
+    pub fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
         match id {
             SurfaceId::Target => &mut self.target,
             SurfaceId::Current => &mut self.current,
@@ -170,6 +188,23 @@ impl Surfaces {
         self.canvas(SurfaceId::Debug)
             .clear(skia::Color::TRANSPARENT)
             .reset_matrix();
+    }
+
+    pub fn cache_tile_surface(&mut self, tile: Tile, id: SurfaceId, rect: skia::Rect) {
+        let sampling_options = self.sampling_options;
+        let mut tile_surface = self.tiles.get_or_create(tile).unwrap();
+        let surface = self.get_mut(id);
+        surface.draw(tile_surface.canvas(), (-rect.x(), -rect.y()), sampling_options, Some(&skia::Paint::default()));
+    }
+
+    pub fn has_cached_tile_surface(&mut self, tile: Tile) -> bool {
+        self.tiles.has(tile)
+    }
+
+    pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect) {
+        let sampling_options = self.sampling_options;
+        let tile_surface = self.tiles.get(tile).unwrap();
+        self.target.draw(tile_surface.canvas(), (rect.x(), rect.y()), sampling_options, Some(&skia::Paint::default()));
     }
 }
 
@@ -224,5 +259,47 @@ impl SurfacePool {
                 return Ok(surface_ref.surface.clone());
             }
         }
+    }
+}
+
+pub struct TileSurfaceCache {
+    pool: SurfacePool,
+    grid: HashMap<Tile, skia::Surface>,
+}
+
+impl TileSurfaceCache {
+    pub fn new(pool: SurfacePool) -> Self {
+        TileSurfaceCache {
+            pool,
+            grid: HashMap::new(),
+        }
+    }
+
+    pub fn has(&mut self, tile: Tile) -> bool {
+        return self.grid.contains_key(&tile);
+    }
+
+    pub fn get_or_create(&mut self, tile: Tile) -> Result<skia::Surface, String> {
+        let surface = self.pool.allocate()?;
+        self.grid.insert(tile, surface.clone());
+        Ok(surface)
+    }
+
+    pub fn get(&mut self, tile: Tile) -> Result<&mut skia::Surface, String> {
+        Ok(self.grid.get_mut(&tile).unwrap())
+    }
+
+    /*
+    pub fn remove(&mut self, tile: Tile) -> bool {
+        if !self.grid.contains_key(&tile) {
+            return false;
+        }
+        self.grid.remove(&tile);
+        true
+    }
+    */
+
+    pub fn clear(&mut self) {
+        self.grid.clear();
     }
 }

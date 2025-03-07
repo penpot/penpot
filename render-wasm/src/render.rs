@@ -1,4 +1,4 @@
-use skia_safe::{self as skia, Contains, FontMgr, Matrix, RRect, Rect, RoundOut};
+use skia_safe::{self as skia, Contains, FontMgr, Matrix, RRect, Rect, RoundOut, Surface};
 
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -75,7 +75,7 @@ pub(crate) struct RenderState {
     pub render_complete: bool,
     pub sampling_options: skia::SamplingOptions,
     pub render_area: Rect,
-    pub tiles: tiles::Tiles,
+    pub tiles: tiles::TileHashMap,
     pub pending_tiles: Vec<tiles::Tile>,
 }
 
@@ -85,7 +85,7 @@ impl RenderState {
         let mut gpu_state = GpuState::new();
         let sampling_options =
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
-        let mut surfaces = Surfaces::new(&mut gpu_state, (width, height), sampling_options);
+        let mut surfaces = Surfaces::new(&mut gpu_state, (width, height), sampling_options, tiles::get_tile_dimensions());
         let mut font_provider = skia::textlayout::TypefaceFontProvider::new();
         let default_font = skia::FontMgr::default()
             .new_from_data(DEFAULT_FONT_BYTES, None)
@@ -105,9 +105,7 @@ impl RenderState {
 
         let debug_font = skia::Font::new(debug_typeface, 10.0);
 
-        let surface_pool =
-            surfaces::SurfacePool::new(&mut surfaces.target, tiles::get_tile_dimensions());
-        let tiles = tiles::Tiles::new(surface_pool);
+        let tiles = tiles::TileHashMap::new();
 
         RenderState {
             gpu_state,
@@ -194,6 +192,15 @@ impl RenderState {
             Some(&skia::Paint::default()),
             rect,
         );
+
+        // This caches the current surface into the corresponding tile.
+        self.surfaces.cache_tile_surface(
+            (x, y),
+            SurfaceId::Current,
+            rect
+        );
+
+        // debug::console_debug_tile_surface(self, (x, y));
 
         // println!("---- {x} {y}");
         // debug::console_debug_surface(self, SurfaceId::Current);
@@ -730,57 +737,71 @@ impl RenderState {
         // TODO: move this to tiles logic?
         // This extra -1 and +2 are to avoid empty space between tiles
         let tile_rect = Rect::from_xywh(
-            ((tile_x as f32 * tiles::TILE_SIZE) - offset_x) - 1.,
-            ((tile_y as f32 * tiles::TILE_SIZE) - offset_y) - 1.,
-            tiles::TILE_SIZE + 2.,
-            tiles::TILE_SIZE + 2.,
+            (tile_x as f32 * tiles::TILE_SIZE) - offset_x,
+            (tile_y as f32 * tiles::TILE_SIZE) - offset_y,
+            tiles::TILE_SIZE,
+            tiles::TILE_SIZE,
         );
         self.apply_render_to_final_canvas(tile_rect, tile_x, tile_y);
 
         // If we finish processing every node rendering is complete
         // let's check if there are more pending nodes
         if let Some(next_tile) = self.pending_tiles.pop() {
-            // If the tile is empty or it doesn't exists we don't do anything with it
-            // TODO: let's see if the double if is required
-            self.current_tile = next_tile;
-            if self.tiles.has_tile_at(next_tile) {
-                if let Some(shapes) = self.tiles.get_tile_at(next_tile) {
-                    for shape_id in shapes.iter() {
-                        let element = tree.get_mut(&shape_id).ok_or(
-                            "Error: Element with root_id {node_render_state.id} not found in the tree."
-                                .to_string(),
-                        )?;
+            if self.surfaces.has_cached_tile_surface(next_tile) {
+                let (tile_x, tile_y) = next_tile;
+                let tile_rect = Rect::from_xywh(
+                    (tile_x as f32 * tiles::TILE_SIZE) - offset_x,
+                    (tile_y as f32 * tiles::TILE_SIZE) - offset_y,
+                    tiles::TILE_SIZE,
+                    tiles::TILE_SIZE,
+                );
+                self.surfaces.draw_cached_tile_surface(next_tile, tile_rect);
+                println!("{:?} {:?}", next_tile, tile_rect);
+                // debug::console_debug_tile_surface(self, next_tile);
+            } else {
+                // If the tile is empty or it doesn't exists we don't do anything with it
+                // TODO: let's see if the double if is required
+                self.current_tile = next_tile;
+                if self.tiles.has_shapes_at(next_tile) {
+                    if let Some(shapes) = self.tiles.get_shapes_at(next_tile) {
+                        for shape_id in shapes.iter() {
+                            let element = tree.get_mut(&shape_id).ok_or(
+                                "Error: Element with root_id {node_render_state.id} not found in the tree."
+                                    .to_string(),
+                            )?;
 
-                        // TODO: this code is duplicated from some lines before, refactor to a common function
-                        let children_clip_bounds = if element.is_recursive() {
-                            (element.clip()).then(|| {
-                                let bounds = element.selrect();
-                                let mut transform = element.transform;
-                                transform.post_translate(bounds.center());
-                                transform.pre_translate(-bounds.center());
-                                if let Some(modifiers) = modifiers.get(&element.id) {
-                                    transform.post_concat(&modifiers);
-                                }
-                                let corners = match &element.shape_type {
-                                    Type::Rect(data) => data.corners,
-                                    Type::Frame(data) => data.corners,
-                                    _ => None,
-                                };
-                                (bounds, corners, transform)
-                            })
-                        } else {
-                            None
-                        };
-                        self.pending_nodes.push(NodeRenderState {
-                            id: *shape_id,
-                            visited_children: false,
-                            clip_bounds: children_clip_bounds,
-                            visited_mask: false,
-                            mask: false,
-                        });
+                            // TODO: this code is duplicated from some lines before, refactor to a common function
+                            let children_clip_bounds = if element.is_recursive() {
+                                (element.clip()).then(|| {
+                                    let bounds = element.selrect();
+                                    let mut transform = element.transform;
+                                    transform.post_translate(bounds.center());
+                                    transform.pre_translate(-bounds.center());
+                                    if let Some(modifiers) = modifiers.get(&element.id) {
+                                        transform.post_concat(&modifiers);
+                                    }
+                                    let corners = match &element.shape_type {
+                                        Type::Rect(data) => data.corners,
+                                        Type::Frame(data) => data.corners,
+                                        _ => None,
+                                    };
+                                    (bounds, corners, transform)
+                                })
+                            } else {
+                                None
+                            };
+                            self.pending_nodes.push(NodeRenderState {
+                                id: *shape_id,
+                                visited_children: false,
+                                clip_bounds: children_clip_bounds,
+                                visited_mask: false,
+                                mask: false,
+                            });
+                        }
                     }
                 }
             }
+
             self.render_area = tiles::get_tile_rect(self.viewbox, next_tile);
             self.render_shape_tree(tree, modifiers, timestamp)?
         } else {
@@ -797,15 +818,22 @@ impl RenderState {
     }
 
     pub fn update_tile_for(&mut self, shape: &Shape) {
-        self.tiles.update_tile_for(self.viewbox, &shape);
+        let tile_size = tiles::get_tile_size(self.viewbox);
+        let (rsx, rsy, rex, rey) = tiles::get_tiles_for_rect(shape.selrect, tile_size);
+        for x in rsx..=rex {
+            for y in rsy..=rey {
+                let tile = (x, y);
+                self.tiles.add_shape_at(tile, shape.id);
+            }
+        }
     }
 
     pub fn invalidate_tiles(&mut self) {
-        self.tiles.invalidate_tiles();
+        self.tiles.clear();
     }
 
     pub fn rebuild_tiles(&mut self, tree: &mut HashMap<Uuid, Shape>) {
-        self.tiles.invalidate_tiles();
+        self.tiles.clear();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {

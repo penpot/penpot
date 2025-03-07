@@ -131,7 +131,7 @@ pub fn render_debug_tiles(render_state: &mut RenderState) {
     for y in sy..=ey {
         for x in sx..=ex {
             let tile = (x, y);
-            let shape_count = render_state.tiles.get_tile_shape_count(tile);
+            let shape_count = render_state.tiles.get_shapes_at(tile).iter().len();
             if shape_count == 0 {
                 continue;
             }
@@ -160,6 +160,11 @@ pub fn render(render_state: &mut RenderState) {
         SurfaceId::Target,
         Some(&skia::Paint::default()),
     );
+}
+
+pub fn console_debug_tile_surface(render_state: &mut RenderState, tile: tiles::Tile) {
+    let base64_image = render_state.surfaces.base64_snapshot_tile(tile);
+    run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
 }
 
 pub fn console_debug_surface(render_state: &mut RenderState, id: SurfaceId) {
