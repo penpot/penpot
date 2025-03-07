@@ -371,21 +371,10 @@
       [:type [:= :del-typography]]
       [:id ::sm/uuid]]]
 
-    [:add-temporary-token-theme
-     [:map {:title "AddTemporaryTokenThemeChange"}
-      [:type [:= :add-temporary-token-theme]]
-      [:token-theme ::ctot/token-theme]]]
-
     [:update-active-token-themes
      [:map {:title "UpdateActiveTokenThemes"}
       [:type [:= :update-active-token-themes]]
       [:theme-ids [:set :string]]]]
-
-    [:delete-temporary-token-theme
-     [:map {:title "DeleteTemporaryTokenThemeChange"}
-      [:type [:= :delete-temporary-token-theme]]
-      [:id ::sm/uuid]
-      [:name :string]]]
 
     [:add-token-theme
      [:map {:title "AddTokenThemeChange"}
@@ -1044,22 +1033,10 @@
                 (ctob/update-token-in-set lib' set-name token-name (fn [prev-token]
                                                                      (ctob/make-token (merge prev-token token)))))))))
 
-(defmethod process-change :add-temporary-token-theme
-  [data {:keys [token-theme]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/add-theme (ctob/make-token-theme token-theme)))))
-
 (defmethod process-change :update-active-token-themes
   [data {:keys [theme-ids]}]
   (update data :tokens-lib #(-> % (ctob/ensure-tokens-lib)
                                 (ctob/set-active-themes theme-ids))))
-
-(defmethod process-change :delete-temporary-token-theme
-  [data {:keys [group name]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/delete-theme group name))))
 
 (defmethod process-change :add-token-theme
   [data {:keys [token-theme]}]
