@@ -782,7 +782,7 @@ impl RenderState {
 
                 i += 1;
             }
-            // TODO: this login is very similar to the beginning
+            // TODO: this code is very similar to the one before the while
             let (tile_x, tile_y) = self.current_tile;
             let zoom = self.viewbox.zoom * self.options.dpr();
             let offset_x = self.viewbox.area.left * zoom;
