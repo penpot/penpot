@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-02-06 11:02+0000\n"
+"PO-Revision-Date: 2025-03-09 18:02+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.10.3-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -3383,11 +3383,11 @@ msgstr "Редагувати"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:58
 msgid "shortcut-subsection.general-dashboard"
-msgstr "Загальний"
+msgstr "Загальні"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:59
 msgid "shortcut-subsection.general-viewer"
-msgstr "Загальний"
+msgstr "Загальні"
 
 #: src/app/main/ui/workspace/main_menu.cljs:829, src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
 msgid "shortcut-subsection.main-menu"
@@ -3515,7 +3515,7 @@ msgstr "Посунути вперед"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:91
 msgid "shortcuts.bring-front"
-msgstr "На передній план"
+msgstr "Висунути вперед"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:92
 msgid "shortcuts.clear-undo"
@@ -3527,7 +3527,7 @@ msgstr "Скопіювати"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
 msgid "shortcuts.copy-link"
-msgstr "Копіювати посилання до буферу обміну"
+msgstr "Скопіювати посилання у буфер"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
 msgid "shortcuts.create-component"
@@ -3907,7 +3907,7 @@ msgstr "Вирявняти по правому краю"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
 msgid "shortcuts.thumbnail-set"
-msgstr "Встановити мініатюри"
+msgstr "Вставити мініатюри"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:497, src/app/main/ui/workspace/sidebar/shortcuts.cljs:506
 msgid "shortcuts.title"
@@ -4462,7 +4462,7 @@ msgstr "Вимкнути масштабування тексту"
 
 #: src/app/main/ui/workspace/main_menu.cljs:228
 msgid "workspace.header.menu.disable-snap-guides"
-msgstr "Зробити неактивною прив'язку до орієнтирів"
+msgstr "Деактивувати прив'язку до орієнтирів"
 
 #: src/app/main/ui/workspace/main_menu.cljs:258
 msgid "workspace.header.menu.disable-snap-pixel-grid"
@@ -4470,7 +4470,7 @@ msgstr "Вимкнути прив'язку до пікселів"
 
 #: src/app/main/ui/workspace/main_menu.cljs:212
 msgid "workspace.header.menu.disable-snap-ruler-guides"
-msgstr "Зробити неактивною прив'язку до орієнтирів лінійок"
+msgstr "Деактивувати прив'язку до орієнтирів лінійок"
 
 #: src/app/main/ui/workspace/main_menu.cljs:244
 msgid "workspace.header.menu.enable-dynamic-alignment"
@@ -5402,7 +5402,7 @@ msgstr "Сяяння"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:140
 msgid "workspace.options.layer-options.blend-mode.multiply"
-msgstr "Примножити"
+msgstr "Множення"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:138
 msgid "workspace.options.layer-options.blend-mode.normal"
@@ -6229,7 +6229,7 @@ msgstr "Початок потоку"
 
 #: src/app/main/ui/workspace/context_menu.cljs:256
 msgid "workspace.shape.menu.forward"
-msgstr "Відсунути на задній план"
+msgstr "На передній план"
 
 #: src/app/main/ui/workspace/context_menu.cljs:259
 msgid "workspace.shape.menu.front"
