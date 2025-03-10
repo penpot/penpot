@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-09 18:02+0000\n"
+"PO-Revision-Date: 2025-03-11 08:02+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -5394,7 +5394,7 @@ msgstr "Відтінок"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:142
 msgid "workspace.options.layer-options.blend-mode.lighten"
-msgstr "Освітленн"
+msgstr "Світліше"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:153
 msgid "workspace.options.layer-options.blend-mode.luminosity"
@@ -5422,7 +5422,7 @@ msgstr "Екран"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:146
 msgid "workspace.options.layer-options.blend-mode.soft-light"
-msgstr "М'який світлий"
+msgstr "М'яке світло"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 #, unused
@@ -6950,6 +6950,4 @@ msgstr "Група"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:458
 msgid "workspace.token.warning-name-change"
-msgstr ""
-"Перейменовування токену призведе до розірвання будь-яких згадок про старе "
-"імʼя."
+msgstr "Якщо перейменувати токен, посилання на старе імʼя буде розірвано."
