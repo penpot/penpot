@@ -152,7 +152,7 @@
 (defn update-token-set [set-name token-set]
   (ptk/reify ::update-token-set
     ptk/WatchEvent
-    (watch [it state _]
+    (watch [it _ _]
       (let [changes (-> (pcb/empty-changes it)
                         (pcb/set-token-set set-name false token-set))]
         (rx/of
