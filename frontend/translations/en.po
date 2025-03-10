@@ -6632,6 +6632,10 @@ msgid "workspace.token.missing-references"
 msgstr "Missing token references: "
 
 #: src/app/main/ui/workspace/tokens/errors.cljs
+msgid "workspace.token.number-too-large"
+msgstr "Invalid token value. The resolved value is too large: %s"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs
 msgid "workspace.token.invalid-value"
 msgstr "Invalid token value: %s"
 
