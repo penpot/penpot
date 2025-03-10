@@ -1524,6 +1524,10 @@ msgstr "Shadow"
 msgid "inspect.attributes.size"
 msgstr "Size and position"
 
+#: src/app/main/ui/viewer/inspect/attributes/variant.cljs:40
+msgid "inspect.attributes.variant"
+msgstr "Variant properties"
+
 #: src/app/main/ui/viewer/inspect/attributes/stroke.cljs:52
 msgid "inspect.attributes.stroke"
 msgstr "Stroke"
