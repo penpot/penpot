@@ -70,9 +70,13 @@
   (let [new-token-theme token-theme]
     (ptk/reify ::create-token-theme
       ptk/WatchEvent
-      (watch [it _ _]
-        (let [changes (-> (pcb/empty-changes it)
-                          (pcb/add-token-theme new-token-theme))]
+      (watch [it state _]
+        (let [data    (dsh/lookup-file-data state)
+              changes (-> (pcb/empty-changes it)
+                          (pcb/with-library-data data)
+                          (pcb/set-token-theme (:group new-token-theme)
+                                               (:name new-token-theme)
+                                               new-token-theme))]
           (rx/of
            (dch/commit-changes changes)))))))
 
@@ -80,9 +84,14 @@
   (ptk/reify ::update-token-theme
     ptk/WatchEvent
     (watch [it state _]
-      (let [tokens-lib (get-tokens-lib state)
+      (let [tokens-lib       (get-tokens-lib state)
+            data             (dsh/lookup-file-data state)
             prev-token-theme (some-> tokens-lib (ctob/get-theme group name))
-            changes (pcb/update-token-theme (pcb/empty-changes it) token-theme prev-token-theme)]
+            changes          (-> (pcb/empty-changes it)
+                                 (pcb/with-library-data data)
+                                 (pcb/set-token-theme (:group prev-token-theme)
+                                                      (:name prev-token-theme)
+                                                      token-theme))]
         (rx/of
          (dch/commit-changes changes))))))
 
@@ -105,15 +114,14 @@
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
 
-(defn delete-token-theme [group name]
+(defn delete-token-theme [group theme-name]
   (ptk/reify ::delete-token-theme
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (dsh/lookup-file-data state)
-
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token-theme group name))]
+                        (pcb/set-token-theme group theme-name nil))]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
