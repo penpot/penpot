@@ -1,8 +1,8 @@
 use skia_safe::{self as skia, RRect};
 
 use super::{RenderState, SurfaceId};
-use crate::math::Rect;
-use crate::shapes::{Fill, ImageFill, Shape, Type};
+use crate::math::Rect as MathRect;
+use crate::shapes::{Fill, Frame, ImageFill, Rect, Shape, Type};
 
 fn draw_image_fill_in_container(
     render_state: &mut RenderState,
@@ -43,7 +43,7 @@ fn draw_image_fill_in_container(
     let scaled_width = width * scale;
     let scaled_height = height * scale;
 
-    let dest_rect = Rect::from_xywh(
+    let dest_rect = MathRect::from_xywh(
         container.left - (scaled_width - container_width) / 2.0,
         container.top - (scaled_height - container_height) / 2.0,
         scaled_width,
@@ -55,6 +55,16 @@ fn draw_image_fill_in_container(
 
     // Set the clipping rectangle to the container bounds
     match &shape.shape_type {
+        Type::Rect(Rect {
+            corners: Some(corners),
+        })
+        | Type::Frame(Frame {
+            corners: Some(corners),
+            ..
+        }) => {
+            let rrect: RRect = RRect::new_rect_radii(container, &corners);
+            canvas.clip_rrect(rrect, skia::ClipOp::Intersect, true);
+        }
         Type::Rect(_) | Type::Frame(_) => {
             canvas.clip_rect(container, skia::ClipOp::Intersect, true);
         }
