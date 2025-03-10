@@ -9,6 +9,7 @@ mod blurs;
 mod bools;
 mod corners;
 mod fills;
+mod fonts;
 mod frames;
 mod groups;
 mod layouts;
@@ -25,6 +26,7 @@ pub use blurs::*;
 pub use bools::*;
 pub use corners::*;
 pub use fills::*;
+pub use fonts::*;
 pub use frames::*;
 pub use groups::*;
 pub use layouts::*;
@@ -588,10 +590,15 @@ impl Shape {
         }
     }
 
-    pub fn add_text_leaf(&mut self, text_str: &str) -> Result<(), String> {
+    pub fn add_text_leaf(
+        &mut self,
+        text_str: String,
+        font_family: FontFamily,
+        font_size: f32,
+    ) -> Result<(), String> {
         match self.shape_type {
             Type::Text(ref mut text) => {
-                text.add_leaf(text_str)?;
+                text.add_leaf(text_str, font_family, font_size)?;
                 Ok(())
             }
             _ => Err("Shape is not a text".to_string()),

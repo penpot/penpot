@@ -38,14 +38,6 @@ pub extern "C" fn free_bytes() {
     std::mem::drop(guard);
 }
 
-pub fn buffer_ptr() -> *mut u8 {
-    let guard = BUFFERU8.lock().unwrap();
-
-    guard
-        .as_ref()
-        .map_or(std::ptr::null_mut(), |buffer| buffer.as_ptr() as *mut u8)
-}
-
 pub fn bytes() -> Vec<u8> {
     let mut guard = BUFFERU8.lock().unwrap();
 

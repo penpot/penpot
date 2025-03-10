@@ -4,6 +4,8 @@ use skia_safe::{
     textlayout::{FontCollection, ParagraphBuilder},
 };
 
+use super::FontFamily;
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct TextContent {
     paragraphs: Vec<Paragraph>,
@@ -38,15 +40,18 @@ impl TextContent {
         self.paragraphs.push(p);
     }
 
-    pub fn add_leaf(&mut self, text: &str) -> Result<(), String> {
+    pub fn add_leaf(
+        &mut self,
+        text: String,
+        font_family: FontFamily,
+        font_size: f32,
+    ) -> Result<(), String> {
         let paragraph = self
             .paragraphs
             .last_mut()
             .ok_or("No paragraph to add text leaf to")?;
 
-        paragraph.add_leaf(TextLeaf {
-            text: text.to_owned(),
-        });
+        paragraph.add_leaf(TextLeaf::new(text, font_family, font_size));
 
         Ok(())
     }
@@ -100,15 +105,29 @@ impl Paragraph {
 #[derive(Debug, PartialEq, Clone)]
 pub struct TextLeaf {
     text: String,
+    font_family: FontFamily,
+    font_size: f32,
 }
 
 impl TextLeaf {
+    pub fn new(text: String, font_family: FontFamily, font_size: f32) -> Self {
+        Self {
+            text,
+            font_family,
+            font_size,
+        }
+    }
+
     pub fn to_style(&self) -> skia::textlayout::TextStyle {
         let mut style = skia::textlayout::TextStyle::default();
-        // TODO: read text style info from the shape
         style.set_color(skia::Color::BLACK);
-        style.set_font_size(16.0);
+        style.set_font_size(self.font_size);
+        style.set_font_families(&[self.serialized_font_family()]);
 
         style
+    }
+
+    fn serialized_font_family(&self) -> String {
+        format!("{}", self.font_family)
     }
 }

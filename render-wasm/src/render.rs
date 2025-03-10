@@ -1,4 +1,4 @@
-use skia_safe::{self as skia, Contains, FontMgr, Matrix, RRect, Rect};
+use skia_safe::{self as skia, Contains, Matrix, RRect, Rect};
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -8,6 +8,7 @@ mod blend;
 mod cache;
 mod debug;
 mod fills;
+mod fonts;
 mod gpu_state;
 mod images;
 mod options;
@@ -23,10 +24,8 @@ use options::RenderOptions;
 use surfaces::{SurfaceId, Surfaces};
 
 pub use blend::BlendMode;
+pub use fonts::*;
 pub use images::*;
-
-const DEFAULT_FONT_BYTES: &[u8] =
-    include_bytes!("../../frontend/resources/fonts/RobotoMono-Regular.ttf");
 
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
@@ -57,9 +56,10 @@ pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub options: RenderOptions,
     pub surfaces: Surfaces,
+    fonts: FontStore,
     // TODO: we should probably have only one of these
-    pub font_provider: skia::textlayout::TypefaceFontProvider,
-    pub font_collection: skia::textlayout::FontCollection,
+    // pub font_provider: skia::textlayout::TypefaceFontProvider,
+    // pub font_collection: skia::textlayout::FontCollection,
     // ----
     pub cached_surface_image: Option<CachedSurfaceImage>,
     pub viewbox: Viewbox,
@@ -83,15 +83,8 @@ impl RenderState {
         let sampling_options =
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
         let surfaces = Surfaces::new(&mut gpu_state, (width, height), sampling_options);
-        let mut font_provider = skia::textlayout::TypefaceFontProvider::new();
-        let default_font = skia::FontMgr::default()
-            .new_from_data(DEFAULT_FONT_BYTES, None)
-            .expect("Failed to load font");
-        font_provider.register_typeface(default_font, "robotomono-regular");
-        let mut font_collection = skia::textlayout::FontCollection::new();
-        let font_manager = FontMgr::from(font_provider.clone());
-        font_collection.set_default_font_manager(FontMgr::default(), None);
-        font_collection.set_dynamic_font_manager(font_manager);
+
+        let fonts = FontStore::new();
 
         // This is used multiple times everywhere so instead of creating new instances every
         // time we reuse this one.
@@ -100,8 +93,9 @@ impl RenderState {
             gpu_state,
             surfaces,
             cached_surface_image: None,
-            font_provider,
-            font_collection,
+            // font_provider,
+            // font_collection,
+            fonts,
             options: RenderOptions::default(),
             viewbox: Viewbox::new(width as f32, height as f32),
             images: ImageStore::new(),
@@ -114,13 +108,11 @@ impl RenderState {
         }
     }
 
-    pub fn add_font(&mut self, family_name: String, font_data: &[u8]) -> Result<(), String> {
-        let typeface = skia::FontMgr::default()
-            .new_from_data(font_data, None)
-            .expect("Failed to add font");
-        self.font_provider
-            .register_typeface(typeface, family_name.as_ref());
-        Ok(())
+    pub fn fonts(&self) -> &FontStore {
+        &self.fonts
+    }
+    pub fn fonts_mut(&mut self) -> &mut FontStore {
+        &mut self.fonts
     }
 
     pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
@@ -324,7 +316,7 @@ impl RenderState {
                 if let Some(svg) = shape.svg.as_ref() {
                     svg.render(self.surfaces.canvas(SurfaceId::Fills))
                 } else {
-                    let font_manager = skia::FontMgr::from(self.font_provider.clone());
+                    let font_manager = skia::FontMgr::from(self.fonts().font_provider().clone());
                     let dom_result = skia::svg::Dom::from_str(sr.content.to_string(), font_manager);
                     match dom_result {
                         Ok(dom) => {
