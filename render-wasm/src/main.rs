@@ -24,16 +24,26 @@ extern "C" {
     ) -> *const ::std::os::raw::c_void;
 }
 
+#[macro_export]
 macro_rules! with_state {
     ($state:ident, $block:block) => {
-        let $state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+        let $state = unsafe {
+            #[allow(static_mut_refs)]
+            STATE.as_mut()
+        }
+        .expect("Got an invalid state pointer");
         $block
     };
 }
 
+#[macro_export]
 macro_rules! with_current_shape {
     ($state:ident, |$shape:ident: &mut Shape| $block:block) => {
-        let $state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+        let $state = unsafe {
+            #[allow(static_mut_refs)]
+            STATE.as_mut()
+        }
+        .expect("Got an invalid state pointer");
         if let Some($shape) = $state.current_shape() {
             $block
         }
@@ -601,17 +611,17 @@ pub extern "C" fn propagate_modifiers() -> *mut u8 {
         .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
         .collect();
 
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    let result = shapes::propagate_modifiers(state, entries);
-
-    mem::write_vec(result)
+    with_state!(state, {
+        let result = shapes::propagate_modifiers(state, entries);
+        return mem::write_vec(result);
+    });
 }
 
 #[no_mangle]
 pub extern "C" fn clean_modifiers() {
-    if let Some(state) = unsafe { STATE.as_mut() } {
+    with_state!(state, {
         state.modifiers.clear();
-    }
+    });
 }
 
 #[no_mangle]
@@ -623,12 +633,12 @@ pub extern "C" fn set_modifiers() {
         .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
         .collect();
 
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-
-    for entry in entries {
-        state.modifiers.insert(entry.id, entry.transform);
-    }
-    state.render_state().clear_cache();
+    with_state!(state, {
+        for entry in entries {
+            state.modifiers.insert(entry.id, entry.transform);
+        }
+        state.render_state().clear_cache();
+    });
 }
 
 #[no_mangle]
