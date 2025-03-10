@@ -127,10 +127,12 @@
       (update state :workspace-tokens dissoc :token-set-new-path))
 
     ptk/WatchEvent
-    (watch [it _ _]
-      (let [token-set (update token-set :name #(if (empty? %) set-name (ctob/join-set-path [% set-name])))
+    (watch [it state _]
+      (let [data (dsh/lookup-file-data state)
+            token-set-name #(if (empty? %) set-name (ctob/join-set-path [% set-name]))
             changes   (-> (pcb/empty-changes it)
-                          (pcb/add-token-set token-set))]
+                          (pcb/with-library-data data)
+                          (pcb/set-token-set token-set false token-set-name))]
         (rx/of (set-selected-token-set-name (:name token-set))
                (dch/commit-changes changes))))))
 
