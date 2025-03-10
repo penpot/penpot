@@ -36,9 +36,9 @@
   (for [property properties]
     (when-let [value (css/get-css-value objects shape property)]
       (let [property-name (cmm/get-css-rule-humanized property)]
-        [:div {:class (stl/css :layout-row)}
+        [:div {:class (stl/css :layout-row)
+               :key   (dm/str "layout-" (:id shape) "-" (d/name property))}
          [:div {:title property-name
-                :key   (dm/str "layout-" (:id shape) "-" (d/name property))
                 :class (stl/css :global/attr-label)}
           property-name]
          [:div {:class (stl/css :global/attr-value)}

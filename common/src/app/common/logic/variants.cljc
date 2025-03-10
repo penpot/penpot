@@ -60,6 +60,11 @@
                                                :value v}) remaining)]
     (into assigned new-properties)))
 
+(defn- dashes-to-end
+  [property-values]
+  (let [dashes (if (some #(= % "--") property-values) ["--"] [])]
+    (concat (remove #(= % "--") property-values) dashes)))
+
 
 (defn extract-properties-values
   [data objects variant-id]
@@ -68,8 +73,10 @@
        (group-by :name)
        (map (fn [[k v]]
               {:name k
-               :values (distinct
-                        (map #(if (str/empty? (:value %)) "--" (:value %)) v))}))))
+               :value (->> v
+                           (map #(if (str/empty? (:value %)) "--" (:value %)))
+                           distinct
+                           dashes-to-end)}))))
 
 
 (defn generate-update-property-name
