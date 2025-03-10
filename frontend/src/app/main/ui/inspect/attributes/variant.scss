@@ -1,0 +1,25 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.attributes-block {
+  @include flexColumn;
+}
+
+.title-spacing-variant {
+  @extend .attr-title;
+}
+
+.variant-row {
+  @extend .attr-row;
+  height: fit-content;
+}
+
+.button-children {
+  @extend .copy-button-children;
+  word-break: break-word;
+}

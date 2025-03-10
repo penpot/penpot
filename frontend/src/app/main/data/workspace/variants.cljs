@@ -180,7 +180,7 @@
             value               (str clv/value-prefix
                                      (-> (clv/extract-properties-values data objects (:variant-id component))
                                          last
-                                         :values
+                                         :value
                                          count
                                          inc))
 
