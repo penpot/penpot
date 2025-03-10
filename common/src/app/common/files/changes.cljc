@@ -394,11 +394,6 @@
       [:group :string]
       [:name :string]]]
 
-    [:add-token-set
-     [:map {:title "AddTokenSetChange"}
-      [:type [:= :add-token-set]]
-      [:token-set ::ctot/token-set]]]
-
     [:add-token-sets
      [:map {:title "AddTokenSetsChange"}
       [:type [:= :add-token-sets]]
@@ -410,11 +405,6 @@
       [:set-group-path [:vector :string]]
       [:set-group-fname :string]]]
 
-    [:mod-token-set
-     [:map {:title "ModTokenSetChange"}
-      [:type [:= :mod-token-set]]
-      [:name :string]
-      [:token-set ::ctot/token-set]]]
 
     [:move-token-set-before
      [:map {:title "MoveTokenSetBefore"}
@@ -432,16 +422,6 @@
       [:before-path [:maybe [:vector :string]]]
       [:before-group? [:maybe :boolean]]]]
 
-    [:del-token-set
-     [:map {:title "DelTokenSetChange"}
-      [:type [:= :del-token-set]]
-      [:name :string]]]
-
-    [:del-token-set-path
-     [:map {:title "DelTokenSetPathChange"}
-      [:type [:= :del-token-set-path]]
-      [:path :string]]]
-
     [:set-tokens-lib
      [:map {:title "SetTokensLib"}
       [:type [:= :set-tokens-lib]]
@@ -452,7 +432,7 @@
       [:type [:= :set-token-set]]
       [:set-name :string]
       [:group? :boolean]
-      [:token-set :any #_[:maybe ::ctob/token-set]]]]
+      [:token-set [:maybe ::ctot/token-set]]]]
 
     [:set-token
      [:map {:title "SetTokenChange"}
@@ -1084,12 +1064,6 @@
                                 (ctob/ensure-tokens-lib)
                                 (ctob/delete-theme group name))))
 
-(defmethod process-change :add-token-set
-  [data {:keys [token-set]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/add-set (ctob/make-token-set token-set)))))
-
 (defmethod process-change :add-token-sets
   [data {:keys [token-sets]}]
   (update data :tokens-lib #(-> %
@@ -1103,14 +1077,6 @@
                                  (ctob/ensure-tokens-lib)
                                  (ctob/rename-set-group set-group-path set-group-fname)))))
 
-(defmethod process-change :mod-token-set
-  [data {:keys [name token-set]}]
-  (update data :tokens-lib (fn [lib]
-                             (-> lib
-                                 (ctob/ensure-tokens-lib)
-                                 (ctob/update-set name (fn [prev-set]
-                                                         (merge prev-set (dissoc token-set :tokens))))))))
-
 (defmethod process-change :move-token-set-before
   [data {:keys [from-path to-path before-path before-group?] :as changes}]
   (update data :tokens-lib #(-> %
@@ -1122,18 +1088,6 @@
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
                                 (ctob/move-set-group from-path to-path before-path before-group?))))
-
-(defmethod process-change :del-token-set
-  [data {:keys [name]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/delete-set-path name))))
-
-(defmethod process-change :del-token-set-path
-  [data {:keys [path]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/delete-set-path path))))
 
 ;; === Operations
 
