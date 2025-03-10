@@ -600,6 +600,7 @@
   (-> attrs
       (assoc :group hidden-token-theme-group)
       (assoc :name hidden-token-theme-name)
+      (assoc :id (str uuid/zero))
       (make-token-theme)))
 
 ;; === TokenThemes (collection)
