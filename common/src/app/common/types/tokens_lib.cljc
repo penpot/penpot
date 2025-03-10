@@ -259,6 +259,9 @@
   (-> (split-token-set-name name)
       (peek)))
 
+(defn split-token-set-path [token-set-path]
+  (split-path token-set-path set-separator))
+
 (defn set-name->prefixed-full-path [name-str]
   (-> (split-token-set-name name-str)
       (set-full-path->set-prefixed-full-path)))
@@ -434,6 +437,8 @@
   (add-sets [_ token-set] "add a collection of sets to the library, at the end")
   (update-set [_ set-name f] "modify a set in the library")
   (delete-set-path [_ set-path] "delete a set in the library")
+  (delete-set [_ set-name] "delete a set at `set-name` in the library and disable the `set-name` in all themes")
+  (delete-set-group [_ set-group-name] "delete a set group at `set-group-name` in the library and disable its child sets in all themes")
   (move-set [_ from-path to-path before-path before-group?] "Move token set at `from-path` to `to-path` and order it before `before-path` with `before-group?`.")
   (move-set-group [_ from-path to-path before-path before-group?] "Move token set group at `from-path` to `to-path` and order it before `before-path` with `before-group?`.")
   (set-count [_] "get the total number if sets in the library")
@@ -895,6 +900,33 @@ Will return a value that matches this schema:
                         themes
                         active-themes)))
         this)))
+
+
+  (delete-set [_ set-name]
+    (let [prefixed-path (set-name->prefixed-full-path set-name)]
+      (TokensLib. (d/dissoc-in sets prefixed-path)
+                  (walk/postwalk
+                   (fn [form]
+                     (if (instance? TokenTheme form)
+                       (disable-set form set-name)
+                       form))
+                   themes)
+                  active-themes)))
+
+  (delete-set-group [this set-group-name]
+    (let [path (split-token-set-path set-group-name)
+          prefixed-path (map add-set-group-prefix path)
+          child-set-names (->> (get-sets-at-path this path)
+                               (map :name)
+                               (into #{}))]
+      (TokensLib. (d/dissoc-in sets prefixed-path)
+                  (walk/postwalk
+                   (fn [form]
+                     (if (instance? TokenTheme form)
+                       (disable-sets form child-set-names)
+                       form))
+                   themes)
+                  active-themes)))
 
   (delete-set-path [_ prefixed-set-name]
     (let [prefixed-set-path (split-token-set-name prefixed-set-name)
