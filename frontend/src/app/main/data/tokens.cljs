@@ -263,7 +263,7 @@
             (ctob/enable-set hidden-theme set-name)
 
             changes
-            (pcb/add-token-set (pcb/empty-changes) token-set)
+            (pcb/set-token-set (pcb/empty-changes) set-name false token-set)
 
             changes
             (-> changes
