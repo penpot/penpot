@@ -128,12 +128,16 @@
 
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (dsh/lookup-file-data state)
-            token-set-name #(if (empty? %) set-name (ctob/join-set-path [% set-name]))
+      (let [token-set' (-> token-set
+                           (update :name #(if (empty? %)
+                                            set-name
+                                            (ctob/join-set-path [% set-name]))))
+            data (dsh/lookup-file-data state)
+            token-set-name (:name token-set')
             changes   (-> (pcb/empty-changes it)
                           (pcb/with-library-data data)
-                          (pcb/set-token-set token-set false token-set-name))]
-        (rx/of (set-selected-token-set-name (:name token-set))
+                          (pcb/set-token-set token-set-name false token-set'))]
+        (rx/of (set-selected-token-set-name token-set-name)
                (dch/commit-changes changes))))))
 
 (defn rename-token-set-group [set-group-path set-group-fname]
@@ -149,10 +153,8 @@
   (ptk/reify ::update-token-set
     ptk/WatchEvent
     (watch [it state _]
-      (let [prev-token-set (some-> (get-tokens-lib state)
-                                   (ctob/get-set set-name))
-            changes (-> (pcb/empty-changes it)
-                        (pcb/update-token-set token-set prev-token-set))]
+      (let [changes (-> (pcb/empty-changes it)
+                        (pcb/set-token-set set-name false token-set))]
         (rx/of
          (set-selected-token-set-name (:name token-set))
          (dch/commit-changes changes))))))
@@ -198,7 +200,7 @@
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token-set-path group? path))]
+                        (pcb/set-token-set (ctob/join-set-path path) group? nil))]
         (rx/of (dch/commit-changes changes)
                (wtu/update-workspace-tokens))))))
 
