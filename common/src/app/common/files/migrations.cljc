@@ -1237,6 +1237,20 @@
       (update data :tokens-lib update-tokens-lib)
       data)))
 
+(defmethod migrate-data "Add token theme id"
+  [data _]
+  (letfn [(update-tokens-lib [tokens-lib]
+            (let [themes (ctob/get-themes tokens-lib)]
+              (reduce (fn [lib theme]
+                        (if (:id theme)
+                          lib
+                          (ctob/update-theme lib (:group theme) (:name theme) #(assoc % :id (str (uuid/next))))))
+                      tokens-lib
+                      themes)))]
+    (if (contains? data :tokens-lib)
+      (update data :tokens-lib update-tokens-lib)
+      data)))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1291,4 +1305,5 @@
          "legacy-65"
          "legacy-66"
          "legacy-67"
-         "Add hidden theme"]))
+         "Add hidden theme"
+         "Add token theme id"]))

@@ -13,6 +13,7 @@
    [app.common.time :as dt]
    [app.common.transit :as t]
    [app.common.types.token :as cto]
+   [app.common.uuid :as uuid]
    [clojure.set :as set]
    [clojure.walk :as walk]
    [cuerdas.core :as str]))
@@ -496,13 +497,14 @@
   (theme-matches-group-name [_ group name] "if a theme matches the given group & name")
   (hidden-temporary-theme? [_] "if a theme is the (from the user ui) hidden temporary theme"))
 
-(defrecord TokenTheme [name group description is-source modified-at sets]
+(defrecord TokenTheme [name group description is-source id modified-at sets]
   ITokenTheme
   (set-sets [_ set-names]
     (TokenTheme. name
                  group
                  description
                  is-source
+                 id
                  (dt/now)
                  set-names))
 
@@ -529,6 +531,7 @@
                    group
                    description
                    is-source
+                   id
                    (dt/now)
                    (conj (disj sets prev-set-name) set-name))
       this))
@@ -553,6 +556,7 @@
    [:group :string]
    [:description [:maybe :string]]
    [:is-source [:maybe :boolean]]
+   [:id :string]
    [:modified-at ::sm/inst]
    [:sets [:set {:gen/max 5} :string]]])
 
@@ -583,10 +587,11 @@
   [& {:as attrs}]
   (-> attrs
       (update :group d/nilv top-level-theme-group-name)
+      (update :description d/nilv "")
       (update :is-source d/nilv false)
+      (update :id d/nilv (str (uuid/next)))
       (update :modified-at #(or % (dt/now)))
       (update :sets set)
-      (update :description d/nilv "")
       (check-token-theme-attrs)
       (map->TokenTheme)))
 
@@ -595,6 +600,7 @@
   (-> attrs
       (assoc :group hidden-token-theme-group)
       (assoc :name hidden-token-theme-name)
+      (assoc :id (str uuid/zero))
       (make-token-theme)))
 
 ;; === TokenThemes (collection)
@@ -1269,11 +1275,12 @@ Will return a value that matches this schema:
       (if-let [themes-data (seq themes-data)]
         (as-> lib' $
           (reduce
-           (fn [lib {:strs [name group description is-source modified-at sets]}]
+           (fn [lib {:strs [name group description is-source id modified-at sets]}]
              (add-theme lib (TokenTheme. name
                                          (or group "")
                                          description
                                          (some? is-source)
+                                         (or id (str (uuid/next)))
                                          (or (some-> modified-at
                                                      (dt/parse-instant))
                                              (dt/now))

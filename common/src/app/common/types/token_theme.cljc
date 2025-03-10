@@ -15,6 +15,7 @@
   [:group :string]
   [:description [:maybe :string]]
   [:is-source :boolean]
+  [:id :string]
   [:modified-at {:optional true} ::sm/inst]
   [:sets :any]])
 
