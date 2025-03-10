@@ -1257,7 +1257,7 @@
                                                                           :value "{accent.default}"})}))
                             (ctob/add-theme (ctob/make-token-theme :name "theme-1"
                                                                    :group "group-1"
-                                                                   :id "test-id"
+                                                                   :id "test-id-00"
                                                                    :modified-at now
                                                                    :sets #{"core"})))
              result   (ctob/encode-dtcg tokens-lib)
@@ -1265,7 +1265,7 @@
                                    "group" "group-1"
                                    "is-source" false
                                    "modified-at" now
-                                   "id" "test-id"
+                                   "id" "test-id-00"
                                    "name" "theme-1"
                                    "selectedTokenSets" {"core" "enabled"}}]
                        "$metadata" {"tokenSetOrder" ["core"]
@@ -1288,7 +1288,7 @@
 
      (t/testing "encode-decode-dtcg-json"
        (with-redefs [dt/now (constantly #inst "2024-10-16T12:01:20.257840055-00:00")]
-         (let [tokens-lib (-> (ctob/make-tokens-lib) ;;Aqui se genera un id al default theme
+         (let [tokens-lib (-> (ctob/make-tokens-lib)
                               (ctob/add-set (ctob/make-token-set :name "core"
                                                                  :tokens {"colors.red.600"
                                                                           (ctob/make-token
@@ -1377,7 +1377,7 @@
                                                                           :value "{accent.default}"})}))
                             (ctob/add-theme (ctob/make-token-theme :name "theme-1"
                                                                    :group "group-1"
-                                                                   :id "test-id"
+                                                                   :id "test-id-01"
                                                                    :modified-at now
                                                                    :sets #{"core"}))
                             (ctob/toggle-theme-active? "group-1" "theme-1"))
@@ -1386,7 +1386,7 @@
                                    "group" "group-1"
                                    "is-source" false
                                    "modified-at" now
-                                   "id" "test-id"
+                                   "id" "test-id-01"
                                    "name" "theme-1"
                                    "selectedTokenSets" {"core" "enabled"}}]
                        "$metadata" {"tokenSetOrder" ["core"]
