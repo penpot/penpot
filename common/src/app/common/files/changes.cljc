@@ -422,6 +422,13 @@
       [:before-path [:maybe [:vector :string]]]
       [:before-group? [:maybe :boolean]]]]
 
+    [:set-token-theme
+     [:map {:title "SetTokenThemeChange"}
+      [:type [:= :set-token-theme]]
+      [:theme-name :string]
+      [:group :string]
+      [:theme [:maybe ::ctot/token-theme]]]]
+
     [:set-tokens-lib
      [:map {:title "SetTokensLib"}
       [:type [:= :set-tokens-lib]]
