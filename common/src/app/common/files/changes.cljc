@@ -447,6 +447,13 @@
       [:type [:= :set-tokens-lib]]
       [:tokens-lib :any]]]
 
+    [:set-token-set
+     [:map {:title "SetTokenSetChange"}
+      [:type [:= :set-token-set]]
+      [:set-name :string]
+      [:group? :boolean]
+      [:token-set :any #_[:maybe ::ctob/token-set]]]]
+
     [:set-token
      [:map {:title "SetTokenChange"}
       [:type [:= :set-token]]
@@ -1032,6 +1039,24 @@
                 :else
                 (ctob/update-token-in-set lib' set-name token-name (fn [prev-token]
                                                                      (ctob/make-token (merge prev-token token)))))))))
+
+(defmethod process-change :set-token-set
+  [data {:keys [set-name group? token-set]}]
+  (update data :tokens-lib
+          (fn [lib]
+            (let [lib' (ctob/ensure-tokens-lib lib)]
+              (cond
+                (not token-set)
+                (if group?
+                  (ctob/delete-set-group lib' set-name)
+                  (ctob/delete-set lib' set-name))
+
+                (not (ctob/get-set lib' set-name))
+                (ctob/add-set lib' (ctob/make-token-set token-set))
+
+                :else
+                (ctob/update-set lib' set-name (fn [prev-token-set]
+                                                 (ctob/make-token-set (merge prev-token-set token-set)))))))))
 
 (defmethod process-change :update-active-token-themes
   [data {:keys [theme-ids]}]
