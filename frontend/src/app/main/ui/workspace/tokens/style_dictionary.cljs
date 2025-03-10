@@ -3,6 +3,7 @@
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
    [app.main.ui.workspace.tokens.errors :as wte]
@@ -42,7 +43,7 @@
          :warnings "silent"
          :errors {:brokenReferences "console"}}})
 
-(defn parse-sd-token-color-value
+(defn- parse-sd-token-color-value
   "Parses `value` of a color `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the value is not parseable and/or has missing references returns a map with `:errors`."
   [value]
@@ -50,18 +51,23 @@
     {:value value :unit (tinycolor/color-format tc)}
     {:errors [(wte/error-with-value :error.token/invalid-color value)]}))
 
-(defn parse-sd-token-dimensions-value
-  "Parses `value` of a dimensions `sd-token` into a map like `{:value 1 :unit \"px\"}`.
+(defn- parse-sd-token-numeric-value
+  "Parses `value` of a numeric `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (or
-   (wtt/parse-token-value value)
-   (if-let [references (seq (ctob/find-token-value-references value))]
-     {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
-      :references references}
-     {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
+  (let [parsed-value  (wtt/parse-token-value value)
+        out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
+                          (<= (:value parsed-value) sm/min-safe-int))]
+    (if (and parsed-value (not out-of-bounds))
+      parsed-value
+      (if out-of-bounds
+        {:errors [(wte/error-with-value :error.token/number-too-large value)]}
+        (if-let [references (seq (ctob/find-token-value-references value))]
+          {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+           :references references}
+          {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))))
 
-(defn parse-sd-token-opacity-value
+(defn- parse-sd-token-opacity-value
   "Parses `value` of a dimensions `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`.
   If the `value` is parseable but is out of range returns a map with `warnings`."
@@ -126,7 +132,7 @@
            parsed-token-value (case (:type origin-token)
                                 :color (parse-sd-token-color-value value)
                                 :opacity (parse-sd-token-opacity-value value has-references?)
-                                (parse-sd-token-dimensions-value value))
+                                (parse-sd-token-numeric-value value))
            output-token (cond (:errors parsed-token-value)
                               (merge origin-token parsed-token-value)
                               (:warnings parsed-token-value)

@@ -28,6 +28,10 @@
    {:error/code :error.token/invalid-color
     :error/fn #(str (tr "workspace.token.invalid-color" %))}
 
+   :error.token/number-too-large
+   {:error/code :error.token/number-too-large
+    :error/fn #(str (tr "workspace.token.number-too-large" %))}
+
    :error.style-dictionary/missing-reference
    {:error/code :error.style-dictionary/missing-reference
     :error/fn #(str (tr "workspace.token.missing-references") (str/join " " %))}
