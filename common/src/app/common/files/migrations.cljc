@@ -1226,14 +1226,14 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(defmethod migrate-data "Add hidden theme"
+(defmethod migrate-data "Ensure hidden theme"
   [data _]
   (letfn [(update-tokens-lib [tokens-lib]
             (let [hidden-theme (ctob/get-hidden-theme tokens-lib)]
               (if (nil? hidden-theme)
                 (ctob/add-theme tokens-lib (ctob/make-hidden-token-theme))
                 tokens-lib)))]
-    (if (contains? data :tokensLib)
+    (if (contains? data :tokens-lib)
       (update data :tokens-lib update-tokens-lib)
       data)))
 
@@ -1305,5 +1305,5 @@
          "legacy-65"
          "legacy-66"
          "legacy-67"
-         "Add hidden theme"
+         "Ensure hidden theme"
          "Add token theme id"]))
