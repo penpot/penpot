@@ -131,7 +131,29 @@
       (t/is (nil? (ctob/get-theme redo-lib group new-theme-name)))
       ;; Undo
       (t/is (some? (ctob/get-theme undo-lib group theme-name)))
-      (t/is (nil? (ctob/get-theme undo-lib group new-theme-name))))))
+      (t/is (nil? (ctob/get-theme undo-lib group new-theme-name)))))
+
+  (t/testing "toggling token theme updates using changes history"
+    (let [theme-name "foo-theme"
+          group "main"
+          set-name "bar-set"
+          token-set (ctob/make-token-set :name set-name)
+          theme (ctob/make-token-theme :name theme-name
+                                       :group group)
+          file (setup-file #(-> %
+                                (ctob/add-theme theme)
+                                (ctob/add-set token-set)))
+          theme' (assoc theme :sets #{set-name})
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (pcb/set-token-theme group theme-name theme'))
+          changed-file (-> file
+                           (thf/apply-changes changes)
+                           (thf/apply-undo-changes changes)
+                           (thf/apply-changes changes))
+          changed-lib (tht/get-tokens-lib changed-file)]
+      (t/is (= #{set-name}
+               (-> changed-lib (ctob/get-theme group theme-name) :sets))))))
 
 (t/deftest set-token-test
   (t/testing "delete token"
