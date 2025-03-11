@@ -28,7 +28,7 @@
   (i/icon-xref :arrow (stl/css :arrow-icon)))
 
 (def ^:private download-icon
-  (i/icon-xref :download (stl/css :download-icon)))
+  (i/icon-xref :add (stl/css :download-icon)))
 
 (def builtin-templates
   (l/derived :builtin-templates st/state))
@@ -241,6 +241,9 @@
                                 :collapsed collapsed)}
      [:> title* {:on-click on-toggle-collapse
                  :is-collapsed collapsed}]
+                 
+     [:p {:class (stl/css :content-description)} 
+      "Here you have some Libraries and templates you can add to your project"]
 
      [:div {:class (stl/css :content)
             :on-scroll on-scroll
