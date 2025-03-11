@@ -26,7 +26,7 @@ title: 10· Design Tokens
 <p>To create a token, click on the + next to the type of token you want to create. You’ll then be prompted to define the token’s:</p>
 <ul>
     <li><strong>Name:</strong> The name should be specific to that token, as it is not possible to create multiple tokens with the same name; for example, <strong>dimension.small</strong>.</li>
-    <li><strong>Value:</strong> The value you wish to attribute to the token; depending on the token type, values may be numerical or color spaces (Hex, RGB, RGBA, ARGB, or HSLA).</li>
+    <li><strong>Value:</strong> The value you wish to attribute to the token; depending on the token type, values may be numerical or color spaces (Hex, RGB, RGBA, ARGB, HSL or HSLA).</li>
     <li><strong>Description:</strong> You can also choose to add a description to your token.</li>
 </ul>
 <p>Once you have named the token and assigned it a value, click <strong>Save</strong> to store the token and start referencing it.</p>
@@ -60,6 +60,7 @@ title: 10· Design Tokens
 <figure>
   <img src="/img/design-tokens/05-tokens-edit.webp" alt="Tokens edit" />
 </figure>
+<p class="advice">Renaming tokens will break any references to their old names. If a token is already applied somewhere, you'll need to reapply it after renaming. This can lead to extra work, so rename with caution. We're actively working on a solution to handle this automatically, ensuring renamed tokens stay linked to their properties without additional effort.</p>
 
 <h3 id="design-tokens-duplicate">Duplicating a token</h3>
 <p>Tokens can be duplicated by right-clicking the token you wish to duplicate and selecting <strong>Duplicate token</strong>. This will create a copy of the selected token within the same set, with <code class="language-js">-copy</code> added to its name.</p>
@@ -68,6 +69,12 @@ title: 10· Design Tokens
 <p>Tokens can be deleted by right-clicking the token you wish to delete and selecting <strong>Delete token</strong>.</p>
 
 <h2 id="design-tokens-available">Available tokens</h2>
+<p>You can apply tokens to the properties of any <a href="/user-guide/objects/" target="_blank">object</a>. There are two ways to apply tokens to a selection:</p>
+<ul>
+  <li>Right-click on tokens to specify a particular property that you want to apply.</li>
+  <li>Left-click on tokens to apply the assumtion. Assumptions can vary across different token types. For example, for the <strong>color</strong> type the assumtion is that you want to apply the token as a <strong>fill</strong>.</li>
+</ul>
+<p>Tokens can be applied to multiple selected elements, but not to groups.</p>
 
 <h3 id="design-tokens-radius">Border radius</h3>
 <p>Border radius tokens allow you to define specific values for border-radius properties, offering flexibility in how you style the corners of elements.</p>
@@ -96,6 +103,7 @@ title: 10· Design Tokens
             <li>RGB: rgb(255, 0, 0)</li>
             <li>RGBA: rgba(255, 0, 0, 1)</li>
             <li>ARGB: #80FFFF00 (also known as Hex8)</li>
+            <li>HSL: hsl(120, 50%, 50%)</li>
             <li>HSLA: hsla(120, 50%, 50%, 1)</li>
         </ul>
     </li>
@@ -158,13 +166,22 @@ title: 10· Design Tokens
 <p class="advice">If you apply the token to a board before flex-layout is applied to it, you may have to remove and re-apply the token for it to take effect.</p>
 <p>When using dimension tokens for spacing, you can apply the token to an element's padding and gap. Specifically, you can select:</p>
 <ul>
-    <li><strong>All</strong> to apply padding to all sides of the element;</li>
-    <li><strong>Horizontal</strong> to apply padding to the left and right sides of the element;</li>
-    <li><strong>Vertical</strong> to apply padding to the top and bottom of the element; </li>
-    <li><strong>Top</strong>, <strong>right</strong>, <strong>bottom</strong> or <strong>left</strong> to apply padding to individual sides of the element;</li>
-    <li><strong>All (gap)</strong> to apply the gap to all sides of the element;</li>
-    <li><strong>Column Gap</strong> to add a gap between child elements within a parent element;</li>
-    <li><strong>Row Gap</strong> to add vertical space between rows on flex-layout board elements set to wrap. </li>
+  <li>
+    <strong>Gaps</strong>
+    <ul>
+      <li><strong>All</strong> to apply the gap to all sides of the element;</li>
+      <li><strong>Column Gap</strong> to add a gap between child elements within a parent element;</li>
+      <li><strong>Row Gap</strong> to add vertical space between rows on flex-layout board elements set to wrap. </li></li>
+    </ul>
+  </li>
+  <li>
+    <strong>Paddings & Margins:</strong>
+    <ul>
+        <li><strong>Horizontal</strong> applies to the left and right of the container;</li>
+        <li><strong>Vertical</strong> and to the top and bottom sides of the container;</li>
+        <li><strong>Top, right, bottom or left</strong> apply space to individual sides of the element.</li>
+    </ul>
+  </li>
 </ul>
 
 <h4>Border radius (dimension)</h4>
@@ -226,27 +243,24 @@ title: 10· Design Tokens
 </ul>
 
 <h3 id="design-tokens-spacing">Spacing</h3>
-<p>The spacing token defines the distance between design elements and supports numeric values, which include negative values and multiple values. Spacing tokens must be applied to Flex Layout boards. </p>
+<p>The spacing token defines the distance between design elements and supports numeric values, which include negative values. Spacing tokens must be applied to Flex Layout boards. </p>
 <p class="advice">If you apply the token to a board before flex-layout is applied to it, you may have to remove and re-apply the token for it to take effect.</p>
 <h4>Applying Spacing Tokens</h4>
 <p>To apply the spacing token to an element, select the element and choose the token from the list:</p>
 <ul>
     <li>Clicking on a spacing token will apply it to all gaps (row and column).</li>
     <li>Right-clicking on a spacing token, allows you to specify which property of the element the token should apply to. In this menu, properties are divided by blocks. In each property you can choose to apply to ‘All’ sides in a specific property, or choose to apply them to individual sides:</li>
+    <li><strong>Gaps:</strong> Applies spaces between child elements within a parent container (both column and row gaps). This only works on flex and grid layouts.</li>
     <li>
+        <strong>Paddings & Margins:</strong>
         <ul>
-            <li><strong>Gaps:</strong> Applies spaces between child elements within a parent container (both column and row gaps). This only works on flex and grid layouts.</li>
-            <li>
-                <strong>Paddings & Margins:</strong>
-                <ul>
-                    <li><strong>Horizontal</strong> applies to the left and right of the container;</li>
-                    <li><strong>Vertical</strong> and to the top and bottom sides of the container;</li>
-                    <li><strong>Top, right, bottom or left</strong> apply space to individual sides of the element.</li>
-                </ul>
-            </li>
+            <li><strong>Horizontal</strong> applies to the left and right of the container;</li>
+            <li><strong>Vertical</strong> and to the top and bottom sides of the container;</li>
+            <li><strong>Top, right, bottom or left</strong> apply space to individual sides of the element.</li>
         </ul>
     </li>
 </ul>
+
 <h4>Stroke Width</h4>
 <p>The stroke width token, also known as the border width token, defines the thickness of a stroke around a design element. It can be applied to boards, groups, rectangles and text elements.</p>
 
