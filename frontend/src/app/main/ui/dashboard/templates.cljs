@@ -81,16 +81,21 @@
       [:span {:class (stl/css :title-text)}
        (tr "dashboard.libraries-and-templates")]
       (if ^boolean is-collapsed
-        [:span {:class (stl/css :title-icon :title-icon-collapsed)}
-         arrow-icon]
-        [:span {:class (stl/css :title-icon)}
-         arrow-icon])]]))
+        [:span {:class (stl/css :title-icon-container)}
+         [:span {:class (stl/css :title-icon-text)} (tr "labels.show")] 
+         [:span {:class (stl/css :title-icon :title-icon-collapsed)}
+          arrow-icon]]
+        [:span {:class (stl/css :title-icon-container)}
+         [:span {:class (stl/css :title-icon-text)} (tr "labels.hide")] 
+         [:span {:class (stl/css :title-icon)}
+          arrow-icon]])]]))
 
 (mf/defc card-item
   {::mf/wrap-props false}
   [{:keys [item index is-visible collapsed on-import]}]
   (let [id  (dm/str "card-container-" index)
         thb (assoc cf/public-uri :path (dm/str "/images/thumbnails/template-" (:id item) ".jpg"))
+        hover? (mf/use-state false)
 
         on-click
         (mf/use-fn
@@ -112,6 +117,8 @@
          :data-index index
          :on-click on-click
          :on-mouse-down dom/prevent-default
+         :on-mouse-enter #(reset! hover? true)
+         :on-mouse-leave #(reset! hover? false)
          :on-key-down on-key-down}
      [:div {:class (stl/css :template-card)}
       [:div {:class (stl/css :img-container)}
@@ -120,7 +127,10 @@
               :loading "lazy"
               :decoding "async"}]]
       [:div {:class (stl/css :card-name)}
-       [:span {:class (stl/css :card-text)} (:name item)]
+       [:span {:class (stl/css :card-text)} 
+        (if @hover? 
+          (tr "dashboard.template.add-to-project")
+          (:name item))]
        download-icon]]]))
 
 (mf/defc card-item-link
@@ -243,7 +253,7 @@
                  :is-collapsed collapsed}]
                  
      [:p {:class (stl/css :content-description)} 
-      "Here you have some Libraries and templates you can add to your project"]
+      (tr "dashboard.libraries-and-templates.description")]
 
      [:div {:class (stl/css :content)
             :on-scroll on-scroll
