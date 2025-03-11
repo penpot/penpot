@@ -53,6 +53,35 @@ pub struct NodeRenderState {
     pub mask: bool,
 }
 
+impl NodeRenderState {
+    pub fn get_children_clip_bounds(
+        &self,
+        element: &Shape,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) -> Option<(Rect, Option<Corners>, Matrix)> {
+        if self.id.is_nil() || !element.clip() {
+            return self.clip_bounds;
+        }
+
+        let bounds = element.selrect();
+        let mut transform = element.transform;
+        transform.post_translate(bounds.center());
+        transform.pre_translate(-bounds.center());
+
+        if let Some(modifier) = modifiers.get(&element.id) {
+            transform.post_concat(modifier);
+        }
+
+        let corners = match &element.shape_type {
+            Type::Rect(data) => data.corners,
+            Type::Frame(data) => data.corners,
+            _ => None,
+        };
+
+        Some((bounds, corners, transform))
+    }
+}
+
 pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub options: RenderOptions,
@@ -675,21 +704,7 @@ impl RenderState {
 
             if element.is_recursive() {
                 let children_clip_bounds =
-                    (!node_render_state.id.is_nil() & element.clip()).then(|| {
-                        let bounds = element.selrect();
-                        let mut transform = element.transform;
-                        transform.post_translate(bounds.center());
-                        transform.pre_translate(-bounds.center());
-                        if let Some(modifiers) = modifiers.get(&element.id) {
-                            transform.post_concat(&modifiers);
-                        }
-                        let corners = match &element.shape_type {
-                            Type::Rect(data) => data.corners,
-                            Type::Frame(data) => data.corners,
-                            _ => None,
-                        };
-                        (bounds, corners, transform)
-                    });
+                    node_render_state.get_children_clip_bounds(element, &modifiers);
 
                 for child_id in element.children_ids().iter().rev() {
                     self.pending_nodes.push(NodeRenderState {
