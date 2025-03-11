@@ -271,8 +271,6 @@
             set-name
             "Global"
 
-            data    (dsh/lookup-file-data state)
-
             token-set
             (-> (ctob/make-token-set :name set-name)
                 (ctob/add-token token))
