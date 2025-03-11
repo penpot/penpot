@@ -492,7 +492,7 @@
            :auto-focus true
            :label (tr "workspace.token.token-name")
            :default-value @name-ref
-           :maxlength 256
+           :max-length 256
            :on-blur on-blur-name
            :on-change on-update-name}])
 
@@ -515,7 +515,7 @@
         {:id "token-value"
          :placeholder (tr "workspace.token.enter-token-value")
          :label (tr "workspace.token.token-value")
-         :maxlength 256
+         :max-length 256
          :default-value @value-ref
          :ref value-input-ref
          :on-change on-update-value
@@ -534,7 +534,7 @@
         {:id "token-description"
          :placeholder (tr "workspace.token.enter-token-description")
          :label (tr "workspace.token.token-description")
-         :maxlength 256
+         :max-length 256
          :default-value @description-ref
          :on-blur on-update-description
          :on-change on-update-description}]

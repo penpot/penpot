@@ -25,4 +25,4 @@
   [:name :string]
   [:description {:optional true} [:maybe :string]]
   [:modified-at {:optional true} ::sm/inst]
-  [:tokens :any]])
+  [:tokens {:optional true} :any]])

@@ -803,13 +803,6 @@
         (update :undo-changes conj {:type :add-token-theme :token-theme prev-token-theme})
         (apply-changes-local))))
 
-(defn add-token-set
-  [changes token-set]
-  (-> changes
-      (update :redo-changes conj {:type :add-token-set :token-set token-set})
-      (update :undo-changes conj {:type :del-token-set :name (:name token-set)})
-      (apply-changes-local)))
-
 (defn rename-token-set-group
   [changes set-group-path set-group-fname]
   (let [undo-path (ctob/replace-last-path-name set-group-path set-group-fname)
@@ -817,29 +810,6 @@
     (-> changes
         (update :redo-changes conj {:type :rename-token-set-group :set-group-path set-group-path :set-group-fname set-group-fname})
         (update :undo-changes conj {:type :rename-token-set-group :set-group-path undo-path :set-group-fname undo-fname})
-        (apply-changes-local))))
-
-(defn update-token-set
-  [changes token-set prev-token-set]
-  (-> changes
-      (update :redo-changes conj {:type :mod-token-set :name (:name prev-token-set) :token-set token-set})
-      (update :undo-changes conj {:type :mod-token-set :name (:name token-set) :token-set (or prev-token-set token-set)})
-      (apply-changes-local)))
-
-(defn delete-token-set-path
-  [changes group? path]
-  (assert-library! changes)
-  (let [;; TODO Move leaking prefix to library
-        prefixed-path (if group?
-                        (ctob/set-group-path->set-group-prefixed-path path)
-                        (ctob/set-full-path->set-prefixed-full-path path))
-        prefixed-path-str (ctob/join-set-path prefixed-path)
-        library-data (::library-data (meta changes))
-        prev-token-sets (some-> (get library-data :tokens-lib)
-                                (ctob/get-path-sets prefixed-path-str))]
-    (-> changes
-        (update :redo-changes conj {:type :del-token-set-path :path prefixed-path-str})
-        (update :undo-changes conj {:type :add-token-sets :token-sets prev-token-sets})
         (apply-changes-local))))
 
 (defn move-token-set-before
@@ -906,6 +876,32 @@
                                       :set-name set-name
                                       :token-name token-name
                                       :token nil}))
+        (apply-changes-local))))
+
+(defn set-token-set [changes set-name group? token-set]
+  (assert-library! changes)
+  (let [library-data (::library-data (meta changes))
+        prev-token-set (some-> (get library-data :tokens-lib)
+                               (ctob/get-set set-name))]
+    (-> changes
+        (update :redo-changes conj {:type :set-token-set
+                                    :set-name set-name
+                                    :token-set token-set
+                                    :group? group?})
+        (update :undo-changes conj (if prev-token-set
+                                     {:type :set-token-set
+                                      :set-name (or
+                                                 ;; Undo of edit
+                                                 (:name token-set)
+                                                 ;; Undo of delete
+                                                 set-name)
+                                      :token-set prev-token-set
+                                      :group? group?}
+                                     ;; Undo of create
+                                     {:type :set-token-set
+                                      :set-name set-name
+                                      :token-set nil
+                                      :group? group?}))
         (apply-changes-local))))
 
 (defn add-component

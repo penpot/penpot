@@ -127,11 +127,17 @@
       (update state :workspace-tokens dissoc :token-set-new-path))
 
     ptk/WatchEvent
-    (watch [it _ _]
-      (let [token-set (update token-set :name #(if (empty? %) set-name (ctob/join-set-path [% set-name])))
+    (watch [it state _]
+      (let [token-set' (-> token-set
+                           (update :name #(if (empty? %)
+                                            set-name
+                                            (ctob/join-set-path [% set-name]))))
+            data (dsh/lookup-file-data state)
+            token-set-name (:name token-set')
             changes   (-> (pcb/empty-changes it)
-                          (pcb/add-token-set token-set))]
-        (rx/of (set-selected-token-set-name (:name token-set))
+                          (pcb/with-library-data data)
+                          (pcb/set-token-set token-set-name false token-set'))]
+        (rx/of (set-selected-token-set-name token-set-name)
                (dch/commit-changes changes))))))
 
 (defn rename-token-set-group [set-group-path set-group-fname]
@@ -147,10 +153,10 @@
   (ptk/reify ::update-token-set
     ptk/WatchEvent
     (watch [it state _]
-      (let [prev-token-set (some-> (get-tokens-lib state)
-                                   (ctob/get-set set-name))
+      (let [data (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
-                        (pcb/update-token-set token-set prev-token-set))]
+                        (pcb/with-library-data data)
+                        (pcb/set-token-set set-name false token-set))]
         (rx/of
          (set-selected-token-set-name (:name token-set))
          (dch/commit-changes changes))))))
@@ -196,7 +202,7 @@
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token-set-path group? path))]
+                        (pcb/set-token-set (ctob/join-set-path path) group? nil))]
         (rx/of (dch/commit-changes changes)
                (wtu/update-workspace-tokens))))))
 
@@ -245,8 +251,10 @@
   [token]
   (ptk/reify ::create-token-and-set
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (let [set-name   "Global"
+
+            data    (dsh/lookup-file-data state)
 
             token-set
             (-> (ctob/make-token-set :name set-name)
@@ -259,7 +267,9 @@
             (ctob/enable-set hidden-theme set-name)
 
             changes
-            (pcb/add-token-set (pcb/empty-changes) token-set)
+            (-> (pcb/empty-changes)
+                (pcb/with-library-data data)
+                (pcb/set-token-set set-name false token-set))
 
             changes
             (-> changes
