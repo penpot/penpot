@@ -7,29 +7,43 @@
 @use "common/refactor/common-refactor.scss" as *;
 
 .dashboard-templates-section {
-  position: absolute;
+  background-color: var(--color-background-tertiary);
+  bottom: 0;
+  border-bottom-left-radius: $br-8;
+  border-bottom-right-radius: $br-8;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  bottom: 0;
-  width: 100%;
   height: $s-228;
+  justify-content: flex-end;
+  margin-left: $s-6;
+  margin-right: $s-6;
+  margin-bottom: $s-6;
+  position: absolute;
   transition: bottom 300ms;
+  width: calc(100% - $s-12);
   pointer-events: none;
   &.collapsed {
     bottom: calc(-1 * $s-228);
+    background-color: transparent;
     transition: bottom 300ms;
+    .title-btn {
+      border-bottom-right-radius: $br-8;
+      border-bottom-left-radius: $br-8;
+    }
+    .content,
+    .content-description {
+      visibility: hidden;
+    }
   }
 }
 
 .title {
   pointer-events: all;
-  width: fit-content;
+  width: 100%;
   top: calc(-1 * $s-56);
   text-align: right;
   height: $s-56;
   position: absolute;
-  right: calc(-1 * $s-24);
 }
 
 .title-btn {
@@ -38,12 +52,12 @@
   height: $s-56;
   display: inline-flex;
   align-items: center;
-  border-top-left-radius: $br-10;
-  border-top-right-radius: $br-10;
-  margin-right: $s-32;
+  border-top-left-radius: $br-8;
+  border-top-right-radius: $br-8;
   position: relative;
   z-index: $z-index-1;
-  background-color: var(--color-background-quaternary);
+  background-color: var(--color-background-tertiary);
+  width: 100%;
 }
 
 .title-text {
@@ -51,7 +65,7 @@
   vertical-align: middle;
   line-height: 1.2;
   font-size: $fs-16;
-  margin-left: $s-16;
+  margin-left: $s-12;
   margin-right: $s-8;
   color: var(--color-foreground-primary);
   font-weight: $fw400;
@@ -108,19 +122,25 @@
   margin-right: $s-44;
 }
 
+.content-description {
+  font-size: $fs-14;
+  color: var(--color-foreground-primary);
+  margin-bottom: -12px;
+  margin-left: $s-16;
+  visibility: visible;
+}
+
 .content {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax($s-276, $s-276));
   grid-auto-flow: column;
   pointer-events: all;
   height: $s-228;
-  margin-left: $s-6;
-  border-top-left-radius: $s-8;
-  background-color: var(--color-background-quaternary);
   overflow: scroll hidden;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
   scroll-snap-stop: always;
+  visibility: visible;
 }
 
 .card-container {
