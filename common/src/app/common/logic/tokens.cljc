@@ -13,13 +13,12 @@
         prev-hidden-token-theme  (ctob/get-hidden-theme tokens-lib)
 
         hidden-token-theme       (-> (some-> prev-hidden-token-theme (ctob/set-sets active-token-set-names))
-                                     (update-theme-fn))
-
-        changes (-> changes
-                    (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} prev-active-token-themes))
-
-        changes (pcb/update-token-theme changes hidden-token-theme prev-hidden-token-theme)]
-    changes))
+                                     (update-theme-fn))]
+    (-> changes
+        (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} prev-active-token-themes)
+        (pcb/set-token-theme (:group prev-hidden-token-theme)
+                             (:name prev-hidden-token-theme)
+                             hidden-token-theme))))
 
 (defn generate-toggle-token-set
   "Toggle a token set at `set-name` in `tokens-lib` without modifying a user theme."

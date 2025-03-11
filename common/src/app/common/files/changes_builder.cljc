@@ -774,35 +774,6 @@
       (update :undo-changes conj {:type :update-active-token-themes :theme-ids prev-token-active-theme-ids})
       (apply-changes-local)))
 
-(defn add-token-theme
-  [changes token-theme]
-  (-> changes
-      (update :redo-changes conj {:type :add-token-theme :token-theme token-theme})
-      (update :undo-changes conj {:type :del-token-theme :group (:group token-theme) :name (:name token-theme)})
-      (apply-changes-local)))
-
-(defn update-token-theme
-  [changes token-theme prev-token-theme]
-  (let [name (or (:name prev-token-theme)
-                 (:name token-theme))
-        group (or (:group prev-token-theme)
-                  (:group token-theme))]
-    (-> changes
-        (update :redo-changes conj {:type :mod-token-theme :group group :name name :token-theme token-theme})
-        (update :undo-changes conj {:type :mod-token-theme :group group :name name :token-theme (or prev-token-theme token-theme)})
-        (apply-changes-local))))
-
-(defn delete-token-theme
-  [changes group name]
-  (assert-library! changes)
-  (let [library-data (::library-data (meta changes))
-        prev-token-theme (some-> (get library-data :tokens-lib)
-                                 (ctob/get-theme group name))]
-    (-> changes
-        (update :redo-changes conj {:type :del-token-theme :group group :name name})
-        (update :undo-changes conj {:type :add-token-theme :token-theme prev-token-theme})
-        (apply-changes-local))))
-
 (defn set-token-theme [changes group theme-name theme]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
