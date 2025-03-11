@@ -68,6 +68,65 @@
 
       (t/is (= #{"foo/bar"} (:sets (ctob/get-hidden-theme redo-lib)))))))
 
+(t/deftest set-token-theme-test
+  (t/testing "delete token theme"
+    (let [theme-name "foo"
+          group "main"
+          file (setup-file #(-> %
+                                (ctob/add-theme (ctob/make-token-theme :name theme-name
+                                                                       :group group))))
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (pcb/set-token-theme group theme-name nil))
+
+          redo (thf/apply-changes file changes)
+          redo-lib (tht/get-tokens-lib redo)
+          undo (thf/apply-undo-changes redo changes)
+          undo-lib (tht/get-tokens-lib undo)]
+      ;; Redo
+      (t/is (nil? (ctob/get-theme redo-lib group theme-name)))
+      ;; Undo
+      (t/is (some? (ctob/get-theme undo-lib group theme-name)))))
+
+  (t/testing "add token theme"
+    (let [theme-name "foo"
+          group "main"
+          theme (ctob/make-token-theme :name theme-name
+                                       :group group)
+          file (setup-file identity)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (pcb/set-token-theme group theme-name theme))
+          redo (thf/apply-changes file changes)
+          redo-lib (tht/get-tokens-lib redo)
+          undo (thf/apply-undo-changes redo changes)
+          undo-lib (tht/get-tokens-lib undo)]
+      ;; Redo
+      (t/is (some? (ctob/get-theme redo-lib group theme-name)))
+      ;; Undo
+      (t/is (nil? (ctob/get-theme undo-lib group theme-name)))))
+
+  (t/testing "update token theme"
+    (let [theme-name "foo"
+          group "main"
+          prev-theme (ctob/make-token-theme :name theme-name
+                                            :group group)
+          file (setup-file #(ctob/add-theme % prev-theme))
+          new-theme-name "foo1"
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (pcb/set-token-theme group new-theme-name prev-theme))
+          redo (thf/apply-changes file changes)
+          redo-lib (tht/get-tokens-lib redo)
+          undo (thf/apply-undo-changes redo changes)
+          undo-lib (tht/get-tokens-lib undo)]
+      ;; Redo
+      (t/is (some? (ctob/get-theme redo-lib group theme-name)))
+      (t/is (nil? (ctob/get-theme redo-lib group new-theme-name)))
+      ;; Undo
+      (t/is (some? (ctob/get-theme undo-lib group theme-name)))
+      (t/is (nil? (ctob/get-theme undo-lib group new-theme-name))))))
+
 (t/deftest set-token-test
   (t/testing "delete token"
     (let [set-name "foo"
