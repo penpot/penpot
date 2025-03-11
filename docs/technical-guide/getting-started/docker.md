@@ -25,7 +25,7 @@ You can install it following the <a href="https://docs.docker.com/desktop/"
 target="_blank">official guide</a>.
 
 Docker Desktop has a graphical control panel (GUI) to manage the service and view the
-containers, images and volumes. But need the command line (Terminal in Linux and Mac, or
+containers, images and volumes. But you need the command line (Terminal in Linux and Mac, or
 PowerShell in Windows) to build and run the containers, and execute other operations.
 
 It already includes **docker compose** utility, needed by Penpot.
@@ -49,10 +49,10 @@ You can easily check which version of **docker compose** you have. If you can ex
 
 ## Start Penpot
 
-As first step you will need to obtain the <code class="language-bash">docker-compose.yaml</code> file. You can download it
+As a first step you will need to obtain the <code class="language-bash">docker-compose.yaml</code> file. You can download it
 <a
 href="https://raw.githubusercontent.com/penpot/penpot/main/docker/images/docker-compose.yaml"
-target="_blank">from Penpot repository</a>.
+target="_blank">from the Penpot repository</a>.
 
 ```bash
 wget https://raw.githubusercontent.com/penpot/penpot/main/docker/images/docker-compose.yaml

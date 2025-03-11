@@ -65,7 +65,7 @@ To install the chart with the release name `my-release`:
 helm install my-release penpot/penpot
 ```
 
-You can customize the installation specify each parameter using the `--set key=value[,key=value]`
+You can customize the installation by specifying each parameter using the `--set key=value[,key=value]`
 argument to helm install. For example,
 
 ```bash

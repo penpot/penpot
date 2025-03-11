@@ -12,9 +12,6 @@ open-source software! This means you can deploy a dedicated instance of Penpot i
 minutes. You’ll be relieved of the need to worry about DNS configuration, SMTP, backups,
 SSL certificates, OS & Penpot upgrades, and much more.
 
-It uses the same Docker configuration as the other installation option, below, so all
-customization options are the same.
-
 ## Get an Elestio account
 
 <p class="advice">
