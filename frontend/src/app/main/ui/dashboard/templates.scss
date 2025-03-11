@@ -88,26 +88,30 @@
 
 .arrow-icon {
   @extend .button-icon;
-  stroke: var(--icon-foreground);
+  stroke: var(--color-foreground-primary);
 }
 
 .move-button {
   position: absolute;
-  top: $s-136;
-  border: $s-2 solid var(--color-foreground-secondary);
+  top: $s-80;
+  border: $s-2 solid var(--button-secondary-background-color-rest);
   border-radius: 50%;
   text-align: center;
   width: $s-36;
   height: $s-36;
   cursor: pointer;
-  background-color: var(--color-foreground-primary);
+  background-color: var(--button-secondary-background-color-rest);
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: all;
 
   &:hover {
-    border: $s-2 solid var(--color-accent-tertiary);
+    border: $s-2 solid var(--color-background-tertiary);
+    background-color: var(--color-accent-primary);
+    .arrow-icon {
+      stroke: var(--color-background-tertiary);
+    }
   }
 }
 
@@ -160,18 +164,24 @@
   font-size: $fs-16;
   cursor: pointer;
   color: var(--color-foreground-primary);
-  padding: $s-3 $s-6 $s-16 $s-6;
+  padding: 0 $s-4 $s-8 $s-4;
   border-radius: $br-8;
-
+  border: $s-2 solid transparent;
   &:hover {
-    background-color: var(--color-background-tertiary);
+    border-color: var(--color-accent-primary);
+    .download-icon {
+      stroke: var(--color-accent-primary);
+    }
+    .card-text {
+      color: var(--color-accent-primary);
+    }
   }
 }
 
 .img-container {
   width: 100%;
   height: $s-136;
-  margin-bottom: $s-16;
+  margin-bottom: $s-8;
   border-radius: $br-5;
   display: flex;
   justify-content: center;
@@ -191,8 +201,13 @@
 }
 
 .card-text {
-  font-weight: $fw500;
+  font-weight: $fw400;
   font-size: $fs-16;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 90%;
+  text-overflow: ellipsis;
+  text-align: left;
 }
 
 .download-icon {
