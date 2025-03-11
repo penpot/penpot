@@ -152,8 +152,10 @@
 (defn update-token-set [set-name token-set]
   (ptk/reify ::update-token-set
     ptk/WatchEvent
-    (watch [it _ _]
-      (let [changes (-> (pcb/empty-changes it)
+    (watch [it state _]
+      (let [data (dsh/lookup-file-data state)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
                         (pcb/set-token-set set-name false token-set))]
         (rx/of
          (set-selected-token-set-name (:name token-set))
@@ -249,8 +251,10 @@
   [token]
   (ptk/reify ::create-token-and-set
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (let [set-name   "Global"
+
+            data    (dsh/lookup-file-data state)
 
             token-set
             (-> (ctob/make-token-set :name set-name)
@@ -263,7 +267,9 @@
             (ctob/enable-set hidden-theme set-name)
 
             changes
-            (pcb/set-token-set (pcb/empty-changes) set-name false token-set)
+            (-> (pcb/empty-changes)
+                (pcb/with-library-data data)
+                (pcb/set-token-set set-name false token-set))
 
             changes
             (-> changes
