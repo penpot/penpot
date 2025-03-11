@@ -55,11 +55,13 @@
                    (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
                    (dwu/start-undo-transaction undo-id)
                    (dwsh/update-shapes shape-ids (fn [shape]
-                                                   (cond-> shape
-                                                     attributes-to-remove
-                                                     (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
-                                                     :always
-                                                     (update :applied-tokens merge tokenized-attributes))))
+                                                   (if (= :group (:type shape))
+                                                     shape
+                                                     (cond-> shape
+                                                       attributes-to-remove
+                                                       (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
+                                                       :always
+                                                       (update :applied-tokens merge tokenized-attributes)))))
                    (when on-update-shape
                      (on-update-shape resolved-value shape-ids attributes))
                    (dwu/commit-undo-transaction undo-id))))))))))
