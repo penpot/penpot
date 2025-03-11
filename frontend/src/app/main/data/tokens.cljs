@@ -175,8 +175,10 @@
   (ptk/reify ::toggle-token-set
     ptk/WatchEvent
     (watch [_ state _]
-      (let [tlib (get-tokens-lib state)
+      (let [data    (dsh/lookup-file-data state)
+            tlib (get-tokens-lib state)
             changes (-> (pcb/empty-changes)
+                        (pcb/with-library-data data)
                         (clt/generate-toggle-token-set tlib name))]
 
         (rx/of (dch/commit-changes changes)
@@ -186,7 +188,10 @@
   (ptk/reify ::toggle-token-set-group
     ptk/WatchEvent
     (watch [_ state _]
-      (let [changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (get-tokens-lib state) group-path)]
+      (let [data    (dsh/lookup-file-data state)
+            changes (-> (pcb/empty-changes)
+                        (pcb/with-library-data data)
+                        (clt/generate-toggle-token-set-group (get-tokens-lib state) group-path))]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))

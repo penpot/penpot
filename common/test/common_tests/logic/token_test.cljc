@@ -22,7 +22,9 @@
                                 (ctob/add-theme (ctob/make-token-theme :name "theme"
                                                                        :sets #{"foo/bar"}))
                                 (ctob/set-active-themes #{"/theme"})))
-          changes (clt/generate-toggle-token-set (pcb/empty-changes) (tht/get-tokens-lib file) "foo/bar")
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-toggle-token-set (tht/get-tokens-lib file) "foo/bar"))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -40,7 +42,9 @@
                                 (ctob/add-theme (ctob/make-token-theme :name "theme"
                                                                        :sets #{"foo/bar"}))
                                 (ctob/set-active-themes #{"/theme"})))
-          changes (clt/generate-toggle-token-set (pcb/empty-changes) (tht/get-tokens-lib file) "foo/bar")
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-toggle-token-set (tht/get-tokens-lib file) "foo/bar"))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -58,7 +62,9 @@
                                 (ctob/add-theme (ctob/make-hidden-token-theme))
                                 (ctob/set-active-themes #{ctob/hidden-token-theme-path})))
 
-          changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (tht/get-tokens-lib file) ["foo"])
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-toggle-token-set-group (tht/get-tokens-lib file) ["foo"]))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -257,7 +263,9 @@
                                 (ctob/add-set (ctob/make-token-set :name "foo/bar/baz/baz-child"))
                                 (ctob/add-theme (ctob/make-token-theme :name "theme"))
                                 (ctob/set-active-themes #{"/theme"})))
-          changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (tht/get-tokens-lib file) ["foo" "bar"])
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-toggle-token-set-group (tht/get-tokens-lib file) ["foo" "bar"]))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -278,7 +286,9 @@
                                                                        :sets #{"foo/bar/baz"}))
                                 (ctob/set-active-themes #{"/theme"})))
 
-          changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (tht/get-tokens-lib file) ["foo" "bar"])
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-toggle-token-set-group (tht/get-tokens-lib file) ["foo" "bar"]))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
