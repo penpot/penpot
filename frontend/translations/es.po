@@ -3197,6 +3197,51 @@ msgstr "Estoy echando un vistazo"
 
 #: src/app/main/ui/onboarding/questions.cljs:91
 msgid "onboarding.questions.reasons.fit"
+msgstr "Estoy buscando una herramienta que se ajuste a mis necesidades"
+
+#: src/app/main/ui/onboarding/questions.cljs:113
+msgid "onboarding.questions.lets-get-started"
+msgstr "¡Empecemos!"
+
+#: src/app/main/ui/dashboard/templates.cljs
+msgid "labels.show"
+msgstr "Mostrar"
+
+#: src/app/main/ui/dashboard/templates.cljs
+msgid "labels.hide"
+msgstr "Ocultar"
+
+#: src/app/main/ui/dashboard/templates.cljs
+msgid "dashboard.libraries-and-templates.description"
+msgstr "Aquí tienes algunas Bibliotecas y plantillas que puedes añadir a tu proyecto"
+
+#: src/app/main/ui/dashboard/templates.cljs
+msgid "dashboard.template.add-to-project"
+msgstr "Añadir a tu proyecto"
+
+#: src/app/main/ui/dashboard/templates.cljs
+msgid "labels.add"
+msgstr "Añadir"
+
+#: src/app/main/ui/dashboard/templates.cljs
+msgid "labels.add-to-your-project"
+msgstr "Añadir a tu proyecto"
+
+#: src/app/main/ui/dashboard/templates.cljs
+msgid "labels.show-hide"
+msgstr "Mostrar/Ocultar"
+
+#: src/app/main/ui/dashboard/templates.cljs
+msgid "labels.show"
+msgstr "Mostrar"
+
+#: src/app/main/ui/dashboard/templates.cljs
+msgid "labels.hide"
+msgstr "Ocultar"
+
+#: src/app/main/ui/dashboard/templates.cljs
+msgid "dashboard.libraries-and-templates.description"
+msgstr "Aquí tienes algunas Bibliotecas y plantillas que puedes añadir a tu proyecto"
 msgstr "Averiguar si Penpot es una buena opción para mi equipo"
 
 #: src/app/main/ui/onboarding/questions.cljs:97

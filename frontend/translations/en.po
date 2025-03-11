@@ -1713,6 +1713,22 @@ msgstr "Access tokens"
 msgid "labels.active"
 msgstr "Active"
 
+#: src/app/main/ui/dashboard/templates.cljs
+msgid "labels.show"
+msgstr "Show"
+
+#: src/app/main/ui/dashboard/templates.cljs
+msgid "labels.hide"
+msgstr "Hide"
+
+#: src/app/main/ui/dashboard/templates.cljs
+msgid "dashboard.libraries-and-templates.description"
+msgstr "Here you have some Libraries and templates you can add to your project"
+
+#: src/app/main/ui/dashboard/templates.cljs
+msgid "dashboard.template.add-to-project"
+msgstr "Add to your project"
+
 #: src/app/main/ui/workspace/libraries.cljs:173
 msgid "labels.add"
 msgstr "Add"

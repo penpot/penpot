@@ -71,15 +71,24 @@
   font-weight: $fw400;
 }
 
+.title-icon-container {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: auto;
+  margin-right: $s-8;
+  color: var(--color-foreground-primary);
+}
+
 .title-icon {
   display: inline-block;
   vertical-align: middle;
-  margin-left: $s-16;
+  margin-left: auto;
   margin-right: $s-8;
-  color: var(--color-foreground-primary);
-  margin-left: $s-16;
-  margin-right: $s-16;
   transform: rotate(90deg);
+}
+
+.title-icon-text {
+  margin-right: $s-8;
 }
 
 .title-icon-collapsed {
@@ -88,7 +97,7 @@
 
 .arrow-icon {
   @extend .button-icon;
-  stroke: var(--color-foreground-primary);
+  stroke: var(--color-foreground-secondary);
 }
 
 .move-button {
@@ -129,7 +138,8 @@
 .content-description {
   font-size: $fs-14;
   color: var(--color-foreground-primary);
-  margin-bottom: -12px;
+  margin-bottom: -8px;
+  margin-top: -4px;
   margin-left: $s-16;
   visibility: visible;
 }
