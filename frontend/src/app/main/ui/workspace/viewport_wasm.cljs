@@ -70,9 +70,16 @@
 
           (contains? modifiers id)
           (gsh/transform-shape (dm/get-in modifiers [id :modifiers]))))))
-
    objects
    selected))
+
+(defn get-selected-modified-objects
+  [objects-modified selected]
+  (let [selected-set (set selected)]
+    (into {}
+          (filter (fn [[k _]]
+                    (contains? selected-set k)))
+          objects-modified)))
 
 (mf/defc viewport*
   [{:keys [selected wglobal wlocal layout file page palete-size]}]
@@ -116,6 +123,7 @@
                               (apply-modifiers-to-selected selected base-objects text-modifiers modifiers)))
 
         selected-shapes   (keep (d/getf objects-modified) selected)
+        selected-modified-objects  (get-selected-modified-objects objects-modified selected)
 
         ;; STATE
         alt?              (mf/use-state false)
@@ -292,9 +300,9 @@
       (when @canvas-init?
         (wasm.api/resize-viewbox (:width vport) (:height vport))))
 
-    (mf/with-effect [@canvas-init?  base-objects]
+    (mf/with-effect [@canvas-init? selected-modified-objects]
       (when (and @canvas-init? @initialized?)
-        (wasm.api/set-objects base-objects)))
+          (wasm.api/set-objects selected-modified-objects)))
 
     (mf/with-effect [@canvas-init? preview-blend]
       (when (and @canvas-init? preview-blend)
