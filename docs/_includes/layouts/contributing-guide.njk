@@ -12,7 +12,7 @@ templateClass: tmpl-contributing-guide
         {{ show_children(child) }}
       {%- endif -%}
       {%- if child.url == page.url -%}
-        {{ content | toc(tags=['h2', 'h3']) | safe }}
+        {{ content | toc(tags=['h2', 'h3']) | stripHash | safe }}
       {%- endif -%}
     </li>
     {%- if loop.last -%}</ul>{%- endif -%}

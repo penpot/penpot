@@ -37,6 +37,11 @@ Also, if you are a developer, you can get into the code, to explore it, learn ho
 or extend it and contribute with new functionality. For this, we have a different Docker installation.
 In the [Developer Guide][6] you can find how to setup a development environment and many other dev-oriented documentation.
 
+## Troubleshooting Penpot
+
+The [Troubleshooting][8] section guides you through the different logs in Penpot so you can easily identify
+any issue that may arise as well as report it comprehensively.
+
 [1]: /technical-guide/getting-started/#install-with-elestio
 [2]: /technical-guide/getting-started/#install-with-docker
 [3]: /technical-guide/configuration/
@@ -44,3 +49,4 @@ In the [Developer Guide][6] you can find how to setup a development environment 
 [5]: /technical-guide/integration/
 [6]: /technical-guide/developer/
 [7]: /technical-guide/getting-started/#install-with-kubernetes
+[8]: /technical-guide/troubleshooting/
