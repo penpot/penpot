@@ -82,11 +82,11 @@
        (tr "dashboard.libraries-and-templates")]
       (if ^boolean is-collapsed
         [:span {:class (stl/css :title-icon-container)}
-         [:span {:class (stl/css :title-icon-text)} (tr "labels.show")] 
+         [:span {:class (stl/css :title-icon-text)} (tr "labels.show")]
          [:span {:class (stl/css :title-icon :title-icon-collapsed)}
           arrow-icon]]
         [:span {:class (stl/css :title-icon-container)}
-         [:span {:class (stl/css :title-icon-text)} (tr "labels.hide")] 
+         [:span {:class (stl/css :title-icon-text)} (tr "labels.hide")]
          [:span {:class (stl/css :title-icon)}
           arrow-icon]])]]))
 
@@ -127,8 +127,8 @@
               :loading "lazy"
               :decoding "async"}]]
       [:div {:class (stl/css :card-name)}
-       [:span {:class (stl/css :card-text)} 
-        (if @hover? 
+       [:span {:class (stl/css :card-text)}
+        (if @hover?
           (tr "dashboard.template.add-to-project")
           (:name item))]
        download-icon]]]))
@@ -251,8 +251,8 @@
                                 :collapsed collapsed)}
      [:> title* {:on-click on-toggle-collapse
                  :is-collapsed collapsed}]
-                 
-     [:p {:class (stl/css :content-description)} 
+
+     [:p {:class (stl/css :content-description)}
       (tr "dashboard.libraries-and-templates.description")]
 
      [:div {:class (stl/css :content)
