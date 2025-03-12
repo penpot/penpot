@@ -61,9 +61,9 @@
     (into assigned new-properties)))
 
 (defn- dashes-to-end
-  [data]
-  (let [dashes (if (some #(= % "--") data) ["--"] [])]
-    (concat (remove #(= % "--") data) dashes)))
+  [property-values]
+  (let [dashes (if (some #(= % "--") property-values) ["--"] [])]
+    (concat (remove #(= % "--") property-values) dashes)))
 
 
 (defn extract-properties-values
