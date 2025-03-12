@@ -38,7 +38,7 @@
     [shape changes]))
 
 (defn prepare-move-shapes-into-frame
-  [changes frame-id shapes objects]
+  [changes frame-id shapes objects remove-layout-data?]
   (let [parent-id  (dm/get-in objects [frame-id :parent-id])
         shapes     (remove #(= % parent-id) shapes)
         to-move    (->> shapes
@@ -46,7 +46,8 @@
                         (not-empty))]
     (if to-move
       (-> changes
-          (cond-> (not (ctl/any-layout? objects frame-id))
+          (cond-> (and remove-layout-data?
+                       (not (ctl/any-layout? objects frame-id)))
             (pcb/update-shapes shapes ctl/remove-layout-item-data))
           (pcb/update-shapes shapes #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true)))
           (pcb/change-parent frame-id to-move 0)
@@ -133,7 +134,7 @@
            (prepare-add-shape changes shape objects)
 
            changes
-           (prepare-move-shapes-into-frame changes (:id shape) selected' objects)
+           (prepare-move-shapes-into-frame changes (:id shape) selected' objects false)
 
            changes
            (cond-> changes

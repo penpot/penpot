@@ -150,7 +150,7 @@
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-objects objects))
 
-            changes (cfsh/prepare-move-shapes-into-frame changes frame-id shapes objects)]
+            changes (cfsh/prepare-move-shapes-into-frame changes frame-id shapes objects true)]
 
         (if (some? changes)
           (rx/of (dch/commit-changes changes))
