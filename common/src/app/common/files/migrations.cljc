@@ -1251,6 +1251,21 @@
       (update data :tokens-lib update-tokens-lib)
       data)))
 
+(defmethod migrate-data "Remove tokens from groups"
+  [data _]
+  (letfn [(update-object [object]
+            (cond-> object
+              (and (= :group (:type object))
+                   (contains? (:applied-tokens object) :fill))
+              (assoc :fills [])
+              (and (= :group (:type object))
+                   (contains? object :applied-tokens))
+              (dissoc :applied-tokens)))
+
+          (update-page [page]
+            (d/update-when page :objects update-vals update-object))]
+    (update data :pages-index update-vals update-page)))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1306,4 +1321,5 @@
          "legacy-66"
          "legacy-67"
          "Ensure hidden theme"
-         "Add token theme id"]))
+         "Add token theme id"
+         "Remove tokens from groups"]))

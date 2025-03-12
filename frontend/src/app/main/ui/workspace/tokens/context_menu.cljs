@@ -371,8 +371,10 @@
 
 (mf/defc menu-tree
   [{:keys [selected-shapes submenu-offset type errors] :as context-data}]
-  (let [entries (if (and (not (some? errors))
-                         (seq selected-shapes))
+  (let [shape-types (into #{} (map :type selected-shapes))
+        entries (if (and (not (some? errors))
+                         (seq selected-shapes)
+                         (not= shape-types #{:group}))
                   (if (some? type)
                     (submenu-actions-selection-actions context-data)
                     (selection-actions context-data))

@@ -49,6 +49,13 @@
              (rx/mapcat
               (fn [resolved-tokens]
                 (let [undo-id (js/Symbol)
+                      objects (dsh/lookup-page-objects state)
+
+                      shape-ids (or (->> (select-keys objects shape-ids)
+                                         (filter (fn [[_ shape]] (not= (:type shape) :group)))
+                                         (keys))
+                                    [])
+
                       resolved-value (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value])
                       tokenized-attributes (wtt/attributes-map attributes token)]
                   (rx/of
