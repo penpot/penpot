@@ -49,19 +49,24 @@
              (rx/mapcat
               (fn [resolved-tokens]
                 (let [undo-id (js/Symbol)
+                      objects (dsh/lookup-page-objects state)
+
+                      shape-ids (or (->> (select-keys objects shape-ids)
+                                         (filter (fn [[_ shape]] (not= (:type shape) :group)))
+                                         (keys))
+                                    [])
+
                       resolved-value (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value])
                       tokenized-attributes (wtt/attributes-map attributes token)]
                   (rx/of
                    (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
                    (dwu/start-undo-transaction undo-id)
                    (dwsh/update-shapes shape-ids (fn [shape]
-                                                   (if (= :group (:type shape))
-                                                     shape
-                                                     (cond-> shape
-                                                       attributes-to-remove
-                                                       (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
-                                                       :always
-                                                       (update :applied-tokens merge tokenized-attributes)))))
+                                                   (cond-> shape
+                                                     attributes-to-remove
+                                                     (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
+                                                     :always
+                                                     (update :applied-tokens merge tokenized-attributes))))
                    (when on-update-shape
                      (on-update-shape resolved-value shape-ids attributes))
                    (dwu/commit-undo-transaction undo-id))))))))))
