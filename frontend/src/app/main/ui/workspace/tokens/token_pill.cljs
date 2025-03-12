@@ -240,10 +240,11 @@
         ;; FIXME: missing deps
         on-hover
         (mf/use-fn
-         (mf/deps selected-shapes is-viewer?)
+         (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set)
          (fn [event]
            (let [node  (dom/get-current-target event)
-                 title (generate-tooltip is-viewer? (first selected-shapes) token
+                 theme-token (get active-theme-tokens (:name token))
+                 title (generate-tooltip is-viewer? (first selected-shapes) theme-token
                                          half-applied? no-valid-value ref-not-in-active-set)]
              (dom/set-attribute! node "title" title))))]
 
