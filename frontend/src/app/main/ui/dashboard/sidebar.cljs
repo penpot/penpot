@@ -852,7 +852,7 @@
 
 (mf/defc cta-power-up*
   {::mf/props :obj}
-  [{:keys [top-title top-description bottom-description bottom-highlight cta-text has-dropdown]}]
+  [{:keys [top-title top-description bottom-description bottom-highlight cta-text cta-link has-dropdown]}]
   (let [show-data* (mf/use-state false)
         show-data (deref show-data*)
         handle-click
@@ -867,7 +867,7 @@
       [:div {:class (stl/css :content)}
        [:span {:class (stl/css :cta-title)} top-title]
        [:span {:class (stl/css :cta-text)} top-description]]
-      [:span {:class (stl/css :icon-dropdown)}  i/arrow]]
+      (when has-dropdown [:span {:class (stl/css :icon-dropdown)}  i/arrow])]
 
      (when (and has-dropdown show-data)
        [:button {:class (stl/css :cta-bottom-section)}
@@ -875,7 +875,7 @@
          [:span {:class (stl/css :cta-text)} bottom-description]
          (when bottom-highlight
            [:span {:class (stl/css :cta-highlight :cta-inline)} bottom-highlight])]
-        [:div {:class (stl/css :cta-highlight :cta-bottom)}
+        [:button {:class (stl/css :cta-highlight :cta-link) :on-click cta-link}
          cta-text]])]))
 
 (mf/defc profile-section*
@@ -984,48 +984,50 @@
         (mf/use-fn
          #(on-click :settings-profile %))
 
-        ;; on-power-up-click
-        ;; (mf/use-fn
-        ;;  (fn []
-        ;;    (dom/open-new-window "https://penpot.app/pricing")))
-        subscription-type :unlimited
+        on-power-up-click
+        (mf/use-fn
+         (fn []
+           (dom/open-new-window "https://penpot.app/pricing")))
+
+
+        ;; TODO subscription cases professonal/unlimited/enterprise/trial
+        subscription-type :professional
+        ;; TODO need to know if it's the owner of the subscription
+        subscription-owner? true
         ]
 
     [:*
-    ;;  [:button {:class (stl/css :upgrade-plan-section)
-    ;;            :on-click on-power-up-click}
-    ;;   [:div {:class (stl/css :penpot-free)}
-    ;;    [:span (tr "dashboard.upgrade-plan.penpot-free")]
-    ;;    [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
-    ;;   [:div {:class (stl/css :power-up)}
-    ;;    (tr "dashboard.upgrade-plan.power-up")]
-    ;;   ]
-
-     (when (contains? cf/flags :subscriptions)
-       ;; poner cases para professonal/unlimited/enterprise/trial
+     ;; TODO update link to profile, it should be o the new 'plans' page in settings
+     (if (contains? cf/flags :subscriptions)
        (case subscription-type
          :professional
          [:> cta-power-up*
           {:top-title (tr "dashboard.power-up.professional.top-title")
-           :top-description (tr "dashboard.power-up.professional.top-description")
+           :top-description (tr "dashboard.upgrade-plan.no-limits")
            :bottom-description (tr "dashboard.power-up.professional.bottom-description")
-           :bottom-highlight (tr "dashboard.power-up.professional.bottom-highlight")
-           :cta-text (tr "dashboard.power-up.professional.cta")
+           :bottom-highlight (tr "dashboard.power-up.unlimited-plan")
+           :cta-text (tr "dashboard.upgrade-plan.power-up")
+           :cta-link (if subscription-owner?
+                       #(st/emit! (rt/nav :settings-profile))
+                       #(dom/open-new-window "https://penpot.app/pricing"))
            :has-dropdown true}]
 
          :unlimited
          [:> cta-power-up*
-          {:top-title (tr "dashboard.power-up.unlimited.top-title")
+          {:top-title (tr "dashboard.power-up.unlimited-plan")
            :top-description (tr "dashboard.power-up.unlimited.top-description")
            :bottom-description (tr "dashboard.power-up.unlimited.bottom-description")
-           :bottom-highlight (tr "dashboard.power-up.unlimited.bottom-highlight")
+           :bottom-highlight (tr "dashboard.power-up.enterprise-plan")
            :cta-text (tr "dashboard.power-up.unlimited.cta")
+           :cta-link (if subscription-owner?
+                       #(st/emit! (rt/nav :settings-profile))
+                       #(dom/open-new-window "https://penpot.app/pricing"))
            :has-dropdown true}]
 
          :enterprise
          [:> cta-power-up*
-          {:top-title (tr "dashboard.power-up.enterprise.top-title")
-           :top-description (tr "dashboard.power-up.enterprise.top-description")
+          {:top-title (tr "dashboard.power-up.enterprise-plan")
+           :top-description (tr "dashboard.power-up.enterprise.description")
            :has-dropdown false}]
 
          :trial
@@ -1033,8 +1035,16 @@
           {:top-title (tr "dashboard.power-up.trial.top-title")
            :top-description (tr "dashboard.power-up.trial.top-description")
            :bottom-description (tr "dashboard.power-up.trial.bottom-description")
-           :cta-text (tr "dashboard.power-up.trial.cta")
-           :has-dropdown true}]))
+           :cta-text (tr "dashboard.upgrade-plan.power-up")
+           :has-dropdown subscription-owner?}])
+
+       [:button {:class (stl/css :upgrade-plan-section)
+                 :on-click on-power-up-click}
+        [:div {:class (stl/css :penpot-free)}
+         [:span (tr "dashboard.upgrade-plan.penpot-free")]
+         [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
+        [:div {:class (stl/css :power-up)}
+         (tr "dashboard.upgrade-plan.power-up")]])
 
      (when (and team profile)
        [:& comments-section
