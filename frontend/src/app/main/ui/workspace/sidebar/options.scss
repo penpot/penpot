@@ -33,6 +33,11 @@
   padding-top: $s-8;
 }
 
+.read-only {
+  grid-template-areas: "right-sidebar";
+  padding: var(--sp-s);
+}
+
 .design-options,
 .interaction-options {
   overflow: auto;

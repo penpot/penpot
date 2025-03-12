@@ -197,16 +197,25 @@
                     :id "inspect"
                     :content inspect-content}])]
 
-    (mf/with-effect [permissions]
-      (when-not (:can-edit permissions)
-        (on-change-tab :inspect)))
-
     [:div {:class (stl/css :tool-window)}
-     [:> tab-switcher* {:tabs tabs
-                        :default-selected "info"
-                        :on-change-tab on-change-tab
-                        :selected (name options-mode)
-                        :class (stl/css :options-tab-switcher)}]]))
+     (if (:can-edit permissions)
+       [:> tab-switcher* {:tabs tabs
+                          :default-selected "info"
+                          :on-change-tab on-change-tab
+                          :selected (name options-mode)
+                          :class (stl/css :options-tab-switcher)}]
+
+       [:div {:class (stl/css-case :element-options true
+                                   :inspect-options true
+                                   :read-only true)}
+        [:& hrs/right-sidebar {:page-id           page-id
+                               :objects           objects
+                               :file-id           file-id
+                               :frame             shape-parent-frame
+                               :shapes            selected-shapes
+                               :on-change-section on-change-section
+                               :on-expand         on-expand
+                               :from              :workspace}]])]))
 
 ;; TODO: this need optimizations, selected-objects and
 ;; selected-objects-with-children are derefed always but they only
