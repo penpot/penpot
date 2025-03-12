@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2.5.3
+
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features
+
+### :bug: Bugs fixed
+
+- Component sync issues with multiple tabs [Taiga #10471](https://tree.taiga.io/project/penpot/issue/10471)
+
 ## 2.5.2
 
 ### :rocket: Epics and highlights
