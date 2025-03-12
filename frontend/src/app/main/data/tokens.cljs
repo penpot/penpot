@@ -70,9 +70,13 @@
   (let [new-token-theme token-theme]
     (ptk/reify ::create-token-theme
       ptk/WatchEvent
-      (watch [it _ _]
-        (let [changes (-> (pcb/empty-changes it)
-                          (pcb/add-token-theme new-token-theme))]
+      (watch [it state _]
+        (let [data    (dsh/lookup-file-data state)
+              changes (-> (pcb/empty-changes it)
+                          (pcb/with-library-data data)
+                          (pcb/set-token-theme (:group new-token-theme)
+                                               (:name new-token-theme)
+                                               new-token-theme))]
           (rx/of
            (dch/commit-changes changes)))))))
 
@@ -80,9 +84,14 @@
   (ptk/reify ::update-token-theme
     ptk/WatchEvent
     (watch [it state _]
-      (let [tokens-lib (get-tokens-lib state)
+      (let [tokens-lib       (get-tokens-lib state)
+            data             (dsh/lookup-file-data state)
             prev-token-theme (some-> tokens-lib (ctob/get-theme group name))
-            changes (pcb/update-token-theme (pcb/empty-changes it) token-theme prev-token-theme)]
+            changes          (-> (pcb/empty-changes it)
+                                 (pcb/with-library-data data)
+                                 (pcb/set-token-theme (:group prev-token-theme)
+                                                      (:name prev-token-theme)
+                                                      token-theme))]
         (rx/of
          (dch/commit-changes changes))))))
 
@@ -105,15 +114,14 @@
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
 
-(defn delete-token-theme [group name]
+(defn delete-token-theme [group theme-name]
   (ptk/reify ::delete-token-theme
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (dsh/lookup-file-data state)
-
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token-theme group name))]
+                        (pcb/set-token-theme group theme-name nil))]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
@@ -167,8 +175,10 @@
   (ptk/reify ::toggle-token-set
     ptk/WatchEvent
     (watch [_ state _]
-      (let [tlib (get-tokens-lib state)
+      (let [data    (dsh/lookup-file-data state)
+            tlib (get-tokens-lib state)
             changes (-> (pcb/empty-changes)
+                        (pcb/with-library-data data)
                         (clt/generate-toggle-token-set tlib name))]
 
         (rx/of (dch/commit-changes changes)
@@ -178,7 +188,10 @@
   (ptk/reify ::toggle-token-set-group
     ptk/WatchEvent
     (watch [_ state _]
-      (let [changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (get-tokens-lib state) group-path)]
+      (let [data    (dsh/lookup-file-data state)
+            changes (-> (pcb/empty-changes)
+                        (pcb/with-library-data data)
+                        (clt/generate-toggle-token-set-group (get-tokens-lib state) group-path))]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
@@ -252,9 +265,11 @@
   (ptk/reify ::create-token-and-set
     ptk/WatchEvent
     (watch [_ state _]
-      (let [set-name   "Global"
+      (let [data
+            (dsh/lookup-file-data state)
 
-            data    (dsh/lookup-file-data state)
+            set-name
+            "Global"
 
             token-set
             (-> (ctob/make-token-set :name set-name)
@@ -269,13 +284,11 @@
             changes
             (-> (pcb/empty-changes)
                 (pcb/with-library-data data)
-                (pcb/set-token-set set-name false token-set))
-
-            changes
-            (-> changes
-                (pcb/update-token-theme hidden-theme-with-set hidden-theme)
+                (pcb/set-token-set set-name false token-set)
+                (pcb/set-token-theme (:group hidden-theme)
+                                     (:name hidden-theme)
+                                     hidden-theme-with-set)
                 (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} #{}))]
-
         (rx/of (dch/commit-changes changes)
                (set-selected-token-set-name set-name))))))
 

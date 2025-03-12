@@ -376,24 +376,6 @@
       [:type [:= :update-active-token-themes]]
       [:theme-ids [:set :string]]]]
 
-    [:add-token-theme
-     [:map {:title "AddTokenThemeChange"}
-      [:type [:= :add-token-theme]]
-      [:token-theme ::ctot/token-theme]]]
-
-    [:mod-token-theme
-     [:map {:title "ModTokenThemeChange"}
-      [:type [:= :mod-token-theme]]
-      [:group :string]
-      [:name :string]
-      [:token-theme ::ctot/token-theme]]]
-
-    [:del-token-theme
-     [:map {:title "DelTokenThemeChange"}
-      [:type [:= :del-token-theme]]
-      [:group :string]
-      [:name :string]]]
-
     [:add-token-sets
      [:map {:title "AddTokenSetsChange"}
       [:type [:= :add-token-sets]]
@@ -421,6 +403,13 @@
       [:to-path [:vector :string]]
       [:before-path [:maybe [:vector :string]]]
       [:before-group? [:maybe :boolean]]]]
+
+    [:set-token-theme
+     [:map {:title "SetTokenThemeChange"}
+      [:type [:= :set-token-theme]]
+      [:theme-name :string]
+      [:group :string]
+      [:theme [:maybe ::ctot/token-theme]]]]
 
     [:set-tokens-lib
      [:map {:title "SetTokensLib"}
@@ -1038,31 +1027,28 @@
                 (ctob/update-set lib' set-name (fn [prev-token-set]
                                                  (ctob/make-token-set (merge prev-token-set token-set)))))))))
 
+(defmethod process-change :set-token-theme
+  [data {:keys [group theme-name theme]}]
+  (update data :tokens-lib
+          (fn [lib]
+            (let [lib' (ctob/ensure-tokens-lib lib)]
+              (cond
+                (not theme)
+                (ctob/delete-theme lib' group theme-name)
+
+                (not (ctob/get-theme lib' group theme-name))
+                (ctob/add-theme lib' (ctob/make-token-theme theme))
+
+                :else
+                (ctob/update-theme lib'
+                                   group theme-name
+                                   (fn [prev-token-theme]
+                                     (ctob/make-token-theme (merge prev-token-theme theme)))))))))
+
 (defmethod process-change :update-active-token-themes
   [data {:keys [theme-ids]}]
   (update data :tokens-lib #(-> % (ctob/ensure-tokens-lib)
                                 (ctob/set-active-themes theme-ids))))
-
-(defmethod process-change :add-token-theme
-  [data {:keys [token-theme]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/add-theme (-> token-theme
-                                                    (ctob/make-token-theme))))))
-
-(defmethod process-change :mod-token-theme
-  [data {:keys [name group token-theme]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/update-theme group name
-                                                   (fn [prev-theme]
-                                                     (merge prev-theme token-theme))))))
-
-(defmethod process-change :del-token-theme
-  [data {:keys [group name]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/delete-theme group name))))
 
 (defmethod process-change :add-token-sets
   [data {:keys [token-sets]}]
