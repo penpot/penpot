@@ -194,9 +194,10 @@
      (watch [_ state _]
        (let [change-fn (fn [shape attrs] (assoc shape :fills [attrs]))
              undo-id   (js/Symbol)]
-         (rx/of (dwu/start-undo-transaction undo-id))
-         (transform-fill state ids color change-fn options)
-         (rx/of (dwu/commit-undo-transaction undo-id)))))))
+         (rx/concat
+          (rx/of (dwu/start-undo-transaction undo-id))
+          (transform-fill state ids color change-fn options)
+          (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn add-fill
   ([ids color] (add-fill ids color nil))
@@ -220,9 +221,10 @@
              undo-id
              (js/Symbol)]
 
-         (rx/of (dwu/start-undo-transaction undo-id))
-         (transform-fill state ids color change-fn options)
-         (rx/of (dwu/commit-undo-transaction undo-id)))))))
+         (rx/concat
+          (rx/of (dwu/start-undo-transaction undo-id))
+          (transform-fill state ids color change-fn options)
+          (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn remove-fill
   ([ids color position] (remove-fill ids color position nil))
