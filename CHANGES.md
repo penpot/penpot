@@ -8,7 +8,10 @@
 
 ### :bug: Bugs fixed
 
-- Fix feature loading on workspace when opening a file in a background tab [Taiga #10377](https://tree.taiga.io/project/penpot/issue/10377)
+- Fix feature loading on workspace when opening a file in a background
+  tab [Taiga #10377](https://tree.taiga.io/project/penpot/issue/10377)
+- Fix minor inconsistencies on RPC `get-file-libraries` and `get-file`
+  methods (add missing team-id prop)
 
 
 ## 2.5.3
