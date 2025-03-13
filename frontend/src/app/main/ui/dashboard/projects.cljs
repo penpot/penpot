@@ -105,7 +105,8 @@
   [{:keys [project is-first team files can-edit]}]
   (let [locale     (mf/deref i18n/locale)
 
-        project-id (:id project)
+        project-id (get project :id)
+        team-id    (get team :id)
 
         file-count (or (:count project) 0)
         is-draft?  (:is-default project)
@@ -191,11 +192,11 @@
 
         on-import
         (mf/use-fn
-         (mf/deps project-id)
+         (mf/deps project-id team-id)
          (fn []
            (st/emit! (dpj/fetch-files project-id)
-                     (dd/fetch-recent-files)
-                     (dd/fetch-projects)
+                     (dd/fetch-recent-files team-id)
+                     (dd/fetch-projects team-id)
                      (dd/clear-selected-files))))
 
         handle-create-click
@@ -317,6 +318,8 @@
                (sort-by :modified-at)
                (reverse)))
 
+        team-id             (get team :id)
+
         recent-map          (mf/deref ref:recent-files)
         permisions          (:permissions team)
 
@@ -327,7 +330,7 @@
         show-team-hero*     (mf/use-state #(get storage/global ::show-team-hero true))
         show-team-hero?     (deref show-team-hero*)
 
-        is-my-penpot        (= (:default-team-id profile) (:id team))
+        is-my-penpot        (= (:default-team-id profile) team-id)
         is-defalt-team?     (:is-default team)
 
         on-close
@@ -346,8 +349,8 @@
                     (:name team))]
         (dom/set-html-title (tr "title.dashboard.projects" tname))))
 
-    (mf/with-effect []
-      (st/emit! (dd/fetch-recent-files)
+    (mf/with-effect [team-id]
+      (st/emit! (dd/fetch-recent-files team-id)
                 (dd/clear-selected-files)))
 
     (when (seq projects)

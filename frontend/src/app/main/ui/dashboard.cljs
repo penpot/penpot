@@ -210,42 +210,45 @@
           (swap! storage/session dissoc :plugin-url))))))
 
 (defn use-templates-import
-  [can-edit? template-url default-project-id]
-  (mf/with-layout-effect
-    [can-edit? template-url default-project-id]
-    (when (and (some? template-url) (some? default-project-id))
-      (if can-edit?
-        (let [valid-url?    (and (str/ends-with? template-url ".penpot")
-                                 (str/starts-with? template-url cf/templates-uri))
-              template-name (when valid-url? (subs template-url (count cf/templates-uri)))
-              on-import     #(st/emit! (dpj/fetch-files default-project-id)
-                                       (dd/fetch-recent-files)
-                                       (dd/fetch-projects)
-                                       (dd/clear-selected-files)
-                                       (ptk/event ::ev/event {::ev/name "install-template-from-link-finished"
-                                                              :name template-name
-                                                              :url template-url}))]
-          (if valid-url?
-            (do
-              (st/emit! (ptk/event ::ev/event {::ev/name "install-template-from-link" :name template-name :url template-url}))
-              (->> (http/send! {:method :get
-                                :uri template-url
-                                :response-type :blob
-                                :omit-default-headers true})
-                   (rx/subs!
-                    (fn [result]
-                      (if (or (< (:status result) 200) (>= (:status result) 300))
-                        (st/emit! (notif/error (tr "dashboard.import.error")))
-                        (st/emit! (modal/show
-                                   {:type :import
-                                    :project-id default-project-id
-                                    :entries [{:name template-name :uri (wapi/create-uri (:body result))}]
-                                    :on-finish-import on-import})))))))
-            (st/emit! (notif/error (tr "dashboard.import.bad-url")))))
-        (st/emit! (notif/error (tr "dashboard.import.no-perms"))))
+  [can-edit? template-url project]
+  (let [project-id (get project :id)
+        team-id    (get project :team-id)]
+    (mf/with-layout-effect [can-edit? template-url project-id team-id]
+      (when (and (some? template-url)
+                 (some? project-id)
+                 (some? team-id))
+        (if can-edit?
+          (let [valid-url?    (and (str/ends-with? template-url ".penpot")
+                                   (str/starts-with? template-url cf/templates-uri))
+                template-name (when valid-url? (subs template-url (count cf/templates-uri)))
+                on-import     #(st/emit! (dpj/fetch-files project-id)
+                                         (dd/fetch-recent-files team-id)
+                                         (dd/fetch-projects team-id)
+                                         (dd/clear-selected-files)
+                                         (ptk/event ::ev/event {::ev/name "install-template-from-link-finished"
+                                                                :name template-name
+                                                                :url template-url}))]
+            (if valid-url?
+              (do
+                (st/emit! (ptk/event ::ev/event {::ev/name "install-template-from-link" :name template-name :url template-url}))
+                (->> (http/send! {:method :get
+                                  :uri template-url
+                                  :response-type :blob
+                                  :omit-default-headers true})
+                     (rx/subs!
+                      (fn [result]
+                        (if (or (< (:status result) 200) (>= (:status result) 300))
+                          (st/emit! (notif/error (tr "dashboard.import.error")))
+                          (st/emit! (modal/show
+                                     {:type :import
+                                      :project-id project-id
+                                      :entries [{:name template-name :uri (wapi/create-uri (:body result))}]
+                                      :on-finish-import on-import})))))))
+              (st/emit! (notif/error (tr "dashboard.import.bad-url")))))
+          (st/emit! (notif/error (tr "dashboard.import.no-perms"))))
 
-      (binding [storage/*sync* true]
-        (swap! storage/session dissoc :template-url)))))
+        (binding [storage/*sync* true]
+          (swap! storage/session dissoc :template-url))))))
 
 (mf/defc dashboard*
   {::mf/props :obj}
@@ -270,10 +273,10 @@
 
     (hooks/use-shortcuts ::dashboard sc/shortcuts)
 
-    (mf/with-effect []
-      (st/emit! (dd/initialize))
+    (mf/with-effect [team-id]
+      (st/emit! (dd/initialize team-id))
       (fn []
-        (st/emit! (dd/finalize))))
+        (st/emit! (dd/finalize team-id))))
 
     (mf/with-effect []
       (let [key (events/listen goog/global "keydown"
@@ -285,7 +288,7 @@
           (events/unlistenByKey key))))
 
     (use-plugin-register plugin-url team-id (:id default-project))
-    (use-templates-import can-edit? template-url (:id default-project))
+    (use-templates-import can-edit? template-url default-project)
 
     [:& (mf/provider ctx/current-project-id) {:value project-id}
      [:> modal-container*]

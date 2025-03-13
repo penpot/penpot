@@ -344,11 +344,13 @@
 
         continue-template
         (mf/use-fn
+         (mf/deps on-finish-import)
          (fn [template]
            (let [on-success
                  (fn [_event]
                    (reset! status* :import-success)
-                   (st/emit! (dd/fetch-recent-files)))
+                   (when (fn? on-finish-import)
+                     (on-finish-import)))
 
                  on-error
                  (fn [cause]
@@ -478,8 +480,6 @@
        (when (some? template)
          [:> import-entry* {:entry (assoc template :status status)
                             :can-be-deleted false}])]
-
-      ;; (prn "import-dialog" status)
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
