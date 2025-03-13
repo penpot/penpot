@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-10-10 10:15+0000\n"
-"Last-Translator: Inex Code <github@inex.rocks>\n"
-"Language-Team: Russian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ru/>\n"
+"PO-Revision-Date: 2025-03-14 21:02+0000\n"
+"Last-Translator: Vin <k3kelm4vw@mozmail.com>\n"
+"Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ru/>\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.8-dev\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -65,8 +65,8 @@ msgstr "Вход"
 #: src/app/main/ui/auth/login.cljs:286
 msgid "auth.login-tagline"
 msgstr ""
-"Penpot - это бесплатный инструмент проектирования с открытым исходным кодом "
-"для совместной работы над дизайном и кодом"
+"Penpot — это бесплатный инструмент для дизайна с открытым исходным кодом, "
+"созданный для совместной работы с дизайном и кодом"
 
 #: src/app/main/ui/auth/login.cljs:223
 msgid "auth.login-with-github-submit"
@@ -98,7 +98,7 @@ msgstr "Пароль успешно изменён"
 
 #: src/app/main/ui/auth/recovery_request.cljs:50
 msgid "auth.notifications.profile-not-verified"
-msgstr "Профиль не подтверждён, проверьте почту."
+msgstr "Профиль не подтверждён, пожалуйста, сначала подтвердите профиль."
 
 #: src/app/main/ui/auth/recovery_request.cljs:33
 msgid "auth.notifications.recovery-token-sent"
@@ -242,11 +242,11 @@ msgstr[1] "%s общих страниц"
 
 #: src/app/main/ui/viewer/share_link.cljs:299
 msgid "common.share-link.permissions-can-comment"
-msgstr "Можно оставлять комментарии"
+msgstr "Могут комментировать"
 
 #: src/app/main/ui/viewer/share_link.cljs:309
 msgid "common.share-link.permissions-can-inspect"
-msgstr "Может проверять код"
+msgstr "Могут проверять код"
 
 #: src/app/main/ui/viewer/share_link.cljs:194
 msgid "common.share-link.permissions-hint"
@@ -551,11 +551,10 @@ msgstr ""
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"Вам следует загружать только собственные шрифты, или у которых есть "
-"лицензия на использование в Penpot. Больше информации в разделе \"Content "
-"rights\" в [Условиях использования Penpot](https://penpot.app/terms.html). "
-"Также можете прочитать о [лицензированием "
-"шрифтов](https://www.typography.com/faq) в целом."
+"Вам следует загружать только собственные шрифты, или у которых есть лицензия "
+"на использование в Penpot. Больше информации в разделе \"Content rights\" в "
+"[Условиях использования Penpot](https://penpot.app/terms.html). Также можете "
+"прочитать о [лицензировании шрифтов](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206
 msgid "dashboard.fonts.upload-all"
@@ -587,10 +586,6 @@ msgstr "Файл с компонентами v2 активирован, но э�
 #: src/app/main/ui/dashboard/import.cljs:292
 msgid "dashboard.import.import-error"
 msgstr "Есть проблема с импортом файла. Файл не был импортирован."
-
-#: src/app/main/ui/dashboard/import.cljs:466
-msgid "dashboard.import.import-message"
-msgstr "Файлы успешно импортированы (%s)."
 
 #: src/app/main/ui/dashboard/import.cljs:461
 msgid "dashboard.import.import-warning"
@@ -698,11 +693,11 @@ msgstr "Ваш адрес эл. почты был успешно обновлё�
 
 #: src/app/main/ui/auth/verify_token.cljs:28
 msgid "dashboard.notifications.email-verified-successfully"
-msgstr "Ваш email адрес успешно подтвержден"
+msgstr "Ваш адрес эл. почты был успешно подтверждён"
 
 #: src/app/main/ui/settings/password.cljs:36
 msgid "dashboard.notifications.password-saved"
-msgstr "Пароль успешно сохранен!"
+msgstr "Пароль успешно сохранён!"
 
 #: src/app/main/ui/dashboard/team.cljs:1133
 msgid "dashboard.num-of-members"
@@ -1711,7 +1706,9 @@ msgstr "Далее"
 
 #: src/app/main/ui/dashboard/comments.cljs:106, src/app/main/ui/workspace/comments.cljs:161
 msgid "labels.no-comments-available"
-msgstr "Вы попались! Здесь будут появляться уведомления о новых комментариях."
+msgstr ""
+"Вы ничего не пропустили! Здесь будут появляться уведомления о новых "
+"комментариях."
 
 #: src/app/main/ui/dashboard/team.cljs:740
 msgid "labels.no-invitations"
@@ -2127,7 +2124,7 @@ msgstr "Да, удалить мой аккаунт"
 
 #: src/app/main/ui/settings/delete_account.cljs:53
 msgid "modals.delete-account.info"
-msgstr "Удалив аккаунт Вы потеряете все прокты и архивы."
+msgstr "Удалив аккаунт, вы потеряете все свои текущие проекты и архивы."
 
 #: src/app/main/ui/settings/delete_account.cljs:46
 msgid "modals.delete-account.title"
@@ -2687,7 +2684,7 @@ msgstr "Давайте начнём!"
 
 #: src/app/main/ui/onboarding/questions.cljs:94
 msgid "onboarding.questions.reasons.alternative"
-msgstr "Ищу альтернативу Figma, XD и т.д."
+msgstr "Ищу альтернативу Figma, XD и т. д."
 
 #: src/app/main/ui/onboarding/questions.cljs:88
 msgid "onboarding.questions.reasons.exploring"
@@ -5351,7 +5348,7 @@ msgstr "Плагины ещё не установлены"
 
 #: src/app/main/ui/workspace/plugins.cljs:192
 msgid "workspace.plugins.error.url"
-msgstr "Плагин не существует или его URL неверен."
+msgstr "Плагин не существует или его URL-адрес неверен."
 
 #: src/app/main/ui/workspace/plugins.cljs:188
 msgid "workspace.plugins.install"
@@ -5711,7 +5708,7 @@ msgstr "Готово"
 #: src/app/main/ui/workspace/viewport/top_bar.cljs:36
 #, markdown
 msgid "workspace.top-bar.view-only"
-msgstr "**Осмотр кода** (Только просмотр)"
+msgstr "**Проверка кода** (Только просмотр)"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:331
 msgid "workspace.undo.empty"
@@ -5877,3 +5874,228 @@ msgstr "Обновить"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Нажмите для замыкания контура"
+
+#: src/app/main/data/common.cljs:207
+msgid "dashboard.permissions-change.viewer"
+msgstr "Теперь вы наблюдатель в этой команде."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:48
+msgid "dashboard.add-file"
+msgstr "Добавить файл"
+
+#: src/app/main/ui/workspace/main_menu.cljs:623
+msgid "dashboard.create-version-menu"
+msgstr "Закрепить эту версию"
+
+#: src/app/main/ui/dashboard/fonts.cljs:448
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "Пользовательских шрифтов пока нет."
+
+#: src/app/main/ui/dashboard/comments.cljs:84
+msgid "dashboard.notifications"
+msgstr "Уведомления"
+
+#: src/app/main/ui/dashboard/comments.cljs:44
+msgid "dashboard.notifications.view"
+msgstr "Просмотреть уведомления"
+
+#: src/app/main/ui/dashboard.cljs:212
+msgid "dashboard.plugins.bad-url"
+msgstr "URL-адрес плагина неверен"
+
+#: src/app/main/data/common.cljs:209
+msgid "dashboard.permissions-change.admin"
+msgstr "Теперь вы администратор в этой команде."
+
+#: src/app/main/data/common.cljs:208
+msgid "dashboard.permissions-change.editor"
+msgstr "Теперь вы редактор в этой команде."
+
+#: src/app/main/data/common.cljs:210
+msgid "dashboard.permissions-change.owner"
+msgstr "Теперь вы владелец этой команды."
+
+#: src/app/main/ui/dashboard.cljs:210
+msgid "dashboard.plugins.parse-error"
+msgstr "Невозможно проанализировать манифест плагина"
+
+#: src/app/main/ui/dashboard.cljs:173
+msgid "dashboard.plugins.try-plugin"
+msgstr "Попробуйте плагин: "
+
+#: src/app/main/ui/settings/notifications.cljs:71
+msgid "dashboard.settings.notifications.title"
+msgstr "Уведомления"
+
+#: src/app/main/ui/workspace/main_menu.cljs:630
+msgid "dashboard.show-version-history"
+msgstr "История версий"
+
+#: src/app/main/ui/settings/sidebar.cljs:99
+msgid "labels.notifications"
+msgstr "Уведомления"
+
+#: src/app/main/ui/settings/notifications.cljs:64
+msgid "title.settings.notifications"
+msgstr "Уведомления - Penpot"
+
+#: src/app/main/ui/workspace/sidebar.cljs:281
+msgid "workspace.versions.tab.history"
+msgstr "История"
+
+#: src/app/main/data/common.cljs:93
+msgid "notifications.by-code.maintenance"
+msgstr ""
+"Технический перерыв: сервис будет недоступен короткое время в течение 5 "
+"минут."
+
+#: src/app/main/ui/settings/notifications.cljs:87
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Только упоминания и ответы"
+
+#: src/app/main/ui/settings/notifications.cljs:98
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "Никакие"
+
+#: src/app/main/ui/settings/notifications.cljs:103
+msgid "dashboard.settings.notifications.submit"
+msgstr "Обновить настройки"
+
+#: src/app/main/ui/workspace/comments.cljs:66, src/app/main/ui/workspace/comments.cljs:136
+msgid "labels.show-mentions"
+msgstr "Показать только упоминания"
+
+#: src/app/main/ui/settings/notifications.cljs:78
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Никакие"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:203
+msgid "workspace.token.save-theme"
+msgstr "Сохранить тему"
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown, unused
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"Библиотеки, добавленные в проект, будут отображаться здесь. Попробуйте "
+"поделиться своими файлами или добавьте из наших [Библиотек и шаблонов]"
+"(https://penpot.app/libraries-templates)."
+
+#: src/app/main/ui/settings/notifications.cljs:92
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Приглашения и запросы"
+
+#: src/app/main/ui/settings/notifications.cljs:95
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "Все виды приглашений и запросов"
+
+#: src/app/main/ui/settings/notifications.cljs:82
+msgid "dashboard.settings.notifications.email.title"
+msgstr "Уведомления по эл. почте"
+
+#: src/app/main/ui/workspace/main_menu.cljs:910
+msgid "workspace.header.menu.option.power-up"
+msgstr "Расширьте свой план"
+
+#: src/app/main/ui/settings/notifications.cljs:76
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Все комментарии, упоминания и ответы"
+
+#: src/app/main/ui/settings/notifications.cljs:42
+msgid "dashboard.notifications.notifications-saved"
+msgstr "Настройки уведомлений обновлены"
+
+#: src/app/main/ui/settings/notifications.cljs:77
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Только упоминания и ответы"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:361
+msgid "workspace.versions.warning.text"
+msgstr "Автосохранённые версии будут храниться в течение %s дней."
+
+#: src/app/main/ui/settings/notifications.cljs:73
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Комментарии к файлам"
+
+#: src/app/main/ui/settings/notifications.cljs:72
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Уведомления в панели управления"
+
+#: src/app/main/ui/settings/notifications.cljs:86
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "Все комментарии, упоминания и ответы"
+
+#: src/app/main/ui/settings/notifications.cljs:88
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "Никакие"
+
+#: src/app/main/ui/settings/notifications.cljs:83
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "Комментарии к файлам"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:36
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "Библиотеки, добавленные в проект, будут отображаться здесь."
+
+#: src/app/main/ui/dashboard.cljs:242
+msgid "dashboard.import.error"
+msgstr "Импорт не удался. Пожалуйста, попробуйте снова"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:327, src/app/main/ui/workspace/sidebar/versions.cljs:329
+msgid "workspace.versions.button.save"
+msgstr "Сохранить версию"
+
+#: src/app/main/ui/workspace/sidebar.cljs:284
+msgid "workspace.versions.tab.actions"
+msgstr "Действия"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:365
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr ""
+"Если вы хотите увеличить этот лимит, напишите нам на [support@penpot.app](%s)"
+
+#: src/app/main/ui/dashboard.cljs:248
+msgid "dashboard.import.bad-url"
+msgstr "Импорт не удался. URL-адрес шаблона неверен"
+
+#: src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:285
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr "Как только участник проекта создаст черновик, он отобразится здесь."
+
+#: src/app/main/ui/dashboard/files.cljs:194, src/app/main/ui/dashboard/projects.cljs:280
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "Черновиков пока нет."
+
+#: src/app/main/ui/dashboard/files.cljs:200, src/app/main/ui/dashboard/projects.cljs:286
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr "Как только участник проекта создаст файл, он отобразится здесь."
+
+#: src/app/main/ui/dashboard/files.cljs:195, src/app/main/ui/dashboard/projects.cljs:281
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "Файлов пока нет."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:33
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "Библиотек пока нет."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:40
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"Библиотеки, добавленные в проект, будут отображаться здесь. Попробуйте "
+"поделиться своими файлами или добавьте из наших [Библиотек и шаблонов]"
+"(https://penpot.app/libraries-templates)."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:971
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Расширить"
+
+#: src/app/main/ui/workspace/plugins.cljs:196
+msgid "workspace.plugins.error.manifest"
+msgstr "Манифест плагина неверен."
+
+#: src/app/main/ui/workspace/plugins.cljs:202
+#, markdown
+msgid "workspace.plugins.discover"
+msgstr "Откройте для себя [больше плагинов](%s)"
