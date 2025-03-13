@@ -15,6 +15,7 @@
   (case type
     :png  ".png"
     :jpeg ".jpg"
+    :webp ".webp"
     :svg  ".svg"
     :pdf  ".pdf"
     :zip  ".zip"))
@@ -26,6 +27,7 @@
     :pdf  "application/pdf"
     :svg  "image/svg+xml"
     :jpeg "image/jpeg"
-    :png  "image/png"))
+    :png  "image/png"
+    :webp "image/webp"))
 
 
