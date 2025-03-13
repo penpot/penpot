@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.5.4 (Unreleased)
+
+### :sparkles: New features
+
+- Add support for WEBP format on shape export [Github #6053](https://github.com/penpot/penpot/pull/6053) and [Github #6074](https://github.com/penpot/penpot/pull/6074)
+
 ## 2.5.3
 
 ### :bug: Bugs fixed

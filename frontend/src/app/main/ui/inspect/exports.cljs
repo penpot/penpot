@@ -37,7 +37,7 @@
         scale-enabled?
         (mf/use-callback
          (fn [export]
-           (#{:png :jpeg} (:type export))))
+           (#{:png :jpeg :webp} (:type export))))
 
         in-progress? (:in-progress xstate)
 
@@ -123,6 +123,7 @@
 
         format-options [{:value "png" :label "PNG"}
                         {:value "jpeg" :label "JPG"}
+                        {:value "webp" :label "WEBP"}
                         {:value "svg" :label "SVG"}
                         {:value "pdf" :label "PDF"}]]
 
