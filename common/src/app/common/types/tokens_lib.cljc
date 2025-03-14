@@ -251,6 +251,12 @@
   [name]
   (split-path name set-separator))
 
+(defn normalize-set-name
+  [name]
+  (->> (split-token-set-name name)
+       (map str/trim)
+       (str/join set-separator)))
+
 (defn get-token-set-path [token-set]
   (let [path (get-path token-set set-separator)]
     (add-token-set-paths-prefix path)))

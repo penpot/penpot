@@ -136,15 +136,26 @@
 
     ptk/WatchEvent
     (watch [it state _]
-      (let [token-set' (-> token-set
-                           (update :name #(if (empty? %)
-                                            set-name
-                                            (ctob/join-set-path [% set-name]))))
-            data (dsh/lookup-file-data state)
-            token-set-name (:name token-set')
-            changes   (-> (pcb/empty-changes it)
-                          (pcb/with-library-data data)
-                          (pcb/set-token-set token-set-name false token-set'))]
+      (let [token-set'
+            ;; FIXME: wtf is this?
+            (update token-set :name #(if (empty? %)
+                                       set-name
+                                       (ctob/join-set-path [% set-name])))
+
+            token-set'
+            (update token-set' :name ctob/normalize-set-name)
+
+            data
+            (dsh/lookup-file-data state)
+
+            token-set-name
+            (:name token-set')
+
+            changes
+            (-> (pcb/empty-changes it)
+                (pcb/with-library-data data)
+                (pcb/set-token-set token-set-name false token-set'))]
+
         (rx/of (set-selected-token-set-name token-set-name)
                (dch/commit-changes changes))))))
 
