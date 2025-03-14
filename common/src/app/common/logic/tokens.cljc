@@ -44,7 +44,7 @@
 (defn vec-starts-with? [v1 v2]
   (= (subvec v1 0 (min (count v1) (count v2))) v2))
 
-(defn calculate-move-token-set-or-set-group
+(defn- calculate-move-token-set-or-set-group
   [tokens-lib {:keys [from-index to-index position collapsed-paths]
                :or {collapsed-paths #{}}}]
   (let [tree (-> (ctob/get-set-tree tokens-lib)
