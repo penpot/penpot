@@ -12,7 +12,7 @@
   tab [Taiga #10377](https://tree.taiga.io/project/penpot/issue/10377)
 - Fix minor inconsistencies on RPC `get-file-libraries` and `get-file`
   methods (add missing team-id prop)
-
+- Fix problem with viewer role and inspect mode [Taiga #9751](https://tree.taiga.io/project/penpot/issue/9751)
 
 ## 2.5.3
 
