@@ -1643,15 +1643,10 @@
   untouched as possible"
   [target-cells source-cells omit-touched?]
   (if omit-touched?
-    (letfn [(get-data [cells id]
-              (dissoc (get cells id) :row :column :row-span :column-span))
-
-            (merge-cells [source-cell target-cell]
+    (letfn [(merge-cells [source-cell target-cell]
               (-> source-cell
                   (d/patch-object
-                   (dissoc target-cell :shapes :row :column :row-span :column-span))
-                  (cond-> (d/not-empty? (:shapes target-cell))
-                    (assoc :shapes (:shapes target-cell)))))]
+                   (dissoc target-cell :row :column :row-span :column-span))))]
       (let [deleted-cells
             (into #{}
                   (filter #(not (contains? source-cells %)))
@@ -1659,10 +1654,7 @@
 
             touched-cells
             (into #{}
-                  (filter #(and
-                            (not (contains? deleted-cells %))
-                            (not= (get-data source-cells %)
-                                  (get-data target-cells %))))
+                  (filter #(not (contains? deleted-cells %)))
                   (keys target-cells))]
 
         (->> touched-cells
