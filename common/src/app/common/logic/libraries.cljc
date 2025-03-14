@@ -1722,13 +1722,26 @@
       (pcb/update-shapes
        [shape-copy-id]
        (fn [shape-copy objects]
-         (let [ids-map
+         (let [component-page
+               (ctf/get-component-page main-container main-component)
+
+               component-swap-children
+               (->> shape-main
+                    :shapes
+                    (map #(get (:objects component-page) %))
+                    (filter #(some? (ctk/get-swap-slot %)))
+                    (group-by ctk/get-swap-slot))
+
+               ids-map
                (into {}
                      (comp
                       (map #(get objects %))
                       (keep
                        (fn [copy-shape]
-                         (let [main-shape (ctf/get-ref-shape main-container main-component copy-shape)]
+                         (let [main-shape
+                               (if (some? (ctk/get-swap-slot copy-shape))
+                                 (first (get component-swap-children (ctk/get-swap-slot copy-shape)))
+                                 (ctf/get-ref-shape main-container main-component copy-shape))]
                            [(:id main-shape) (:id copy-shape)]))))
                      (:shapes shape-copy))
 
@@ -1744,7 +1757,8 @@
                main-cells (-> shape-main (ctl/remap-grid-cells ids-map) :layout-grid-cells)]
            (-> shape-copy
                (assoc :layout-grid-cells
-                      (ctl/merge-cells copy-cells main-cells omit-touched?)))))
+                      (ctl/merge-cells main-cells copy-cells omit-touched?))
+               (ctl/assign-cells objects))))
        {:ignore-touched true :with-objects? true})))
 
 (defn- update-grid-main-attrs
