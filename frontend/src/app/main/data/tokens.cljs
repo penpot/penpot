@@ -127,7 +127,7 @@
          (wtu/update-workspace-tokens))))))
 
 (defn create-token-set
-  [set-name token-set]
+  [set-name]
   (ptk/reify ::create-token-set
     ptk/UpdateEvent
     (update [_ state]
@@ -136,28 +136,16 @@
 
     ptk/WatchEvent
     (watch [it state _]
-      (let [token-set'
-            ;; FIXME: wtf is this?
-            (update token-set :name #(if (empty? %)
-                                       set-name
-                                       (ctob/join-set-path [% set-name])))
-
-            token-set'
-            (update token-set' :name ctob/normalize-set-name)
-
-            data
-            (dsh/lookup-file-data state)
-
-            token-set-name
-            (:name token-set')
-
-            changes
-            (-> (pcb/empty-changes it)
-                (pcb/with-library-data data)
-                (pcb/set-token-set token-set-name false token-set'))]
-
-        (rx/of (set-selected-token-set-name token-set-name)
-               (dch/commit-changes changes))))))
+      (let [data       (dsh/lookup-file-data state)
+            tokens-lib (get data :tokens-lib)
+            set-name   (ctob/normalize-set-name set-name)]
+        (when-not (ctob/get-set tokens-lib set-name)
+          (let [token-set (ctob/make-token-set :name set-name)
+                changes   (-> (pcb/empty-changes it)
+                              (pcb/with-library-data data)
+                              (pcb/set-token-set set-name false token-set))]
+            (rx/of (set-selected-token-set-name set-name)
+                   (dch/commit-changes changes))))))))
 
 (defn rename-token-set-group [set-group-path set-group-fname]
   (ptk/reify ::rename-token-set-group
@@ -168,17 +156,28 @@
         (rx/of
          (dch/commit-changes changes))))))
 
-(defn update-token-set [set-name token-set]
+(defn update-token-set
+  [token-set name]
   (ptk/reify ::update-token-set
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (dsh/lookup-file-data state)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-library-data data)
-                        (pcb/set-token-set set-name false token-set))]
-        (rx/of
-         (set-selected-token-set-name (:name token-set))
-         (dch/commit-changes changes))))))
+      (let [data       (dsh/lookup-file-data state)
+            name       (ctob/normalize-set-name name (:name token-set))
+            tokens-lib (get data :tokens-lib)]
+
+        (cond
+          (= (:name token-set) name)
+          nil
+
+          (ctob/get-set tokens-lib name)
+          nil
+
+          :else
+          (let [changes (-> (pcb/empty-changes it)
+                            (pcb/with-library-data data)
+                            (pcb/rename-token-set (:name token-set) name))]
+            (rx/of (set-selected-token-set-name (:name token-set))
+                   (dch/commit-changes changes))))))))
 
 (defn toggle-token-set
   [name]

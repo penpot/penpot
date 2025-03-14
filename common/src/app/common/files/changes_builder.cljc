@@ -875,9 +875,28 @@
                                       :token nil}))
         (apply-changes-local))))
 
-(defn set-token-set [changes set-name group? token-set]
+(defn rename-token-set
+  [changes name new-name]
+
   (assert-library! changes)
-  (let [library-data (::library-data (meta changes))
+  (let [library-data   (::library-data (meta changes))
+        prev-token-set (some-> (get library-data :tokens-lib)
+                               (ctob/get-set name))]
+    (-> changes
+        (update :redo-changes conj {:type :set-token-set
+                                    :set-name name
+                                    :token-set (assoc prev-token-set :name new-name)
+                                    :group? false})
+        (update :undo-changes conj {:type :set-token-set
+                                    :set-name new-name
+                                    :token-set prev-token-set
+                                    :group? false})
+        (apply-changes-local))))
+
+(defn set-token-set
+  [changes set-name group? token-set]
+  (assert-library! changes)
+  (let [library-data   (::library-data (meta changes))
         prev-token-set (some-> (get library-data :tokens-lib)
                                (ctob/get-set set-name))]
     (-> changes

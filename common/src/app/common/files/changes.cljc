@@ -387,7 +387,6 @@
       [:set-group-path [:vector :string]]
       [:set-group-fname :string]]]
 
-
     [:move-token-set-before
      [:map {:title "MoveTokenSetBefore"}
       [:type [:= :move-token-set-before]]

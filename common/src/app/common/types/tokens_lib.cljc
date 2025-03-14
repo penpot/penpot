@@ -27,14 +27,17 @@
 (def valid-groupable-item?
   (sm/validator schema:groupable-item))
 
+(def xf-map-trim
+  (comp
+   (map str/trim)
+   (remove str/empty?)))
+
 (defn split-path
   "Decompose a string in the form 'one.two.three' into a vector of strings, removing spaces."
-
   [path separator]
-  (let [xf (comp (map str/trim)
-                 (remove str/empty?))]
-    (->> (str/split path separator)
-         (into [] xf))))
+  (->> (str/split path separator)
+       (into [] xf-map-trim)
+       (not-empty)))
 
 (defn split-path-name [s separator]
   (let [[path name] (str/split s (re-pattern (str "\\" separator)) 2)]
@@ -61,10 +64,12 @@
                           (join-path separator))))
 
 (defn get-path
-  "Get the groups part of the name as a vector. E.g. group.subgroup.name -> ['group' 'subgroup']"
+  "Get the path of object by specified separator (E.g. with '.'
+  separator, the 'group.subgroup.name' -> ['group' 'subgroup'])"
   [item separator]
   (assert (valid-groupable-item? item) "expected groupable item")
-  (split-path (:name item) separator))
+  (->> (split-path (:name item) separator)
+       (not-empty)))
 
 (defn get-groups-str
   "Get the groups part of the name. E.g. group.subgroup.name -> group.subgroup"
@@ -97,14 +102,9 @@
 
 (def token-separator ".")
 
-(defn get-token-path [path]
-  (get-path path token-separator))
-
-;; FIXME: misleading name, we are spliting name into path, not
-;; spliting path into path
-(defn split-token-path
-  [path]
-  (split-path path token-separator))
+(defn get-token-path
+  [token]
+  (get-path token token-separator))
 
 (defrecord Token [name type value description modified-at])
 
@@ -247,27 +247,37 @@
         set-name (add-set-prefix (last paths))]
     (conj set-path set-name)))
 
+(defn get-token-set-path
+  [token-set]
+  (get-path token-set set-separator))
+
 (defn split-token-set-name
   [name]
   (split-path name set-separator))
 
+;; (defn rename-token-set-preserving-group
+;;   [token-set name]
+;;   (let [base (butlast (get-path token-set))
+
+
 (defn normalize-set-name
-  [name]
-  (->> (split-token-set-name name)
-       (map str/trim)
-       (str/join set-separator)))
+  "Normalize a set name.
 
-(defn get-token-set-path [token-set]
-  (let [path (get-path token-set set-separator)]
-    (add-token-set-paths-prefix path)))
+  If `relative-to` is provided, the normalized name will preserve the
+  same group prefix as reference name"
+  ([name]
+   (->> (split-token-set-name name)
+        (str/join set-separator)))
+  ([name relative-to]
+   (->> (concat (butlast (split-token-set-name relative-to))
+                (split-token-set-name name))
+        (str/join set-separator))))
 
+;; FIXME: revisit
 (defn get-token-set-final-name
   [name]
   (-> (split-token-set-name name)
       (peek)))
-
-(defn split-token-set-path [token-set-path]
-  (split-path token-set-path set-separator))
 
 (defn set-name->prefixed-full-path [name-str]
   (-> (split-token-set-name name-str)
@@ -297,7 +307,7 @@
   [tokens & {:keys [update-token-fn]
              :or {update-token-fn identity}}]
   (reduce-kv (fn [acc _ token]
-               (let [path (split-token-path (:name token))]
+               (let [path (get-token-path token)]
                  (assoc-in acc path (update-token-fn token))))
              {} tokens))
 
@@ -309,8 +319,8 @@
   (reduce
    (fn [acc [_ token]]
      (let [temp-id (random-uuid)
-           token (assoc token :temp/id temp-id)
-           path (split-token-path (:name token))]
+           token   (assoc token :temp/id temp-id)
+           path    (get-token-path token)]
        (-> acc
            (assoc-in (concat [:tokens-tree] path) token)
            (assoc-in [:ids temp-id] token))))
@@ -378,6 +388,7 @@
   (get-tokens-tree [_]
     (tokens-tree tokens))
 
+  ;; FIXME: looks redundant
   (get-dtcg-tokens-tree [_]
     (tokens-tree tokens :update-token-fn (fn [token]
                                            (cond-> {"$value" (:value token)
@@ -926,7 +937,7 @@ Will return a value that matches this schema:
                   active-themes)))
 
   (delete-set-group [this set-group-name]
-    (let [path (split-token-set-path set-group-name)
+    (let [path (split-token-set-name set-group-name)
           prefixed-path (map add-set-group-prefix path)
           child-set-names (->> (get-sets-at-path this path)
                                (map :name)
@@ -1268,14 +1279,17 @@ Will return a value that matches this schema:
                        (tree-seq d/ordered-map? vals themes))
           ;; Active themes without exposing hidden penpot theme
           active-themes-clear (disj active-themes hidden-token-theme-path)
+
           name-set-tuples (->> sets
                                (tree-seq d/ordered-map? vals)
                                (filter (partial instance? TokenSet))
                                (map (fn [token-set]
                                       [(:name token-set) (get-dtcg-tokens-tree token-set)])))
-          ordered-set-names (map first name-set-tuples)
+          ordered-set-names (mapv first name-set-tuples)
           sets (into {} name-set-tuples)
           active-sets (get-active-themes-set-names this)]
+
+
       (-> sets
           (assoc "$themes" themes)
           (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names)
