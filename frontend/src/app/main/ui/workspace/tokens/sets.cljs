@@ -43,17 +43,27 @@
   (st/emit! (dt/set-selected-token-set-name name)))
 
 (defn on-update-token-set
-  [name token-set]
+  [token-set name]
   (st/emit! (dt/clear-token-set-edition)
-            (dt/update-token-set (:name token-set) (ctob/update-name token-set name))))
+            (dt/update-token-set token-set name)))
 
-(defn- on-update-token-set-group [path name]
+(defn- on-update-token-set-group
+  [path name]
   (st/emit! (dt/clear-token-set-edition)
             (dt/rename-token-set-group path name)))
 
-(defn- on-create-token-set [name token-set]
-  (st/emit! (ptk/data-event ::ev/event {::ev/name "create-token-set" :name name})
-            (dt/create-token-set name token-set)))
+(defn- on-create-token-set
+  [parent-set name]
+  (let [;; FIXME: this code should be reusable under helper under
+        ;; common types namespace
+        name
+        (if-let [parent-path (ctob/get-token-set-path parent-set)]
+          (->> (concat parent-path (ctob/split-token-set-name name))
+               (ctob/join-set-path))
+          (ctob/normalize-set-name name))]
+
+    (st/emit! (ptk/data-event ::ev/event {::ev/name "create-token-set" :name name})
+              (dt/create-token-set name))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPONENTS
@@ -62,13 +72,11 @@
 (mf/defc editing-label*
   {::mf/private true}
   [{:keys [default-value on-cancel on-submit]}]
-  (let [ref (mf/use-ref)
-
-        on-submit-valid
+  (let [on-submit
         (mf/use-fn
          (mf/deps on-cancel on-submit default-value)
          (fn [event]
-           (let [value (str/trim (dom/get-target-val event))]
+           (let [value (dom/get-target-val event)]
              (if (or (str/empty? value)
                      (= value default-value))
                (on-cancel)
@@ -76,16 +84,15 @@
 
         on-key-down
         (mf/use-fn
-         (mf/deps on-submit-valid on-cancel)
+         (mf/deps on-submit on-cancel)
          (fn [event]
            (cond
-             (kbd/enter? event) (on-submit-valid event)
+             (kbd/enter? event) (on-submit event)
              (kbd/esc? event) (on-cancel))))]
     [:input
      {:class (stl/css :editing-node)
       :type "text"
-      :ref ref
-      :on-blur on-submit-valid
+      :on-blur on-submit
       :on-key-down on-key-down
       :auto-focus true
       :placeholder (tr "workspace.token.set-edit-placeholder")
@@ -234,6 +241,7 @@
 (mf/defc sets-tree-set*
   [{:keys [id set label tree-depth tree-path tree-index is-selected is-active is-draggable is-editing
            on-select on-drop on-toggle on-start-edition on-reset-edition on-edit-submit]}]
+
   (let [set-name  (get set :name)
         can-edit? (mf/use-ctx ctx/can-edit?)
 
@@ -273,7 +281,7 @@
         on-edit-submit'
         (mf/use-fn
          (mf/deps set on-edit-submit)
-         #(on-edit-submit % set))
+         #(on-edit-submit set %))
 
         on-drag
         (mf/use-fn
