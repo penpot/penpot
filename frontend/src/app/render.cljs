@@ -14,7 +14,6 @@
    [app.common.types.components-list :as ctkl]
    [app.common.uri :as u]
    [app.main.data.fonts :as df]
-   [app.main.data.team :as dtm]
    [app.main.features :as features]
    [app.main.render :as render]
    [app.main.repo :as repo]
@@ -30,6 +29,20 @@
 
 (log/setup! {:app :info})
 
+(defn set-current-team
+  [{:keys [id permissions features] :as team}]
+  (ptk/reify ::set-current-team
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc :permissions permissions)
+          (update :teams assoc id team)
+          (assoc :current-team-id id)))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (features/initialize (or features #{}))))))
+
 (defn- fetch-team
   [& {:keys [file-id]}]
   (ptk/reify ::fetch-team
@@ -37,7 +50,7 @@
     (watch [_ _ _]
       (->> (repo/cmd! :get-team {:file-id file-id})
            (rx/mapcat (fn [team]
-                        (rx/of (dtm/set-current-team team)
+                        (rx/of (set-current-team team)
                                (ptk/data-event ::team-fetched team))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

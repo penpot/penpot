@@ -133,7 +133,7 @@
             (st/emit! (dcm/go-to-dashboard-files
                        {:project-id project-id
                         :team-id team-id}))
-            (st/emit! (dd/fetch-recent-files)
+            (st/emit! (dd/fetch-recent-files team-id)
                       (dd/clear-selected-files))))
 
         on-move-accept
