@@ -1532,6 +1532,10 @@ msgstr "Sombra"
 msgid "inspect.attributes.size"
 msgstr "Tamaño y posición"
 
+#: src/app/main/ui/viewer/inspect/attributes/variant.cljs:40
+msgid "inspect.attributes.variant"
+msgstr "Propiedades de la variante"
+
 #: src/app/main/ui/viewer/inspect/attributes/stroke.cljs:52
 msgid "inspect.attributes.stroke"
 msgstr "Borde"

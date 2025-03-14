@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.logic.variants :as clv]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.main.data.helpers :as dsh]
@@ -758,23 +759,8 @@
         first-variant      (get objects (first (:shapes shape)))
         variant-id         (:variant-id first-variant)
 
-        dashes-to-end      (mf/use-fn
-                            (fn [data]
-                              (let [dashes (if (some #(= % "--") data) ["--"] [])]
-                                (concat (remove #(= % "--") data) dashes))))
-
         properties         (mf/with-memo [data objects variant-id]
-                             (->> (dwv/find-related-components data objects variant-id)
-                                  (mapcat :variant-properties)
-                                  (group-by :name)
-                                  (map-indexed (fn [index [k v]]
-                                                 {:name k
-                                                  :pos index
-                                                  :values (->> v
-                                                               (map #(if (str/empty? (:value %)) "--" (:value %)))
-                                                               distinct
-                                                               dashes-to-end)}))))
-
+                             (clv/extract-properties-values data objects (:id shape)))
 
         menu-open*         (mf/use-state false)
         menu-open?         (deref menu-open*)
