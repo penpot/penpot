@@ -23,17 +23,16 @@ fn render_debug_view(render_state: &mut RenderState) {
 }
 
 pub fn render_wasm_label(render_state: &mut RenderState) {
-    let canvas = render_state.surfaces.canvas(SurfaceId::Current);
+    let font_provider = render_state.fonts().font_provider();
+    let typeface = font_provider
+        .match_family_style("robotomono-regular", skia::FontStyle::default())
+        .unwrap();
 
+    let canvas = render_state.surfaces.canvas(SurfaceId::Current);
     let skia::ISize { width, height } = canvas.base_layer_size();
     let p = skia::Point::new(width as f32 - 100.0, height as f32 - 25.0);
     let mut paint = skia::Paint::default();
     paint.set_color(skia::Color::from_argb(100, 0, 0, 0));
-
-    let font_provider = &render_state.font_provider;
-    let typeface = font_provider
-        .match_family_style("robotomono-regular", skia::FontStyle::default())
-        .unwrap();
 
     let font = skia::Font::new(typeface, 10.0);
     canvas.draw_str("WASM RENDERER", p, &font, &paint);

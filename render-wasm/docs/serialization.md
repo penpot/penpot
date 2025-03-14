@@ -4,19 +4,18 @@
 
 Shape types are serialized as `u8`:
 
-| Value | Field      |
-| ----- | ---------- |
-| 0     | Frame      |
-| 1     | Group      |
-| 2     | Bool       |
-| 3     | Rect       |
-| 4     | Path       |
-| 5     | Text       |
-| 6     | Circle     |
-| 7     | SvgRaw     |
-| 8     | Image      |
-| \_    | Rect       |
-
+| Value | Field  |
+| ----- | ------ |
+| 0     | Frame  |
+| 1     | Group  |
+| 2     | Bool   |
+| 3     | Rect   |
+| 4     | Path   |
+| 5     | Text   |
+| 6     | Circle |
+| 7     | SvgRaw |
+| 8     | Image  |
+| \_    | Rect   |
 
 ## Horizontal Constraint
 
@@ -31,7 +30,6 @@ Horizontal constraints are serialized as `u8`:
 | 4     | Scale     |
 | \_    | None      |
 
-
 ## Vertical Constraint
 
 Vertical constraints are serialized as `u8`:
@@ -44,7 +42,6 @@ Vertical constraints are serialized as `u8`:
 | 3     | Center    |
 | 4     | Scale     |
 | \_    | None      |
-
 
 ## Paths
 
@@ -143,64 +140,65 @@ Shadow styles are serialized as `u8`:
 | 1     | Inner Shadow |
 | \_    | Drop Shadow  |
 
-## Layout - Direction
+## Layout
+
+### Direction
 
 | Value | Field         |
-| ----- | --------------|
+| ----- | ------------- |
 | 0     | Row           |
 | 1     | RowReverse    |
 | 2     | Column        |
 | 3     | ColumnReverse |
 | \_    | error         |
 
-## Layout - Align Items
+### Align Items
 
 | Value | Field   |
-| ----- | --------|
+| ----- | ------- |
 | 0     | Start   |
 | 1     | End     |
 | 2     | Center  |
 | 3     | Stretch |
 | \_    | error   |
 
-## Layout - Align Content
+### Align Content
 
 | Value | Field         |
 | ----- | ------------- |
 | 0     | Start         |
 | 1     | End           |
 | 2     | Center        |
-| 3     | Space between | 
+| 3     | Space between |
 | 4     | Space around  |
 | 5     | Space evenly  |
 | 6     | Stretch       |
 | \_    | error         |
 
-## Layout - Justify items
+### Justify items
 
 | Value | Field   |
-| ----- | --------|
+| ----- | ------- |
 | 0     | Start   |
 | 1     | End     |
 | 2     | Center  |
 | 3     | Stretch |
 | \_    | error   |
 
-## Layout - Justify content
-
+### Justify content
 
 | Value | Field         |
 | ----- | ------------- |
 | 0     | Start         |
 | 1     | End           |
 | 2     | Center        |
-| 3     | Space between | 
+| 3     | Space between |
 | 4     | Space around  |
 | 5     | Space evenly  |
 | 6     | Stretch       |
 | \_    | error         |
 
-## Layout - Wrap type
+### Wrap type
 
 | Value | Field   |
 | ----- | ------- |
@@ -208,11 +206,21 @@ Shadow styles are serialized as `u8`:
 | 1     | No Wrap |
 | \_    | error   |
 
-## Layout - Sizing
+### Sizing
 
 | Value | Field |
-| ----- | ------|
+| ----- | ----- |
 | 0     | Fill  |
 | 1     | Fix   |
 | 2     | Auto  |
 | \_    | error |
+
+## Font
+
+### Style
+
+| Value | Variant |
+| ----- | ------- |
+| 0     | Normal  |
+| 1     | Italic  |
+| \_    | Normal  |

@@ -8,6 +8,7 @@
   "A WASM based render API"
   (:require
    ["react-dom/server" :as rds]
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.math :as mth]
@@ -17,6 +18,8 @@
    [app.config :as cf]
    [app.main.refs :as refs]
    [app.main.render :as render]
+   [app.main.store :as st]
+   [app.main.ui.shapes.text.fontfaces :as fonts]
    [app.render-wasm.helpers :as h]
    [app.util.debug :as dbg]
    [app.util.http :as http]
@@ -24,6 +27,8 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.object :as gobj]
+   [lambdaisland.uri :as u]
+   [okulary.core :as l]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -165,35 +170,50 @@
 (defn- get-string-length [string] (+ (count string) 1))
 
 ;; IMPORTANT: It should be noted that only TTF fonts can be stored.
-;; Do not remove, this is going to be useful
-;; when we implement text rendering.
-#_(defn- store-font
-    [family-name font-array-buffer]
-    (let [family-name-size (get-string-length family-name)
-          font-array-buffer-size (.-byteLength font-array-buffer)
-          size (+ font-array-buffer-size family-name-size)
-          ptr  (h/call internal-module "_alloc_bytes" size)
-          family-name-ptr (+ ptr font-array-buffer-size)
-          heap (gobj/get ^js internal-module "HEAPU8")
-          mem  (js/Uint8Array. (.-buffer heap) ptr size)]
-      (.set mem (js/Uint8Array. font-array-buffer))
-      (h/call internal-module "stringToUTF8" family-name family-name-ptr family-name-size)
-      (h/call internal-module "_store_font" family-name-size font-array-buffer-size)))
+(defn- store-font-buffer
+  [font-data font-array-buffer]
+  (let [id-buffer (:family-id-buffer font-data)
+        size (.-byteLength font-array-buffer)
+        ptr  (h/call internal-module "_alloc_bytes" size)
+        heap (gobj/get ^js internal-module "HEAPU8")
+        mem  (js/Uint8Array. (.-buffer heap) ptr size)]
+    (.set mem (js/Uint8Array. font-array-buffer))
+    (h/call internal-module "_store_font"
+            (aget id-buffer 0)
+            (aget id-buffer 1)
+            (aget id-buffer 2)
+            (aget id-buffer 3)
+            (:weight font-data)
+            (:style font-data))
+    true))
 
-;; This doesn't work
-#_(store-font-url "roboto-thin-italic" "https://fonts.gstatic.com/s/roboto/v32/KFOiCnqEu92Fr1Mu51QrEzAdLw.woff2")
-;; This does
-#_(store-font-url "sourcesanspro-regular" "http://localhost:3449/fonts/sourcesanspro-regular.ttf")
-;; Do not remove, this is going to be useful
-;; when we implement text rendering.
-#_(defn- store-font-url
-    [family-name font-url]
-    (-> (p/then (js/fetch font-url)
-                (fn [response] (.arrayBuffer response)))
-        (p/then (fn [array-buffer] (store-font family-name array-buffer)))))
+(defn- store-font-url
+  [font-data font-url]
+  (->> (http/send! {:method :get
+                    :uri font-url
+                    :response-type :blob})
+       (rx/map :body)
+       (rx/mapcat wapi/read-file-as-array-buffer)
+       (rx/map (fn [array-buffer] (store-font-buffer font-data array-buffer)))))
+
+(defn- store-font-id
+  [font-data asset-id]
+  (when asset-id
+    (let [uri (str (u/join cf/public-uri "assets/by-id/" asset-id))
+          id-buffer (uuid/get-u32 (:family-id font-data))
+          font-data (assoc font-data :family-id-buffer id-buffer)
+          font-stored? (not= 0 (h/call internal-module "_is_font_uploaded"
+                                       (aget id-buffer 0)
+                                       (aget id-buffer 1)
+                                       (aget id-buffer 2)
+                                       (aget id-buffer 3)
+                                       (:weight font-data)
+                                       (:style font-data)))]
+      (when-not font-stored? (store-font-url font-data uri)))))
 
 (defn- store-image
   [id]
+
   (let [buffer (uuid/get-u32 id)
         url    (cf/resolve-file-media {:id id})]
     (->> (http/send! {:method :get
@@ -663,6 +683,55 @@
   (let [encoder (js/TextEncoder.)]
     (.encode encoder text)))
 
+(def ^:private fonts
+  (l/derived :fonts st/state))
+
+(defn ^:private font->ttf-id [font-uuid font-style font-weight]
+  (let [matching-font (d/seek (fn [[_ font]]
+                                (and (= (:font-id font) font-uuid)
+                                     (= (:font-style font) font-style)
+                                     (= (:font-weight font) font-weight)))
+                              (seq @fonts))]
+    (when matching-font
+      (:ttf-file-id (second matching-font)))))
+
+(defn- serialize-font-style
+  [font-style]
+  (case font-style
+    "normal" 0
+    "regular" 0
+    "italic" 1
+    0))
+
+(defn- serialize-font-id
+  [font-id]
+  (let [no-prefix (subs font-id (inc (str/index-of font-id "-")))
+        as-uuid (uuid/uuid no-prefix)]
+    (uuid/get-u32 as-uuid)))
+
+(defn- serialize-font-weight
+  [font-weight]
+  (js/Number font-weight))
+
+(defn- add-text-leaf [leaf]
+  (let [text (dm/get-prop leaf :text)
+        font-id (serialize-font-id (dm/get-prop leaf :font-id))
+        font-style (serialize-font-style (dm/get-prop leaf :font-style))
+        font-weight (serialize-font-weight (dm/get-prop leaf :font-weight))
+        font-size (js/Number (dm/get-prop leaf :font-size))
+        buffer (utf8->buffer text)
+        size (.-byteLength buffer)
+        ptr (h/call internal-module "_alloc_bytes" size)
+        heap (gobj/get ^js internal-module "HEAPU8")
+        mem (js/Uint8Array. (.-buffer heap) ptr size)]
+    (.set mem buffer)
+    (h/call internal-module "_add_text_leaf"
+            (aget font-id 0)
+            (aget font-id 1)
+            (aget font-id 2)
+            (aget font-id 3)
+            font-weight font-style font-size)))
+
 (defn set-shape-text-content [content]
   (h/call internal-module "_clear_shape_text")
   (let [paragraph-set (first (dm/get-prop content :children))
@@ -677,17 +746,8 @@
           (h/call internal-module "_add_text_paragraph")
           (loop [index-leaves 0]
             (when (< index-leaves total-leaves)
-              (let [leaf (nth leaves index-leaves)
-                    text (dm/get-prop leaf :text)
-                    buffer (utf8->buffer text)
-                      ;; set up buffer array from
-                    size (.-byteLength buffer)
-                    ptr (h/call internal-module "_alloc_bytes" size)
-                    heap (gobj/get ^js internal-module "HEAPU8")
-                    mem (js/Uint8Array. (.-buffer heap) ptr size)]
-
-                (.set mem buffer)
-                (h/call internal-module "_add_text_leaf")
+              (let [leaf (nth leaves index-leaves)]
+                (add-text-leaf leaf)
                 (recur (inc index-leaves))))))
         (recur (inc index))))))
 
@@ -699,8 +759,34 @@
 (defn clear-cache []
   (h/call internal-module "_clear_cache"))
 
+(defn- store-all-fonts
+  [fonts]
+  (keep (fn [font]
+          (let [font-id (dm/get-prop font :font-id)
+                font-variant (dm/get-prop font :font-variant-id)
+                variant-parts (str/split font-variant #"\-")
+                style (first variant-parts)
+                weight (serialize-font-weight (last variant-parts))
+                font-id (subs font-id (inc (str/index-of font-id "-")))
+                font-id (uuid/uuid font-id)
+                ttf-id (font->ttf-id font-id style weight)
+                font-data {:family-id font-id
+                           :style (serialize-font-style style)
+                           :weight weight}]
+            (store-font-id font-data ttf-id))) fonts))
+
+(defn set-fonts
+  [objects]
+  (let [fonts (fonts/shapes->fonts (into [] (vals objects)))
+        pending (into [] (store-all-fonts fonts))]
+    (->> (rx/from pending)
+         (rx/mapcat identity)
+         (rx/reduce conj [])
+         (rx/subs! request-render))))
+
 (defn set-objects
   [objects]
+  (set-fonts objects)
   (let [shapes        (into [] (vals objects))
         total-shapes  (count shapes)
         pending
