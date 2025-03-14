@@ -22,6 +22,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
@@ -408,7 +409,10 @@
       (when can-edit?
         [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                  :on-click on-display-file-explorer}
-         (tr "labels.import")])
+         [:div {:class (stl/css :import-menu-item)}
+          [:div (tr "labels.import")]
+          [:div {:class (stl/css :import-export-menu-item-icon) :title (tr "workspace.token.import-tooltip")}
+           [:> i/icon* {:icon-id i/info :aria-label (tr "workspace.token.import-tooltip")}]]]])
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                :on-click on-export}
        (tr "labels.export")]]]))

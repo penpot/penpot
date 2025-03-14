@@ -129,6 +129,19 @@
   }
 }
 
+.import-export-menu-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.import-menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1;
+}
+
 .theme-select-wrapper {
   display: grid;
   grid-template-columns: 1fr 0.28fr;

@@ -6789,6 +6789,10 @@ msgstr "TOKENS -  %s"
 msgid "workspace.token.tools"
 msgstr "Tools"
 
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:415
+msgid "workspace.token.import-tooltip"
+msgstr "Importing a JSON file will override all your current tokens, sets and themes"
+
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:123
 msgid "workspace.token.value-not-valid"
 msgstr "The value is not valid"

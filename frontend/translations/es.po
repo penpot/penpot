@@ -6782,6 +6782,10 @@ msgstr "Valor"
 msgid "workspace.token.tools"
 msgstr "Herramientas"
 
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:415
+msgid "workspace.token.import-tooltip"
+msgstr "Al importar un fichero JSON sobreescribirás todos tus tokens, sets y themes"
+
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:123
 msgid "workspace.token.value-not-valid"
 msgstr "El valor no es válido"
