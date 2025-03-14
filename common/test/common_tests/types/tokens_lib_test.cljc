@@ -86,22 +86,22 @@
 
 (t/deftest move-token-set
   (t/testing "flat"
-      (let [tokens-lib (-> (ctob/make-tokens-lib)
-                           (ctob/add-set (ctob/make-token-set :name "A"))
-                           (ctob/add-set (ctob/make-token-set :name "B"))
-                           (ctob/add-set (ctob/make-token-set :name "Move")))
-            move (fn [from-path to-path before-path before-group?]
-                   (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
-                        (ctob/get-ordered-set-names)
-                        (into [])))]
-        (t/testing "move to top"
-          (t/is (= ["Move" "A" "B"] (move ["Move"] ["Move"] ["A"] false))))
+    (let [tokens-lib (-> (ctob/make-tokens-lib)
+                         (ctob/add-set (ctob/make-token-set :name "A"))
+                         (ctob/add-set (ctob/make-token-set :name "B"))
+                         (ctob/add-set (ctob/make-token-set :name "Move")))
+          move (fn [from-path to-path before-path before-group?]
+                 (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
+                      (ctob/get-ordered-set-names)
+                      (into [])))]
+      (t/testing "move to top"
+        (t/is (= ["Move" "A" "B"] (move ["Move"] ["Move"] ["A"] false))))
 
-        (t/testing "move in-between"
-          (t/is (= ["A" "Move" "B"] (move ["Move"] ["Move"] ["B"] false))))
+      (t/testing "move in-between"
+        (t/is (= ["A" "Move" "B"] (move ["Move"] ["Move"] ["B"] false))))
 
-        (t/testing "move to bottom"
-          (t/is (= ["A" "B" "Move"] (move ["Move"] ["Move"] nil false))))))
+      (t/testing "move to bottom"
+        (t/is (= ["A" "B" "Move"] (move ["Move"] ["Move"] nil false))))))
 
   (t/testing "nested"
     (let [tokens-lib (-> (ctob/make-tokens-lib)
@@ -129,7 +129,7 @@
                          (ctob/add-theme (ctob/make-token-theme :name "Theme"
                                                                 :sets #{"Foo/Bar/Baz"}))
                          (ctob/move-set ["Foo" "Bar" "Baz"] ["Other/Baz"] nil nil))]
-        (t/is (= #{"Other/Baz"} (:sets (ctob/get-theme tokens-lib "" "Theme")))))))
+      (t/is (= #{"Other/Baz"} (:sets (ctob/get-theme tokens-lib "" "Theme")))))))
 
 (t/deftest move-token-set-group
   (t/testing "reordering"
@@ -590,7 +590,7 @@
                                                                                      :type :boolean
                                                                                      :value true))
                             (ctob/add-theme (ctob/make-token-theme :name "test-token-theme"))
-                              (ctob/toggle-set-in-theme "" "test-token-theme" "test-token-set"))
+                            (ctob/toggle-set-in-theme "" "test-token-theme" "test-token-set"))
            encoded-blob (fres/encode tokens-lib)
            tokens-lib'  (fres/decode encoded-blob)]
 
