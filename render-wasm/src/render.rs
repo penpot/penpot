@@ -51,7 +51,7 @@ impl NodeRenderState {
     pub fn get_children_clip_bounds(
         &self,
         element: &Shape,
-        modifiers: &HashMap<Uuid, Matrix>,
+        modifiers: Option<&Matrix>,
     ) -> Option<(Rect, Option<Corners>, Matrix)> {
         if self.id.is_nil() || !element.clip() {
             return self.clip_bounds;
@@ -62,7 +62,7 @@ impl NodeRenderState {
         transform.post_translate(bounds.center());
         transform.pre_translate(-bounds.center());
 
-        if let Some(modifier) = modifiers.get(&element.id) {
+        if let Some(modifier) = modifiers {
             transform.post_concat(modifier);
         }
 
@@ -80,12 +80,7 @@ pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub options: RenderOptions,
     pub surfaces: Surfaces,
-    fonts: FontStore,
-    pub debug_font: skia::Font,
-    // TODO: we should probably have only one of these
-    // pub font_provider: skia::textlayout::TypefaceFontProvider,
-    // pub font_collection: skia::textlayout::FontCollection,
-    // ----
+    pub fonts: FontStore,
     pub viewbox: Viewbox,
     pub images: ImageStore,
     pub background_color: skia::Color,
@@ -102,27 +97,6 @@ pub(crate) struct RenderState {
     pub pending_tiles: Vec<tiles::Tile>,
 }
 
-fn children_clip_bounds(
-    element: &mut Shape,
-    modifiers: Option<&Matrix>,
-) -> Option<(Rect, Option<Corners>, Matrix)> {
-    (element.clip()).then(|| {
-        let bounds = element.selrect();
-        let mut transform = element.transform;
-        transform.post_translate(bounds.center());
-        transform.pre_translate(-bounds.center());
-        if let Some(modifiers) = modifiers {
-            transform.post_concat(&modifiers);
-        }
-        let corners = match &element.shape_type {
-            Type::Rect(data) => data.corners,
-            Type::Frame(data) => data.corners,
-            _ => None,
-        };
-        (bounds, corners, transform)
-    })
-}
-
 impl RenderState {
     pub fn new(width: i32, height: i32) -> RenderState {
         // This needs to be done once per WebGL context.
@@ -137,24 +111,9 @@ impl RenderState {
             sampling_options,
             tiles::get_tile_dimensions(),
         );
-        let mut font_provider = skia::textlayout::TypefaceFontProvider::new();
-        let default_font = skia::FontMgr::default()
-            .new_from_data(DEFAULT_FONT_BYTES, None)
-            .expect("Failed to load font");
-        font_provider.register_typeface(default_font, "robotomono-regular");
-        let mut font_collection = skia::textlayout::FontCollection::new();
-        let font_manager = FontMgr::from(font_provider.clone());
-        font_collection.set_default_font_manager(FontMgr::default(), None);
-        font_collection.set_dynamic_font_manager(font_manager);
 
         // This is used multiple times everywhere so instead of creating new instances every
         // time we reuse this one.
-
-        let debug_typeface = font_provider
-            .match_family_style("robotomono-regular", skia::FontStyle::default())
-            .unwrap();
-
-        let debug_font = skia::Font::new(debug_typeface, 10.0);
 
         let tiles = tiles::TileHashMap::new();
 
@@ -162,10 +121,7 @@ impl RenderState {
             gpu_state,
             options: RenderOptions::default(),
             surfaces,
-            cached_surface_image: None,
             fonts,
-            options: RenderOptions::default(),
-            debug_font,
             viewbox: Viewbox::new(width as f32, height as f32),
             images: ImageStore::new(),
             background_color: skia::Color::TRANSPARENT,
@@ -243,6 +199,7 @@ impl RenderState {
             .draw_cached_tile_surface(self.current_tile.unwrap(), rect);
 
         if self.options.is_debug_visible() {
+            // TODO: Esto habría que moverlo a debug.rs
             let canvas = self.surfaces.canvas(SurfaceId::Target);
 
             let mut p = skia::Paint::default();
@@ -253,7 +210,8 @@ impl RenderState {
             let point = skia::Point::new(rect.x() + 10., rect.y() + 20.);
             p.set_stroke_width(1.);
             let str = format!("{}:{}", x, y);
-            canvas.draw_str(str, point, &self.debug_font, &p);
+            let debug_font = self.fonts.debug_font();
+            canvas.draw_str(str, point, &debug_font, &p);
         }
     }
 
@@ -615,6 +573,7 @@ impl RenderState {
                         .draw_cached_tile_surface(current_tile, tile_rect);
 
                     if self.options.is_debug_visible() {
+                        // TODO: Esto habría que moverlo a debug.rs
                         let canvas = self.surfaces.canvas(SurfaceId::Target);
 
                         let mut p = skia::Paint::default();
@@ -625,7 +584,8 @@ impl RenderState {
                         let point = skia::Point::new(tile_rect.x() + 10., tile_rect.y() + 20.);
                         p.set_stroke_width(1.);
                         let str = format!("Cached {}:{}", current_tile.0, current_tile.1);
-                        canvas.draw_str(str, point, &self.debug_font, &p);
+                        let debug_font = self.fonts.debug_font();
+                        canvas.draw_str(str, point, &debug_font, &p);
                     }
                 } else {
                     let mut i = 0;
@@ -705,11 +665,7 @@ impl RenderState {
 
                         if element.is_recursive() {
                             // Fix this
-                            let children_clip_bounds = if (node_render_state.id.is_nil()) {
-                                None
-                            } else {
-                                children_clip_bounds(element, modifiers.get(&element.id))
-                            };
+                            let children_clip_bounds = node_render_state.get_children_clip_bounds(element, modifiers.get(&element.id));
                             for child_id in element.children_ids().iter().rev() {
                                 self.pending_nodes.push(NodeRenderState {
                                     id: *child_id,

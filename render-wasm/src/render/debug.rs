@@ -40,10 +40,11 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
     } else {
         "WASM RENDERER"
     };
-    let (scalar, _) = render_state.debug_font.measure_str(str, None);
+    let (scalar, _) = render_state.fonts.debug_font().measure_str(str, None);
     let p = skia::Point::new(width as f32 - 25.0 - scalar, height as f32 - 25.0);
 
-    canvas.draw_str(str, p, &render_state.debug_font, &paint);
+    let debug_font = render_state.fonts.debug_font();
+    canvas.draw_str(str, p, &debug_font, &paint);
 }
 
 pub fn render_debug_shape(render_state: &mut RenderState, element: &Shape, intersected: bool) {
@@ -76,10 +77,12 @@ pub fn render_debug_tiles_for_viewbox(
     paint.set_color(skia::Color::from_rgb(255, 0, 127));
     paint.set_stroke_width(1.);
     let str_rect = format!("{} {} {} {}", sx, sy, ex, ey);
+
+    let debug_font = render_state.fonts.debug_font();
     canvas.draw_str(
         str_rect,
         skia::Point::new(100.0, 150.0),
-        &render_state.debug_font,
+        &debug_font,
         &paint,
     );
 }
@@ -95,12 +98,15 @@ pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
     let tile_size = tiles::get_tile_size(render_state.viewbox);
     let (sx, sy, ex, ey) = tiles::get_tiles_for_rect(render_state.viewbox.area, tile_size);
     let str_rect = format!("{} {} {} {}", sx, sy, ex, ey);
+
+    let debug_font = render_state.fonts.debug_font();
     canvas.draw_str(
         str_rect,
         skia::Point::new(100.0, 100.0),
-        &render_state.debug_font,
+        &debug_font,
         &paint,
     );
+
     for y in sy..=ey {
         for x in sx..=ex {
             let rect = Rect::from_xywh(
@@ -112,7 +118,8 @@ pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
             let debug_rect = get_debug_rect(rect);
             let p = skia::Point::new(debug_rect.x(), debug_rect.y() - 1.);
             let str = format!("{}:{}", x, y);
-            canvas.draw_str(str, p, &render_state.debug_font, &paint);
+            let debug_font = render_state.fonts.debug_font();
+            canvas.draw_str(str, p, &debug_font, &paint);
             canvas.draw_rect(&debug_rect, &paint);
         }
     }
@@ -144,7 +151,9 @@ pub fn render_debug_tiles(render_state: &mut RenderState) {
             let debug_rect = get_debug_rect(rect);
             let p = skia::Point::new(debug_rect.x(), debug_rect.y() - 1.);
             let str = format!("{}:{} {}", x, y, shape_count);
-            canvas.draw_str(str, p, &render_state.debug_font, &paint);
+
+            let debug_font = render_state.fonts.debug_font();
+            canvas.draw_str(str, p, &debug_font, &paint);
             canvas.draw_rect(&debug_rect, &paint);
         }
     }
