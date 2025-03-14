@@ -254,7 +254,7 @@
           (rx/of
            (dch/commit-changes changes)
            (wtu/update-workspace-tokens)))
-        (catch js/Error e
+        (catch :default e
           (rx/of
            (drop-error (ex-data e))))))))
 
@@ -266,7 +266,7 @@
         (when-let [changes (clt/generate-move-token-set (pcb/empty-changes it) (get-tokens-lib state) drop-opts)]
           (rx/of (dch/commit-changes changes)
                  (wtu/update-workspace-tokens)))
-        (catch js/Error e
+        (catch :default e
           (rx/of
            (drop-error (ex-data e))))))))
 
