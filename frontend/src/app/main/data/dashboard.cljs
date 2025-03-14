@@ -39,7 +39,9 @@
 (declare process-message)
 
 (defn initialize
-  []
+  [team-id]
+  (assert (uuid? team-id) "expected uuid instance for `team-id`")
+
   (ptk/reify ::initialize
     ptk/WatchEvent
     (watch [_ state stream]
@@ -47,8 +49,8 @@
             profile-id (:profile-id state)]
 
         (->> (rx/merge
-              (rx/of (fetch-projects)
-                     (df/fetch-fonts))
+              (rx/of (fetch-projects team-id)
+                     (df/fetch-fonts team-id))
               (->> stream
                    (rx/filter (ptk/type? ::dws/message))
                    (rx/map deref)
@@ -61,8 +63,8 @@
              (rx/take-until stopper))))))
 
 (defn finalize
-  []
-  (ptk/data-event ::finalize {}))
+  [team-id]
+  (ptk/data-event ::finalize {:team-id team-id}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching (context aware: current team)
@@ -70,7 +72,7 @@
 
 ;; --- EVENT: fetch-projects
 
-(defn projects-fetched
+(defn- projects-fetched
   [projects]
   (ptk/reify ::projects-fetched
     ptk/UpdateEvent
@@ -81,13 +83,12 @@
               projects))))
 
 (defn fetch-projects
-  []
+  [team-id]
   (ptk/reify ::fetch-projects
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :get-projects {:team-id team-id})
-             (rx/map projects-fetched))))))
+    (watch [_ _ _]
+      (->> (rp/cmd! :get-projects {:team-id team-id})
+           (rx/map projects-fetched)))))
 
 ;; --- EVENT: search
 
@@ -116,7 +117,7 @@
 
 ;; --- EVENT: recent-files
 
-(defn recent-files-fetched
+(defn- recent-files-fetched
   [files]
   (ptk/reify ::recent-files-fetched
     ptk/UpdateEvent
@@ -127,13 +128,14 @@
             (update :files d/merge files))))))
 
 (defn fetch-recent-files
-  []
-  (ptk/reify ::fetch-recent-files
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :get-team-recent-files {:team-id team-id})
-             (rx/map recent-files-fetched))))))
+  ([] (fetch-recent-files nil))
+  ([team-id]
+   (ptk/reify ::fetch-recent-files
+     ptk/WatchEvent
+     (watch [_ state _]
+       (when-let [team-id (or team-id (:current-team-id state))]
+         (->> (rp/cmd! :get-team-recent-files {:team-id team-id})
+              (rx/map recent-files-fetched)))))))
 
 ;; --- EVENT: fetch-template-files
 

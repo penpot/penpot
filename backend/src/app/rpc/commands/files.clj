@@ -323,6 +323,7 @@
 
           file (-> (get-file cfg id :project-id project-id)
                    (assoc :permissions perms)
+                   (assoc :team-id (:id team))
                    (check-version!))]
 
       (-> (cfeat/get-team-enabled-features cf/flags team)
@@ -613,6 +614,7 @@
    SELECT l.id,
           l.features,
           l.project_id,
+          p.team_id,
           l.created_at,
           l.modified_at,
           l.deleted_at,
@@ -622,6 +624,7 @@
           l.synced_at,
           l.is_shared
      FROM libs AS l
+    INNER JOIN project AS p ON (p.id = l.project_id)
     WHERE l.deleted_at IS NULL OR l.deleted_at > now();")
 
 (defn get-file-libraries

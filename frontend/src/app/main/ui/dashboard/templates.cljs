@@ -37,6 +37,7 @@
   [template team-id project-id default-project-id section]
   (letfn [(on-finish []
             (st/emit!
+             (dd/fetch-recent-files team-id)
              (ptk/event ::ev/event {::ev/name "import-template-finish"
                                     ::ev/origin "dashboard"
                                     :template (:name template)

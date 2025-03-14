@@ -291,7 +291,8 @@
     (watch [_ state stream]
       (let [features     (features/get-team-enabled-features state)
             render-wasm? (contains? features "render-wasm/v1")
-            stopper-s    (rx/filter (ptk/type? ::finalize-workspace) stream)]
+            stopper-s    (rx/filter (ptk/type? ::finalize-workspace) stream)
+            team-id      (:current-team-id state)]
 
         (->> (rx/concat
               ;; Firstly load wasm module if it is enabled and fonts
@@ -305,7 +306,7 @@
                     (rx/filter (ptk/type? ::df/fonts-loaded))
                     (rx/take 1)
                     (rx/ignore))
-               (rx/of (df/fetch-fonts)))
+               (rx/of (df/fetch-fonts team-id)))
 
               ;; Then fetch file and thumbnails
               (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
@@ -335,7 +336,7 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (log/debug :hint "initialize-workspace" :file-id file-id)
+      (log/debug :hint "initialize-workspace" :file-id (dm/str file-id))
       (let [stoper-s (rx/filter (ptk/type? ::finalize-workspace) stream)
             rparams  (rt/get-params state)]
 

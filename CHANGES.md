@@ -24,15 +24,22 @@
 - The plugin list in the navigation menu lacks scrolling, some plugins are not visible when a large number are installed [Taiga #9360](https://tree.taiga.io/project/penpot/us/9360)
 - Fix hidden toolbar click event still available [Taiga #10437](https://tree.taiga.io/project/penpot/us/10437)
 
-## 2.5.3
 
-### :rocket: Epics and highlights
-
-### :boom: Breaking changes & Deprecations
-
-### :heart: Community contributions (Thank you!)
+## 2.5.4 (Unreleased)
 
 ### :sparkles: New features
+
+- Add support for WEBP format on shape export [Github #6053](https://github.com/penpot/penpot/pull/6053) and [Github #6074](https://github.com/penpot/penpot/pull/6074)
+
+### :bug: Bugs fixed
+
+- Fix feature loading on workspace when opening a file in a background
+  tab [Taiga #10377](https://tree.taiga.io/project/penpot/issue/10377)
+- Fix minor inconsistencies on RPC `get-file-libraries` and `get-file`
+  methods (add missing team-id prop)
+
+
+## 2.5.3
 
 ### :bug: Bugs fixed
 
@@ -40,13 +47,8 @@
 
 ## 2.5.2
 
-### :rocket: Epics and highlights
-
-### :boom: Breaking changes & Deprecations
-
-### :heart: Community contributions (Thank you!)
-
 ### :sparkles: New features
+
 - When the workspace is empty, set default the board creation tool [Taiga #9425](https://tree.taiga.io/project/penpot/us/9425)
 
 ### :bug: Bugs fixed
@@ -58,21 +60,11 @@
 
 ## 2.5.1
 
-### :rocket: Epics and highlights
-
-### :boom: Breaking changes & Deprecations
-
-### :heart: Community contributions (Thank you!)
-
 ### :sparkles: New features
 
 - Improve Nginx entryponit to get the resolvers dinamically by default
 
-### :bug: Bugs fixed
-
 ## 2.5.0
-
-### :rocket: Epics and highlights
 
 ### :boom: Breaking changes & Deprecations
 
@@ -101,9 +93,6 @@ docker exec -ti <container-name-or-id> ./run.sh app.migrations.media-refs '{:max
 If you have a big database and many cores available, you can reduce the time of processing
 all files by increasing paralelizacion changing the `max-jobs` value from 1 to N (where N
 is a number of cores)
-
-
-### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features
 
