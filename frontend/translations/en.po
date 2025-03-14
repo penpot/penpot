@@ -1160,11 +1160,14 @@ msgid "errors.clipboard-not-implemented"
 msgstr "Your browser cannot do this operation"
 
 #: src/app/main/data/tokens.cljs:199
-msgid "errors.drag-drop.parent-to-child"
+msgid "errors.drop-token-set-parent-to-child"
 msgstr "Cannot drop a parent set to an own child path."
 
+msgid "errors.token-set-already-exists"
+msgstr "A set with the same name already exists"
+
 #: src/app/main/data/tokens.cljs:198
-msgid "errors.drag-drop.set-exists"
+msgid "errors.token-set-exists-on-drop"
 msgstr "Cannot complete drop, a set with same name already exists at path %s."
 
 #: src/app/main/data/tokens.cljs:294

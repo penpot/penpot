@@ -27,14 +27,17 @@
 (def valid-groupable-item?
   (sm/validator schema:groupable-item))
 
+(def xf-map-trim
+  (comp
+   (map str/trim)
+   (remove str/empty?)))
+
 (defn split-path
   "Decompose a string in the form 'one.two.three' into a vector of strings, removing spaces."
-
   [path separator]
-  (let [xf (comp (map str/trim)
-                 (remove str/empty?))]
-    (->> (str/split path separator)
-         (into [] xf))))
+  (->> (str/split path separator)
+       (into [] xf-map-trim)
+       (not-empty)))
 
 (defn split-path-name [s separator]
   (let [[path name] (str/split s (re-pattern (str "\\" separator)) 2)]
@@ -61,10 +64,12 @@
                           (join-path separator))))
 
 (defn get-path
-  "Get the groups part of the name as a vector. E.g. group.subgroup.name -> ['group' 'subgroup']"
+  "Get the path of object by specified separator (E.g. with '.'
+  separator, the 'group.subgroup.name' -> ['group' 'subgroup'])"
   [item separator]
   (assert (valid-groupable-item? item) "expected groupable item")
-  (split-path (:name item) separator))
+  (->> (split-path (:name item) separator)
+       (not-empty)))
 
 (defn get-groups-str
   "Get the groups part of the name. E.g. group.subgroup.name -> group.subgroup"
@@ -97,14 +102,9 @@
 
 (def token-separator ".")
 
-(defn get-token-path [path]
-  (get-path path token-separator))
-
-;; FIXME: misleading name, we are spliting name into path, not
-;; spliting path into path
-(defn split-token-path
-  [path]
-  (split-path path token-separator))
+(defn get-token-path
+  [token]
+  (get-path token token-separator))
 
 (defrecord Token [name type value description modified-at])
 
@@ -247,21 +247,32 @@
         set-name (add-set-prefix (last paths))]
     (conj set-path set-name)))
 
+(defn get-token-set-path
+  [token-set]
+  (get-path token-set set-separator))
+
 (defn split-token-set-name
   [name]
   (split-path name set-separator))
 
-(defn get-token-set-path [token-set]
-  (let [path (get-path token-set set-separator)]
-    (add-token-set-paths-prefix path)))
+(defn normalize-set-name
+  "Normalize a set name.
 
+  If `relative-to` is provided, the normalized name will preserve the
+  same group prefix as reference name"
+  ([name]
+   (->> (split-token-set-name name)
+        (str/join set-separator)))
+  ([name relative-to]
+   (->> (concat (butlast (split-token-set-name relative-to))
+                (split-token-set-name name))
+        (str/join set-separator))))
+
+;; FIXME: revisit
 (defn get-token-set-final-name
   [name]
   (-> (split-token-set-name name)
       (peek)))
-
-(defn split-token-set-path [token-set-path]
-  (split-path token-set-path set-separator))
 
 (defn set-name->prefixed-full-path [name-str]
   (-> (split-token-set-name name-str)
@@ -291,7 +302,7 @@
   [tokens & {:keys [update-token-fn]
              :or {update-token-fn identity}}]
   (reduce-kv (fn [acc _ token]
-               (let [path (split-token-path (:name token))]
+               (let [path (get-token-path token)]
                  (assoc-in acc path (update-token-fn token))))
              {} tokens))
 
@@ -303,8 +314,8 @@
   (reduce
    (fn [acc [_ token]]
      (let [temp-id (random-uuid)
-           token (assoc token :temp/id temp-id)
-           path (split-token-path (:name token))]
+           token   (assoc token :temp/id temp-id)
+           path    (get-token-path token)]
        (-> acc
            (assoc-in (concat [:tokens-tree] path) token)
            (assoc-in [:ids temp-id] token))))
@@ -316,10 +327,7 @@
   (update-token [_ token-name f] "update a token in the list")
   (delete-token [_ token-name] "delete a token from the list")
   (get-token [_ token-name] "return token by token-name")
-  (get-tokens [_] "return an ordered sequence of all tokens in the set")
-  (get-set-prefixed-path-string [_] "convert set name to prefixed full path string")
-  (get-tokens-tree [_] "returns a tree of tokens split & nested by their name path")
-  (get-dtcg-tokens-tree [_] "returns tokens tree formated to the dtcg spec"))
+  (get-tokens [_] "return an ordered sequence of all tokens in the set"))
 
 (defrecord TokenSet [name description modified-at tokens]
   ITokenSet
@@ -363,20 +371,7 @@
     (get tokens token-name))
 
   (get-tokens [_]
-    (vals tokens))
-
-  (get-set-prefixed-path-string [_]
-    (-> (set-name->prefixed-full-path name)
-        (join-set-path)))
-
-  (get-tokens-tree [_]
-    (tokens-tree tokens))
-
-  (get-dtcg-tokens-tree [_]
-    (tokens-tree tokens :update-token-fn (fn [token]
-                                           (cond-> {"$value" (:value token)
-                                                    "$type" (cto/token-type->dtcg-token-type (:type token))}
-                                             (:description token) (assoc "$description" (:description token)))))))
+    (vals tokens)))
 
 (defn token-set?
   [o]
@@ -435,7 +430,6 @@
     Prefixed set full path or pfpath:  a full path wit prefixes [\"G-some-group\", \"G-some-subgroup\", \"S-some-set\"].
     Prefixed set final name or pfname: a final name with prefix \"S-some-set\"."
   (add-set [_ token-set] "add a set to the library, at the end")
-  (add-sets [_ token-set] "add a collection of sets to the library, at the end")
   (update-set [_ set-name f] "modify a set in the library")
   (delete-set-path [_ set-path] "delete a set in the library")
   (delete-set [_ set-name] "delete a set at `set-name` in the library and disable the `set-name` in all themes")
@@ -880,9 +874,6 @@ Will return a value that matches this schema:
                   themes
                   active-themes)))
 
-  (add-sets [this token-sets]
-    (reduce add-set this token-sets))
-
   (update-set [this set-name f]
     (let [prefixed-full-path (set-name->prefixed-full-path set-name)
           set (get-in sets prefixed-full-path)]
@@ -920,7 +911,7 @@ Will return a value that matches this schema:
                   active-themes)))
 
   (delete-set-group [this set-group-name]
-    (let [path (split-token-set-path set-group-name)
+    (let [path (split-token-set-name set-group-name)
           prefixed-path (map add-set-group-prefix path)
           child-set-names (->> (get-sets-at-path this path)
                                (map :name)
@@ -1245,31 +1236,49 @@ Will return a value that matches this schema:
        (d/ordered-map) active-themes)))
 
   (encode-dtcg [this]
-    (let [themes (into []
-                       (comp
-                        (filter #(and (instance? TokenTheme %)
-                                      (not (hidden-temporary-theme? %))))
-                        (map (fn [token-theme]
-                               (let [theme-map (->> token-theme
-                                                    (into {})
-                                                    walk/stringify-keys)]
-                                 (-> theme-map
-                                     (set/rename-keys  {"sets" "selectedTokenSets"})
-                                     (update "selectedTokenSets" (fn [sets]
-                                                                   (->> (for [s sets]
-                                                                          [s "enabled"])
-                                                                        (into {})))))))))
-                       (tree-seq d/ordered-map? vals themes))
+    (let [themes-xform
+          (comp
+           (filter #(and (instance? TokenTheme %)
+                         (not (hidden-temporary-theme? %))))
+           (map (fn [token-theme]
+                  (let [theme-map (->> token-theme
+                                       (into {})
+                                       walk/stringify-keys)]
+                    (-> theme-map
+                        (set/rename-keys  {"sets" "selectedTokenSets"})
+                        (update "selectedTokenSets" (fn [sets]
+                                                      (->> (for [s sets] [s "enabled"])
+                                                           (into {})))))))))
+          themes
+          (->> (tree-seq d/ordered-map? vals themes)
+               (into [] themes-xform))
+
           ;; Active themes without exposing hidden penpot theme
-          active-themes-clear (disj active-themes hidden-token-theme-path)
-          name-set-tuples (->> sets
-                               (tree-seq d/ordered-map? vals)
-                               (filter (partial instance? TokenSet))
-                               (map (fn [token-set]
-                                      [(:name token-set) (get-dtcg-tokens-tree token-set)])))
-          ordered-set-names (map first name-set-tuples)
-          sets (into {} name-set-tuples)
-          active-sets (get-active-themes-set-names this)]
+          active-themes-clear
+          (disj active-themes hidden-token-theme-path)
+
+          update-token-fn
+          (fn [token]
+            (cond-> {"$value" (:value token)
+                     "$type" (cto/token-type->dtcg-token-type (:type token))}
+              (:description token) (assoc "$description" (:description token))))
+
+          name-set-tuples
+          (->> sets
+               (tree-seq d/ordered-map? vals)
+               (filter (partial instance? TokenSet))
+               (map (fn [{:keys [name tokens]}]
+                      [name (tokens-tree tokens :update-token-fn update-token-fn)])))
+
+          ordered-set-names
+          (mapv first name-set-tuples)
+
+          sets
+          (into {} name-set-tuples)
+
+          active-sets
+          (get-active-themes-set-names this)]
+
       (-> sets
           (assoc "$themes" themes)
           (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names)
@@ -1470,10 +1479,12 @@ Will return a value that matches this schema:
                   prev-sets (->> (fres/read-object! r)
                                  (tree-seq d/ordered-map? vals)
                                  (filter (partial instance? TokenSet)))
-                  sets (-> (make-tokens-lib)
-                           (add-sets prev-sets)
-                           (deref)
-                           :sets)
+
+                  ;; FIXME: wtf we usind deref here?
+                  sets  (-> (reduce add-set (make-tokens-lib) prev-sets)
+                            (deref)
+                            (:sets))
+
                   _set-groups   (fres/read-object! r)
                   themes        (fres/read-object! r)
                   active-themes (fres/read-object! r)]
