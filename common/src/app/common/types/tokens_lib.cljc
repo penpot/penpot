@@ -327,8 +327,7 @@
   (update-token [_ token-name f] "update a token in the list")
   (delete-token [_ token-name] "delete a token from the list")
   (get-token [_ token-name] "return token by token-name")
-  (get-tokens [_] "return an ordered sequence of all tokens in the set")
-  (get-set-prefixed-path-string [_] "convert set name to prefixed full path string"))
+  (get-tokens [_] "return an ordered sequence of all tokens in the set"))
 
 (defrecord TokenSet [name description modified-at tokens]
   ITokenSet
@@ -372,11 +371,7 @@
     (get tokens token-name))
 
   (get-tokens [_]
-    (vals tokens))
-
-  (get-set-prefixed-path-string [_]
-    (-> (set-name->prefixed-full-path name)
-        (join-set-path))))
+    (vals tokens)))
 
 (defn token-set?
   [o]
