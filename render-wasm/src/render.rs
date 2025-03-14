@@ -269,12 +269,7 @@ impl RenderState {
             .flush_and_submit(&mut self.gpu_state, SurfaceId::Current);
 
         self.surfaces.apply_mut(
-            &[
-                SurfaceId::Shadow,
-                SurfaceId::Overlay,
-                SurfaceId::Fills,
-                SurfaceId::Strokes,
-            ],
+            &[SurfaceId::Overlay, SurfaceId::Fills, SurfaceId::Strokes],
             |s| {
                 s.canvas().clear(skia::Color::TRANSPARENT);
             },
@@ -293,17 +288,19 @@ impl RenderState {
         modifiers: Option<&Matrix>,
         clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
     ) {
-        let surface_ids = &[SurfaceId::Fills, SurfaceId::Strokes];
+        let surface_ids = &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::Shadow];
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().save();
         });
 
         // set clipping
         if let Some((bounds, corners, transform)) = clip_bounds {
-            self.surfaces
-                .apply_mut(&[SurfaceId::Fills, SurfaceId::Strokes], |s| {
+            self.surfaces.apply_mut(
+                &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::Shadow],
+                |s| {
                     s.canvas().concat(&transform);
-                });
+                },
+            );
 
             if let Some(corners) = corners {
                 let rrect = RRect::new_rect_radii(bounds, &corners);
@@ -370,13 +367,18 @@ impl RenderState {
                 text::render(self, text_content);
             }
             _ => {
-                self.surfaces
-                    .apply_mut(&[SurfaceId::Fills, SurfaceId::Strokes], |s| {
+                self.surfaces.apply_mut(
+                    &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::Shadow],
+                    |s| {
                         s.canvas().concat(&matrix);
-                    });
+                    },
+                );
 
                 for fill in shape.fills().rev() {
-                    fills::render(self, &shape, fill);
+                    fills::render(self, &shape, fill, None);
+                    for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
+                        shadows::fill_drop_shadow(self, &shape, shadow, &fill);
+                    }
                 }
 
                 for stroke in shape.strokes().rev() {
@@ -392,21 +394,17 @@ impl RenderState {
                     );
                 }
 
-                for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
-                    shadows::render_drop_shadow(
-                        self,
-                        shadow,
-                        self.viewbox.zoom * self.options.dpr(),
-                    );
-                }
+                shadows::render_drop_shadow(self);
             }
         };
 
         self.apply_drawing_to_render_canvas(&shape);
-        self.surfaces
-            .apply_mut(&[SurfaceId::Fills, SurfaceId::Strokes], |s| {
+        self.surfaces.apply_mut(
+            &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::Shadow],
+            |s| {
                 s.canvas().restore();
-            });
+            },
+        );
     }
 
     pub fn start_render_loop(
@@ -415,7 +413,7 @@ impl RenderState {
         modifiers: &HashMap<Uuid, Matrix>,
         timestamp: i32,
     ) -> Result<(), String> {
-        let surface_ids = &[SurfaceId::Fills, SurfaceId::Strokes];
+        let surface_ids = &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::Shadow];
 
         if self.render_in_progress {
             if let Some(frame_id) = self.render_request_id {
