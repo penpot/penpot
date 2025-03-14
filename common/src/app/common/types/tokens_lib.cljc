@@ -255,11 +255,6 @@
   [name]
   (split-path name set-separator))
 
-;; (defn rename-token-set-preserving-group
-;;   [token-set name]
-;;   (let [base (butlast (get-path token-set))
-
-
 (defn normalize-set-name
   "Normalize a set name.
 
