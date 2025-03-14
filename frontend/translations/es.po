@@ -7182,3 +7182,6 @@ msgstr "Soporte de Plugins"
 
 msgid "loader.tips.10.message"
 msgstr "Extiende Penpot con plugins creados por la comunidad para funcionalidad extra."
+
+msgid "errors.token-set-already-exists"
+msgstr "Ya existe un set con el mismo nombre"
