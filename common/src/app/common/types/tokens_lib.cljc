@@ -329,8 +329,7 @@
   (get-token [_ token-name] "return token by token-name")
   (get-tokens [_] "return an ordered sequence of all tokens in the set")
   (get-set-prefixed-path-string [_] "convert set name to prefixed full path string")
-  (get-tokens-tree [_] "returns a tree of tokens split & nested by their name path")
-  (get-dtcg-tokens-tree [_] "returns tokens tree formated to the dtcg spec"))
+  (get-tokens-tree [_] "returns a tree of tokens split & nested by their name path"))
 
 (defrecord TokenSet [name description modified-at tokens]
   ITokenSet
@@ -381,14 +380,7 @@
         (join-set-path)))
 
   (get-tokens-tree [_]
-    (tokens-tree tokens))
-
-  ;; FIXME: looks redundant
-  (get-dtcg-tokens-tree [_]
-    (tokens-tree tokens :update-token-fn (fn [token]
-                                           (cond-> {"$value" (:value token)
-                                                    "$type" (cto/token-type->dtcg-token-type (:type token))}
-                                             (:description token) (assoc "$description" (:description token)))))))
+    (tokens-tree tokens)))
 
 (defn token-set?
   [o]
@@ -1257,33 +1249,48 @@ Will return a value that matches this schema:
        (d/ordered-map) active-themes)))
 
   (encode-dtcg [this]
-    (let [themes (into []
-                       (comp
-                        (filter #(and (instance? TokenTheme %)
-                                      (not (hidden-temporary-theme? %))))
-                        (map (fn [token-theme]
-                               (let [theme-map (->> token-theme
-                                                    (into {})
-                                                    walk/stringify-keys)]
-                                 (-> theme-map
-                                     (set/rename-keys  {"sets" "selectedTokenSets"})
-                                     (update "selectedTokenSets" (fn [sets]
-                                                                   (->> (for [s sets]
-                                                                          [s "enabled"])
-                                                                        (into {})))))))))
-                       (tree-seq d/ordered-map? vals themes))
+    (let [themes-xform
+          (comp
+           (filter #(and (instance? TokenTheme %)
+                         (not (hidden-temporary-theme? %))))
+           (map (fn [token-theme]
+                  (let [theme-map (->> token-theme
+                                       (into {})
+                                       walk/stringify-keys)]
+                    (-> theme-map
+                        (set/rename-keys  {"sets" "selectedTokenSets"})
+                        (update "selectedTokenSets" (fn [sets]
+                                                      (->> (for [s sets] [s "enabled"])
+                                                           (into {})))))))))
+          themes
+          (->> (tree-seq d/ordered-map? vals themes)
+               (into [] themes-xform))
+
           ;; Active themes without exposing hidden penpot theme
-          active-themes-clear (disj active-themes hidden-token-theme-path)
+          active-themes-clear
+          (disj active-themes hidden-token-theme-path)
 
-          name-set-tuples (->> sets
-                               (tree-seq d/ordered-map? vals)
-                               (filter (partial instance? TokenSet))
-                               (map (fn [token-set]
-                                      [(:name token-set) (get-dtcg-tokens-tree token-set)])))
-          ordered-set-names (mapv first name-set-tuples)
-          sets (into {} name-set-tuples)
-          active-sets (get-active-themes-set-names this)]
+          update-token-fn
+          (fn [token]
+            (cond-> {"$value" (:value token)
+                     "$type" (cto/token-type->dtcg-token-type (:type token))}
+              (:description token) (assoc "$description" (:description token))))
 
+          name-set-tuples
+          (->> sets
+               (tree-seq d/ordered-map? vals)
+               (filter (partial instance? TokenSet))
+               (map (fn [{:keys [name tokens]}]
+                      [name (tokens-tree tokens :update-token-fn update-token-fn)])))
+
+          ordered-set-names
+          (mapv first name-set-tuples)
+
+          sets
+          (into {} name-set-tuples)
+
+          active-sets
+          (get-active-themes-set-names this)]
 
       (-> sets
           (assoc "$themes" themes)
