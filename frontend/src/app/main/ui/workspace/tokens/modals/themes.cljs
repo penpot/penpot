@@ -144,6 +144,7 @@
                 [:> button* {:class (stl/css :sets-count-button)
                              :variant "secondary"
                              :type "button"
+                             :title (tr "workspace.token.sets-hint")
                              :on-click on-edit-theme}
                  [:div {:class (stl/css :label-wrapper)}
                   [:> text* {:as "span" :typography "body-medium"}

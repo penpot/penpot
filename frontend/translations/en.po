@@ -6719,6 +6719,10 @@ msgstr "You currently have no themes."
 msgid "workspace.token.num-active-sets"
 msgstr "%s active sets"
 
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:147
+msgid "workspace.token.sets-hint"
+msgstr "Edit theme and manage sets"
+
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
 #, fuzzy
 msgid "workspace.token.original-value"
