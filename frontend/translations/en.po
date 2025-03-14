@@ -1163,6 +1163,9 @@ msgstr "Your browser cannot do this operation"
 msgid "errors.drop-token-set-parent-to-child"
 msgstr "Cannot drop a parent set to an own child path."
 
+msgid "errors.token-set-already-exists"
+msgstr "A set with the same name already exists"
+
 #: src/app/main/data/tokens.cljs:198
 msgid "errors.token-set-exists-on-drop"
 msgstr "Cannot complete drop, a set with same name already exists at path %s."

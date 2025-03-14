@@ -7115,3 +7115,6 @@ msgstr "Se han marcado todas las noficaciones como leídas"
 
 msgid "label.mark-all-as-read"
 msgstr "Marcar todo como leído"
+
+msgid "errors.token-set-already-exists"
+msgstr "Ya existe un set con el mismo nombre"

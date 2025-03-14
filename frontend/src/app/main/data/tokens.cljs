@@ -139,7 +139,11 @@
       (let [data       (dsh/lookup-file-data state)
             tokens-lib (get data :tokens-lib)
             set-name   (ctob/normalize-set-name set-name)]
-        (when-not (ctob/get-set tokens-lib set-name)
+        (if (ctob/get-set tokens-lib set-name)
+          (rx/of (ntf/show {:content (tr "errors.token-set-already-exists")
+                            :type :toast
+                            :level :error
+                            :timeout 9000}))
           (let [token-set (ctob/make-token-set :name set-name)
                 changes   (-> (pcb/empty-changes it)
                               (pcb/with-library-data data)
@@ -165,14 +169,11 @@
             name       (ctob/normalize-set-name name (:name token-set))
             tokens-lib (get data :tokens-lib)]
 
-        (cond
-          (= (:name token-set) name)
-          nil
-
-          (ctob/get-set tokens-lib name)
-          nil
-
-          :else
+        (if (ctob/get-set tokens-lib name)
+          (rx/of (ntf/show {:content (tr "errors.token-set-already-exists")
+                            :type :toast
+                            :level :error
+                            :timeout 9000}))
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
                             (pcb/rename-token-set (:name token-set) name))]
