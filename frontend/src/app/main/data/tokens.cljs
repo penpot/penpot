@@ -234,8 +234,8 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [content (case error
-                      :path-exists (tr "errors.drag-drop.set-exists" to-path)
-                      :parent-to-child (tr "errors.drag-drop.parent-to-child")
+                      :path-exists (tr "errors.token-set-exists-on-drop" to-path)
+                      :parent-to-child (tr "errors.drop-token-set-parent-to-child")
                       nil)]
         (when content
           (rx/of
