@@ -78,7 +78,8 @@ impl Shadow {
 
     fn drop_shadow_filters(&self, scale: f32) -> Option<ImageFilter> {
         let mut filter = image_filters::drop_shadow_only(
-            (self.offset.0 * scale, self.offset.1 * scale),
+            // TODO: investigate why the y offset should be inverted when applying mut on Shadow surface
+            (self.offset.0 * scale, self.offset.1 * scale * -1.),
             (self.blur * scale, self.blur * scale),
             self.color,
             None,

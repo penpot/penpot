@@ -1,5 +1,5 @@
 use super::gpu_state::GpuState;
-use skia_safe as skia;
+use skia_safe::{self as skia};
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {

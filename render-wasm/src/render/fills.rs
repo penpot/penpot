@@ -1,4 +1,4 @@
-use skia_safe::{self as skia, RRect};
+use skia_safe::{self as skia, Paint, RRect};
 
 use super::{RenderState, SurfaceId};
 use crate::math::Rect as MathRect;
@@ -7,8 +7,8 @@ use crate::shapes::{Fill, Frame, ImageFill, Rect, Shape, Type};
 fn draw_image_fill_in_container(
     render_state: &mut RenderState,
     shape: &Shape,
-    fill: &Fill,
     image_fill: &ImageFill,
+    paint: &Paint,
 ) {
     let image = render_state.images.get(&image_fill.id());
     if image.is_none() {
@@ -19,7 +19,6 @@ fn draw_image_fill_in_container(
     let canvas = render_state.surfaces.canvas(SurfaceId::Fills);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
-    let paint = fill.to_paint(container);
 
     let width = size.0 as f32;
     let height = size.1 as f32;
@@ -109,25 +108,38 @@ fn draw_image_fill_in_container(
 /**
  * This SHOULD be the only public function in this module.
  */
-pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill) {
-    let canvas = render_state.surfaces.canvas(SurfaceId::Fills);
+pub fn render(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    fill: &Fill,
+    shadow_paint: Option<&Paint>,
+) {
     let selrect = shape.selrect;
     let path_transform = shape.to_path_transform();
 
+    let (paint, surface_id) = if let Some(paint) = shadow_paint {
+        (paint, SurfaceId::Shadow)
+    } else {
+        (&fill.to_paint(&selrect), SurfaceId::Fills)
+    };
+
     match (fill, &shape.shape_type) {
-        (Fill::Image(image_fill), _) => {
-            draw_image_fill_in_container(render_state, shape, fill, image_fill);
+        (Fill::Image(image_fill), _) if shadow_paint.is_none() => {
+            draw_image_fill_in_container(render_state, shape, image_fill, paint);
         }
         (_, Type::Rect(_) | Type::Frame(_)) => {
             if let Some(corners) = shape.shape_type.corners() {
                 let rrect = RRect::new_rect_radii(selrect, &corners);
-                canvas.draw_rrect(rrect, &fill.to_paint(&selrect));
+                let canvas = render_state.surfaces.canvas(surface_id);
+                canvas.draw_rrect(rrect, paint);
             } else {
-                canvas.draw_rect(selrect, &fill.to_paint(&selrect));
+                let canvas = render_state.surfaces.canvas(surface_id);
+                canvas.draw_rect(selrect, paint);
             }
         }
         (_, Type::Circle) => {
-            canvas.draw_oval(selrect, &fill.to_paint(&selrect));
+            let canvas = render_state.surfaces.canvas(surface_id);
+            canvas.draw_oval(selrect, paint);
         }
         (_, Type::Path(_)) | (_, Type::Bool(_)) => {
             if let Some(path) = &shape.shape_type.path() {
@@ -139,10 +151,15 @@ pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill) {
                     if let Some("evenodd") = svg_attrs.get("fill-rule").map(String::as_str) {
                         skia_path.set_fill_type(skia::PathFillType::EvenOdd);
                     }
-                    canvas.draw_path(&skia_path, &fill.to_paint(&selrect));
+                    let canvas = render_state.surfaces.canvas(surface_id);
+                    canvas.draw_path(&skia_path, paint);
                 }
             }
         }
-        (_, _) => unreachable!("This shape should not have fills"),
+        (_, _) => {
+            if shadow_paint.is_none() {
+                unreachable!("This shape should not have fills")
+            }
+        }
     }
 }

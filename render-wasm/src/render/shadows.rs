@@ -1,23 +1,23 @@
 use skia_safe::{self as skia};
 
-use super::{RenderState, SurfaceId};
-use crate::shapes::Shadow;
+// Import the fills module
+use super::{fills, RenderState, SurfaceId};
+use crate::shapes::{Fill, Shadow, Shape};
 
-pub fn render_drop_shadow(render_state: &mut RenderState, shadow: &Shadow, scale: f32) {
-    let shadow_paint = shadow.to_paint(scale);
+pub fn fill_drop_shadow(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    shadow: &Shadow,
+    fill: &Fill,
+) {
+    let shadow_paint = shadow.to_paint(render_state.viewbox.zoom * render_state.options.dpr());
+    fills::render(render_state, &shape, fill, Some(&shadow_paint));
+}
+
+pub fn render_drop_shadow(render_state: &mut RenderState) {
     render_state
         .surfaces
-        .draw_into(SurfaceId::Fills, SurfaceId::Shadow, Some(&shadow_paint));
-
-    render_state
-        .surfaces
-        .draw_into(SurfaceId::Strokes, SurfaceId::Shadow, Some(&shadow_paint));
-
-    render_state.surfaces.draw_into(
-        SurfaceId::Shadow,
-        SurfaceId::Current,
-        Some(&skia::Paint::default()),
-    );
+        .draw_into(SurfaceId::Shadow, SurfaceId::Current, None);
 
     render_state
         .surfaces
