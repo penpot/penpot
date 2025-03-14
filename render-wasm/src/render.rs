@@ -677,16 +677,22 @@ impl RenderState {
                             continue;
                         }
 
-                        // If we didn't visited_children this shape, then we need to do
-                        if !element.extrect().intersects(self.render_area) || element.hidden() {
-                            debug::render_debug_shape(self, element, false);
-                            continue;
-                        } else {
-                            debug::render_debug_shape(self, element, true);
+                        if !node_render_state.id.is_nil() {
+                            // If we didn't visited_children this shape, then we need to do
+                            if !element.extrect().intersects(self.render_area) || element.hidden() {
+                                debug::render_debug_shape(self, element, false);
+                                continue;
+                            } else {
+                                debug::render_debug_shape(self, element, true);
+                            }
                         }
 
                         self.render_shape_enter(element, mask);
-                        self.render_shape(element, modifiers.get(&element.id), clip_bounds);
+                        if !node_render_state.id.is_nil() {
+                            self.render_shape(element, modifiers.get(&element.id), clip_bounds);
+                        } else {
+                            self.apply_drawing_to_render_canvas(Some(&element));
+                        }
 
                         // Set the node as visited_children before processing children
                         self.pending_nodes.push(NodeRenderState {
@@ -698,8 +704,12 @@ impl RenderState {
                         });
 
                         if element.is_recursive() {
-                            let children_clip_bounds =
-                                children_clip_bounds(element, modifiers.get(&element.id));
+                            // Fix this
+                            let children_clip_bounds = if (node_render_state.id.is_nil()) {
+                                None
+                            } else {
+                                children_clip_bounds(element, modifiers.get(&element.id))
+                            };
                             for child_id in element.children_ids().iter().rev() {
                                 self.pending_nodes.push(NodeRenderState {
                                     id: *child_id,
@@ -735,27 +745,34 @@ impl RenderState {
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     // If the tile is empty or it doesn't exists we don't do anything with it
                     if self.tiles.has_shapes_at(next_tile) {
-                        if let Some(shapes) = self.tiles.get_shapes_at(next_tile) {
-                            for shape_id in shapes.iter() {
-                                let element = tree.get_mut(&shape_id).ok_or(
-                                    "Error: Element with root_id {node_render_state.id} not found in the tree."
-                                        .to_string(),
-                                )?;
-
-                                let children_clip_bounds = if element.is_recursive() {
-                                    children_clip_bounds(element, modifiers.get(&element.id))
-                                } else {
-                                    None
-                                };
-                                self.pending_nodes.push(NodeRenderState {
-                                    id: *shape_id,
-                                    visited_children: false,
-                                    clip_bounds: children_clip_bounds,
-                                    visited_mask: false,
-                                    mask: false,
-                                });
-                            }
-                        }
+                        self.pending_nodes.push(NodeRenderState {
+                            id: Uuid::nil(),
+                            visited_children: false,
+                            clip_bounds: None,
+                            visited_mask: false,
+                            mask: false,
+                        });
+                        // TODO: This should be more efficient but needs more work
+                        // if let Some(shapes) = self.tiles.get_shapes_at(next_tile) {
+                        //     for shape_id in shapes.iter() {
+                        //         let element = tree.get_mut(&shape_id).ok_or(
+                        //             "Error: Element with root_id {node_render_state.id} not found in the tree."
+                        //                 .to_string(),
+                        //         )?;
+                        //         let children_clip_bounds = if element.is_recursive() {
+                        //             children_clip_bounds(element, modifiers.get(&element.id))
+                        //         } else {
+                        //             None
+                        //         };
+                        //         self.pending_nodes.push(NodeRenderState {
+                        //             id: *shape_id,
+                        //             visited_children: false,
+                        //             clip_bounds: children_clip_bounds,
+                        //             visited_mask: false,
+                        //             mask: false,
+                        //         });
+                        //     }
+                        // }
                     }
                 }
             }
