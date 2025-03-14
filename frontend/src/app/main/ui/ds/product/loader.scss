@@ -44,24 +44,24 @@
     // Tips container
     .tips-container {
       text-align: center;
-      min-width: 600px;
-      max-width: 800px;
+      min-width: var(--sp-600);
+      max-width: var(--sp-800);
       display: flex;
       flex-direction: column;
       gap: var(--sp-s);
-      border: 1px solid rgba(211, 211, 211, 0.2);
-      border-radius: 16px;
+      border: 1px solid var(--color-background-tertiary);
+      border-radius: var(--sp-l);
       padding: var(--sp-xxl) var(--sp-xxxl);
 
       // Tips title
       .tip-title {
-        color: #FFFFFF;
+        color: var(--color-foreground-primary);
         font-weight: 500;
       }
 
       // Tips message
       .tip-message {
-        color: var(--text-secondary-color);
+        color: var(--color-foreground-secondary);
       }
     }
   }

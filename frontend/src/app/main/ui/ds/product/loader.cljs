@@ -76,7 +76,7 @@
                          (reset! current-tip [(tr (str (first tip) "." (second tip)))
                                            (tr (str (first tip) "." (nth tip 2)))]))
                        (reset! show-tips true))
-                     2000)]
+                     1000)]
            #(js/clearTimeout timer)))))
     
     (mf/use-effect
