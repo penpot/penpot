@@ -1,7 +1,7 @@
-use crate::math::Rect;
+use crate::{math::Rect, render::DEFAULT_EMOJI_FONT, render::DEFAULT_FONT};
 use skia_safe::{
     self as skia,
-    textlayout::{FontCollection, ParagraphBuilder},
+    textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextStyle},
 };
 
 #[derive(Debug, PartialEq, Clone)]
@@ -52,7 +52,7 @@ impl TextContent {
     }
 
     pub fn to_paragraphs(&self, fonts: &FontCollection) -> Vec<skia::textlayout::Paragraph> {
-        let mut paragraph_style = skia::textlayout::ParagraphStyle::default();
+        let mut paragraph_style = ParagraphStyle::default();
         // TODO: read text direction, align, etc. from the shape
         paragraph_style.set_text_direction(skia::textlayout::TextDirection::LTR);
 
@@ -60,14 +60,18 @@ impl TextContent {
             .iter()
             .map(|p| {
                 let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+
                 for leaf in &p.children {
-                    builder.push_style(&leaf.to_style());
+                    let mut text_style = leaf.to_style();
+                    text_style.set_font_families(&[DEFAULT_FONT, DEFAULT_EMOJI_FONT]);
+                    builder.push_style(&text_style);
                     builder.add_text(&leaf.text);
                     builder.pop();
                 }
+
                 builder.build()
             })
-            .collect()
+            .collect::<Vec<_>>() // Collect the built paragraphs into a Vec
     }
 }
 
@@ -103,12 +107,11 @@ pub struct TextLeaf {
 }
 
 impl TextLeaf {
-    pub fn to_style(&self) -> skia::textlayout::TextStyle {
-        let mut style = skia::textlayout::TextStyle::default();
+    pub fn to_style(&self) -> TextStyle {
+        let mut style = TextStyle::default();
         // TODO: read text style info from the shape
         style.set_color(skia::Color::BLACK);
         style.set_font_size(16.0);
-
         style
     }
 }

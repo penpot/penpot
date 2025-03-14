@@ -28,8 +28,14 @@ pub use images::*;
 const DEFAULT_FONT_BYTES: &[u8] =
     include_bytes!("../../frontend/resources/fonts/RobotoMono-Regular.ttf");
 
+const EMOJI_FONT_BYTES: &[u8] =
+    include_bytes!("../../frontend/resources/fonts/NotoColorEmoji-Regular.ttf");
+
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
+
+pub static DEFAULT_FONT: &'static str = "robotomono-regular";
+pub static DEFAULT_EMOJI_FONT: &'static str = "noto-color-emoji";
 
 extern "C" {
     fn emscripten_run_script(script: *const i8);
@@ -113,18 +119,26 @@ impl RenderState {
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
         let surfaces = Surfaces::new(&mut gpu_state, (width, height), sampling_options);
         let mut font_provider = skia::textlayout::TypefaceFontProvider::new();
+
+        // default font
         let default_font = skia::FontMgr::default()
             .new_from_data(DEFAULT_FONT_BYTES, None)
             .expect("Failed to load font");
-        font_provider.register_typeface(default_font, "robotomono-regular");
+
+        font_provider.register_typeface(default_font, DEFAULT_FONT);
+
+        // emoji font
+        let emoji_font = skia::FontMgr::default()
+            .new_from_data(EMOJI_FONT_BYTES, None)
+            .expect("Failed to load font");
+        font_provider.register_typeface(emoji_font, DEFAULT_EMOJI_FONT);
+
         let mut font_collection = skia::textlayout::FontCollection::new();
         let font_manager = FontMgr::from(font_provider.clone());
-        font_collection.set_default_font_manager(FontMgr::default(), None);
         font_collection.set_dynamic_font_manager(font_manager);
 
         // This is used multiple times everywhere so instead of creating new instances every
         // time we reuse this one.
-
         RenderState {
             gpu_state,
             surfaces,
