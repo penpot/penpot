@@ -139,7 +139,7 @@
       (let [data       (dsh/lookup-file-data state)
             tokens-lib (get data :tokens-lib)
             set-name   (ctob/normalize-set-name set-name)]
-        (if (ctob/get-set tokens-lib set-name)
+        (if (and tokens-lib (ctob/get-set tokens-lib set-name))
           (rx/of (ntf/show {:content (tr "errors.token-set-already-exists")
                             :type :toast
                             :level :error

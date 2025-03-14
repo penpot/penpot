@@ -430,7 +430,6 @@
     Prefixed set full path or pfpath:  a full path wit prefixes [\"G-some-group\", \"G-some-subgroup\", \"S-some-set\"].
     Prefixed set final name or pfname: a final name with prefix \"S-some-set\"."
   (add-set [_ token-set] "add a set to the library, at the end")
-  (add-sets [_ token-set] "add a collection of sets to the library, at the end")
   (update-set [_ set-name f] "modify a set in the library")
   (delete-set-path [_ set-path] "delete a set in the library")
   (delete-set [_ set-name] "delete a set at `set-name` in the library and disable the `set-name` in all themes")
@@ -874,9 +873,6 @@ Will return a value that matches this schema:
       (TokensLib. (d/oassoc-in sets path token-set)
                   themes
                   active-themes)))
-
-  (add-sets [this token-sets]
-    (reduce add-set this token-sets))
 
   (update-set [this set-name f]
     (let [prefixed-full-path (set-name->prefixed-full-path set-name)
@@ -1483,10 +1479,12 @@ Will return a value that matches this schema:
                   prev-sets (->> (fres/read-object! r)
                                  (tree-seq d/ordered-map? vals)
                                  (filter (partial instance? TokenSet)))
-                  sets (-> (make-tokens-lib)
-                           (add-sets prev-sets)
-                           (deref)
-                           :sets)
+
+                  ;; FIXME: wtf we usind deref here?
+                  sets  (-> (reduce add-set (make-tokens-lib) prev-sets)
+                            (deref)
+                            (:sets))
+
                   _set-groups   (fres/read-object! r)
                   themes        (fres/read-object! r)
                   active-themes (fres/read-object! r)]
