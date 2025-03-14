@@ -149,7 +149,7 @@ Shadow styles are serialized as `u8`:
 | 0     | Row           |
 | 1     | RowReverse    |
 | 2     | Column        |
-| 3     | ColumnReverse |
+| 4     | ColumnReverse |
 | \_    | error         |
 
 ### Align Items

@@ -108,6 +108,15 @@
             (aget buffer 2)
             (aget buffer 3))))
 
+(defn set-parent-id
+  [id]
+  (let [buffer (uuid/get-u32 id)]
+    (h/call internal-module "_set_parent"
+            (aget buffer 0)
+            (aget buffer 1)
+            (aget buffer 2)
+            (aget buffer 3))))
+
 (defn set-shape-clip-content
   [clip-content]
   (h/call internal-module "_set_shape_clip_content" clip-content))
@@ -614,6 +623,15 @@
     :fix  1
     :auto 2))
 
+(defn translate-align-self
+  [value]
+  (when value
+    (case value
+      :start   0
+      :end     1
+      :center  2
+      :stretch 3)))
+
 (defn set-layout-child
   [shape]
   (let [margins (dm/get-prop shape :layout-item-margin)
@@ -624,6 +642,7 @@
 
         h-sizing (-> (dm/get-prop shape :layout-item-h-sizing) (or :auto) translate-layout-sizing)
         v-sizing (-> (dm/get-prop shape :layout-item-v-sizing) (or :auto) translate-layout-sizing)
+        align-self (-> (dm/get-prop shape :layout-item-align-self) translate-align-self)
 
         max-h (dm/get-prop shape :layout-item-max-h)
         has-max-h (some? max-h)
@@ -651,6 +670,8 @@
             (or max-w 0)
             has-min-w
             (or min-w 0)
+            (some? align-self)
+            (or align-self 0)
             is-absolute
             z-index)))
 
@@ -794,6 +815,7 @@
           (if (< index total-shapes)
             (let [shape        (nth shapes index)
                   id           (dm/get-prop shape :id)
+                  parent-id    (dm/get-prop shape :parent-id)
                   type         (dm/get-prop shape :type)
                   masked       (dm/get-prop shape :masked-group)
                   selrect      (dm/get-prop shape :selrect)
@@ -824,6 +846,7 @@
                   shadows      (dm/get-prop shape :shadow)]
 
               (use-shape id)
+              (set-parent-id parent-id)
               (set-shape-type type)
               (set-shape-clip-content clip-content)
               (set-shape-selrect selrect)

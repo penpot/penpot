@@ -168,6 +168,15 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn set_parent(a: u32, b: u32, c: u32, d: u32) {
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    if let Some(shape) = state.current_shape() {
+        shape.set_parent(id);
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn set_shape_masked_group(masked: bool) {
     with_current_shape!(state, |shape: &mut Shape| {
         shape.set_masked(masked);
@@ -697,6 +706,8 @@ pub extern "C" fn set_layout_child_data(
     max_w: f32,
     has_min_w: bool,
     min_w: f32,
+    has_align_self: bool,
+    align_self: u8,
     is_absolute: bool,
     z_index: i32,
 ) {
@@ -706,6 +717,11 @@ pub extern "C" fn set_layout_child_data(
     let min_h = if has_min_h { Some(min_h) } else { None };
     let max_w = if has_max_w { Some(max_w) } else { None };
     let min_w = if has_min_w { Some(min_w) } else { None };
+    let align_self = if has_align_self {
+        shapes::AlignSelf::from_u8(align_self)
+    } else {
+        None
+    };
 
     with_current_shape!(state, |shape: &mut Shape| {
         shape.set_flex_layout_child_data(
@@ -719,6 +735,7 @@ pub extern "C" fn set_layout_child_data(
             min_h,
             max_w,
             min_w,
+            align_self,
             is_absolute,
             z_index,
         );
