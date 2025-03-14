@@ -64,7 +64,8 @@ impl Surfaces {
         let debug = target.new_surface_with_dimensions((width, height)).unwrap();
 
         const POOL_CAPACITY_THRESHOLD: i32 = 4;
-        let pool_capacity = (width / tile_dims.width) * (height / tile_dims.height) * POOL_CAPACITY_THRESHOLD;
+        let pool_capacity =
+            (width / tile_dims.width) * (height / tile_dims.height) * POOL_CAPACITY_THRESHOLD;
         let pool = SurfacePool::with_capacity(&mut target, tile_dims, pool_capacity as usize);
         // let pool = SurfacePool::new(&mut target, tile_dims);
         let tiles = TileSurfaceCache::new(pool);

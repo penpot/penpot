@@ -95,7 +95,7 @@ pub(crate) struct RenderState {
     pub render_in_progress: bool,
     // Stack of nodes pending to be rendered.
     pub pending_nodes: Vec<NodeRenderState>,
-    pub current_tile: tiles::Tile,
+    pub current_tile: Option<tiles::Tile>,
     pub sampling_options: skia::SamplingOptions,
     pub render_area: Rect,
     pub tiles: tiles::TileHashMap,
@@ -172,7 +172,7 @@ impl RenderState {
             render_request_id: None,
             render_in_progress: false,
             pending_nodes: vec![],
-            current_tile: (0, 0),
+            current_tile: None,
             sampling_options,
             render_area: Rect::new_empty(),
             tiles,
@@ -232,15 +232,15 @@ impl RenderState {
     }
 
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect) {
-        let x = self.current_tile.0;
-        let y = self.current_tile.1;
+        let x = self.current_tile.unwrap().0;
+        let y = self.current_tile.unwrap().1;
 
         // This caches the current surface into the corresponding tile.
         self.surfaces
             .cache_tile_surface((x, y), SurfaceId::Current, self.background_color);
 
         self.surfaces
-            .draw_cached_tile_surface(self.current_tile, rect);
+            .draw_cached_tile_surface(self.current_tile.unwrap(), rect);
 
         if self.options.is_debug_visible() {
             let canvas = self.surfaces.canvas(SurfaceId::Target);
@@ -315,14 +315,6 @@ impl RenderState {
                 SurfaceId::Strokes,
             ],
             |s| {
-                // s.canvas().restore_to_count(1);
-                // let surface_size = s.image_info().dimensions();
-                // let full_rect = skia::Rect::from_wh(s.width() as f32, s.height() as f32);
-                // // s.canvas().clip_rect(full_rect, skia::ClipOp::Intersect, true);
-                // let mut paint = skia_safe::Paint::default();
-                // paint.set_color(skia::Color::TRANSPARENT); // Transparente
-                // paint.set_blend_mode(skia_safe::BlendMode::Src);
-                // s.canvas().draw_rect(full_rect, &paint);
                 s.canvas().clear(skia::Color::TRANSPARENT);
             },
         );
@@ -451,7 +443,7 @@ impl RenderState {
     }
 
     pub fn update_render_context(&mut self, tile: tiles::Tile) {
-        self.current_tile = tile;
+        self.current_tile = Some(tile);
         self.render_area = tiles::get_tile_rect(self.viewbox, tile);
         self.surfaces
             .update_render_context(self.render_area, self.viewbox);
@@ -496,32 +488,7 @@ impl RenderState {
                 self.pending_tiles.push(tile);
             }
         }
-        if let Some(next_tile) = self.pending_tiles.pop() {
-            self.update_render_context(next_tile);
-            self.pending_nodes = vec![];
-            if let Some(shapes) = self.tiles.get_shapes_at(self.current_tile) {
-                for shape_id in shapes.iter() {
-                    let element = tree.get_mut(&shape_id).ok_or(
-                        "Error: Element with root_id {node_render_state.id} not found in the tree."
-                            .to_string(),
-                    )?;
-
-                    let children_clip_bounds = if element.is_recursive() {
-                        children_clip_bounds(element, modifiers.get(&element.id))
-                    } else {
-                        None
-                    };
-                    self.pending_nodes.push(NodeRenderState {
-                        id: *shape_id,
-                        visited_children: false,
-                        clip_bounds: children_clip_bounds,
-                        visited_mask: false,
-                        mask: false,
-                    });
-                }
-            }
-        }
-
+        self.current_tile = None;
         self.render_in_progress = true;
         self.apply_drawing_to_render_canvas(None);
         self.process_animation_frame(tree, modifiers, timestamp)?;
@@ -618,7 +585,7 @@ impl RenderState {
     }
 
     pub fn get_current_tile_bounds(&mut self) -> Rect {
-        let (tile_x, tile_y) = self.current_tile;
+        let (tile_x, tile_y) = self.current_tile.unwrap();
         let zoom = self.viewbox.zoom * self.options.dpr();
         let offset_x = self.viewbox.area.left * zoom;
         let offset_y = self.viewbox.area.top * zoom;
@@ -641,118 +608,120 @@ impl RenderState {
         }
 
         while !self.pending_tiles.is_empty() {
-            if self.surfaces.has_cached_tile_surface(self.current_tile) {
-                let tile_rect = self.get_current_tile_bounds();
-                self.surfaces
-                    .draw_cached_tile_surface(self.current_tile, tile_rect);
+            if let Some(current_tile) = self.current_tile {
+                if self.surfaces.has_cached_tile_surface(current_tile) {
+                    let tile_rect = self.get_current_tile_bounds();
+                    self.surfaces
+                        .draw_cached_tile_surface(current_tile, tile_rect);
 
-                if self.options.is_debug_visible() {
-                    let canvas = self.surfaces.canvas(SurfaceId::Target);
+                    if self.options.is_debug_visible() {
+                        let canvas = self.surfaces.canvas(SurfaceId::Target);
 
-                    let mut p = skia::Paint::default();
-                    p.set_stroke_width(1.);
-                    p.set_style(skia::PaintStyle::Stroke);
-                    canvas.draw_rect(&tile_rect, &p);
+                        let mut p = skia::Paint::default();
+                        p.set_stroke_width(1.);
+                        p.set_style(skia::PaintStyle::Stroke);
+                        canvas.draw_rect(&tile_rect, &p);
 
-                    let point = skia::Point::new(tile_rect.x() + 10., tile_rect.y() + 20.);
-                    p.set_stroke_width(1.);
-                    let str = format!("Cached {}:{}", self.current_tile.0, self.current_tile.1);
-                    canvas.draw_str(str, point, &self.debug_font, &p);
-                }
-            } else {
-                let mut i = 0;
-                while let Some(node_render_state) = self.pending_nodes.pop() {
-                    let NodeRenderState {
-                        id: node_id,
-                        visited_children,
-                        clip_bounds,
-                        visited_mask,
-                        mask,
-                    } = node_render_state;
-                    let element = tree.get_mut(&node_id).ok_or(
-                        "Error: Element with root_id {node_render_state.id} not found in the tree."
-                            .to_string(),
-                    )?;
+                        let point = skia::Point::new(tile_rect.x() + 10., tile_rect.y() + 20.);
+                        p.set_stroke_width(1.);
+                        let str = format!("Cached {}:{}", current_tile.0, current_tile.1);
+                        canvas.draw_str(str, point, &self.debug_font, &p);
+                    }
+                } else {
+                    let mut i = 0;
+                    while let Some(node_render_state) = self.pending_nodes.pop() {
+                        let NodeRenderState {
+                            id: node_id,
+                            visited_children,
+                            clip_bounds,
+                            visited_mask,
+                            mask,
+                        } = node_render_state;
+                        let element = tree.get_mut(&node_id).ok_or(
+                            "Error: Element with root_id {node_render_state.id} not found in the tree."
+                                .to_string(),
+                        )?;
 
-                    if visited_children {
-                        if !visited_mask {
-                            match element.shape_type {
-                                Type::Group(group) => {
-                                    // When we're dealing with masked groups we need to
-                                    // do a separate extra step to draw the mask (the last
-                                    // element of a masked group) and blend (using
-                                    // the blend mode 'destination-in') the content
-                                    // of the group and the mask.
-                                    if group.masked {
-                                        self.pending_nodes.push(NodeRenderState {
-                                            id: node_id,
-                                            visited_children: true,
-                                            clip_bounds: None,
-                                            visited_mask: true,
-                                            mask: false,
-                                        });
-                                        if let Some(&mask_id) = element.mask_id() {
+                        if visited_children {
+                            if !visited_mask {
+                                match element.shape_type {
+                                    Type::Group(group) => {
+                                        // When we're dealing with masked groups we need to
+                                        // do a separate extra step to draw the mask (the last
+                                        // element of a masked group) and blend (using
+                                        // the blend mode 'destination-in') the content
+                                        // of the group and the mask.
+                                        if group.masked {
                                             self.pending_nodes.push(NodeRenderState {
-                                                id: mask_id,
-                                                visited_children: false,
+                                                id: node_id,
+                                                visited_children: true,
                                                 clip_bounds: None,
-                                                visited_mask: false,
-                                                mask: true,
+                                                visited_mask: true,
+                                                mask: false,
                                             });
+                                            if let Some(&mask_id) = element.mask_id() {
+                                                self.pending_nodes.push(NodeRenderState {
+                                                    id: mask_id,
+                                                    visited_children: false,
+                                                    clip_bounds: None,
+                                                    visited_mask: false,
+                                                    mask: true,
+                                                });
+                                            }
                                         }
                                     }
+                                    _ => {}
                                 }
-                                _ => {}
+                            }
+                            self.render_shape_exit(element, visited_mask);
+                            continue;
+                        }
+
+                        // If we didn't visited_children this shape, then we need to do
+                        if !element.extrect().intersects(self.render_area) || element.hidden() {
+                            debug::render_debug_shape(self, element, false);
+                            continue;
+                        } else {
+                            debug::render_debug_shape(self, element, true);
+                        }
+
+                        self.render_shape_enter(element, mask);
+                        self.render_shape(element, modifiers.get(&element.id), clip_bounds);
+
+                        // Set the node as visited_children before processing children
+                        self.pending_nodes.push(NodeRenderState {
+                            id: node_id,
+                            visited_children: true,
+                            clip_bounds: None,
+                            visited_mask: false,
+                            mask: mask,
+                        });
+
+                        if element.is_recursive() {
+                            let children_clip_bounds =
+                                children_clip_bounds(element, modifiers.get(&element.id));
+                            for child_id in element.children_ids().iter().rev() {
+                                self.pending_nodes.push(NodeRenderState {
+                                    id: *child_id,
+                                    visited_children: false,
+                                    clip_bounds: children_clip_bounds,
+                                    visited_mask: false,
+                                    mask: false,
+                                });
                             }
                         }
-                        self.render_shape_exit(element, visited_mask);
-                        continue;
-                    }
 
-                    // If we didn't visited_children this shape, then we need to do
-                    if !element.extrect().intersects(self.render_area) || element.hidden() {
-                        debug::render_debug_shape(self, element, false);
-                        continue;
-                    } else {
-                        debug::render_debug_shape(self, element, true);
-                    }
-
-                    self.render_shape_enter(element, mask);
-                    self.render_shape(element, modifiers.get(&element.id), clip_bounds);
-
-                    // Set the node as visited_children before processing children
-                    self.pending_nodes.push(NodeRenderState {
-                        id: node_id,
-                        visited_children: true,
-                        clip_bounds: None,
-                        visited_mask: false,
-                        mask: mask,
-                    });
-
-                    if element.is_recursive() {
-                        let children_clip_bounds =
-                            children_clip_bounds(element, modifiers.get(&element.id));
-                        for child_id in element.children_ids().iter().rev() {
-                            self.pending_nodes.push(NodeRenderState {
-                                id: *child_id,
-                                visited_children: false,
-                                clip_bounds: children_clip_bounds,
-                                visited_mask: false,
-                                mask: false,
-                            });
+                        // We try to avoid doing too many calls to get_time
+                        if i % NODE_BATCH_THRESHOLD == 0
+                            && get_time() - timestamp > MAX_BLOCKING_TIME_MS
+                        {
+                            return Ok(());
                         }
+                        i += 1;
                     }
-
-                    // We try to avoid doing too many calls to get_time
-                    if i % NODE_BATCH_THRESHOLD == 0
-                        && get_time() - timestamp > MAX_BLOCKING_TIME_MS
-                    {
-                        return Ok(());
-                    }
-                    i += 1;
+                    let tile_rect = self.get_current_tile_bounds();
+                    self.apply_render_to_final_canvas(tile_rect);
                 }
-                let tile_rect = self.get_current_tile_bounds();
-                self.apply_render_to_final_canvas(tile_rect);
             }
 
             self.surfaces

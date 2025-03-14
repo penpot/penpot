@@ -579,7 +579,9 @@ impl Shape {
     }
 
     pub fn is_recursive(&self) -> bool {
-        !matches!(self.shape_type, Type::SVGRaw(_))
+        matches!(self.shape_type, Type::Frame(_))
+            || matches!(self.shape_type, Type::Group(_))
+            || matches!(self.shape_type, Type::Bool(_))
     }
 
     pub fn add_shadow(&mut self, shadow: Shadow) {
