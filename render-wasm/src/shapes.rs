@@ -646,6 +646,21 @@ impl Shape {
         }
     }
 
+    pub fn get_skia_path(&self) -> Option<skia::Path> {
+        if let Some(path) = self.shape_type.path() {
+            let mut skia_path = path.to_skia_path();
+            if let Some(path_transform) = self.to_path_transform() {
+                skia_path.transform(&path_transform);
+            }
+            if let Some("evenodd") = self.svg_attrs.get("fill-rule").map(String::as_str) {
+                skia_path.set_fill_type(skia::PathFillType::EvenOdd);
+            }
+            Some(skia_path)
+        } else {
+            None
+        }
+    }
+
     fn transform_selrect(&mut self, transform: &Matrix) {
         let mut center = self.selrect.center();
         center = transform.map_point(center);

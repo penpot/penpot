@@ -123,4 +123,33 @@ impl Shadow {
 
         filter
     }
+
+    // New methods for DropShadow
+    pub fn get_drop_shadow_paint(&self) -> skia::Paint {
+        let mut paint = skia::Paint::default();
+
+        let image_filter = self.get_drop_shadow_filter();
+
+        paint.set_image_filter(image_filter);
+        paint.set_anti_alias(true);
+
+        paint
+    }
+
+    fn get_drop_shadow_filter(&self) -> Option<ImageFilter> {
+        let mut filter = image_filters::drop_shadow_only(
+            (self.offset.0, self.offset.1),
+            (self.blur, self.blur),
+            self.color,
+            None,
+            None,
+            None,
+        );
+
+        if self.spread > 0. {
+            filter = image_filters::dilate((self.spread, self.spread), filter, None);
+        }
+
+        filter
+    }
 }

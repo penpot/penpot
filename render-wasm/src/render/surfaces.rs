@@ -1,5 +1,6 @@
 use super::gpu_state::GpuState;
-use skia_safe as skia;
+use crate::shapes::Shape;
+use skia_safe::{self as skia, Paint, RRect};
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {
@@ -8,6 +9,7 @@ pub enum SurfaceId {
     Fills,
     Strokes,
     Shadow,
+    DropShadows,
     Overlay,
     Debug,
 }
@@ -23,6 +25,8 @@ pub struct Surfaces {
     shape_strokes: skia::Surface,
     // used for rendering shadows
     shadow: skia::Surface,
+    // used for new shadow rendering
+    drop_shadows: skia::Surface,
     // for drawing the things that are over shadows.
     overlay: skia::Surface,
     // for drawing debug info.
@@ -40,6 +44,7 @@ impl Surfaces {
         let mut target = gpu_state.create_target_surface(width, height);
         let current = target.new_surface_with_dimensions((width, height)).unwrap();
         let shadow = target.new_surface_with_dimensions((width, height)).unwrap();
+        let drop_shadows = target.new_surface_with_dimensions((width, height)).unwrap();
         let overlay = target.new_surface_with_dimensions((width, height)).unwrap();
         let shape_fills = target.new_surface_with_dimensions((width, height)).unwrap();
         let shape_strokes = target.new_surface_with_dimensions((width, height)).unwrap();
@@ -49,6 +54,7 @@ impl Surfaces {
             target,
             current,
             shadow,
+            drop_shadows,
             overlay,
             shape_fills,
             shape_strokes,
@@ -94,6 +100,7 @@ impl Surfaces {
             SurfaceId::Target => &mut self.target,
             SurfaceId::Current => &mut self.current,
             SurfaceId::Shadow => &mut self.shadow,
+            SurfaceId::DropShadows => &mut self.drop_shadows,
             SurfaceId::Overlay => &mut self.overlay,
             SurfaceId::Fills => &mut self.shape_fills,
             SurfaceId::Strokes => &mut self.shape_strokes,
@@ -107,7 +114,27 @@ impl Surfaces {
         self.current = self.target.new_surface_with_dimensions(dim).unwrap();
         self.overlay = self.target.new_surface_with_dimensions(dim).unwrap();
         self.shadow = self.target.new_surface_with_dimensions(dim).unwrap();
+        self.drop_shadows = self.target.new_surface_with_dimensions(dim).unwrap();
         self.shape_fills = self.target.new_surface_with_dimensions(dim).unwrap();
         self.debug = self.target.new_surface_with_dimensions(dim).unwrap();
+    }
+
+    pub fn draw_rect_to(&mut self, id: SurfaceId, shape: &Shape, paint: &Paint) {
+        if let Some(corners) = shape.shape_type.corners() {
+            let rrect = RRect::new_rect_radii(shape.selrect, &corners);
+            self.canvas(id).draw_rrect(rrect, paint);
+        } else {
+            self.canvas(id).draw_rect(shape.selrect, paint);
+        }
+    }
+
+    pub fn draw_circle_to(&mut self, id: SurfaceId, shape: &Shape, paint: &Paint) {
+        self.canvas(id).draw_oval(shape.selrect, paint);
+    }
+
+    pub fn draw_path_to(&mut self, id: SurfaceId, shape: &Shape, paint: &Paint) {
+        if let Some(path) = shape.get_skia_path() {
+            self.canvas(id).draw_path(&path, paint);
+        }
     }
 }
