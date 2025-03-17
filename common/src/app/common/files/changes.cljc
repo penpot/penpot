@@ -376,17 +376,11 @@
       [:type [:= :update-active-token-themes]]
       [:theme-ids [:set :string]]]]
 
-    [:add-token-sets
-     [:map {:title "AddTokenSetsChange"}
-      [:type [:= :add-token-sets]]
-      [:token-sets [:sequential ::ctot/token-set]]]]
-
     [:rename-token-set-group
      [:map {:title "RenameTokenSetGroup"}
       [:type [:= :rename-token-set-group]]
       [:set-group-path [:vector :string]]
       [:set-group-fname :string]]]
-
 
     [:move-token-set-before
      [:map {:title "MoveTokenSetBefore"}
@@ -1049,12 +1043,6 @@
   [data {:keys [theme-ids]}]
   (update data :tokens-lib #(-> % (ctob/ensure-tokens-lib)
                                 (ctob/set-active-themes theme-ids))))
-
-(defmethod process-change :add-token-sets
-  [data {:keys [token-sets]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/add-sets (map ctob/make-token-set token-sets)))))
 
 (defmethod process-change :rename-token-set-group
   [data {:keys [set-group-path set-group-fname]}]

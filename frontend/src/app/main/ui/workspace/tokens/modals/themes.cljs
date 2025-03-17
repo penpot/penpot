@@ -293,11 +293,12 @@
                                   :on-save-form on-save-form
                                   :disabled? disabled?}]]]]]))
 
-(defn- make-lib-with-theme [theme sets]
-  (-> (ctob/make-tokens-lib)
-      (ctob/add-theme theme)
-      (ctob/add-sets sets)
-      (ctob/activate-theme (:group theme) (:name theme))))
+(defn- make-lib-with-theme
+  [theme sets]
+  (let [tlib (-> (ctob/make-tokens-lib)
+                 (ctob/add-theme theme))
+        tlib (reduce ctob/add-set tlib sets)]
+    (ctob/activate-theme tlib (:group theme) (:name theme))))
 
 (mf/defc controlled-edit-theme
   [{:keys [state set-state]}]
