@@ -312,6 +312,7 @@
 
         token-resolve-result* (mf/use-state (get resolved-tokens (wtt/token-identifier token)))
         token-resolve-result (deref token-resolve-result*)
+
         set-resolve-value
         (mf/use-fn
          (fn [token-or-err]
@@ -320,12 +321,15 @@
                  v (cond
                      error?
                      token-or-err
+
                      warnings?
                      (:warnings {:warnings token-or-err})
+
                      :else
                      (:resolved-value token-or-err))]
              (when color? (reset! color (if error? nil v)))
              (reset! token-resolve-result* v))))
+
         on-update-value-debounced (use-debonced-resolve-callback name-ref token active-theme-tokens set-resolve-value)
         on-update-value (mf/use-fn
                          (mf/deps on-update-value-debounced)
@@ -459,10 +463,10 @@
            (when (k/enter? e)
              (on-submit e))))]
 
-    ;; Clear form token cache on mount
+    ;; Clear form token cache on unmount
     (mf/use-effect
      (fn []
-       (reset! form-token-cache-atom nil)))
+       #(reset! form-token-cache-atom nil)))
 
     ;; Update the value when editing an existing token
     ;; so the user doesn't have to interact with the form to validate the token
