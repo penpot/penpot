@@ -1,6 +1,13 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
 (ns app.main.ui.workspace.tokens.update
   (:require
    [app.common.files.helpers :as cfh]
+   [app.common.logging :as l]
    [app.common.types.token :as ctt]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
@@ -9,6 +16,7 @@
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
    [app.main.ui.workspace.tokens.token-set :as wtts]
+   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [clojure.data :as data]
    [clojure.set :as set]
@@ -127,8 +135,14 @@
   [state resolved-tokens]
   (let [file-id         (get state :current-file-id)
         current-page-id (get state :current-page-id)
-        fdata           (dsh/lookup-file-data state file-id)]
-    (->> (rx/from (:pages fdata))
+        fdata           (dsh/lookup-file-data state file-id)
+        tpoint          (dt/tpoint-ms)]
+
+    (l/inf :status "START" :hint "update-tokens")
+    (->> (rx/concat
+          (rx/of current-page-id)
+          (->> (rx/from (:pages fdata))
+               (rx/filter (fn [id] (not= id current-page-id)))))
          (rx/mapcat
           (fn [page-id]
             (let [page
@@ -139,6 +153,12 @@
 
                   actions
                   (actionize-shapes-update-info page-id attrs)]
+
+              (l/inf :status "PROGRESS"
+                     :hint "update-tokens"
+                     :page-id (str page-id)
+                     :elapsed (tpoint)
+                     ::l/sync? true)
 
               (rx/merge
                (rx/from actions)
@@ -151,7 +171,11 @@
                                             (fn [shape]
                                               (dissoc shape :position-data))
                                             {:page-id page-id
-                                             :ignore-touched true}))))))))))
+                                             :ignore-touched true})))))))
+         (rx/finalize
+          (fn [_]
+            (let [elapsed (tpoint)]
+              (l/inf :status "END" :hint "update-tokens" :elapsed elapsed)))))))
 
 (defn update-workspace-tokens
   []
