@@ -78,7 +78,7 @@
   (reduce
    (fn [acc [attrs v]]
      (cond
-       (some attrs #{:widht :height}) (let [[_ a b] (data/diff #{:width :height} attrs)]
+       (some attrs #{:width :height}) (let [[_ a b] (data/diff #{:width :height} attrs)]
                                         (cond-> (assoc acc b v)
                                           ;; Exact match in attrs
                                           a (assoc a v)))
