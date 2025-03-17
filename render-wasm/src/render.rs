@@ -86,10 +86,6 @@ pub(crate) struct RenderState {
     pub options: RenderOptions,
     pub surfaces: Surfaces,
     fonts: FontStore,
-    // TODO: we should probably have only one of these
-    // pub font_provider: skia::textlayout::TypefaceFontProvider,
-    // pub font_collection: skia::textlayout::FontCollection,
-    // ----
     pub cached_surface_image: Option<CachedSurfaceImage>,
     pub viewbox: Viewbox,
     pub images: ImageStore,
@@ -117,7 +113,6 @@ impl RenderState {
 
         // This is used multiple times everywhere so instead of creating new instances every
         // time we reuse this one.
-
         RenderState {
             gpu_state,
             surfaces,
@@ -140,6 +135,7 @@ impl RenderState {
     pub fn fonts(&self) -> &FontStore {
         &self.fonts
     }
+
     pub fn fonts_mut(&mut self) -> &mut FontStore {
         &mut self.fonts
     }
