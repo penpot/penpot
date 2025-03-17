@@ -18,7 +18,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.code-block :refer [code-block]]
-   [app.main.ui.components.copy-button :refer [copy-button]]
+   [app.main.ui.components.copy-button :refer [copy-button*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
@@ -293,9 +293,9 @@
                   :on-click on-expand}
          i/code]
 
-        [:& copy-button {:data copy-css-fn
-                         :class (stl/css :css-copy-btn)
-                         :on-copied on-style-copied}]]]
+        [:> copy-button* {:data copy-css-fn
+                          :class (stl/css :css-copy-btn)
+                          :on-copied on-style-copied}]]]
 
       (when-not collapsed-css?
         [:div {:class (stl/css :code-row-display)
@@ -334,9 +334,9 @@
                   :on-click on-expand}
          i/code]
 
-        [:& copy-button {:data copy-html-fn
-                         :class (stl/css :html-copy-btn)
-                         :on-copied on-markup-copied}]]]
+        [:> copy-button* {:data copy-html-fn
+                          :class (stl/css :html-copy-btn)
+                          :on-copied on-markup-copied}]]]
 
       (when-not collapsed-markup?
         [:div {:class (stl/css :code-row-display)
