@@ -7188,3 +7188,7 @@ msgstr "Ya existe un set con el mismo nombre"
 
 msgid "errors.token-theme-already-exists"
 msgstr "Ya existe un theme con este nombre"
+
+#: src/app/main/data/tokens.cljs:198
+msgid "errors.token-set-exists-on-drop"
+msgstr "No se ha podido mover el set, un set con el mismo nombre ya existe en la esa ruta."

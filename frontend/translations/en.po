@@ -1171,7 +1171,7 @@ msgstr "Theme Option with the same name exists"
 
 #: src/app/main/data/tokens.cljs:198
 msgid "errors.token-set-exists-on-drop"
-msgstr "Cannot complete drop, a set with same name already exists at path %s."
+msgstr "Cannot complete drop, a set with same name already exists at path."
 
 #: src/app/main/data/tokens.cljs:294
 msgid "workspace.token.duplicate-suffix"
