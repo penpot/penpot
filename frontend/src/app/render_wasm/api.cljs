@@ -873,7 +873,8 @@
               (when (and (= type :text) (some? content))
                 (set-shape-text-content content))
 
-              (when (ctl/any-layout-immediate-child? objects shape)
+              (when (or (ctl/any-layout? shape)
+                        (ctl/any-layout-immediate-child? objects shape))
                 (set-layout-child shape))
 
               (when (ctl/flex-layout? shape)

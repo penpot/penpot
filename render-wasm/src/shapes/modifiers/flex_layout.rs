@@ -2,7 +2,7 @@
 use crate::math::{self as math, Bounds, Matrix, Point, Vector, VectorExt};
 use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, FlexData, JustifyContent, LayoutData, LayoutItem,
-    Modifier, Shape, Sizing,
+    Modifier, Shape,
 };
 use std::collections::{HashMap, VecDeque};
 use uuid::Uuid;
@@ -116,8 +116,6 @@ struct ChildAxis {
     max_across_size: f32,
     is_fill_main: bool,
     is_fill_across: bool,
-    is_auto_main: bool,
-    is_auto_across: bool,
     is_absolute: bool,
     z_index: i32,
 }
@@ -139,18 +137,8 @@ impl ChildAxis {
                 max_main_size: layout_item.and_then(|i| i.max_w).unwrap_or(MAX_SIZE),
                 min_across_size: layout_item.and_then(|i| i.min_h).unwrap_or(MIN_SIZE),
                 max_across_size: layout_item.and_then(|i| i.max_h).unwrap_or(MAX_SIZE),
-                is_fill_main: layout_item
-                    .map(|i| i.h_sizing == Sizing::Fill)
-                    .unwrap_or(false),
-                is_fill_across: layout_item
-                    .map(|i| i.v_sizing == Sizing::Fill)
-                    .unwrap_or(false),
-                is_auto_main: layout_item
-                    .map(|i| i.h_sizing == Sizing::Auto)
-                    .unwrap_or(false),
-                is_auto_across: layout_item
-                    .map(|i| i.v_sizing == Sizing::Auto)
-                    .unwrap_or(false),
+                is_fill_main: child.is_layout_horizontal_fill(),
+                is_fill_across: child.is_layout_vertical_fill(),
                 is_absolute: layout_item.map(|i| i.is_absolute).unwrap_or(false),
                 z_index: layout_item.map(|i| i.z_index).unwrap_or(0),
             }
@@ -167,18 +155,8 @@ impl ChildAxis {
                 max_across_size: layout_item.and_then(|i| i.max_w).unwrap_or(MAX_SIZE),
                 min_main_size: layout_item.and_then(|i| i.min_h).unwrap_or(MIN_SIZE),
                 max_main_size: layout_item.and_then(|i| i.max_h).unwrap_or(MAX_SIZE),
-                is_fill_across: layout_item
-                    .map(|i| i.h_sizing == Sizing::Fill)
-                    .unwrap_or(false),
-                is_fill_main: layout_item
-                    .map(|i| i.v_sizing == Sizing::Fill)
-                    .unwrap_or(false),
-                is_auto_across: layout_item
-                    .map(|i| i.h_sizing == Sizing::Auto)
-                    .unwrap_or(false),
-                is_auto_main: layout_item
-                    .map(|i| i.v_sizing == Sizing::Auto)
-                    .unwrap_or(false),
+                is_fill_main: child.is_layout_vertical_fill(),
+                is_fill_across: child.is_layout_horizontal_fill(),
                 is_absolute: layout_item.map(|i| i.is_absolute).unwrap_or(false),
                 z_index: layout_item.map(|i| i.z_index).unwrap_or(0),
             }
@@ -366,15 +344,20 @@ fn calculate_track_positions(
     tracks: &mut Vec<TrackData>,
     total_across_size: f32,
 ) {
-    match layout_data.align_content {
+    let mut align_content = &layout_data.align_content;
+
+    if layout_axis.is_auto_across {
+        align_content = &AlignContent::Start;
+    }
+
+    match align_content {
         AlignContent::End => {
             let total_across_size_gap: f32 =
                 total_across_size + (tracks.len() - 1) as f32 * layout_axis.gap_across;
-            let mut next_anchor = layout_bounds.nw
-                + layout_axis.across_v
-                    * (layout_axis.across_size
-                        - total_across_size_gap
-                        - layout_axis.padding_across_end);
+
+            let delta =
+                layout_axis.across_size - total_across_size_gap - layout_axis.padding_across_end;
+            let mut next_anchor = layout_bounds.nw + layout_axis.across_v * delta;
 
             for track in tracks.iter_mut() {
                 track.anchor = next_anchor;
@@ -464,12 +447,18 @@ fn calculate_track_data(
 ) -> Vec<TrackData> {
     let layout_axis = LayoutAxis::new(shape, layout_bounds, layout_data, flex_data);
     let mut tracks = initialize_tracks(shape, &layout_axis, layout_data, flex_data, shapes, bounds);
-    distribute_fill_main_space(&layout_axis, &mut tracks);
-    distribute_fill_across_space(&layout_axis, &mut tracks);
+
+    if !layout_axis.is_auto_main {
+        distribute_fill_main_space(&layout_axis, &mut tracks);
+    }
+
+    if !layout_axis.is_auto_across {
+        distribute_fill_across_space(&layout_axis, &mut tracks);
+    }
 
     let total_across_size = tracks.iter().map(|t| t.across_size).sum::<f32>();
 
-    if layout_data.align_content == AlignContent::Stretch {
+    if !layout_axis.is_auto_across && layout_data.align_content == AlignContent::Stretch {
         stretch_tracks_sizes(&layout_axis, &mut tracks, total_across_size);
     }
 
@@ -489,6 +478,10 @@ fn first_anchor(
     track: &TrackData,
     total_shapes_size: f32,
 ) -> Point {
+    if layout_axis.is_auto_main {
+        return track.anchor + layout_axis.main_v * layout_axis.padding_main_start;
+    }
+
     let delta = match layout_data.justify_content {
         JustifyContent::Center => (layout_axis.main_size - track.main_size) / 2.0,
         JustifyContent::End => {
@@ -631,6 +624,78 @@ pub fn reflow_flex_layout(
                 total_shapes_size,
             );
         }
+    }
+
+    if layout_axis.is_auto_across || layout_axis.is_auto_main {
+        let width = layout_bounds.width();
+        let height = layout_bounds.height();
+
+        let auto_across_size = if layout_axis.is_auto_across {
+            tracks.iter().map(|track| track.across_size).sum::<f32>()
+                + (tracks.len() - 1) as f32 * layout_axis.gap_across
+                + layout_axis.padding_main_start
+                + layout_axis.padding_main_end
+        } else {
+            0.0
+        };
+
+        let auto_main_size = if layout_axis.is_auto_main {
+            tracks
+                .iter()
+                .map(|track| {
+                    track.shapes.iter().map(|s| s.main_size).sum::<f32>()
+                        + (track.shapes.len() - 1) as f32 * layout_axis.gap_main
+                })
+                .reduce(f32::max)
+                .unwrap_or(0.01)
+                + layout_axis.padding_across_start
+                + layout_axis.padding_across_end
+        } else {
+            0.0
+        };
+
+        let (scale_width, scale_height) = if layout_data.is_row() {
+            (
+                if layout_axis.is_auto_main {
+                    auto_main_size / width
+                } else {
+                    1.0
+                },
+                if layout_axis.is_auto_across {
+                    auto_across_size / height
+                } else {
+                    1.0
+                },
+            )
+        } else {
+            (
+                if layout_axis.is_auto_across {
+                    auto_across_size / width
+                } else {
+                    1.0
+                },
+                if layout_axis.is_auto_main {
+                    auto_main_size / height
+                } else {
+                    1.0
+                },
+            )
+        };
+
+        let parent_transform = layout_bounds
+            .transform_matrix()
+            .unwrap_or(Matrix::default());
+
+        let parent_transform_inv = &parent_transform.invert().unwrap();
+        let origin = parent_transform_inv.map_point(layout_bounds.nw);
+
+        let mut scale = Matrix::scale((scale_width, scale_height));
+        scale.post_translate(origin);
+        scale.post_concat(&parent_transform);
+        scale.pre_translate(-origin);
+        scale.pre_concat(&parent_transform_inv);
+
+        result.push_back(Modifier::parent(shape.id, scale));
     }
     result
 }

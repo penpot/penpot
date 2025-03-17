@@ -116,16 +116,19 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                     let shape_bounds_before = bounds.find(&shape);
                     let shape_bounds_after = shape_bounds_before.transform(&entry.transform);
 
-                    let mut children = propagate_children(
-                        shape,
-                        shapes,
-                        &shape_bounds_before,
-                        &shape_bounds_after,
-                        entry.transform,
-                        &bounds,
-                    );
+                    if entry.propagate {
+                        let mut children = propagate_children(
+                            shape,
+                            shapes,
+                            &shape_bounds_before,
+                            &shape_bounds_after,
+                            entry.transform,
+                            &bounds,
+                        );
 
-                    entries.append(&mut children);
+                        entries.append(&mut children);
+                    }
+
                     bounds.insert(shape.id, shape_bounds_after);
 
                     let default_matrix = Matrix::default();

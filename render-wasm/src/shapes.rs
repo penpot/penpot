@@ -676,7 +676,6 @@ impl Shape {
         }
     }
 
-    #[allow(dead_code)]
     pub fn is_layout_vertical_auto(&self) -> bool {
         match &self.layout_item {
             Some(LayoutItem { v_sizing, .. }) => v_sizing == &Sizing::Auto,
@@ -684,7 +683,6 @@ impl Shape {
         }
     }
 
-    #[allow(dead_code)]
     pub fn is_layout_vertical_fill(&self) -> bool {
         match &self.layout_item {
             Some(LayoutItem { v_sizing, .. }) => v_sizing == &Sizing::Fill,
@@ -692,7 +690,6 @@ impl Shape {
         }
     }
 
-    #[allow(dead_code)]
     pub fn is_layout_horizontal_auto(&self) -> bool {
         match &self.layout_item {
             Some(LayoutItem { h_sizing, .. }) => h_sizing == &Sizing::Auto,
@@ -700,18 +697,9 @@ impl Shape {
         }
     }
 
-    #[allow(dead_code)]
     pub fn is_layout_horizontal_fill(&self) -> bool {
         match &self.layout_item {
             Some(LayoutItem { h_sizing, .. }) => h_sizing == &Sizing::Fill,
-            _ => false,
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn is_layout_absolute(&self) -> bool {
-        match &self.layout_item {
-            Some(LayoutItem { is_absolute, .. }) => *is_absolute,
             _ => false,
         }
     }
