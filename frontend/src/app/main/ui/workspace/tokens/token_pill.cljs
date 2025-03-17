@@ -102,9 +102,10 @@
 
 (defn- generate-tooltip
   "Generates a tooltip for a given token"
-  [is-viewer shape token half-applied no-valid-value ref-not-in-active-set]
-  (let [{:keys [name value resolved-value type]} token
-        {:keys [title] :as token-props} (wtch/get-token-properties token)
+  [is-viewer shape theme-token token half-applied no-valid-value ref-not-in-active-set]
+  (let [{:keys [name value type]} token
+        {:keys [resolved-value]} theme-token
+        {:keys [title] :as token-props} (wtch/get-token-properties theme-token)
         applied-tokens (:applied-tokens shape)
         app-token-vals (set (vals applied-tokens))
         app-token-keys (keys applied-tokens)
@@ -244,7 +245,7 @@
          (fn [event]
            (let [node  (dom/get-current-target event)
                  theme-token (get active-theme-tokens (:name token))
-                 title (generate-tooltip is-viewer? (first selected-shapes) theme-token
+                 title (generate-tooltip is-viewer? (first selected-shapes) theme-token token
                                          half-applied? no-valid-value ref-not-in-active-set)]
              (dom/set-attribute! node "title" title))))]
 
