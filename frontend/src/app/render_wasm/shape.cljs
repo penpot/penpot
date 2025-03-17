@@ -111,6 +111,7 @@
   (when ^boolean shape/*wasm-sync*
     (api/use-shape (:id self))
     (case k
+      :parent-id    (api/set-parent-id v)
       :type         (api/set-shape-type v)
       :bool-type    (api/set-shape-bool-type v)
       :bool-content (api/set-shape-bool-content v)

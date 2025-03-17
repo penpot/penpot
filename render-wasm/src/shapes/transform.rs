@@ -6,15 +6,45 @@ use crate::utils::{uuid_from_u32_quartet, uuid_to_u32_quartet};
 use skia::Matrix;
 
 #[derive(PartialEq, Debug, Clone)]
+pub enum Modifier {
+    Transform(TransformEntry),
+    Reflow(Uuid),
+}
+
+impl Modifier {
+    pub fn transform(id: Uuid, transform: Matrix) -> Self {
+        Modifier::Transform(TransformEntry::new(id, transform))
+    }
+    pub fn parent(id: Uuid, transform: Matrix) -> Self {
+        Modifier::Transform(TransformEntry::parent(id, transform))
+    }
+    pub fn reflow(id: Uuid) -> Self {
+        Modifier::Reflow(id)
+    }
+}
+
+#[derive(PartialEq, Debug, Clone)]
 #[repr(C)]
 pub struct TransformEntry {
     pub id: Uuid,
     pub transform: Matrix,
+    pub propagate: bool,
 }
 
 impl TransformEntry {
     pub fn new(id: Uuid, transform: Matrix) -> Self {
-        TransformEntry { id, transform }
+        TransformEntry {
+            id,
+            transform,
+            propagate: true,
+        }
+    }
+    pub fn parent(id: Uuid, transform: Matrix) -> Self {
+        TransformEntry {
+            id,
+            transform,
+            propagate: false,
+        }
     }
 }
 
@@ -40,7 +70,7 @@ impl SerializableResult for TransformEntry {
             0.0,
             1.0,
         );
-        TransformEntry { id, transform }
+        TransformEntry::new(id, transform)
     }
 
     fn as_bytes(&self) -> Self::BytesType {
@@ -75,10 +105,10 @@ mod tests {
 
     #[test]
     fn test_serialization() {
-        let entry = TransformEntry {
-            id: uuid!("550e8400-e29b-41d4-a716-446655440000"),
-            transform: Matrix::new_all(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.0, 0.0, 1.0),
-        };
+        let entry = TransformEntry::new(
+            uuid!("550e8400-e29b-41d4-a716-446655440000"),
+            Matrix::new_all(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.0, 0.0, 1.0),
+        );
 
         let bytes = entry.as_bytes();
 
