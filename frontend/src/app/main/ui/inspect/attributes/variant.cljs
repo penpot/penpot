@@ -11,8 +11,8 @@
    [app.common.logic.variants :as clv]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
-   [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.components.title-bar :refer [inspect-title-bar]]
+   [app.main.ui.components.copy-button :refer [copy-button*]]
+   [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -23,12 +23,12 @@
          :class (stl/css :variant-row)}
    [:div {:class (stl/css :global/attr-label)} name]
    [:div {:class (stl/css :global/attr-value)}
-    [:& copy-button {:data value}
+    [:> copy-button* {:data value}
      [:div {:class (stl/css :button-children)} value]]]])
 
 
 (mf/defc variant-panel*
-  [{:keys [objects shapes libraries file-id] :as kk} ]
+  [{:keys [objects shapes libraries file-id] :as kk}]
   (let [shape           (->> shapes first)
         title           (cond
                           (ctc/is-variant-container? shape)
@@ -48,7 +48,7 @@
                               (->> (:variant-properties component)
                                    (map #(update % :value (fn [v] (if (str/blank? v) "--" v))))))))]
     [:div {:class (stl/css :attributes-block)}
-     [:& inspect-title-bar
+     [:> inspect-title-bar*
       {:title (tr title)
        :class (stl/css :title-spacing-variant)}]
 

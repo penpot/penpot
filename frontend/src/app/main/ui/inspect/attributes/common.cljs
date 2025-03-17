@@ -15,7 +15,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
-   [app.main.ui.components.copy-button :refer [copy-button]]
+   [app.main.ui.components.copy-button :refer [copy-button*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.formats :as fmt]
    [app.util.i18n :refer [tr]]
@@ -75,8 +75,8 @@
           [:div {:class (stl/css :format-wrapper)}
            [:div {:class (stl/css :image-format)}
             (tr "media.image.short")]]
-          [:& copy-button {:data copy-data
-                           :class (stl/css :color-row-copy-btn)}
+          [:> copy-button* {:data copy-data
+                            :class (stl/css :color-row-copy-btn)}
            [:div {:class (stl/css-case :color-info true
                                        :two-line (some? color-library-name))}
             [:div {:class (stl/css :first-row)}
@@ -116,11 +116,11 @@
         (when (:gradient color)
           [:div {:class (stl/css :format-info)} "rgba"])]
 
-       [:& copy-button {:data copy-data
-                        :aria-label (tr "labels.copy-color")
-                        :class (stl/css-case :color-row-copy-btn true
-                                             :one-line (not color-library-name)
-                                             :two-line (some? color-library-name))}
+       [:> copy-button* {:data copy-data
+                         :aria-label (tr "labels.copy-color")
+                         :class (stl/css-case :color-row-copy-btn true
+                                              :one-line (not color-library-name)
+                                              :two-line (some? color-library-name))}
         [:div {:class (stl/css :first-row)}
          [:div {:class (stl/css :name-opacity)}
           [:span {:class (stl/css-case :color-value-wrapper true

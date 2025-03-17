@@ -7,7 +7,7 @@
 (ns app.main.ui.inspect.attributes.fill
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.ui.components.title-bar :refer [inspect-title-bar]]
+   [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
    [app.main.ui.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
@@ -53,7 +53,7 @@
   (let [shapes (filter has-fill? shapes)]
     (when (seq shapes)
       [:div {:class (stl/css :attributes-block)}
-       [:& inspect-title-bar
+       [:> inspect-title-bar*
         {:title (tr "inspect.attributes.fill")
          :class (stl/css :title-spacing-fill)}]
 
