@@ -346,12 +346,10 @@
 
 (defn create-invitations
   [{:keys [emails role team-id resend?] :as params}]
-  (dm/assert! (keyword? role))
-  (dm/assert! (uuid? team-id))
 
-  (dm/assert!
-   "expected a valid set of emails"
-   (sm/check-set-of-emails! emails))
+  (assert (keyword? role))
+  (assert (uuid? team-id))
+  (assert (sm/check-set-of-emails emails))
 
   (ptk/reify ::create-invitations
     ev/Event
@@ -372,11 +370,8 @@
 
 (defn copy-invitation-link
   [{:keys [email team-id] :as params}]
-  (dm/assert!
-   "expected a valid email"
-   (sm/check-email! email))
-
-  (dm/assert! (uuid? team-id))
+  (assert (sm/check-email email))
+  (assert (uuid? team-id))
 
   (ptk/reify ::copy-invitation-link
     IDeref
@@ -402,12 +397,9 @@
 
 (defn update-invitation-role
   [{:keys [email team-id role] :as params}]
-  (dm/assert!
-   "expected a valid email"
-   (sm/check-email! email))
-
-  (dm/assert! (uuid? team-id))
-  (dm/assert! (contains? ctt/valid-roles role))
+  (assert (sm/check-email email))
+  (assert (uuid? team-id))
+  (assert (contains? ctt/valid-roles role))
 
   (ptk/reify ::update-invitation-role
     IDeref
@@ -424,8 +416,9 @@
 
 (defn delete-invitation
   [{:keys [email team-id] :as params}]
-  (dm/assert! (sm/check-email! email))
-  (dm/assert! (uuid? team-id))
+  (assert (sm/check-email email))
+  (assert (uuid? team-id))
+
   (ptk/reify ::delete-invitation
     ptk/WatchEvent
     (watch [_ _ _]
