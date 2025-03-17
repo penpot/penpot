@@ -128,7 +128,7 @@
                   :class (stl/css :theme-row)}
              [:div {:class (stl/css :theme-row-left)}
 
-              ;; FIREEEEEEEEEE THIS
+              ;; FIXME: FIREEEEEEEEEE THIS
               [:div {:on-click (fn [e]
                                  (dom/prevent-default e)
                                  (dom/stop-propagation e)
@@ -261,7 +261,7 @@
            (swap! theme-state* #(assoc % field value))))
 
         on-save-form
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps theme-state)
          (fn [e]
            (dom/prevent-default e)
@@ -270,9 +270,9 @@
                            (update :group str/trim)
                            (update :description str/trim))]
              (when-not (str/empty? (:name theme))
-               (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens-theme"}))
-               (st/emit! (wdt/create-token-theme theme))))
-           (on-back)))
+               (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens-theme"})
+                         (wdt/create-token-theme theme)))
+             (on-back))))
 
         close-modal
         (mf/use-fn
@@ -378,7 +378,7 @@
                                    (clt/toggle-token-set-group group-path lib' theme'))))))
 
         on-click-token-set
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-toggle-token-set)
          (fn [prefixed-set-path-str]
            (let [set-name (ctob/prefixed-set-path-string->set-name-string prefixed-set-path-str)]
@@ -423,13 +423,14 @@
                                    :on-save-form on-save-form
                                    :disabled? disabled?}]]]]]]))
 
-(mf/defc themes-modal-body
-  [_]
-  (let [themes (mf/deref refs/workspace-token-themes-no-hidden)
-        state (mf/use-state (if (empty? themes)
-                              {:type :create-theme}
-                              {:type :themes-overview}))
-        set-state (mf/use-callback #(swap! state %))
+(mf/defc themes-modal-body*
+  {::mf/private true}
+  []
+  (let [themes    (mf/deref refs/workspace-token-themes-no-hidden)
+        state     (mf/use-state #(if (empty? themes)
+                                   {:type :create-theme}
+                                   {:type :themes-overview}))
+        set-state (mf/use-fn #(swap! state %))
         component (case (:type @state)
                     :empty-themes empty-themes
                     :themes-overview (if (empty? themes) empty-themes themes-overview)
@@ -442,14 +443,13 @@
   {::mf/wrap-props false
    ::mf/register modal/components
    ::mf/register-as :tokens/themes}
-  [_args]
-  (let [handle-close-dialog (mf/use-callback #(st/emit! (modal/hide)))]
-    [:div {:class (stl/css :modal-overlay)}
-     [:div {:class (stl/css :modal-dialog)
-            :data-testid "token-theme-update-create-modal"}
-      [:> icon-button* {:class (stl/css :close-btn)
-                        :on-click handle-close-dialog
-                        :aria-label (tr "labels.close")
-                        :variant "action"
-                        :icon "close"}]
-      [:& themes-modal-body]]]))
+  []
+  [:div {:class (stl/css :modal-overlay)}
+   [:div {:class (stl/css :modal-dialog)
+          :data-testid "token-theme-update-create-modal"}
+    [:> icon-button* {:class (stl/css :close-btn)
+                      :on-click modal/hide!
+                      :aria-label (tr "labels.close")
+                      :variant "action"
+                      :icon "close"}]
+    [:> themes-modal-body*]]])

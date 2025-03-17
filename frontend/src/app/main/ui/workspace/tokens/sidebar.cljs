@@ -266,10 +266,6 @@
             (ctob/get-active-themes-set-tokens tokens-lib)
             {}))
 
-        ;; Resolve tokens as second step
-        active-theme-tokens
-        (sd/use-resolved-tokens* active-theme-tokens)
-
         ;; This only checks for the currently explicitly selected set
         ;; name, it is ephimeral and can be nil
         selected-token-set-name
