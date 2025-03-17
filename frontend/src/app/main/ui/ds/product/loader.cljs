@@ -15,19 +15,6 @@
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
-(def tips
-  [["loader.tips.01" "title" "message"]
-   ["loader.tips.02" "title" "message"]
-   ["loader.tips.03" "title" "message"]
-   ["loader.tips.04" "title" "message"]
-   ["loader.tips.05" "title" "message"]
-   ["loader.tips.06" "title" "message"]
-   ["loader.tips.07" "title" "message"]
-   ["loader.tips.08" "title" "message"]
-   ["loader.tips.09" "title" "message"]
-   ["loader.tips.10" "title" "message"]])
-
-
 (defn- get-tips
   []
   [{:title (tr "loader.tips.01.title")
