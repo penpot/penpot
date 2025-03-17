@@ -7185,3 +7185,6 @@ msgstr "Extiende Penpot con plugins creados por la comunidad para funcionalidad 
 
 msgid "errors.token-set-already-exists"
 msgstr "Ya existe un set con el mismo nombre"
+
+msgid "errors.token-theme-already-exists"
+msgstr "Ya existe un theme con este nombre"

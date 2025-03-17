@@ -66,19 +66,26 @@
 ;; TOKENS Actions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn create-token-theme [token-theme]
+(defn create-token-theme
+  [token-theme]
   (let [new-token-theme token-theme]
     (ptk/reify ::create-token-theme
       ptk/WatchEvent
       (watch [it state _]
-        (let [data    (dsh/lookup-file-data state)
-              changes (-> (pcb/empty-changes it)
-                          (pcb/with-library-data data)
-                          (pcb/set-token-theme (:group new-token-theme)
-                                               (:name new-token-theme)
-                                               new-token-theme))]
-          (rx/of
-           (dch/commit-changes changes)))))))
+        (let [data       (dsh/lookup-file-data state)
+              tokens-lib (get data :tokens-lib)]
+
+          (if (and tokens-lib (ctob/get-theme tokens-lib (:group token-theme) (:name token-theme)))
+            (rx/of (ntf/show {:content (tr "errors.token-theme-already-exists")
+                              :type :toast
+                              :level :error
+                              :timeout 9000}))
+            (let [changes (-> (pcb/empty-changes it)
+                              (pcb/with-library-data data)
+                              (pcb/set-token-theme (:group new-token-theme)
+                                                   (:name new-token-theme)
+                                                   new-token-theme))]
+              (rx/of (dch/commit-changes changes)))))))))
 
 (defn update-token-theme [[group name] token-theme]
   (ptk/reify ::update-token-theme

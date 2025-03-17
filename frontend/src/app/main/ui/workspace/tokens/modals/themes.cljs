@@ -270,9 +270,9 @@
                            (update :group str/trim)
                            (update :description str/trim))]
              (when-not (str/empty? (:name theme))
-               (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens-theme"}))
-               (st/emit! (wdt/create-token-theme theme))))
-           (on-back)))
+               (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens-theme"})
+                         (wdt/create-token-theme theme)))
+             (on-back))))
 
         close-modal
         (mf/use-fn
@@ -423,12 +423,13 @@
                                    :on-save-form on-save-form
                                    :disabled? disabled?}]]]]]]))
 
-(mf/defc themes-modal-body
-  [_]
-  (let [themes (mf/deref refs/workspace-token-themes-no-hidden)
-        state (mf/use-state (if (empty? themes)
-                              {:type :create-theme}
-                              {:type :themes-overview}))
+(mf/defc themes-modal-body*
+  {::mf/private true}
+  []
+  (let [themes    (mf/deref refs/workspace-token-themes-no-hidden)
+        state     (mf/use-state #(if (empty? themes)
+                                   {:type :create-theme}
+                                   {:type :themes-overview}))
         set-state (mf/use-fn #(swap! state %))
         component (case (:type @state)
                     :empty-themes empty-themes
@@ -443,13 +444,12 @@
    ::mf/register modal/components
    ::mf/register-as :tokens/themes}
   []
-  (let [handle-close-dialog (mf/use-fn #(st/emit! (modal/hide)))]
-    [:div {:class (stl/css :modal-overlay)}
-     [:div {:class (stl/css :modal-dialog)
-            :data-testid "token-theme-update-create-modal"}
-      [:> icon-button* {:class (stl/css :close-btn)
-                        :on-click handle-close-dialog
-                        :aria-label (tr "labels.close")
-                        :variant "action"
-                        :icon "close"}]
-      [:& themes-modal-body]]]))
+  [:div {:class (stl/css :modal-overlay)}
+   [:div {:class (stl/css :modal-dialog)
+          :data-testid "token-theme-update-create-modal"}
+    [:> icon-button* {:class (stl/css :close-btn)
+                      :on-click modal/hide!
+                      :aria-label (tr "labels.close")
+                      :variant "action"
+                      :icon "close"}]
+    [:> themes-modal-body*]]])
