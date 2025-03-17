@@ -9,8 +9,11 @@
    [app.common.data.macros :as dm]
    [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.math :as mth]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.timers :as tm]
+   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 (def tips
@@ -50,55 +53,43 @@
    [:width {:optional true} :int]
    [:height {:optional true} :int]
    [:title {:optional true} :string]
-   [:overlay {:optional true} :boolean]])
+   [:overlay {:optional true} :boolean]
+   [:file-loading {:optional true} :boolean]])
 
 (mf/defc loader*
-  {::mf/props :obj
-   ::mf/schema schema:loader}
+  {::mf/schema schema:loader}
   [{:keys [class width height title overlay children file-loading] :rest props}]
-  (let [w (or width (when (some? height) (mth/ceil (* height (/ 100 27)))) 100)
-        h (or height (when (some? width) (mth/ceil (* width (/ 27 100)))) 27)
-        class (dm/str (or class "") " " 
-                     (stl/css-case :wrapper true
-                                  :wrapper-overlay overlay
-                                  :file-loading file-loading))
-        title (or title (tr "labels.loading"))
-        current-tip (mf/use-state nil)
-        show-tips (mf/use-state false)]
-    
-    (mf/use-effect
-     (mf/deps)
-     (fn []
-       (when file-loading
-         (let [timer (js/setTimeout
-                     (fn []
-                       (let [tip (rand-nth tips)]
-                         (reset! current-tip [(tr (str (first tip) "." (second tip)))
-                                           (tr (str (first tip) "." (nth tip 2)))]))
-                       (reset! show-tips true))
-                     1000)]
-           #(js/clearTimeout timer)))))
-    
-    (mf/use-effect
-     (mf/deps @show-tips file-loading)
-     (fn []
-       (when (and @show-tips file-loading)
-         (let [interval-id (js/setInterval 
-                           #(let [tip (rand-nth tips)]
-                              (reset! current-tip [(tr (str (first tip) "." (second tip)))
-                                                (tr (str (first tip) "." (nth tip 2)))]))
-                           4000)]
-           #(js/clearInterval interval-id)))))
+  (let [width  (or width (when (some? height) (mth/ceil (* height (/ 100 27)))) 100)
+        height (or height (when (some? width) (mth/ceil (* width (/ 27 100)))) 27)
+
+        class  (dm/str (or class "") " "
+                       (stl/css-case :wrapper true
+                                     :wrapper-overlay overlay
+                                     :file-loading file-loading))
+
+        title  (or title (tr "labels.loading"))
+
+        tip*   (mf/use-state nil)
+        tip    (deref tip*)]
+
+    (mf/with-effect [file-loading]
+      (when file-loading
+        (let [sub (->> (rx/timer 1000 4000)
+                       (rx/subs! (fn []
+                                   (let [tip (rand-nth tips)]
+                                     (reset! tip* [(tr (str (first tip) "." (second tip)))
+                                                   (tr (str (first tip) "." (nth tip 2)))])))))]
+          (partial rx/dispose! sub))))
 
     [:> "div" {:class class}
      [:div {:class (stl/css :loader-content)}
       [:> loader-icon* {:title title
-                        :width w
-                        :height h}]
-      (when (and file-loading @show-tips @current-tip)
+                        :width width
+                        :height height}]
+      (when (and file-loading tip)
         [:div {:class (stl/css :tips-container)}
          [:div {:class (stl/css :tip-title)}
-          (first @current-tip)]
+          (first tip)]
          [:div {:class (stl/css :tip-message)}
-          (second @current-tip)]])]
+          (second tip)]])]
      children]))
