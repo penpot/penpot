@@ -28,9 +28,16 @@
    ["tips.tip-09" "title" "message"]
    ["tips.tip-10" "title" "message"]])
 
+(def ^:private
+  svg:loader-path-1
+  "M128.273 0l-3.9 2.77L0 91.078l128.273 91.076 549.075-.006V.008L128.273 0zm20.852 30l498.223.006V152.15l-498.223.007V30zm-25 9.74v102.678l-49.033-34.813-.578-32.64 49.61-35.225z")
+
+(def ^:private
+  svg:loader-path-2
+  "M134.482 157.147v25l518.57.008.002-25-518.572-.008z")
+
 (mf/defc loader-icon*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [width height title] :rest props}]
   (let [class (stl/css :loader)
         props (mf/spread-props props {:viewBox "0 0 677.34762 182.15429"
@@ -38,14 +45,12 @@
                                       :width width
                                       :height height
                                       :class class})]
-    [:> "svg" props
+    [:> :svg props
      [:title title]
      [:g
-      [:path {:d
-              "M128.273 0l-3.9 2.77L0 91.078l128.273 91.076 549.075-.006V.008L128.273 0zm20.852 30l498.223.006V152.15l-498.223.007V30zm-25 9.74v102.678l-49.033-34.813-.578-32.64 49.61-35.225z"}]
+      [:path {:d svg:loader-path-1}]
       [:path {:class (stl/css :loader-line)
-              :d
-              "M134.482 157.147v25l518.57.008.002-25-518.572-.008z"}]]]))
+              :d svg:loader-path-2}]]]))
 
 (def ^:private schema:loader
   [:map
