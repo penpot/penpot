@@ -117,7 +117,8 @@
   []
   [:> loader*  {:title (tr "labels.loading")
                 :class (stl/css :workspace-loader)
-                :overlay true}])
+                :overlay true
+                :file-loading true}])
 
 (mf/defc workspace-page*
   {::mf/private true}

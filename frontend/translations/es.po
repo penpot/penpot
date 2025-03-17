@@ -7119,3 +7119,66 @@ msgstr "Se han marcado todas las noficaciones como leídas"
 
 msgid "label.mark-all-as-read"
 msgstr "Marcar todo como leído"
+
+msgid "workspace.versions.tab.actions"
+msgstr "Acciones"
+
+msgid "loader.tips.01.title"
+msgstr "Componentes Reutilizables"
+
+msgid "loader.tips.01.message"
+msgstr "Mantén tus diseños consistentes y fáciles de actualizar en todos los proyectos."
+
+msgid "loader.tips.02.title"
+msgstr "Colaboración en Tiempo Real"
+
+msgid "loader.tips.02.message"
+msgstr "Trabaja con tu equipo en vivo, comparte feedback al instante."
+
+msgid "loader.tips.03.title"
+msgstr "Auto Layout como CSS"
+
+msgid "loader.tips.03.message"
+msgstr "Diseña de forma flexible con controles de diseño similares a CSS."
+
+msgid "loader.tips.04.title"
+msgstr "Exportar a Código"
+
+msgid "loader.tips.04.message"
+msgstr "Obtén código CSS y SVG directamente de tus diseños."
+
+msgid "loader.tips.05.title"
+msgstr "Bibliotecas de Diseño"
+
+msgid "loader.tips.05.message"
+msgstr "Comparte recursos y estilos para mantener la consistencia."
+
+msgid "loader.tips.06.title"
+msgstr "Prototipos Interactivos"
+
+msgid "loader.tips.06.message"
+msgstr "Da vida a tus ideas con animaciones y transiciones."
+
+msgid "loader.tips.07.title"
+msgstr "Formatos Web Estándar"
+
+msgid "loader.tips.07.message"
+msgstr "Penpot usa SVG y CSS para un desarrollo sin problemas."
+
+msgid "loader.tips.08.title"
+msgstr "Atajos de Teclado"
+
+msgid "loader.tips.08.message"
+msgstr "Acelera tu flujo de trabajo con atajos útiles como Shift + A para Auto Layout."
+
+msgid "loader.tips.09.title"
+msgstr "Modo Claro y Oscuro"
+
+msgid "loader.tips.09.message"
+msgstr "Elige el tema que mejor se adapte a tu estilo."
+
+msgid "loader.tips.10.title"
+msgstr "Soporte de Plugins"
+
+msgid "loader.tips.10.message"
+msgstr "Extiende Penpot con plugins creados por la comunidad para funcionalidad extra."

@@ -21,8 +21,50 @@
   display: inline-flex;
   column-gap: var(--sp-s);
   align-items: center;
-
   color: var(--loader-color-foreground);
+
+  // Specific styles for file loading screen
+  &.file-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    padding: var(--sp-xxl);
+
+    // Container for loader icon and tips
+    .loader-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--sp-xl);
+    }
+
+    // Tips container
+    .tips-container {
+      text-align: center;
+      min-width: var(--sp-600);
+      max-width: var(--sp-800);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-s);
+      border: 1px solid var(--color-background-tertiary);
+      border-radius: var(--sp-l);
+      padding: var(--sp-xxl) var(--sp-xxxl);
+
+      // Tips title
+      .tip-title {
+        color: var(--color-foreground-primary);
+        font-weight: 500;
+      }
+
+      // Tips message
+      .tip-message {
+        color: var(--color-foreground-secondary);
+      }
+    }
+  }
 }
 
 .wrapper-overlay {
