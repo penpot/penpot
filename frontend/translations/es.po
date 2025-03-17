@@ -7119,62 +7119,62 @@ msgstr "Marcar todo como leído"
 msgid "workspace.versions.tab.actions"
 msgstr "Acciones"
 
-msgid "tips.tip-01.title"
+msgid "loader.tips.01.title"
 msgstr "Componentes Reutilizables"
 
-msgid "tips.tip-01.message"
+msgid "loader.tips.01.message"
 msgstr "Mantén tus diseños consistentes y fáciles de actualizar en todos los proyectos."
 
-msgid "tips.tip-02.title"
+msgid "loader.tips.02.title"
 msgstr "Colaboración en Tiempo Real"
 
-msgid "tips.tip-02.message"
+msgid "loader.tips.02.message"
 msgstr "Trabaja con tu equipo en vivo, comparte feedback al instante."
 
-msgid "tips.tip-03.title"
+msgid "loader.tips.03.title"
 msgstr "Auto Layout como CSS"
 
-msgid "tips.tip-03.message"
+msgid "loader.tips.03.message"
 msgstr "Diseña de forma flexible con controles de diseño similares a CSS."
 
-msgid "tips.tip-04.title"
+msgid "loader.tips.04.title"
 msgstr "Exportar a Código"
 
-msgid "tips.tip-04.message"
+msgid "loader.tips.04.message"
 msgstr "Obtén código CSS y SVG directamente de tus diseños."
 
-msgid "tips.tip-05.title"
+msgid "loader.tips.05.title"
 msgstr "Bibliotecas de Diseño"
 
-msgid "tips.tip-05.message"
+msgid "loader.tips.05.message"
 msgstr "Comparte recursos y estilos para mantener la consistencia."
 
-msgid "tips.tip-06.title"
+msgid "loader.tips.06.title"
 msgstr "Prototipos Interactivos"
 
-msgid "tips.tip-06.message"
+msgid "loader.tips.06.message"
 msgstr "Da vida a tus ideas con animaciones y transiciones."
 
-msgid "tips.tip-07.title"
+msgid "loader.tips.07.title"
 msgstr "Formatos Web Estándar"
 
-msgid "tips.tip-07.message"
+msgid "loader.tips.07.message"
 msgstr "Penpot usa SVG y CSS para un desarrollo sin problemas."
 
-msgid "tips.tip-08.title"
+msgid "loader.tips.08.title"
 msgstr "Atajos de Teclado"
 
-msgid "tips.tip-08.message"
+msgid "loader.tips.08.message"
 msgstr "Acelera tu flujo de trabajo con atajos útiles como Shift + A para Auto Layout."
 
-msgid "tips.tip-09.title"
+msgid "loader.tips.09.title"
 msgstr "Modo Claro y Oscuro"
 
-msgid "tips.tip-09.message"
+msgid "loader.tips.09.message"
 msgstr "Elige el tema que mejor se adapte a tu estilo."
 
-msgid "tips.tip-10.title"
+msgid "loader.tips.10.title"
 msgstr "Soporte de Plugins"
 
-msgid "tips.tip-10.message"
+msgid "loader.tips.10.message"
 msgstr "Extiende Penpot con plugins creados por la comunidad para funcionalidad extra."

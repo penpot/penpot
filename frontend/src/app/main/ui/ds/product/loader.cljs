@@ -12,21 +12,44 @@
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 (def tips
-  [["tips.tip-01" "title" "message"]
-   ["tips.tip-02" "title" "message"]
-   ["tips.tip-03" "title" "message"]
-   ["tips.tip-04" "title" "message"]
-   ["tips.tip-05" "title" "message"]
-   ["tips.tip-06" "title" "message"]
-   ["tips.tip-07" "title" "message"]
-   ["tips.tip-08" "title" "message"]
-   ["tips.tip-09" "title" "message"]
-   ["tips.tip-10" "title" "message"]])
+  [["loader.tips.01" "title" "message"]
+   ["loader.tips.02" "title" "message"]
+   ["loader.tips.03" "title" "message"]
+   ["loader.tips.04" "title" "message"]
+   ["loader.tips.05" "title" "message"]
+   ["loader.tips.06" "title" "message"]
+   ["loader.tips.07" "title" "message"]
+   ["loader.tips.08" "title" "message"]
+   ["loader.tips.09" "title" "message"]
+   ["loader.tips.10" "title" "message"]])
+
+
+(defn- get-tips
+  []
+  [{:title (tr "loader.tips.01.title")
+    :message (tr "loader.tips.01.message")}
+   {:title (tr "loader.tips.02.title")
+    :message (tr "loader.tips.02.message")}
+   {:title (tr "loader.tips.03.title")
+    :message (tr "loader.tips.03.message")}
+   {:title (tr "loader.tips.04.title")
+    :message (tr "loader.tips.04.message")}
+   {:title (tr "loader.tips.05.title")
+    :message (tr "loader.tips.05.message")}
+   {:title (tr "loader.tips.06.title")
+    :message (tr "loader.tips.06.message")}
+   {:title (tr "loader.tips.07.title")
+    :message (tr "loader.tips.07.message")}
+   {:title (tr "loader.tips.08.title")
+    :message (tr "loader.tips.08.message")}
+   {:title (tr "loader.tips.09.title")
+    :message (tr "loader.tips.09.message")}
+   {:title (tr "loader.tips.10.title")
+    :message (tr "loader.tips.10.message")}])
 
 (def ^:private
   svg:loader-path-1
@@ -67,26 +90,24 @@
   (let [width  (or width (when (some? height) (mth/ceil (* height (/ 100 27)))) 100)
         height (or height (when (some? width) (mth/ceil (* width (/ 27 100)))) 27)
 
-        class  (dm/str (or class "") " "
+        class  (dm/str (d/nilv class "") " "
                        (stl/css-case :wrapper true
                                      :wrapper-overlay overlay
                                      :file-loading file-loading))
 
         title  (or title (tr "labels.loading"))
+        tips   (mf/use-memo get-tips)
 
         tip*   (mf/use-state nil)
         tip    (deref tip*)]
 
-    (mf/with-effect [file-loading]
+    (mf/with-effect [file-loading tips]
       (when file-loading
         (let [sub (->> (rx/timer 1000 4000)
-                       (rx/subs! (fn []
-                                   (let [tip (rand-nth tips)]
-                                     (reset! tip* [(tr (str (first tip) "." (second tip)))
-                                                   (tr (str (first tip) "." (nth tip 2)))])))))]
+                       (rx/subs! #(reset! tip* (rand-nth tips))))]
           (partial rx/dispose! sub))))
 
-    [:> "div" {:class class}
+    [:> :div {:class class}
      [:div {:class (stl/css :loader-content)}
       [:> loader-icon* {:title title
                         :width width
@@ -94,7 +115,8 @@
       (when (and file-loading tip)
         [:div {:class (stl/css :tips-container)}
          [:div {:class (stl/css :tip-title)}
-          (first tip)]
+          (get tip :title)]
          [:div {:class (stl/css :tip-message)}
-          (second tip)]])]
+          (get tip :message)]])]
+
      children]))
