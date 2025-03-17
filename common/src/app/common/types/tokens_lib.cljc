@@ -1233,7 +1233,8 @@ Will return a value that matches this schema:
           (fn [tokens' cur]
             (merge tokens' (:tokens (get-set this cur))))
           tokens (order-theme-set theme)))
-       (d/ordered-map) active-themes)))
+       (d/ordered-map)
+       active-themes)))
 
   (encode-dtcg [this]
     (let [themes-xform
