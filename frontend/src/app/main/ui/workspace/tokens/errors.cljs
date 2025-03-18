@@ -10,7 +10,7 @@
 
    :error.import/invalid-json-data
    {:error/code :error.import/invalid-json-data
-    :error/fn #(tr "workspace.token.import-error")}
+    :error/fn #(tr "workspace.token.invalid-json")}
 
    :error.import/style-dictionary-reference-errors
    {:error/code :error.import/style-dictionary-reference-errors
