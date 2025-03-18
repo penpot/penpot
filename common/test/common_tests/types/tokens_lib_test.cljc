@@ -213,7 +213,7 @@
     (t/is (= (ctob/set-count tokens-lib) 0))))
 
 (t/deftest make-invalid-tokens-lib
-  (let [params {:sets nil :themes nil}]
+  (let [params {:sets {} :themes {}}]
     (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid token sets"
                             (ctob/make-tokens-lib params)))))
 

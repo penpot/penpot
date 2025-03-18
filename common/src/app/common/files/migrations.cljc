@@ -29,7 +29,6 @@
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.types.shape.shadow :as ctss]
-   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -1226,32 +1225,7 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(defmethod migrate-data "Ensure hidden theme"
-  [data _]
-  (letfn [(update-tokens-lib [tokens-lib]
-            (let [hidden-theme (ctob/get-hidden-theme tokens-lib)]
-              (if (nil? hidden-theme)
-                (ctob/add-theme tokens-lib (ctob/make-hidden-token-theme))
-                tokens-lib)))]
-    (if (contains? data :tokens-lib)
-      (update data :tokens-lib update-tokens-lib)
-      data)))
-
-(defmethod migrate-data "Add token theme id"
-  [data _]
-  (letfn [(update-tokens-lib [tokens-lib]
-            (let [themes (ctob/get-themes tokens-lib)]
-              (reduce (fn [lib theme]
-                        (if (:id theme)
-                          lib
-                          (ctob/update-theme lib (:group theme) (:name theme) #(assoc % :id (str (uuid/next))))))
-                      tokens-lib
-                      themes)))]
-    (if (contains? data :tokens-lib)
-      (update data :tokens-lib update-tokens-lib)
-      data)))
-
-(defmethod migrate-data "Remove tokens from groups"
+(defmethod migrate-data "0001-remove-tokens-from-groups"
   [data _]
   (letfn [(update-object [object]
             (cond-> object
@@ -1320,6 +1294,4 @@
          "legacy-65"
          "legacy-66"
          "legacy-67"
-         "Ensure hidden theme"
-         "Add token theme id"
-         "Remove tokens from groups"]))
+         "0001-remove-tokens-from-groups"]))
