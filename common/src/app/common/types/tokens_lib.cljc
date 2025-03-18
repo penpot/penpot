@@ -612,7 +612,6 @@
   (get-theme-tree [_] "get a nested tree of all themes in the library")
   (get-themes [_] "get an ordered sequence of all themes in the library")
   (get-theme [_ group name] "get one theme looking for name")
-  (get-hidden-theme [_] "get the theme hidden from the user, used for managing active sets without a user created theme.")
   (get-theme-groups [_] "get a sequence of group names by order")
   (get-active-theme-paths [_] "get the active theme paths")
   (get-active-themes [_] "get an ordered sequence of active themes in the library")
@@ -1130,9 +1129,6 @@ Will return a value that matches this schema:
   (get-theme [_ group name]
     (dm/get-in themes [group name]))
 
-  (get-hidden-theme [this]
-    (get-theme this hidden-token-theme-group hidden-token-theme-name))
-
   (set-active-themes [_ active-themes]
     (TokensLib. sets
                 themes
@@ -1366,6 +1362,10 @@ Will return a value that matches this schema:
     (and (valid-token-sets? sets)
          (valid-token-themes? themes)
          (valid-active-token-themes? active-themes))))
+
+(defn get-hidden-theme
+  [tokens-lib]
+  (get-theme tokens-lib hidden-token-theme-group hidden-token-theme-name))
 
 (defn valid-tokens-lib?
   [o]
