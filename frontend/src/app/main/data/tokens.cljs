@@ -184,7 +184,7 @@
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
                             (pcb/rename-token-set (:name token-set) name))]
-            (rx/of (set-selected-token-set-name (:name token-set))
+            (rx/of (set-selected-token-set-name name)
                    (dch/commit-changes changes))))))))
 
 (defn toggle-token-set
