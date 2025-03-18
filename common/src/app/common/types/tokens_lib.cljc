@@ -588,7 +588,7 @@
       (update :group d/nilv top-level-theme-group-name)
       (update :description d/nilv "")
       (update :is-source d/nilv false)
-      (update :id d/nilv (str (uuid/next)))
+      (update :id #(or % (str (uuid/next))))
       (update :modified-at #(or % (dt/now)))
       (update :sets set)
       (check-token-theme-attrs)
