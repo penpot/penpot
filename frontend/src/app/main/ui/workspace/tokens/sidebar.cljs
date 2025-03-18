@@ -266,6 +266,10 @@
             (ctob/get-active-themes-set-tokens tokens-lib)
             {}))
 
+        ;; Resolve tokens as second step
+        active-theme-tokens'
+        (sd/use-resolved-tokens* active-theme-tokens)
+
         ;; This only checks for the currently explicitly selected set
         ;; name, it is ephimeral and can be nil
         selected-token-set-name
@@ -323,14 +327,14 @@
                            :is-open (get open-status type false)
                            :type type
                            :selected-shapes selected-shapes
-                           :active-theme-tokens active-theme-tokens
+                           :active-theme-tokens active-theme-tokens'
                            :tokens tokens}]))
 
      (for [type empty-group]
        [:> token-group* {:key (name type)
                          :type type
                          :selected-shapes selected-shapes
-                         :active-theme-tokens active-theme-tokens
+                         :active-theme-tokens active-theme-tokens'
                          :tokens []}])]))
 
 (mf/defc import-export-button*
