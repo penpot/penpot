@@ -260,7 +260,8 @@
         touched-name? (deref touched-name*)
         warning-name-change* (mf/use-state false)
         warning-name-change? (deref warning-name-change*)
-        name-ref (mf/use-var (:name token))
+        token-name-ref (mf/use-var (:name token))
+        name-ref (mf/use-ref nil)
         name-errors (mf/use-state nil)
         validate-name
         (mf/use-fn
@@ -285,23 +286,26 @@
 
         on-update-name-debounced
         (mf/use-fn
-         (uf/debounce (fn [e]
-                        (let [value (dom/get-target-val e)
-                              errors (validate-name value)]
+         (mf/deps touched-name? validate-name)
+         (uf/debounce (fn [token-name]
+                        (let [errors (validate-name token-name)]
                           (when touched-name?
-                            (reset! name-errors errors))))))
+                            (reset! name-errors errors))))
+                      300))
 
         on-update-name
         (mf/use-fn
-         (mf/deps on-update-name-debounced)
-         (fn [e]
-           (reset! touched-name* true)
-           (reset! name-ref (dom/get-target-val e))
-           (on-update-name-debounced e)))
+         (mf/deps on-update-name-debounced name-ref)
+         (fn []
+           (let [ref (mf/ref-val name-ref)
+                 token-name (dom/get-value ref)]
+             (reset! touched-name* true)
+             (reset! token-name-ref token-name)
+             (on-update-name-debounced token-name))))
 
         valid-name-field? (and
                            (not @name-errors)
-                           (valid-name? @name-ref))
+                           (valid-name? @token-name-ref))
 
         ;; Value
         color (mf/use-state (when color? (:value token)))
@@ -330,7 +334,7 @@
              (when color? (reset! color (if error? nil v)))
              (reset! token-resolve-result* v))))
 
-        on-update-value-debounced (use-debonced-resolve-callback name-ref token active-theme-tokens set-resolve-value)
+        on-update-value-debounced (use-debonced-resolve-callback token-name-ref token active-theme-tokens set-resolve-value)
         on-update-value (mf/use-fn
                          (mf/deps on-update-value-debounced)
                          (fn [e]
@@ -401,7 +405,7 @@
            ;; because the validation is asynchronous/debounced
            ;; and the user might have edited a valid form to make it invalid,
            ;; and press enter before the next validations could return.
-           (let [final-name (finalize-name @name-ref)
+           (let [final-name (finalize-name @token-name-ref)
                  valid-name?+ (-> (validate-name final-name) schema-validation->promise)
                  final-value (finalize-value @value-ref)
                  final-description @description-ref
@@ -476,7 +480,7 @@
        (when (and (not create?)
                   (not token-resolve-result)
                   resolved-tokens)
-         (-> (get resolved-tokens @name-ref)
+         (-> (get resolved-tokens @token-name-ref)
              (set-resolve-value)))))
 
     [:form {:class (stl/css :form-wrapper)
@@ -495,7 +499,8 @@
            :error (boolean @name-errors)
            :auto-focus true
            :label (tr "workspace.token.token-name")
-           :default-value @name-ref
+           :default-value @token-name-ref
+           :ref name-ref
            :max-length 256
            :on-blur on-blur-name
            :on-change on-update-name}])
