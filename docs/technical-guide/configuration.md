@@ -489,6 +489,26 @@ PENPOT_STORAGE_ASSETS_S3_ENDPOINT: <endpoint-uri>
 These settings are equally useful if you have a Minio storage system.
 </p>
 
+### Autosave
+
+By default, Penpot stores manually saved versions indefinitely; these can be found in the History tab and can be renamed, restored, deleted, etc. Additionally, the default behavior of on-premise instances is to not keep automatic version history. This automatic behavior can be modified and adapted to each on-premise installation with the corresponding configuration.
+
+<p class="advice">
+You need to be very careful when configuring automatic versioning, as it can significantly impact the size of your database. If you configure automatic versioning, you'll need to monitor this impact; if you're unsure about this management, we recommend leaving the default settings and using manual versioning.
+</p>
+
+This is how configuration looks for auto-file-snapshot
+
+```bash
+PENPOT_FLAGS: enable-auto-file-snapshot               # Enable automatic version saving
+
+# Backend
+PENPOT_AUTO_FILE_SNAPSHOT_EVERY: 5             # How many save operations trigger the auto-save-version?
+PENPOT_AUTO_FILE_SNAPSHOT_TIIMEOUT: "1h"       # How often is an automatic save forced even if the `every` trigger is not met?
+```
+
+Setting custom values for auto-file-snapshot does not change the behaviour for manual versions.
+
 ## Frontend
 
 In comparison with backend, frontend only has a small number of runtime configuration
