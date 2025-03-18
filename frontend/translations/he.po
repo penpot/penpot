@@ -6402,10 +6402,6 @@ msgstr "הוספת תיאור (רשות)"
 msgid "workspace.token.enter-token-name"
 msgstr "נא למלא את שם האסימון %s"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:463
-msgid "workspace.token.enter-token-value"
-msgstr "נא למלא ערך או כינוי לאסימון"
-
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
 msgid "workspace.token.grouping-set-alert"
