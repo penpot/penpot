@@ -164,6 +164,6 @@
              (rx/mapcat (fn [sd-tokens]
                           (let [undo-id (js/Symbol)]
                             (rx/concat
-                             (rx/of (dwu/start-undo-transaction undo-id))
+                             (rx/of (dwu/start-undo-transaction undo-id :timeout false))
                              (update-tokens state sd-tokens)
                              (rx/of (dwu/commit-undo-transaction undo-id)))))))))))
