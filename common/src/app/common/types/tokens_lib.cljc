@@ -1310,7 +1310,7 @@ Will return a value that matches this schema:
                                             :tokens (flatten-nested-tokens-json tokens ""))))
                             lib))
           lib' (cond-> lib'
-                 (and (seq active-sets) (empty? active-themes))
+                 (and (seq active-sets) (= #{hidden-token-theme-path} active-themes))
                  (update-theme hidden-token-theme-group hidden-token-theme-name
                                #(assoc % :sets active-sets)))]
       (if-let [themes-data (seq themes-data)]
@@ -1391,10 +1391,10 @@ Will return a value that matches this schema:
    ;; with pages and pages-index.
    (make-tokens-lib :sets (d/ordered-map)
                     :themes (d/ordered-map)
-                    :active-themes #{}))
+                    :active-themes #{hidden-token-theme-path}))
 
   ([& {:keys [sets themes active-themes]}]
-   (let [active-themes (d/nilv active-themes #{})
+   (let [active-themes (d/nilv active-themes #{hidden-token-theme-path})
          themes (if (empty? themes)
                   (update themes hidden-token-theme-group d/oassoc hidden-token-theme-name (make-hidden-token-theme))
                   themes)]
