@@ -13,6 +13,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
+   [clojure.walk :as walk]
    [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
@@ -165,7 +166,13 @@
     config)
 
   (build-dictionary [_]
-    (let [config' (clj->js config)]
+    (let [config' (->> config
+                       (walk/prewalk
+                        (fn [item]
+                          (cond-> item
+                            (and (map? item) (contains? item :error/fn))
+                            (dissoc item :error/fn))))
+                       clj->js)]
       (-> (sd. config')
           (.buildAllPlatforms "json")
           (p/then #(.-allTokens ^js %))))))
