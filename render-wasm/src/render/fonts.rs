@@ -3,6 +3,9 @@ use skia_safe::{self as skia, textlayout, FontMgr};
 use crate::shapes::FontFamily;
 
 const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../fonts/RobotoMono-Regular.ttf");
+const EMOJI_FONT_BYTES: &[u8] = include_bytes!("../fonts/NotoColorEmoji-Regular.ttf");
+pub static DEFAULT_FONT: &'static str = "robotomono-regular";
+pub static DEFAULT_EMOJI_FONT: &'static str = "noto-color-emoji";
 
 pub struct FontStore {
     // TODO: we should probably have just one of those
@@ -18,7 +21,13 @@ impl FontStore {
             .new_from_data(DEFAULT_FONT_BYTES, None)
             .expect("Failed to load font");
 
-        font_provider.register_typeface(default_font, "robotomono-regular");
+        font_provider.register_typeface(default_font, DEFAULT_FONT);
+
+        let emoji_font = skia::FontMgr::default()
+            .new_from_data(EMOJI_FONT_BYTES, None)
+            .expect("Failed to load font");
+
+        font_provider.register_typeface(emoji_font, DEFAULT_EMOJI_FONT);
 
         let mut font_collection = skia::textlayout::FontCollection::new();
         font_collection.set_default_font_manager(FontMgr::default(), None);
@@ -50,6 +59,7 @@ impl FontStore {
 
         self.font_provider
             .register_typeface(typeface, alias.as_str());
+
         self.refresh_font_collection();
 
         Ok(())
