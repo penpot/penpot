@@ -6474,10 +6474,6 @@ msgstr "Voeg een beschrijving toe (optioneel)"
 msgid "workspace.token.enter-token-name"
 msgstr "Voer de tokennaam %s in"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:463
-msgid "workspace.token.enter-token-value"
-msgstr "Voer de tokenwaarde of alias in"
-
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
 msgid "workspace.token.grouping-set-alert"

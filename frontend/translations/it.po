@@ -6464,10 +6464,6 @@ msgstr "Aggiungi una descrizione (opzionale)"
 msgid "workspace.token.enter-token-name"
 msgstr "Inserisci il nome del token %s"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:463
-msgid "workspace.token.enter-token-value"
-msgstr "Inserisci un valore del token o un alias"
-
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
 msgid "workspace.token.grouping-set-alert"

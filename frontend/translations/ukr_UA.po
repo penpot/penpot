@@ -6485,10 +6485,6 @@ msgstr "Додайте опис (необов'язково)"
 msgid "workspace.token.enter-token-name"
 msgstr "Введіть %s ім'я токену"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:463
-msgid "workspace.token.enter-token-value"
-msgstr "Введіть значення токену чи його псевдонім"
-
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
 msgid "workspace.token.grouping-set-alert"

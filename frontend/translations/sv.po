@@ -6447,10 +6447,6 @@ msgstr "Lägg till en beskrivning (valfritt)"
 msgid "workspace.token.enter-token-name"
 msgstr "Ange %s tokennamn"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:463
-msgid "workspace.token.enter-token-value"
-msgstr "Ange tokenvärde eller alias"
-
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
 msgid "workspace.token.grouping-set-alert"

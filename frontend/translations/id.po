@@ -6427,10 +6427,6 @@ msgstr "Tambahkan deskripsi (opsional)"
 msgid "workspace.token.enter-token-name"
 msgstr "Masukkan nama token %s"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:463
-msgid "workspace.token.enter-token-value"
-msgstr "Masukkan nilai atau alias token"
-
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
 msgid "workspace.token.grouping-set-alert"

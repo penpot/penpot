@@ -513,7 +513,7 @@
       [:div {:class (stl/css :input-row)}
        [:> input-tokens*
         {:id "token-value"
-         :placeholder (tr "workspace.token.enter-token-value")
+         :placeholder (tr "workspace.token.token-value-enter")
          :label (tr "workspace.token.token-value")
          :max-length 256
          :default-value @value-ref

@@ -6617,8 +6617,8 @@ msgid "workspace.token.enter-token-name"
 msgstr "Introduce un nombre para el token %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:463
-msgid "workspace.token.enter-token-value"
-msgstr "Introduce un valor o alias"
+msgid "workspace.token.token-value-enter"
+msgstr "Introduce un valor o un alias usando {alias}"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
