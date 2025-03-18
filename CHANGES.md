@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.5.4 (Unreleased)
+## 2.5.4
 
 ### :sparkles: New features
 
