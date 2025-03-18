@@ -25,7 +25,7 @@
 - Fix hidden toolbar click event still available [Taiga #10437](https://tree.taiga.io/project/penpot/us/10437)
 
 
-## 2.5.4 (Unreleased)
+## 2.5.4
 
 ### :sparkles: New features
 
