@@ -18,42 +18,10 @@ production environments using Docker. For this, we provide a series of *Dockerfi
 
 ## Install Docker
 
-<p class="advice">
-Skip this section if you already have docker installed, up and running.
-</p>
-
-Currently, Docker comes into two different flavours:
-
-### Docker Desktop
-
-This is the only option to have Docker in a Windows or MacOS. Recently it's also available
-for Linux, in the most popular distributions (Debian, Ubuntu and Fedora).
-
-You can install it following the <a href="https://docs.docker.com/desktop/"
-target="_blank">official guide</a>.
-
-Docker Desktop has a graphical control panel (GUI) to manage the service and view the
-containers, images and volumes. But you need the command line (Terminal in Linux and Mac, or
-PowerShell in Windows) to build and run the containers, and execute other operations.
-
-It already includes **docker compose** utility, needed by Penpot.
-
-### Docker Engine
-
-This is the classic and default Docker setup for Linux machines, and the only option for a
-Linux VPS without graphical interface.
-
-You can install it following the <a href="https://docs.docker.com/engine/"
-target="_blank">official guide</a>.
-
-And you also need the [docker
-compose](https://docs.docker.com/compose/cli-command/#installing-compose-v2) (V2)
-plugin. You can use the old **docker-compose** tool, but all the documentation supposes
-you are using the V2.
-
-You can easily check which version of **docker compose** you have. If you can execute
-<code class="language-bash">docker compose</code> command, then you have V2. If you need to write <code class="language-bash">docker-compose</code> (with a
-<code class="language-bash">-</code>) for it to work, you have the old version.
+To host a Penpot instance with Docker, it's necessary to have
+<code class="language-bash">docker</code> and <code class="language-bash">docker compose</code>
+installed. Check the comprehensive <a href="https://docs.docker.com/" target="_blank">official documentation</a>
+to install and maintain docker.
 
 ## Start Penpot
 
