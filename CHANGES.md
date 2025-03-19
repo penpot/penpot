@@ -26,6 +26,7 @@
 - Fix hovering over templates [Taiga #10545](https://tree.taiga.io/project/penpot/issue/10545)
 - Fix problem with default shadows value in plugins [Plugins #191](https://github.com/penpot/penpot-plugins/issues/191)
 - Fix problem with constraints when creating group [Taiga #10455](https://tree.taiga.io/project/penpot/issue/10455)
+- Fix opening pen with shortcut multiple times breaks toolbar [Taiga #10566](https://tree.taiga.io/project/penpot/issue/10566)
 
 ## 2.5.4
 
