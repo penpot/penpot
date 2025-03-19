@@ -4152,6 +4152,15 @@ msgstr "Contraseña - Penpot"
 msgid "title.settings.profile"
 msgstr "Perfil - Penpot"
 
+msgid "settings.plans.section-plan"
+msgstr "Tu plan"
+
+msgid "settings.plans.extras-description"
+msgstr "Si quieres más espacio de almacenamiento, versiones guardadas automáticamente, copias de seguridad de archivos y mucho más, amplía tu plan."
+
+msgid "settings.plans.other-plans"
+msgstr "Otros planes de penpot"
+
 #: src/app/main/ui/dashboard/team.cljs:779
 msgid "title.team-invitations"
 msgstr "Invitaciones - %s - Penpot"
