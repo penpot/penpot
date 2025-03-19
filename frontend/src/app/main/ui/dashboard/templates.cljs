@@ -112,16 +112,16 @@
              (dom/stop-propagation event)
              (on-import item event))))]
 
-    [:a {:class (stl/css :card-container)
-         :tab-index (if (or (not is-visible) collapsed) "-1" "0")
-         :id id
-         :data-index index
-         :on-click on-click
-         :on-mouse-down dom/prevent-default
-         :on-mouse-enter #(reset! hover? true)
-         :on-mouse-leave #(reset! hover? false)
-         :on-key-down on-key-down}
-     [:div {:class (stl/css :template-card)}
+    [:div {:class (stl/css :card-container)
+           :tab-index (if (or (not is-visible) collapsed) "-1" "0")
+           :id id
+           :data-index index}
+     [:a {:class (stl/css :template-card)
+          :on-click on-click
+          :on-mouse-down dom/prevent-default
+          :on-mouse-enter #(reset! hover? true)
+          :on-mouse-leave #(reset! hover? false)
+          :on-key-down on-key-down}
       [:div {:class (stl/css :img-container)}
        [:img {:src (dm/str thb)
               :alt (:name item)
