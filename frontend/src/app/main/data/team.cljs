@@ -102,7 +102,11 @@
                 features    (get team :features)]
             (rx/of #(assoc % :permissions permissions)
                    (features/initialize (or features #{}))
-                   (fetch-members team-id))))))))
+                   (fetch-members team-id))))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (swap! storage/global assoc ::current-team-id team-id))))
 
 (defn initialize-team
   [team-id]
