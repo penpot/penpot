@@ -176,8 +176,9 @@
 
 (defn format-shadows
   [shadows]
-  (when (some? shadows)
-    (format-array format-shadow shadows)))
+  (if (some? shadows)
+    (format-array format-shadow shadows)
+    (array)))
 
 ;;export interface Fill {
 ;;  fillColor?: string;
