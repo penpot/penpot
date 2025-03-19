@@ -2,6 +2,14 @@
 title: 1.3  Install with Docker
 ---
 
+<p class="advice">
+Installing and maintaining a self-hosted Penpot instance requires some technical knowledge:
+Docker and Docker Compose, basic DNS management, and proxy configuration.
+If you're not comfortable with this stack, we encourage you to try
+more straight-forward installations with <a href="https://help.penpot.app/technical-guide/getting-started/elestio/" target="_blank">Elestio</a>
+or use the SAAS at <a href="https://design.penpot.app" targret="_blank">https://design.penpot.app</a>.
+</p>
+
 # Install with Docker
 
 This section details everything you need to know to get Penpot up and running in
