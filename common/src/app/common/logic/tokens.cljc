@@ -49,12 +49,20 @@
                :or {collapsed-paths #{}}}]
   (let [tree (-> (ctob/get-set-tree tokens-lib)
                  (ctob/walk-sets-tree-seq :skip-children-pred #(contains? collapsed-paths %)))
+
         from (nth tree from-index)
         to (nth tree to-index)
         before (case position
                  :top to
-                 :bot (nth tree (inc to-index) nil)
+                 :bot (let [v (nth tree (inc to-index) nil)]
+                        ;; if the next index is a group, we need to set it as
+                        ;; nil because if we set a path on different subpath,
+                        ;; the move algorightm will simply remove the set
+                        (if (:group? v)
+                          nil
+                          v))
                  :center nil)
+
         prev-before (if (:group? from)
                       (->> (drop (inc from-index) tree)
                            (filter (fn [element]
