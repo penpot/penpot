@@ -9,12 +9,12 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.variant :as cfv]
    [app.common.types.components-list :as ctkl]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.data.workspace.variants :as dwv]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -346,7 +346,7 @@
         (mf/with-memo [filters library]
           (as-> (into [] (ctkl/components-seq library)) $
             (cmm/apply-filters $ filters)
-            (remove #(dwv/is-secondary-variant? % library) $)))
+            (remove #(cfv/is-secondary-variant? % library) $)))
 
         filtered-media
         (mf/with-memo [filters media]

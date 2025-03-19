@@ -9,7 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.common.logic.variants :as clv]
+   [app.common.files.variant :as cfv]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.main.data.helpers :as dsh]
@@ -241,7 +241,7 @@
         objects      (-> (dsh/get-page data page-id)
                          (get :objects))
 
-        related-components (dwv/find-related-components data objects variant-id)
+        related-components (cfv/find-variant-components data objects variant-id)
 
         flat-comps ;; Get a list like [{:id 0 :prop1 "v1" :prop2 "v2"} {:id 1, :prop1 "v3" :prop2 "v4"}]
         (map (fn [{:keys [id variant-properties]}]
@@ -760,7 +760,7 @@
         variant-id         (:variant-id first-variant)
 
         properties         (mf/with-memo [data objects variant-id]
-                             (clv/extract-properties-values data objects (:id shape)))
+                             (cfv/extract-properties-values data objects (:id shape)))
 
         menu-open*         (mf/use-state false)
         menu-open?         (deref menu-open*)

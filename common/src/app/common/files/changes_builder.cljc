@@ -964,11 +964,13 @@
                                       :name name
                                       :main-instance-id main-instance-id
                                       :main-instance-page main-instance-page
-                                      :annotation annotation
-                                      :variant-id variant-id
-                                      :variant-properties variant-properties}
+                                      :annotation annotation}
                                (some? new-shapes)  ;; this will be null in components-v2
-                               (assoc :shapes (vec new-shapes))))
+                               (assoc :shapes (vec new-shapes))
+                               (some? variant-id)
+                               (assoc :variant-id variant-id)
+                               (seq variant-properties)
+                               (assoc :variant-properties variant-properties)))
                        (into (map mk-change) updated-shapes))))
          (update :undo-changes
                  (fn [undo-changes]
@@ -991,27 +993,39 @@
         new-component  (update-fn prev-component)]
     (if prev-component
       (-> changes
-          (update :redo-changes conj {:type :mod-component
-                                      :id id
-                                      :name (:name new-component)
-                                      :path (:path new-component)
-                                      :main-instance-id (:main-instance-id new-component)
-                                      :main-instance-page (:main-instance-page new-component)
-                                      :annotation (:annotation new-component)
-                                      :variant-id (:variant-id new-component)
-                                      :variant-properties (:variant-properties new-component)
-                                      :objects (:objects new-component) ;; this won't exist in components-v2 (except for deleted components)
-                                      :modified-at (:modified-at new-component)})
-          (update :undo-changes conj {:type :mod-component
-                                      :id id
-                                      :name (:name prev-component)
-                                      :path (:path prev-component)
-                                      :main-instance-id (:main-instance-id prev-component)
-                                      :main-instance-page (:main-instance-page prev-component)
-                                      :annotation (:annotation prev-component)
-                                      :variant-id (:variant-id prev-component)
-                                      :variant-properties (:variant-properties prev-component)
-                                      :objects (:objects prev-component)})
+          (update :redo-changes conj (cond-> {:type :mod-component
+                                              :id id
+                                              :name (:name new-component)
+                                              :path (:path new-component)
+                                              :main-instance-id (:main-instance-id new-component)
+                                              :main-instance-page (:main-instance-page new-component)
+                                              :annotation (:annotation new-component)
+                                              :objects (:objects new-component) ;; this won't exist in components-v2 (except for deleted components)
+                                              :modified-at (:modified-at new-component)}
+                                       (some? (:variant-id new-component))
+                                       (assoc :variant-id (:variant-id new-component))
+                                       (nil? (:variant-id new-component))
+                                       (dissoc :variant-id)
+                                       (seq (:variant-properties new-component))
+                                       (assoc :variant-properties (:variant-properties new-component))
+                                       (not (seq (:variant-properties new-component)))
+                                       (dissoc :variant-properties)))
+          (update :undo-changes conj (cond-> {:type :mod-component
+                                              :id id
+                                              :name (:name prev-component)
+                                              :path (:path prev-component)
+                                              :main-instance-id (:main-instance-id prev-component)
+                                              :main-instance-page (:main-instance-page prev-component)
+                                              :annotation (:annotation prev-component)
+                                              :objects (:objects prev-component)}
+                                       (some? (:variant-id prev-component))
+                                       (assoc :variant-id (:variant-id prev-component))
+                                       (nil? (:variant-id prev-component))
+                                       (dissoc :variant-id)
+                                       (seq (:variant-properties prev-component))
+                                       (assoc :variant-properties (:variant-properties prev-component))
+                                       (not (seq (:variant-properties prev-component)))
+                                       (dissoc :variant-properties)))
           (cond-> apply-changes-local-library?
             (apply-changes-local {:apply-to-library? true})))
       changes)))
