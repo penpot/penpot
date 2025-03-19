@@ -103,8 +103,9 @@
 (defn- generate-tooltip
   "Generates a tooltip for a given token"
   [is-viewer shape theme-token token half-applied no-valid-value ref-not-in-active-set]
-  (let [{:keys [name value type]} token
-        {:keys [resolved-value]} theme-token
+  (let [{:keys [name value type resolved-value]} token
+        resolved-value-theme (:resolved-value theme-token)
+        resolved-value (or resolved-value-theme resolved-value)
         {:keys [title] :as token-props} (wtch/get-token-properties theme-token)
         applied-tokens (:applied-tokens shape)
         app-token-vals (set (vals applied-tokens))
