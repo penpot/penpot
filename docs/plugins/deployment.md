@@ -39,6 +39,7 @@ Fill in your verification code.
 
 ![Vercel_deploy_new_project](https://github.com/user-attachments/assets/93472961-4198-4197-a9a5-e4d95ce9ec0a)
 
+<a target="_blank" href="https://vercel.com/docs/deployments/">Vercel deployment documentation</a>.
 
 
 ## 3.3. Netlify
