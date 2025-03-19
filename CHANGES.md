@@ -23,7 +23,7 @@
 - Fix duplicate page with component over frame [Taiga #8151](https://tree.taiga.io/project/penpot/issue/8151) and [Taiga #9698](https://tree.taiga.io/project/penpot/issue/9698)
 - The plugin list in the navigation menu lacks scrolling, some plugins are not visible when a large number are installed [Taiga #9360](https://tree.taiga.io/project/penpot/us/9360)
 - Fix hidden toolbar click event still available [Taiga #10437](https://tree.taiga.io/project/penpot/us/10437)
-
+- Fix hovering over templates [Taiga #10545](https://tree.taiga.io/project/penpot/issue/10545)
 
 ## 2.5.4
 
