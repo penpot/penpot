@@ -51,11 +51,8 @@
   ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-touched undo-group with-objects? changed-sub-attr]
                    :or {reg-objects? false save-undo? true stack-undo? false ignore-touched false with-objects? false}}]
 
-   (dm/assert!
-    "expected a valid coll of uuid's"
-    (sm/check-coll-of-uuid! ids))
-
-   (dm/assert! (fn? update-fn))
+   (assert (sm/check-coll-of-uuid ids))
+   (assert (fn? update-fn))
 
    (ptk/reify ::update-shapes
      ptk/WatchEvent
@@ -162,9 +159,7 @@
   ([ids] (delete-shapes nil ids {}))
   ([page-id ids] (delete-shapes page-id ids {}))
   ([page-id ids options]
-   (dm/assert!
-    "expected a valid set of uuid's"
-    (sm/check-set-of-uuid! ids))
+   (assert (sm/check-set-of-uuid ids))
 
    (ptk/reify ::delete-shapes
      ptk/WatchEvent

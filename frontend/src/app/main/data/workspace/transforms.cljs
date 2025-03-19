@@ -340,35 +340,35 @@
              (rx/filter (ptk/type? ::trigger-bounding-box-cloaking) stream)))))))
 
 (defn update-dimensions
-  "Change size of shapes, from the sideber options form.
-  Will ignore pixel snap used in the options side panel"
+  "Change size of shapes, from the sidebar options form
+  (will ignore pixel snap)"
   ([ids attr value] (update-dimensions ids attr value nil))
   ([ids attr value options]
-   (dm/assert! (number? value))
-   (dm/assert!
-    "expected valid coll of uuids"
-    (every? uuid? ids))
-   (dm/assert!
-    "expected valid attr"
-    (contains? #{:width :height} attr))
-   (ptk/reify ::update-dimensions
-     ptk/UpdateEvent
-     (update [_ state]
-       (let [page-id (or (get options :page-id)
-                         (get state :current-page-id))
+   (assert (number? value))
+   (assert (every? uuid? ids)
+           "expected valid coll of uuids")
+   (assert (contains? #{:width :height} attr)
+           "expected valid attr")
 
-             objects (dsh/lookup-page-objects state page-id)
+   (ptk/reify ::update-dimensions
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [page-id
+             (or (get options :page-id)
+                 (get state :current-page-id))
+
+             objects
+             (dsh/lookup-page-objects state page-id)
+
              get-modifier
-             (fn [shape] (ctm/change-dimensions-modifiers shape attr value))
+             (fn [shape]
+               (ctm/change-dimensions-modifiers shape attr value))
+
              modif-tree
              (-> (dwm/build-modif-tree ids objects get-modifier)
                  (gm/set-objects-modifiers objects))]
 
-         (assoc state :workspace-modifiers modif-tree)))
-
-     ptk/WatchEvent
-     (watch [_ _ _]
-       (rx/of (dwm/apply-modifiers options))))))
+         (rx/of (dwm/apply-modifiers* objects modif-tree nil options)))))))
 
 (defn change-orientation
   "Change orientation of shapes, from the sidebar options form.
