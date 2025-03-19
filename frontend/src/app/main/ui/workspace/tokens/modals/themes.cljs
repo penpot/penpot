@@ -140,24 +140,18 @@
 
 
              [:div {:class (stl/css :theme-row-right)}
-              (if-let [sets-count (some-> theme :sets seq count)]
-                [:> button* {:class (stl/css :sets-count-button)
+              (let [sets-count (some-> theme :sets seq count)]
+                [:> button* {:class (stl/css-case :sets-count-button sets-count
+                                                  :sets-count-empty-button (not sets-count))
                              :variant "secondary"
                              :type "button"
                              :title (tr "workspace.token.sets-hint")
                              :on-click on-edit-theme}
                  [:div {:class (stl/css :label-wrapper)}
                   [:> text* {:as "span" :typography "body-medium"}
-                   (tr "workspace.token.num-active-sets" sets-count)]
-                  [:> icon* {:icon-id "arrow-right"}]]]
-
-                [:> button* {:class (stl/css :sets-count-empty-button)
-                             :type "button"
-                             :variant "secondary"
-                             :on-click on-edit-theme}
-                 [:div {:class (stl/css :label-wrapper)}
-                  [:> text* {:as "span" :typography "body-medium"}
-                   (tr "workspace.token.no-active-sets")]
+                   (if sets-count
+                     (tr "workspace.token.num-active-sets" sets-count)
+                     (tr "workspace.token.no-active-sets"))]
                   [:> icon* {:icon-id "arrow-right"}]]])
 
               [:> icon-button* {:on-click delete-theme
