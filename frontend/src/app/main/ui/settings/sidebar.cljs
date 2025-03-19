@@ -40,8 +40,8 @@
 (def ^:private go-settings-options
   #(st/emit! (rt/nav :settings-options)))
 
-(def ^:private go-settings-plan
-  #(st/emit! (rt/nav :settings-plan)))
+(def ^:private go-settings-plans
+  #(st/emit! (rt/nav :settings-plans)))
 
 (def ^:private go-settings-access-tokens
   #(st/emit! (rt/nav :settings-access-tokens)))
@@ -65,7 +65,7 @@
         password?      (= section :settings-password)
         options?       (= section :settings-options)
         feedback?      (= section :settings-feedback)
-        plan?          (= section :settings-plan)
+        plan?          (= section :settings-plans)
         access-tokens? (= section :settings-access-tokens)
         notifications? (= section :settings-notifications)
         team-id        (or (dtm/get-last-team-id)
@@ -111,9 +111,9 @@
        (when (contains? cf/flags :subscriptions)
          [:li {:class (stl/css-case :current plan?
                                     :settings-item true)
-               :on-click go-settings-plan
-               :data-testid "settings-plan"}
-          [:span {:class (stl/css :element-title)} "Plan"]])
+               :on-click go-settings-plans
+               :data-testid "settings-plans"}
+          [:span {:class (stl/css :element-title)} (tr "labels.plans")]])
 
        (when (contains? cf/flags :access-tokens)
          [:li {:class (stl/css-case :current access-tokens?

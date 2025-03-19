@@ -468,7 +468,6 @@
 }
 
 .cta-bottom-section {
-  @include buttonStyle;
   border-block-start: $s-1 solid var(--color-background-quaternary);
   display: grid;
   color: var(--color-foreground-secondary);
@@ -477,6 +476,8 @@
   padding-block-start: $s-12;
 }
 .cta-bottom-section .content {
+  @include buttonStyle;
+  color: var(--color-foreground-secondary);
   display: inline;
   text-align: left;
 }

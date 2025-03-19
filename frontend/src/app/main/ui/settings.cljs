@@ -20,7 +20,7 @@
    [app.main.ui.settings.notifications :refer [notifications-page*]]
    [app.main.ui.settings.options :refer [options-page]]
    [app.main.ui.settings.password :refer [password-page]]
-   [app.main.ui.settings.plan :refer [plan-page*]]
+   [app.main.ui.settings.plans :refer [plans-page*]]
    [app.main.ui.settings.profile :refer [profile-page]]
    [app.main.ui.settings.sidebar :refer [sidebar]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -68,8 +68,8 @@
           :settings-options
           [:& options-page]
 
-          :settings-plan
-          [:> plan-page*]
+          :settings-plans
+          [:> plans-page*]
 
           :settings-access-tokens
           [:& access-tokens-page]

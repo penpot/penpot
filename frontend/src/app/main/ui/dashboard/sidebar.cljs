@@ -870,8 +870,8 @@
       (when has-dropdown [:span {:class (stl/css :icon-dropdown)}  i/arrow])]
 
      (when (and has-dropdown show-data)
-       [:button {:class (stl/css :cta-bottom-section)}
-        [:div {:class (stl/css :content)}
+       [:div {:class (stl/css :cta-bottom-section)}
+        [:button {:class (stl/css :content)}
          [:span {:class (stl/css :cta-text)} bottom-description]
          (when bottom-highlight
            [:span {:class (stl/css :cta-highlight :cta-inline)} bottom-highlight])]
@@ -1009,7 +1009,10 @@
            :bottom-highlight (tr "dashboard.power-up.unlimited-plan")
            :cta-text (tr "dashboard.upgrade-plan.power-up")
            :cta-link (if subscription-owner?
-                       #(st/emit! (rt/nav :settings-profile))
+                       (fn [event]
+                         (dom/prevent-default event)
+                         (dom/stop-propagation event)
+                         (st/emit! (rt/nav :settings-plans)))
                        #(dom/open-new-window "https://penpot.app/pricing"))
            :has-dropdown true}]
 
@@ -1021,7 +1024,10 @@
            :bottom-highlight (tr "dashboard.power-up.enterprise-plan")
            :cta-text (tr "dashboard.power-up.unlimited.cta")
            :cta-link (if subscription-owner?
-                       #(st/emit! (rt/nav :settings-profile))
+                       (fn [event]
+                         (dom/prevent-default event)
+                         (dom/stop-propagation event)
+                         (st/emit! (rt/nav :settings-plans)))
                        #(dom/open-new-window "https://penpot.app/pricing"))
            :has-dropdown true}]
 

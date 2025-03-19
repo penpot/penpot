@@ -2335,6 +2335,9 @@ msgstr "Sets"
 msgid "labels.settings"
 msgstr "Settings"
 
+msgid "labels.plans"
+msgstr "Penpot plans"
+
 #: src/app/main/ui/viewer/header.cljs:206
 msgid "labels.share"
 msgstr "Share"
@@ -4271,6 +4274,15 @@ msgstr "Password - Penpot"
 #: src/app/main/ui/settings/profile.cljs:124
 msgid "title.settings.profile"
 msgstr "Profile - Penpot"
+
+msgid "settings.plans.section-plan"
+msgstr "Your plan"
+
+msgid "settings.plans.extras-description"
+msgstr "If you'd like extra storage and autosaved versions, file backup and more, power up your plan"
+
+msgid "settings.plans.other-plans"
+msgstr "Other penpot plans"
 
 #: src/app/main/ui/dashboard/team.cljs:779
 msgid "title.team-invitations"
