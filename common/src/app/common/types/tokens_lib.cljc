@@ -945,14 +945,21 @@ Will return a value that matches this schema:
     (let [prefixed-from-path (set-full-path->set-prefixed-full-path from-path)
           prev-set (get-in sets prefixed-from-path)]
       (if (instance? TokenSet prev-set)
-        (let [prefixed-to-path (set-full-path->set-prefixed-full-path to-path)
-              prefixed-before-path (when before-path
-                                     (if before-group?
-                                       (mapv add-set-path-group-prefix before-path)
-                                       (set-full-path->set-prefixed-full-path before-path)))
+        (let [prefixed-to-path
+              (set-full-path->set-prefixed-full-path to-path)
 
-              set (assoc prev-set :name (join-set-path to-path))
-              reorder? (= prefixed-from-path prefixed-to-path)
+              prefixed-before-path
+              (when before-path
+                (if before-group?
+                  (mapv add-set-path-group-prefix before-path)
+                  (set-full-path->set-prefixed-full-path before-path)))
+
+              set
+              (assoc prev-set :name (join-set-path to-path))
+
+              reorder?
+              (= prefixed-from-path prefixed-to-path)
+
               sets'
               (if reorder?
                 (d/oreorder-before sets
@@ -964,6 +971,7 @@ Will return a value that matches this schema:
                       (d/oassoc-in-before sets prefixed-before-path prefixed-to-path set)
                       (d/oassoc-in sets prefixed-to-path set))
                     (d/dissoc-in prefixed-from-path)))]
+
           (TokensLib. sets'
                       (if reorder?
                         themes

@@ -84,52 +84,65 @@
     (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid params for token-set"
                             (ctob/make-token-set params)))))
 
-(t/deftest move-token-set
-  (t/testing "flat"
-    (let [tokens-lib (-> (ctob/make-tokens-lib)
-                         (ctob/add-set (ctob/make-token-set :name "A"))
-                         (ctob/add-set (ctob/make-token-set :name "B"))
-                         (ctob/add-set (ctob/make-token-set :name "Move")))
-          move (fn [from-path to-path before-path before-group?]
-                 (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
-                      (ctob/get-ordered-set-names)
-                      (into [])))]
-      (t/testing "move to top"
-        (t/is (= ["Move" "A" "B"] (move ["Move"] ["Move"] ["A"] false))))
+(t/deftest move-token-set-flat
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "A"))
+                       (ctob/add-set (ctob/make-token-set :name "B"))
+                       (ctob/add-set (ctob/make-token-set :name "Move")))
+        move (fn [from-path to-path before-path before-group?]
+               (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
+                    (ctob/get-ordered-set-names)
+                    (into [])))]
+    (t/testing "move to top"
+      (t/is (= ["Move" "A" "B"] (move ["Move"] ["Move"] ["A"] false))))
 
-      (t/testing "move in-between"
-        (t/is (= ["A" "Move" "B"] (move ["Move"] ["Move"] ["B"] false))))
+    (t/testing "move in-between"
+      (t/is (= ["A" "Move" "B"] (move ["Move"] ["Move"] ["B"] false))))
 
-      (t/testing "move to bottom"
-        (t/is (= ["A" "B" "Move"] (move ["Move"] ["Move"] nil false))))))
+    (t/testing "move to bottom"
+      (t/is (= ["A" "B" "Move"] (move ["Move"] ["Move"] nil false))))))
 
-  (t/testing "nested"
-    (let [tokens-lib (-> (ctob/make-tokens-lib)
-                         (ctob/add-set (ctob/make-token-set :name "Foo/Baz"))
-                         (ctob/add-set (ctob/make-token-set :name "Foo/Bar"))
-                         (ctob/add-set (ctob/make-token-set :name "Foo")))
-          move (fn [from-path to-path before-path before-group?]
-                 (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
-                      (ctob/get-ordered-set-names)
-                      (into [])))]
-      (t/testing "move outside of group"
-        (t/is (= ["Foo/Baz" "Bar" "Foo"] (move ["Foo" "Bar"] ["Bar"] ["Foo"] false)))
-        (t/is (= ["Bar" "Foo/Baz" "Foo"] (move ["Foo" "Bar"] ["Bar"] ["Foo" "Baz"] true)))
-        (t/is (= ["Foo/Baz" "Foo" "Bar"] (move ["Foo" "Bar"] ["Bar"] nil false))))
+(t/deftest move-token-set-nested
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "Foo/Baz"))
+                       (ctob/add-set (ctob/make-token-set :name "Foo/Bar"))
+                       (ctob/add-set (ctob/make-token-set :name "Foo")))
+        move (fn [from-path to-path before-path before-group?]
+               (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
+                    (ctob/get-ordered-set-names)
+                    (into [])))]
+    (t/testing "move outside of group"
+      (t/is (= ["Foo/Baz" "Bar" "Foo"] (move ["Foo" "Bar"] ["Bar"] ["Foo"] false)))
+      (t/is (= ["Bar" "Foo/Baz" "Foo"] (move ["Foo" "Bar"] ["Bar"] ["Foo" "Baz"] true)))
+      (t/is (= ["Foo/Baz" "Foo" "Bar"] (move ["Foo" "Bar"] ["Bar"] nil false))))
 
-      (t/testing "move inside of group"
-        (t/is (= ["Foo/Foo" "Foo/Baz" "Foo/Bar"] (move ["Foo"] ["Foo" "Foo"] ["Foo" "Baz"] false)))
-        (t/is (= ["Foo/Baz" "Foo/Bar" "Foo/Foo"] (move ["Foo"] ["Foo" "Foo"] nil false))))))
+    (t/testing "move inside of group"
+      (t/is (= ["Foo/Foo" "Foo/Baz" "Foo/Bar"] (move ["Foo"] ["Foo" "Foo"] ["Foo" "Baz"] false)))
+      (t/is (= ["Foo/Baz" "Foo/Bar" "Foo/Foo"] (move ["Foo"] ["Foo" "Foo"] nil false))))))
 
-  ;; FIXME
-  (t/testing "updates theme set names"
-    (let [tokens-lib (-> (ctob/make-tokens-lib)
-                         (ctob/add-set (ctob/make-token-set :name "Foo/Bar/Baz"))
-                         (ctob/add-set (ctob/make-token-set :name "Other"))
-                         (ctob/add-theme (ctob/make-token-theme :name "Theme"
-                                                                :sets #{"Foo/Bar/Baz"}))
-                         (ctob/move-set ["Foo" "Bar" "Baz"] ["Other/Baz"] nil nil))]
-      (t/is (= #{"Other/Baz"} (:sets (ctob/get-theme tokens-lib "" "Theme")))))))
+
+(t/deftest move-token-set-nested-2
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "a/b"))
+                       (ctob/add-set (ctob/make-token-set :name "a/a"))
+                       (ctob/add-set (ctob/make-token-set :name "b/a"))
+                       (ctob/add-set (ctob/make-token-set :name "b/b")))
+        move (fn [from-path to-path before-path before-group?]
+               (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
+                    (ctob/get-ordered-set-names)
+                    (vec)))]
+    (t/testing "move within group"
+      (t/is (= ["a/b" "a/a" "b/a" "b/b"] (vec (ctob/get-ordered-set-names tokens-lib))))
+      (t/is (= ["a/a" "a/b" "b/a" "b/b"] (move ["a" "b"] ["a" "b"] nil true))))))
+
+(t/deftest move-token-set-nested-3
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "Foo/Bar/Baz"))
+                       (ctob/add-set (ctob/make-token-set :name "Other"))
+                       (ctob/add-theme (ctob/make-token-theme :name "Theme"
+                                                              :sets #{"Foo/Bar/Baz"}))
+                       (ctob/move-set ["Foo" "Bar" "Baz"] ["Other/Baz"] nil nil))]
+    (t/is (= #{"Other/Baz"} (:sets (ctob/get-theme tokens-lib "" "Theme"))))))
 
 (t/deftest move-token-set-group
   (t/testing "reordering"

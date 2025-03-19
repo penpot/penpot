@@ -252,6 +252,8 @@
                       :level :error
                       :timeout 9000})))))))
 
+;; FIXME: add schema for params
+
 (defn drop-token-set-group [drop-opts]
   (ptk/reify ::drop-token-set-group
     ptk/WatchEvent
@@ -265,17 +267,21 @@
           (rx/of
            (drop-error (ex-data e))))))))
 
-(defn drop-token-set [drop-opts]
+;; FIXME: add schema for params
+
+(defn drop-token-set
+  [params]
   (ptk/reify ::drop-token-set
     ptk/WatchEvent
     (watch [it state _]
       (try
-        (when-let [changes (clt/generate-move-token-set (pcb/empty-changes it) (get-tokens-lib state) drop-opts)]
+        (let [tokens-lib (get-tokens-lib state)
+              changes    (-> (pcb/empty-changes it)
+                             (clt/generate-move-token-set tokens-lib params))]
           (rx/of (dch/commit-changes changes)
                  (wtu/update-workspace-tokens)))
-        (catch :default e
-          (rx/of
-           (drop-error (ex-data e))))))))
+        (catch :default cause
+          (rx/of (drop-error (ex-data cause))))))))
 
 (defn- create-token-with-set
   "A special case when a first token is created and no set exists"

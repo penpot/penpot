@@ -809,19 +809,19 @@
         (update :undo-changes conj {:type :rename-token-set-group :set-group-path undo-path :set-group-fname undo-fname})
         (apply-changes-local))))
 
-(defn move-token-set-before
+(defn move-token-set
   [changes {:keys [from-path to-path before-path before-group? prev-before-path prev-before-group?] :as opts}]
   (-> changes
-      (update :redo-changes conj {:type :move-token-set-before
+      (update :redo-changes conj {:type :move-token-set
                                   :from-path from-path
                                   :to-path to-path
                                   :before-path before-path
-                                  :before-group? before-group?})
-      (update :undo-changes conj {:type :move-token-set-before
+                                  :before-group before-group?})
+      (update :undo-changes conj {:type :move-token-set
                                   :from-path to-path
                                   :to-path from-path
                                   :before-path prev-before-path
-                                  :before-group? prev-before-group?})
+                                  :before-group prev-before-group?})
       (apply-changes-local)))
 
 (defn move-token-set-group-before
