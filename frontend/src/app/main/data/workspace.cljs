@@ -406,6 +406,7 @@
            :workspace-media-objects
            :workspace-persistence
            :workspace-presence
+           :workspace-tokens
            :workspace-undo)
           (update :workspace-global dissoc :read-only?)
           (assoc-in [:workspace-global :options-mode] :design)))
