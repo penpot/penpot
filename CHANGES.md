@@ -25,6 +25,7 @@
 - Fix hidden toolbar click event still available [Taiga #10437](https://tree.taiga.io/project/penpot/us/10437)
 - Fix hovering over templates [Taiga #10545](https://tree.taiga.io/project/penpot/issue/10545)
 - Fix problem with default shadows value in plugins [Plugins #191](https://github.com/penpot/penpot-plugins/issues/191)
+- Fix problem with constraints when creating group [Taiga #10455](https://tree.taiga.io/project/penpot/issue/10455)
 
 ## 2.5.4
 
