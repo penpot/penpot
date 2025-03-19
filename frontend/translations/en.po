@@ -1451,6 +1451,15 @@ msgstr "X support account"
 msgid "generic.error"
 msgstr "An error has occurred"
 
+msgid "inspect.subtitle.main"
+msgstr "Main component"
+
+msgid "inspect.subtitle.copy"
+msgstr "Copy"
+
+msgid "inspect.subtitle.variant"
+msgstr "Variant"
+
 #: src/app/main/ui/viewer/inspect/attributes/blur.cljs:26
 msgid "inspect.attributes.blur"
 msgstr "Blur"
@@ -1531,14 +1540,8 @@ msgid "inspect.attributes.size"
 msgstr "Size and position"
 
 #: src/app/main/ui/viewer/inspect/attributes/variant.cljs:40
-msgid "inspect.attributes.variant.variant"
+msgid "inspect.attributes.variant"
 msgstr "Variant properties"
-
-msgid "inspect.attributes.variant.component"
-msgstr "Component properties"
-
-msgid "inspect.attributes.variant.copy"
-msgstr "Copy properties"
 
 #: src/app/main/ui/viewer/inspect/attributes/stroke.cljs:52
 msgid "inspect.attributes.stroke"

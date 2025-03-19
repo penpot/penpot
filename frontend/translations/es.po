@@ -1453,6 +1453,15 @@ msgstr "Cuenta de X para soporte"
 msgid "generic.error"
 msgstr "Ha ocurrido un error"
 
+msgid "inspect.subtitle.main"
+msgstr "Componente principal"
+
+msgid "inspect.subtitle.copy"
+msgstr "Copia"
+
+msgid "inspect.subtitle.variant"
+msgstr "Variante"
+
 #: src/app/main/ui/viewer/inspect/attributes/blur.cljs:26
 msgid "inspect.attributes.blur"
 msgstr "Desenfocado"
@@ -1533,14 +1542,8 @@ msgid "inspect.attributes.size"
 msgstr "Tamaño y posición"
 
 #: src/app/main/ui/viewer/inspect/attributes/variant.cljs:40
-msgid "inspect.attributes.variant.variant"
+msgid "inspect.attributes.variant"
 msgstr "Propiedades de la variante"
-
-msgid "inspect.attributes.variant.component"
-msgstr "Propiedades del componente"
-
-msgid "inspect.attributes.variant.copy"
-msgstr "Propiedades de la copia"
 
 #: src/app/main/ui/viewer/inspect/attributes/stroke.cljs:52
 msgid "inspect.attributes.stroke"

@@ -50,6 +50,16 @@
         libraries      (get-libraries from)
         main-instance? (ctk/main-instance? first-shape)
 
+        subtitle       (cond
+                         (or
+                          (ctk/is-variant-container? first-shape)
+                          (and (not (ctk/is-variant? first-shape)) main-instance?))
+                         (tr "inspect.subtitle.main")
+                         (and (ctk/is-variant? first-shape) main-instance?)
+                         (tr "inspect.subtitle.variant")
+                         (ctk/instance-head? first-shape)
+                         (tr "inspect.subtitle.copy"))
+
         handle-change-tab
         (mf/use-fn
          (mf/deps from on-change-section)
@@ -107,7 +117,7 @@
                                   :viewer-code (= from :viewer))}
      (if (seq shapes)
        [:div {:class (stl/css :tool-windows)}
-        [:div {:class (stl/css :shape-row)}
+        [:div {:class (stl/css-case :shape-row true :shape-row-subtitle (some? subtitle))}
          (if (> (count shapes) 1)
            [:*
             [:span {:class (stl/css :layers-icon)} i/layers]
@@ -127,7 +137,13 @@
             ;;   (tr "inspect.tabs.code.selected.rect")
             ;;   (tr "inspect.tabs.code.selected.svg-raw")
             ;;   (tr "inspect.tabs.code.selected.text")
-            [:span {:class (stl/css :layer-title)} (:name first-shape)]])]
+            [:div
+             (if (some? subtitle)
+               [:*
+                [:div {:class (stl/css :layer-title :layer-title-with-subtitle)} (:name first-shape)]
+                [:div {:class (stl/css :layer-subtitle)} subtitle]]
+               [:div {:class (stl/css :layer-title)} (:name first-shape)])]])]
+
         [:div {:class (stl/css :inspect-content)}
 
          [:> tab-switcher* {:tabs tabs
