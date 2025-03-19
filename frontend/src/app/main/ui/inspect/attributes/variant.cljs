@@ -30,14 +30,6 @@
 (mf/defc variant-panel*
   [{:keys [objects shapes libraries file-id] :as kk}]
   (let [shape           (->> shapes first)
-        title           (cond
-                          (ctc/is-variant-container? shape)
-                          "inspect.attributes.variant.component"
-                          (ctc/main-instance? shape)
-                          "inspect.attributes.variant.variant"
-                          :else
-                          "inspect.attributes.variant.copy")
-
         properties      (mf/with-memo [objects shape]
                           (let [data          (dm/get-in libraries [file-id :data])
                                 is-container? (ctc/is-variant-container? shape)
@@ -49,7 +41,7 @@
                                    (map #(update % :value (fn [v] (if (str/blank? v) "--" v))))))))]
     [:div {:class (stl/css :attributes-block)}
      [:> inspect-title-bar*
-      {:title (tr title)
+      {:title (tr "inspect.attributes.variant")
        :class (stl/css :title-spacing-variant)}]
 
      (for [[pos property] (map-indexed vector properties)]
