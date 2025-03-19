@@ -382,13 +382,13 @@
       [:set-group-path [:vector :string]]
       [:set-group-fname :string]]]
 
-    [:move-token-set-before
-     [:map {:title "MoveTokenSetBefore"}
-      [:type [:= :move-token-set-before]]
+    [:move-token-set
+     [:map {:title "MoveTokenSet"}
+      [:type [:= :move-token-set]]
       [:from-path [:vector :string]]
       [:to-path [:vector :string]]
       [:before-path [:maybe [:vector :string]]]
-      [:before-group? [:maybe :boolean]]]]
+      [:before-group [:maybe :boolean]]]]
 
     [:move-token-set-group-before
      [:map {:title "MoveTokenSetGroupBefore"}
@@ -1051,11 +1051,11 @@
                                  (ctob/ensure-tokens-lib)
                                  (ctob/rename-set-group set-group-path set-group-fname)))))
 
-(defmethod process-change :move-token-set-before
-  [data {:keys [from-path to-path before-path before-group?] :as changes}]
+(defmethod process-change :move-token-set
+  [data {:keys [from-path to-path before-path before-group] :as changes}]
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
-                                (ctob/move-set from-path to-path before-path before-group?))))
+                                (ctob/move-set from-path to-path before-path before-group))))
 
 (defmethod process-change :move-token-set-group-before
   [data {:keys [from-path to-path before-path before-group?]}]
