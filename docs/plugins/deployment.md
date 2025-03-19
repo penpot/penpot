@@ -22,7 +22,12 @@ Examples:
 ![Vue dist example](/img/plugins/vue_dist.png)
 ![Angular dist example](/img/plugins/angular_dist.png)
 
-## 3.2. Netlify
+
+## 3.3. Vercel
+
+You need a Vercel account if you don't already have one. You can <a target="_blank" href="https://vercel.com/signup">sign up</a> with Github, GItlab, BItbucket, Passkey or via email and password.
+
+## 3.3. Netlify
 
 ### Create an account
 
@@ -85,7 +90,7 @@ npm run build
 
 4. Done!
 
-## 3.3. Cloudflare
+## 3.4. Cloudflare
 
 ### Create an account
 
@@ -159,7 +164,7 @@ npm run build
 
 5. Deploy site.
 
-## 3.4. Surge
+## 3.5. Surge
 
 Surge provides a CLI tool for easy deployment.
 
@@ -217,7 +222,7 @@ Success! - Published to example-plugin-penpot.surge.sh
 
 5. Done!
 
-## 3.5. Submitting to Penpot
+## 3.6. Submitting to Penpot
 
 To make your finished plugin available in our catalog, submit in on the [plugin submission page](https://penpot.app/penpothub/plugins/create-plugin). Once it becomes available any Penpot user will be able to install and use it.
 
