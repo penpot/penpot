@@ -17,6 +17,8 @@
 
 ### :rocket: Epics and highlights
 
+- Design Tokens
+
 ### :boom: Breaking changes & Deprecations
 
 ### :heart: Community contributions (Thank you!)
@@ -26,6 +28,15 @@
 - [COMMENTS] "Mark All as Read" Functionality in Dashboard [Taiga #9235](https://tree.taiga.io/project/penpot/us/9235)
 - [COMMENTS] Bubble Groups [Taiga #9236](https://tree.taiga.io/project/penpot/us/9236)
 - Change templates carrousel [Taiga #9803](https://tree.taiga.io/project/penpot/us/9803)
+- [DESIGN TOKENS] Tokens CRUD. Types added: Color, Opacity, Border radius, Dimension, Sizing, Spacing, Rotation and Stroke.
+- [DESIGN TOKENS] Create references (alias) that point to other tokens.
+- [DESIGN TOKENS] Math operations in token values.
+- [DESIGN TOKENS] Sets CRUD, grouping and reordering.
+- [DESIGN TOKENS] Multidimensional Themes and Sets management.
+- [DESIGN TOKENS] Apply/Remove tokens to/from elements from the Tokens tab.
+- [DESIGN TOKENS] Integration with components.
+- [DESIGN TOKENS] Import and export tokens from a JSON file.
+- [DESIGN TOKENS] Apply Themes and Sets at document level.
 
 ### :bug: Bugs fixed
 
@@ -39,10 +50,11 @@
 - Fix hovering over templates [Taiga #10545](https://tree.taiga.io/project/penpot/issue/10545)
 - Fix problem with default shadows value in plugins [Plugins #191](https://github.com/penpot/penpot-plugins/issues/191)
 - Fix problem with constraints when creating group [Taiga #10455](https://tree.taiga.io/project/penpot/issue/10455)
+- Fix opening pen with shortcut multiple times breaks toolbar [Taiga #10566](https://tree.taiga.io/project/penpot/issue/10566)
 
 ## 2.5.4
 
-### :sparkles: New features
+### :heart: Community contributions (Thank you!)
 
 - Add support for WEBP format on shape export [Github #6053](https://github.com/penpot/penpot/pull/6053) and [Github #6074](https://github.com/penpot/penpot/pull/6074)
 

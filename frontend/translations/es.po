@@ -6754,6 +6754,14 @@ msgstr "Error al importar: Datos de token no válidos en JSON."
 msgid "workspace.token.invalid-value"
 msgstr "Valor de token no válido: %s"
 
+#: src/app/main/ui/workspace/tokens/errors.cljs
+msgid "workspace.token.opacity-range"
+msgstr "La opacidad debe estar entre 0 y 100% o 0 y 1 (p.e. 50% o 0.5)."
+
+#: src/app/main/ui/workspace/tokens/errors.cljs
+msgid "workspace.token.stroke-width-range"
+msgstr "Stroke width debe ser mayor o igual a 0."
+
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:196
 msgid "workspace.token.label.group"
 msgstr "Grupo"
