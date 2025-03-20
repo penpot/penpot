@@ -15,6 +15,7 @@ pub enum SurfaceId {
     Strokes,
     Shadow,
     DropShadows,
+    InnerShadows,
     Overlay,
     Debug,
 }
@@ -32,6 +33,7 @@ pub struct Surfaces {
     shadow: skia::Surface,
     // used for new shadow rendering
     drop_shadows: skia::Surface,
+    inner_shadows: skia::Surface,
     // for drawing the things that are over shadows.
     overlay: skia::Surface,
     // for drawing debug info.
@@ -63,6 +65,7 @@ impl Surfaces {
         let current = target.new_surface_with_dimensions(extra_tile_dims).unwrap();
         let shadow = target.new_surface_with_dimensions(extra_tile_dims).unwrap();
         let drop_shadows = target.new_surface_with_dimensions(extra_tile_dims).unwrap();
+        let inner_shadows = target.new_surface_with_dimensions(extra_tile_dims).unwrap();
         let overlay = target.new_surface_with_dimensions(extra_tile_dims).unwrap();
         let shape_fills = target.new_surface_with_dimensions(extra_tile_dims).unwrap();
         let shape_strokes = target.new_surface_with_dimensions(extra_tile_dims).unwrap();
@@ -78,6 +81,7 @@ impl Surfaces {
             current,
             shadow,
             drop_shadows,
+            inner_shadows,
             overlay,
             shape_fills,
             shape_strokes,
@@ -154,7 +158,12 @@ impl Surfaces {
             -render_area.top() + self.margins.height as f32 / viewbox.zoom,
         );
         self.apply_mut(
-            &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::DropShadows],
+            &[
+                SurfaceId::Fills,
+                SurfaceId::Strokes,
+                SurfaceId::DropShadows,
+                SurfaceId::InnerShadows,
+            ],
             |s| {
                 s.canvas().restore();
                 s.canvas().save();
@@ -169,6 +178,7 @@ impl Surfaces {
             SurfaceId::Current => &mut self.current,
             SurfaceId::Shadow => &mut self.shadow,
             SurfaceId::DropShadows => &mut self.drop_shadows,
+            SurfaceId::InnerShadows => &mut self.inner_shadows,
             SurfaceId::Overlay => &mut self.overlay,
             SurfaceId::Fills => &mut self.shape_fills,
             SurfaceId::Strokes => &mut self.shape_strokes,
@@ -205,6 +215,7 @@ impl Surfaces {
     pub fn reset(&mut self, color: skia::Color) {
         self.canvas(SurfaceId::Fills).restore_to_count(1);
         self.canvas(SurfaceId::DropShadows).restore_to_count(1);
+        self.canvas(SurfaceId::InnerShadows).restore_to_count(1);
         self.canvas(SurfaceId::Strokes).restore_to_count(1);
         self.canvas(SurfaceId::Current).restore_to_count(1);
         self.apply_mut(
@@ -213,6 +224,7 @@ impl Surfaces {
                 SurfaceId::Strokes,
                 SurfaceId::Current,
                 SurfaceId::DropShadows,
+                SurfaceId::InnerShadows,
                 SurfaceId::Shadow,
                 SurfaceId::Overlay,
             ],
