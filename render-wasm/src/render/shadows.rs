@@ -9,7 +9,7 @@ pub fn render_drop_shadows(render_state: &mut RenderState, shape: &Shape) {
             render_fill_drop_shadow(render_state, &shape, &shadow);
         }
     } else {
-        let scale = render_state.viewbox.zoom * render_state.options.dpr();
+        let scale = render_state.get_scale();
         for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
             render_stroke_drop_shadow(render_state, &shadow, scale);
         }

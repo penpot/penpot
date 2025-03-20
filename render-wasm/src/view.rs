@@ -51,4 +51,8 @@ impl Viewbox {
         self.area
             .set_wh(self.width / self.zoom, self.height / self.zoom);
     }
+
+    pub fn zoom(&self) -> f32 {
+        self.zoom
+    }
 }
