@@ -3255,7 +3255,6 @@ msgstr "Ocultar"
 #: src/app/main/ui/dashboard/templates.cljs
 msgid "dashboard.libraries-and-templates.description"
 msgstr "Aquí tienes algunas Bibliotecas y plantillas que puedes añadir a tu proyecto"
-msgstr "Averiguar si Penpot es una buena opción para mi equipo"
 
 #: src/app/main/ui/onboarding/questions.cljs:97
 msgid "onboarding.questions.reasons.testing"
