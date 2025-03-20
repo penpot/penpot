@@ -308,7 +308,6 @@
 
         ;; Form / Modal handlers
         on-back #(set-state (constantly {:type :themes-overview}))
-        on-submit #(st/emit! (wdt/update-token-theme [(:group theme) (:name theme)] %))
         disabled? (-> (:name theme-state)
                       (str/trim)
                       (str/empty?))
@@ -320,16 +319,16 @@
 
         on-save-form
         (mf/use-fn
-         (mf/deps theme-state on-submit)
+         (mf/deps theme theme-state)
          (fn [e]
            (dom/prevent-default e)
-           (let [theme (-> theme-state
-                           (update :name str/trim)
-                           (update :group str/trim)
-                           (update :description str/trim))]
+           (let [theme' (-> theme-state
+                            (update :name str/trim)
+                            (update :group str/trim)
+                            (update :description str/trim))]
              (when-not (str/empty? (:name theme))
-               (on-submit theme)))
-           (on-back)))
+               (st/emit! (wdt/update-token-theme [(:group theme) (:name theme)] theme')))
+             (on-back))))
 
         close-modal
         (mf/use-fn
