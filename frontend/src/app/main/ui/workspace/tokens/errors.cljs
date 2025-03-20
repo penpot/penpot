@@ -44,6 +44,10 @@
    {:error/code :error.style-dictionary/invalid-token-value-opacity
     :error/fn #(str/join "\n" [(str (tr "workspace.token.invalid-value" %) ".") (tr "workspace.token.opacity-range")])}
 
+   :error.style-dictionary/invalid-token-value-stroke-width
+   {:error/code :error.style-dictionary/invalid-token-value-stroke-width
+    :error/fn #(str/join "\n" [(str (tr "workspace.token.invalid-value" %) ".") (tr "workspace.token.stroke-width-range")])}
+
    :error/unknown
    {:error/code :error/unknown
     :error/fn #(tr "labels.unknown-error")}})

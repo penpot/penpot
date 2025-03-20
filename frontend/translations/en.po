@@ -6675,6 +6675,10 @@ msgstr "Invalid token value: %s"
 msgid "workspace.token.opacity-range"
 msgstr "Opacity must be between 0 and 100% or 0 and 1 (e.g. 50% or 0.5)."
 
+#: src/app/main/ui/workspace/tokens/errors.cljs
+msgid "workspace.token.stroke-width-range"
+msgstr "Stroke width must be between equal or bigger than 0."
+
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
 msgid "workspace.token.label.group"
 msgstr "Group"
