@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-29 22:23+0000\n"
+"PO-Revision-Date: 2025-03-20 13:42+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -3491,6 +3491,7 @@ msgid "shortcuts.copy"
 msgstr "Kopiera"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+#, fuzzy
 msgid "shortcuts.copy-link"
 msgstr "Kopiera länk till urklipp"
 
@@ -4231,10 +4232,6 @@ msgstr "Grupp"
 msgid "workspace.assets.group-name"
 msgstr "Gruppnamn"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Bibliotek"
-
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
 msgid "workspace.assets.list-view"
 msgstr "Listvy"
@@ -4686,6 +4683,7 @@ msgid "workspace.libraries.empty.add-some"
 msgstr "Eller lägg till några av dessa för att prova:"
 
 #: src/app/main/ui/workspace/libraries.cljs:368
+#, fuzzy
 msgid "workspace.libraries.empty.no-libraries"
 msgstr "Det finns inga delade bibliotek i ditt team, du kan leta efter"
 
@@ -4726,10 +4724,6 @@ msgstr "Laddar…"
 msgid "workspace.libraries.more-templates"
 msgstr "Du kan titta efter "
 
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "fler mallar här"
-
 #: src/app/main/ui/workspace/libraries.cljs:481
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "Det finns inga delade bibliotek som behöver uppdateras"
@@ -4737,10 +4731,6 @@ msgstr "Det finns inga delade bibliotek som behöver uppdateras"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Inga träffar hittades för ”%s”"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Det finns inga delade bibliotek"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -6108,6 +6098,7 @@ msgid "workspace.shape.menu.copy-css-nested"
 msgstr "Kopiera som CSS (nästlade lager)"
 
 #: src/app/main/ui/workspace/context_menu.cljs:188
+#, fuzzy
 msgid "workspace.shape.menu.copy-link"
 msgstr "Kopiera länken till urklipp"
 
@@ -6403,10 +6394,6 @@ msgstr "Skapa ditt första tema nu."
 msgid "workspace.token.create-one"
 msgstr "Skapa ett."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "Skapa tema"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:431
 msgid "workspace.token.create-token"
 msgstr "Skapa en ny %s token"
@@ -6452,17 +6439,9 @@ msgstr "Ange %s tokennamn"
 msgid "workspace.token.grouping-set-alert"
 msgstr "Gruppering av Token Set stöds inte."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
-msgid "workspace.token.new-theme"
-msgstr "Nytt tema"
-
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:88
 msgid "workspace.token.no-active-theme"
 msgstr "Inget tema aktiverat"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
-msgid "workspace.token.no-sets"
-msgstr "Inga uppsättningar"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:401, src/app/main/ui/workspace/tokens/sets.cljs:405
 msgid "workspace.token.no-sets-create"
@@ -6479,10 +6458,6 @@ msgstr "Det finns inga teman."
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
 msgid "workspace.token.no-themes-currently"
 msgstr "Du har för närvarande inga teman."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
-msgid "workspace.token.num-sets"
-msgstr "%s uppsättningar"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
 #, fuzzy
@@ -6512,10 +6487,6 @@ msgstr ""
 #, unused
 msgid "workspace.token.theme-name"
 msgstr "Tema %s"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "Teman"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:482
 msgid "workspace.token.token-description"
