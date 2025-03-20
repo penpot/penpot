@@ -138,11 +138,9 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 
 #[no_mangle]
 pub unsafe extern "C" fn set_parent(a: u32, b: u32, c: u32, d: u32) {
-    with_state!(state, {
+    with_current_shape!(state, |shape: &mut Shape| {
         let id = uuid_from_u32_quartet(a, b, c, d);
-        with_current_shape!(state, |shape: &mut Shape| {
-            shape.set_parent(id);
-        });
+        shape.set_parent(id);
     });
 }
 
