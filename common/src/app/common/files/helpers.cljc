@@ -283,6 +283,22 @@
       :else
       (get-root-frame objects (:frame-id frame)))))
 
+(defn get-parent-frame
+  "Similar to `get-frame, but always return the parent frame. When root
+  frame is provided, then itself is returned."
+  [objects shape-or-id]
+  (cond
+    (map? shape-or-id)
+    (get objects (dm/get-prop shape-or-id :frame-id))
+
+    (= uuid/zero shape-or-id)
+    (get objects uuid/zero)
+
+    :else
+    (some->> shape-or-id
+             (get objects)
+             (get-frame objects))))
+
 (defn valid-frame-target?
   [objects parent-id shape-id]
   (let [shape (get objects shape-id)]

@@ -859,42 +859,44 @@
           (rx/of (reorder-selected-layout-child direction))
           (rx/of (nudge-selected-shapes direction shift?)))))))
 
-(defn- get-delta [position bbox]
-  (let [cpos (gpt/point (:x bbox) (:y bbox))
-        pos (gpt/point (or (:x position) (:x bbox))
-                       (or (:y position) (:y bbox)))]
-    (gpt/subtract pos cpos)))
-
-(defn- get-relative-delta [position bbox frame]
-  (let [frame-bbox (-> frame :points grc/points->rect)
-        relative-cpos (gpt/subtract (gpt/point (:x bbox) (:y bbox))
-                                    (gpt/point (:x frame-bbox)
-                                               (:y frame-bbox)))
-        cpos (gpt/point (:x relative-cpos) (:y relative-cpos))
-        pos (gpt/point (or (:x position) (:x relative-cpos))
-                       (or (:y position) (:y relative-cpos)))]
-    (gpt/subtract pos cpos)))
+(defn- calculate-delta
+  [position bbox relative-to]
+  (let [current  (gpt/point (:x bbox) (:y bbox))
+        position (gpt/point (or (some-> (:x position) (+ (dm/get-prop relative-to :x)))
+                                (:x bbox))
+                            (or (some-> (:y position) (+ (dm/get-prop relative-to :y)))
+                                (:y bbox)))]
+    (gpt/subtract position current)))
 
 (defn update-position
-  "Move shapes to a new position"
+  "Move shapes to a new position. It will resolve to the current frame
+  of the shape, unless given the absolute option. In this case it will
+  resolve to the root frame of the page.
+
+  The position is a map that can have a partial position (it means it
+  can receive {:x 10}."
   ([id position] (update-position id position nil))
   ([id position options]
-   (dm/assert! (uuid? id))
+   (assert (uuid? id) "expected a valid uuid for `id`")
+   (assert (map? position) "expected a valid map for `position`")
+
    (ptk/reify ::update-position
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id    (or (get options :page-id)
-                            (get state :current-page-id))
-             objects    (dsh/lookup-page-objects state page-id)
-             shape      (get objects id)
-             ;; FIXME: performance rect
-             bbox       (-> shape :points grc/points->rect)
-             frame      (cfh/get-frame objects shape)
-             delta      (if (:absolute? options)
-                          (get-delta position bbox)
-                          (get-relative-delta position bbox frame))
-             modif-tree (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
-         (rx/of (dwm/apply-modifiers {:modifiers modif-tree
+       (let [page-id   (or (get options :page-id)
+                           (get state :current-page-id))
+             objects   (dsh/lookup-page-objects state page-id)
+             shape     (get objects id)
+
+             bbox      (-> shape :points grc/points->rect)
+             frame     (if (:absolute? options)
+                         (cfh/get-frame objects)
+                         (cfh/get-parent-frame objects shape))
+
+             delta     (calculate-delta position bbox frame)
+             modifiers (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
+
+         (rx/of (dwm/apply-modifiers {:modifiers modifiers
                                       :page-id page-id
                                       :ignore-constraints false
                                       :ignore-touched (:ignore-touched options)
