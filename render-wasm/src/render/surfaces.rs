@@ -277,6 +277,8 @@ impl Surfaces {
 }
 
 pub struct SurfaceRef {
+    pub index: usize,
+    pub in_use: bool,
     pub surface: skia::Surface,
 }
 
@@ -296,7 +298,12 @@ impl SurfacePool {
             index: 0,
             surfaces: surfaces
                 .into_iter()
-                .map(|surface| SurfaceRef { surface: surface })
+                .enumerate()
+                .map(|(index, surface)| SurfaceRef {
+                    index,
+                    in_use: false,
+                    surface: surface
+                })
                 .collect(),
         }
     }
