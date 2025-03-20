@@ -308,7 +308,11 @@ impl SurfacePool {
         }
     }
 
-    pub fn allocate(&mut self) -> Result<skia::Surface, String> {
+    pub fn deallocate(&mut self, surface_ref: &mut SurfaceRef) {
+        surface_ref.in_use = false;
+    }
+
+    pub fn allocate(&mut self) -> Result<&mut SurfaceRef, String> {
         let start = self.index;
         let len = self.surfaces.len();
         loop {
@@ -316,8 +320,11 @@ impl SurfacePool {
             if self.index == start {
                 return Err("Not enough surfaces in the pool".into());
             }
-            if let Some(surface_ref) = self.surfaces.get(self.index) {
-                return Ok(surface_ref.surface.clone());
+            if let Some(surface_ref) = self.surfaces.get_mut(self.index) {
+                if !surface_ref.in_use {
+                    surface_ref.in_use = true;
+                    return Ok(surface_ref);
+                }
             }
         }
     }
@@ -325,7 +332,7 @@ impl SurfacePool {
 
 pub struct TileSurfaceCache {
     pool: SurfacePool,
-    grid: HashMap<Tile, skia::Surface>,
+    grid: HashMap<Tile, SurfaceRef>,
 }
 
 impl TileSurfaceCache {
@@ -341,13 +348,13 @@ impl TileSurfaceCache {
     }
 
     pub fn get_or_create(&mut self, tile: Tile) -> Result<skia::Surface, String> {
-        let surface = self.pool.allocate()?;
-        self.grid.insert(tile, surface.clone());
-        Ok(surface)
+        let surface_ref = self.pool.allocate()?;
+        self.grid.insert(tile, surface_ref);
+        Ok(surface_ref.surface.clone())
     }
 
     pub fn get(&mut self, tile: Tile) -> Result<&mut skia::Surface, String> {
-        Ok(self.grid.get_mut(&tile).unwrap())
+        Ok(&mut self.grid.get_mut(&tile).unwrap().surface)
     }
 
     pub fn remove(&mut self, tile: Tile) -> bool {
