@@ -6738,7 +6738,7 @@ msgstr "%s sets activos"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:147
 msgid "workspace.token.sets-hint"
-msgstr "Editar tema y gestionar set"
+msgstr "Editar tema y gestionar sets"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
 #, fuzzy

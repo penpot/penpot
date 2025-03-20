@@ -536,11 +536,8 @@
 
 (defn move-files
   [{:keys [ids project-id] :as params}]
-  (dm/assert! (uuid? project-id))
-
-  (dm/assert!
-   "expected a valid set of uuids"
-   (sm/check-set-of-uuid! ids))
+  (assert (uuid? project-id))
+  (assert (sm/check-set-of-uuid ids))
 
   (ptk/reify ::move-files
     ev/Event

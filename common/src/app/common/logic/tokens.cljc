@@ -1,11 +1,21 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
 (ns app.common.logic.tokens
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.types.tokens-lib :as ctob]))
 
 (defn generate-update-active-sets
-  "Copy the active sets from the currently active themes and move them to the hidden token theme and update the theme with `update-theme-fn`.
-  Use this for managing sets active state without having to modify a user created theme (\"no themes selected\" state in the ui)."
+  "Copy the active sets from the currently active themes and move them
+  to the hidden token theme and update the theme with
+  `update-theme-fn`.
+
+  Use this for managing sets active state without having to modify a
+  user created theme (\"no themes selected\" state in the ui)."
   [changes tokens-lib update-theme-fn]
   (let [prev-active-token-themes (ctob/get-active-theme-paths tokens-lib)
         active-token-set-names   (ctob/get-active-themes-set-names tokens-lib)
@@ -21,7 +31,8 @@
                              hidden-token-theme))))
 
 (defn generate-toggle-token-set
-  "Toggle a token set at `set-name` in `tokens-lib` without modifying a user theme."
+  "Toggle a token set at `set-name` in `tokens-lib` without modifying a
+  user theme."
   [changes tokens-lib set-name]
   (generate-update-active-sets changes tokens-lib #(ctob/toggle-set % set-name)))
 
@@ -49,12 +60,20 @@
                :or {collapsed-paths #{}}}]
   (let [tree (-> (ctob/get-set-tree tokens-lib)
                  (ctob/walk-sets-tree-seq :skip-children-pred #(contains? collapsed-paths %)))
+
         from (nth tree from-index)
         to (nth tree to-index)
         before (case position
                  :top to
-                 :bot (nth tree (inc to-index) nil)
+                 :bot (let [v (nth tree (inc to-index) nil)]
+                        ;; if the next index is a group, we need to set it as
+                        ;; nil because if we set a path on different subpath,
+                        ;; the move algorightm will simply remove the set
+                        (if (:group? v)
+                          nil
+                          v))
                  :center nil)
+
         prev-before (if (:group? from)
                       (->> (drop (inc from-index) tree)
                            (filter (fn [element]
@@ -113,9 +132,9 @@
 (defn generate-move-token-set
   "Create changes for dropping a token set or token set.
   Throws for impossible moves."
-  [changes tokens-lib drop-opts]
-  (if-let [drop-opts' (calculate-move-token-set-or-set-group tokens-lib drop-opts)]
-    (pcb/move-token-set-before changes drop-opts')
+  [changes tokens-lib params]
+  (if-let [params (calculate-move-token-set-or-set-group tokens-lib params)]
+    (pcb/move-token-set changes params)
     changes))
 
 (defn generate-move-token-set-group

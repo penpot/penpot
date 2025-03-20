@@ -10,6 +10,7 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.data :as d]
+   [app.common.files.migrations :as fmg]
    [app.common.files.validate :as cfv]
    [app.db :as db]
    [app.features.components-v2 :as feat.comp-v2]
@@ -142,7 +143,9 @@
                   (update-fn file opts)))]
 
     (when (and (some? file')
-               (not (identical? file file')))
+               (or (fmg/migrated? file)
+                   (not (identical? file file'))))
+
       (when validate?
         (cfv/validate-file-schema! file'))
 

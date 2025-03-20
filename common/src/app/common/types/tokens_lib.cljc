@@ -588,7 +588,7 @@
       (update :group d/nilv top-level-theme-group-name)
       (update :description d/nilv "")
       (update :is-source d/nilv false)
-      (update :id d/nilv (str (uuid/next)))
+      (update :id #(or % (str (uuid/next))))
       (update :modified-at #(or % (dt/now)))
       (update :sets set)
       (check-token-theme-attrs)
@@ -612,7 +612,6 @@
   (get-theme-tree [_] "get a nested tree of all themes in the library")
   (get-themes [_] "get an ordered sequence of all themes in the library")
   (get-theme [_ group name] "get one theme looking for name")
-  (get-hidden-theme [_] "get the theme hidden from the user, used for managing active sets without a user created theme.")
   (get-theme-groups [_] "get a sequence of group names by order")
   (get-active-theme-paths [_] "get the active theme paths")
   (get-active-themes [_] "get an ordered sequence of active themes in the library")
@@ -946,14 +945,21 @@ Will return a value that matches this schema:
     (let [prefixed-from-path (set-full-path->set-prefixed-full-path from-path)
           prev-set (get-in sets prefixed-from-path)]
       (if (instance? TokenSet prev-set)
-        (let [prefixed-to-path (set-full-path->set-prefixed-full-path to-path)
-              prefixed-before-path (when before-path
-                                     (if before-group?
-                                       (mapv add-set-path-group-prefix before-path)
-                                       (set-full-path->set-prefixed-full-path before-path)))
+        (let [prefixed-to-path
+              (set-full-path->set-prefixed-full-path to-path)
 
-              set (assoc prev-set :name (join-set-path to-path))
-              reorder? (= prefixed-from-path prefixed-to-path)
+              prefixed-before-path
+              (when before-path
+                (if before-group?
+                  (mapv add-set-path-group-prefix before-path)
+                  (set-full-path->set-prefixed-full-path before-path)))
+
+              set
+              (assoc prev-set :name (join-set-path to-path))
+
+              reorder?
+              (= prefixed-from-path prefixed-to-path)
+
               sets'
               (if reorder?
                 (d/oreorder-before sets
@@ -965,6 +971,7 @@ Will return a value that matches this schema:
                       (d/oassoc-in-before sets prefixed-before-path prefixed-to-path set)
                       (d/oassoc-in sets prefixed-to-path set))
                     (d/dissoc-in prefixed-from-path)))]
+
           (TokensLib. sets'
                       (if reorder?
                         themes
@@ -1129,9 +1136,6 @@ Will return a value that matches this schema:
 
   (get-theme [_ group name]
     (dm/get-in themes [group name]))
-
-  (get-hidden-theme [this]
-    (get-theme this hidden-token-theme-group hidden-token-theme-name))
 
   (set-active-themes [_ active-themes]
     (TokensLib. sets
@@ -1368,6 +1372,10 @@ Will return a value that matches this schema:
          (valid-token-themes? themes)
          (valid-active-token-themes? active-themes))))
 
+(defn get-hidden-theme
+  [tokens-lib]
+  (get-theme tokens-lib hidden-token-theme-group hidden-token-theme-name))
+
 (defn valid-tokens-lib?
   [o]
   (and (instance? TokensLib o)
@@ -1382,27 +1390,32 @@ Will return a value that matches this schema:
 (def ^:private check-active-themes
   (sm/check-fn schema:active-themes :hint "expected valid active themes"))
 
+(defn- ensure-hidden-theme
+  "A helper that is responsible to ensure that the hidden theme always
+  exists on the themes data structure"
+  [themes]
+  (update themes hidden-token-theme-group
+          (fn [data]
+            (if (contains? data hidden-token-theme-name)
+              data
+              (d/oassoc data hidden-token-theme-name (make-hidden-token-theme))))))
+
+;; NOTE: is possible that ordered map is not the most apropriate
+;; data structure and maybe we need a specific that allows us an
+;; easy way to reorder it, or just store inside Tokens data
+;; structure the data and the order separately as we already do
+;; with pages and pages-index.
 (defn make-tokens-lib
   "Create an empty or prepopulated tokens library."
-  ([]
-   ;; NOTE: is possible that ordered map is not the most apropriate
-   ;; data structure and maybe we need a specific that allows us an
-   ;; easy way to reorder it, or just store inside Tokens data
-   ;; structure the data and the order separately as we already do
-   ;; with pages and pages-index.
-   (make-tokens-lib :sets (d/ordered-map)
-                    :themes (d/ordered-map)
-                    :active-themes #{hidden-token-theme-path}))
-
-  ([& {:keys [sets themes active-themes]}]
-   (let [active-themes (d/nilv active-themes #{hidden-token-theme-path})
-         themes (if (empty? themes)
-                  (update themes hidden-token-theme-group d/oassoc hidden-token-theme-name (make-hidden-token-theme))
-                  themes)]
-     (TokensLib.
-      (check-token-sets sets)
-      (check-token-themes themes)
-      (check-active-themes active-themes)))))
+  [& {:keys [sets themes active-themes]}]
+  (let [sets          (or sets (d/ordered-map))
+        themes        (-> (or themes (d/ordered-map))
+                          (ensure-hidden-theme))
+        active-themes (or active-themes #{hidden-token-theme-path})]
+    (TokensLib.
+     (check-token-sets sets)
+     (check-token-themes themes)
+     (check-active-themes active-themes))))
 
 (defn ensure-tokens-lib
   [tokens-lib]
@@ -1446,6 +1459,71 @@ Will return a value that matches this schema:
   :rfn #(map->Token %)})
 
 #?(:clj
+   (defn- read-tokens-lib-v1-0
+     "Reads the first version of tokens lib, now completly obsolete"
+     [r]
+     (let [;; Migrate sets tree without prefix to new format
+           prev-sets (->> (fres/read-object! r)
+                          (tree-seq d/ordered-map? vals)
+                          (filter (partial instance? TokenSet)))
+
+           sets  (-> (reduce add-set (make-tokens-lib) prev-sets)
+                     (deref)
+                     (:sets))
+
+           _set-groups   (fres/read-object! r)
+           themes        (fres/read-object! r)
+           active-themes (fres/read-object! r)]
+       (->TokensLib sets themes active-themes))))
+
+#?(:clj
+   (defn- read-tokens-lib-v1-1
+     "Reads the tokens lib data structure and ensures that hidden
+     theme exists and adds missing ID on themes"
+     [r]
+     (let [sets          (fres/read-object! r)
+           themes        (fres/read-object! r)
+           active-themes (fres/read-object! r)
+
+           ;; Ensure we have at least a hidden theme
+           themes
+           (ensure-hidden-theme themes)
+
+           ;; Ensure we add an :id field for each existing theme
+           themes
+           (reduce (fn [result group-id]
+                     (update result group-id
+                             (fn [themes]
+                               (reduce (fn [themes theme-id]
+                                         (update themes theme-id
+                                                 (fn [theme]
+                                                   (if (get theme :id)
+                                                     theme
+                                                     (assoc theme :id (str (uuid/next)))))))
+                                       themes
+                                       (keys themes)))))
+                   themes
+                   (keys themes))]
+
+       (->TokensLib sets themes active-themes))))
+
+#?(:clj
+   (defn- write-tokens-lib
+     [n w ^TokensLib o]
+     (fres/write-tag! w n 3)
+     (fres/write-object! w (.-sets o))
+     (fres/write-object! w (.-themes o))
+     (fres/write-object! w (.-active-themes o))))
+
+#?(:clj
+   (defn- read-tokens-lib
+     [r]
+     (let [sets          (fres/read-object! r)
+           themes        (fres/read-object! r)
+           active-themes (fres/read-object! r)]
+       (->TokensLib sets themes active-themes))))
+
+#?(:clj
    (fres/add-handlers!
     {:name "penpot/token/v1"
      :class Token
@@ -1474,32 +1552,15 @@ Will return a value that matches this schema:
             (let [obj (fres/read-object! r)]
               (map->TokenTheme obj)))}
 
+    ;; LEGACY TOKENS LIB READERS (with migrations)
     {:name "penpot/tokens-lib/v1"
-     :rfn (fn [r]
-            (let [;; Migrate sets tree without prefix to new format
-                  prev-sets (->> (fres/read-object! r)
-                                 (tree-seq d/ordered-map? vals)
-                                 (filter (partial instance? TokenSet)))
-
-                  ;; FIXME: wtf we usind deref here?
-                  sets  (-> (reduce add-set (make-tokens-lib) prev-sets)
-                            (deref)
-                            (:sets))
-
-                  _set-groups   (fres/read-object! r)
-                  themes        (fres/read-object! r)
-                  active-themes (fres/read-object! r)]
-              (->TokensLib sets themes active-themes)))}
+     :rfn read-tokens-lib-v1-0}
 
     {:name "penpot/tokens-lib/v1.1"
+     :rfn read-tokens-lib-v1-1}
+
+    ;; CURRENT TOKENS LIB READER & WRITTER
+    {:name "penpot/tokens-lib/v1.2"
      :class TokensLib
-     :wfn (fn [n w o]
-            (fres/write-tag! w n 3)
-            (fres/write-object! w (.-sets o))
-            (fres/write-object! w (.-themes o))
-            (fres/write-object! w (.-active-themes o)))
-     :rfn (fn [r]
-            (let [sets          (fres/read-object! r)
-                  themes        (fres/read-object! r)
-                  active-themes (fres/read-object! r)]
-              (->TokensLib sets themes active-themes)))}))
+     :wfn write-tokens-lib
+     :rfn read-tokens-lib}))

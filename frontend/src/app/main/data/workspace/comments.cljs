@@ -134,9 +134,7 @@
 ;; Move comment threads that are inside a frame when that frame is moved"
 (defmethod ptk/resolve ::move-frame-comment-threads
   [_ ids]
-  (dm/assert!
-   "expected a valid coll of uuid's"
-   (sm/check-coll-of-uuid! ids))
+  (assert (sm/check-coll-of-uuid ids))
 
   (ptk/reify ::move-frame-comment-threads
     ptk/WatchEvent
