@@ -140,7 +140,7 @@
 (defn generate-move-token-set-group
   "Create changes for dropping a token set or token set group.
   Throws for impossible moves"
-  [changes tokens-lib drop-opts]
-  (if-let [drop-opts' (calculate-move-token-set-or-set-group tokens-lib drop-opts)]
-    (pcb/move-token-set-group-before changes drop-opts')
+  [changes tokens-lib params]
+  (if-let [params (calculate-move-token-set-or-set-group tokens-lib params)]
+    (pcb/move-token-set-group changes params)
     changes))

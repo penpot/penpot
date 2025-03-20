@@ -824,19 +824,19 @@
                                   :before-group prev-before-group?})
       (apply-changes-local)))
 
-(defn move-token-set-group-before
+(defn move-token-set-group
   [changes {:keys [from-path to-path before-path before-group? prev-before-path prev-before-group?]}]
   (-> changes
-      (update :redo-changes conj {:type :move-token-set-group-before
+      (update :redo-changes conj {:type :move-token-set-group
                                   :from-path from-path
                                   :to-path to-path
                                   :before-path before-path
-                                  :before-group? before-group?})
-      (update :undo-changes conj {:type :move-token-set-group-before
+                                  :before-group before-group?})
+      (update :undo-changes conj {:type :move-token-set-group
                                   :from-path to-path
                                   :to-path from-path
                                   :before-path prev-before-path
-                                  :before-group? prev-before-group?})
+                                  :before-group prev-before-group?})
       (apply-changes-local)))
 
 (defn set-tokens-lib
