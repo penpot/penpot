@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-11 08:02+0000\n"
-"Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
+"PO-Revision-Date: 2025-03-20 13:42+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
 "Language: ukr_UA\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 5.10.3-dev\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -613,7 +613,7 @@ msgstr ""
 "WOFF** (потрібен лише один)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:186
-#, markdown
+#, fuzzy, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Ви повинні завантажувати лише ті шрифти, якими володієте або маєте ліцензію "
@@ -3526,6 +3526,7 @@ msgid "shortcuts.copy"
 msgstr "Скопіювати"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+#, fuzzy
 msgid "shortcuts.copy-link"
 msgstr "Скопіювати посилання у буфер"
 
@@ -4266,10 +4267,6 @@ msgstr "Група"
 msgid "workspace.assets.group-name"
 msgstr "Ім'я групи"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Бібліотеки"
-
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
 msgid "workspace.assets.list-view"
 msgstr "Перегляд списком"
@@ -4723,6 +4720,7 @@ msgid "workspace.libraries.empty.add-some"
 msgstr "Або додайте кілька з них, щоб спробувати:"
 
 #: src/app/main/ui/workspace/libraries.cljs:368
+#, fuzzy
 msgid "workspace.libraries.empty.no-libraries"
 msgstr "У команді немає Спільних Бібліотек"
 
@@ -4763,10 +4761,6 @@ msgstr "Завантаження…"
 msgid "workspace.libraries.more-templates"
 msgstr "Ви можете шукати "
 
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "більше шаблонів тут"
-
 #: src/app/main/ui/workspace/libraries.cljs:481
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "Тут ще немає спільних бібліотек, які потребують оновлення"
@@ -4774,10 +4768,6 @@ msgstr "Тут ще немає спільних бібліотек, які по�
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Не знайдено збігів для \"%s\""
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Немає доступних спільних бібліотек"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -6148,6 +6138,7 @@ msgid "workspace.shape.menu.copy-css-nested"
 msgstr "Копіювати як CSS (вкладені шари)"
 
 #: src/app/main/ui/workspace/context_menu.cljs:188
+#, fuzzy
 msgid "workspace.shape.menu.copy-link"
 msgstr "Копіювати посилання в буфер обміну"
 
@@ -6443,10 +6434,6 @@ msgstr "Створити свою першу тему зараз."
 msgid "workspace.token.create-one"
 msgstr "Створити його."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "Створити тему"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:431
 msgid "workspace.token.create-token"
 msgstr "Створити новий %s токен"
@@ -6487,26 +6474,14 @@ msgstr "Додайте опис (необов'язково)"
 msgid "workspace.token.enter-token-name"
 msgstr "Вкажіть %s ім'я токену"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:463
-msgid "workspace.token.enter-token-value"
-msgstr "Вкажіть значення токену чи його псевдонім"
-
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
 msgid "workspace.token.grouping-set-alert"
 msgstr "Групування наборів токенів поки не підтримується."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
-msgid "workspace.token.new-theme"
-msgstr "Нова тема"
-
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:88
 msgid "workspace.token.no-active-theme"
 msgstr "Немає активної теми"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
-msgid "workspace.token.no-sets"
-msgstr "Немає наборів"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:401, src/app/main/ui/workspace/tokens/sets.cljs:405
 msgid "workspace.token.no-sets-create"
@@ -6523,10 +6498,6 @@ msgstr "Тут немає тем."
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
 msgid "workspace.token.no-themes-currently"
 msgstr "Наразі у вас немає жодної теми."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
-msgid "workspace.token.num-sets"
-msgstr "%s наборів"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
 msgid "workspace.token.original-value"
@@ -6554,10 +6525,6 @@ msgstr ""
 #, unused
 msgid "workspace.token.theme-name"
 msgstr "Тема %s"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "Теми"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:482
 msgid "workspace.token.token-description"
@@ -6893,10 +6860,6 @@ msgstr "Натисність щоб закінчити шлях"
 msgid "dashboard.add-file"
 msgstr "Додати файл"
 
-#: src/app/main/data/tokens.cljs:199
-msgid "errors.drag-drop.parent-to-child"
-msgstr "Не можна кинути батьківський набір на власний дочірній шлях."
-
 #: src/app/main/ui/workspace/context_menu.cljs:210
 msgid "workspace.shape.menu.copy-text"
 msgstr "Копіювати як текст"
@@ -6939,10 +6902,6 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:343, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:344
 msgid "workspace.options.fit-content"
 msgstr "Змінити розмір щоб заповнити"
-
-#: src/app/main/data/tokens.cljs:198
-msgid "errors.drag-drop.set-exists"
-msgstr "Не вдалось кинути, набір з таким самим імʼям вже існує за шляхом %s."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
 msgid "workspace.token.label.group"
