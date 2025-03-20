@@ -60,10 +60,6 @@ impl TileHashMap {
         }
     }
 
-    pub fn has_shapes_at(&mut self, tile: Tile) -> bool {
-        return self.grid.contains_key(&tile);
-    }
-
     pub fn get_shapes_at(&mut self, tile: Tile) -> Option<&IndexSet<Uuid>> {
         return self.grid.get(&tile);
     }
