@@ -7,7 +7,6 @@ else
 fi
 
 EMCC_CFLAGS="--no-entry \
-    -Os \
     -sASSERTIONS=1 \
     -sALLOW_TABLE_GROWTH=1 \
     -sALLOW_MEMORY_GROWTH=1 \
@@ -28,8 +27,13 @@ _CARGO_PARAMS="--target=wasm32-unknown-emscripten";
 
 if [ "$_BUILD_MODE" = "release" ]; then
     _CARGO_PARAMS="--release $_CARGO_PARAMS"
+    EMCC_CFLAGS="-Os $EMCC_FLAGS"
 else
-    EMCC_CFLAGS="$EMCC_CFLAGS -sMALLOC=emmalloc-debug"
+    # TODO: Extra parameters that could be good to look into:
+    #        -gseparate-dwarf
+    #        -gsplit-dwarf
+    #        -gsource-map
+    EMCC_CFLAGS="-g $EMCC_CFLAGS -sMALLOC=emmalloc-debug"
 fi
 
 export EMCC_CFLAGS;
