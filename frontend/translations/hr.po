@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-18 10:01+0000\n"
-"Last-Translator: al0cam <benjaminsikac@gmail.com>\n"
+"PO-Revision-Date: 2025-03-20 13:42+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Croatian <https://hosted.weblate.org/projects/penpot/frontend/"
 "hr/>\n"
 "Language: hr\n"
@@ -5961,6 +5961,7 @@ msgid "workspace.versions.filter.mine"
 msgstr "Moje verzije"
 
 #: src/app/main/ui/workspace/context_menu.cljs:188
+#, fuzzy
 msgid "workspace.shape.menu.copy-link"
 msgstr "Kopiraj vezu u međuspremnik"
 
@@ -6756,6 +6757,7 @@ msgid "modals.create-access-token.expiration-date.label"
 msgstr "Rok trajanja"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+#, fuzzy
 msgid "shortcuts.copy-link"
 msgstr "Kopiraj vezu u međuspremnik"
 
@@ -6776,6 +6778,7 @@ msgid "workspace.context-menu.grid-track.row.delete"
 msgstr "Izbriši red"
 
 #: src/app/main/ui/workspace/libraries.cljs:368
+#, fuzzy
 msgid "workspace.libraries.empty.no-libraries"
 msgstr "U vašem timu nema dijeljenih biblioteka, možete ih potražiti"
 
