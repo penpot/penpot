@@ -95,6 +95,7 @@ pub(crate) struct RenderState {
     pub render_area: Rect,
     pub tiles: tiles::TileHashMap,
     pub pending_tiles: Vec<tiles::Tile>,
+    pub current_tile_tree: HashMap<Uuid, Shape>,
 }
 
 impl RenderState {
@@ -133,6 +134,7 @@ impl RenderState {
             render_area: Rect::new_empty(),
             tiles,
             pending_tiles: vec![],
+            current_tile_tree: HashMap::new(),
         }
     }
 
@@ -595,93 +597,100 @@ impl RenderState {
                             mask,
                         } = node_render_state;
                         is_empty = false;
-                        let element = tree.get_mut(&node_id).ok_or(
-                            "Error: Element with root_id {node_render_state.id} not found in the tree."
-                                .to_string(),
-                        )?;
+                        if let Some(element) = self.current_tile_tree.get_mut(&node_id) {
+                            let mut element = element.clone();
 
-                        if visited_children {
-                            if !visited_mask {
-                                match element.shape_type {
-                                    Type::Group(group) => {
-                                        // When we're dealing with masked groups we need to
-                                        // do a separate extra step to draw the mask (the last
-                                        // element of a masked group) and blend (using
-                                        // the blend mode 'destination-in') the content
-                                        // of the group and the mask.
-                                        if group.masked {
-                                            self.pending_nodes.push(NodeRenderState {
-                                                id: node_id,
-                                                visited_children: true,
-                                                clip_bounds: None,
-                                                visited_mask: true,
-                                                mask: false,
-                                            });
-                                            if let Some(&mask_id) = element.mask_id() {
+                            if visited_children {
+                                if !visited_mask {
+                                    match element.shape_type {
+                                        Type::Group(group) => {
+                                            // When we're dealing with masked groups we need to
+                                            // do a separate extra step to draw the mask (the last
+                                            // element of a masked group) and blend (using
+                                            // the blend mode 'destination-in') the content
+                                            // of the group and the mask.
+                                            if group.masked {
                                                 self.pending_nodes.push(NodeRenderState {
-                                                    id: mask_id,
-                                                    visited_children: false,
+                                                    id: node_id,
+                                                    visited_children: true,
                                                     clip_bounds: None,
-                                                    visited_mask: false,
-                                                    mask: true,
+                                                    visited_mask: true,
+                                                    mask: false,
                                                 });
+                                                if let Some(&mask_id) = element.mask_id() {
+                                                    self.pending_nodes.push(NodeRenderState {
+                                                        id: mask_id,
+                                                        visited_children: false,
+                                                        clip_bounds: None,
+                                                        visited_mask: false,
+                                                        mask: true,
+                                                    });
+                                                }
                                             }
                                         }
+                                        _ => {}
                                     }
-                                    _ => {}
+                                }
+                                self.render_shape_exit(&mut element, visited_mask);
+                                continue;
+                            }
+
+                            if !node_render_state.id.is_nil() {
+                                // If we didn't visited_children this shape, then we need to do
+                                let mut transformed_element = element.clone();
+                                if let Some(modifier) = modifiers.get(&node_id) {
+                                    transformed_element.apply_transform(modifier);
+                                }
+                                if !transformed_element.extrect().intersects(self.render_area)
+                                    || transformed_element.hidden()
+                                {
+                                    debug::render_debug_shape(self, &transformed_element, false);
+                                    continue;
+                                } else {
+                                    debug::render_debug_shape(self, &transformed_element, true);
                                 }
                             }
-                            self.render_shape_exit(element, visited_mask);
-                            continue;
-                        }
 
-                        if !node_render_state.id.is_nil() {
-                            // If we didn't visited_children this shape, then we need to do
-                            let mut transformed_element = element.clone();
-                            if let Some(modifier) = modifiers.get(&node_id) {
-                                transformed_element.apply_transform(modifier);
-                            }
-                            if !transformed_element.extrect().intersects(self.render_area)
-                                || transformed_element.hidden()
-                            {
-                                debug::render_debug_shape(self, &transformed_element, false);
-                                continue;
+                            self.render_shape_enter(&mut element, mask);
+                            if !node_render_state.id.is_nil() {
+                                let element_id = element.id;
+                                self.render_shape(
+                                    &mut element,
+                                    modifiers.get(&element_id),
+                                    clip_bounds,
+                                );
                             } else {
-                                debug::render_debug_shape(self, &transformed_element, true);
+                                self.apply_drawing_to_render_canvas(Some(&element));
+                            }
+
+                            // Set the node as visited_children before processing children
+                            self.pending_nodes.push(NodeRenderState {
+                                id: node_id,
+                                visited_children: true,
+                                clip_bounds: None,
+                                visited_mask: false,
+                                mask: mask,
+                            });
+
+                            if element.is_recursive() {
+                                // Fix this
+                                let element_id = element.id;
+                                let children_clip_bounds = node_render_state
+                                    .get_children_clip_bounds(
+                                        &mut element,
+                                        modifiers.get(&element_id),
+                                    );
+                                for child_id in element.children_ids().iter().rev() {
+                                    self.pending_nodes.push(NodeRenderState {
+                                        id: *child_id,
+                                        visited_children: false,
+                                        clip_bounds: children_clip_bounds,
+                                        visited_mask: false,
+                                        mask: false,
+                                    });
+                                }
                             }
                         }
-
-                        self.render_shape_enter(element, mask);
-                        if !node_render_state.id.is_nil() {
-                            self.render_shape(element, modifiers.get(&element.id), clip_bounds);
-                        } else {
-                            self.apply_drawing_to_render_canvas(Some(&element));
-                        }
-
-                        // Set the node as visited_children before processing children
-                        self.pending_nodes.push(NodeRenderState {
-                            id: node_id,
-                            visited_children: true,
-                            clip_bounds: None,
-                            visited_mask: false,
-                            mask: mask,
-                        });
-
-                        if element.is_recursive() {
-                            // Fix this
-                            let children_clip_bounds = node_render_state
-                                .get_children_clip_bounds(element, modifiers.get(&element.id));
-                            for child_id in element.children_ids().iter().rev() {
-                                self.pending_nodes.push(NodeRenderState {
-                                    id: *child_id,
-                                    visited_children: false,
-                                    clip_bounds: children_clip_bounds,
-                                    visited_mask: false,
-                                    mask: false,
-                                });
-                            }
-                        }
-
                         // We try to avoid doing too many calls to get_time
                         if i % NODE_BATCH_THRESHOLD == 0
                             && get_time() - timestamp > MAX_BLOCKING_TIME_MS
@@ -711,11 +720,24 @@ impl RenderState {
             // let's check if there are more pending nodes
             if let Some(next_tile) = self.pending_tiles.pop() {
                 self.update_render_context(next_tile);
+
+                // Calculating the tree of shapes that apply to the current tile
+                self.current_tile_tree = tree.clone();
+                self.current_tile_tree.retain(|_, v| {
+                    if v.id == Uuid::nil() {
+                        return true;
+                    }
+                    let mut transformed_element = v.clone();
+                    if let Some(modifier) = modifiers.get(&v.id) {
+                        transformed_element.apply_transform(modifier);
+                    }
+                    !transformed_element.hidden()
+                        && transformed_element.extrect().intersects(self.render_area)
+                });
+
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     // If the tile is empty or it doesn't exists we don't do anything with it
                     if self.tiles.has_shapes_at(next_tile) {
-                        // TODO: This should be more efficient, we should be able to know exactly what shapes tree
-                        // are included for this tile
                         self.pending_nodes.push(NodeRenderState {
                             id: Uuid::nil(),
                             visited_children: false,
