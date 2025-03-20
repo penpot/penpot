@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-29 22:23+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-02-07 14:01+0000\n"
+"Last-Translator: Linerly <linerly@proton.me>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
 "frontend/id/>\n"
 "Language: id\n"
@@ -6465,14 +6465,12 @@ msgid "workspace.token.num-sets"
 msgstr "%s set"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
-#, fuzzy
 msgid "workspace.token.original-value"
-msgstr "Nilai asli: "
+msgstr "Nilai asli: %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:205, src/app/main/ui/workspace/tokens/form.cljs:208, src/app/main/ui/workspace/tokens/token_pill.cljs:115
-#, fuzzy
 msgid "workspace.token.resolved-value"
-msgstr "Nilai terselesaikan: "
+msgstr "Nilai terselesaikan: %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:203
 msgid "workspace.token.save-theme"
@@ -6824,3 +6822,88 @@ msgstr "Versi tersimpan otomatis akan disimpan selama %s hari."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik untuk menutup jalur"
+
+#: src/app/main/data/common.cljs:87
+msgid "Refresh"
+msgstr " "
+
+#: src/app/main/ui/dashboard/placeholder.cljs:48
+msgid "dashboard.add-file"
+msgstr "Tambahkan berkas"
+
+#: src/app/main/ui/workspace/context_menu.cljs:210
+msgid "workspace.shape.menu.copy-text"
+msgstr "Salin sebagai teks"
+
+#: src/app/main/ui/settings/access_tokens.cljs:152
+msgid "modals.create-access-token.token"
+msgstr " "
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
+msgid "workspace.token.label.theme"
+msgstr "Tema"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:123
+msgid "workspace.token.theme"
+msgstr " "
+
+#: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:85
+msgid "exclude"
+msgstr " "
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:128
+msgid "workspace.token.applied-to"
+msgstr "Diterapkan pada"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:89
+msgid "workspace.token.no-permisions-set"
+msgstr "Anda perlu menjadi penyunting untuk mengaktifkan / menonaktifkan set"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
+msgid "workspace.token.label.group"
+msgstr "Kelompok"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:279
+msgid "workspace.token.tokens-section-title"
+msgstr "TOKEN -  %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:343, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:344
+msgid "workspace.options.fit-content"
+msgstr "Ubah ukuran papan untuk memuat konten"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:123
+msgid "workspace.token.value-not-valid"
+msgstr "Nilai tidak valid"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:200
+msgid "workspace.token.no-permission-themes"
+msgstr "Anda perlu menjadi penyunting untuk menggunakan tema"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:458
+msgid "workspace.token.warning-name-change"
+msgstr "Mengubah nama token ini akan merusak referensi nama lamanya."
+
+#: src/app/main/data/tokens.cljs:199
+msgid "errors.drag-drop.parent-to-child"
+msgstr "Tidak dapat melepaskan set induk ke jalur anak sendiri."
+
+#: src/app/main/data/tokens.cljs:198
+msgid "errors.drag-drop.set-exists"
+msgstr ""
+"Tidak dapat menyelesaikan pelepasan, set dengan nama yang sama sudah ada "
+"dalam jalur %s."
+
+#: src/app/main/ui/workspace/tokens/form.cljs:56
+msgid "workspace.token.token-name-validation-error"
+msgstr ""
+" bukanlah nama token yang valid.\n"
+"Nama token seharusnya hanya berisi huruf dan angka dipisahkan oleh karakter "
+". dan tidak berawal dengan tanda $."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:80
+msgid "intersection"
+msgstr " "
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:120
+msgid "workspace.token.ref-not-valid"
+msgstr "Referensi tidak valid atau tidak dalam set aktif mana pun"

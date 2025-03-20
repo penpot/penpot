@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-29 22:23+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-03-03 15:04+0000\n"
+"Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
 "Language: it\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.10.3-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -58,7 +58,7 @@ msgstr "Accedi al mio account"
 
 #: src/app/main/ui/auth/register.cljs:137, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:101
 msgid "auth.login-here"
-msgstr "Accedere qui"
+msgstr "Accedi qui."
 
 #: src/app/main/ui/auth/login.cljs:196
 msgid "auth.login-submit"
@@ -396,7 +396,7 @@ msgstr "Il token non ha una data di scadenza"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/workspace/main_menu.cljs:612
 msgid "dashboard.add-shared"
-msgstr "Aggiungi una libreria condivisa"
+msgstr "Aggiungi come libreria condivisa"
 
 #: src/app/main/ui/settings/profile.cljs:75
 msgid "dashboard.change-email"
@@ -572,7 +572,7 @@ msgstr "Esporta i file"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:313
 msgid "dashboard.fonts.deleted-placeholder"
-msgstr "Font mancante"
+msgstr "Carattere mancante"
 
 #: src/app/main/ui/dashboard/fonts.cljs:210
 msgid "dashboard.fonts.dismiss-all"
@@ -580,43 +580,45 @@ msgstr "Chiudi tutto"
 
 #: src/app/main/ui/dashboard/fonts.cljs:445
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "I font personalizzati che carichi appariranno qui."
+msgstr "I caratteri personalizzati che carichi appariranno qui."
 
 #: src/app/main/ui/dashboard/fonts.cljs:448
 msgid "dashboard.fonts.empty-placeholder-viewer"
-msgstr "Nessun font personalizzato presente."
+msgstr "Nessun carattere personalizzato presente."
 
 #: src/app/main/ui/dashboard/fonts.cljs:449
 msgid "dashboard.fonts.empty-placeholder-viewer-sub"
 msgstr ""
-"Quando un membro del progetto carica un font personalizzato, verrà mostrato "
-"qui."
+"Quando un membro del progetto carica un carattere personalizzato, verrà "
+"mostrato qui."
 
 #: src/app/main/ui/dashboard/fonts.cljs:198
 msgid "dashboard.fonts.fonts-added"
 msgid_plural "dashboard.fonts.fonts-added"
-msgstr[0] "1 font aggiunto"
-msgstr[1] "%s font aggiunti"
+msgstr[0] "1 carattere aggiunto"
+msgstr[1] "%s caratteri aggiunti"
 
 #: src/app/main/ui/dashboard/fonts.cljs:174
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"Qualsiasi font web caricato qui verrà aggiunto alla lista dei font family "
-"disponibile nelle impostazioni testo dei file di questo team. I font che "
-"arrecano lo stesso nome di font family verranno raggruppati come un "
-"**singolo font family**. È possibile caricare font con i seguenti "
-"formati:**TTF, OTF e WOFF**(uno solo di questi è necessario)."
+"Qualsiasi carattere web caricato qui verrà aggiunto alla lista delle "
+"famiglie di caratteri disponibili nelle impostazioni testo dei file di "
+"questo team. I caratteri che arrecano lo stesso nome di famiglia di "
+"carattere verranno raggruppati come una **singola famiglia di caratteri**. È "
+"possibile caricare caratteri con i seguenti formati: **TTF, OTF e WOFF** ("
+"uno solo di questi è necessario)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:186
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"È consigliabile caricare unicamente font di cui si è proprietari o dei "
+"È consigliabile caricare unicamente caratteri di cui si è proprietari o dei "
 "quali si possiede la licenza d'uso in Penpot. Ulteriori informazioni sui "
-"diritti dei contenuti sono disponibili nella sezione [Termini di Servizio "
-"di Penpot](%s). Potresti anche voler "
-"approfondire le [licenze per i font](https://www.typography.com/faq)."
+"diritti dei contenuti sono disponibili nella sezione "
+"[Termini di Servizio di Penpot](https://penpot.app/terms.html). Potresti "
+"anche voler approfondire le [licenze dei caratteri](https://"
+"www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206
 msgid "dashboard.fonts.upload-all"
@@ -626,10 +628,10 @@ msgstr "Carica tutto"
 #, markdown
 msgid "dashboard.fonts.warning-text"
 msgstr ""
-"Abbiamo rilevato un possibile problema nei tuoi font relativo alle metriche "
-"verticali per diversi sistemi operativi. Per verificarlo, puoi utilizzare "
-"servizi per le metriche verticali dei font come "
-"[questo](https://vertical-metrics.netlify.app/). Inoltre, ti consigliamo di "
+"Abbiamo rilevato un possibile problema nei tuoi caratteri relativo alle "
+"metriche verticali per diversi sistemi operativi. Per verificarlo, puoi "
+"utilizzare servizi per le metriche verticali dei caratteri come [questo]"
+"(https://vertical-metrics.netlify.app/). Inoltre, ti consigliamo di "
 "utilizzare [Transfonter](https://transfonter.org/) per generare webfont e "
 "correggere errori. "
 
@@ -733,7 +735,7 @@ msgstr "caricamento dei file …"
 
 #: src/app/main/ui/dashboard/fonts.cljs:439
 msgid "dashboard.loading-fonts"
-msgstr "caricamento dei font …"
+msgstr "caricamento dei caratteri…"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:291, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
@@ -854,7 +856,7 @@ msgstr "Desideri eliminare il tuo account?"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 #, unused
 msgid "dashboard.remove-shared"
-msgstr "Elimina come libreria condivisa"
+msgstr "Rimuovi come libreria condivisa"
 
 #: src/app/main/data/common.cljs:242
 msgid "dashboard.removed-from-team"
@@ -1125,11 +1127,11 @@ msgstr "Sembra che tu non ti sia autenticato o che la sessione sia scaduta."
 
 #: src/app/main/data/fonts.cljs:193, src/app/main/ui/dashboard/fonts.cljs:113
 msgid "errors.bad-font"
-msgstr "Il font %s non può essere caricato"
+msgstr "Il carattere %s non può essere caricato"
 
 #: src/app/main/data/fonts.cljs:192
 msgid "errors.bad-font-plural"
-msgstr "I font %s non posso essere caricati"
+msgstr "I caratteri %s non posso essere caricati"
 
 #: src/app/main/data/workspace/media.cljs:198
 msgid "errors.cannot-upload"
@@ -1534,7 +1536,7 @@ msgstr "Tipografia"
 
 #: src/app/main/ui/viewer/inspect/attributes/text.cljs:89, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:299
 msgid "inspect.attributes.typography.font-family"
-msgstr "Font Family"
+msgstr "Famiglia di caratteri"
 
 #: src/app/main/ui/viewer/inspect/attributes/text.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
 msgid "inspect.attributes.typography.font-size"
@@ -1796,7 +1798,7 @@ msgstr "Inserisci il nome del nuovo team"
 
 #, unused
 msgid "labels.custom-fonts"
-msgstr "Font personalizzati"
+msgstr "Caratteri personalizzati"
 
 #: src/app/main/ui/settings/sidebar.cljs:80
 msgid "labels.dashboard"
@@ -1876,11 +1878,11 @@ msgstr "Figma"
 
 #: src/app/main/ui/dashboard/fonts.cljs:422
 msgid "labels.font-family"
-msgstr "Font Family"
+msgstr "Famiglia di caratteri"
 
 #, unused
 msgid "labels.font-providers"
-msgstr "Fornitori di font"
+msgstr "Fornitori di caratteri"
 
 #: src/app/main/ui/dashboard/fonts.cljs:423
 msgid "labels.font-variants"
@@ -1932,7 +1934,7 @@ msgstr "Inattivo"
 
 #: src/app/main/ui/dashboard/fonts.cljs:420
 msgid "labels.installed-fonts"
-msgstr "Font installati"
+msgstr "Caratteri installati"
 
 #: src/app/main/ui/static.cljs:424
 msgid "labels.internal-error.desc-message"
@@ -1998,7 +2000,7 @@ msgstr "Successivo"
 
 #: src/app/main/ui/dashboard/comments.cljs:106, src/app/main/ui/workspace/comments.cljs:161
 msgid "labels.no-comments-available"
-msgstr "Non ci sono notifiche di commenti in attesa"
+msgstr "Non ci sono notifiche di commenti in attesa."
 
 #: src/app/main/ui/dashboard/team.cljs:740
 msgid "labels.no-invitations"
@@ -2179,7 +2181,7 @@ msgstr "Cerca"
 
 #: src/app/main/ui/dashboard/fonts.cljs:425
 msgid "labels.search-font"
-msgstr "Cerca un font"
+msgstr "Cerca un carattere"
 
 #: src/app/main/ui/onboarding/questions.cljs:85, src/app/main/ui/onboarding/questions.cljs:244, src/app/main/ui/onboarding/questions.cljs:255, src/app/main/ui/onboarding/questions.cljs:265
 msgid "labels.select-option"
@@ -2287,7 +2289,7 @@ msgstr "Carica"
 
 #: src/app/main/ui/dashboard/fonts.cljs:173
 msgid "labels.upload-custom-fonts"
-msgstr "Carica font personalizzati"
+msgstr "Carica caratteri personalizzati"
 
 #: src/app/main/ui/dashboard/fonts.cljs:244
 msgid "labels.uploading"
@@ -2368,7 +2370,7 @@ msgstr ""
 
 #: src/app/main/data/common.cljs:136
 msgid "modals.add-shared-confirm.accept"
-msgstr "Aggiungere come libreria condivisa"
+msgstr "Aggiungi come libreria condivisa"
 
 #: src/app/main/data/common.cljs:134
 msgid "modals.add-shared-confirm.hint"
@@ -2779,9 +2781,8 @@ msgstr "Elimina come libreria condivisa"
 #, unused
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
-"Una volta eliminata come libreria condivisa, la libreria dei file di questo "
-"file smetterà di essere a disposizione per essere usata con il resto dei "
-"tuoi file."
+"Una volta rimossa come libreria condivisa, la libreria file di questo file "
+"non sarà più disponibile per l'uso tra gli altri tuoi file."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 #, unused
@@ -4404,11 +4405,11 @@ msgstr "Modalità focus"
 
 #: src/app/main/ui/workspace/context_menu.cljs:378, src/app/main/ui/workspace/context_menu.cljs:663
 msgid "workspace.focus.focus-off"
-msgstr "Modalità focus disattivata"
+msgstr "Disattiva modalità focus"
 
 #: src/app/main/ui/workspace/context_menu.cljs:377
 msgid "workspace.focus.focus-on"
-msgstr "Modalità focus attivata"
+msgstr "Attiva modalità focus"
 
 #, unused
 msgid "workspace.focus.selection"
@@ -4860,7 +4861,7 @@ msgstr "Sostituisci componente"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:460
 msgid "workspace.options.component.swap.empty"
-msgstr "Non ci sono ancora asset in questo libreria"
+msgstr "Non ci sono ancora asset in questa libreria"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
 msgid "workspace.options.constraints"
@@ -6502,14 +6503,12 @@ msgid "workspace.token.num-sets"
 msgstr "%s set"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
-#, fuzzy
 msgid "workspace.token.original-value"
-msgstr "Valore originale: "
+msgstr "Valore originale: %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:205, src/app/main/ui/workspace/tokens/form.cljs:208, src/app/main/ui/workspace/tokens/token_pill.cljs:115
-#, fuzzy
 msgid "workspace.token.resolved-value"
-msgstr "Valore risultato: "
+msgstr "Valore risolto: %"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:203
 msgid "workspace.token.save-theme"
@@ -6888,3 +6887,70 @@ msgstr "Clicca per chiudere il tracciato"
 
 #~ msgid "onboarding.slide.1.desc1"
 #~ msgstr "Crea interazioni complete per imitare al meglio il prodotto finale."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
+msgid "workspace.token.label.group"
+msgstr "Gruppo"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:458
+msgid "workspace.token.warning-name-change"
+msgstr ""
+"Rinominare questo token interromperà qualsiasi riferimento al suo vecchio "
+"nome."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:200
+msgid "workspace.token.no-permission-themes"
+msgstr "Devi essere un editor per usare i temi"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:123
+msgid "workspace.token.value-not-valid"
+msgstr "Il valore non è valido"
+
+#: src/app/main/data/tokens.cljs:199
+msgid "errors.drag-drop.parent-to-child"
+msgstr "Impossibile rilasciare un set genitore in un suo percorso sottostante."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:343, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:344
+msgid "workspace.options.fit-content"
+msgstr "Adatta tavola da disegno al contenuto"
+
+#: src/app/main/ui/workspace/context_menu.cljs:210
+msgid "workspace.shape.menu.copy-text"
+msgstr "Copia come testo"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:128
+msgid "workspace.token.applied-to"
+msgstr "Applicato a"
+
+#: src/app/main/data/tokens.cljs:198
+msgid "errors.drag-drop.set-exists"
+msgstr ""
+"Impossibile completare il rilascio, un set con lo stesso nome è già presente "
+"nel percorso %s."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
+msgid "workspace.token.label.theme"
+msgstr "Tema"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:89
+msgid "workspace.token.no-permisions-set"
+msgstr "Devi essere un editor per attivare / disattivare i set"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:120
+msgid "workspace.token.ref-not-valid"
+msgstr "Il riferimento non è valido o non è presente in nessun set attivo"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:56
+msgid "workspace.token.token-name-validation-error"
+msgstr ""
+" non è un nome di token valido.\n"
+"I nomi dei token dovrebbero contenere solo lettere e cifre separate da "
+"caratteri . e non devono iniziare con un segno $."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:279
+msgid "workspace.token.tokens-section-title"
+msgstr "TOKEN -  %s"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:48
+msgid "dashboard.add-file"
+msgstr "Aggiungi file"

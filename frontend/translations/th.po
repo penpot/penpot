@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-12-28 16:02+0000\n"
+"PO-Revision-Date: 2025-02-04 21:02+0000\n"
 "Last-Translator: Late Night Defender <pongpeera054@protonmail.com>\n"
-"Language-Team: Thai "
-"<https://hosted.weblate.org/projects/penpot/frontend/th/>\n"
+"Language-Team: Thai <https://hosted.weblate.org/projects/penpot/frontend/th/>"
+"\n"
 "Language: th\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -861,3 +861,13 @@ msgstr "โปรไฟล์"
 #: src/app/main/ui/dashboard/sidebar.cljs:807
 msgid "labels.projects"
 msgstr "โปรเจกต์"
+
+#: src/app/main/ui/dashboard/projects.cljs:88
+msgid "dasboard.team-hero.title"
+msgstr "รวบรวมทีมเลย!"
+
+#: src/app/main/ui/dashboard/projects.cljs:90
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot เป็นเครื่องมือสำหรับการทำงานเป็นทีม เชิญชวนสมาชิกมาทำงานด้วยกันผ่านโปรเจกต์และไฟล์ต่"
+"าง ๆ เลย"

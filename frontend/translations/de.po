@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-14 12:00+0000\n"
+"PO-Revision-Date: 2025-02-11 13:22+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -6366,3 +6366,603 @@ msgstr "Verlauf"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:48
+msgid "dashboard.add-file"
+msgstr "Datei hinzufügen"
+
+#: src/app/main/ui/dashboard.cljs:173
+msgid "dashboard.plugins.try-plugin"
+msgstr "Plugin ausprobieren: "
+
+#: src/app/main/ui/settings/notifications.cljs:78
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Keine"
+
+#: src/app/main/ui/settings/notifications.cljs:77
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Nur Erwähnungen und Antworten"
+
+#: src/app/main/ui/settings/notifications.cljs:73
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Kommentare in der Datei"
+
+#: src/app/main/ui/settings/notifications.cljs:88
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "Keine"
+
+#: src/app/main/ui/settings/notifications.cljs:87
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Nur Erwähnungen und Antworten"
+
+#: src/app/main/ui/settings/notifications.cljs:83
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "Kommentare in der Datei"
+
+#: src/app/main/ui/settings/notifications.cljs:95
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "Alle Arten von Einladungen und Anfragen"
+
+#: src/app/main/ui/settings/notifications.cljs:92
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Einladungen und Anfragen"
+
+#: src/app/main/ui/settings/notifications.cljs:82
+msgid "dashboard.settings.notifications.email.title"
+msgstr "E-Mail-Benachrichtigungen"
+
+#: src/app/main/ui/settings/notifications.cljs:103
+msgid "dashboard.settings.notifications.submit"
+msgstr "Einstellungen aktualisieren"
+
+#: src/app/main/ui/settings/notifications.cljs:71
+msgid "dashboard.settings.notifications.title"
+msgstr "Benachrichtigungen"
+
+#: src/app/main/ui/settings/sidebar.cljs:99
+msgid "labels.notifications"
+msgstr "Benachrichtigungen"
+
+#: src/app/main/ui/static.cljs:311, src/app/main/ui/static.cljs:320
+msgid "not-found.no-permission.if-approves"
+msgstr "Wenn der Besitzer es zulässt, wirst du in das Team eingeladen."
+
+#: src/app/main/ui/settings/notifications.cljs:64
+msgid "title.settings.notifications"
+msgstr "Benachrichtigungen - Penpot"
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:404
+msgid "workspace.assets.typography.add-typography"
+msgstr "Typografie hinzufügen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:343, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:344
+msgid "workspace.options.fit-content"
+msgstr "Größe des Boards an den Inhalt anpassen"
+
+#: src/app/main/ui/workspace/plugins.cljs:283
+msgid "workspace.plugins.permissions.allow-download"
+msgstr "Starten von Dateidownloads."
+
+#: src/app/main/ui/workspace/plugins.cljs:270
+msgid "workspace.plugins.permissions.comment-write"
+msgstr "Ihre Kommentare lesen und ändern und in Ihrem Namen antworten."
+
+#: src/app/main/ui/workspace/plugins.cljs:436
+msgid "workspace.plugins.try-out.cancel"
+msgstr "NICHT JETZT"
+
+#: src/app/main/ui/workspace/plugins.cljs:425
+msgid "workspace.plugins.try-out.title"
+msgstr "'%s' PLUGIN IST FÜR IHREN BENUTZER INSTALLIERT!"
+
+#: src/app/main/ui/workspace/context_menu.cljs:188
+msgid "workspace.shape.menu.copy-link"
+msgstr "Link in die Zwischenablage kopieren"
+
+#: src/app/main/ui/workspace/context_menu.cljs:201
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "Kopieren/Einfügen als ..."
+
+#: src/app/main/ui/workspace/context_menu.cljs:210
+msgid "workspace.shape.menu.copy-text"
+msgstr "Als Text kopieren"
+
+#: src/app/main/ui/workspace/context_menu.cljs:217
+msgid "workspace.shape.menu.paste-props"
+msgstr "Eigenschaften einfügen"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+#, unused
+msgid "workspace.token-set.not-active"
+msgstr "Token-Set ist nicht aktiv"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:84
+msgid "workspace.token.active-themes"
+msgstr "%s aktive Themes"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+#, unused
+msgid "workspace.token.add set"
+msgstr "Set hinzufügen"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:128
+msgid "workspace.token.applied-to"
+msgstr "Angewandt auf"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:341
+msgid "workspace.token.back-to-themes"
+msgstr "Zurück zur Themen-Liste"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:51
+msgid "workspace.token.create-new-theme"
+msgstr "Erstellen Sie jetzt Ihr erstes Theme."
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:212
+msgid "workspace.token.edit"
+msgstr "Token bearbeiten"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
+msgid "workspace.token.label.group"
+msgstr "Gruppe"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
+msgid "workspace.token.label.theme"
+msgstr "Theme"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:89
+msgid "workspace.token.no-permisions-set"
+msgstr "Sie müssen ein Redakteur sein, um Sets zu aktivieren / deaktivieren"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:200
+msgid "workspace.token.no-permission-themes"
+msgstr "Sie müssen ein Redakteur sein, um Themes zu verwenden"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:401, src/app/main/ui/workspace/tokens/sets.cljs:405
+msgid "workspace.token.no-sets-create"
+msgstr "Es sind noch keine Sets definiert. Erstellen Sie zuerst eines."
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:114
+msgid "workspace.token.original-value"
+msgstr "Ursprünglicher Wert: %s"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:123
+msgid "workspace.token.value-not-valid"
+msgstr "Der Wert ist nicht gültig"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:458
+msgid "workspace.token.warning-name-change"
+msgstr ""
+"Die Umbenennung dieses Tokens macht jeden Verweis auf seinen alten Namen "
+"kaputt."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:259
+msgid "workspace.versions.restore-warning"
+msgstr "Möchten Sie diese Version wiederherstellen?"
+
+#, unused
+msgid "workspace.versions.snapshot-menu"
+msgstr "Schnappschuss-Menü öffnen"
+
+#: src/app/main/ui/workspace/sidebar.cljs:284
+msgid "workspace.versions.tab.actions"
+msgstr "Aktionen"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:365
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr ""
+"Wenn Sie diese Grenze erhöhen möchten, schreiben Sie uns an "
+"[support@penpot.app](%s)"
+
+#: src/app/main/ui/workspace/libraries.cljs:387
+msgid "workspace.libraries.more-templates"
+msgstr "Sie können Folgendes suchen "
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:154
+msgid "workspace.options.flows.remove-flow"
+msgstr "Flow entfernen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:735
+msgid "workspace.options.interactions.add-interaction"
+msgstr "Interaktion hinzufügen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interactions.remove-interaction"
+msgstr "Interaktion entfernen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:191, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:197
+msgid "workspace.options.layer-options.toggle-layer"
+msgstr "Sichtbarkeit der Ebene ein- und ausschalten"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:431
+msgid "workspace.token.create-token"
+msgstr "Neues %s Token erstellen"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:215, src/app/main/ui/workspace/tokens/sidebar.cljs:221
+msgid "workspace.token.no-sets-yet"
+msgstr "Es sind noch keine Sets vorhanden."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
+msgid "workspace.token.num-sets"
+msgstr "%s Sets"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:336
+msgid "workspace.versions.empty"
+msgstr "Es sind noch keine Versionen vorhanden"
+
+#: src/app/main/ui/ds/product/autosaved_milestone.cljs:53
+msgid "workspace.versions.expand-snapshot"
+msgstr "Schnappschüsse erweitern"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:309
+msgid "workspace.versions.filter.all"
+msgstr "Alle Versionen"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:308
+msgid "workspace.versions.filter.label"
+msgstr "Versionen filtern"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:310
+msgid "workspace.versions.filter.mine"
+msgstr "Meine Versionen"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:316
+msgid "workspace.versions.filter.user"
+msgstr "%s Versionen"
+
+#: src/app/main/ui/ds/product/autosaved_milestone.cljs:67, src/app/main/ui/ds/product/user_milestone.cljs:74
+msgid "workspace.versions.version-menu"
+msgstr "Version-Menü öffnen"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
+msgid "workspace.token.no-sets"
+msgstr "Keine Sets"
+
+#: src/app/main/errors.cljs:228
+msgid "errors.migration-in-progress"
+msgstr "Migration wird durchgeführt"
+
+#: src/app/main/ui/auth/recovery_request.cljs:116
+msgid "not-found.login.sent-recovery-check"
+msgstr ""
+"Überprüfen Sie Ihre E-Mail und klicken Sie auf den Link, um ein neues "
+"Passwort zu erstellen."
+
+#: src/app/main/ui/static.cljs:298
+msgid "not-found.no-permission.already-requested.or-others.project"
+msgstr ""
+"Sie haben bereits Zugang zu diesem Projekt oder anderen Projekten oder "
+"Dateien dieses Teams beantragt."
+
+#: src/app/main/ui/static.cljs:304
+msgid "not-found.no-permission.done.remember"
+msgstr ""
+"Denken Sie daran, dass Sie in das Team eingeladen werden, wenn der "
+"Eigentümer es erlaubt."
+
+#: src/app/main/ui/static.cljs:303
+msgid "not-found.no-permission.done.success"
+msgstr "Ihre Anfrage wurde korrekt abgeschickt!"
+
+#: src/app/main/data/common.cljs:93
+msgid "notifications.by-code.maintenance"
+msgstr ""
+"Wartungsarbeiten: Wir werden innerhalb von 5 Minuten für eine kurze Wartung "
+"offline sein."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:136
+msgid "workspace.options.radius.show-single-corners"
+msgstr "Unabhängige Ecken anzeigen"
+
+#: src/app/main/ui/workspace/plugins.cljs:372
+msgid "workspace.plugins.permissions-update.title"
+msgstr "DIESES PLUGIN AKTUALISIEREN"
+
+#: src/app/main/ui/workspace/plugins.cljs:376
+msgid "workspace.plugins.permissions-update.warning"
+msgstr ""
+"Das Plugin wurde geändert, seit Sie es das letzte Mal geöffnet haben. Es "
+"möchte nun auch zugreifen:"
+
+#: src/app/main/ui/workspace/plugins.cljs:316
+msgid "workspace.plugins.permissions.title"
+msgstr "'%s' PLUGIN BENÖTIGT ZUGRIFF AUF:"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:120
+msgid "workspace.token.ref-not-valid"
+msgstr "Referenz ist ungültig oder befindet sich nicht in einem aktiven Set"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:200, src/app/main/ui/workspace/tokens/sets.cljs:305
+msgid "workspace.token.select-set"
+msgstr "Set auswählen."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:346
+msgid "workspace.token.set-selection-theme"
+msgstr ""
+"Legen Sie fest, welche Token-Sets als Teil dieser Theme-Option verwendet "
+"werden sollen:"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:482
+msgid "workspace.token.token-description"
+msgstr "Beschreibung"
+
+#: src/app/main/ui/dashboard.cljs:242
+msgid "dashboard.import.error"
+msgstr "Der Import ist fehlgeschlagen. Bitte versuchen Sie es erneut"
+
+#: src/app/main/ui/settings/notifications.cljs:72
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Dashboard Benachrichtigungen"
+
+#: src/app/main/ui/dashboard.cljs:210
+msgid "dashboard.plugins.parse-error"
+msgstr "Das Plugin-Manifest kann nicht ausgewertet werden"
+
+#: src/app/main/ui/settings/notifications.cljs:76
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Alle Kommentare, Erwähnungen und Antworten"
+
+#: src/app/main/ui/settings/notifications.cljs:86
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "Alle Kommentare, Erwähnungen und Antworten"
+
+#: src/app/main/ui/settings/notifications.cljs:98
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "Keine"
+
+#: src/app/main/ui/workspace/plugins.cljs:276
+msgid "workspace.plugins.permissions.comment-read"
+msgstr "Ihre Kommentare und Antworten lesen."
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+#, unused
+msgid "workspace.token.grouping-set-alert"
+msgstr "Die Gruppierung von Token-Sets wird noch nicht unterstützt."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
+msgid "workspace.token.no-themes-currently"
+msgstr "Sie haben derzeit keine Themes."
+
+#: src/app/main/ui/workspace/tokens/form.cljs:205, src/app/main/ui/workspace/tokens/form.cljs:208, src/app/main/ui/workspace/tokens/token_pill.cljs:115
+msgid "workspace.token.resolved-value"
+msgstr "Aufgelöster Wert: %s"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:56
+msgid "workspace.token.token-name-validation-error"
+msgstr ""
+" sit kein gültiger Token-Name.\n"
+"Token-Namen dürfen nur Buchstaben und Ziffern enthalten, die durch . Zeichen "
+"(Punkt) getrennt sind und dürfen nicht mit einem $-Zeichen beginnen."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:361
+msgid "workspace.versions.warning.text"
+msgstr "Automatisch gespeicherte Versionen werden für %s Tage aufbewahrt."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:279
+msgid "workspace.token.tokens-section-title"
+msgstr "TOKENS -   %s"
+
+#: src/app/main/data/tokens.cljs:198
+msgid "errors.drag-drop.set-exists"
+msgstr ""
+"Ablegen kann nicht abgeschlossen werden, ein Set mit demselben Namen "
+"existiert bereits unter dem Pfad %s."
+
+#: src/app/main/data/tokens.cljs:199
+msgid "errors.drag-drop.parent-to-child"
+msgstr ""
+"Ein übergeordnetes Set kann nicht auf einem eigenen untergeordneten Pfad "
+"abgelegt werden."
+
+#: src/app/main/ui/static.cljs:51, src/app/main/ui/static.cljs:287, src/app/main/ui/static.cljs:293, src/app/main/ui/static.cljs:299, src/app/main/ui/static.cljs:305, src/app/main/ui/static.cljs:314, src/app/main/ui/static.cljs:323
+msgid "not-found.no-permission.go-dashboard"
+msgstr "Zu deinem Penpot wechseln"
+
+#: src/app/main/ui/workspace/plugins.cljs:429
+msgid "workspace.plugins.try-out.message"
+msgstr ""
+"Möchten Sie einen ersten Eindruck bekommen? Es wird in einem neuen Entwurf "
+"für Ihr aktuelles Team geöffnet. (Falls nicht, können Sie es jederzeit in "
+"den installierten Plugins einer beliebigen Datei finden.)"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:40
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"Die zum Projekt hinzugefügten Bibliotheken werden hier angezeigt. Versuchen "
+"Sie, Ihre Dateien freizugeben oder aus unseren [Bibliotheken & Vorlagen]"
+"(https://penpot.app/libraries-templates) hinzuzufügen."
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown, unused
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"Die zum Projekt hinzugefügten Bibliotheken werden hier angezeigt. Versuchen "
+"Sie, Ihre Dateien freizugeben oder aus unseren [Bibliotheken & Vorlagen]"
+"(https://penpot.app/libraries-templates) hinzuzufügen."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:969
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Keine Grenzen für die Kreativität"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:971
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Power up"
+
+#: src/app/main/ui/dashboard/team.cljs:181, src/app/main/ui/onboarding/team_choice.cljs:100
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr ""
+"Die maximale (%s) Anzahl von E-Mails, die in einer einzigen Anfrage "
+"eingeladen werden können, wurde erreicht"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:355
+msgid "labels.import"
+msgstr "Importieren"
+
+#: src/app/main/ui/comments.cljs:657, src/app/main/ui/comments.cljs:690, src/app/main/ui/comments.cljs:759
+msgid "labels.post"
+msgstr "Versenden"
+
+#: src/app/main/ui/comments.cljs:603
+msgid "labels.replies.new"
+msgstr "neue Antworten"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:252
+msgid "labels.sets"
+msgstr "Sets"
+
+#: src/app/main/ui/workspace/comments.cljs:66, src/app/main/ui/workspace/comments.cljs:136
+msgid "labels.show-mentions"
+msgstr "Nur Ihre Erwähnungen anzeigen"
+
+#: src/app/main/ui/dashboard/team.cljs:216
+msgid "modals.invite-team-member.text"
+msgstr ""
+"Sie können Mitglieder in das Team einladen, damit diese auf diese Datei und "
+"alle Team-Dateien zugreifen können."
+
+#: src/app/main/ui/static.cljs:150
+msgid "not-found.login.start-using"
+msgstr "Und starten Sie Penpot in Sekunden!"
+
+#: src/app/main/ui/static.cljs:135
+msgid "not-found.login.free"
+msgstr ""
+"Penpot ist das kostenlose und quelloffene Design-Tool für die Zusammenarbeit "
+"in Design und Code"
+
+#: src/app/main/ui/static.cljs:291
+msgid "not-found.no-permission.already-requested.file"
+msgstr "Sie haben bereits Zugang zu dieser Datei beantragt."
+
+#: src/app/main/ui/static.cljs:292
+msgid "not-found.no-permission.already-requested.or-others.file"
+msgstr ""
+"Sie haben bereits Zugang zu dieser Datei oder anderen Dateien oder Projekten "
+"dieses Teams beantragt."
+
+#: src/app/main/ui/static.cljs:297
+msgid "not-found.no-permission.already-requested.project"
+msgstr "Sie haben bereits Zugang zu diesem Projekt beantragt."
+
+#: src/app/main/ui/workspace/main_menu.cljs:910
+msgid "workspace.header.menu.option.power-up"
+msgstr "Verstärken Sie Ihren Plan"
+
+#: src/app/main/ui/workspace/libraries.cljs:368
+msgid "workspace.libraries.empty.no-libraries"
+msgstr ""
+"In Ihrem Team gibt es keine gemeinsamen Bibliotheken, Sie können suchen nach"
+
+#: src/app/main/ui/workspace/libraries.cljs:374
+msgid "workspace.libraries.empty.add-some"
+msgstr "Oder probieren Sie einige von diesen aus:"
+
+#: src/app/main/ui/workspace/libraries.cljs:372
+msgid "workspace.libraries.empty.some-templates"
+msgstr "einige Vorlagen sind hier"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:108
+msgid "workspace.options.blur-options.toggle-blur"
+msgstr "Weichzeichnen ein -und aufblenden"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:187
+msgid "workspace.options.export.add-export"
+msgstr "Export hinzufügen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:234
+msgid "workspace.options.export.remove-export"
+msgstr "Export entfernen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:164
+msgid "workspace.options.fill.remove-fill"
+msgstr "Füllung entfernen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:323
+msgid "workspace.options.guides.add-guide"
+msgstr "Hilfslinie hinzufügen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:187
+msgid "workspace.options.guides.remove-guide"
+msgstr "Hilfslinie entfernen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:183
+msgid "workspace.options.guides.toggle-guide"
+msgstr "Hilfslinie ein -und ausblenden"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:135
+msgid "workspace.options.radius.hide-all-corners"
+msgstr "Unabhängige Ecken einklappen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:176
+msgid "workspace.options.shadow-options.toggle-shadow"
+msgstr "Schatten ein- und ausblenden"
+
+#: src/app/main/data/plugins.cljs:86, src/app/main/ui/workspace/main_menu.cljs:743, src/app/main/ui/workspace/plugins.cljs:82
+msgid "workspace.plugins.error.need-editor"
+msgstr "Sie müssen ein Redakteur sein, um dieses Plugin zu benutzen"
+
+#: src/app/main/ui/workspace/context_menu.cljs:203
+msgid "workspace.shape.menu.copy-css"
+msgstr "Als CSS kopieren"
+
+#: src/app/main/ui/workspace/context_menu.cljs:205
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "Als CSS kopieren (verschachtelte Ebenen)"
+
+#: src/app/main/ui/workspace/context_menu.cljs:213
+msgid "workspace.shape.menu.copy-props"
+msgstr "Eigenschaften kopieren"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:437
+msgid "workspace.token.enter-token-name"
+msgstr "%s Token-Name eingeben"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:463
+msgid "workspace.token.enter-token-value"
+msgstr "Token-Wert oder Alias eingeben"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:440
+msgid "workspace.token.token-name"
+msgstr "Name"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:464
+msgid "workspace.token.token-value"
+msgstr "Wert"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:228
+msgid "workspace.token.delete"
+msgstr "Token löschen"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:225
+msgid "workspace.token.duplicate"
+msgstr "Token duplizieren"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:481
+msgid "workspace.token.enter-token-description"
+msgstr "Eine Beschreibung hinzufügen (optional)"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:348
+msgid "workspace.token.tools"
+msgstr "Werkzeuge"
+
+#: src/app/main/ui/comments.cljs:504
+msgid "comments.mentions.not-found"
+msgstr "Es wurden keine Personen für @%s gefunden"
+
+#: src/app/main/ui/dashboard.cljs:248
+msgid "dashboard.import.bad-url"
+msgstr "Der Import ist fehlgeschlagen. Die URL der Vorlage ist falsch"
+
+#: src/app/main/ui/dashboard.cljs:249
+msgid "dashboard.import.no-perms"
+msgstr "Sie haben nicht die Berechtigung, in dieses Team zu importieren"
+
+#: src/app/main/ui/settings/notifications.cljs:42
+msgid "dashboard.notifications.notifications-saved"
+msgstr "Benachrichtigungseinstellungen aktualisiert"
+
+#: src/app/main/ui/dashboard.cljs:212
+msgid "dashboard.plugins.bad-url"
+msgstr "Die URL des Plugins ist falsch"
