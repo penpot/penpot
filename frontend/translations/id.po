@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-02-07 14:01+0000\n"
-"Last-Translator: Linerly <linerly@proton.me>\n"
+"PO-Revision-Date: 2025-03-20 13:42+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
 "frontend/id/>\n"
 "Language: id\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -3473,6 +3473,7 @@ msgid "shortcuts.copy"
 msgstr "Salin"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+#, fuzzy
 msgid "shortcuts.copy-link"
 msgstr "Salin tautan ke papan klip"
 
@@ -4662,6 +4663,7 @@ msgid "workspace.libraries.empty.add-some"
 msgstr "Atau tambahkan beberapa dari sini untuk mencoba:"
 
 #: src/app/main/ui/workspace/libraries.cljs:368
+#, fuzzy
 msgid "workspace.libraries.empty.no-libraries"
 msgstr "Tidak ada Pustaka Terbagi dalam tim Anda, Anda dapat melihat"
 
@@ -6076,6 +6078,7 @@ msgid "workspace.shape.menu.copy-css-nested"
 msgstr "Salin sebagai CSS (lapisan bersarang)"
 
 #: src/app/main/ui/workspace/context_menu.cljs:188
+#, fuzzy
 msgid "workspace.shape.menu.copy-link"
 msgstr "Salin tautan ke papan klip"
 
