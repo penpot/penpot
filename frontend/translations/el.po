@@ -1249,10 +1249,6 @@ msgstr "Επεξεργασία"
 msgid "workspace.assets.graphics"
 msgstr "Γραφικά"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Βιβλιοθήκες"
-
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:320
 msgid "workspace.assets.not-found"
 msgstr "Δεν βρέθηκαν στοιχεία"
@@ -1413,10 +1409,6 @@ msgstr "Δεν υπάρχουν κοινόχρηστες βιβλιοθήκες 
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Δεν βρίσκεται «%s»"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Δεν υπάρχουν διαθέσιμες κοινόχρηστες βιβλιοθήκες"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"

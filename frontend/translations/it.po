@@ -4244,10 +4244,6 @@ msgstr "Gruppo"
 msgid "workspace.assets.group-name"
 msgstr "Nome gruppo"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Librerie"
-
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
 msgid "workspace.assets.list-view"
 msgstr "Vista a elenco"
@@ -4739,10 +4735,6 @@ msgstr "Caricamento…"
 msgid "workspace.libraries.more-templates"
 msgstr "Puoi cercare altri "
 
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "modelli qui"
-
 #: src/app/main/ui/workspace/libraries.cljs:481
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "Non ci sono librerie condivise che necessitano un aggiornamento"
@@ -4750,10 +4742,6 @@ msgstr "Non ci sono librerie condivise che necessitano un aggiornamento"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Nessun risultato trovato per “%s”"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Non ci sono librerie condivise disponibili"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -6421,10 +6409,6 @@ msgstr "Crea ora il tuo prima tema."
 msgid "workspace.token.create-one"
 msgstr "Creane uno."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "Crea tema"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:431
 msgid "workspace.token.create-token"
 msgstr "Crea un nuovo token %s"
@@ -6470,17 +6454,9 @@ msgstr "Inserisci il nome del token %s"
 msgid "workspace.token.grouping-set-alert"
 msgstr "Il raggruppamento di set di token non è ancora supportato."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
-msgid "workspace.token.new-theme"
-msgstr "Nuovo tema"
-
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:88
 msgid "workspace.token.no-active-theme"
 msgstr "Nessun tema attivo"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
-msgid "workspace.token.no-sets"
-msgstr "Nessun set"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:401, src/app/main/ui/workspace/tokens/sets.cljs:405
 msgid "workspace.token.no-sets-create"
@@ -6497,10 +6473,6 @@ msgstr "Non ci sono temi."
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
 msgid "workspace.token.no-themes-currently"
 msgstr "Al momento non hai temi."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
-msgid "workspace.token.num-sets"
-msgstr "%s set"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
 msgid "workspace.token.original-value"
@@ -6526,10 +6498,6 @@ msgstr "Definisci quali set token dovrebbe essere usati come parte di questo tem
 #, unused
 msgid "workspace.token.theme-name"
 msgstr "Tema %s"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "Temi"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:482
 msgid "workspace.token.token-description"
@@ -6906,10 +6874,6 @@ msgstr "Devi essere un editor per usare i temi"
 msgid "workspace.token.value-not-valid"
 msgstr "Il valore non è valido"
 
-#: src/app/main/data/tokens.cljs:199
-msgid "errors.drag-drop.parent-to-child"
-msgstr "Impossibile rilasciare un set genitore in un suo percorso sottostante."
-
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:343, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:344
 msgid "workspace.options.fit-content"
 msgstr "Adatta tavola da disegno al contenuto"
@@ -6921,12 +6885,6 @@ msgstr "Copia come testo"
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:128
 msgid "workspace.token.applied-to"
 msgstr "Applicato a"
-
-#: src/app/main/data/tokens.cljs:198
-msgid "errors.drag-drop.set-exists"
-msgstr ""
-"Impossibile completare il rilascio, un set con lo stesso nome è già presente "
-"nel percorso %s."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
 msgid "workspace.token.label.theme"

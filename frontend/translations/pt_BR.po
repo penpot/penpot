@@ -3020,10 +3020,6 @@ msgstr "Agrupar"
 msgid "workspace.assets.group-name"
 msgstr "Nome do grupo"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Bibliotecas"
-
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:336
 msgid "workspace.assets.local-library"
 msgstr "biblioteca local"
@@ -3331,10 +3327,6 @@ msgstr "Não há bibliotecas compartilhadas para atualizar"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Não foram encontrados resultados para “%s“"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Não há bibliotecas compartilhadas disponíveis"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -4916,10 +4908,6 @@ msgstr ""
 msgid "workspace.token.theme-name"
 msgstr "Tema %s"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "Temas"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:464
 msgid "workspace.token.token-value"
 msgstr "Valor"
@@ -4975,10 +4963,6 @@ msgstr "Duplicar token"
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:228
 msgid "workspace.token.delete"
 msgstr "Remover token"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "Criar tema"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:51
 msgid "workspace.token.create-new-theme"

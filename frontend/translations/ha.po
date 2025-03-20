@@ -3374,10 +3374,6 @@ msgstr "rukuni"
 msgid "workspace.assets.group-name"
 msgstr "sunan kungiya"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "dakunan karatu"
-
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:336
 msgid "workspace.assets.local-library"
 msgstr "dakin karatun gida"
@@ -3730,10 +3726,6 @@ msgstr "Babu rabben ma'adanai da suke bukatar sabuntawa"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Babu daidaituwa da aka samu na “%s“"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Babu rababbun ma'adanai wanda aka samu"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"

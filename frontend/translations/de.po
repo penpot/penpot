@@ -4056,10 +4056,6 @@ msgstr "Gruppieren"
 msgid "workspace.assets.group-name"
 msgstr "Name der Gruppe"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Bibliotheken"
-
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
 msgid "workspace.assets.list-view"
 msgstr "Listenansicht"
@@ -4527,10 +4523,6 @@ msgstr "AKTUALISIERUNGEN DER BIBLIOTHEK"
 msgid "workspace.libraries.loading"
 msgstr "Laden…"
 
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "weitere Vorlagen sind hier"
-
 #: src/app/main/ui/workspace/libraries.cljs:481
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr ""
@@ -4540,10 +4532,6 @@ msgstr ""
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Keine Übereinstimmungen für “%s“ gefunden"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Es sind keine gemeinsam genutzte Bibliotheken verfügbar"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -6059,10 +6047,6 @@ msgstr "Sitemap"
 msgid "workspace.token.create-one"
 msgstr "Ein neues erstellen."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "Theme erstellen"
-
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:151
 msgid "workspace.token.delete-theme-title"
 msgstr "Theme löschen"
@@ -6078,10 +6062,6 @@ msgstr "Themes bearbeiten"
 #: src/app/main/ui/workspace/tokens/form.cljs:430
 msgid "workspace.token.edit-token"
 msgstr "Token bearbeiten"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
-msgid "workspace.token.new-theme"
-msgstr "Neues Theme"
 
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:88
 msgid "workspace.token.no-active-theme"
@@ -6099,10 +6079,6 @@ msgstr "Theme speichern"
 #, unused
 msgid "workspace.token.theme-name"
 msgstr "Theme %s"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "Themes"
 
 #: src/app/main/ui/workspace/sidebar.cljs:134, src/app/main/ui/workspace/sidebar.cljs:143
 msgid "workspace.toolbar.assets"
@@ -6583,10 +6559,6 @@ msgstr "Neues %s Token erstellen"
 msgid "workspace.token.no-sets-yet"
 msgstr "Es sind noch keine Sets vorhanden."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
-msgid "workspace.token.num-sets"
-msgstr "%s Sets"
-
 #: src/app/main/ui/workspace/sidebar/versions.cljs:336
 msgid "workspace.versions.empty"
 msgstr "Es sind noch keine Versionen vorhanden"
@@ -6614,10 +6586,6 @@ msgstr "%s Versionen"
 #: src/app/main/ui/ds/product/autosaved_milestone.cljs:67, src/app/main/ui/ds/product/user_milestone.cljs:74
 msgid "workspace.versions.version-menu"
 msgstr "Version-Menü öffnen"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
-msgid "workspace.token.no-sets"
-msgstr "Keine Sets"
 
 #: src/app/main/errors.cljs:228
 msgid "errors.migration-in-progress"
@@ -6742,18 +6710,6 @@ msgstr "Automatisch gespeicherte Versionen werden für %s Tage aufbewahrt."
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:279
 msgid "workspace.token.tokens-section-title"
 msgstr "TOKENS -   %s"
-
-#: src/app/main/data/tokens.cljs:198
-msgid "errors.drag-drop.set-exists"
-msgstr ""
-"Ablegen kann nicht abgeschlossen werden, ein Set mit demselben Namen "
-"existiert bereits unter dem Pfad %s."
-
-#: src/app/main/data/tokens.cljs:199
-msgid "errors.drag-drop.parent-to-child"
-msgstr ""
-"Ein übergeordnetes Set kann nicht auf einem eigenen untergeordneten Pfad "
-"abgelegt werden."
 
 #: src/app/main/ui/static.cljs:51, src/app/main/ui/static.cljs:287, src/app/main/ui/static.cljs:293, src/app/main/ui/static.cljs:299, src/app/main/ui/static.cljs:305, src/app/main/ui/static.cljs:314, src/app/main/ui/static.cljs:323
 msgid "not-found.no-permission.go-dashboard"
@@ -6918,10 +6874,6 @@ msgstr "Eigenschaften kopieren"
 #: src/app/main/ui/workspace/tokens/form.cljs:437
 msgid "workspace.token.enter-token-name"
 msgstr "%s Token-Name eingeben"
-
-#: src/app/main/ui/workspace/tokens/form.cljs:463
-msgid "workspace.token.enter-token-value"
-msgstr "Token-Wert oder Alias eingeben"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:440
 msgid "workspace.token.token-name"

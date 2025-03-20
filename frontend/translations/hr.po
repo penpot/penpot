@@ -2766,10 +2766,6 @@ msgstr "Grupa"
 msgid "workspace.assets.group-name"
 msgstr "Ime grupe"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Biblioteke"
-
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:336
 msgid "workspace.assets.local-library"
 msgstr "lokalna biblioteka"
@@ -3074,10 +3070,6 @@ msgstr "Ne postoje zajedničke biblioteke koje je potrebno ažurirati"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Nisu pronađeni rezultati za “%s”"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Nema dostupnih zajedničkih biblioteka"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -4884,10 +4876,6 @@ msgstr ""
 "datoteke koju pokušavate otvoriti. Prije otvaranja datoteke potrebno je "
 "primijeniti migracije za '%s'."
 
-#: src/app/main/data/tokens.cljs:199
-msgid "errors.drag-drop.parent-to-child"
-msgstr "Nije moguće ispustiti nadređeni skup na vlastiti podređeni put."
-
 #: src/app/main/ui/settings/notifications.cljs:83
 msgid "dashboard.settings.notifications.email-comments.title"
 msgstr "Komentari datoteke"
@@ -4955,11 +4943,6 @@ msgstr "Aktivno"
 #: src/app/main/ui/dashboard/team.cljs:910
 msgid "dashboard.webhooks.active.explain"
 msgstr "Kada se ovaj webhook pokrene, bit će isporučene pojedinosti o događaju"
-
-#: src/app/main/data/tokens.cljs:198
-msgid "errors.drag-drop.set-exists"
-msgstr ""
-"Nije moguće dovršiti ispuštanje, skup s istim imenom već postoji na putu %s."
 
 #: src/app/main/ui/delete_shared.cljs:59
 msgid "modals.delete-unpublish-shared-confirm.activated.hint"
@@ -5530,10 +5513,6 @@ msgstr "Uredite temu"
 msgid "workspace.token.enter-token-name"
 msgstr "Unesite %s naziv tokena"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:463
-msgid "workspace.token.enter-token-value"
-msgstr "Unesite vrijednost tokena ili alias"
-
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
 msgid "workspace.token.label.group"
 msgstr "Grupa"
@@ -5562,10 +5541,6 @@ msgstr "Nema tema."
 msgid "workspace.token.no-themes-currently"
 msgstr "Trenutno nemate nijednu temu."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
-msgid "workspace.token.num-sets"
-msgstr "%s skupova"
-
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:120
 msgid "workspace.token.ref-not-valid"
 msgstr "Referenca nije važeća ili nije ni u jednom aktivnom skupu"
@@ -5587,10 +5562,6 @@ msgstr ""
 #, unused
 msgid "workspace.token.theme-name"
 msgstr "Tema %s"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "Teme"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:440
 msgid "workspace.token.token-name"
@@ -5784,14 +5755,6 @@ msgstr "Uredite token"
 #, unused
 msgid "workspace.token.grouping-set-alert"
 msgstr "Grupiranje skupa tokena još nije podržano."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
-msgid "workspace.token.new-theme"
-msgstr "Nova tema"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
-msgid "workspace.token.no-sets"
-msgstr "Nema skupina"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:228
 msgid "workspace.token.delete"
@@ -6008,10 +5971,6 @@ msgstr "Kopiraj/zalijepi kao..."
 #: src/app/main/ui/workspace/context_menu.cljs:210
 msgid "workspace.shape.menu.copy-text"
 msgstr "Kopiraj kao tekst"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "Stvorite temu"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:56
 msgid "workspace.token.token-name-validation-error"
@@ -6412,10 +6371,6 @@ msgstr "Dodajte 1 stupac desno"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:478
 msgid "workspace.layout_grid.editor.padding.expand"
 msgstr "Prikaži 4-strane opcije podstava"
-
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "više predložaka ovdje"
 
 #: src/app/main/ui/workspace/text_palette.cljs:161
 msgid "workspace.libraries.colors.empty-typography-palette"

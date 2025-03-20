@@ -3113,10 +3113,6 @@ msgstr "Taldekatu"
 msgid "workspace.assets.group-name"
 msgstr "Taldearen izena"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Liburutegiak"
-
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:336
 msgid "workspace.assets.local-library"
 msgstr "liburutegi lokala"
@@ -3436,10 +3432,6 @@ msgstr "Ez dago eguneraketa behar duen partekatutako liburutegirik"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Ez da ezer aurkitu bilaketa honentzat: \"%s\""
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Ez dago partekatutako liburutegirik"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"

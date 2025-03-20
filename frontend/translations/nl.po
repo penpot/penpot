@@ -4255,10 +4255,6 @@ msgstr "Groeperen"
 msgid "workspace.assets.group-name"
 msgstr "Groepsnaam"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Bibliotheken"
-
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
 msgid "workspace.assets.list-view"
 msgstr "Lijstweergave"
@@ -4750,10 +4746,6 @@ msgstr "Laden…"
 msgid "workspace.libraries.more-templates"
 msgstr "Je kun hier "
 
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "meer sjablonen zoeken"
-
 #: src/app/main/ui/workspace/libraries.cljs:481
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "Er zijn geen gedeelde bibliotheken die moeten worden bijgewerkt"
@@ -4761,10 +4753,6 @@ msgstr "Er zijn geen gedeelde bibliotheken die moeten worden bijgewerkt"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Geen resultaten gevonden voor “%s“"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Er zijn geen gedeelde bibliotheken beschikbaar"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -6430,10 +6418,6 @@ msgstr "Maak nu je eerste thema aan."
 msgid "workspace.token.create-one"
 msgstr "Maak er een aan."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "Thema aanmaken"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:431
 msgid "workspace.token.create-token"
 msgstr "Nieuw %s token aanmaken"
@@ -6479,17 +6463,9 @@ msgstr "Voer de tokennaam %s in"
 msgid "workspace.token.grouping-set-alert"
 msgstr "Groepering van tokenverzamelingen is nog niet ondersteund."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
-msgid "workspace.token.new-theme"
-msgstr "Nieuw thema"
-
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:88
 msgid "workspace.token.no-active-theme"
 msgstr "Geen thema actief"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
-msgid "workspace.token.no-sets"
-msgstr "Geen verzamelingen"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:401, src/app/main/ui/workspace/tokens/sets.cljs:405
 msgid "workspace.token.no-sets-create"
@@ -6506,10 +6482,6 @@ msgstr "Er zijn geen thema's."
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
 msgid "workspace.token.no-themes-currently"
 msgstr "Je hebt momenteel geen thema's."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
-msgid "workspace.token.num-sets"
-msgstr "%s verzamelingen"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
 msgid "workspace.token.original-value"
@@ -6537,10 +6509,6 @@ msgstr ""
 #, unused
 msgid "workspace.token.theme-name"
 msgstr "Thema %s"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "Thema's"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:482
 msgid "workspace.token.token-description"
@@ -6921,16 +6889,6 @@ msgstr "Groep"
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:120
 msgid "workspace.token.ref-not-valid"
 msgstr "Referentie is niet geldig of zit niet in een actieve verzameling"
-
-#: src/app/main/data/tokens.cljs:199
-msgid "errors.drag-drop.parent-to-child"
-msgstr "Kan bovenliggende verzameling niet toepassen op onderliggend pad."
-
-#: src/app/main/data/tokens.cljs:198
-msgid "errors.drag-drop.set-exists"
-msgstr ""
-"Kan sleepactie niet voltooien. Er bestaat al een verzameling met dezelfde "
-"naam op pad %s."
 
 #: src/app/main/ui/workspace/tokens/form.cljs:56
 msgid "workspace.token.token-name-validation-error"

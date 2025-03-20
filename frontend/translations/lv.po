@@ -4148,10 +4148,6 @@ msgstr "Kopa"
 msgid "workspace.assets.group-name"
 msgstr "Kopas nosaukums"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Bibliotēkas"
-
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
 msgid "workspace.assets.list-view"
 msgstr "Saraksta skats"
@@ -4645,10 +4641,6 @@ msgstr "Ielādē…"
 msgid "workspace.libraries.more-templates"
 msgstr "Var meklēt "
 
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "vairāk sagatavju šeit"
-
 #: src/app/main/ui/workspace/libraries.cljs:481
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "Nav nevienas koplietojamās bibliotēkas, kas būtu jāatjaunina"
@@ -4656,10 +4648,6 @@ msgstr "Nav nevienas koplietojamās bibliotēkas, kas būtu jāatjaunina"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "“%s” nav atrasta neviena atbilstība"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Nav pieejamu koplietojamo bibliotēku"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -6307,10 +6295,6 @@ msgstr "Tagad izveido savu pirmo izskatu!"
 msgid "workspace.token.create-one"
 msgstr "Izveidot kādu."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "Izveidot izskatu"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:431
 msgid "workspace.token.create-token"
 msgstr "Izveidot jaunu %s tekstvienību"
@@ -6336,17 +6320,9 @@ msgstr "Labot tekstvienību"
 msgid "workspace.token.grouping-set-alert"
 msgstr "Tekstvienību apkopošana vēl netiek nodrošināta."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
-msgid "workspace.token.new-theme"
-msgstr "Jauns izskats"
-
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:88
 msgid "workspace.token.no-active-theme"
 msgstr "Nav izvēlēts izskats"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
-msgid "workspace.token.no-sets"
-msgstr "Nav kopu"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:401, src/app/main/ui/workspace/tokens/sets.cljs:405
 msgid "workspace.token.no-sets-create"
@@ -6363,10 +6339,6 @@ msgstr "Šeit nav izskatu."
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
 msgid "workspace.token.no-themes-currently"
 msgstr "Pašlaik nav izskatu."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
-msgid "workspace.token.num-sets"
-msgstr "%s kopas"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
 msgid "workspace.token.original-value"
@@ -6394,10 +6366,6 @@ msgstr ""
 #, unused
 msgid "workspace.token.theme-name"
 msgstr "Izskats \"%s\""
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "Izskati"
 
 #: src/app/main/ui/workspace/sidebar.cljs:134, src/app/main/ui/workspace/sidebar.cljs:143
 msgid "workspace.toolbar.assets"
@@ -6809,15 +6777,6 @@ msgstr "Atjaunināt iestatījumus"
 msgid "dashboard.settings.notifications.title"
 msgstr "Paziņojumi"
 
-#: src/app/main/data/tokens.cljs:199
-msgid "errors.drag-drop.parent-to-child"
-msgstr "Nevar nomest vecāku kopu paša bērna ceļā."
-
-#: src/app/main/data/tokens.cljs:198
-msgid "errors.drag-drop.set-exists"
-msgstr ""
-"Nevar pabeigt nomešanu, jo kopa ar tādu pašu nosaukumu jau pastāv ceļā %s."
-
 #: src/app/main/ui/settings/notifications.cljs:64
 msgid "title.settings.notifications"
 msgstr "Paziņojumi - Penpot"
@@ -6928,10 +6887,6 @@ msgstr "Pievienot aprakstu (pēc izvēles)"
 #: src/app/main/ui/workspace/tokens/form.cljs:437
 msgid "workspace.token.enter-token-name"
 msgstr "Jāievada %s tekstvienības nosaukums"
-
-#: src/app/main/ui/workspace/tokens/form.cljs:463
-msgid "workspace.token.enter-token-value"
-msgstr "Jāievada tekstvienības vērtība vai aizstājvārds"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:225
 msgid "workspace.token.duplicate"
