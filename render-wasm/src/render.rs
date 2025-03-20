@@ -216,6 +216,9 @@ impl RenderState {
         self.surfaces
             .flush_and_submit(&mut self.gpu_state, SurfaceId::DropShadows);
 
+        self.surfaces
+            .flush_and_submit(&mut self.gpu_state, SurfaceId::InnerShadows);
+
         self.surfaces.draw_into(
             SurfaceId::DropShadows,
             SurfaceId::Current,
@@ -224,6 +227,12 @@ impl RenderState {
 
         self.surfaces.draw_into(
             SurfaceId::Fills,
+            SurfaceId::Current,
+            Some(&skia::Paint::default()),
+        );
+
+        self.surfaces.draw_into(
+            SurfaceId::InnerShadows,
             SurfaceId::Current,
             Some(&skia::Paint::default()),
         );
@@ -269,6 +278,7 @@ impl RenderState {
         self.surfaces.apply_mut(
             &[
                 SurfaceId::Shadow,
+                SurfaceId::InnerShadows,
                 SurfaceId::DropShadows,
                 SurfaceId::Overlay,
                 SurfaceId::Fills,
@@ -286,7 +296,12 @@ impl RenderState {
         modifiers: Option<&Matrix>,
         clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
     ) {
-        let surface_ids = &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::DropShadows];
+        let surface_ids = &[
+            SurfaceId::Fills,
+            SurfaceId::Strokes,
+            SurfaceId::DropShadows,
+            SurfaceId::InnerShadows,
+        ];
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().save();
         });
@@ -365,7 +380,12 @@ impl RenderState {
             }
             _ => {
                 self.surfaces.apply_mut(
-                    &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::DropShadows],
+                    &[
+                        SurfaceId::Fills,
+                        SurfaceId::Strokes,
+                        SurfaceId::DropShadows,
+                        SurfaceId::InnerShadows,
+                    ],
                     |s| {
                         s.canvas().concat(&matrix);
                     },
@@ -379,22 +399,19 @@ impl RenderState {
                     strokes::render(self, &shape, stroke);
                 }
 
-                for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
-                    shadows::render_inner_shadow(
-                        self,
-                        shadow,
-                        self.viewbox.zoom * self.options.dpr(),
-                        shape.fills().len() > 0,
-                    );
-                }
-
+                shadows::render_inner_shadows(self, &shape);
                 shadows::render_drop_shadows(self, &shape);
             }
         };
 
         self.apply_drawing_to_render_canvas(Some(&shape));
         self.surfaces.apply_mut(
-            &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::DropShadows],
+            &[
+                SurfaceId::Fills,
+                SurfaceId::Strokes,
+                SurfaceId::DropShadows,
+                SurfaceId::InnerShadows,
+            ],
             |s| {
                 s.canvas().restore();
             },
@@ -419,14 +436,17 @@ impl RenderState {
                 self.cancel_animation_frame(frame_id);
             }
         }
+        let scale = self.get_scale();
         self.reset_canvas();
         self.surfaces.apply_mut(
-            &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::DropShadows],
+            &[
+                SurfaceId::Fills,
+                SurfaceId::Strokes,
+                SurfaceId::DropShadows,
+                SurfaceId::InnerShadows,
+            ],
             |s| {
-                s.canvas().scale((
-                    self.viewbox.zoom * self.options.dpr(),
-                    self.viewbox.zoom * self.options.dpr(),
-                ));
+                s.canvas().scale((scale, scale));
             },
         );
 
@@ -517,7 +537,7 @@ impl RenderState {
                 .save_layer(&mask_rec);
         }
 
-        if let Some(image_filter) = element.image_filter(self.viewbox.zoom * self.options.dpr()) {
+        if let Some(image_filter) = element.image_filter(self.get_scale()) {
             paint.set_image_filter(image_filter);
         }
 
@@ -546,9 +566,9 @@ impl RenderState {
 
     pub fn get_current_tile_bounds(&mut self) -> Rect {
         let (tile_x, tile_y) = self.current_tile.unwrap();
-        let zoom = self.viewbox.zoom * self.options.dpr();
-        let offset_x = self.viewbox.area.left * zoom;
-        let offset_y = self.viewbox.area.top * zoom;
+        let scale = self.get_scale();
+        let offset_x = self.viewbox.area.left * scale;
+        let offset_y = self.viewbox.area.top * scale;
         Rect::from_xywh(
             (tile_x as f32 * tiles::TILE_SIZE) - offset_x,
             (tile_y as f32 * tiles::TILE_SIZE) - offset_y,
@@ -781,5 +801,9 @@ impl RenderState {
                 }
             }
         }
+    }
+
+    pub fn get_scale(&self) -> f32 {
+        self.viewbox.zoom() * self.options.dpr()
     }
 }

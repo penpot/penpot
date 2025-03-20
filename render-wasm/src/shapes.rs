@@ -749,6 +749,10 @@ impl Shape {
             _ => false,
         }
     }
+
+    pub fn has_fills(&self) -> bool {
+        !self.fills.is_empty()
+    }
 }
 
 #[cfg(test)]

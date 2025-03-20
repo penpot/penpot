@@ -154,7 +154,7 @@ fn handle_stroke_caps(
     canvas: &skia::Canvas,
     is_open: bool,
     svg_attrs: &HashMap<String, String>,
-    dpr_scale: f32,
+    scale: f32,
 ) {
     let points_count = path.count_points();
     let mut points = vec![Point::default(); points_count];
@@ -165,7 +165,7 @@ fn handle_stroke_caps(
         let first_point = points.first().unwrap();
         let last_point = points.last().unwrap();
 
-        let mut paint_stroke = stroke.to_stroked_paint(is_open, selrect, svg_attrs, dpr_scale);
+        let mut paint_stroke = stroke.to_stroked_paint(is_open, selrect, svg_attrs, scale);
 
         handle_stroke_cap(
             canvas,
@@ -332,11 +332,11 @@ fn draw_image_stroke_in_container(
     }
 
     let size = image_fill.size();
+    let scale = render_state.get_scale();
     let canvas = render_state.surfaces.canvas(SurfaceId::Fills);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
     let svg_attrs = &shape.svg_attrs;
-    let dpr_scale = render_state.viewbox.zoom * render_state.options.dpr();
 
     // Save canvas and layer state
     let mut pb = skia::Paint::default();
@@ -358,11 +358,11 @@ fn draw_image_stroke_in_container(
                 &outer_rect,
                 &shape_type.corners(),
                 svg_attrs,
-                dpr_scale,
+                scale,
             );
         }
         Type::Circle => {
-            draw_stroke_on_circle(canvas, stroke, container, &outer_rect, svg_attrs, dpr_scale)
+            draw_stroke_on_circle(canvas, stroke, container, &outer_rect, svg_attrs, scale)
         }
 
         shape_type @ (Type::Path(_) | Type::Bool(_)) => {
@@ -381,12 +381,12 @@ fn draw_image_stroke_in_container(
                     }
                 }
                 let is_open = p.is_open();
-                let mut paint = stroke.to_stroked_paint(is_open, &outer_rect, svg_attrs, dpr_scale);
+                let mut paint = stroke.to_stroked_paint(is_open, &outer_rect, svg_attrs, scale);
                 canvas.draw_path(&path, &paint);
                 if stroke.render_kind(is_open) == StrokeKind::OuterStroke {
                     // Small extra inner stroke to overlap with the fill
                     // and avoid unnecesary artifacts.
-                    paint.set_stroke_width(1. / dpr_scale);
+                    paint.set_stroke_width(1. / scale);
                     canvas.draw_path(&path, &paint);
                 }
                 handle_stroke_caps(
@@ -396,7 +396,7 @@ fn draw_image_stroke_in_container(
                     canvas,
                     is_open,
                     svg_attrs,
-                    dpr_scale,
+                    scale,
                 );
                 canvas.restore();
             }
@@ -437,8 +437,8 @@ fn draw_image_stroke_in_container(
  * This SHOULD be the only public function in this module.
  */
 pub fn render(render_state: &mut RenderState, shape: &Shape, stroke: &Stroke) {
+    let scale = render_state.get_scale();
     let canvas = render_state.surfaces.canvas(SurfaceId::Strokes);
-    let dpr_scale = render_state.viewbox.zoom * render_state.options.dpr();
     let selrect = shape.selrect;
     let path_transform = shape.to_path_transform();
     let svg_attrs = &shape.svg_attrs;
@@ -455,15 +455,14 @@ pub fn render(render_state: &mut RenderState, shape: &Shape, stroke: &Stroke) {
                     &selrect,
                     &shape_type.corners(),
                     svg_attrs,
-                    dpr_scale,
+                    scale,
                 );
             }
             Type::Circle => {
-                draw_stroke_on_circle(canvas, stroke, &selrect, &selrect, &svg_attrs, dpr_scale)
+                draw_stroke_on_circle(canvas, stroke, &selrect, &selrect, svg_attrs, scale)
             }
             shape_type @ (Type::Path(_) | Type::Bool(_)) => {
                 if let Some(path) = shape_type.path() {
-                    let svg_attrs = &shape.svg_attrs;
                     draw_stroke_on_path(
                         canvas,
                         stroke,
@@ -471,7 +470,7 @@ pub fn render(render_state: &mut RenderState, shape: &Shape, stroke: &Stroke) {
                         &selrect,
                         path_transform.as_ref(),
                         svg_attrs,
-                        dpr_scale,
+                        scale,
                     );
                 }
             }
