@@ -1297,7 +1297,9 @@ Will return a value that matches this schema:
                            (map (fn [theme]
                                   (-> theme
                                       (set/rename-keys {"selectedTokenSets" "sets"})
-                                      (update "sets" keys)))))
+                                      (update "sets" keys)
+                                      (update "sets" #(map normalize-set-name %))))))
+
           active-sets (get metadata "activeSets")
           active-themes (get metadata "activeThemes")
           active-themes (if (empty? active-themes)
