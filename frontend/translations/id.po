@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-02-07 14:01+0000\n"
-"Last-Translator: Linerly <linerly@proton.me>\n"
+"PO-Revision-Date: 2025-03-20 13:42+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
 "frontend/id/>\n"
 "Language: id\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -3473,6 +3473,7 @@ msgid "shortcuts.copy"
 msgstr "Salin"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+#, fuzzy
 msgid "shortcuts.copy-link"
 msgstr "Salin tautan ke papan klip"
 
@@ -4213,10 +4214,6 @@ msgstr "Kelompok"
 msgid "workspace.assets.group-name"
 msgstr "Nama kelompok"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Pustaka"
-
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
 msgid "workspace.assets.list-view"
 msgstr "Tampilan daftar"
@@ -4666,6 +4663,7 @@ msgid "workspace.libraries.empty.add-some"
 msgstr "Atau tambahkan beberapa dari sini untuk mencoba:"
 
 #: src/app/main/ui/workspace/libraries.cljs:368
+#, fuzzy
 msgid "workspace.libraries.empty.no-libraries"
 msgstr "Tidak ada Pustaka Terbagi dalam tim Anda, Anda dapat melihat"
 
@@ -4706,10 +4704,6 @@ msgstr "Memuat…"
 msgid "workspace.libraries.more-templates"
 msgstr "Anda dapat mencari "
 
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "lebih banyak tempat di sini"
-
 #: src/app/main/ui/workspace/libraries.cljs:481
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "Tidak ada Pustaka Terbagi yang membutuhkan pembaruan"
@@ -4717,10 +4711,6 @@ msgstr "Tidak ada Pustaka Terbagi yang membutuhkan pembaruan"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Tidak ada yang cocok dengan “%s”"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Tidak ada Pustaka Terbagi yang tersedia"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -6088,6 +6078,7 @@ msgid "workspace.shape.menu.copy-css-nested"
 msgstr "Salin sebagai CSS (lapisan bersarang)"
 
 #: src/app/main/ui/workspace/context_menu.cljs:188
+#, fuzzy
 msgid "workspace.shape.menu.copy-link"
 msgstr "Salin tautan ke papan klip"
 
@@ -6383,10 +6374,6 @@ msgstr "Buat tema pertama Anda sekarang."
 msgid "workspace.token.create-one"
 msgstr "Buat baru."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "Buat tema"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:431
 msgid "workspace.token.create-token"
 msgstr "Buat token %s baru"
@@ -6432,17 +6419,9 @@ msgstr "Masukkan nama token %s"
 msgid "workspace.token.grouping-set-alert"
 msgstr "Pengelompokan Set Token belum didukung."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
-msgid "workspace.token.new-theme"
-msgstr "Tema baru"
-
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:88
 msgid "workspace.token.no-active-theme"
 msgstr "Tidak ada tema aktif"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
-msgid "workspace.token.no-sets"
-msgstr "Tidak ada set"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:401, src/app/main/ui/workspace/tokens/sets.cljs:405
 msgid "workspace.token.no-sets-create"
@@ -6459,10 +6438,6 @@ msgstr "Belum ada tema."
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
 msgid "workspace.token.no-themes-currently"
 msgstr "Anda saat ini belum memiliki tema."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
-msgid "workspace.token.num-sets"
-msgstr "%s set"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
 msgid "workspace.token.original-value"
@@ -6488,10 +6463,6 @@ msgstr "Tentukan set token apa yang digunakan sebagai bagian opsi tema ini:"
 #, unused
 msgid "workspace.token.theme-name"
 msgstr "Tema %s"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "Tema"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:482
 msgid "workspace.token.token-description"
@@ -6823,10 +6794,6 @@ msgstr "Versi tersimpan otomatis akan disimpan selama %s hari."
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik untuk menutup jalur"
 
-#: src/app/main/data/common.cljs:87
-msgid "Refresh"
-msgstr " "
-
 #: src/app/main/ui/dashboard/placeholder.cljs:48
 msgid "dashboard.add-file"
 msgstr "Tambahkan berkas"
@@ -6835,21 +6802,9 @@ msgstr "Tambahkan berkas"
 msgid "workspace.shape.menu.copy-text"
 msgstr "Salin sebagai teks"
 
-#: src/app/main/ui/settings/access_tokens.cljs:152
-msgid "modals.create-access-token.token"
-msgstr " "
-
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
 msgid "workspace.token.label.theme"
 msgstr "Tema"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:123
-msgid "workspace.token.theme"
-msgstr " "
-
-#: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:85
-msgid "exclude"
-msgstr " "
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:128
 msgid "workspace.token.applied-to"
@@ -6883,26 +6838,12 @@ msgstr "Anda perlu menjadi penyunting untuk menggunakan tema"
 msgid "workspace.token.warning-name-change"
 msgstr "Mengubah nama token ini akan merusak referensi nama lamanya."
 
-#: src/app/main/data/tokens.cljs:199
-msgid "errors.drag-drop.parent-to-child"
-msgstr "Tidak dapat melepaskan set induk ke jalur anak sendiri."
-
-#: src/app/main/data/tokens.cljs:198
-msgid "errors.drag-drop.set-exists"
-msgstr ""
-"Tidak dapat menyelesaikan pelepasan, set dengan nama yang sama sudah ada "
-"dalam jalur %s."
-
 #: src/app/main/ui/workspace/tokens/form.cljs:56
 msgid "workspace.token.token-name-validation-error"
 msgstr ""
 " bukanlah nama token yang valid.\n"
 "Nama token seharusnya hanya berisi huruf dan angka dipisahkan oleh karakter "
 ". dan tidak berawal dengan tanda $."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:80
-msgid "intersection"
-msgstr " "
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:120
 msgid "workspace.token.ref-not-valid"

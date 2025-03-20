@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-14 21:02+0000\n"
-"Last-Translator: Vin <k3kelm4vw@mozmail.com>\n"
+"PO-Revision-Date: 2025-03-20 13:42+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
 "Language: ru\n"
@@ -548,7 +548,7 @@ msgstr ""
 "из них)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:186
-#, markdown
+#, fuzzy, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Вам следует загружать только собственные шрифты, или у которых есть лицензия "
@@ -3748,10 +3748,6 @@ msgstr "Группа"
 msgid "workspace.assets.group-name"
 msgstr "Имя группы"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Библиотеки"
-
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:336
 msgid "workspace.assets.local-library"
 msgstr "локальная библиотека"
@@ -4218,10 +4214,6 @@ msgstr "Нет общих библиотек, требующих обновле�
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Совпадений для \"%s\" не найдено"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Общие библиотеки отсутсвуют"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"

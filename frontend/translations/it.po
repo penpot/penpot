@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-03 15:04+0000\n"
-"Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
+"PO-Revision-Date: 2025-03-20 13:42+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
 "Language: it\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.10.3-dev\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -610,7 +610,7 @@ msgstr ""
 "uno solo di questi è necessario)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:186
-#, markdown
+#, fuzzy, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "È consigliabile caricare unicamente caratteri di cui si è proprietari o dei "
@@ -3502,6 +3502,7 @@ msgid "shortcuts.copy"
 msgstr "Copia"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+#, fuzzy
 msgid "shortcuts.copy-link"
 msgstr "Copia link negli appunti"
 
@@ -4244,10 +4245,6 @@ msgstr "Gruppo"
 msgid "workspace.assets.group-name"
 msgstr "Nome gruppo"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Librerie"
-
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
 msgid "workspace.assets.list-view"
 msgstr "Vista a elenco"
@@ -4699,6 +4696,7 @@ msgid "workspace.libraries.empty.add-some"
 msgstr "O aggiungi alcuni di questi per provare:"
 
 #: src/app/main/ui/workspace/libraries.cljs:368
+#, fuzzy
 msgid "workspace.libraries.empty.no-libraries"
 msgstr "Non ci sono librerie condivise nel tuo team, puoi cercare"
 
@@ -4739,10 +4737,6 @@ msgstr "Caricamento…"
 msgid "workspace.libraries.more-templates"
 msgstr "Puoi cercare altri "
 
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "modelli qui"
-
 #: src/app/main/ui/workspace/libraries.cljs:481
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "Non ci sono librerie condivise che necessitano un aggiornamento"
@@ -4750,10 +4744,6 @@ msgstr "Non ci sono librerie condivise che necessitano un aggiornamento"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Nessun risultato trovato per “%s”"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Non ci sono librerie condivise disponibili"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -6126,6 +6116,7 @@ msgid "workspace.shape.menu.copy-css-nested"
 msgstr "Copia come CSS (livelli nidificati)"
 
 #: src/app/main/ui/workspace/context_menu.cljs:188
+#, fuzzy
 msgid "workspace.shape.menu.copy-link"
 msgstr "Copia link negli appunti"
 
@@ -6421,10 +6412,6 @@ msgstr "Crea ora il tuo prima tema."
 msgid "workspace.token.create-one"
 msgstr "Creane uno."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "Crea tema"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:431
 msgid "workspace.token.create-token"
 msgstr "Crea un nuovo token %s"
@@ -6470,17 +6457,9 @@ msgstr "Inserisci il nome del token %s"
 msgid "workspace.token.grouping-set-alert"
 msgstr "Il raggruppamento di set di token non è ancora supportato."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
-msgid "workspace.token.new-theme"
-msgstr "Nuovo tema"
-
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:88
 msgid "workspace.token.no-active-theme"
 msgstr "Nessun tema attivo"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
-msgid "workspace.token.no-sets"
-msgstr "Nessun set"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:401, src/app/main/ui/workspace/tokens/sets.cljs:405
 msgid "workspace.token.no-sets-create"
@@ -6497,10 +6476,6 @@ msgstr "Non ci sono temi."
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
 msgid "workspace.token.no-themes-currently"
 msgstr "Al momento non hai temi."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
-msgid "workspace.token.num-sets"
-msgstr "%s set"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
 msgid "workspace.token.original-value"
@@ -6526,10 +6501,6 @@ msgstr "Definisci quali set token dovrebbe essere usati come parte di questo tem
 #, unused
 msgid "workspace.token.theme-name"
 msgstr "Tema %s"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "Temi"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:482
 msgid "workspace.token.token-description"
@@ -6906,10 +6877,6 @@ msgstr "Devi essere un editor per usare i temi"
 msgid "workspace.token.value-not-valid"
 msgstr "Il valore non è valido"
 
-#: src/app/main/data/tokens.cljs:199
-msgid "errors.drag-drop.parent-to-child"
-msgstr "Impossibile rilasciare un set genitore in un suo percorso sottostante."
-
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:343, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:344
 msgid "workspace.options.fit-content"
 msgstr "Adatta tavola da disegno al contenuto"
@@ -6921,12 +6888,6 @@ msgstr "Copia come testo"
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:128
 msgid "workspace.token.applied-to"
 msgstr "Applicato a"
-
-#: src/app/main/data/tokens.cljs:198
-msgid "errors.drag-drop.set-exists"
-msgstr ""
-"Impossibile completare il rilascio, un set con lo stesso nome è già presente "
-"nel percorso %s."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
 msgid "workspace.token.label.theme"

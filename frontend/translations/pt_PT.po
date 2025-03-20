@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-02-09 20:02+0000\n"
-"Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
+"PO-Revision-Date: 2025-03-20 13:42+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -3773,10 +3773,6 @@ msgstr "Agrupar"
 msgid "workspace.assets.group-name"
 msgstr "Nome do grupo"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Bibliotecas"
-
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:336
 msgid "workspace.assets.local-library"
 msgstr "biblioteca local"
@@ -4243,10 +4239,6 @@ msgstr "Não há bibliotecas partilhadas que precisem de atualização"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Não há resultados para \"%s\""
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Não há bibliotecas partilhadas disponíveis"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -5962,6 +5954,7 @@ msgid "shortcuts.rename"
 msgstr "Renomear"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+#, fuzzy
 msgid "shortcuts.copy-link"
 msgstr "Copiar ligação para a área de transferência"
 
@@ -6086,10 +6079,6 @@ msgstr "TESTAR PLUGIN"
 msgid "workspace.shape.menu.copy-text"
 msgstr "Copiar como texto"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "Criar tema"
-
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:128
 msgid "workspace.token.applied-to"
 msgstr "Aplicado a"
@@ -6194,10 +6183,6 @@ msgstr "Ler as informações de perfil do utilizador atual."
 msgid "workspace.token.original-value"
 msgstr "Valor original: %s"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "Temas"
-
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs
 #, unused
 msgid "workspace.token.theme-name"
@@ -6230,10 +6215,6 @@ msgstr "Precisas de ser um(a) editor(a) para usar este plugin"
 #: src/app/main/ui/workspace/plugins.cljs:372
 msgid "workspace.plugins.permissions-update.title"
 msgstr "ATUALIZAR ESTE PLUGIN"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
-msgid "workspace.token.new-theme"
-msgstr "Novo tema"
 
 #: src/app/main/errors.cljs:228
 msgid "errors.migration-in-progress"
@@ -6433,6 +6414,7 @@ msgid "workspace.shape.menu.copy-paste-as"
 msgstr "Copiar/Colar como ..."
 
 #: src/app/main/ui/workspace/context_menu.cljs:188
+#, fuzzy
 msgid "workspace.shape.menu.copy-link"
 msgstr "Copiar ligação para a área de transferência"
 

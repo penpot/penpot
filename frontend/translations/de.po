@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-02-11 13:22+0000\n"
-"Last-Translator: Stas Haas <stas@girafic.de>\n"
+"PO-Revision-Date: 2025-03-20 13:42+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -3318,6 +3318,7 @@ msgid "shortcuts.copy"
 msgstr "Kopieren"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+#, fuzzy
 msgid "shortcuts.copy-link"
 msgstr "Link in die Zwischenablage kopieren"
 
@@ -4056,10 +4057,6 @@ msgstr "Gruppieren"
 msgid "workspace.assets.group-name"
 msgstr "Name der Gruppe"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Bibliotheken"
-
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
 msgid "workspace.assets.list-view"
 msgstr "Listenansicht"
@@ -4527,10 +4524,6 @@ msgstr "AKTUALISIERUNGEN DER BIBLIOTHEK"
 msgid "workspace.libraries.loading"
 msgstr "Laden…"
 
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "weitere Vorlagen sind hier"
-
 #: src/app/main/ui/workspace/libraries.cljs:481
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr ""
@@ -4540,10 +4533,6 @@ msgstr ""
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Keine Übereinstimmungen für “%s“ gefunden"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Es sind keine gemeinsam genutzte Bibliotheken verfügbar"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -6059,10 +6048,6 @@ msgstr "Sitemap"
 msgid "workspace.token.create-one"
 msgstr "Ein neues erstellen."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "Theme erstellen"
-
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:151
 msgid "workspace.token.delete-theme-title"
 msgstr "Theme löschen"
@@ -6078,10 +6063,6 @@ msgstr "Themes bearbeiten"
 #: src/app/main/ui/workspace/tokens/form.cljs:430
 msgid "workspace.token.edit-token"
 msgstr "Token bearbeiten"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
-msgid "workspace.token.new-theme"
-msgstr "Neues Theme"
 
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:88
 msgid "workspace.token.no-active-theme"
@@ -6099,10 +6080,6 @@ msgstr "Theme speichern"
 #, unused
 msgid "workspace.token.theme-name"
 msgstr "Theme %s"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "Themes"
 
 #: src/app/main/ui/workspace/sidebar.cljs:134, src/app/main/ui/workspace/sidebar.cljs:143
 msgid "workspace.toolbar.assets"
@@ -6456,6 +6433,7 @@ msgid "workspace.plugins.try-out.title"
 msgstr "'%s' PLUGIN IST FÜR IHREN BENUTZER INSTALLIERT!"
 
 #: src/app/main/ui/workspace/context_menu.cljs:188
+#, fuzzy
 msgid "workspace.shape.menu.copy-link"
 msgstr "Link in die Zwischenablage kopieren"
 
@@ -6583,10 +6561,6 @@ msgstr "Neues %s Token erstellen"
 msgid "workspace.token.no-sets-yet"
 msgstr "Es sind noch keine Sets vorhanden."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
-msgid "workspace.token.num-sets"
-msgstr "%s Sets"
-
 #: src/app/main/ui/workspace/sidebar/versions.cljs:336
 msgid "workspace.versions.empty"
 msgstr "Es sind noch keine Versionen vorhanden"
@@ -6614,10 +6588,6 @@ msgstr "%s Versionen"
 #: src/app/main/ui/ds/product/autosaved_milestone.cljs:67, src/app/main/ui/ds/product/user_milestone.cljs:74
 msgid "workspace.versions.version-menu"
 msgstr "Version-Menü öffnen"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
-msgid "workspace.token.no-sets"
-msgstr "Keine Sets"
 
 #: src/app/main/errors.cljs:228
 msgid "errors.migration-in-progress"
@@ -6743,18 +6713,6 @@ msgstr "Automatisch gespeicherte Versionen werden für %s Tage aufbewahrt."
 msgid "workspace.token.tokens-section-title"
 msgstr "TOKENS -   %s"
 
-#: src/app/main/data/tokens.cljs:198
-msgid "errors.drag-drop.set-exists"
-msgstr ""
-"Ablegen kann nicht abgeschlossen werden, ein Set mit demselben Namen "
-"existiert bereits unter dem Pfad %s."
-
-#: src/app/main/data/tokens.cljs:199
-msgid "errors.drag-drop.parent-to-child"
-msgstr ""
-"Ein übergeordnetes Set kann nicht auf einem eigenen untergeordneten Pfad "
-"abgelegt werden."
-
 #: src/app/main/ui/static.cljs:51, src/app/main/ui/static.cljs:287, src/app/main/ui/static.cljs:293, src/app/main/ui/static.cljs:299, src/app/main/ui/static.cljs:305, src/app/main/ui/static.cljs:314, src/app/main/ui/static.cljs:323
 msgid "not-found.no-permission.go-dashboard"
 msgstr "Zu deinem Penpot wechseln"
@@ -6851,6 +6809,7 @@ msgid "workspace.header.menu.option.power-up"
 msgstr "Verstärken Sie Ihren Plan"
 
 #: src/app/main/ui/workspace/libraries.cljs:368
+#, fuzzy
 msgid "workspace.libraries.empty.no-libraries"
 msgstr ""
 "In Ihrem Team gibt es keine gemeinsamen Bibliotheken, Sie können suchen nach"
@@ -6918,10 +6877,6 @@ msgstr "Eigenschaften kopieren"
 #: src/app/main/ui/workspace/tokens/form.cljs:437
 msgid "workspace.token.enter-token-name"
 msgstr "%s Token-Name eingeben"
-
-#: src/app/main/ui/workspace/tokens/form.cljs:463
-msgid "workspace.token.enter-token-value"
-msgstr "Token-Wert oder Alias eingeben"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:440
 msgid "workspace.token.token-name"

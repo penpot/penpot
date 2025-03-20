@@ -3029,10 +3029,6 @@ msgstr "Grupa"
 msgid "workspace.assets.group-name"
 msgstr "Nazwa grupy"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Biblioteki"
-
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:336
 msgid "workspace.assets.local-library"
 msgstr "lokalna biblioteka"
@@ -3345,10 +3341,6 @@ msgstr "Nie ma Bibliotek Współdzielonych, które wymagają aktualizacji"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Nie znaleziono dopasowań dla “%s“"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Brak dostępnych Bibliotek Współdzielonych"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"

@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-02-14 15:01+0000\n"
-"Last-Translator: \"Amerey.eu\" <info@amerey.eu>\n"
+"PO-Revision-Date: 2025-03-20 13:42+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Czech <https://hosted.weblate.org/projects/penpot/frontend/cs/"
 ">\n"
 "Language: cs\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
-"X-Generator: Weblate 5.10\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -3387,6 +3387,7 @@ msgid "shortcuts.copy"
 msgstr "Kopírovat"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+#, fuzzy
 msgid "shortcuts.copy-link"
 msgstr "Zkopírovat odkaz do schránky"
 
@@ -4123,10 +4124,6 @@ msgstr "Skupina"
 msgid "workspace.assets.group-name"
 msgstr "Název skupiny"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Knihovny"
-
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
 msgid "workspace.assets.list-view"
 msgstr "Zobrazení seznamu"
@@ -4580,6 +4577,7 @@ msgid "workspace.libraries.empty.add-some"
 msgstr "Nebo přidejte některé z těchto:"
 
 #: src/app/main/ui/workspace/libraries.cljs:368
+#, fuzzy
 msgid "workspace.libraries.empty.no-libraries"
 msgstr "Ve vašem týmu nejsou žádné sdílené knihovny, které můžete hledat"
 
@@ -4620,10 +4618,6 @@ msgstr "Načítání…"
 msgid "workspace.libraries.more-templates"
 msgstr "Můžete hledat "
 
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "více šablon zde"
-
 #: src/app/main/ui/workspace/libraries.cljs:481
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "Neexistují žádné sdílené knihovny, které by potřebovaly aktualizaci"
@@ -4631,10 +4625,6 @@ msgstr "Neexistují žádné sdílené knihovny, které by potřebovaly aktualiz
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Nebyly nalezeny žádné shody pro „%s“"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Nejsou k dispozici žádné sdílené knihovny"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -6247,10 +6237,6 @@ msgstr "Vytvořte si svůj první motiv hned teď."
 msgid "workspace.token.create-one"
 msgstr "Vytvořte si."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "Vytvořit motiv"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:431
 msgid "workspace.token.create-token"
 msgstr "Vytvořte nový %s token"
@@ -6276,17 +6262,9 @@ msgstr "Upravit token"
 msgid "workspace.token.grouping-set-alert"
 msgstr "Seskupení sady tokenů zatím není podporováno."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
-msgid "workspace.token.new-theme"
-msgstr "Nový motiv"
-
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:88
 msgid "workspace.token.no-active-theme"
 msgstr "Žádný motiv není aktivní"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
-msgid "workspace.token.no-sets"
-msgstr "Žádné sady"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:401, src/app/main/ui/workspace/tokens/sets.cljs:405
 msgid "workspace.token.no-sets-create"
@@ -6303,10 +6281,6 @@ msgstr "Nejsou zde žádné motivy."
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
 msgid "workspace.token.no-themes-currently"
 msgstr "Momentálně nemáte žádné motivy."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
-msgid "workspace.token.num-sets"
-msgstr "%s sady"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
 msgid "workspace.token.original-value"
@@ -6334,10 +6308,6 @@ msgstr ""
 #, unused
 msgid "workspace.token.theme-name"
 msgstr "Motiv %s"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "Motivy"
 
 #: src/app/main/ui/workspace/sidebar.cljs:134, src/app/main/ui/workspace/sidebar.cljs:143
 msgid "workspace.toolbar.assets"
@@ -6780,6 +6750,7 @@ msgid "labels.notifications"
 msgstr "Oznámení"
 
 #: src/app/main/ui/workspace/context_menu.cljs:188
+#, fuzzy
 msgid "workspace.shape.menu.copy-link"
 msgstr "Zkopírovat odkaz do schránky"
 
@@ -6806,15 +6777,6 @@ msgstr ""
 msgid "dashboard.settings.notifications.email-invites.all"
 msgstr "Všechny typy pozvánek a žádostí"
 
-#: src/app/main/data/tokens.cljs:199
-msgid "errors.drag-drop.parent-to-child"
-msgstr "Nadřazenou sadu nelze přesunout na vlastní podřízenou cestu."
-
-#: src/app/main/data/tokens.cljs:198
-msgid "errors.drag-drop.set-exists"
-msgstr ""
-"Přesouvání nelze dokončit, sada se stejným názvem již v cestě %s existuje."
-
 #: src/app/main/errors.cljs:228
 msgid "errors.migration-in-progress"
 msgstr "Probíhá migrace"
@@ -6839,10 +6801,6 @@ msgstr "Sada tokenů není aktivní"
 #: src/app/main/ui/workspace/tokens/form.cljs:437
 msgid "workspace.token.enter-token-name"
 msgstr "Zadejte název tokenu %s"
-
-#: src/app/main/ui/workspace/tokens/form.cljs:463
-msgid "workspace.token.enter-token-value"
-msgstr "Zadejte hodnotu tokenu nebo alias"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:440
 msgid "workspace.token.token-name"

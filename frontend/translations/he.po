@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-30 23:57+0000\n"
-"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
+"PO-Revision-Date: 2025-03-20 13:42+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
 "Language: he\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -3443,6 +3443,7 @@ msgid "shortcuts.copy"
 msgstr "העתקה"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+#, fuzzy
 msgid "shortcuts.copy-link"
 msgstr "העתקת קישור ללוח הגזירים"
 
@@ -4183,10 +4184,6 @@ msgstr "קבוצה"
 msgid "workspace.assets.group-name"
 msgstr "שם קבוצה"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "ספריות"
-
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
 msgid "workspace.assets.list-view"
 msgstr "תצוגת רשימה"
@@ -4642,6 +4639,7 @@ msgid "workspace.libraries.empty.add-some"
 msgstr "או להוסיף כמה מאלה לניסיון:"
 
 #: src/app/main/ui/workspace/libraries.cljs:368
+#, fuzzy
 msgid "workspace.libraries.empty.no-libraries"
 msgstr "אין ספריות משותפות בצוות שלך, אפשר לחפש אחר"
 
@@ -4682,10 +4680,6 @@ msgstr "בטעינה…"
 msgid "workspace.libraries.more-templates"
 msgstr "אפשר לחפש "
 
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "תבניות נוספות כאן"
-
 #: src/app/main/ui/workspace/libraries.cljs:481
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "אין ספריות משותפות שדורשות עדכון"
@@ -4693,10 +4687,6 @@ msgstr "אין ספריות משותפות שדורשות עדכון"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "לא נמצאו תוצאות לחיפוש אחר „%s”"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "אין ספריות משותפות זמינות"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -6063,6 +6053,7 @@ msgid "workspace.shape.menu.copy-css-nested"
 msgstr "העתקה כ־CSS (שכבות מקוננות)"
 
 #: src/app/main/ui/workspace/context_menu.cljs:188
+#, fuzzy
 msgid "workspace.shape.menu.copy-link"
 msgstr "העתקת קישור ללוח הגזירים"
 
@@ -6358,10 +6349,6 @@ msgstr "אפשר ליצור את ערכת העיצוב הראשונה שלך ע�
 msgid "workspace.token.create-one"
 msgstr "ליצור אחד."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "יצירת ערכת עיצוב"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:431
 msgid "workspace.token.create-token"
 msgstr "יצירת אסימון %s חדש"
@@ -6407,17 +6394,9 @@ msgstr "נא למלא את שם האסימון %s"
 msgid "workspace.token.grouping-set-alert"
 msgstr "אין עדיין תמיכה בקיבוץ סדרות אסימונים."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
-msgid "workspace.token.new-theme"
-msgstr "ערכת עיצוב חדשה"
-
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:88
 msgid "workspace.token.no-active-theme"
 msgstr "אין ערכת עיצוב פעילה"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
-msgid "workspace.token.no-sets"
-msgstr "אין סדרות"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:401, src/app/main/ui/workspace/tokens/sets.cljs:405
 msgid "workspace.token.no-sets-create"
@@ -6434,10 +6413,6 @@ msgstr "אין ערכות עיצוב."
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
 msgid "workspace.token.no-themes-currently"
 msgstr "אין לך ערכות עיצוב עדיין."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
-msgid "workspace.token.num-sets"
-msgstr "%s סדרות"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
 msgid "workspace.token.original-value"
@@ -6463,10 +6438,6 @@ msgstr "נא להגדיר באילו סדרות אסימונים להשתמש כ
 #, unused
 msgid "workspace.token.theme-name"
 msgstr "ערכת עיצוב %s"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "ערכות עיצוב"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:482
 msgid "workspace.token.token-description"
@@ -6800,10 +6771,6 @@ msgstr "לחיצה תסגור את הנתיב"
 msgid "workspace.token.no-permisions-set"
 msgstr "נדרשות הרשאות עריכה כדי להפעיל / להשבית סדרות"
 
-#: src/app/main/data/tokens.cljs:198
-msgid "errors.drag-drop.set-exists"
-msgstr "לא ניתן להשלים השלכה, כבר קיימת סדרה באותו השם בנתיב %s."
-
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
 msgid "workspace.token.label.theme"
 msgstr "ערכת עיצוב"
@@ -6819,10 +6786,6 @@ msgstr "אסימונים -  %s"
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:120
 msgid "workspace.token.ref-not-valid"
 msgstr "ההפניה לא תקפה או שאינה באף סדרה פעילה"
-
-#: src/app/main/data/tokens.cljs:199
-msgid "errors.drag-drop.parent-to-child"
-msgstr "לא ניתן להשליך סדרת הורה לנתיב צאצא עצמי."
 
 #: src/app/main/ui/workspace/tokens/form.cljs:458
 msgid "workspace.token.warning-name-change"

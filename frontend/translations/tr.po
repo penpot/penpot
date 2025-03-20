@@ -3920,10 +3920,6 @@ msgstr "Grup"
 msgid "workspace.assets.group-name"
 msgstr "Grup adı"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Kütüphaneler"
-
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
 msgid "workspace.assets.list-view"
 msgstr "Liste görünümü"
@@ -4394,10 +4390,6 @@ msgstr "Güncelleme gerektiren Paylaşılmış Kütüphane bulunmuyor"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "“%s“ için eşleşme bulunmadı"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Paylaşılmış Kütüphane bulunmuyor"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"

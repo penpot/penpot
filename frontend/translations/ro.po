@@ -3554,10 +3554,6 @@ msgstr "Grup"
 msgid "workspace.assets.group-name"
 msgstr "Nume grup"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Biblioteci"
-
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:336
 msgid "workspace.assets.local-library"
 msgstr "biblioteca locală"
@@ -3911,10 +3907,6 @@ msgstr "Nu există Biblioteci Distribuite ce necesită update"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "Nu au fost găsite asemănări pentru “%s“"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Nu există Biblioteci Distribuite"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
