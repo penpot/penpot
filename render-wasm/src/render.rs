@@ -95,7 +95,6 @@ pub(crate) struct RenderState {
     pub render_area: Rect,
     pub tiles: tiles::TileHashMap,
     pub pending_tiles: Vec<tiles::Tile>,
-    pub current_tile_tree: HashMap<Uuid, Shape>,
 }
 
 impl RenderState {
@@ -134,7 +133,6 @@ impl RenderState {
             render_area: Rect::new_empty(),
             tiles,
             pending_tiles: vec![],
-            current_tile_tree: HashMap::new(),
         }
     }
 
@@ -597,7 +595,7 @@ impl RenderState {
                             mask,
                         } = node_render_state;
                         is_empty = false;
-                        if let Some(element) = self.current_tile_tree.get_mut(&node_id) {
+                        if let Some(element) = tree.get_mut(&node_id) {
                             let mut element = element.clone();
 
                             if visited_children {
@@ -673,7 +671,6 @@ impl RenderState {
                             });
 
                             if element.is_recursive() {
-                                // Fix this
                                 let element_id = element.id;
                                 let children_clip_bounds = node_render_state
                                     .get_children_clip_bounds(
@@ -720,31 +717,24 @@ impl RenderState {
             // let's check if there are more pending nodes
             if let Some(next_tile) = self.pending_tiles.pop() {
                 self.update_render_context(next_tile);
-
-                // Calculating the tree of shapes that apply to the current tile
-                self.current_tile_tree = tree.clone();
-                self.current_tile_tree.retain(|_, v| {
-                    if v.id == Uuid::nil() {
-                        return true;
-                    }
-                    let mut transformed_element = v.clone();
-                    if let Some(modifier) = modifiers.get(&v.id) {
-                        transformed_element.apply_transform(modifier);
-                    }
-                    !transformed_element.hidden()
-                        && transformed_element.extrect().intersects(self.render_area)
-                });
-
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
-                    // If the tile is empty or it doesn't exists we don't do anything with it
-                    if self.tiles.has_shapes_at(next_tile) {
-                        self.pending_nodes.push(NodeRenderState {
-                            id: Uuid::nil(),
-                            visited_children: false,
-                            clip_bounds: None,
-                            visited_mask: false,
-                            mask: false,
-                        });
+                    if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
+                        for id in ids {
+                            let element = tree.get_mut(&id).ok_or(
+                                "Error: Element with root_id {id} not found in the tree."
+                                    .to_string(),
+                            )?;
+                            if element.parent_id == Some(Uuid::nil()) {
+                                println!("{:?} {:?}", next_tile, id);
+                                self.pending_nodes.push(NodeRenderState {
+                                    id: *id,
+                                    visited_children: false,
+                                    clip_bounds: None,
+                                    visited_mask: false,
+                                    mask: false,
+                                });
+                            }
+                        }
                     }
                 }
             } else {
@@ -794,10 +784,12 @@ impl RenderState {
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
                 let mut shape = shape.clone();
-                if let Some(modifier) = modifiers.get(&shape_id) {
-                    shape.apply_transform(modifier);
+                if shape_id != Uuid::nil() {
+                    if let Some(modifier) = modifiers.get(&shape_id) {
+                        shape.apply_transform(modifier);
+                    }
+                    self.update_tile_for(&shape);
                 }
-                self.update_tile_for(&shape);
                 for child_id in shape.children_ids().iter() {
                     nodes.push(*child_id);
                 }
