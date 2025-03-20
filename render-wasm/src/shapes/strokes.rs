@@ -232,13 +232,13 @@ impl Stroke {
         match self.render_kind(is_open) {
             StrokeKind::InnerStroke => {
                 paint.set_stroke_width(2. * paint.stroke_width());
-                paint
             }
-            StrokeKind::CenterStroke => paint,
+            StrokeKind::CenterStroke => {}
             StrokeKind::OuterStroke => {
                 paint.set_stroke_width(2. * paint.stroke_width());
-                paint
             }
         }
+
+        paint
     }
 }

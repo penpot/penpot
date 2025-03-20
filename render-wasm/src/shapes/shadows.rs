@@ -1,4 +1,4 @@
-use skia_safe::{self as skia, image_filters, ImageFilter};
+use skia_safe::{self as skia, image_filters, ImageFilter, Paint};
 
 use super::Color;
 
@@ -62,75 +62,8 @@ impl Shadow {
         self.hidden
     }
 
-    pub fn to_paint(&self, scale: f32, antialias: bool) -> skia::Paint {
-        let mut paint = skia::Paint::default();
-
-        let image_filter = match self.style {
-            ShadowStyle::Drop => self.drop_shadow_filters(scale),
-            ShadowStyle::Inner => self.inner_shadow_filters(scale),
-        };
-
-        paint.set_image_filter(image_filter);
-        paint.set_anti_alias(antialias);
-
-        paint
-    }
-
-    // To be removed: Old methods for Drop Shadows and Inner Shadows (now used opnly for stroke shadows)
-
-    fn drop_shadow_filters(&self, scale: f32) -> Option<ImageFilter> {
-        let mut filter = image_filters::drop_shadow_only(
-            (self.offset.0 * scale, self.offset.1 * scale),
-            (self.blur * scale, self.blur * scale),
-            self.color,
-            None,
-            None,
-            None,
-        );
-
-        if self.spread > 0. {
-            filter =
-                image_filters::dilate((self.spread * scale, self.spread * scale), filter, None);
-        }
-
-        filter
-    }
-
-    fn inner_shadow_filters(&self, scale: f32) -> Option<ImageFilter> {
-        let sigma = self.blur * 0.5;
-        let mut filter = skia::image_filters::drop_shadow_only(
-            (self.offset.0 * scale, self.offset.1 * scale), // DPR?
-            (sigma * scale, sigma * scale),
-            skia::Color::BLACK,
-            None,
-            None,
-            None,
-        );
-
-        filter = skia::image_filters::color_filter(
-            skia::color_filters::blend(self.color, skia::BlendMode::SrcOut).unwrap(),
-            filter,
-            None,
-        );
-
-        if self.spread > 0. {
-            filter = skia::image_filters::dilate(
-                (self.spread * scale, self.spread * scale),
-                filter,
-                None,
-            );
-        }
-
-        filter = skia::image_filters::blend(skia::BlendMode::SrcIn, None, filter, None);
-
-        filter
-    }
-
-    // New methods for Drop Shadows
-
-    pub fn get_drop_shadow_paint(&self, antialias: bool) -> skia::Paint {
-        let mut paint = skia::Paint::default();
-
+    pub fn get_drop_shadow_paint(&self, antialias: bool) -> Paint {
+        let mut paint = Paint::default();
         let image_filter = self.get_drop_shadow_filter();
 
         paint.set_image_filter(image_filter);
@@ -139,7 +72,7 @@ impl Shadow {
         paint
     }
 
-    fn get_drop_shadow_filter(&self) -> Option<ImageFilter> {
+    pub fn get_drop_shadow_filter(&self) -> Option<ImageFilter> {
         let mut filter = image_filters::drop_shadow_only(
             (self.offset.0, self.offset.1),
             (self.blur, self.blur),
@@ -156,10 +89,8 @@ impl Shadow {
         filter
     }
 
-    // New methods for Inner Shadows
-
-    pub fn get_inner_shadow_paint(&self, antialias: bool) -> skia::Paint {
-        let mut paint = skia::Paint::default();
+    pub fn get_inner_shadow_paint(&self, antialias: bool) -> Paint {
+        let mut paint = Paint::default();
 
         let image_filter = self.get_inner_shadow_filter();
 
@@ -169,12 +100,12 @@ impl Shadow {
         paint
     }
 
-    fn get_inner_shadow_filter(&self) -> Option<ImageFilter> {
+    pub fn get_inner_shadow_filter(&self) -> Option<ImageFilter> {
         let sigma = self.blur * 0.5;
         let mut filter = skia::image_filters::drop_shadow_only(
             (self.offset.0, self.offset.1), // DPR?
             (sigma, sigma),
-            skia::Color::BLACK,
+            skia::Color::WHITE,
             None,
             None,
             None,
