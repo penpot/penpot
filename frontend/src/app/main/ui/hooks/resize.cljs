@@ -14,6 +14,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
+   [app.util.globals :as glob]
    [app.util.storage :as storage]
    [rumext.v2 :as mf]))
 
@@ -48,13 +49,22 @@
          start-size-ref (mf/use-ref nil)
          start-ref      (mf/use-ref nil)
 
-         window-height (dom/get-window-height)
+         window-height* (mf/use-state #(dom/get-window-height))
+         window-height (deref window-height*)
 
          max-val (mf/with-memo [max-val window-height]
                    (let [parsed-max-val (when (string? max-val) (d/parse-double max-val))]
                      (if parsed-max-val
                        (* window-height parsed-max-val)
                        max-val)))
+
+         set-size
+         (mf/use-fn
+          (mf/deps file-id key min-val max-val window-height)
+          (fn [new-size]
+            (let [new-size (mth/clamp new-size min-val max-val)]
+              (reset! current-size* new-size)
+              (swap! storage/user update-persistent-state file-id key new-size))))
 
          on-pointer-down
          (mf/use-fn
@@ -89,20 +99,27 @@
                     start-size (mf/ref-val start-size-ref)
 
                     new-size (-> (+ start-size delta) (max min-val) (min max-val))]
-                (reset! current-size* new-size)
-                (swap! storage/user update-persistent-state file-id key new-size)))))
 
-         set-size
+                (set-size new-size)))))
+
+         on-resize-window
          (mf/use-fn
-          (mf/deps on-change-size file-id key)
-          (fn [new-size]
-            (let [new-size (mth/clamp new-size min-val max-val)]
-              (reset! current-size* new-size)
-              (swap! storage/user update-persistent-state file-id key new-size))))]
+          (fn []
+            (let [new-window-height (dom/get-window-height)]
+              (reset! window-height* new-window-height))))]
 
      (mf/with-effect [on-change-size current-size]
        (when on-change-size
          (on-change-size current-size)))
+
+     (mf/with-effect []
+       (.addEventListener glob/window "resize" on-resize-window)
+       (fn []
+         (.removeEventListener glob/window "resize" on-resize-window)))
+
+     (mf/with-effect [window-height]
+       (let [new-size (mth/clamp current-size min-val max-val)]
+         (set-size new-size)))
 
      {:on-pointer-down on-pointer-down
       :on-lost-pointer-capture on-lost-pointer-capture
