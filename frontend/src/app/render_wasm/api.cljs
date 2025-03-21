@@ -640,8 +640,8 @@
         margin-bottom (or (dm/get-prop margins :m3) 0)
         margin-left (or (dm/get-prop margins :m4) 0)
 
-        h-sizing (-> (dm/get-prop shape :layout-item-h-sizing) (or :auto) translate-layout-sizing)
-        v-sizing (-> (dm/get-prop shape :layout-item-v-sizing) (or :auto) translate-layout-sizing)
+        h-sizing (-> (dm/get-prop shape :layout-item-h-sizing) (or :fix) translate-layout-sizing)
+        v-sizing (-> (dm/get-prop shape :layout-item-v-sizing) (or :fix) translate-layout-sizing)
         align-self (-> (dm/get-prop shape :layout-item-align-self) translate-align-self)
 
         max-h (dm/get-prop shape :layout-item-max-h)

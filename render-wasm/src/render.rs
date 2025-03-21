@@ -690,7 +690,19 @@ impl RenderState {
                         if element.is_recursive() {
                             let children_clip_bounds = node_render_state
                                 .get_children_clip_bounds(element, modifiers.get(&element.id));
-                            for child_id in element.children_ids().iter().rev() {
+
+                            let mut children_ids = element.children_ids();
+
+                            // Z-index ordering on Layouts
+                            if element.has_layout() {
+                                children_ids.sort_by(|id1, id2| {
+                                    let z1 = tree.get(id1).map_or_else(|| 0, |s| s.z_index());
+                                    let z2 = tree.get(id2).map_or_else(|| 0, |s| s.z_index());
+                                    z1.cmp(&z2)
+                                });
+                            }
+
+                            for child_id in children_ids.iter().rev() {
                                 self.pending_nodes.push(NodeRenderState {
                                     id: *child_id,
                                     visited_children: false,

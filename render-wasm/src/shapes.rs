@@ -722,6 +722,20 @@ impl Shape {
         }
     }
 
+    pub fn is_absolute(&self) -> bool {
+        match &self.layout_item {
+            Some(LayoutItem { is_absolute, .. }) => *is_absolute,
+            _ => false,
+        }
+    }
+
+    pub fn z_index(&self) -> i32 {
+        match &self.layout_item {
+            Some(LayoutItem { z_index, .. }) => *z_index,
+            _ => 0,
+        }
+    }
+
     pub fn is_layout_vertical_auto(&self) -> bool {
         match &self.layout_item {
             Some(LayoutItem { v_sizing, .. }) => v_sizing == &Sizing::Auto,
