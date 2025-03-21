@@ -24,6 +24,7 @@
 - [DESIGN TOKENS] Integration with components.
 - [DESIGN TOKENS] Import and export tokens from a JSON file.
 - [DESIGN TOKENS] Apply Themes and Sets at document level.
+- Add more descriptive tooltip to boards for first time users [Taiga #9426](https://tree.taiga.io/project/penpot/us/9426)
 
 ### :bug: Bugs fixed
 
@@ -38,6 +39,8 @@
 - Fix problem with default shadows value in plugins [Plugins #191](https://github.com/penpot/penpot-plugins/issues/191)
 - Fix problem with constraints when creating group [Taiga #10455](https://tree.taiga.io/project/penpot/issue/10455)
 - Fix opening pen with shortcut multiple times breaks toolbar [Taiga #10566](https://tree.taiga.io/project/penpot/issue/10566)
+- Fix actions when workspace is visited first time [Taiga #10548](https://tree.taiga.io/project/penpot/issue/10548)
+
 
 ## 2.5.4
 
