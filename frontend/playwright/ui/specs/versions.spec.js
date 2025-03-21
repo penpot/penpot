@@ -25,6 +25,8 @@ test("Save and restore version", async ({ page }) => {
     pageId: "406b7b01-d3e2-80e4-8005-3138ac5d449d",
   });
 
+  await workspacePage.moveButton.click();
+
   await workspacePage.mockRPC(
     "get-file-snapshots?file-id=*",
     "workspace/versions-snapshot-1.json",

@@ -7,7 +7,6 @@
 (ns app.main.data.workspace.common
   (:require
    [app.common.logging :as log]
-   [app.config :as cf]
    [app.main.data.profile :as du]
    [app.main.data.workspace.layout :as dwl]
    [beicon.v2.core :as rx]
