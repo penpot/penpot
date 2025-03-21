@@ -24,7 +24,14 @@ rm -rf resources/public;
 rm -rf target/dist;
 
 yarn run build:app:main --config-merge "{:release-version \"${CURRENT_HASH}-${TS}\"}" $EXTRA_PARAMS || exit 1
+
+
+## WORKAROUND: tile rendering breaks the production build
+export NODE_ENV=develop;
 yarn run build:wasm || exit 1;
+
+export NODE_ENV=production;
+
 yarn run build:app:libs || exit 1;
 yarn run build:app:assets || exit 1;
 
