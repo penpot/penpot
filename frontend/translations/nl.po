@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-21 15:02+0000\n"
+"PO-Revision-Date: 2025-03-22 17:01+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -6513,7 +6513,6 @@ msgid "workspace.token.no-themes-currently"
 msgstr "Je hebt momenteel geen thema's."
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.token.original-value"
 msgstr "Oorspronkelijke waarde: %s"
 
@@ -6522,9 +6521,8 @@ msgid "workspace.token.ref-not-valid"
 msgstr "Referentie is niet geldig of zit niet in een actieve verzameling"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:217, src/app/main/ui/workspace/tokens/form.cljs:221, src/app/main/ui/workspace/tokens/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.token.resolved-value"
-msgstr "Besloten waarde: %s"
+msgstr "Opgeloste waarde: %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:240
 msgid "workspace.token.save-theme"
@@ -7258,3 +7256,62 @@ msgstr "Verticale vulling"
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:153
 msgid "workspace.token.num-active-sets"
 msgstr "%s actieve verzamelingen"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:33
+msgid "workspace.token.number-too-large"
+msgstr "Ongeldige tokenwaarde. De opgeloste waarde is te groot: %s"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:177
+msgid "workspace.token.paddings"
+msgstr "Vulling"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:237
+msgid "workspace.token.radius"
+msgstr "Radius"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.token.reference-error"
+msgstr "Referentie fouten: "
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:98
+msgid "workspace.token.set-edit-placeholder"
+msgstr "Voer de naam in (gebruik '/' voor groepen)"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:148
+msgid "workspace.token.sets-hint"
+msgstr "Thema bewerken en verzamelingen beheren"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:210
+msgid "workspace.token.size"
+msgstr "Grootte"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:101
+msgid "workspace.token.themes-description"
+msgstr ""
+"Hier kunt je je thema's beheren, ze in- of uitschakelen en de actieve sets "
+"configureren."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:46, src/app/main/ui/workspace/tokens/modals/themes.cljs:99
+msgid "workspace.token.themes-list"
+msgstr "Lijst met thema's"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
+msgid "workspace.token.token-not-resolved"
+msgstr "Kan referentietoken met de naam: %s niet oplossen"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:525
+msgid "workspace.token.token-value-enter"
+msgstr "Voer een waarde of alias in met {alias}"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:131
+msgid "workspace.toolbar.frame-first-time"
+msgstr "Bord aanmaken. Klik en sleep om de grootte te bepalen. (%s)"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:45
+msgid "workspace.token.opacity-range"
+msgstr "De dekking moet tussen 0 en 100% of 0 en 1 zijn (bijv. 50% of 0,5)."
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:25
+msgid "workspace.token.self-reference"
+msgstr "Token bevat cirkelverwijzing"
