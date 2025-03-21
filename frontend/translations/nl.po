@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-20 13:42+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Dutch "
-"<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
+"PO-Revision-Date: 2025-03-21 15:02+0000\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
+">\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -6894,3 +6894,367 @@ msgstr "Automatisch opgeslagen versies worden %s dagen bewaard."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:59
+msgid "inspect.subtitle.variant"
+msgstr "Variant"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:29
+msgid "workspace.token.invalid-color"
+msgstr "Ongeldige kleurwaarde: %s"
+
+#: src/app/main/ui/ds/product/loader.cljs:27
+msgid "loader.tips.04.message"
+msgstr "CSS- en SVG-code rechtstreeks vanuit je ontwerpen."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:43
+msgid "dashboard.empty-project.go-to-libraries"
+msgstr "Ga naar bibliotheken en sjablonen"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:39, src/app/main/ui/dashboard/placeholder.cljs:40
+msgid "dashboard.empty-project.import"
+msgstr "Importeer een bestand"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:41
+msgid "dashboard.empty-project.import-penpot"
+msgstr "Importeer een .penpot-bestand"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:37
+msgid "dashboard.empty-project.start"
+msgstr "Begin met het bouwen van geweldige dingen"
+
+#: src/app/main/data/comments.cljs:472
+msgid "dashboard.mark-all-as-read.success"
+msgstr "Alle meldingen zijn gemarkeerd als gelezen"
+
+#: src/app/main/ui/comments.cljs:729, src/app/main/ui/comments.cljs:760, src/app/main/ui/comments.cljs:826
+msgid "errors.character-limit-exceeded"
+msgstr "Tekenlimiet overschreden"
+
+#: src/app/main/data/tokens.cljs:246
+msgid "errors.drop-token-set-parent-to-child"
+msgstr ""
+"Een bovenliggende verzameling kan niet worden verwijderd naar een "
+"onderliggend pad."
+
+#: src/app/util/forms.cljs:61
+msgid "errors.field-missing"
+msgstr "Leeg veld"
+
+#: src/app/util/forms.cljs:35, src/app/util/forms.cljs:84
+msgid "errors.invalid-data"
+msgstr "Ongeldige gegevens"
+
+#: src/app/util/forms.cljs
+#, unused
+msgid "errors.invalid-text"
+msgstr "Ongeldige tekst"
+
+#: src/app/main/data/tokens.cljs:245
+msgid "errors.token-set-exists-on-drop"
+msgstr ""
+"Kan sleepactie niet voltooien, een verzameling met dezelfde naam bestaat "
+"daar al."
+
+#: src/app/main/data/tokens.cljs:79
+msgid "errors.token-theme-already-exists"
+msgstr "Thema-optie met dezelfde naam bestaat"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variant"
+msgstr "Eigenschappen van de variant"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:57
+msgid "inspect.subtitle.main"
+msgstr "Hoofdcomponent"
+
+#: src/app/main/ui/components/copy_button.cljs:41
+msgid "labels.copy"
+msgstr "Kopie"
+
+#: src/app/main/ui/inspect/attributes/common.cljs:120
+msgid "labels.copy-color"
+msgstr "Kleur kopiëren"
+
+#: src/app/main/ui/dashboard/templates.cljs:90
+msgid "labels.hide"
+msgstr "Verbergen"
+
+#: src/app/main/ui/comments.cljs:583
+msgid "labels.mention"
+msgstr "Vermelden"
+
+#: src/app/main/data/common.cljs:87
+msgid "labels.refresh"
+msgstr "Vernieuwen"
+
+#: src/app/main/ui/dashboard/templates.cljs:86
+msgid "labels.show"
+msgstr "Weergeven"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:49
+msgid "labels.unknown-error"
+msgstr "Onbekende fout"
+
+#: src/app/main/ui/ds/product/loader.cljs:21
+msgid "loader.tips.01.message"
+msgstr ""
+"Zorg ervoor dat uw ontwerpen consistent zijn en eenvoudig kunnen worden "
+"bijgewerkt in verschillende projecten."
+
+#: src/app/main/ui/ds/product/loader.cljs:20
+msgid "loader.tips.01.title"
+msgstr "Herbruikbare componenten"
+
+#: src/app/main/ui/ds/product/loader.cljs:23
+msgid "loader.tips.02.message"
+msgstr "Werk gelijktijdig samen met je team, deel direct feedback."
+
+#: src/app/main/ui/ds/product/loader.cljs:22
+msgid "loader.tips.02.title"
+msgstr "Realtime samenwerking"
+
+#: src/app/main/ui/ds/product/loader.cljs:24
+msgid "loader.tips.03.title"
+msgstr "Automatische lay-out zoals CSS"
+
+#: src/app/main/ui/ds/product/loader.cljs:26
+msgid "loader.tips.04.title"
+msgstr "Exporteren naar code"
+
+#: src/app/main/ui/ds/product/loader.cljs:29
+msgid "loader.tips.05.message"
+msgstr "Deel assets en stijlen om consistentie te behouden."
+
+#: src/app/main/ui/ds/product/loader.cljs:33
+msgid "loader.tips.07.message"
+msgstr "Penpot maakt gebruik van SVG en CSS voor naadloze ontwikkeling."
+
+#: src/app/main/ui/ds/product/loader.cljs:35
+msgid "loader.tips.08.message"
+msgstr ""
+"Versnel je werk met handige sneltoetsen zoals Shift + A voor automatische "
+"lay-out."
+
+#: src/app/main/ui/ds/product/loader.cljs:37
+msgid "loader.tips.09.message"
+msgstr "Kies het thema dat bij jouw stijl past."
+
+#: src/app/main/ui/ds/product/loader.cljs:38
+msgid "loader.tips.10.title"
+msgstr "Ondersteuning voor plug-ins"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
+#, unused
+msgid "shortcuts.paste-props"
+msgstr "Eigenschappen plakken"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:604
+#, unused
+msgid "shortcuts.plugins"
+msgstr "Beheer van plug-ins"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:441, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:447
+msgid "workspace.layout_grid.editor.padding.left"
+msgstr "Linker vulling"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:769
+msgid "workspace.shape.menu.add-variant-property"
+msgstr "Nieuwe eigenschap toevoegen"
+
+#: src/app/main/ui/workspace/tokens/sets_context_menu.cljs:54
+msgid "workspace.token.add-set-to-group"
+msgstr "Verzameling aan deze groep toevoegen"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:257
+msgid "workspace.token.axis"
+msgstr "As"
+
+#: src/app/main/data/tokens.cljs:386
+msgid "workspace.token.duplicate-suffix"
+msgstr "kopie"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:197
+msgid "workspace.token.gaps"
+msgstr "Tussenruimtes"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.token.generic-error"
+msgstr "Fout: "
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:109
+msgid "workspace.token.group-name"
+msgstr "Groepnaam"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:17, src/app/main/ui/workspace/tokens/errors.cljs:21
+msgid "workspace.token.import-error"
+msgstr "Fout bij importeren:"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
+msgid "workspace.token.import-tooltip"
+msgstr ""
+"Bij het importeren van een JSON-bestand worden alle huidige tokens, "
+"verzamelingen en thema's overschreven"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:13
+msgid "workspace.token.invalid-json"
+msgstr "Fout bij importeren: Ongeldige tokengegevens in JSON."
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/errors.cljs:45
+msgid "workspace.token.invalid-value"
+msgstr "Ongeldige tokenwaarde: %s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:197
+msgid "workspace.token.label.group-optional"
+msgstr "Optioneel"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:208
+msgid "workspace.token.label.theme-placeholder"
+msgstr "Een thema toevoegen (bijv. Licht)"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:199
+msgid "workspace.token.label.group-placeholder"
+msgstr "Groep toevoegen (bijv. Modus)"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:222
+msgid "workspace.token.max-size"
+msgstr "Max. grootte"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:216
+msgid "workspace.token.min-size"
+msgstr "Min. grootte"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:37
+msgid "workspace.token.missing-references"
+msgstr "Ontbrekende tokenverwijzingen: "
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:154
+msgid "workspace.token.no-active-sets"
+msgstr "Geen actieve verzamelingen"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
+#, unused
+msgid "shortcuts.copy-props"
+msgstr "Eigenschappen kopiëren"
+
+#: src/app/main/ui/ds/product/loader.cljs:28
+msgid "loader.tips.05.title"
+msgstr "Ontwerpbibliotheken"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:241
+msgid "workspace.token.color"
+msgstr "Kleur"
+
+#: src/app/main/ui/ds/product/loader.cljs:36
+msgid "loader.tips.09.title"
+msgstr "Donkere en lichte modus"
+
+#: src/app/main/ui/ds/product/loader.cljs:25
+msgid "loader.tips.03.message"
+msgstr ""
+"Flexibel ontwerpen met vertrouwde CSS-achtige lay-outbesturingselementen."
+
+#: src/app/main/data/tokens.cljs:150, src/app/main/data/tokens.cljs:180
+msgid "errors.token-set-already-exists"
+msgstr "Er bestaat al een verzameling met dezelfde naam"
+
+#: src/app/main/ui/ds/product/loader.cljs:30
+msgid "loader.tips.06.title"
+msgstr "Interactieve prototypes"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:9
+msgid "workspace.token.error-parse"
+msgstr "Fout bij importeren: Kan JSON niet verwerken."
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:189
+msgid "workspace.token.margins"
+msgstr "Marges"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:856
+msgid "workspace.shape.menu.remove-variant-property"
+msgstr "Eigenschap verwijderen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:351, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:358
+msgid "workspace.layout_grid.editor.padding.horizontal"
+msgstr "Horizontale vulling"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:44
+msgid "dashboard.empty-project.add-library"
+msgstr "Een bibliotheek of sjabloon toevoegen"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:61
+msgid "inspect.subtitle.copy"
+msgstr "Kopiëren"
+
+#: src/app/main/ui/dashboard/templates.cljs:133
+msgid "dashboard.template.add-to-project"
+msgstr "Toevoegen aan je project"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:36, src/app/main/ui/dashboard/placeholder.cljs:90
+msgid "dashboard.empty-project.create"
+msgstr "Nieuw bestand aanmaken"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:45
+msgid "dashboard.empty-project.explore"
+msgstr "Rondkijken om wat toe te voegen"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:176
+msgid "workspace.assets.manage-library"
+msgstr "Bibliotheek beheren"
+
+#: src/app/main/ui/dashboard/templates.cljs:257
+msgid "dashboard.libraries-and-templates.description"
+msgstr ""
+"Hier heb je een aantal bibliotheken en sjablonen die je aan je project kunt "
+"toevoegen"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:63, src/app/main/ui/workspace/tokens/modals/themes.cljs:170, src/app/main/ui/workspace/tokens/modals/themes.cljs:279
+msgid "workspace.token.add-new-theme"
+msgstr "Nieuw thema toevoegen"
+
+#: src/app/main/ui/ds/product/loader.cljs:32
+msgid "loader.tips.07.title"
+msgstr "Web-standaard formaten"
+
+#: src/app/main/ui/dashboard/comments.cljs:95
+msgid "label.mark-all-as-read"
+msgstr "Alles als gelezen markeren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:396, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:402
+msgid "workspace.layout_grid.editor.padding.top"
+msgstr "Vulling aan de bovenkant"
+
+#: src/app/main/ui/ds/product/loader.cljs:31
+msgid "loader.tips.06.message"
+msgstr "Breng je ideeën tot leven met animaties en overgangen."
+
+#: src/app/main/ui/ds/product/loader.cljs:34
+msgid "loader.tips.08.title"
+msgstr "Sneltoetsen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:426, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:432
+msgid "workspace.layout_grid.editor.padding.bottom"
+msgstr "Vulling aan de onderkant"
+
+#: src/app/main/ui/ds/product/loader.cljs:39
+msgid "loader.tips.10.message"
+msgstr ""
+"Breid Penpot uit met door de community gebouwde plug-ins voor extra "
+"functionaliteit."
+
+#: src/app/main/ui/workspace/context_menu.cljs:587, src/app/main/ui/workspace/sidebar/assets/common.cljs:475, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:771
+msgid "workspace.shape.menu.add-variant"
+msgstr "Variant aanmaken"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:411, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:417
+msgid "workspace.layout_grid.editor.padding.right"
+msgstr "Rechter vulling"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:337, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:343
+msgid "workspace.layout_grid.editor.padding.vertical"
+msgstr "Verticale vulling"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:153
+msgid "workspace.token.num-active-sets"
+msgstr "%s actieve verzamelingen"
