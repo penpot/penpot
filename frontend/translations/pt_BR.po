@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-03-21 15:01+0000\n"
-"Last-Translator: Rick Benetti <rick@boz.solutions>\n"
+"Last-Translator: Ally Tiago <allytiagomail@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -41,7 +41,7 @@ msgstr "Quer apenas experimentar?"
 #: src/app/main/ui/auth/login.cljs:43
 msgid "auth.demo-warning"
 msgstr ""
-"Este é um serviço DEMONSTRATIVO, NÃO USE para trabalho real, os projetos "
+"Este é um serviço DEMONSTRATIVO, NÃO USE para trabalho real. Os projetos "
 "serão apagados periodicamente."
 
 #: src/app/main/ui/auth/login.cljs:189, src/app/main/ui/viewer/login.cljs:84
