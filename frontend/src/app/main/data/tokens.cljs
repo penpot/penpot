@@ -91,16 +91,21 @@
   (ptk/reify ::update-token-theme
     ptk/WatchEvent
     (watch [it state _]
-      (let [tokens-lib       (get-tokens-lib state)
-            data             (dsh/lookup-file-data state)
-            prev-token-theme (some-> tokens-lib (ctob/get-theme group name))
-            changes          (-> (pcb/empty-changes it)
-                                 (pcb/with-library-data data)
-                                 (pcb/set-token-theme (:group prev-token-theme)
-                                                      (:name prev-token-theme)
-                                                      token-theme))]
-        (rx/of
-         (dch/commit-changes changes))))))
+      (let [data             (dsh/lookup-file-data state)
+            tokens-lib       (get data :tokens-lib)]
+        (if (and (or (not= group (:group token-theme))
+                     (not= name (:name token-theme)))
+                 (ctob/get-theme tokens-lib
+                                 (:group token-theme)
+                                 (:name token-theme)))
+          (rx/of (ntf/show {:content (tr "errors.token-theme-already-exists")
+                            :type :toast
+                            :level :error
+                            :timeout 9000}))
+          (let [changes (-> (pcb/empty-changes it)
+                            (pcb/with-library-data data)
+                            (pcb/set-token-theme group name token-theme))]
+            (rx/of (dch/commit-changes changes))))))))
 
 (defn toggle-token-theme-active? [group name]
   (ptk/reify ::toggle-token-theme-active?

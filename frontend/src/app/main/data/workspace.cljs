@@ -253,7 +253,6 @@
     (watch [_ state _]
       (let [team-id    (:current-team-id state)
             file-id    (:id file)]
-
         (rx/of (dwn/initialize team-id file-id)
                (dwsl/initialize-shape-layout)
                (fetch-libraries file-id))))))

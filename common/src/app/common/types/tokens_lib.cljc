@@ -799,7 +799,7 @@
          (map-indexed (fn [index item]
                         (assoc item :index index))))))
 
-(defn flatten-nested-tokens-json
+(defn- flatten-nested-tokens-json
   "Recursively flatten the dtcg token structure, joining keys with '.'."
   [tokens token-path]
   (reduce-kv
@@ -1290,54 +1290,85 @@ Will return a value that matches this schema:
           (assoc-in ["$metadata" "activeThemes"] active-themes-clear)
           (assoc-in ["$metadata" "activeSets"] active-sets))))
 
-  (decode-dtcg-json [_ parsed-json]
-    (let [metadata (get parsed-json "$metadata")
-          sets-data (dissoc parsed-json "$themes" "$metadata")
-          themes-data (->> (get parsed-json "$themes")
-                           (map (fn [theme]
-                                  (-> theme
-                                      (set/rename-keys {"selectedTokenSets" "sets"})
-                                      (update "sets" keys)))))
-          active-sets (get metadata "activeSets")
-          active-themes (get metadata "activeThemes")
-          active-themes (if (empty? active-themes)
-                          #{hidden-token-theme-path}
-                          active-themes)
+  (decode-dtcg-json [_ data]
+    (assert (map? data) "expected a map data structure for `data`")
 
-          set-order (get metadata "tokenSetOrder")
-          name->pos (into {} (map-indexed (fn [idx itm] [itm idx]) set-order))
-          sets-data' (sort-by (comp name->pos first) sets-data)
-          lib (make-tokens-lib)
-          lib' (->> sets-data'
-                    (reduce (fn [lib [set-name tokens]]
-                              (add-set lib (make-token-set
-                                            :name set-name
-                                            :tokens (flatten-nested-tokens-json tokens ""))))
-                            lib))
-          lib' (cond-> lib'
-                 (and (seq active-sets) (= #{hidden-token-theme-path} active-themes))
-                 (update-theme hidden-token-theme-group hidden-token-theme-name
-                               #(assoc % :sets active-sets)))]
-      (if-let [themes-data (seq themes-data)]
-        (as-> lib' $
-          (reduce
-           (fn [lib {:strs [name group description is-source id modified-at sets]}]
-             (add-theme lib (TokenTheme. name
-                                         (or group "")
-                                         description
-                                         (some? is-source)
-                                         (or id (str (uuid/next)))
-                                         (or (some-> modified-at
-                                                     (dt/parse-instant))
-                                             (dt/now))
-                                         (set sets))))
-           $ themes-data)
-          (reduce
-           (fn [lib active-theme]
-             (let [[group name] (split-token-theme-path active-theme)]
-               (activate-theme lib group name)))
-           $ active-themes))
-        lib')))
+    (let [metadata (get data "$metadata")
+
+          xf-normalize-set-name
+          (map normalize-set-name)
+
+          sets
+          (dissoc data "$themes" "$metadata")
+
+          ordered-sets
+          (-> (d/ordered-set)
+              (into xf-normalize-set-name (get metadata "tokenSetOrder"))
+              (into xf-normalize-set-name (keys sets)))
+
+          active-sets
+          (or (->> (get metadata "activeSets")
+                   (into #{} xf-normalize-set-name)
+                   (not-empty))
+              #{})
+
+          active-themes
+          (or (->> (get metadata "activeThemes")
+                   (into #{})
+                   (not-empty))
+              #{hidden-token-theme-path})
+
+          themes
+          (->> (get data "$themes")
+               (map (fn [theme]
+                      (make-token-theme
+                       :name (get theme "name")
+                       :group (get theme "group")
+                       :is-source (get theme "is-source")
+                       :id (get theme "id")
+                       :modified-at (some-> (get theme "modified-at")
+                                            (dt/parse-instant))
+                       :sets (into #{}
+                                   (comp (map key)
+                                         xf-normalize-set-name
+                                         (filter #(contains? ordered-sets %)))
+                                   (get theme "selectedTokenSets")))))
+               (not-empty))
+
+          library
+          (make-tokens-lib)
+
+          sets
+          (reduce-kv (fn [result name tokens]
+                       (assoc result
+                              (normalize-set-name name)
+                              (flatten-nested-tokens-json tokens "")))
+                     {}
+                     sets)
+
+          library
+          (reduce (fn [library name]
+                    (if-let [tokens (get sets name)]
+                      (add-set library (make-token-set :name name :tokens tokens))
+                      library))
+                  library
+                  ordered-sets)
+
+          library
+          (update-theme library hidden-token-theme-group hidden-token-theme-name
+                        #(assoc % :sets active-sets))
+
+          library
+          (reduce add-theme library themes)
+
+          library
+          (reduce (fn [library theme-path]
+                    (let [[group name] (split-token-theme-path theme-path)]
+                      (activate-theme library group name)))
+                  library
+                  active-themes)]
+
+      library))
 
   (decode-legacy-json [this parsed-legacy-json]
     (let [other-data (select-keys parsed-legacy-json ["$themes" "$metadata"])
