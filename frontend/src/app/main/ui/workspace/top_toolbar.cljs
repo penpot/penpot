@@ -10,7 +10,6 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.media :as cm]
-   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
