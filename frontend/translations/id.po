@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-20 13:42+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Indonesian "
-"<https://hosted.weblate.org/projects/penpot/frontend/id/>\n"
+"PO-Revision-Date: 2025-03-21 15:01+0000\n"
+"Last-Translator: Linerly <linerly@proton.me>\n"
+"Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
+"frontend/id/>\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -6466,7 +6466,6 @@ msgid "workspace.token.no-themes-currently"
 msgstr "Anda saat ini belum memiliki tema."
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.token.original-value"
 msgstr "Nilai asli: %s"
 
@@ -6475,7 +6474,6 @@ msgid "workspace.token.ref-not-valid"
 msgstr "Referensi tidak valid atau tidak dalam set aktif mana pun"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:217, src/app/main/ui/workspace/tokens/form.cljs:221, src/app/main/ui/workspace/tokens/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.token.resolved-value"
 msgstr "Nilai terselesaikan: %s"
 
@@ -6843,3 +6841,96 @@ msgstr "Versi tersimpan otomatis akan disimpan selama %s hari."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik untuk menutup jalur"
+
+#: src/app/main/data/tokens.cljs:79
+msgid "errors.token-theme-already-exists"
+msgstr "Opsi Tema dengan nama yang sama sudah ada"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:44
+msgid "dashboard.empty-project.add-library"
+msgstr "Tambahkan Pustaka atau Templat"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:43
+msgid "dashboard.empty-project.go-to-libraries"
+msgstr "Pergi ke Pustaka dan Templat"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:37
+msgid "dashboard.empty-project.start"
+msgstr "Mulai membuat hal-hal yang hebat"
+
+#: src/app/main/data/comments.cljs:472
+msgid "dashboard.mark-all-as-read.success"
+msgstr "Semua notifikasi tertanda sebagai dibaca"
+
+#: src/app/main/ui/comments.cljs:729, src/app/main/ui/comments.cljs:760, src/app/main/ui/comments.cljs:826
+msgid "errors.character-limit-exceeded"
+msgstr "Melebihi batas karakter"
+
+#: src/app/util/forms.cljs:61
+msgid "errors.field-missing"
+msgstr "Kolom kosong"
+
+#: src/app/util/forms.cljs
+#, unused
+msgid "errors.invalid-text"
+msgstr "Teks tidak valid"
+
+#: src/app/main/data/tokens.cljs:245
+msgid "errors.token-set-exists-on-drop"
+msgstr ""
+"Tidak dapat menyelesaikan drop, set dengan nama yang sama sudah ada di jalur "
+"ini."
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variant"
+msgstr "Properti varian"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:45
+msgid "dashboard.empty-project.explore"
+msgstr "Jelajahi beberapa untuk ditambahkan"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:39, src/app/main/ui/dashboard/placeholder.cljs:40
+msgid "dashboard.empty-project.import"
+msgstr "Impor berkas"
+
+#: src/app/util/forms.cljs:35, src/app/util/forms.cljs:84
+msgid "errors.invalid-data"
+msgstr "Data tidak valid"
+
+#: src/app/main/data/tokens.cljs:150, src/app/main/data/tokens.cljs:180
+msgid "errors.token-set-already-exists"
+msgstr "Set dengan nama yang sama sudah ada"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:59
+msgid "inspect.subtitle.variant"
+msgstr "Varian"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:57
+msgid "inspect.subtitle.main"
+msgstr "Komponen utama"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:36, src/app/main/ui/dashboard/placeholder.cljs:90
+msgid "dashboard.empty-project.create"
+msgstr "Buat berkas baru"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:61
+msgid "inspect.subtitle.copy"
+msgstr "Salin"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:41
+msgid "dashboard.empty-project.import-penpot"
+msgstr "Impor berkas .penpot"
+
+#: src/app/main/ui/dashboard/templates.cljs:257
+msgid "dashboard.libraries-and-templates.description"
+msgstr ""
+"Di sini Anda memiliki Pustaka dan templat yang dapat ditambahkan ke proyek "
+"Anda"
+
+#: src/app/main/ui/dashboard/comments.cljs:95
+msgid "label.mark-all-as-read"
+msgstr "Tandai semua sebagai terbaca"
+
+#: src/app/main/ui/dashboard/templates.cljs:133
+msgid "dashboard.template.add-to-project"
+msgstr "Tambahkan ke proyek Anda"
