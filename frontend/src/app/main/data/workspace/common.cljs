@@ -38,7 +38,7 @@
     (watch [_ state _]
       (let [profile (:profile state)
             props   (get profile :props)]
-        (when (and (cf/external-feature-flag "boards-03" "test") (not (:workspace-visited props)))
+        (when (not (:workspace-visited props))
           (rx/of (du/update-profile-props {:workspace-visited true})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
