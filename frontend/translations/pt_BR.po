@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-21 15:01+0000\n"
-"Last-Translator: Ally Tiago <allytiagomail@gmail.com>\n"
+"PO-Revision-Date: 2025-03-23 19:01+0000\n"
+"Last-Translator: Rick Benetti <rick@boz.solutions>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -5146,3 +5146,43 @@ msgstr "E-mail de trabalho"
 #: src/app/main/ui/comments.cljs:532
 msgid "comments.mentions.not-found"
 msgstr "Ninguém encontrado com @%s"
+
+#: src/app/main/ui/settings/notifications.cljs:54
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Comentários de arquivo"
+
+#: src/app/main/data/common.cljs:207
+msgid "dashboard.permissions-change.viewer"
+msgstr "Agora você é um espectador desta equipe."
+
+#: src/app/main/ui/dashboard.cljs:208
+msgid "dashboard.plugins.bad-url"
+msgstr "A URL do plugin está incorreta"
+
+#: src/app/main/ui/dashboard.cljs:206
+msgid "dashboard.plugins.parse-error"
+msgstr "Não é possível avaliar o manifesto do plugin"
+
+#: src/app/main/ui/dashboard.cljs:169
+msgid "dashboard.plugins.try-plugin"
+msgstr "Experimente o plugin: "
+
+#: src/app/main/data/common.cljs:242
+msgid "dashboard.removed-from-team"
+msgstr "Você não faz mais parte do time \"%s\"."
+
+#: src/app/main/ui/settings/notifications.cljs:57
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Todos os comentários, menções e respostas"
+
+#: src/app/main/ui/settings/notifications.cljs:59
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Nenhuma"
+
+#: src/app/main/ui/settings/notifications.cljs:58
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Somente menções e respostas"
+
+#: src/app/main/ui/settings/notifications.cljs:84
+msgid "dashboard.settings.notifications.submit"
+msgstr "Atualizar configurações"
