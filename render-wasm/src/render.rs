@@ -306,6 +306,8 @@ impl RenderState {
             s.canvas().save();
         });
 
+        let antialias = shape.should_use_antialias(self.get_scale());
+
         // set clipping
         if let Some((bounds, corners, transform)) = clip_bounds {
             self.surfaces.apply_mut(surface_ids, |s| {
@@ -315,11 +317,13 @@ impl RenderState {
             if let Some(corners) = corners {
                 let rrect = RRect::new_rect_radii(bounds, &corners);
                 self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas().clip_rrect(rrect, skia::ClipOp::Intersect, true);
+                    s.canvas()
+                        .clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
                 });
             } else {
                 self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas().clip_rect(bounds, skia::ClipOp::Intersect, true);
+                    s.canvas()
+                        .clip_rect(bounds, skia::ClipOp::Intersect, antialias);
                 });
             }
 
@@ -392,15 +396,15 @@ impl RenderState {
                 );
 
                 for fill in shape.fills().rev() {
-                    fills::render(self, &shape, fill);
+                    fills::render(self, &shape, fill, antialias);
                 }
 
                 for stroke in shape.strokes().rev() {
-                    strokes::render(self, &shape, stroke);
+                    strokes::render(self, &shape, stroke, antialias);
                 }
 
-                shadows::render_inner_shadows(self, &shape);
-                shadows::render_drop_shadows(self, &shape);
+                shadows::render_inner_shadows(self, &shape, antialias);
+                shadows::render_drop_shadows(self, &shape, antialias);
             }
         };
 

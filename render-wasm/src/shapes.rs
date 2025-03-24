@@ -43,6 +43,7 @@ use crate::math;
 use crate::math::{Bounds, Matrix, Point};
 
 const MIN_VISIBLE_SIZE: f32 = 2.0;
+const ANTIALIAS_THRESHOLD: f32 = 15.0;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
@@ -510,6 +511,11 @@ impl Shape {
     pub fn visually_insignificant(&self, scale: f32) -> bool {
         self.selrect.width() * scale < MIN_VISIBLE_SIZE
             || self.selrect.height() * scale < MIN_VISIBLE_SIZE
+    }
+
+    pub fn should_use_antialias(&self, scale: f32) -> bool {
+        self.selrect.width() * scale > ANTIALIAS_THRESHOLD
+            || self.selrect.height() * scale > ANTIALIAS_THRESHOLD
     }
 
     // TODO: Maybe store this inside the shape
