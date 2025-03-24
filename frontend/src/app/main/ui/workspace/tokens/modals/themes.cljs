@@ -32,35 +32,35 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(mf/defc empty-themes
-  [{:keys [set-state]}]
-  (let [create-theme
-        (mf/use-fn
-         (mf/deps set-state)
-         #(set-state (fn [_] {:type :create-theme})))
-        close-modal
-        (mf/use-fn
-         #(st/emit! (modal/hide)))]
-    [:div {:class (stl/css :themes-modal-wrapper)}
-     [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
-      (tr "workspace.token.themes-list")]
-     [:div {:class (stl/css :empty-themes-wrapper)}
-      [:div {:class (stl/css :empty-themes-message)}
-       [:> text* {:as "span" :typography "title-medium" :class (stl/css :empty-theme-title)}
-        (tr "workspace.token.no-themes-currently")]
-       [:> text* {:as "span"
-                  :class (stl/css :empty-theme-subtitle)
-                  :typography "body-medium"}
-        (tr "workspace.token.create-new-theme")]]
-      [:div {:class (stl/css :button-footer)}
-       [:> button* {:variant "secondary"
-                    :type "button"
-                    :on-click close-modal}
-        (tr "labels.close")]
-       [:> button* {:variant "primary"
-                    :type "button"
-                    :on-click create-theme}
-        (tr "workspace.token.add-new-theme")]]]]))
+;; (mf/defc empty-themes
+;;   [{:keys [set-state]}]
+;;   (let [create-theme
+;;         (mf/use-fn
+;;          (mf/deps set-state)
+;;          #(set-state (fn [_] {:type :create-theme})))
+;;         close-modal
+;;         (mf/use-fn
+;;          #(st/emit! (modal/hide)))]
+;;     [:div {:class (stl/css :themes-modal-wrapper)}
+;;      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
+;;       (tr "workspace.token.themes-list")]
+;;      [:div {:class (stl/css :empty-themes-wrapper)}
+;;       [:div {:class (stl/css :empty-themes-message)}
+;;        [:> text* {:as "span" :typography "title-medium" :class (stl/css :empty-theme-title)}
+;;         (tr "workspace.token.no-themes-currently")]
+;;        [:> text* {:as "span"
+;;                   :class (stl/css :empty-theme-subtitle)
+;;                   :typography "body-medium"}
+;;         (tr "workspace.token.create-new-theme")]]
+;;       [:div {:class (stl/css :button-footer)}
+;;        [:> button* {:variant "secondary"
+;;                     :type "button"
+;;                     :on-click close-modal}
+;;         (tr "labels.close")]
+;;        [:> button* {:variant "primary"
+;;                     :type "button"
+;;                     :on-click create-theme}
+;;         (tr "workspace.token.add-new-theme")]]]]))
 
 (mf/defc switch
   [{:keys [selected? name on-change]}]
@@ -425,8 +425,8 @@
                                    {:type :themes-overview}))
         set-state (mf/use-fn #(swap! state %))
         component (case (:type @state)
-                    :empty-themes empty-themes
-                    :themes-overview (if (empty? themes) empty-themes themes-overview)
+                    ;; :empty-themes empty-themes
+                    :themes-overview themes-overview
                     :edit-theme controlled-edit-theme
                     :create-theme create-theme)]
     [:& component {:state state
