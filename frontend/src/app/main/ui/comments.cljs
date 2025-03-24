@@ -17,6 +17,7 @@
    [app.main.data.comments :as dcm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.comments :as dwcm]
+   [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -1097,15 +1098,34 @@
                                                     groups))
          (group-bubbles zoom remaining visited (cons [current] groups)))))))
 
-(defn- calculate-zoom-scale-to-ungroup-bubbles
-  "Calculate the minimum zoom scale needed for a group of bubbles to avoid overlap among them"
-  [zoom threads]
+(defn- inside-vbox?
+  "Checks if a bubble or a bubble group is inside a viewbox"
+  [thread-group wl]
+  (let [vbox      (:vbox wl)
+        positions (mapv :position thread-group)
+        position  (gpt/center-points positions)
+        pos-x     (:x position)
+        pos-y     (:y position)
+        x1        (:x vbox)
+        y1        (:y vbox)
+        x2        (+ x1 (:width vbox))
+        y2        (+ y1 (:height vbox))]
+    (and (> x2 pos-x x1) (> y2 pos-y y1))))
+
+(defn- calculate-zoom-scale
+  "Calculates the zoom level needed to ungroup the largest number of bubbles while
+   keeping them all visible in the viewbox."
+  [position zoom threads wl]
   (let [num-threads         (count threads)
-        num-grouped-threads (count (group-bubbles zoom threads))
-        zoom-scale-step     1.75]
-    (if (= num-threads num-grouped-threads)
+        grouped-threads     (group-bubbles zoom threads)
+        num-grouped-threads (count grouped-threads)
+        zoom-scale-step     1.75
+        scaled-zoom         (* zoom zoom-scale-step)
+        zoomed-wl           (dwz/impl-update-zoom wl position scaled-zoom)]
+    (if (or (= num-threads num-grouped-threads)
+            (some #((comp not inside-vbox?) % zoomed-wl) grouped-threads))
       zoom
-      (calculate-zoom-scale-to-ungroup-bubbles (* zoom zoom-scale-step) threads))))
+      (calculate-zoom-scale position scaled-zoom threads zoomed-wl))))
 
 (mf/defc comment-floating-group*
   {::mf/wrap [mf/memo]}
@@ -1124,13 +1144,17 @@
 
         test-id     (str/join "-" (map :seqn (sort-by :seqn thread-group)))
 
+        wl          (mf/deref refs/workspace-local)
+
         on-click
         (mf/use-fn
-         (mf/deps thread-group position)
+         (mf/deps thread-group position zoom wl)
          (fn []
-           (let [updated-zoom (calculate-zoom-scale-to-ungroup-bubbles zoom thread-group)
+           (let [centered-wl  (dwv/calculate-centered-viewbox wl position)
+                 updated-zoom (calculate-zoom-scale position zoom thread-group centered-wl)
                  scale-zoom   (/ updated-zoom zoom)]
-             (st/emit! (dwz/set-zoom position scale-zoom)))))]
+             (st/emit! (dwv/update-viewport-position-center position)
+                       (dwz/set-zoom position scale-zoom)))))]
 
     [:div {:style {:top (dm/str pos-y "px")
                    :left (dm/str pos-x "px")}
