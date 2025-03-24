@@ -8,10 +8,9 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
-   [app.common.logic.libraries :as cll]
+   [app.common.logic.variant-properties :as clvp]
    [app.common.logic.variants :as clv]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
@@ -29,18 +28,6 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-(dm/export clv/find-related-components)
-
-(defn is-secondary-variant?
-  [component data]
-  (if-let [variant-id (:variant-id component)]
-    (let [page-id (:main-instance-page component)
-          objects (-> (dsh/get-page data page-id)
-                      (get :objects))
-          shapes  (dm/get-in objects [variant-id :shapes])]
-      (not= (:main-instance-id component) (last shapes)))
-    false))
-
 (defn update-property-name
   "Update the variant property name on the position pos
    in all the components with this variant-id"
@@ -56,7 +43,7 @@
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-objects objects)
                         (pcb/with-library-data data)
-                        (clv/generate-update-property-name variant-id pos new-name))
+                        (clvp/generate-update-property-name variant-id pos new-name))
             undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
@@ -77,7 +64,7 @@
             changes    (-> (pcb/empty-changes it page-id)
                            (pcb/with-library-data data)
                            (pcb/with-objects objects)
-                           (clv/generate-update-property-value component-id pos value))
+                           (clvp/generate-update-property-value component-id pos value))
             undo-id    (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
@@ -100,7 +87,7 @@
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-library-data data)
                         (pcb/with-objects objects)
-                        (clv/generate-remove-property variant-id pos))
+                        (clvp/generate-remove-property variant-id pos))
 
             undo-id (js/Symbol)]
         (rx/of
@@ -124,7 +111,7 @@
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-library-data data)
                         (pcb/with-objects objects)
-                        (clv/generate-add-new-property variant-id options))
+                        (clvp/generate-add-new-property variant-id options))
 
             undo-id (js/Symbol)]
         (rx/of
@@ -132,7 +119,7 @@
          (dch/commit-changes changes)
          (dwu/commit-undo-transaction undo-id))))))
 
-(defn set-variant-id
+(defn- set-variant-id
   "Sets the variant-id on a component"
   [component-id variant-id]
   (ptk/reify ::set-variant-id
@@ -149,7 +136,7 @@
          (dch/commit-changes changes)
          (dwu/commit-undo-transaction undo-id))))))
 
-(defn focus-property
+(defn- focus-property
   [shape-id prop-num]
   (ptk/reify ::focus-property
     ptk/EffectEvent
@@ -177,30 +164,13 @@
             new-component-id    (uuid/next)
             new-shape-id        (uuid/next)
 
-            value               (str clv/value-prefix
-                                     (-> (clv/extract-properties-values data objects (:variant-id component))
-                                         last
-                                         :value
-                                         count
-                                         inc))
-
             prop-num            (dec (count (:variant-properties component)))
 
-
-            [new-shape changes] (-> (pcb/empty-changes it page-id)
+            changes             (-> (pcb/empty-changes it page-id)
                                     (pcb/with-library-data data)
                                     (pcb/with-objects objects)
                                     (pcb/with-page-id page-id)
-                                    (cll/generate-duplicate-component
-                                     {:data data}
-                                     component-id
-                                     new-component-id
-                                     true
-                                     {:new-shape-id new-shape-id :apply-changes-local-library? true}))
-
-            changes             (-> changes
-                                    (clv/generate-update-property-value new-component-id prop-num value)
-                                    (pcb/change-parent (:parent-id shape) [new-shape] 0))
+                                    (clv/generate-add-new-variant shape (:variant-id component) new-component-id new-shape-id prop-num))
 
             undo-id             (js/Symbol)]
         (rx/concat
@@ -253,6 +223,8 @@
             undo-id      (js/Symbol)]
 
 
+        ;;TODO Refactor all called methods in order to be able to
+        ;;generate changes instead of call the events
         (rx/concat
          (rx/of
           (dwu/start-undo-transaction undo-id)
@@ -286,6 +258,7 @@
           (dwu/commit-undo-transaction undo-id)))))))
 
 (defn add-component-or-variant
+  "Manage the shared shortcut, and do the pertinent action"
   []
   (ptk/reify ::add-component-or-variant
 
@@ -319,6 +292,7 @@
           (rx/of (dwl/add-component)))))))
 
 (defn duplicate-or-add-variant
+  "Manage the shared shortcut, and do the pertinent action"
   []
   (ptk/reify ::duplicate-or-add-variant
     ptk/WatchEvent

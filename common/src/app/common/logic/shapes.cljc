@@ -10,12 +10,13 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.logic.variants :as clv]
+   [app.common.logic.variant-properties :as clvp]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.token :as cto]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -413,7 +414,7 @@
                                         (- max-path-items num-props))
 
                    changes            (nth
-                                       (iterate #(clv/generate-add-new-property % (:id parent)) changes)
+                                       (iterate #(clvp/generate-add-new-property % (:id parent)) changes)
                                        num-new-props)]
                (reduce
                 (fn [changes shape]
@@ -424,11 +425,11 @@
                           ;; we need to get the updated library data to have access to the current properties
                           data                (pcb/get-library-data changes)
 
-                          props               (clv/path-to-properties
+                          props               (ctv/path-to-properties
                                                base-name
                                                (get-in data [:components first-comp-id :variant-properties]))
 
-                          variant-name        (clv/properties-to-name props)
+                          variant-name        (ctv/properties-to-name props)
                           [cpath cname]       (cfh/parse-path-name (:name parent))]
 
                       (-> (pcb/update-component changes

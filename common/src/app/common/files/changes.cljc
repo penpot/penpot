@@ -31,6 +31,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as ctt]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
@@ -336,7 +337,9 @@
       [:type [:= :mod-component]]
       [:id ::sm/uuid]
       [:shapes {:optional true} [:vector {:gen/max 3} :any]]
-      [:name {:optional true} :string]]]
+      [:name {:optional true} :string]
+      [:variant-id {:optional true} ::sm/uuid]
+      [:variant-properties {:optional true} [:vector ::ctv/variant-property]]]]
 
     [:del-component
      [:map {:title "DelComponentChange"}

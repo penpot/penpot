@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.logic.variants :as clv]
+   [app.common.files.variant :as cfv]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.main.ui.components.copy-button :refer [copy-button*]]
@@ -35,7 +35,7 @@
                                 is-container? (ctc/is-variant-container? shape)
                                 component     (when-not is-container? (ctkl/get-component data (:component-id shape)))]
                             (if is-container?
-                              (->> (clv/extract-properties-values data objects (:id shape))
+                              (->> (cfv/extract-properties-values data objects (:id shape))
                                    (map #(update % :value (partial str/join ", "))))
                               (->> (:variant-properties component)
                                    (map #(update % :value (fn [v] (if (str/blank? v) "--" v))))))))]
