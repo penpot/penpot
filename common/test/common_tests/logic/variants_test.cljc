@@ -117,7 +117,7 @@
     (t/is (= (count (:variant-properties comp01')) 2))
     (t/is (= (count (:variant-properties comp02)) 1))
     (t/is (= (count (:variant-properties comp02')) 2))
-    (t/is (= (-> comp01' :variant-properties last :value) "Value1"))))
+    (t/is (= (-> comp01' :variant-properties last :value) "Value 1"))))
 
 
 

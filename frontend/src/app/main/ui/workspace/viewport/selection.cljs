@@ -12,6 +12,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.main.data.workspace :as dw]
@@ -530,7 +531,9 @@
         ;; Note that we don't use mf/deref to avoid a repaint dependency here
         objects (deref refs/workspace-page-objects)
 
-        color   (if (and (= total 1) ^boolean (ctn/in-any-component? objects shape))
+        color   (if (and (= total 1) ^boolean
+                         (or (ctn/in-any-component? objects shape)
+                             (ctk/is-variant-container? shape)))
                   selection-rect-color-component
                   selection-rect-color-normal)]
 
@@ -577,7 +580,9 @@
         ;; Note that we don't use mf/deref to avoid a repaint dependency here
         objects (deref refs/workspace-page-objects)
 
-        color   (if (and (= total 1) ^boolean (ctn/in-any-component? objects shape))
+        color   (if (and (= total 1) ^boolean
+                         (or (ctn/in-any-component? objects shape)
+                             (ctk/is-variant-container? shape)))
                   selection-rect-color-component
                   selection-rect-color-normal)]
 

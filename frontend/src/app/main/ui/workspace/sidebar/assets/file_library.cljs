@@ -145,7 +145,7 @@
 
 (mf/defc file-library-content*
   {::mf/private true}
-  [{:keys [file is-local is-loaded open-status-ref on-clear-selection filters colors media typographies components]}]
+  [{:keys [file is-local is-loaded open-status-ref on-clear-selection filters colors media typographies components count-variants]}]
   (let [open-status       (mf/deref open-status-ref)
 
         file-id           (:id file)
@@ -263,7 +263,8 @@
             :selected selected
             :on-asset-click on-component-click
             :on-assets-delete on-assets-delete
-            :on-clear-selection on-clear-selection}])
+            :on-clear-selection on-clear-selection
+            :count-variants count-variants}])
 
         (when ^boolean show-graphics?
           [:& graphics-section
@@ -385,7 +386,15 @@
         (mf/use-fn
          (mf/deps file-id)
          (fn []
-           (st/emit! (dw/unselect-all-assets file-id))))]
+           (st/emit! (dw/unselect-all-assets file-id))))
+
+        count-variants
+        (mf/use-fn
+         (mf/deps library)
+         (fn [variant-id]
+           (->> (ctkl/components-seq library)
+                (filterv #(= variant-id (:variant-id %)))
+                count)))]
 
     [:div {:class (stl/css :tool-window)
            :on-context-menu dom/prevent-default
@@ -409,4 +418,5 @@
          :media filtered-media
          :typographies filtered-typographies
          :on-clear-selection unselect-all
-         :open-status-ref open-status-ref}])]))
+         :open-status-ref open-status-ref
+         :count-variants count-variants}])]))

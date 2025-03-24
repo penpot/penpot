@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
@@ -32,7 +33,9 @@
 
         ;; NOTE: that we don't use mf/deref to avoid a repaint dependency here
         objects   (deref refs/workspace-page-objects)
-        color     (if (ctn/in-any-component? objects shape)
+        color     (if (or
+                       (ctn/in-any-component? objects shape)
+                       (ctk/is-variant-container? shape))
                     "var(--assets-component-hightlight)"
                     "var(--color-accent-tertiary)")
 

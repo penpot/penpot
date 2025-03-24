@@ -1672,6 +1672,9 @@ msgstr "Mayúsculas"
 msgid "inspect.attributes.variant"
 msgstr "Propiedades de la variante"
 
+msgid "inspect.attributes.variants"
+msgstr "Propiedades de las variantes"
+
 #: src/app/main/ui/inspect/right_sidebar.cljs:163
 msgid "inspect.empty.help"
 msgstr ""
@@ -4406,6 +4409,9 @@ msgstr "Componentes"
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:520
 msgid "workspace.assets.components.add-component"
 msgstr "Añadir componente"
+
+msgid "workspace.assets.components.num-variants"
+msgstr "%s Variantes"
 
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:127
 msgid "workspace.assets.create-group"

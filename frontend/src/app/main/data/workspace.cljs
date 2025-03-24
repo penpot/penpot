@@ -13,6 +13,7 @@
    [app.common.features :as cfeat]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.variant :as cfv]
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
    [app.common.geom.proportions :as gpp]
@@ -25,7 +26,7 @@
    [app.common.schema :as sm]
    [app.common.text :as txt]
    [app.common.transit :as t]
-   [app.common.types.component :as ctk]
+   [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
@@ -75,6 +76,7 @@
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.variants :as dwva]
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.errors]
@@ -577,7 +579,7 @@
             name               (cfh/generate-unique-name base-name unames :suffix-fn suffix-fn)
             objects            (update-vals (:objects page) #(dissoc % :use-for-thumbnail))
 
-            main-instances-ids (set (keep #(when (ctk/main-instance? (val %)) (key %)) objects))
+            main-instances-ids (set (keep #(when (ctc/main-instance? (val %)) (key %)) objects))
             ids-to-remove      (set (apply concat (map #(cfh/get-children-ids objects %) main-instances-ids)))
 
             add-component-copy
@@ -794,27 +796,36 @@
   ([] (end-rename-shape nil nil))
   ([shape-id name]
    (ptk/reify ::end-rename-shape
+     ptk/UpdateEvent
+     (update [_ state]
+       ;; Remove rename state from workspace local state
+       (update state :workspace-local dissoc :shape-for-rename))
      ptk/WatchEvent
      (watch [_ state _]
        (when-let [shape-id (d/nilv shape-id (dm/get-in state [:workspace-local :shape-for-rename]))]
-         (let [shape (dsh/lookup-shape state shape-id)
-               name        (str/trim name)
-               clean-name  (cfh/clean-path name)
-               valid?      (and (not (str/ends-with? name "/"))
-                                (string? clean-name)
-                                (not (str/blank? clean-name)))]
-           (rx/concat
-            ;; Remove rename state from workspace local state
-            (rx/of #(update % :workspace-local dissoc :shape-for-rename))
+         (let [shape        (dsh/lookup-shape state shape-id)
+               name         (str/trim name)
+               clean-name   (cfh/clean-path name)
+               valid?       (and (not (str/ends-with? name "/"))
+                                 (string? clean-name)
+                                 (not (str/blank? clean-name)))
+               component-id (:component-id shape)
+               undo-id (js/Symbol)]
 
-            ;; Rename the shape if string is not empty/blank
-            (when valid?
-              (rx/of (update-shape shape-id {:name clean-name})))
 
-            ;; Update the component in case if shape is a main instance
-            (when (and valid? (:main-instance shape))
-              (when-let [component-id (:component-id shape)]
-                (rx/of (dwl/rename-component component-id clean-name)))))))))))
+           (when valid?
+             (if (ctc/is-variant-container? shape)
+               ;; Rename the full variant when it is a variant container
+               (rx/of (dwva/rename-variant shape-id clean-name))
+               (rx/of
+                (dwu/start-undo-transaction undo-id)
+                ;; Rename the shape if string is not empty/blank
+                (update-shape shape-id {:name clean-name})
+
+                ;; Update the component in case shape is a main instance
+                (when (and (some? component-id) (ctc/main-instance? shape))
+                  (dwl/rename-component component-id clean-name))
+                (dwu/commit-undo-transaction undo-id))))))))))
 
 ;; --- Update Selected Shapes attrs
 
@@ -1206,22 +1217,26 @@
   (ptk/reify ::show-component-in-assets
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)
-            fdata   (dsh/lookup-file-data state file-id)
-            cpath   (dm/get-in fdata [:components component-id :path])
-            cpath   (cfh/split-path cpath)
-            paths   (map (fn [i] (cfh/join-path (take (inc i) cpath)))
-                         (range (count cpath)))]
+      (let [file-id   (:current-file-id state)
+            fdata     (dsh/lookup-file-data state file-id)
+            component (cfv/get-primary-component fdata component-id)
+            cpath     (:path component)
+            cpath     (cfh/split-path cpath)
+            paths     (map (fn [i] (cfh/join-path (take (inc i) cpath)))
+                           (range (count cpath)))]
         (rx/concat
          (rx/from (map #(set-assets-group-open file-id :components % true) paths))
          (rx/of (dcm/go-to-workspace :layout :assets)
                 (set-assets-section-open file-id :library true)
                 (set-assets-section-open file-id :components true)
-                (select-single-asset file-id component-id :components)))))
+                (select-single-asset file-id (:id component) :components)))))
 
     ptk/EffectEvent
-    (effect [_ _ _]
-      (let [wrapper-id (str "component-shape-id-" component-id)]
+    (effect [_ state _]
+      (let [file-id   (:current-file-id state)
+            fdata     (dsh/lookup-file-data state file-id)
+            component (cfv/get-primary-component fdata component-id)
+            wrapper-id (str "component-shape-id-" (:id component))]
         (tm/schedule-on-idle #(dom/scroll-into-view-if-needed! (dom/get-element wrapper-id)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1388,7 +1403,7 @@
                                heads))))
 
           (advance-copy [file libraries page objects shape]
-            (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
+            (if (and (ctc/instance-head? shape) (not (ctc/main-instance? shape)))
               (let [level-delta (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)]
                 (if (pos? level-delta)
                   (reduce (partial advance-shape file libraries page level-delta)
@@ -2118,7 +2133,7 @@
               undo-id      (js/Symbol)]
 
           (rx/concat
-           (->> (filter ctk/instance-head? orig-shapes)
+           (->> (filter ctc/instance-head? orig-shapes)
                 (map (fn [{:keys [component-file]}]
                        (ptk/event ::ev/event
                                   {::ev/name "use-library-component"
@@ -2433,7 +2448,7 @@
       (let [objects (dsh/lookup-page-objects state)
             copies  (->> objects
                          vals
-                         (filter #(and (ctk/instance-head? %) (not (ctk/main-instance? %)))))
+                         (filter #(and (ctc/instance-head? %) (not (ctc/main-instance? %)))))
 
             copies-no-ref (filter #(not (:shape-ref %)) copies)
             find-childs-no-ref (fn [acc-map item]
