@@ -586,7 +586,7 @@ impl RenderState {
         if !self.render_in_progress {
             return Ok(());
         }
-
+        let scale = self.get_scale();
         let mut should_stop = false;
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
@@ -663,6 +663,7 @@ impl RenderState {
                             }
                             if !transformed_element.extrect().intersects(self.render_area)
                                 || transformed_element.hidden()
+                                || transformed_element.visually_insignificant(scale)
                             {
                                 debug::render_debug_shape(self, &transformed_element, false);
                                 continue;
