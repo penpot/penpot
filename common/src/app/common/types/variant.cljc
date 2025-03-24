@@ -21,16 +21,20 @@
    [:value :string]])
 
 (def schema:variant-component
+  ;; A component that is part of a variant set.
   [:map
    [:variant-id {:optional true} ::sm/uuid]
    [:variant-properties {:optional true} [:vector schema:variant-property]]])
 
 (def schema:variant-shape
+  ;; The root shape of the main instance of a variant component.
   [:map
    [:variant-id {:optional true} ::sm/uuid]
    [:variant-name {:optional true} :string]])
 
 (def schema:variant-container
+  ;; is a board that contains all variant components of a variant set,
+  ;; for grouping them visually in the workspace.
   [:map
    [:is-variant-container {:optional true} :boolean]])
 

@@ -25,6 +25,14 @@
     (concat (remove #(= % "--") property-values) dashes)))
 
 
+(defn extract-properties-names
+  [shape data]
+  (->> shape
+       (#(ctcl/get-component data (:component-id %) true))
+       :variant-properties
+       (map :name)))
+
+
 (defn extract-properties-values
   [data objects variant-id]
   (->> (find-variant-components data objects variant-id)
