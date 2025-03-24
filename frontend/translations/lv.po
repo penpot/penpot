@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-21 15:02+0000\n"
+"PO-Revision-Date: 2025-03-25 11:01+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -7028,3 +7028,80 @@ msgstr "Nezināma kļūda"
 #: src/app/main/ui/components/copy_button.cljs:41
 msgid "labels.copy"
 msgstr "Ievietot starpliktuvē"
+
+#: src/app/main/ui/ds/product/loader.cljs:22
+msgid "loader.tips.02.title"
+msgstr "Sadarbošanās reāllaikā"
+
+#: src/app/main/ui/ds/product/loader.cljs:25
+msgid "loader.tips.03.message"
+msgstr "Dizaina pielāgojamība ar pazīstamām CSS līdzīgām izkārtojuma vadīklām."
+
+#: src/app/main/ui/ds/product/loader.cljs:24
+msgid "loader.tips.03.title"
+msgstr "Automātisks izkārtojums kā CSS"
+
+#: src/app/main/ui/ds/product/loader.cljs:27
+msgid "loader.tips.04.message"
+msgstr "CSS un SVG koda iegūšana tieši no dizainiem."
+
+#: src/app/main/ui/ds/product/loader.cljs:29
+msgid "loader.tips.05.message"
+msgstr "Līdzekļu un stilu kopīgošana, lai uzturētu saskanīgumu."
+
+#: src/app/main/ui/ds/product/loader.cljs:28
+msgid "loader.tips.05.title"
+msgstr "Dizaina bibliotēkas"
+
+#: src/app/main/ui/ds/product/loader.cljs:31
+msgid "loader.tips.06.message"
+msgstr "Savu ideju atdzīvināšana ar animācijām un pārejām."
+
+#: src/app/main/ui/ds/product/loader.cljs:30
+msgid "loader.tips.06.title"
+msgstr "Mijiedarbīgi prototipi"
+
+#: src/app/main/ui/ds/product/loader.cljs:33
+msgid "loader.tips.07.message"
+msgstr "Penpot izmanto SVG un CSS plūdenai izstrādei."
+
+#: src/app/main/ui/ds/product/loader.cljs:35
+msgid "loader.tips.08.message"
+msgstr ""
+"Darbplūsmas paātrināšana ar īsinājumtaustiņiem, piemēram, Shift + A "
+"automātiskam izkārtojumam."
+
+#: src/app/main/ui/ds/product/loader.cljs:37
+msgid "loader.tips.09.message"
+msgstr "Izskata izvēle atbilstoši savai patikšanai."
+
+#: src/app/main/ui/ds/product/loader.cljs:38
+msgid "loader.tips.10.title"
+msgstr "Spraudņu atbalsts"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
+#, unused
+msgid "shortcuts.copy-props"
+msgstr "Ievietot īpašības starpliktuvē"
+
+#: src/app/main/ui/ds/product/loader.cljs:26
+msgid "loader.tips.04.title"
+msgstr "Izgūt kā kodu"
+
+#: src/app/main/ui/ds/product/loader.cljs:32
+msgid "loader.tips.07.title"
+msgstr "Tīmekļa standartu veidoli"
+
+#: src/app/main/ui/ds/product/loader.cljs:34
+msgid "loader.tips.08.title"
+msgstr "Tastatūras īsinājumtaustiņi"
+
+#: src/app/main/ui/ds/product/loader.cljs:39
+msgid "loader.tips.10.message"
+msgstr ""
+"Penpot paplašināšana ar kopienas veidotu spraudņu nodrošinātām papildu "
+"iespējām."
+
+#: src/app/main/ui/ds/product/loader.cljs:36
+msgid "loader.tips.09.title"
+msgstr "Tumšais un gaišais izskats"
