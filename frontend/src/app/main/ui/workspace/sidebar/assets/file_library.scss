@@ -4,6 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../../../ds/typography.scss" as t;
 @import "refactor/common-refactor.scss";
 .tool-window {
   padding: 0 0 $s-24 $s-12;
@@ -14,7 +15,7 @@
 }
 
 .file-name {
-  @include bodySmallTypography;
+  @include t.use-typography("body-small");
   display: flex;
   justify-content: flex-start;
   align-items: center;
@@ -23,9 +24,13 @@
 }
 
 .loading {
-  font-size: $fs-12;
-  padding-left: $s-12;
-  color: var(--title-foreground-color-hover);
+  @include t.use-typography("body-small");
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: $s-32;
+  padding-left: calc($s-12 + $s-2);
+  color: var(--color-foreground-secondary);
 }
 
 .special-title {
