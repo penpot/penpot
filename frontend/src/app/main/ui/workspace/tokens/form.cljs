@@ -233,11 +233,22 @@
   (let [create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
         token-properties (wtch/get-token-properties token)
+
+        has-references? (str/includes? (:value token) "{")
+        clear-ref-name (str/replace (:value token) #"[{}]" "")
+        
         color? (wtt/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
         active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
         resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:cache-atom form-token-cache-atom
                                                                      :interactive? true})
+
+        test-resolved-token (if has-references?
+                              (get active-theme-tokens clear-ref-name)
+                              (get resolved-tokens (wtt/token-identifier token)))
+
+        new-resolved-token (assoc token :resolved-value (:value test-resolved-token))
+
         token-path (mf/use-memo
                     (mf/deps (:name token))
                     #(wtt/token-name->path (:name token)))
@@ -314,7 +325,7 @@
         value-input-ref (mf/use-ref nil)
         value-ref (mf/use-var (:value token))
 
-        token-resolve-result* (mf/use-state (get resolved-tokens (wtt/token-identifier token)))
+        token-resolve-result* (mf/use-state new-resolved-token #_(get resolved-tokens (wtt/token-identifier token)))
         token-resolve-result (deref token-resolve-result*)
 
         set-resolve-value
@@ -345,6 +356,7 @@
                                             (dom/set-value! (mf/ref-val value-input-ref) hex)
                                             hex)
                                           value)]
+                             (prn "en update value" value value')
                              (reset! value-ref value')
                              (on-update-value-debounced value'))))
         on-update-color (mf/use-fn
