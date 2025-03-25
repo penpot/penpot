@@ -21,6 +21,7 @@
    [app.main.store :as st]
    [app.main.ui.shapes.text.fontfaces :as fonts]
    [app.render-wasm.helpers :as h]
+   [app.render-wasm.serializers :as sr]
    [app.util.debug :as dbg]
    [app.util.http :as http]
    [app.util.webapi :as wapi]
@@ -39,48 +40,6 @@
 (def dpr
   (if use-dpr? js/window.devicePixelRatio 1.0))
 
-(defn u8
-  [value]
-  (let [u8-arr (js/Uint8Array. 1)]
-    (aset u8-arr 0 value)
-    u8-arr))
-
-(defn f32->u8
-  [value]
-  (let [f32-arr (js/Float32Array. 1)]
-    (aset f32-arr 0 value)
-    (js/Uint8Array. (.-buffer f32-arr))))
-
-(defn i32->u8
-  [value]
-  (let [i32-arr (js/Int32Array. 1)]
-    (aset i32-arr 0 value)
-    (js/Uint8Array. (.-buffer i32-arr))))
-
-(defn bool->u8
-  [value]
-  (let [result (js/Uint8Array. 1)]
-    (aset result 0 (if value 1 0))
-    result))
-
-(defn uuid->u8
-  [id]
-  (let [buffer (uuid/get-u32 id)
-        u32-arr (js/Uint32Array. 4)]
-    (doseq [i (range 0 4)]
-      (aset u32-arr i (aget buffer i)))
-    (js/Uint8Array. (.-buffer u32-arr))))
-
-(defn matrix->u8
-  [{:keys [a b c d e f]}]
-  (let [f32-arr (js/Float32Array. 6)]
-    (aset f32-arr 0 a)
-    (aset f32-arr 1 b)
-    (aset f32-arr 2 c)
-    (aset f32-arr 3 d)
-    (aset f32-arr 4 e)
-    (aset f32-arr 5 f)
-    (js/Uint8Array. (.-buffer f32-arr))))
 
 ;; Based on app.main.render/object-svg
 (mf/defc object-svg
@@ -164,22 +123,9 @@
   [clip-content]
   (h/call internal-module "_set_shape_clip_content" clip-content))
 
-(defn- translate-shape-type
-  [type]
-  (case type
-    :frame   0
-    :group   1
-    :bool    2
-    :rect    3
-    :path    4
-    :text    5
-    :circle  6
-    :svg-raw 7
-    :image   8))
-
 (defn set-shape-type
   [type]
-  (h/call internal-module "_set_shape_type" (translate-shape-type type)))
+  (h/call internal-module "_set_shape_type" (sr/translate-shape-type type)))
 
 (defn set-masked
   [masked]
@@ -344,26 +290,6 @@
                   (store-image id))))))
         fills))
 
-(defn- translate-stroke-style
-  [stroke-style]
-  (case stroke-style
-    :dotted 1
-    :dashed 2
-    :mixed  3
-    0))
-
-(defn- translate-stroke-cap
-  [stroke-cap]
-  (case stroke-cap
-    :line-arrow 1
-    :triangle-arrow 2
-    :square-marker 3
-    :circle-marker 4
-    :diamond-marker 5
-    :round 6
-    :square 7
-    0))
-
 (defn set-shape-strokes
   [strokes]
   (h/call internal-module "_clear_shape_strokes")
@@ -374,9 +300,9 @@
                 image     (:stroke-image stroke)
                 width     (:stroke-width stroke)
                 align     (:stroke-alignment stroke)
-                style     (-> stroke :stroke-style translate-stroke-style)
-                cap-start (-> stroke :stroke-cap-start translate-stroke-cap)
-                cap-end   (-> stroke :stroke-cap-end translate-stroke-cap)]
+                style     (-> stroke :stroke-style sr/translate-stroke-style)
+                cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
+                cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)]
             (case align
               :inner (h/call internal-module "_add_shape_inner_stroke" width style cap-start cap-end)
               :outer (h/call internal-module "_add_shape_outer_stroke" width style cap-start cap-end)
@@ -431,14 +357,7 @@
                 (h/call internal-module "_add_shape_stroke_solid_fill" rgba)))))
         strokes))
 
-(defn serialize-path-attrs
-  [svg-attrs]
-  (reduce
-   (fn [acc [key value]]
-     (str/concat
-      acc
-      (str/kebab key) "\0"
-      value "\0")) "" svg-attrs))
+
 
 (defn set-shape-path-attrs
   [attrs]
@@ -446,7 +365,7 @@
         attrs (-> attrs
                   (dissoc :style)
                   (merge style))
-        str   (serialize-path-attrs attrs)
+        str   (sr/serialize-path-attrs attrs)
         size  (count str)
         ptr   (h/call internal-module "_alloc_bytes" size)]
     (h/call internal-module "stringToUTF8" str ptr size)
@@ -469,95 +388,45 @@
     (h/call internal-module "stringToUTF8" content ptr size)
     (h/call internal-module "_set_shape_svg_raw_content")))
 
-(defn- translate-blend-mode
-  [blend-mode]
-  (case blend-mode
-    :normal 3
-    :darken 16
-    :multiply 24
-    :color-burn 19
-    :lighten 17
-    :screen 14
-    :color-dodge 18
-    :overlay 15
-    :soft-light 21
-    :hard-light 20
-    :difference 22
-    :exclusion 23
-    :hue 25
-    :saturation 26
-    :color 27
-    :luminosity 28
-    3))
+
 
 (defn set-shape-blend-mode
   [blend-mode]
   ;; These values correspond to skia::BlendMode representation
   ;; https://rust-skia.github.io/doc/skia_safe/enum.BlendMode.html
-  (h/call internal-module "_set_shape_blend_mode" (translate-blend-mode blend-mode)))
+  (h/call internal-module "_set_shape_blend_mode" (sr/translate-blend-mode blend-mode)))
 
 (defn set-shape-opacity
   [opacity]
   (h/call internal-module "_set_shape_opacity" (or opacity 1)))
 
-(defn- translate-constraint-h
-  [type]
-  (case type
-    :left      0
-    :right     1
-    :leftright 2
-    :center    3
-    :scale     4))
+
 
 (defn set-constraints-h
   [constraint]
   (when constraint
-    (h/call internal-module "_set_shape_constraint_h" (translate-constraint-h constraint))))
-
-(defn- translate-constraint-v
-  [type]
-  (case type
-    :top       0
-    :bottom    1
-    :topbottom 2
-    :center    3
-    :scale     4))
+    (h/call internal-module "_set_shape_constraint_h" (sr/translate-constraint-h constraint))))
 
 (defn set-constraints-v
   [constraint]
   (when constraint
-    (h/call internal-module "_set_shape_constraint_v" (translate-constraint-v constraint))))
+    (h/call internal-module "_set_shape_constraint_v" (sr/translate-constraint-v constraint))))
 
 (defn set-shape-hidden
   [hidden]
   (h/call internal-module "_set_shape_hidden" hidden))
 
-(defn- translate-bool-type
-  [bool-type]
-  (case bool-type
-    :union 0
-    :difference 1
-    :intersection 2
-    :exclusion 3
-    0))
-
 (defn set-shape-bool-type
   [bool-type]
-  (h/call internal-module "_set_shape_bool_type" (translate-bool-type bool-type)))
+  (h/call internal-module "_set_shape_bool_type" (sr/translate-bool-type bool-type)))
 
 (defn set-shape-bool-content
   [content]
   (set-shape-path-content content))
 
-(defn- translate-blur-type
-  [blur-type]
-  (case blur-type
-    :layer-blur 1
-    0))
-
 (defn set-shape-blur
   [blur]
-  (let [type   (-> blur :type translate-blur-type)
+  (let [type   (-> blur :type sr/translate-blur-type)
         hidden (:hidden blur)
         value  (:value blur)]
     (h/call internal-module "_set_shape_blur" type hidden value)))
@@ -570,112 +439,18 @@
         r4 (or (get corners 3) 0)]
     (h/call internal-module "_set_shape_corners" r1 r2 r3 r4)))
 
-
-(defn translate-layout-flex-dir
-  [flex-dir]
-  (case flex-dir
-    :row            0
-    :row-reverse    1
-    :column         2
-    :column-reverse 3))
-
-(defn translate-layout-grid-dir
-  [flex-dir]
-  (case flex-dir
-    :row    0
-    :column 1))
-
-(defn translate-layout-align-items
-  [align-items]
-  (case align-items
-    :start   0
-    :end     1
-    :center  2
-    :stretch 3))
-
-(defn translate-layout-align-content
-  [align-content]
-  (case align-content
-    :start         0
-    :end           1
-    :center        2
-    :space-between 3
-    :space-around  4
-    :space-evenly  5
-    :stretch       6))
-
-(defn translate-layout-justify-items
-  [justify-items]
-  (case justify-items
-    :start   0
-    :end     1
-    :center  2
-    :stretch 3))
-
-(defn translate-layout-justify-content
-  [justify-content]
-  (case justify-content
-    :start         0
-    :end           1
-    :center        2
-    :space-between 3
-    :space-around  4
-    :space-evenly  5
-    :stretch       6))
-
-(defn translate-layout-wrap-type
-  [wrap-type]
-  (case wrap-type
-    :wrap   0
-    :nowrap 1))
-
-(defn translate-grid-track-type
-  [type]
-  (case type
-    :percent 0
-    :flex 1
-    :auto 2
-    :fixed 3))
-
-(defn translate-layout-sizing
-  [value]
-  (case value
-    :fill 0
-    :fix  1
-    :auto 2))
-
-(defn translate-align-self
-  [value]
-  (when value
-    (case value
-      :auto    0
-      :start   1
-      :end     2
-      :center  3
-      :stretch 4)))
-
-(defn translate-justify-self
-  [value]
-  (when value
-    (case value
-      :auto    0
-      :start   1
-      :end     2
-      :center  3
-      :stretch 4)))
-
 (defn set-flex-layout
   [shape]
-  (let [dir (-> (or (dm/get-prop shape :layout-flex-dir) :row) translate-layout-flex-dir)
+  (let [dir (-> (or (dm/get-prop shape :layout-flex-dir) :row) sr/translate-layout-flex-dir)
         gap (dm/get-prop shape :layout-gap)
         row-gap (or (dm/get-prop gap :row-gap) 0)
         column-gap (or (dm/get-prop gap :column-gap) 0)
 
-        align-items (-> (or (dm/get-prop shape :layout-align-items) :start) translate-layout-align-items)
-        align-content (-> (or (dm/get-prop shape :layout-align-content) :stretch) translate-layout-align-content)
-        justify-items (-> (or (dm/get-prop shape :layout-justify-items) :start) translate-layout-justify-items)
-        justify-content (-> (or (dm/get-prop shape :layout-justify-content) :stretch) translate-layout-justify-content)
-        wrap-type (-> (or (dm/get-prop shape :layout-wrap-type) :nowrap) translate-layout-wrap-type)
+        align-items (-> (or (dm/get-prop shape :layout-align-items) :start) sr/translate-layout-align-items)
+        align-content (-> (or (dm/get-prop shape :layout-align-content) :stretch) sr/translate-layout-align-content)
+        justify-items (-> (or (dm/get-prop shape :layout-justify-items) :start) sr/translate-layout-justify-items)
+        justify-content (-> (or (dm/get-prop shape :layout-justify-content) :stretch) sr/translate-layout-justify-content)
+        wrap-type (-> (or (dm/get-prop shape :layout-wrap-type) :nowrap) sr/translate-layout-wrap-type)
 
         padding (dm/get-prop shape :layout-padding)
         padding-top (or (dm/get-prop padding :p1) 0)
@@ -700,15 +475,15 @@
 (defn set-grid-layout
   [shape]
 
-  (let [dir (-> (or (dm/get-prop shape :layout-grid-dir) :row) translate-layout-grid-dir)
+  (let [dir (-> (or (dm/get-prop shape :layout-grid-dir) :row) sr/translate-layout-grid-dir)
         gap (dm/get-prop shape :layout-gap)
         row-gap (or (dm/get-prop gap :row-gap) 0)
         column-gap (or (dm/get-prop gap :column-gap) 0)
 
-        align-items (-> (or (dm/get-prop shape :layout-align-items) :start) translate-layout-align-items)
-        align-content (-> (or (dm/get-prop shape :layout-align-content) :stretch) translate-layout-align-content)
-        justify-items (-> (or (dm/get-prop shape :layout-justify-items) :start) translate-layout-justify-items)
-        justify-content (-> (or (dm/get-prop shape :layout-justify-content) :stretch) translate-layout-justify-content)
+        align-items (-> (or (dm/get-prop shape :layout-align-items) :start) sr/translate-layout-align-items)
+        align-content (-> (or (dm/get-prop shape :layout-align-content) :stretch) sr/translate-layout-align-content)
+        justify-items (-> (or (dm/get-prop shape :layout-justify-items) :start) sr/translate-layout-justify-items)
+        justify-content (-> (or (dm/get-prop shape :layout-justify-content) :stretch) sr/translate-layout-justify-content)
 
         padding (dm/get-prop shape :layout-padding)
         padding-top (or (dm/get-prop padding :p1) 0)
@@ -744,8 +519,8 @@
            offset  0]
       (when-not (empty? entries)
         (let [{:keys [type value]} (first entries)]
-          (.set heap (u8 (translate-grid-track-type type)) (+ offset 0))
-          (.set heap (f32->u8 value) (+ offset 1))
+          (.set heap (sr/u8 (sr/translate-grid-track-type type)) (+ offset 0))
+          (.set heap (sr/f32->u8 value) (+ offset 1))
           (recur (rest entries) (+ offset entry-size)))))
     (h/call internal-module "_set_grid_rows"))
 
@@ -763,8 +538,8 @@
            offset  0]
       (when-not (empty? entries)
         (let [{:keys [type value]} (first entries)]
-          (.set heap (u8 (translate-grid-track-type type)) (+ offset 0))
-          (.set heap (f32->u8 value) (+ offset 1))
+          (.set heap (sr/u8 (sr/translate-grid-track-type type)) (+ offset 0))
+          (.set heap (sr/f32->u8 value) (+ offset 1))
           (recur (rest entries) (+ offset entry-size)))))
     (h/call internal-module "_set_grid_columns"))
 
@@ -785,37 +560,37 @@
         (let [cell (first entries)]
 
           ;; row: [u8; 4],
-          (.set heap (i32->u8 (:row cell)) (+ offset 0))
+          (.set heap (sr/i32->u8 (:row cell)) (+ offset 0))
 
           ;; row_span: [u8; 4],
-          (.set heap (i32->u8 (:row-span cell)) (+ offset 4))
+          (.set heap (sr/i32->u8 (:row-span cell)) (+ offset 4))
 
           ;; column: [u8; 4],
-          (.set heap (i32->u8 (:column cell)) (+ offset 8))
+          (.set heap (sr/i32->u8 (:column cell)) (+ offset 8))
 
           ;; column_span: [u8; 4],
-          (.set heap (i32->u8 (:column-span cell)) (+ offset 12))
+          (.set heap (sr/i32->u8 (:column-span cell)) (+ offset 12))
 
           ;; has_align_self: u8,
-          (.set heap (bool->u8 (some? (:align-self cell))) (+ offset 16))
+          (.set heap (sr/bool->u8 (some? (:align-self cell))) (+ offset 16))
 
           ;; align_self: u8,
-          (.set heap (u8 (translate-align-self (:align-self cell))) (+ offset 17))
+          (.set heap (sr/u8 (sr/translate-align-self (:align-self cell))) (+ offset 17))
 
           ;; has_justify_self: u8,
-          (.set heap (bool->u8 (some? (:justify-self cell))) (+ offset 18))
+          (.set heap (sr/bool->u8 (some? (:justify-self cell))) (+ offset 18))
 
           ;; justify_self: u8,
-          (.set heap (u8 (translate-justify-self (:justify-self cell))) (+ offset 19))
+          (.set heap (sr/u8 (sr/translate-justify-self (:justify-self cell))) (+ offset 19))
 
           ;; has_shape_id: u8,
-          (.set heap (bool->u8 (d/not-empty? (:shapes cell))) (+ offset 20))
+          (.set heap (sr/bool->u8 (d/not-empty? (:shapes cell))) (+ offset 20))
 
           ;; shape_id_a: [u8; 4],
           ;; shape_id_b: [u8; 4],
           ;; shape_id_c: [u8; 4],
           ;; shape_id_d: [u8; 4],
-          (.set heap (uuid->u8 (or (-> cell :shapes first) uuid/zero)) (+ offset 21))
+          (.set heap (sr/uuid->u8 (or (-> cell :shapes first) uuid/zero)) (+ offset 21))
 
           (recur (rest entries) (+ offset entry-size)))))
 
@@ -829,9 +604,9 @@
         margin-bottom (or (dm/get-prop margins :m3) 0)
         margin-left (or (dm/get-prop margins :m4) 0)
 
-        h-sizing (-> (dm/get-prop shape :layout-item-h-sizing) (or :fix) translate-layout-sizing)
-        v-sizing (-> (dm/get-prop shape :layout-item-v-sizing) (or :fix) translate-layout-sizing)
-        align-self (-> (dm/get-prop shape :layout-item-align-self) translate-align-self)
+        h-sizing (-> (dm/get-prop shape :layout-item-h-sizing) (or :fix) sr/translate-layout-sizing)
+        v-sizing (-> (dm/get-prop shape :layout-item-v-sizing) (or :fix) sr/translate-layout-sizing)
+        align-self (-> (dm/get-prop shape :layout-item-align-self) sr/translate-align-self)
 
         max-h (dm/get-prop shape :layout-item-max-h)
         has-max-h (some? max-h)
@@ -864,13 +639,6 @@
             is-absolute
             z-index)))
 
-(defn- translate-shadow-style
-  [style]
-  (case style
-    :drop-shadow 0
-    :inner-shadow 1
-    0))
-
 (defn set-shape-shadows
   [shadows]
   (h/call internal-module "_clear_shape_shadows")
@@ -886,7 +654,7 @@
               y (dm/get-prop shadow :offset-y)
               spread (dm/get-prop shadow :spread)
               style (dm/get-prop shadow :style)]
-          (h/call internal-module "_add_shape_shadow" rgba blur spread x y (translate-shadow-style style) hidden)
+          (h/call internal-module "_add_shape_shadow" rgba blur spread x y (sr/translate-shadow-style style) hidden)
           (recur (inc index)))))))
 
 (defn utf8->buffer [text]
@@ -1122,8 +890,8 @@
            offset  0]
       (when-not (empty? entries)
         (let [{:keys [id transform]} (first entries)]
-          (.set heap (uuid->u8 id) offset)
-          (.set heap (matrix->u8 transform) (+ offset 16))
+          (.set heap (sr/uuid->u8 id) offset)
+          (.set heap (sr/matrix->u8 transform) (+ offset 16))
           (recur (rest entries) (+ offset entry-size)))))
 
     (let [result-ptr (h/call internal-module "_propagate_modifiers")
@@ -1162,8 +930,8 @@
              offset  0]
         (when-not (empty? entries)
           (let [{:keys [id transform]} (first entries)]
-            (.set heap (uuid->u8 id) offset)
-            (.set heap (matrix->u8 transform) (+ offset 16))
+            (.set heap (sr/uuid->u8 id) offset)
+            (.set heap (sr/matrix->u8 transform) (+ offset 16))
             (recur (rest entries) (+ offset ENTRY_SIZE)))))
 
       (h/call internal-module "_set_modifiers")
