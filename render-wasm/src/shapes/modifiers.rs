@@ -159,6 +159,8 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                         continue;
                     };
 
+                    let mut reflow_parent = false;
+
                     match &shape.shape_type {
                         Type::Frame(Frame {
                             layout: Some(_), ..
@@ -173,8 +175,15 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                                             // If this is a fill layout but the parent has not been reflown yet
                                             // we wait for the next iteration for reflow
                                             skip_reflow = true;
+                                            reflow_parent = true;
                                         }
                                     }
+                                }
+
+                                if shape.is_layout_vertical_auto()
+                                    || shape.is_layout_horizontal_auto()
+                                {
+                                    reflow_parent = true;
                                 }
 
                                 if !skip_reflow {
@@ -186,6 +195,7 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                             if let Some(child) = shapes.get(&shape.children[0]) {
                                 let child_bounds = bounds.find(&child);
                                 bounds.insert(shape.id, child_bounds);
+                                reflow_parent = true;
                             }
                         }
                         Type::Group(_) => {
@@ -193,6 +203,7 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                                 calculate_group_bounds(shape, shapes, &bounds)
                             {
                                 bounds.insert(shape.id, shape_bounds);
+                                reflow_parent = true;
                             }
                         }
                         Type::Bool(_) => {
@@ -203,6 +214,7 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                                 calculate_group_bounds(shape, shapes, &bounds)
                             {
                                 bounds.insert(shape.id, shape_bounds);
+                                reflow_parent = true;
                             }
                         }
                         _ => {
@@ -211,7 +223,7 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                     }
 
                     if let Some(parent) = shape.parent_id.and_then(|id| shapes.get(&id)) {
-                        if parent.has_layout() || parent.is_group_like() {
+                        if reflow_parent && (parent.has_layout() || parent.is_group_like()) {
                             entries.push_back(Modifier::reflow(parent.id));
                         }
                     }
@@ -231,6 +243,7 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
             let Type::Frame(frame_data) = &shape.shape_type else {
                 continue;
             };
+
             if let Some(Layout::FlexLayout(layout_data, flex_data)) = &frame_data.layout {
                 let mut children = flex_layout::reflow_flex_layout(
                     shape,
@@ -242,11 +255,11 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                 entries.append(&mut children);
             }
 
-            if let Some(Layout::GridLayout(layout_data, grid_data)) = &frame_data.layout {
-                let mut children =
-                    grid_layout::reflow_grid_layout(shape, layout_data, grid_data, shapes, &bounds);
-                entries.append(&mut children);
-            }
+            // if let Some(Layout::GridLayout(layout_data, grid_data)) = &frame_data.layout {
+            //     let mut children =
+            //         grid_layout::reflow_grid_layout(shape, layout_data, grid_data, shapes, &bounds);
+            //     entries.append(&mut children);
+            // }
             reflown.insert(*id);
         }
         layout_reflows = Vec::new();

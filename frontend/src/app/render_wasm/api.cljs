@@ -39,6 +39,49 @@
 (def dpr
   (if use-dpr? js/window.devicePixelRatio 1.0))
 
+(defn u8
+  [value]
+  (let [u8-arr (js/Uint8Array. 1)]
+    (aset u8-arr 0 value)
+    u8-arr))
+
+(defn f32->u8
+  [value]
+  (let [f32-arr (js/Float32Array. 1)]
+    (aset f32-arr 0 value)
+    (js/Uint8Array. (.-buffer f32-arr))))
+
+(defn i32->u8
+  [value]
+  (let [i32-arr (js/Int32Array. 1)]
+    (aset i32-arr 0 value)
+    (js/Uint8Array. (.-buffer i32-arr))))
+
+(defn bool->u8
+  [value]
+  (let [result (js/Uint8Array. 1)]
+    (aset result 0 (if value 1 0))
+    result))
+
+(defn uuid->u8
+  [id]
+  (let [buffer (uuid/get-u32 id)
+        u32-arr (js/Uint32Array. 4)]
+    (doseq [i (range 0 4)]
+      (aset u32-arr i (aget buffer i)))
+    (js/Uint8Array. (.-buffer u32-arr))))
+
+(defn matrix->u8
+  [{:keys [a b c d e f]}]
+  (let [f32-arr (js/Float32Array. 6)]
+    (aset f32-arr 0 a)
+    (aset f32-arr 1 b)
+    (aset f32-arr 2 c)
+    (aset f32-arr 3 d)
+    (aset f32-arr 4 e)
+    (aset f32-arr 5 f)
+    (js/Uint8Array. (.-buffer f32-arr))))
+
 ;; Based on app.main.render/object-svg
 (mf/defc object-svg
   {::mf/props :obj}
@@ -536,6 +579,12 @@
     :column         2
     :column-reverse 3))
 
+(defn translate-layout-grid-dir
+  [flex-dir]
+  (case flex-dir
+    :row    0
+    :column 1))
+
 (defn translate-layout-align-items
   [align-items]
   (case align-items
@@ -580,6 +629,41 @@
     :wrap   0
     :nowrap 1))
 
+(defn translate-grid-track-type
+  [type]
+  (case type
+    :percent 0
+    :flex 1
+    :auto 2
+    :fixed 3))
+
+(defn translate-layout-sizing
+  [value]
+  (case value
+    :fill 0
+    :fix  1
+    :auto 2))
+
+(defn translate-align-self
+  [value]
+  (when value
+    (case value
+      :auto    0
+      :start   1
+      :end     2
+      :center  3
+      :stretch 4)))
+
+(defn translate-justify-self
+  [value]
+  (when value
+    (case value
+      :auto    0
+      :start   1
+      :end     2
+      :center  3
+      :stretch 4)))
+
 (defn set-flex-layout
   [shape]
   (let [dir (-> (or (dm/get-prop shape :layout-flex-dir) :row) translate-layout-flex-dir)
@@ -614,23 +698,128 @@
             padding-left)))
 
 (defn set-grid-layout
-  [_shape])
+  [shape]
 
-(defn translate-layout-sizing
-  [value]
-  (case value
-    :fill 0
-    :fix  1
-    :auto 2))
+  (let [dir (-> (or (dm/get-prop shape :layout-grid-dir) :row) translate-layout-grid-dir)
+        gap (dm/get-prop shape :layout-gap)
+        row-gap (or (dm/get-prop gap :row-gap) 0)
+        column-gap (or (dm/get-prop gap :column-gap) 0)
 
-(defn translate-align-self
-  [value]
-  (when value
-    (case value
-      :start   0
-      :end     1
-      :center  2
-      :stretch 3)))
+        align-items (-> (or (dm/get-prop shape :layout-align-items) :start) translate-layout-align-items)
+        align-content (-> (or (dm/get-prop shape :layout-align-content) :stretch) translate-layout-align-content)
+        justify-items (-> (or (dm/get-prop shape :layout-justify-items) :start) translate-layout-justify-items)
+        justify-content (-> (or (dm/get-prop shape :layout-justify-content) :stretch) translate-layout-justify-content)
+
+        padding (dm/get-prop shape :layout-padding)
+        padding-top (or (dm/get-prop padding :p1) 0)
+        padding-right (or (dm/get-prop padding :p2) 0)
+        padding-bottom (or (dm/get-prop padding :p3) 0)
+        padding-left (or (dm/get-prop padding :p4) 0)]
+
+    (h/call internal-module
+            "_set_grid_layout_data"
+            dir
+            row-gap
+            column-gap
+            align-items
+            align-content
+            justify-items
+            justify-content
+            padding-top
+            padding-right
+            padding-bottom
+            padding-left))
+
+  ;; Send Rows
+  (let [entry-size 5
+        entries (:layout-grid-rows shape)
+        ptr (h/call internal-module "_alloc_bytes" (* entry-size (count entries)))
+
+        heap
+        (js/Uint8Array.
+         (.-buffer (gobj/get ^js internal-module "HEAPU8"))
+         ptr
+         (* entry-size (count entries)))]
+    (loop [entries (seq entries)
+           offset  0]
+      (when-not (empty? entries)
+        (let [{:keys [type value]} (first entries)]
+          (.set heap (u8 (translate-grid-track-type type)) (+ offset 0))
+          (.set heap (f32->u8 value) (+ offset 1))
+          (recur (rest entries) (+ offset entry-size)))))
+    (h/call internal-module "_set_grid_rows"))
+
+  ;; Send Columns
+  (let [entry-size 5
+        entries (:layout-grid-columns shape)
+        ptr (h/call internal-module "_alloc_bytes" (* entry-size (count entries)))
+
+        heap
+        (js/Uint8Array.
+         (.-buffer (gobj/get ^js internal-module "HEAPU8"))
+         ptr
+         (* entry-size (count entries)))]
+    (loop [entries (seq entries)
+           offset  0]
+      (when-not (empty? entries)
+        (let [{:keys [type value]} (first entries)]
+          (.set heap (u8 (translate-grid-track-type type)) (+ offset 0))
+          (.set heap (f32->u8 value) (+ offset 1))
+          (recur (rest entries) (+ offset entry-size)))))
+    (h/call internal-module "_set_grid_columns"))
+
+  ;; Send cells
+  (let [entry-size 37
+        entries (-> shape :layout-grid-cells vals)
+        ptr (h/call internal-module "_alloc_bytes" (* entry-size (count entries)))
+
+        heap
+        (js/Uint8Array.
+         (.-buffer (gobj/get ^js internal-module "HEAPU8"))
+         ptr
+         (* entry-size (count entries)))]
+
+    (loop [entries (seq entries)
+           offset  0]
+      (when-not (empty? entries)
+        (let [cell (first entries)]
+
+          ;; row: [u8; 4],
+          (.set heap (i32->u8 (:row cell)) (+ offset 0))
+
+          ;; row_span: [u8; 4],
+          (.set heap (i32->u8 (:row-span cell)) (+ offset 4))
+
+          ;; column: [u8; 4],
+          (.set heap (i32->u8 (:column cell)) (+ offset 8))
+
+          ;; column_span: [u8; 4],
+          (.set heap (i32->u8 (:column-span cell)) (+ offset 12))
+
+          ;; has_align_self: u8,
+          (.set heap (bool->u8 (some? (:align-self cell))) (+ offset 16))
+
+          ;; align_self: u8,
+          (.set heap (u8 (translate-align-self (:align-self cell))) (+ offset 17))
+
+          ;; has_justify_self: u8,
+          (.set heap (bool->u8 (some? (:justify-self cell))) (+ offset 18))
+
+          ;; justify_self: u8,
+          (.set heap (u8 (translate-justify-self (:justify-self cell))) (+ offset 19))
+
+          ;; has_shape_id: u8,
+          (.set heap (bool->u8 (d/not-empty? (:shapes cell))) (+ offset 20))
+
+          ;; shape_id_a: [u8; 4],
+          ;; shape_id_b: [u8; 4],
+          ;; shape_id_c: [u8; 4],
+          ;; shape_id_d: [u8; 4],
+          (.set heap (uuid->u8 (or (-> cell :shapes first) uuid/zero)) (+ offset 21))
+
+          (recur (rest entries) (+ offset entry-size)))))
+
+    (h/call internal-module "_set_grid_cells")))
 
 (defn set-layout-child
   [shape]
@@ -898,24 +1087,6 @@
                        (clear-drawing-cache)
                        (request-render "set-objects")))))))
 
-(defn uuid->u8
-  [id]
-  (let [buffer (uuid/get-u32 id)
-        u32-arr (js/Uint32Array. 4)]
-    (doseq [i (range 0 4)]
-      (aset u32-arr i (aget buffer i)))
-    (js/Uint8Array. (.-buffer u32-arr))))
-
-(defn matrix->u8
-  [{:keys [a b c d e f]}]
-  (let [f32-arr (js/Float32Array. 6)]
-    (aset f32-arr 0 a)
-    (aset f32-arr 1 b)
-    (aset f32-arr 2 c)
-    (aset f32-arr 3 d)
-    (aset f32-arr 4 e)
-    (aset f32-arr 5 f)
-    (js/Uint8Array. (.-buffer f32-arr))))
 
 (defn data->entry
   [data offset]
