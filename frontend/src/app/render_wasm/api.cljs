@@ -777,8 +777,8 @@
   (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
   (render nil))
 
-(defn clear-cache []
-  (h/call internal-module "_clear_cache"))
+(defn clear-drawing-cache []
+  (h/call internal-module "_clear_drawing_cache"))
 
 (defn- store-all-fonts
   [fonts]
@@ -803,7 +803,9 @@
     (->> (rx/from pending)
          (rx/mapcat identity)
          (rx/reduce conj [])
-         (rx/subs! request-render))))
+         (rx/subs! (fn [_]
+                     (clear-drawing-cache)
+                     (request-render "set-fonts"))))))
 
 (defn set-objects
   [objects]
@@ -886,13 +888,15 @@
               (let [pending' (concat (set-shape-fills fills) (set-shape-strokes strokes))]
                 (recur (inc index) (into pending pending'))))
             pending))]
-    (clear-cache)
+    (clear-drawing-cache)
     (request-render "set-objects")
     (when-let [pending (seq pending)]
       (->> (rx/from pending)
            (rx/mapcat identity)
            (rx/reduce conj [])
-           (rx/subs! request-render)))))
+           (rx/subs! (fn [_]
+                       (clear-drawing-cache)
+                       (request-render "set-objects")))))))
 
 (defn uuid->u8
   [id]

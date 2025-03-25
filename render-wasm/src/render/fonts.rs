@@ -1,4 +1,4 @@
-use skia_safe::{self as skia, textlayout, Font};
+use skia_safe::{self as skia, textlayout, Font, FontMgr};
 
 use crate::shapes::FontFamily;
 
@@ -31,8 +31,8 @@ impl FontStore {
         font_provider.register_typeface(emoji_font, DEFAULT_EMOJI_FONT);
 
         let mut font_collection = skia::textlayout::FontCollection::new();
-        font_collection.set_default_font_manager(Some(font_provider.clone().into()), None);
-        font_collection.set_dynamic_font_manager(Some(font_provider.clone().into()));
+        font_collection.set_default_font_manager(FontMgr::default(), None);
+        font_collection.set_dynamic_font_manager(FontMgr::from(font_provider.clone()));
 
         let debug_typeface = font_provider
             .match_family_style("robotomono-regular", skia::FontStyle::default())
@@ -72,11 +72,21 @@ impl FontStore {
         self.font_provider
             .register_typeface(typeface, alias.as_str());
 
+        self.refresh_font_collection();
+
         Ok(())
     }
 
     pub fn has_family(&self, family: &FontFamily) -> bool {
         let serialized = format!("{}", family);
         self.font_provider.family_names().any(|x| x == serialized)
+    }
+
+    fn refresh_font_collection(&mut self) {
+        self.font_collection = skia::textlayout::FontCollection::new();
+        self.font_collection
+            .set_default_font_manager(FontMgr::default(), None);
+        self.font_collection
+            .set_dynamic_font_manager(FontMgr::from(self.font_provider.clone()));
     }
 }

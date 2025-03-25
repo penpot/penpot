@@ -61,7 +61,7 @@ pub extern "C" fn clean_up() {
 }
 
 #[no_mangle]
-pub extern "C" fn clear_cache() {
+pub extern "C" fn clear_drawing_cache() {
     with_state!(state, {
         state.rebuild_tiles();
     });
