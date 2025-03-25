@@ -1066,8 +1066,9 @@ msgstr "Power up"
 msgid "dashboard.power-up.professional.top-title"
 msgstr "Professional plan"
 
+#, markdown
 msgid "dashboard.power-up.professional.bottom-description"
-msgstr "Get extra editors and storage, file backup and more with the"
+msgstr "Get extra editors and storage, file backup and more with the **Unlimited plan**"
 
 msgid "dashboard.power-up.unlimited-plan"
 msgstr "Unlimited plan"
@@ -1075,8 +1076,9 @@ msgstr "Unlimited plan"
 msgid "dashboard.power-up.unlimited.top-description"
 msgstr "Extra storage and autosaved version..."
 
+#, markdown
 msgid "dashboard.power-up.unlimited.bottom-description"
-msgstr "Get advanced security, activity logs, dedicated support and more with"
+msgstr "Get advanced security, activity logs, dedicated support and more with **Enterprise plan**"
 
 msgid "dashboard.power-up.enterprise-plan"
 msgstr "Enterprise plan"

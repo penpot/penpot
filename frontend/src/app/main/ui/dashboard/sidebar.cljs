@@ -852,7 +852,7 @@
 
 (mf/defc cta-power-up*
   {::mf/props :obj}
-  [{:keys [top-title top-description bottom-description bottom-highlight cta-text cta-link has-dropdown]}]
+  [{:keys [top-title top-description bottom-description cta-text cta-link has-dropdown]}]
   (let [show-data* (mf/use-state false)
         show-data (deref show-data*)
         handle-click
@@ -871,10 +871,9 @@
 
      (when (and has-dropdown show-data)
        [:div {:class (stl/css :cta-bottom-section)}
-        [:button {:class (stl/css :content)}
-         [:span {:class (stl/css :cta-text)} bottom-description]
-         (when bottom-highlight
-           [:span {:class (stl/css :cta-highlight :cta-inline)} bottom-highlight])]
+        [:> i18n/tr-html* {:content bottom-description
+                            :class (stl/css :content)
+                            :tag-name "button"}]
         [:button {:class (stl/css :cta-highlight :cta-link) :on-click cta-link}
          cta-text]])]))
 
@@ -992,7 +991,7 @@
 
 
         ;; TODO subscription cases professonal/unlimited/enterprise/trial
-        subscription-type :professional
+        subscription-type :unlimited
         ;; TODO need to know if it's the owner of the subscription
         subscription-owner? true
         ]
@@ -1006,7 +1005,6 @@
           {:top-title (tr "dashboard.power-up.professional.top-title")
            :top-description (tr "dashboard.upgrade-plan.no-limits")
            :bottom-description (tr "dashboard.power-up.professional.bottom-description")
-           :bottom-highlight (tr "dashboard.power-up.unlimited-plan")
            :cta-text (tr "dashboard.upgrade-plan.power-up")
            :cta-link (if subscription-owner?
                        (fn [event]
@@ -1021,7 +1019,6 @@
           {:top-title (tr "dashboard.power-up.unlimited-plan")
            :top-description (tr "dashboard.power-up.unlimited.top-description")
            :bottom-description (tr "dashboard.power-up.unlimited.bottom-description")
-           :bottom-highlight (tr "dashboard.power-up.enterprise-plan")
            :cta-text (tr "dashboard.power-up.unlimited.cta")
            :cta-link (if subscription-owner?
                        (fn [event]

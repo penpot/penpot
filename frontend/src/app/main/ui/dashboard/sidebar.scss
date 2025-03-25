@@ -487,21 +487,17 @@
   text-align: left;
 }
 
-.cta-text {
-  text-align: left;
-}
-
 .cta-highlight {
   @include t.use-typography("body-small");
   color: var(--color-accent-tertiary);
 }
 
-.cta-link,
-.cta-inline {
-  margin-inline-start: $s-4;
+.cta-bottom-section .content strong {
+  color: pink;
 }
 
 .cta-link {
   @include buttonStyle;
   align-self: end;
+  margin-inline-start: $s-4;
 }
