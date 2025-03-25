@@ -65,13 +65,7 @@
         to (nth tree to-index)
         before (case position
                  :top to
-                 :bot (let [v (nth tree (inc to-index) nil)]
-                        ;; if the next index is a group, we need to set it as
-                        ;; nil because if we set a path on different subpath,
-                        ;; the move algorightm will simply remove the set
-                        (if (:group? v)
-                          nil
-                          v))
+                 :bot (nth tree (inc to-index) nil)
                  :center nil)
 
         prev-before (if (:group? from)
@@ -87,6 +81,7 @@
                                       (= :bot position)
                                       (:group? to)
                                       (not (get collapsed-paths (:path to)))))
+
         from-path (:path from)
         to-parent-path (if drop-as-direct-group-child?
                          (:path to)
