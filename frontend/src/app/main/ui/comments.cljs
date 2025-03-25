@@ -1121,9 +1121,10 @@
         num-grouped-threads (count grouped-threads)
         zoom-scale-step     1.75
         scaled-zoom         (* zoom zoom-scale-step)
-        zoomed-wl           (dwz/impl-update-zoom wl position scaled-zoom)]
+        zoomed-wl           (dwz/impl-update-zoom wl position scaled-zoom)
+        outside-vbox?       (complement inside-vbox?)]
     (if (or (= num-threads num-grouped-threads)
-            (some #((comp not inside-vbox?) % zoomed-wl) grouped-threads))
+            (some #(outside-vbox? % zoomed-wl) grouped-threads))
       zoom
       (calculate-zoom-scale position scaled-zoom threads zoomed-wl))))
 
@@ -1144,13 +1145,12 @@
 
         test-id     (str/join "-" (map :seqn (sort-by :seqn thread-group)))
 
-        wl          (mf/deref refs/workspace-local)
-
         on-click
         (mf/use-fn
-         (mf/deps thread-group position zoom wl)
+         (mf/deps thread-group position zoom)
          (fn []
-           (let [centered-wl  (dwv/calculate-centered-viewbox wl position)
+           (let [wl           (deref refs/workspace-local)
+                 centered-wl  (dwv/calculate-centered-viewbox wl position)
                  updated-zoom (calculate-zoom-scale position zoom thread-group centered-wl)
                  scale-zoom   (/ updated-zoom zoom)]
              (st/emit! (dwv/update-viewport-position-center position)

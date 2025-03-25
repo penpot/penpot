@@ -96,17 +96,12 @@
 
 (defn update-viewport-position-center
   [position]
-
-  (dm/assert!
-   "expected a point instance for `position` param"
-   (gpt/point? position))
+  (assert (gpt/point? position) "expected a point instance for `position` param")
 
   (ptk/reify ::update-viewport-position-center
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-local
-              (fn [local]
-                (calculate-centered-viewbox local position))))))
+      (update state :workspace-local calculate-centered-viewbox position))))
 
 (defn update-viewport-position
   [{:keys [x y] :or {x identity y identity}}]
