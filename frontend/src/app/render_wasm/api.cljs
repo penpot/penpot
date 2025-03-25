@@ -803,7 +803,9 @@
     (->> (rx/from pending)
          (rx/mapcat identity)
          (rx/reduce conj [])
-         (rx/subs! request-render))))
+         (rx/subs! (fn [_]
+                     (clear-cache)
+                     (request-render "set-fonts"))))))
 
 (defn set-objects
   [objects]
@@ -892,7 +894,9 @@
       (->> (rx/from pending)
            (rx/mapcat identity)
            (rx/reduce conj [])
-           (rx/subs! request-render)))))
+           (rx/subs! (fn [_]
+                       (clear-cache)
+                       (request-render "set-objects")))))))
 
 (defn uuid->u8
   [id]
