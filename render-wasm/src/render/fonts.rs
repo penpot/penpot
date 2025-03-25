@@ -34,7 +34,6 @@ impl FontStore {
 
         let mut font_collection = skia::textlayout::FontCollection::new();
         font_collection.set_default_font_manager(FontMgr::from(font_provider.clone()), None);
-        // font_collection.set_dynamic_font_manager(FontMgr::from(font_provider.clone()));
 
         let debug_typeface = font_provider
             .match_family_style("robotomono-regular", skia::FontStyle::default())
