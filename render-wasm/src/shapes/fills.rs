@@ -1,7 +1,7 @@
 use skia_safe::{self as skia, Rect};
 
 use super::Color;
-use uuid::Uuid;
+use crate::uuid::Uuid;
 
 #[derive(Debug)]
 #[repr(C)]

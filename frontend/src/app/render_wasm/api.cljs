@@ -16,10 +16,10 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.main.store :as st]
-   [app.main.ui.shapes.text.fontfaces :as fonts]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.serializers :as sr]
    [app.util.debug :as dbg]
@@ -155,15 +155,24 @@
 
 (defn set-shape-children
   [shape-ids]
-  (h/call internal-module "_clear_shape_children")
-  (run! (fn [id]
-          (let [buffer (uuid/get-u32 id)]
-            (h/call internal-module "_add_shape_child"
-                    (aget buffer 0)
-                    (aget buffer 1)
-                    (aget buffer 2)
-                    (aget buffer 3))))
-        shape-ids))
+  (let [ENTRY-SIZE 16
+        ptr
+        (h/call internal-module "_alloc_bytes" (* ENTRY-SIZE (count shape-ids)))
+
+        heap
+        (js/Uint8Array.
+         (.-buffer (gobj/get ^js internal-module "HEAPU8"))
+         ptr
+         (* ENTRY-SIZE (count shape-ids)))]
+
+    (loop [entries (seq shape-ids)
+           offset  0]
+      (when-not (empty? entries)
+        (let [id (first entries)]
+          (.set heap (sr/uuid->u8 id) offset)
+          (recur (rest entries) (+ offset ENTRY-SIZE)))))
+
+    (h/call internal-module "_set_children")))
 
 (defn- get-string-length [string] (+ (count string) 1))
 
@@ -240,7 +249,6 @@
                 color    (:fill-color fill)
                 gradient (:fill-color-gradient fill)
                 image    (:fill-image fill)]
-
             (cond
               (some? color)
               (let [rgba (rgba-from-hex color opacity)]
@@ -712,34 +720,7 @@
             (aget font-id 3)
             font-weight font-style font-size)))
 
-(defn set-shape-text-content [content]
-  (h/call internal-module "_clear_shape_text")
-  (let [paragraph-set (first (dm/get-prop content :children))
-        paragraphs (dm/get-prop paragraph-set :children)
-        total-paragraphs (count paragraphs)]
-
-    (loop [index 0]
-      (when (< index total-paragraphs)
-        (let [paragraph (nth paragraphs index)
-              leaves (dm/get-prop paragraph :children)
-              total-leaves (count leaves)]
-          (h/call internal-module "_add_text_paragraph")
-          (loop [index-leaves 0]
-            (when (< index-leaves total-leaves)
-              (let [leaf (nth leaves index-leaves)]
-                (add-text-leaf leaf)
-                (recur (inc index-leaves))))))
-        (recur (inc index))))))
-
-(defn set-view-box
-  [zoom vbox]
-  (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-  (render nil))
-
-(defn clear-drawing-cache []
-  (h/call internal-module "_clear_drawing_cache"))
-
-(defn- store-all-fonts
+(defn- store-fonts
   [fonts]
   (keep (fn [font]
           (let [font-id (dm/get-prop font :font-id)
@@ -755,97 +736,126 @@
                            :weight weight}]
             (store-font-id font-data ttf-id))) fonts))
 
-(defn set-fonts
-  [objects]
-  (let [fonts (fonts/shapes->fonts (into [] (vals objects)))
-        pending (into [] (store-all-fonts fonts))]
-    (->> (rx/from pending)
-         (rx/mapcat identity)
-         (rx/reduce conj [])
-         (rx/subs! (fn [_]
-                     (clear-drawing-cache)
-                     (request-render "set-fonts"))))))
+(defn set-shape-text-content [content]
+  (h/call internal-module "_clear_shape_text")
+  (let [paragraph-set (first (dm/get-prop content :children))
+        paragraphs (dm/get-prop paragraph-set :children)
+        total-paragraphs (count paragraphs)
+        fonts (fonts/get-content-fonts content)]
+
+    (loop [index 0]
+      (when (< index total-paragraphs)
+        (let [paragraph (nth paragraphs index)
+              leaves (dm/get-prop paragraph :children)
+              total-leaves (count leaves)]
+          (h/call internal-module "_add_text_paragraph")
+          (loop [index-leaves 0]
+            (when (< index-leaves total-leaves)
+              (let [leaf (nth leaves index-leaves)]
+                (add-text-leaf leaf)
+                (recur (inc index-leaves))))))
+        (recur (inc index))))
+    (store-fonts fonts)))
+
+(defn set-view-box
+  [zoom vbox]
+  (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+  (render nil))
+
+(defn clear-drawing-cache []
+  (h/call internal-module "_clear_drawing_cache"))
+
+(defn update-shape-tiles []
+  (h/call internal-module "_update_shape_tiles"))
+
+(defn set-object
+  [objects shape]
+  (let [id           (dm/get-prop shape :id)
+        parent-id    (dm/get-prop shape :parent-id)
+        type         (dm/get-prop shape :type)
+        masked       (dm/get-prop shape :masked-group)
+        selrect      (dm/get-prop shape :selrect)
+        constraint-h (dm/get-prop shape :constraints-h)
+        constraint-v (dm/get-prop shape :constraints-v)
+        clip-content (if (= type :frame)
+                       (not (dm/get-prop shape :show-content))
+                       false)
+        rotation     (dm/get-prop shape :rotation)
+        transform    (dm/get-prop shape :transform)
+        fills        (if (= type :group)
+                       [] (dm/get-prop shape :fills))
+        strokes      (if (= type :group)
+                       [] (dm/get-prop shape :strokes))
+        children     (dm/get-prop shape :shapes)
+        blend-mode   (dm/get-prop shape :blend-mode)
+        opacity      (dm/get-prop shape :opacity)
+        hidden       (dm/get-prop shape :hidden)
+        content      (dm/get-prop shape :content)
+        blur         (dm/get-prop shape :blur)
+        corners      (when (some? (dm/get-prop shape :r1))
+                       [(dm/get-prop shape :r1)
+                        (dm/get-prop shape :r2)
+                        (dm/get-prop shape :r3)
+                        (dm/get-prop shape :r4)])
+        svg-attrs    (dm/get-prop shape :svg-attrs)
+        shadows      (dm/get-prop shape :shadow)]
+
+    (use-shape id)
+    (set-parent-id parent-id)
+    (set-shape-type type)
+    (set-shape-clip-content clip-content)
+    (set-shape-selrect selrect)
+    (set-constraints-h constraint-h)
+    (set-constraints-v constraint-v)
+    (set-shape-rotation rotation)
+    (set-shape-transform transform)
+    (set-shape-blend-mode blend-mode)
+    (set-shape-opacity opacity)
+    (set-shape-hidden hidden)
+    (set-shape-children children)
+    (when (and (= type :group) masked)
+      (set-masked masked))
+    (when (some? blur)
+      (set-shape-blur blur))
+    (when (and (some? content)
+               (or (= type :path)
+                   (= type :bool)))
+      (set-shape-path-attrs svg-attrs)
+      (set-shape-path-content content))
+    (when (and (some? content) (= type :svg-raw))
+      (set-shape-svg-raw-content (get-static-markup shape)))
+    (when (some? corners) (set-shape-corners corners))
+    (when (some? shadows) (set-shape-shadows shadows))
+    (when (and (= type :text) (some? content))
+      (set-shape-text-content content))
+
+    (when (or (ctl/any-layout? shape)
+              (ctl/any-layout-immediate-child? objects shape))
+      (set-layout-child shape))
+
+    (when (ctl/flex-layout? shape)
+      (set-flex-layout shape))
+
+    (when (ctl/grid-layout? shape)
+      (set-grid-layout shape))
+
+    (into [] (concat
+              (if (and (= type :text) (some? content))
+                (set-shape-text-content content)
+                [])
+              (set-shape-fills fills)
+              (set-shape-strokes strokes)))))
 
 (defn set-objects
   [objects]
-  (set-fonts objects)
   (let [shapes        (into [] (vals objects))
         total-shapes  (count shapes)
         pending
         (loop [index 0 pending []]
           (if (< index total-shapes)
-            (let [shape        (nth shapes index)
-                  id           (dm/get-prop shape :id)
-                  parent-id    (dm/get-prop shape :parent-id)
-                  type         (dm/get-prop shape :type)
-                  masked       (dm/get-prop shape :masked-group)
-                  selrect      (dm/get-prop shape :selrect)
-                  constraint-h (dm/get-prop shape :constraints-h)
-                  constraint-v (dm/get-prop shape :constraints-v)
-                  clip-content (if (= type :frame)
-                                 (not (dm/get-prop shape :show-content))
-                                 false)
-                  rotation     (dm/get-prop shape :rotation)
-                  transform    (dm/get-prop shape :transform)
-                  fills        (if (= type :group)
-                                 [] (dm/get-prop shape :fills))
-                  strokes      (if (= type :group)
-                                 [] (dm/get-prop shape :strokes))
-                  children     (dm/get-prop shape :shapes)
-                  blend-mode   (dm/get-prop shape :blend-mode)
-                  opacity      (dm/get-prop shape :opacity)
-                  hidden       (dm/get-prop shape :hidden)
-                  content      (dm/get-prop shape :content)
-                  blur         (dm/get-prop shape :blur)
-                  corners      (when (some? (dm/get-prop shape :r1))
-                                 [(dm/get-prop shape :r1)
-                                  (dm/get-prop shape :r2)
-                                  (dm/get-prop shape :r3)
-                                  (dm/get-prop shape :r4)])
-                  svg-attrs    (dm/get-prop shape :svg-attrs)
-                  shadows      (dm/get-prop shape :shadow)]
-
-              (use-shape id)
-              (set-parent-id parent-id)
-              (set-shape-type type)
-              (set-shape-clip-content clip-content)
-              (set-shape-selrect selrect)
-              (set-constraints-h constraint-h)
-              (set-constraints-v constraint-v)
-              (set-shape-rotation rotation)
-              (set-shape-transform transform)
-              (set-shape-blend-mode blend-mode)
-              (set-shape-opacity opacity)
-              (set-shape-hidden hidden)
-              (set-shape-children children)
-              (when (and (= type :group) masked)
-                (set-masked masked))
-              (when (some? blur)
-                (set-shape-blur blur))
-              (when (and (some? content)
-                         (or (= type :path)
-                             (= type :bool)))
-                (set-shape-path-attrs svg-attrs)
-                (set-shape-path-content content))
-              (when (and (some? content) (= type :svg-raw))
-                (set-shape-svg-raw-content (get-static-markup shape)))
-              (when (some? corners) (set-shape-corners corners))
-              (when (some? shadows) (set-shape-shadows shadows))
-              (when (and (= type :text) (some? content))
-                (set-shape-text-content content))
-
-              (when (or (ctl/any-layout? shape)
-                        (ctl/any-layout-immediate-child? objects shape))
-                (set-layout-child shape))
-
-              (when (ctl/flex-layout? shape)
-                (set-flex-layout shape))
-
-              (when (ctl/grid-layout? shape)
-                (set-grid-layout shape))
-
-              (let [pending' (concat (set-shape-fills fills) (set-shape-strokes strokes))]
-                (recur (inc index) (into pending pending'))))
+            (let [shape    (nth shapes index)
+                  pending' (set-object objects shape)]
+              (recur (inc index) (into pending pending')))
             pending))]
     (clear-drawing-cache)
     (request-render "set-objects")
@@ -917,16 +927,16 @@
   (if (empty? modifiers)
     (h/call internal-module "_clean_modifiers")
 
-    (let [ENTRY_SIZE 40
+    (let [ENTRY-SIZE 40
 
           ptr
-          (h/call internal-module "_alloc_bytes" (* ENTRY_SIZE (count modifiers)))
+          (h/call internal-module "_alloc_bytes" (* ENTRY-SIZE (count modifiers)))
 
           heap
           (js/Uint8Array.
            (.-buffer (gobj/get ^js internal-module "HEAPU8"))
            ptr
-           (* ENTRY_SIZE (count modifiers)))]
+           (* ENTRY-SIZE (count modifiers)))]
 
       (loop [entries (seq modifiers)
              offset  0]
@@ -934,7 +944,7 @@
           (let [{:keys [id transform]} (first entries)]
             (.set heap (sr/uuid->u8 id) offset)
             (.set heap (sr/matrix->u8 transform) (+ offset 16))
-            (recur (rest entries) (+ offset ENTRY_SIZE)))))
+            (recur (rest entries) (+ offset ENTRY-SIZE)))))
 
       (h/call internal-module "_set_modifiers")
 

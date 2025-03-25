@@ -1,8 +1,8 @@
 use std::collections::HashMap;
-use uuid::Uuid;
 
 use crate::math::Bounds;
 use crate::shapes::Shape;
+use crate::uuid::Uuid;
 
 pub trait GetBounds {
     fn find(&self, shape: &Shape) -> Bounds;

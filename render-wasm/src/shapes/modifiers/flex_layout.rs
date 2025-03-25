@@ -4,8 +4,9 @@ use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, FlexData, JustifyContent, LayoutData, LayoutItem,
     Modifier, Shape,
 };
+use crate::uuid::Uuid;
+
 use std::collections::{HashMap, VecDeque};
-use uuid::Uuid;
 
 use super::common::GetBounds;
 

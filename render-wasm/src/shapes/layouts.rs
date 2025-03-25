@@ -1,5 +1,5 @@
 use crate::utils::uuid_from_u32_quartet;
-use uuid::Uuid;
+use crate::uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
 #[allow(dead_code)]

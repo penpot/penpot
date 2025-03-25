@@ -1,7 +1,7 @@
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 
+use crate::uuid::Uuid;
 use std::collections::HashMap;
-use uuid::Uuid;
 
 use crate::view::Viewbox;
 use crate::{run_script, run_script_int};
@@ -474,6 +474,7 @@ impl RenderState {
                 self.surfaces.cache_visit(tile);
             }
         }
+        self.pending_nodes = vec![];
         self.current_tile = None;
         self.render_in_progress = true;
         self.apply_drawing_to_render_canvas(None);
@@ -751,21 +752,33 @@ impl RenderState {
                 self.update_render_context(next_tile);
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
-                        for id in ids {
-                            let element = tree.get_mut(&id).ok_or(
-                                "Error: Element with root_id {id} not found in the tree."
-                                    .to_string(),
-                            )?;
-                            if element.parent_id == Some(Uuid::nil()) {
-                                self.pending_nodes.push(NodeRenderState {
-                                    id: *id,
-                                    visited_children: false,
-                                    clip_bounds: None,
-                                    visited_mask: false,
-                                    mask: false,
-                                });
-                            }
+                        // We only need first level shapes
+                        let mut valid_ids: Vec<Uuid> = ids
+                            .iter()
+                            .filter_map(|id| {
+                                tree.get(id)
+                                    .filter(|element| element.parent_id == Some(Uuid::nil()))
+                                    .map(|_| *id)
+                            })
+                            .collect();
+
+                        // These shapes for the tile should be ordered as they are in the parent node
+                        if let Some(root) = tree.get(&Uuid::nil()) {
+                            let root_ids = &root.children_ids();
+                            valid_ids.sort_by_key(|id| {
+                                root_ids.iter().rev().position(|root_id| root_id == id)
+                            });
                         }
+
+                        self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
+                            NodeRenderState {
+                                id,
+                                visited_children: false,
+                                clip_bounds: None,
+                                visited_mask: false,
+                                mask: false,
+                            }
+                        }));
                     }
                 }
             } else {
@@ -783,9 +796,13 @@ impl RenderState {
         Ok(())
     }
 
-    pub fn update_tile_for(&mut self, shape: &Shape) {
+    pub fn get_tiles_for_rect(&mut self, shape: &Shape) -> (i32, i32, i32, i32) {
         let tile_size = tiles::get_tile_size(self.viewbox);
-        let (rsx, rsy, rex, rey) = tiles::get_tiles_for_rect(shape.extrect(), tile_size);
+        tiles::get_tiles_for_rect(shape.extrect(), tile_size)
+    }
+
+    pub fn update_tile_for(&mut self, shape: &Shape) {
+        let (rsx, rsy, rex, rey) = self.get_tiles_for_rect(shape);
 
         // Update tiles where the shape was
         if let Some(tiles) = self.tiles.get_tiles_of(shape.id) {

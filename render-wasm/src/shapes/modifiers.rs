@@ -4,8 +4,6 @@ mod constraints;
 mod flex_layout;
 mod grid_layout;
 
-use uuid::Uuid;
-
 use common::GetBounds;
 
 use crate::math::{identitish, Bounds, Matrix, Point};
@@ -13,6 +11,7 @@ use crate::shapes::{
     ConstraintH, ConstraintV, Frame, Group, Layout, Modifier, Shape, TransformEntry, Type,
 };
 use crate::state::State;
+use crate::uuid::Uuid;
 
 fn propagate_children(
     shape: &Shape,

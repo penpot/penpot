@@ -1,9 +1,8 @@
 use skia_safe::{self as skia};
 
-use std::collections::HashMap;
-use uuid::Uuid;
-
 use crate::render::BlendMode;
+use crate::uuid::Uuid;
+use std::collections::HashMap;
 
 mod blurs;
 mod bools;
@@ -41,6 +40,7 @@ pub use transform::*;
 
 use crate::math;
 use crate::math::{Bounds, Matrix, Point};
+use indexmap::IndexSet;
 
 const MIN_VISIBLE_SIZE: f32 = 2.0;
 const ANTIALIAS_THRESHOLD: f32 = 15.0;
@@ -160,7 +160,7 @@ pub struct Shape {
     pub id: Uuid,
     pub parent_id: Option<Uuid>,
     pub shape_type: Type,
-    pub children: Vec<Uuid>,
+    pub children: IndexSet<Uuid>,
     pub selrect: math::Rect,
     pub transform: Matrix,
     pub rotation: f32,
@@ -185,7 +185,7 @@ impl Shape {
             id,
             parent_id: None,
             shape_type: Type::Rect(Rect::default()),
-            children: Vec::<Uuid>::new(),
+            children: IndexSet::<Uuid>::new(),
             selrect: math::Rect::new_empty(),
             transform: Matrix::default(),
             rotation: 0.,
@@ -432,7 +432,16 @@ impl Shape {
     }
 
     pub fn add_child(&mut self, id: Uuid) {
-        self.children.push(id);
+        self.children.insert(id);
+    }
+
+    pub fn compute_children_differences(
+        &mut self,
+        children: &IndexSet<Uuid>,
+    ) -> (IndexSet<Uuid>, IndexSet<Uuid>) {
+        let added = children.difference(&self.children).cloned().collect();
+        let removed = self.children.difference(children).cloned().collect();
+        (added, removed)
     }
 
     pub fn clear_children(&mut self) {
@@ -655,12 +664,12 @@ impl Shape {
             vec![]
         } else if let Type::Group(group) = self.shape_type {
             if group.masked {
-                self.children[1..self.children.len()].to_vec()
+                self.children.iter().skip(1).cloned().collect()
             } else {
-                self.children.clone()
+                self.children.clone().into_iter().collect()
             }
         } else {
-            self.children.clone()
+            self.children.clone().into_iter().collect()
         }
     }
 
