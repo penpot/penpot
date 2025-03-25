@@ -28,6 +28,8 @@ pub use blend::BlendMode;
 pub use fonts::*;
 pub use images::*;
 
+// This is the extra are used for tile rendering.
+const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
 
@@ -449,17 +451,12 @@ impl RenderState {
             },
         );
 
-        let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox);
+        // TODO: Maybe we should calculate the interest area based on the actual viewport. See how.
+        let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox_with_interest(
+            self.viewbox,
+            VIEWPORT_INTEREST_AREA_THRESHOLD,
+        );
         debug::render_debug_tiles_for_viewbox(self, sx, sy, ex, ey);
-        /*
-        // TODO: Instead of rendering only the visible area
-        // we could apply an offset to the viewbox to render
-        // more tiles.
-        sx - interest_delta
-        sy - interest_delta
-        ex + interest_delta
-        ey + interest_delta
-        */
         let tile_center = ((ex - sx) / 2, (ey - sy) / 2);
         self.pending_tiles = vec![];
         self.surfaces.cache_clear_visited();
