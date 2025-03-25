@@ -145,7 +145,7 @@
     ;; when something synced with wasm
     ;; is modified, we need to request
     ;; a new render.
-    (api/clear-cache)
+    (api/clear-drawing-cache)
     (api/request-render "set-wasm-attrs")))
 
 (defn- impl-assoc
