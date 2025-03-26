@@ -12,6 +12,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix SVG `stroke-linecap` property when importing SVGs [Taiga #9489](https://tree.taiga.io/project/penpot/issue/9489)
 
 ## 2.6.0 (Unreleased)
 
