@@ -1,11 +1,11 @@
 use crate::shapes::Shape;
 use crate::view::Viewbox;
-use skia_safe::{self as skia, Paint, RRect};
+use skia_safe::{self as skia, Paint, RRect, Surface};
 
 use super::{gpu_state::GpuState, tiles::Tile};
 
 use base64::{engine::general_purpose, Engine as _};
-use std::collections::HashMap;
+use lru::LruCache;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {
@@ -22,22 +22,22 @@ pub enum SurfaceId {
 
 pub struct Surfaces {
     // is the final destination surface, the one that it is represented in the canvas element.
-    target: skia::Surface,
+    target: Surface,
     // keeps the current render
-    current: skia::Surface,
+    current: Surface,
     // keeps the current shape's fills
-    shape_fills: skia::Surface,
+    shape_fills: Surface,
     // keeps the current shape's strokes
-    shape_strokes: skia::Surface,
+    shape_strokes: Surface,
     // used for rendering shadows
-    shadow: skia::Surface,
+    shadow: Surface,
     // used for new shadow rendering
-    drop_shadows: skia::Surface,
-    inner_shadows: skia::Surface,
+    drop_shadows: Surface,
+    inner_shadows: Surface,
     // for drawing the things that are over shadows.
-    overlay: skia::Surface,
+    overlay: Surface,
     // for drawing debug info.
-    debug: skia::Surface,
+    debug: Surface,
     // for drawing tiles.
     tiles: TileSurfaceCache,
     sampling_options: skia::SamplingOptions,
@@ -74,8 +74,11 @@ impl Surfaces {
         const POOL_CAPACITY_THRESHOLD: i32 = 4;
         let pool_capacity =
             (width / tile_dims.width) * (height / tile_dims.height) * POOL_CAPACITY_THRESHOLD;
-        let pool = SurfacePool::with_capacity(&mut target, tile_dims, pool_capacity as usize);
-        let tiles = TileSurfaceCache::new(pool);
+        let tiles = TileSurfaceCache::new(
+            pool_capacity as usize,
+            target.new_surface_with_dimensions(tile_dims).unwrap(),
+            tile_dims,
+        );
         Surfaces {
             target,
             current,
@@ -145,7 +148,7 @@ impl Surfaces {
             .draw(self.canvas(to), (0.0, 0.0), sampling_options, paint);
     }
 
-    pub fn apply_mut(&mut self, ids: &[SurfaceId], mut f: impl FnMut(&mut skia::Surface) -> ()) {
+    pub fn apply_mut(&mut self, ids: &[SurfaceId], mut f: impl FnMut(&mut Surface) -> ()) {
         for id in ids {
             let surface = self.get_mut(*id);
             f(surface);
@@ -172,7 +175,7 @@ impl Surfaces {
         );
     }
 
-    fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
+    fn get_mut(&mut self, id: SurfaceId) -> &mut Surface {
         match id {
             SurfaceId::Target => &mut self.target,
             SurfaceId::Current => &mut self.current,
@@ -186,7 +189,7 @@ impl Surfaces {
         }
     }
 
-    fn reset_from_target(&mut self, target: skia::Surface) {
+    fn reset_from_target(&mut self, target: Surface) {
         let dim = (target.width(), target.height());
         self.target = target;
         self.debug = self.target.new_surface_with_dimensions(dim).unwrap();
@@ -238,18 +241,10 @@ impl Surfaces {
             .reset_matrix();
     }
 
-    pub fn cache_clear_visited(&mut self) {
-        self.tiles.clear_visited();
-    }
-
-    pub fn cache_visit(&mut self, tile: Tile) {
-        self.tiles.visit(tile);
-    }
-
     pub fn cache_tile_surface(&mut self, tile: Tile, id: SurfaceId, color: skia::Color) {
         let sampling_options = self.sampling_options;
-        let mut tile_surface = self.tiles.get_or_create(tile).unwrap();
         let margins = self.margins;
+        let mut tile_surface = self.tiles.get_or_create(tile);
         let surface = self.get_mut(id);
         tile_surface.canvas().clear(color);
         surface.draw(
@@ -280,148 +275,52 @@ impl Surfaces {
     }
 
     pub fn remove_cached_tiles(&mut self) {
-        self.tiles.clear_grid();
-    }
-}
-
-pub struct SurfaceRef {
-    pub index: usize,
-    pub in_use: bool,
-    pub surface: skia::Surface,
-}
-
-impl Clone for SurfaceRef {
-    fn clone(&self) -> Self {
-        Self {
-            index: self.index,
-            in_use: self.in_use,
-            surface: self.surface.clone(),
-        }
-    }
-}
-
-pub struct SurfacePool {
-    pub surfaces: Vec<SurfaceRef>,
-    pub index: usize,
-}
-
-impl SurfacePool {
-    pub fn with_capacity(surface: &mut skia::Surface, dims: skia::ISize, capacity: usize) -> Self {
-        let mut surfaces = Vec::with_capacity(capacity);
-        for _ in 0..capacity {
-            surfaces.push(surface.new_surface_with_dimensions(dims).unwrap())
-        }
-
-        Self {
-            index: 0,
-            surfaces: surfaces
-                .into_iter()
-                .enumerate()
-                .map(|(index, surface)| SurfaceRef {
-                    index,
-                    in_use: false,
-                    surface: surface,
-                })
-                .collect(),
-        }
-    }
-
-    pub fn clear(&mut self) {
-        for surface in self.surfaces.iter_mut() {
-            surface.in_use = false;
-        }
-    }
-
-    pub fn deallocate(&mut self, surface_ref_to_deallocate: &SurfaceRef) {
-        let surface_ref = self
-            .surfaces
-            .get_mut(surface_ref_to_deallocate.index)
-            .unwrap();
-        surface_ref.in_use = false;
-    }
-
-    pub fn allocate(&mut self) -> Option<SurfaceRef> {
-        let start = self.index;
-        let len = self.surfaces.len();
-        loop {
-            self.index = (self.index + 1) % len;
-            if self.index == start {
-                return None;
-            }
-            if let Some(surface_ref) = self.surfaces.get_mut(self.index) {
-                if !surface_ref.in_use {
-                    surface_ref.in_use = true;
-                    return Some(surface_ref.clone());
-                }
-            }
-        }
+        self.tiles.clear();
     }
 }
 
 pub struct TileSurfaceCache {
-    pool: SurfacePool,
-    grid: HashMap<Tile, SurfaceRef>,
-    visited: HashMap<Tile, bool>,
+    surface: Surface,
+    dims: skia::ISize,
+    lru_cache: LruCache<Tile, Surface>,
 }
 
 impl TileSurfaceCache {
-    pub fn new(pool: SurfacePool) -> Self {
+    pub fn new(pool_capacity: usize, surface: Surface, dims: skia::ISize) -> Self {
+        let lru_cache = LruCache::new(pool_capacity);
         Self {
-            pool,
-            grid: HashMap::new(),
-            visited: HashMap::new(),
+            surface,
+            dims,
+            lru_cache,
         }
     }
 
     pub fn has(&mut self, tile: Tile) -> bool {
-        return self.grid.contains_key(&tile);
+        self.lru_cache.contains(&tile)
     }
 
-    pub fn get_or_create(&mut self, tile: Tile) -> Result<skia::Surface, String> {
-        if let Some(surface_ref) = self.pool.allocate() {
-            self.grid.insert(tile, surface_ref.clone());
-            Ok(surface_ref.surface.clone())
-        } else {
-            // TODO: I don't know yet how to improve this but I don't like it. I think
-            // there should be a better solution.
-            for (tile, surface_ref) in self.grid.iter() {
-                if !self.visited.contains_key(tile) {
-                    continue;
-                }
-                if !self.visited.get(tile).unwrap() {
-                    self.pool.deallocate(surface_ref);
-                }
-            }
-            if let Some(surface_ref) = self.pool.allocate() {
-                self.grid.insert(tile, surface_ref.clone());
-                return Ok(surface_ref.surface.clone());
-            }
-            return Err("Not enough surfaces".into());
+    pub fn get_or_create(&mut self, tile: Tile) -> Surface {
+        if let Some(surface) = self.lru_cache.get(&tile) {
+            return surface.clone();
         }
+
+        let new_surface = self.surface.new_surface_with_dimensions(self.dims).unwrap();
+        self.lru_cache.put(tile, new_surface.clone());
+        new_surface
     }
 
-    pub fn get(&mut self, tile: Tile) -> Result<&mut skia::Surface, String> {
-        Ok(&mut self.grid.get_mut(&tile).unwrap().surface)
+    pub fn get(&mut self, tile: Tile) -> Result<&mut Surface, String> {
+        self.lru_cache
+            .get_mut(&tile)
+            .ok_or_else(|| "Tile not found".to_string())
     }
 
     pub fn remove(&mut self, tile: Tile) -> bool {
-        if !self.grid.contains_key(&tile) {
-            return false;
-        }
-        self.grid.remove(&tile);
+        self.lru_cache.pop(&tile);
         true
     }
 
-    pub fn clear_grid(&mut self) {
-        self.grid.clear();
-        self.pool.clear();
-    }
-
-    pub fn clear_visited(&mut self) {
-        self.visited.clear();
-    }
-
-    pub fn visit(&mut self, tile: Tile) {
-        self.visited.insert(tile, true);
+    pub fn clear(&mut self) {
+        self.lru_cache.clear();
     }
 }

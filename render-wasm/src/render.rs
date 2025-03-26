@@ -462,12 +462,10 @@ impl RenderState {
         ey + interest_delta
         */
         self.pending_tiles = vec![];
-        self.surfaces.cache_clear_visited();
         for y in sy..=ey {
             for x in sx..=ex {
                 let tile = (x, y);
                 self.pending_tiles.push(tile);
-                self.surfaces.cache_visit(tile);
             }
         }
         self.current_tile = None;

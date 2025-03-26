@@ -11,6 +11,7 @@ name = "render_wasm"
 path = "src/main.rs"
 
 [dependencies]
+lru = "0.6"
 base64 = "0.22.1"
 gl = "0.14.0"
 indexmap = "2.7.1"
