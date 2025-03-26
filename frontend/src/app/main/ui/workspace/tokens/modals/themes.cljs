@@ -78,7 +78,7 @@
                        :label ""}]]))
 
 (mf/defc themes-overview
-  [{:keys [set-state]}]
+  [{:keys [state set-state]}]
   (let [active-theme-ids (mf/deref refs/workspace-active-theme-paths)
         themes-groups (mf/deref refs/workspace-token-theme-tree-no-hidden)
 
@@ -97,7 +97,8 @@
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
       (tr "workspace.token.themes-list")]
-     [:> text* {:as "div" :typography "body-medium" :class (stl/css :themes-modal-description)}
+     (if ()
+       [:> text* {:as "div" :typography "body-medium" :class (stl/css :themes-modal-description)}
       (tr "workspace.token.themes-description")]
      [:ul {:class (stl/css :theme-group-wrapper)}
       (for [[group themes] themes-groups]
@@ -157,7 +158,7 @@
               [:> icon-button* {:on-click delete-theme
                                 :variant "ghost"
                                 :aria-label (tr "workspace.token.delete-theme-title")
-                                :icon "delete"}]]])]])]
+                                :icon "delete"}]]])]])])
 
      [:div {:class (stl/css :button-footer)}
       [:> button* {:variant "secondary"
@@ -425,7 +426,6 @@
                                    {:type :themes-overview}))
         set-state (mf/use-fn #(swap! state %))
         component (case (:type @state)
-                    ;; :empty-themes empty-themes
                     :themes-overview themes-overview
                     :edit-theme controlled-edit-theme
                     :create-theme create-theme)]
