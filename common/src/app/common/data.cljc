@@ -82,15 +82,22 @@
   "Assoc a k v pair, in the order position just before the other key."
   [o ks k v before-k]
   (let [f (fn [o']
-            (cond-> (reduce
-                     (fn [acc [k' v']]
-                       (cond
-                         (and before-k (= k' before-k)) (assoc acc k v k' v')
-                         (= k k') acc
-                         :else (assoc acc k' v')))
-                     (ordered-map)
-                     o')
-              (not before-k) (assoc k v)))]
+            (let [found  (volatile! false)
+                  result (reduce
+                          (fn [acc [k' v']]
+                            (cond
+                              (and before-k (= k' before-k))
+                              (do
+                                (vreset! found true)
+                                (assoc acc k v k' v'))
+
+                              (= k k') acc
+                              :else (assoc acc k' v')))
+                          (ordered-map)
+                          o')]
+              (if (or (not before-k) (not @found))
+                (assoc result k v)
+                result)))]
     (if (seq ks)
       (oupdate-in o ks f)
       (f o))))

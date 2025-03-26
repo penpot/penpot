@@ -50,7 +50,7 @@
   Caution: This will allow a trailing dot like `token-name.`,
   But we will trim that in the `finalize-name`,
   to not throw too many errors while the user is editing."
-  #"(?!\$)([a-zA-Z0-9-$]+\.?)*")
+  #"(?!\$)([a-zA-Z0-9-$_]+\.?)*")
 
 (def valid-token-name-schema
   (m/-simple-schema
@@ -235,7 +235,14 @@
         token-properties (wtch/get-token-properties token)
         color? (wtt/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
-        active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
+
+        active-theme-tokens (cond-> (mf/deref refs/workspace-active-theme-sets-tokens)
+                              ;; Ensure that the resolved value uses the currently editing token
+                              ;; even if the name has been overriden by a token with the same name
+                              ;; in another set below.
+                              (and (:name token) (:value token))
+                              (assoc (:name token) token))
+
         resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:cache-atom form-token-cache-atom
                                                                      :interactive? true})
         token-path (mf/use-memo

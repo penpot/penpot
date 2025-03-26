@@ -20,10 +20,22 @@ test("Save and restore version", async ({ page }) => {
     "workspace/update-file-create-rect.json",
   );
 
+  await workspacePage.mockRPC(
+    "push-audit-events",
+    "workspace/audit-event-empty.json",
+  );
+
+  await workspacePage.mockRPC(
+    "update-profile-props",
+    "workspace/update-profile-empty.json",
+  );
+
   await workspacePage.goToWorkspace({
     fileId: "406b7b01-d3e2-80e4-8005-3138ac5d449c",
     pageId: "406b7b01-d3e2-80e4-8005-3138ac5d449d",
   });
+
+  await workspacePage.moveButton.click();
 
   await workspacePage.mockRPC(
     "get-file-snapshots?file-id=*",

@@ -1,0 +1,377 @@
+---
+title: 10· Design Tokens
+---
+
+<h1 id="design-tokens">Design Tokens</h1>
+<p class="main-paragraph">Design tokens are the building blocks of all UI elements, the same tokens are used in designs, tools, and code. They include colors, typography, spacing, shadows, and any visual element that affects an object: all these properties collectively make up a design system or a visual inheritance.</p>
+
+<figure>
+  <img src="/img/design-tokens/01-tokens-cover.webp" alt="Tokens cover" />
+</figure>
+
+<h3 id="design-tokens-why">Why Design Tokens?</h3>
+<p>Design tokens act as a single source of truth, a common language that can be translated and used in any other tool or framework capable of reading the token format. With Design Tokens, you can create, manage, and synchronize these visual elements within Penpot and across other design tools, keeping your designs consistent and making your workflows faster and easier to maintain.</p>
+<p>You can also integrate Design Tokens with other core Penpot features, such as components and grid & flex layout, plus plugins will be able to access the tokens API (coming soon) making it even more powerful.</p>
+
+<h3 id="design-tokens-format">W3C DTCG Format</h3>
+<p>Penpot Design Tokens adhere to the <a href="https://design-tokens.github.io/community-group/format/" target="_blank">Design Tokens Format Module</a> and <a href="https://www.designtokens.org/glossary/" target="_blank">its definitions</a>, a draft by the <a href="https://www.w3.org/community/design-tokens/" target="_blank">W3C DTCG</a>. Penpot ensures compatibility across various disciplines, tools, and technologies by following the most standardized approach available for design tokens.</p>
+<p>Tokens can be exported from Penpot or integrated into other tools directly, without conversion. Additionally, the knowledge gained from using Design Tokens in Penpot remains valuable, regardless of whether you continue using Penpot or a different tool or technology.</p>
+
+<h2 id="design-tokens-use">Using Tokens</h2>
+<h3 id="design-tokens-use-create">Creating a token</h3>
+<p>You can create reusable and semantic tokens to be referenced in your designs at the <strong>Tokens</strong> panel. In this panel, you’ll find all the available types of tokens in Penpot arranged alphabetically, with existing tokens being shown at the top of the list.</p>
+<figure>
+  <img src="/img/design-tokens/02-tokens-create.webp" alt="Tokens create" />
+</figure>
+<p>To create a token, click on the + next to the type of token you want to create. You’ll then be prompted to define the token’s:</p>
+<ul>
+    <li><strong>Name:</strong> The name should be specific to that token, as it is not possible to create multiple tokens with the same name; for example, <strong>dimension.small</strong>.</li>
+    <li><strong>Value:</strong> The value you wish to attribute to the token; depending on the token type, values may be numerical or color spaces (Hex, RGB, RGBA, ARGB, HSL or HSLA).</li>
+    <li><strong>Description:</strong> You can also choose to add a description to your token.</li>
+</ul>
+<p>Once you have named the token and assigned it a value, click <strong>Save</strong> to store the token and start referencing it.</p>
+
+<h3 id="design-tokens-aliases">Referencing tokens into values (aliases)</h3>
+<p>When assigning a value to a token, you can reference existing tokens - these are called aliases at the <a href="https://www.designtokens.org/glossary/" target="_blank">DTCG Glossary</a>.</p>
+<figure>
+  <img src="/img/design-tokens/03-tokens-aliases.webp" alt="Tokens aliases" />
+</figure>
+<p>For example, if you have created a <strong>dimension.small</strong> token, with a value of <strong">64</strong>, you could create a <strong>spacing.small</strong> token with a value of <code class="language-js">{dimension.small}</code>. The <strong>spacing.small</strong> token would thereby have a value of 64.</p>
+<p>When referencing an existing token in the value of a new token, you must reference it within <strong>{}</strong>.</p>
+<p>If the value of the referenced token changes, this will also change the value of the tokens where it is referenced.</p>
+<p class="advice">References to existing tokens are case sensitive.</p>
+
+<h3 id="design-tokens-equations">Using equations</h3>
+<p>Token types with numerical values also accept mathematical equations. If, for example, you create a <strong>spacing.small</strong> token with the value of <strong>2</strong>, and you then want to create a <strong>spacing.medium</strong> token that is twice as large, you could do so by writing <code class="language-js">{spacing.small} * 2</code> in its value. As a result, <strong>spacing.medium</strong> would have a value of <strong>4</strong>.</p>
+<p>Say you have a <strong>spacing.scale</strong> token with a value of <strong>2</strong>. You could also use this token in the equation to calculate the value of <strong>spacing.medium</strong> by writing <code class="language-js">{spacing.small} * {spacing.scale}</code> in its value.</p>
+<figure>
+  <img src="/img/design-tokens/04-tokens-math.webp" alt="Tokens math" />
+</figure>
+<p>Mathematical equations can be performed using:</p>
+<ul>
+    <li><code class="language-js">+</code> for addition.</li>
+    <li><code class="language-js">-</code> for subtraction.</li>
+    <li><code class="language-js">*</code> for multiplication.</li>
+    <li><code class="language-js">/</code> for division.</li>
+</ul>
+
+<h3 id="design-tokens-edit">Editing a token</h3>
+<p>Tokens can be edited by right-clicking the token and selecting <strong>Edit token</strong>. This will allow you to change the tokens name, value and description. Once the changes are made, click <strong>Save</strong>.</p>
+<figure>
+  <img src="/img/design-tokens/05-tokens-edit.webp" alt="Tokens edit" />
+</figure>
+<p class="advice">Renaming tokens will break any references to their old names. If a token is already applied somewhere, you'll need to reapply it after renaming. This can lead to extra work, so rename with caution. We're actively working on a solution to handle this automatically, ensuring renamed tokens stay linked to their properties without additional effort.</p>
+
+<h3 id="design-tokens-duplicate">Duplicating a token</h3>
+<p>Tokens can be duplicated by right-clicking the token you wish to duplicate and selecting <strong>Duplicate token</strong>. This will create a copy of the selected token within the same set, with <code class="language-js">-copy</code> added to its name.</p>
+
+<h3 id="design-tokens-delete">Deleting a token</h3>
+<p>Tokens can be deleted by right-clicking the token you wish to delete and selecting <strong>Delete token</strong>.</p>
+
+<h2 id="design-tokens-available">Available tokens</h2>
+<p>You can apply tokens to the properties of any <a href="/user-guide/objects/" target="_blank">object</a>. There are two ways to apply tokens to a selection:</p>
+<ul>
+  <li>Right-click on tokens to specify a particular property that you want to apply.</li>
+  <li>Left-click on tokens to apply the assumtion. Assumptions can vary across different token types. For example, for the <strong>color</strong> type the assumtion is that you want to apply the token as a <strong>fill</strong>.</li>
+</ul>
+<p>Tokens can be applied to multiple selected elements, but not to groups.</p>
+
+<h3 id="design-tokens-radius">Border radius</h3>
+<p>Border radius tokens allow you to define specific values for border-radius properties, offering flexibility in how you style the corners of elements.</p>
+<figure>
+  <img src="/img/design-tokens/06-tokens-radius.webp" alt="Tokens radius" />
+</figure>
+<h4>Applying Border Radius Tokens</h4>
+<p>To apply the border radius token to an element, select the element and choose the token from the list:</p>
+<ul>
+    <li>Clicking on a border radius token will apply it to all corners of the element simultaneously.</li>
+    <li>Right-clicking on a border radius token, allows you to select which corners the token should be applied to.</li>
+</ul>
+
+<h3 id="design-tokens-color">Color</h3>
+<p>Color tokens support color properties that can be applied to many different design elements, including boards, groups, shapes, and text.</p>
+<figure>
+  <img src="/img/design-tokens/07-tokens-color-create.webp" alt="Tokens color create" />
+</figure>
+<p>You can define a color token’s value using:</p>
+<ol>
+    <li><strong>The color picker</strong>, select the color switch to the left of the token <strong>Value</strong> input to open the color picker; here you’ll also be able to define the colors opacity.</li>
+    <li>
+        <strong>The color Spaces</strong>, define your color token in the following color spaces:
+        <ul>
+            <li>Hex: #ff0000</li>
+            <li>RGB: rgb(255, 0, 0)</li>
+            <li>RGBA: rgba(255, 0, 0, 1)</li>
+            <li>ARGB: #80FFFF00 (also known as Hex8)</li>
+            <li>HSL: hsl(120, 50%, 50%)</li>
+            <li>HSLA: hsla(120, 50%, 50%, 1)</li>
+        </ul>
+    </li>
+</ol>
+<h4>Applying Color Tokens</h4>
+<p>Color tokens can define a design element's <strong>fill</strong> or <strong>stroke</strong> color. To apply the color token to an element, select the element and choose the token from the list:</p>
+<ul>
+    <li>Clicking on a color token will apply it to the element as a fill by default.</li>
+    <li>Right-clicking on a color token, allows you to select whether it should be applied as a fill or stroke color.</li>
+</ul>
+<figure>
+  <img src="/img/design-tokens/08-tokens-color.webp" alt="Tokens color" />
+</figure>
+
+<h3 id="design-tokens-dimensions">Dimensions</h3>
+<p>Dimension tokens allow you to define an amount of distance that can be used to set the size, space, radius or position of specific elements within a design.</p>
+<h4>Applying Dimension Tokens</h4>
+<p>To apply a dimension token, select the element and choose the token from the list:</p>
+<ul>
+    <li>Clicking on a dimension token will apply it to the element’s width and height by default.</li>
+    <li>
+        Right-clicking on a dimension token, allows you to select where you want the token to be used in the element. You can use it for:
+        <ol>
+            <li>Sizing</li>
+            <li>Spacing</li>
+            <li>Border radius</li>
+            <li>Stroke width</li>
+            <li>X position</li>
+            <li>Y position</li>
+        </ol>
+    </li>
+</ul>
+<h4>Sizing (dimension)</h4>
+<p>The sizing property of the dimension token defines the height or width of design elements like boards, shapes, and groups.</p>
+<figure>
+  <img src="/img/design-tokens/09-tokens-dimensions-sizing.webp" alt="Tokens dimensions sizing" />
+</figure>
+<p>When using dimension tokens for sizing, you can apply the token to an element's size by selecting:</p>
+<ul>
+    <li><strong>All</strong> to apply the same size value to both the width and height of an element;</li>
+    <li><strong>Width</strong> to apply the token value to the horizontal size of an element;</li>
+    <li><strong>Height</strong> to apply the token value to the vertical size of an element;</li>
+</ul>
+<p>If you are working with flex-layout boards, you can also apply the token to an element’s size by selecting:</p>
+<ul>
+    <li><strong>All</strong> to apply the same size value to both the <strong>Min width</strong> and <strong>Min height</strong> of an element;</li>
+    <li><strong>Min width</strong> to define the smallest allowed horizontal size of an element but allow a larger size;</li>
+    <li><strong>Min height</strong> to define the smallest allowed vertical size of an element but allow a large size;</li>
+    <li><strong>All</strong> to apply the same size value to both the <strong>Max width</strong> and <strong>Max height</strong> of an element;</li>
+    <li><strong>Max width</strong> to define the largest allowed horizontal size of an element but allow a smaller size;</li>
+    <li><strong>Max height</strong> to define the largest allowed vertical size of an element but allow a smaller size.</li>
+</ul>
+<p class="advice">If you apply the <strong>min/max height/width properties</strong> to a board before flex-layout is applied to it, you may have to remove and re-apply the token for it to take effect.</p>
+
+<h4>Spacing (dimension)</h4>
+<p>The spacing property of the dimension token defines the distance between elements and it must be applied to flex-layout boards.</p>
+<figure>
+  <img src="/img/design-tokens/10-tokens-dimensions-spacing.webp" alt="Tokens dimensions spacing" />
+</figure>
+<p class="advice">If you apply the token to a board before flex-layout is applied to it, you may have to remove and re-apply the token for it to take effect.</p>
+<p>When using dimension tokens for spacing, you can apply the token to an element's padding and gap. Specifically, you can select:</p>
+<ul>
+  <li>
+    <strong>Gaps</strong>
+    <ul>
+      <li><strong>All</strong> to apply the gap to all sides of the element;</li>
+      <li><strong>Column Gap</strong> to add a gap between child elements within a parent element;</li>
+      <li><strong>Row Gap</strong> to add vertical space between rows on flex-layout board elements set to wrap. </li></li>
+    </ul>
+  </li>
+  <li>
+    <strong>Paddings & Margins:</strong>
+    <ul>
+        <li><strong>Horizontal</strong> applies to the left and right of the container;</li>
+        <li><strong>Vertical</strong> and to the top and bottom sides of the container;</li>
+        <li><strong>Top, right, bottom or left</strong> apply space to individual sides of the element.</li>
+    </ul>
+  </li>
+</ul>
+
+<h4>Border radius (dimension)</h4>
+<p>The border radius property of the dimension token defines the roundness of the corner of elements like boards, shapes, and groups.</p>
+<p>You can apply the border radius property by right-clicking on the dimension token and selecting:</p>
+<ul>
+    <li><strong>All</strong> to apply the radius to all sides of the selected element;</li>
+    <li><strong>Top Left</strong> to apply the radius to the top-left corner of the selected element;</li>
+    <li><strong>Top Right</strong> to apply the radius to the top-right corner of the selected element;</li>
+    <li><strong>Bottom Right</strong> to apply the radius to the bottom-right corner of the selected element;</li>
+    <li><strong>Bottom Left</strong> to apply the radius to the bottom-left corner of the selected element.</li>
+</ul>
+
+<h4>Stroke width (dimension)</h4>
+<p>The stroke width property specifies the thickness of a border for elements that already have a stroke property applied.</p>
+<p class="advice">If you apply the border property to an element before it has a stroke applied to it, you may have to remove and re-apply the token for it to take effect.</p>
+
+<h4>X Position (dimension)</h4>
+<p>The X property specifies the position of the element on the X axis of the canvas.</p>
+
+<h4>Y Position (dimension)</h4>
+<p>The Y property specifies the position of the element on the Y axis of the canvas.</p>
+
+<h3 id="design-tokens-opacity">Opacity</h3>
+<p>Opacity tokens allow you to define the opacity of a layer, ranging from fully opaque to fully transparent.</p>
+<p>Opacity tokens can be applied to any design element that supports transparency. You can use any decimal value between 0 and 1 to set varying levels of opacity or you can use any value between 0 and 100 with <strong>`%`</strong> sign at the end of the value. For example, you can use <strong>45%</strong> which would resolve to <strong>.45</strong>.</p>
+<h4>Applying Opacity Tokens</h4>
+<p>To apply the opacity token to an element, select the element and click on the desired token.</p>
+
+<h3 id="design-tokens-rotation">Rotation</h3>
+<p>Rotation tokens are used to define and standardize rotational values within a design system. These tokens represent rotation angles, typically measured in degrees, and can be applied to elements such as icons or images, to ensure consistent rotation throughout a design.</p>
+<h4>Applying Rotation Tokens</h4>
+<p>To apply a rotation token, select the element and choose the token from the list.</p>
+
+<h3 id="design-tokens-sizing">Sizing</h3>
+<p>Sizing tokens can define various size-related design properties, namely the height and width of design elements.The sizing token supports numeric values, which include negative values.</p>
+<figure>
+  <img src="/img/design-tokens/11-tokens-spacing.webp" alt="Tokens spacing" />
+</figure>
+<h4>Applying Sizing Tokens</h4>
+<p>To apply the sizing token to an element, select the element and choose the token from the list:</p>
+<ul>
+    <li>Clicking on a sizing token will apply it to all sides of the element by default;</li>
+    <li>
+        Right-clicking on a sizing token, allows you to specify which side of the element the token should apply to:
+        <ul>
+            <li><strong>All</strong> applies the same size value to both the width and height of an element;</li>
+            <li><strong>Width</strong> applies the token to the horizontal size of an element;</li>
+            <li><strong>Height</strong> applies the token to the vertical size of an element;</li>
+        </ul>
+    </li>
+</ul>
+<p>If you are working with flex-layout boards, you can also apply the token to an element’s size by selecting:</p>
+<ul>
+    <li><strong>Min width</strong> defines the smallest allowed horizontal size of an element, allowing larger sizes;</li>
+    <li><strong>Min height</strong> defines the smallest allowed vertical size of an element, allowing larger sizes;</li>
+    <li><strong>Max width</strong> defines the largest allowed horizontal size of an element, allowing smaller sizes;</li>
+    <li><strong>Max height</strong> defines the largest allowed vertical size of an element, allowing smaller sizes.</li>
+</ul>
+
+<h3 id="design-tokens-spacing">Spacing</h3>
+<p>The spacing token defines the distance between design elements and supports numeric values, which include negative values. Spacing tokens must be applied to Flex Layout boards. </p>
+<p class="advice">If you apply the token to a board before flex-layout is applied to it, you may have to remove and re-apply the token for it to take effect.</p>
+<h4>Applying Spacing Tokens</h4>
+<p>To apply the spacing token to an element, select the element and choose the token from the list:</p>
+<ul>
+    <li>Clicking on a spacing token will apply it to all gaps (row and column).</li>
+    <li>Right-clicking on a spacing token, allows you to specify which property of the element the token should apply to. In this menu, properties are divided by blocks. In each property you can choose to apply to ‘All’ sides in a specific property, or choose to apply them to individual sides:</li>
+    <li><strong>Gaps:</strong> Applies spaces between child elements within a parent container (both column and row gaps). This only works on flex and grid layouts.</li>
+    <li>
+        <strong>Paddings & Margins:</strong>
+        <ul>
+            <li><strong>Horizontal</strong> applies to the left and right of the container;</li>
+            <li><strong>Vertical</strong> and to the top and bottom sides of the container;</li>
+            <li><strong>Top, right, bottom or left</strong> apply space to individual sides of the element.</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>Stroke Width</h4>
+<p>The stroke width token, also known as the border width token, defines the thickness of a stroke around a design element. It can be applied to boards, groups, rectangles and text elements.</p>
+
+
+<h2 id="design-tokens-sets">Token Sets</h2>
+<p>Token Sets allow you to split your tokens up into multiple files in order to create organized groups or collections of tokens. It enables efficient management and customization within design files. For example you can group all your color sets, sizing sets or platform-specific sets. The purpose of tokens sets is to organize them in a way that matches your needs.</p>
+<figure>
+  <img src="/img/design-tokens/12-tokens-sets.webp" alt="Tokens sets" />
+</figure>
+<p>When you create your first token, a default set is created. You can rename, group or move it later. As you create new token sets, they’ll be added sequentially after existing ones. You can reorder token sets by dragging and dropping them.</p>
+<p class="advice">The order of the token sets is essential! If you have tokens with the same name (and different  values) across multiple sets, the tokens that are in the set that appears last in the list will override the previous ones - similar to how Cascading Style Sheets work.</p>
+<p>When creating a token set, it’s recommended that you assign it a unique name to ensure clarity. Token set names are not included in individual token names by default so it is possible to have tokens with the same name belonging to different token sets.</p>
+<p>Token sets can be enabled or disabled. If a set is disabled, its tokens will be excluded from the token resolution process.</p>
+
+<h3 id="design-tokens-sets-create">Creating Token Sets</h3>
+<p>There are two ways to create a token set at the <strong>Tokens</strong> tab:</p>
+<ol>
+    <li>Click on the <strong>+</strong> next to <strong>Sets</strong>;</li>
+    <li>Click on the <strong>Create one</strong> button.</li>
+</ol>
+<p>You’ll then need to name your token set. Set names should be specific, as it is not possible to create multiple token sets with the same name.</p>
+<p>When a token set is selected, the tokens within the selected set are displayed on the panel below.</p>
+
+
+<h3 id="design-tokens-sets-delete">Deleting and Renaming a Token Set</h3>
+<p>Token sets can be renamed or deleted by right-clicking on the token set and:</p>
+<ol>
+    <li>Selecting <strong>Rename</strong>, entering a new name, and hitting Enter.</li>
+    <li>Selecting <strong>Delete</strong>.</li>
+</ol>
+<figure>
+  <img src="/img/design-tokens/14-tokens-sets-edit.webp" alt="Tokens sets edit" />
+</figure>
+
+<h3 id="design-tokens-sets-create-within"></h3>
+<p>Once you have created a token set, you can start creating tokens within that token set. To do so, simply select the token set and create a new token.</p>
+<p class="advice">If a token with the same name already exists in another set, a new token can still be created in the current set.</p>
+
+<h3 id="design-tokens-groups">Creating Token Groups</h3>
+<p>You can create a token set group by simply naming your token sets to have a folder path. For example, you can create a <strong><i>Light</i></strong> group with a <strong><i>Global</i></strong> set and a <strong><i>Colors</i></strong> set using: <code class="language-js">Light/Global</code>, <code class="language-js">Light/Colors</code>. </p>
+<figure>
+  <img src="/img/design-tokens/15-tokens-sets-group.webp" alt="Tokens sets group" />
+</figure>
+
+<h2 id="design-tokens-themes">Token Themes</h2>
+<p>Themes are a way to configure your sets to be applied in a specific context, such as a brand, a mode or a touchpoint. Themes enable switching between different styles dynamically by applying different token values depending on the selected theme.</p>
+<p>Themes are multidimensional, this means that you can have more than one theme active at the same time, combining the values of the active themes.</p>
+
+<h4>Theme groups</h4>
+<p>Using Theme Groups you can categorise your themes into groups. This will allow you to generate a number of combinations involving color themes, brands, platforms, density, and more. Using groups will reduce the need to create an excessive number of individual themes with every combination.</p>
+<figure>
+  <img src="/img/design-tokens/16-tokens-themes.webp" alt="Tokens themes" />
+</figure>
+<p>For example:</p>
+<p><i>Group - theme options</i></p>
+<ul>
+    <li><strong>Mode</strong> - Light, Dark</li>
+    <li><strong>Brand</strong> - RedPlanet, YellowCab</li>
+    <li><strong>Contrast</strong> - High, Low, Dim</li>
+    <li><strong>Platform</strong> - Web, App</li>
+</ul>
+<p>When you have various themes inside a group, only one of the themes in this group can be active.</p>
+<p>Having your sets clubbed under groups makes it more accessible to switch from a matrix of themes.</p>
+
+<h3 id="design-tokens-themes-create">Creating Token Themes</h3>
+<p>To create a new theme, click the <strong>Create one</strong> button in the Themes section. You can create a group (this is optional) or add an existing one, and then you then need to assign a name to your theme and click on <strong>Save Theme</strong>.</p>
+<p>Your new theme will now appear on the Theme lists. You’ll need to enable the tokens sets that you want to include in the theme, clicking on the button “no active sets”. Here you can also activate and deactivate it, as well as delete the theme.</p>
+<figure>
+  <img src="/img/design-tokens/17-tokens-themes-create.webp" alt="Tokens themes create" />
+</figure>
+
+<h3 id="design-tokens-themes-edit">Editing Themes</h3>
+<p>In the <strong>Themes</strong> section, you can find a dropdown to activate and deactivate themes. If there are no active themes, the dropdown shows a message of: “no theme active”.</p>
+<figure>
+  <img src="/img/design-tokens/19-tokens-themes-edit.webp" alt="Tokens themes edit" />
+</figure>
+<p>To edit existing themes, you can click on the <strong>Edit</strong> button next to the dropdown in the <strong>Themes</strong> section or open the dropdown and select <strong>Edit themes</strong>:</p>
+<figure>
+  <img src="/img/design-tokens/18-tokens-themes-list.webp" alt="Tokens themes list" />
+</figure>
+<p>This action will open a modal window where you can activate or deactivate themes, as well as select which Token sets should be part of the theme.</p>
+<ol>
+    <li>You can enable and disable the themes.</li>
+    <li>Configure the token sets you want to be included in the theme.</li>
+    <li>Deletes the theme.</li>
+    <li>Creates a new theme.</li>
+</ol>
+
+<h3 id="design-tokens-themes-group">Grouping Themes</h3>
+<p>You can categorize your themes into groups. This allows you to generate a matrix of potential combinations involving color themes, brands, modes, and more.</p>
+<figure>
+  <img src="/img/design-tokens/20-tokens-themes-group.webp" alt="Tokens themes group" />
+</figure>
+
+<ol>
+    <li>Select a particular group.</li>
+    <li>Select the theme from the group.</li>
+    <li>You can define what token sets should be used as part of this theme option.</li>
+    <li>Click save theme to see the changes.</li>
+    <li>Cancel to clear the edits.</li>
+    <li>Delete.</li>
+</ol>
+
+<h2 id="design-tokens-import-export">Importing and Exporting Tokens</h2>
+<p>You can export Tokens from Penpot and import them from your computer to a Penpot file. Tokens can be imported from the <strong>Tools</strong> option at the bottom of the <strong>Tokens</strong> tab.</p>
+<p>The <strong>Import</strong> functionality allows you to upload and replace the global token set using a single file, while the <strong>Export</strong> functionality lets you download the current global token set using a single file to your system.</p>
+<p>These features support JSON files formatted according to specific guidelines and preserve the ability to undo changes if needed.</p>
+<figure>
+  <img src="/img/design-tokens/21-tokens-import-export.webp" alt="Tokens import export" />
+</figure>
+<ol>
+    <li><strong>Import:</strong> At the <strong>Tools</strong> option, select <strong>Import</strong>, then select your <code class="language-js">tokens.json</code> file. </li>
+    <li><strong>Export:</strong> At the <strong>Tools</strong> option, select <strong>Export</strong>. This will export all the tokens, including token sets and themes.</li>
+</ol>
