@@ -44,6 +44,11 @@
   margin-bottom: $s-8;
   padding-left: $s-8;
   color: var(--title-foreground-color);
+  word-break: break-word;
+}
+
+.sets-header {
+  margin-block-start: $s-8;
 }
 
 .themes-wrapper {

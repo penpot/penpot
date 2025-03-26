@@ -192,3 +192,5 @@
     :height 720}])
 
 (def zoom-half-pixel-precision 8)
+
+(def max-input-length 255)
