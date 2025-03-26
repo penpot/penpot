@@ -336,7 +336,7 @@
   [tokens & {:keys [interactive?]}]
   (let [state* (mf/use-state tokens)]
     (mf/with-effect [tokens interactive?]
-      (when (seq tokens)
+      (if (seq tokens)
         (let [tpoint  (dt/tpoint-ms)
               promise (if interactive?
                         (resolve-tokens-interactive+ tokens)
@@ -346,5 +346,6 @@
                (p/fmap (fn [resolved-tokens]
                          (let [elapsed (tpoint)]
                            (l/dbg :hint "use-resolved-tokens*" :elapsed elapsed)
-                           (reset! state* resolved-tokens))))))))
+                           (reset! state* resolved-tokens))))))
+        (reset! state* tokens)))
     @state*))
