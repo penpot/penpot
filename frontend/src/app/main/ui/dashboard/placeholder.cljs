@@ -51,10 +51,10 @@
 (mf/defc empty-placeholder
   [{:keys [dragging? limit origin create-fn can-edit project-id on-finish-import]}]
   (let [on-click
-                       (mf/use-fn
-                        (mf/deps create-fn)
-                        (fn [_]
-                          (create-fn "dashboard:empty-folder-placeholder")))
+        (mf/use-fn
+         (mf/deps create-fn)
+         (fn [_]
+           (create-fn "dashboard:empty-folder-placeholder")))
         show-text      (mf/use-state nil)
         on-mouse-enter (mf/use-fn #(reset! show-text true))
         on-mouse-leave (mf/use-fn #(reset! show-text nil))
