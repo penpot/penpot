@@ -12,8 +12,8 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.math :as mth]
-   [app.common.svg.path :as path]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.shape.path :as path]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.refs :as refs]
@@ -373,12 +373,11 @@
 
 (defn set-shape-path-content
   [content]
-  (let [buffer    (path/content->buffer content)
-        size      (.-byteLength buffer)
-        ptr       (h/call internal-module "_alloc_bytes" size)
-        heap      (gobj/get ^js internal-module "HEAPU8")
-        mem       (js/Uint8Array. (.-buffer heap) ptr size)]
-    (.set mem (js/Uint8Array. buffer))
+  (let [pdata  (path/path-data content)
+        size   (* (count pdata) path/SEGMENT-BYTE-SIZE)
+        offset (h/call internal-module "_alloc_bytes" size)
+        heap   (gobj/get ^js internal-module "HEAPU8")]
+    (path/-write-to pdata (.-buffer heap) offset)
     (h/call internal-module "_set_shape_path_content")))
 
 (defn set-shape-svg-raw-content
