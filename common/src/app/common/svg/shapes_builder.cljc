@@ -435,16 +435,12 @@
 
         attrs
         (-> attrs
-            (cond-> linecap
-              (dissoc :strokeLinecap))
             (cond-> (some? color)
               (dissoc :stroke :strokeWidth :strokeOpacity))
             (update
              :style
              (fn [style]
                (-> style
-                   (cond-> linecap
-                     (dissoc :strokeLinecap))
                    (cond-> (some? color)
                      (dissoc :stroke :strokeWidth :strokeOpacity)))))
             (d/without-nils))]
@@ -461,12 +457,14 @@
 
       (and (some? linecap) (cfh/path-shape? shape)
            (or (= linecap :round) (= linecap :square)))
+
       (assoc :stroke-cap-start linecap
-             :stroke-cap-end linecap)
+             :stroke-cap-end linecap
+             :stroke-linecap linecap)
 
       (d/any-key? (dm/get-in shape [:strokes 0])
                   :strokeColor :strokeOpacity :strokeWidth
-                  :strokeCapStart :strokeCapEnd)
+                  :strokeLinecap :strokeCapStart :strokeCapEnd)
       (assoc-in [:strokes 0 :stroke-style] :svg))))
 
 (defn setup-opacity [shape]
