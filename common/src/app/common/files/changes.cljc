@@ -963,8 +963,8 @@
   (ctf/delete-component data id skip-undelete? main-instance))
 
 (defmethod process-change :restore-component
-  [data {:keys [id page-id]}]
-  (ctf/restore-component data id page-id))
+  [data {:keys [id page-id parent-id]}]
+  (ctf/restore-component data id page-id parent-id))
 
 (defmethod process-change :purge-component
   [data {:keys [id]}]

@@ -376,6 +376,7 @@
          inside-component? (some? (ctn/get-instance-root (:objects page) parent))
          shapes            (cfh/get-children-with-self (:objects component) (:main-instance-id component))
          shapes            (map #(gsh/move % delta) shapes)
+         is-variant?       (ctk/is-variant? component)
 
          first-shape       (cond-> (first shapes)
                              (not (nil? parent-id))
@@ -389,7 +390,9 @@
                              inside-component?
                              (dissoc :component-root)
                              (not inside-component?)
-                             (assoc :component-root true))
+                             (assoc :component-root true)
+                             (and is-variant? (some? parent-id))
+                             (assoc :variant-id parent-id))
 
          changes           (-> changes
                                (pcb/with-page page)
@@ -400,7 +403,7 @@
          changes           (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                                    changes
                                    (rest shapes))]
-     {:changes (pcb/restore-component changes component-id (:id page) main-inst)
+     {:changes (pcb/restore-component changes component-id (:id page) main-inst parent-id)
       :shape (first shapes)})))
 
 ;; ---- General library synchronization functions ----
