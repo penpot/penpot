@@ -420,9 +420,11 @@
   [bool-type]
   (h/call internal-module "_set_shape_bool_type" (sr/translate-bool-type bool-type)))
 
-(defn set-shape-bool-content
-  [content]
-  (set-shape-path-content content))
+(defn- translate-blur-type
+  [blur-type]
+  (case blur-type
+    :layer-blur 1
+    0))
 
 (defn set-shape-blur
   [blur]
@@ -800,7 +802,6 @@
                                   (dm/get-prop shape :r2)
                                   (dm/get-prop shape :r3)
                                   (dm/get-prop shape :r4)])
-                  bool-content (dm/get-prop shape :bool-content)
                   svg-attrs    (dm/get-prop shape :svg-attrs)
                   shadows      (dm/get-prop shape :shadow)]
 
@@ -821,12 +822,13 @@
                 (set-masked masked))
               (when (some? blur)
                 (set-shape-blur blur))
-              (when (and (some? content) (= type :path))
+              (when (and (some? content)
+                         (or (= type :path)
+                             (= type :bool)))
                 (set-shape-path-attrs svg-attrs)
                 (set-shape-path-content content))
               (when (and (some? content) (= type :svg-raw))
                 (set-shape-svg-raw-content (get-static-markup shape)))
-              (when (some? bool-content) (set-shape-bool-content bool-content))
               (when (some? corners) (set-shape-corners corners))
               (when (some? shadows) (set-shape-shadows shadows))
               (when (and (= type :text) (some? content))
