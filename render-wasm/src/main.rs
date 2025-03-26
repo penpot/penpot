@@ -636,7 +636,7 @@ pub extern "C" fn set_flex_layout_data(
     padding_bottom: f32,
     padding_left: f32,
 ) {
-    let dir = shapes::Direction::from_u8(dir);
+    let dir = shapes::FlexDirection::from_u8(dir);
     let align_items = shapes::AlignItems::from_u8(align_items);
     let align_content = shapes::AlignContent::from_u8(align_content);
     let justify_items = shapes::JustifyItems::from_u8(justify_items);
@@ -714,13 +714,89 @@ pub extern "C" fn set_layout_child_data(
 }
 
 #[no_mangle]
-pub extern "C" fn set_grid_layout_data() {}
+pub extern "C" fn set_grid_layout_data(
+    dir: u8,
+    row_gap: f32,
+    column_gap: f32,
+    align_items: u8,
+    align_content: u8,
+    justify_items: u8,
+    justify_content: u8,
+    padding_top: f32,
+    padding_right: f32,
+    padding_bottom: f32,
+    padding_left: f32,
+) {
+    let dir = shapes::GridDirection::from_u8(dir);
+    let align_items = shapes::AlignItems::from_u8(align_items);
+    let align_content = shapes::AlignContent::from_u8(align_content);
+    let justify_items = shapes::JustifyItems::from_u8(justify_items);
+    let justify_content = shapes::JustifyContent::from_u8(justify_content);
+
+    with_current_shape!(state, |shape: &mut Shape| {
+        shape.set_grid_layout_data(
+            dir,
+            row_gap,
+            column_gap,
+            align_items,
+            align_content,
+            justify_items,
+            justify_content,
+            padding_top,
+            padding_right,
+            padding_bottom,
+            padding_left,
+        );
+    });
+}
 
 #[no_mangle]
-pub extern "C" fn add_grid_track() {}
+pub extern "C" fn set_grid_columns() {
+    let bytes = mem::bytes();
+
+    let entries: Vec<_> = bytes
+        .chunks(size_of::<shapes::RawGridTrack>())
+        .map(|data| shapes::RawGridTrack::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    with_current_shape!(state, |shape: &mut Shape| {
+        shape.set_grid_columns(entries);
+    });
+
+    mem::free_bytes();
+}
 
 #[no_mangle]
-pub extern "C" fn set_grid_cell() {}
+pub extern "C" fn set_grid_rows() {
+    let bytes = mem::bytes();
+
+    let entries: Vec<_> = bytes
+        .chunks(size_of::<shapes::RawGridTrack>())
+        .map(|data| shapes::RawGridTrack::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    with_current_shape!(state, |shape: &mut Shape| {
+        shape.set_grid_rows(entries);
+    });
+
+    mem::free_bytes();
+}
+
+#[no_mangle]
+pub extern "C" fn set_grid_cells() {
+    let bytes = mem::bytes();
+
+    let entries: Vec<_> = bytes
+        .chunks(size_of::<shapes::RawGridCell>())
+        .map(|data| shapes::RawGridCell::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    with_current_shape!(state, |shape: &mut Shape| {
+        shape.set_grid_cells(entries);
+    });
+
+    mem::free_bytes();
+}
 
 fn main() {
     init_gl!();

@@ -318,7 +318,7 @@ impl Shape {
 
     pub fn set_flex_layout_data(
         &mut self,
-        direction: Direction,
+        direction: FlexDirection,
         row_gap: f32,
         column_gap: f32,
         align_items: AlignItems,
@@ -334,7 +334,6 @@ impl Shape {
         match &mut self.shape_type {
             Type::Frame(data) => {
                 let layout_data = LayoutData {
-                    direction,
                     align_items,
                     align_content,
                     justify_items,
@@ -343,11 +342,12 @@ impl Shape {
                     padding_right,
                     padding_bottom,
                     padding_left,
+                    row_gap,
+                    column_gap,
                 };
 
                 let flex_data = FlexData {
-                    row_gap,
-                    column_gap,
+                    direction,
                     wrap_type,
                 };
 
@@ -355,6 +355,73 @@ impl Shape {
             }
             _ => {}
         }
+    }
+
+    pub fn set_grid_layout_data(
+        &mut self,
+        direction: GridDirection,
+        row_gap: f32,
+        column_gap: f32,
+        align_items: AlignItems,
+        align_content: AlignContent,
+        justify_items: JustifyItems,
+        justify_content: JustifyContent,
+        padding_top: f32,
+        padding_right: f32,
+        padding_bottom: f32,
+        padding_left: f32,
+    ) {
+        match &mut self.shape_type {
+            Type::Frame(data) => {
+                let layout_data = LayoutData {
+                    align_items,
+                    align_content,
+                    justify_items,
+                    justify_content,
+                    padding_top,
+                    padding_right,
+                    padding_bottom,
+                    padding_left,
+                    row_gap,
+                    column_gap,
+                };
+
+                let mut grid_data = GridData::default();
+                grid_data.direction = direction;
+                data.layout = Some(Layout::GridLayout(layout_data, grid_data));
+            }
+            _ => {}
+        }
+    }
+
+    pub fn set_grid_columns(&mut self, tracks: Vec<RawGridTrack>) {
+        let Type::Frame(frame_data) = &mut self.shape_type else {
+            return;
+        };
+        let Some(Layout::GridLayout(_, grid_data)) = &mut frame_data.layout else {
+            return;
+        };
+        grid_data.columns = tracks.iter().map(GridTrack::from_raw).collect();
+    }
+
+    pub fn set_grid_rows(&mut self, tracks: Vec<RawGridTrack>) {
+        let Type::Frame(frame_data) = &mut self.shape_type else {
+            return;
+        };
+        let Some(Layout::GridLayout(_, grid_data)) = &mut frame_data.layout else {
+            return;
+        };
+        grid_data.rows = tracks.iter().map(GridTrack::from_raw).collect();
+    }
+
+    pub fn set_grid_cells(&mut self, cells: Vec<RawGridCell>) {
+        let Type::Frame(frame_data) = &mut self.shape_type else {
+            return;
+        };
+        let Some(Layout::GridLayout(_, grid_data)) = &mut frame_data.layout else {
+            return;
+        };
+        grid_data.cells = cells.iter().map(GridCell::from_raw).collect();
     }
 
     pub fn set_blur(&mut self, blur_type: u8, hidden: bool, value: f32) {

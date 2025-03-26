@@ -67,7 +67,7 @@ impl LayoutAxis {
         layout_data: &LayoutData,
         flex_data: &FlexData,
     ) -> Self {
-        if layout_data.is_row() {
+        if flex_data.is_row() {
             Self {
                 main_size: layout_bounds.width(),
                 across_size: layout_bounds.height(),
@@ -77,8 +77,8 @@ impl LayoutAxis {
                 padding_main_end: layout_data.padding_right,
                 padding_across_start: layout_data.padding_top,
                 padding_across_end: layout_data.padding_bottom,
-                gap_main: flex_data.column_gap,
-                gap_across: flex_data.row_gap,
+                gap_main: layout_data.column_gap,
+                gap_across: layout_data.row_gap,
                 is_auto_main: shape.is_layout_horizontal_auto(),
                 is_auto_across: shape.is_layout_vertical_auto(),
             }
@@ -92,8 +92,8 @@ impl LayoutAxis {
                 padding_main_end: layout_data.padding_bottom,
                 padding_across_start: layout_data.padding_left,
                 padding_across_end: layout_data.padding_right,
-                gap_main: flex_data.row_gap,
-                gap_across: flex_data.column_gap,
+                gap_main: layout_data.row_gap,
+                gap_across: layout_data.column_gap,
                 is_auto_main: shape.is_layout_vertical_auto(),
                 is_auto_across: shape.is_layout_horizontal_auto(),
             }
@@ -121,10 +121,10 @@ struct ChildAxis {
 }
 
 impl ChildAxis {
-    fn new(child: &Shape, child_bounds: &Bounds, layout_data: &LayoutData) -> Self {
+    fn new(child: &Shape, child_bounds: &Bounds, flex_data: &FlexData) -> Self {
         let id = child.id;
         let layout_item = child.layout_item;
-        let mut result = if layout_data.is_row() {
+        let mut result = if flex_data.is_row() {
             Self {
                 id,
                 main_size: child_bounds.width(),
@@ -176,7 +176,6 @@ fn initialize_tracks(
     shape: &Shape,
     layout_bounds: &Bounds,
     layout_axis: &LayoutAxis,
-    layout_data: &LayoutData,
     flex_data: &FlexData,
     shapes: &HashMap<Uuid, Shape>,
     bounds: &HashMap<Uuid, Bounds>,
@@ -186,7 +185,7 @@ fn initialize_tracks(
     let mut children = shape.children.clone();
     let mut first = true;
 
-    if !layout_data.is_reverse() {
+    if !flex_data.is_reverse() {
         children.reverse();
     }
 
@@ -204,7 +203,7 @@ fn initialize_tracks(
             .box_bounds(&default_bounds)
             .unwrap_or(default_bounds);
 
-        let child_axis = ChildAxis::new(child, &child_bounds, layout_data);
+        let child_axis = ChildAxis::new(child, &child_bounds, flex_data);
 
         let child_main_size = child_axis.margin_main_start
             + child_axis.margin_main_end
@@ -466,7 +465,6 @@ fn calculate_track_data(
         shape,
         layout_bounds,
         &layout_axis,
-        layout_data,
         flex_data,
         shapes,
         bounds,
@@ -617,7 +615,7 @@ pub fn reflow_flex_layout(
             let child_bounds = &child_axis.bounds;
             let delta_v = Vector::new_points(&child_bounds.nw, &position);
 
-            let (new_width, new_height) = if layout_data.is_row() {
+            let (new_width, new_height) = if flex_data.is_row() {
                 (child_axis.main_size, child_axis.across_size)
             } else {
                 (child_axis.across_size, child_axis.main_size)
@@ -681,7 +679,7 @@ pub fn reflow_flex_layout(
             0.0
         };
 
-        let (scale_width, scale_height) = if layout_data.is_row() {
+        let (scale_width, scale_height) = if flex_data.is_row() {
             (
                 if layout_axis.is_auto_main {
                     auto_main_size / width
