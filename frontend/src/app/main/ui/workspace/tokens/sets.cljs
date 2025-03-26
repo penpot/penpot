@@ -94,6 +94,7 @@
       :type "text"
       :on-blur on-submit
       :on-key-down on-key-down
+      :maxlength "256"
       :auto-focus true
       :placeholder (tr "workspace.token.set-edit-placeholder")
       :default-value default-value}]))

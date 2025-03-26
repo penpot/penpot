@@ -205,6 +205,7 @@
       [:> input-tokens* {:id "theme-input"
                          :label (tr "workspace.token.label.theme")
                          :type "text"
+                         :max-length 256
                          :placeholder (tr "workspace.token.label.theme-placeholder")
                          :on-change on-update-name
                          :value (mf/ref-val theme-name-ref)
