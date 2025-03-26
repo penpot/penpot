@@ -160,7 +160,7 @@
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (when-not is-editing
+           (when (and can-edit? (not is-editing))
              (st/emit! (dt/assign-token-set-context-menu
                         {:position (dom/get-client-position event)
                          :is-group true
