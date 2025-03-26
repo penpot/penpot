@@ -319,8 +319,7 @@
 
     [:*
      [:& token-context-menu]
-     [:& title-bar {:all-clickable true
-                    :title (tr "workspace.token.tokens-section-title" selected-token-set-name)}]
+     [:span {:class (stl/css :sets-header)} (tr "workspace.token.tokens-section-title" selected-token-set-name)]
 
      (for [type filled-group]
        (let [tokens (get tokens-by-type type)]

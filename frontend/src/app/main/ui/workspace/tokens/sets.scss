@@ -70,6 +70,7 @@
 }
 
 .icon {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   width: $s-20;
@@ -82,6 +83,7 @@
 }
 
 .checkbox-style {
+  flex-shrink: 0;
   display: flex;
   justify-content: center;
   align-items: center;

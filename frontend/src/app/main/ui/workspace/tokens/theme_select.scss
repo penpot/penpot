@@ -41,6 +41,7 @@
 }
 
 .group {
+  @include textEllipsis;
   display: block;
   padding: $s-8;
   color: var(--color-foreground-secondary);

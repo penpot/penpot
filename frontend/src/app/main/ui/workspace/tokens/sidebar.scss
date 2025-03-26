@@ -38,11 +38,11 @@
   padding-block-end: $s-16;
 }
 
-.themes-header {
+.themes-header,
+.sets-header {
   @include use-typography("headline-small");
   display: block;
-  margin-bottom: $s-8;
-  padding-left: $s-8;
+  padding: $s-8;
   color: var(--title-foreground-color);
   word-break: break-word;
 }
