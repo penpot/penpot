@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-25 11:01+0000\n"
+"PO-Revision-Date: 2025-03-27 10:01+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -7105,3 +7105,44 @@ msgstr ""
 #: src/app/main/ui/ds/product/loader.cljs:36
 msgid "loader.tips.09.title"
 msgstr "Tumšais un gaišais izskats"
+
+#: src/app/main/data/tokens.cljs:386
+msgid "workspace.token.duplicate-suffix"
+msgstr "dublējums"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:856
+msgid "workspace.shape.menu.remove-variant-property"
+msgstr "Noņemt īpašību"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:63, src/app/main/ui/workspace/tokens/modals/themes.cljs:170, src/app/main/ui/workspace/tokens/modals/themes.cljs:279
+msgid "workspace.token.add-new-theme"
+msgstr "Pievienot jaunu izskatu"
+
+#: src/app/main/ui/workspace/tokens/sets_context_menu.cljs:54
+msgid "workspace.token.add-set-to-group"
+msgstr "Pievienot kopu šai grupai"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:257
+msgid "workspace.token.axis"
+msgstr "Ass"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:241
+msgid "workspace.token.color"
+msgstr "Krāsa"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:9
+msgid "workspace.token.error-parse"
+msgstr "Ievietošanas kļūda: nevarēja apstrādāt JSON."
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:197
+msgid "workspace.token.gaps"
+msgstr "Spraugas"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.token.generic-error"
+msgstr "Kļūda: "
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:109
+msgid "workspace.token.group-name"
+msgstr "Kopas nosaukums"
