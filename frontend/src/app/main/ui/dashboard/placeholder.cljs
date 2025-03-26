@@ -83,12 +83,11 @@
       (if (= (count files) 0)
         [:> empty-placeholder-projects* {:on-create on-click :on-finish-import on-finish-import :project-id project-id}]
         [:div {:class (stl/css :grid-empty-placeholder)}
-           [:button {:class (stl/css :create-new)
-                     :on-click on-click
-                     :on-mouse-enter on-mouse-enter
-                     :on-mouse-leave on-mouse-leave}
-            (if @show-text (tr "dashboard.empty-project.create") i/add)]
-           ]))))
+         [:button {:class (stl/css :create-new)
+                   :on-click on-click
+                   :on-mouse-enter on-mouse-enter
+                   :on-mouse-leave on-mouse-leave}
+          (if @show-text (tr "dashboard.empty-project.create") i/add)]]))))
 
 (mf/defc loading-placeholder
   []
