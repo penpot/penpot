@@ -6,7 +6,9 @@
 
 (ns app.common.types.shape.path
   (:require
-   [app.common.schema :as sm])
+   #?(:clj [app.common.fressian :as fres])
+   [app.common.schema :as sm]
+   [app.common.transit :as t])
   (:import
    #?(:cljs [goog.string StringBuffer]
       :clj  [java.nio ByteBuffer])))
@@ -74,7 +76,8 @@
 (def ^:const SEGMENT-BYTE-SIZE 28)
 
 (defprotocol IPathData
-  (-write-to [_ buffer offset] "write the content to the specified buffer"))
+  (-write-to [_ buffer offset] "write the content to the specified buffer")
+  (-bytes [_] "get path data as byte array"))
 
 (defrecord PathSegment [command params])
 
@@ -225,7 +228,15 @@
          default))
 
      clojure.lang.Counted
-     (count [_] size))
+     (count [_] size)
+
+
+     IPathData
+     (-write-to [_ _ _]
+       (throw (RuntimeException. "not implemented")))
+
+     (-bytes [_]
+       (.array ^ByteBuffer buffer)))
 
    :cljs
    (deftype PathData [size buffer dview]
@@ -240,18 +251,21 @@
              mem  (js/Uint32Array. into-buffer offset size)]
          (.set mem (js/Uint32Array. buffer))))
 
+     (-bytes [_]
+       (js/Uint8Array. buffer))
+
      cljs.core/ISequential
      cljs.core/IEquiv
      (-equiv [_ other]
        (if (instance? PathData other)
-         (let [obuffer (.-buffer other)
-               osize   (.-byteLength obuffer)
-               csize   (.-byteLength buffer)]
-           (if (= osize csize)
+         (let [obuffer (.-buffer other)]
+           (if (= (.-byteLength obuffer)
+                  (.-byteLength buffer))
              (let [cb (js/Uint32Array. buffer)
-                   ob (js/Uint32Array. obuffer)]
+                   ob (js/Uint32Array. obuffer)
+                   sz (alength cb)]
                (loop [i 0]
-                 (if (< i osize)
+                 (if (< i sz)
                    (if (= (aget ob i)
                           (aget cb i))
                      (recur (inc i))
@@ -341,6 +355,9 @@
              count (long (/ size SEGMENT-BYTE-SIZE))]
          (PathData. count buffer dview))
 
+       (instance? js/Uint8Array buffer)
+       (from-bytes (.-buffer buffer))
+
        :else
        (throw (js/Error. "invalid data provided")))))
 
@@ -429,3 +446,23 @@
 
     :else
     (from-bytes data)))
+
+(t/add-handlers!
+ {:id "penpot/path-data"
+  :class PathData
+  :wfn (fn [^PathData pdata]
+         (-bytes pdata))
+  :rfn path-data})
+
+#?(:clj
+   (fres/add-handlers!
+    {:name "penpot/path-data"
+     :class PathData
+     :wfn (fn [n w o]
+            (fres/write-tag! w n 1)
+            (let [buffer (.-buffer ^PathData o)
+                  bytes  (.array ^ByteBuffer buffer)]
+              (fres/write-bytes! w bytes)))
+     :rfn (fn [r]
+            (let [^bytes bytes (fres/read-object! r)]
+              (path-data (ByteBuffer/wrap bytes))))}))
