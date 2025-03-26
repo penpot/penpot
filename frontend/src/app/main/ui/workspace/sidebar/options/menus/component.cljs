@@ -850,11 +850,11 @@
                [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-row)}
                 [:> input-with-values* {:name (:name property)
                                         :values val
-                                        :data-position (:pos property)
+                                        :data-position pos
                                         :on-blur update-property-name}]
                 [:> icon-button* {:variant "ghost"
                                   :aria-label (tr "workspace.shape.menu.remove-variant-property")
                                   :on-click remove-property
-                                  :data-position (:pos property)
+                                  :data-position pos
                                   :icon "remove"
                                   :disabled (<= (count properties) 1)}]]))])]])))
