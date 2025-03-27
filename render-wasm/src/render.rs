@@ -94,7 +94,7 @@ pub(crate) struct RenderState {
     pub sampling_options: skia::SamplingOptions,
     pub render_area: Rect,
     pub tiles: tiles::TileHashMap,
-    pub pending_tiles: Vec<tiles::Tile>,
+    pub pending_tiles: Vec<tiles::TileWithDistance>,
 }
 
 impl RenderState {
@@ -460,16 +460,20 @@ impl RenderState {
         ex + interest_delta
         ey + interest_delta
         */
+        let tile_center = ((ex - sx) / 2, (ey - sy) / 2);
         self.pending_tiles = vec![];
         self.surfaces.cache_clear_visited();
         for y in sy..=ey {
             for x in sx..=ex {
                 let tile = (x, y);
-                self.pending_tiles.push(tile);
+                let distance = tiles::manhattan_distance(tile, tile_center);
+                self.pending_tiles.push((x, y, distance));
                 self.surfaces.cache_visit(tile);
             }
         }
         self.pending_nodes = vec![];
+        // reorder by distance to the center.
+        self.pending_tiles.sort_by(|a, b| b.2.cmp(&a.2));
         self.current_tile = None;
         self.render_in_progress = true;
         self.apply_drawing_to_render_canvas(None);
@@ -744,7 +748,9 @@ impl RenderState {
 
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
-            if let Some(next_tile) = self.pending_tiles.pop() {
+            if let Some(next_tile_with_distance) = self.pending_tiles.pop() {
+                let (x, y, _) = next_tile_with_distance;
+                let next_tile = (x, y);
                 self.update_render_context(next_tile);
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
