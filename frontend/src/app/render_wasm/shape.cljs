@@ -8,6 +8,7 @@
   (:require
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
+   [app.common.types.shape.layout :as ctl]
    [app.render-wasm.api :as api]
    [beicon.v2.core :as rx]
    [clojure.core :as c]
@@ -110,54 +111,99 @@
 (defn- set-wasm-attrs
   [self k v]
   (when ^boolean shape/*wasm-sync*
-    (api/use-shape (:id self))
-    (let [pending (case k
-                    :parent-id    (api/set-parent-id v)
-                    :type         (api/set-shape-type v)
-                    :bool-type    (api/set-shape-bool-type v)
-                    :selrect      (api/set-shape-selrect v)
-                    :show-content (if (= (:type self) :frame)
-                                    (api/set-shape-clip-content (not v))
-                                    (api/set-shape-clip-content false))
-                    :rotation     (api/set-shape-rotation v)
-                    :transform    (api/set-shape-transform v)
-                    :fills        (into [] (api/set-shape-fills v))
-                    :strokes      (into [] (api/set-shape-strokes v))
-                    :blend-mode   (api/set-shape-blend-mode v)
-                    :opacity      (api/set-shape-opacity v)
-                    :hidden       (api/set-shape-hidden v)
-                    :shapes       (api/set-shape-children v)
-                    :blur         (api/set-shape-blur v)
-                    :shadow       (api/set-shape-shadows v)
-                    :constraints-h (api/set-constraints-h v)
-                    :constraints-v (api/set-constraints-v v)
-                    :svg-attrs    (when (= (:type self) :path)
-                                    (api/set-shape-path-attrs v))
-                    :masked-group (when (and (= (:type self) :group) (:masked-group self))
-                                    (api/set-masked (:masked-group self)))
-                    :content      (cond
-                                    (= (:type self) :path)
-                                    (api/set-shape-path-content v)
+    (binding [shape/*wasm-sync* false]
+      (let [self (assoc self k v)]
+        (api/use-shape (:id self))
+        (let [pending (case k
+                        :parent-id    (api/set-parent-id v)
+                        :type         (api/set-shape-type v)
+                        :bool-type    (api/set-shape-bool-type v)
+                        :selrect      (api/set-shape-selrect v)
+                        :show-content (if (= (:type self) :frame)
+                                        (api/set-shape-clip-content (not v))
+                                        (api/set-shape-clip-content false))
+                        :rotation     (api/set-shape-rotation v)
+                        :transform    (api/set-shape-transform v)
+                        :fills        (into [] (api/set-shape-fills v))
+                        :strokes      (into [] (api/set-shape-strokes v))
+                        :blend-mode   (api/set-shape-blend-mode v)
+                        :opacity      (api/set-shape-opacity v)
+                        :hidden       (api/set-shape-hidden v)
+                        :shapes       (api/set-shape-children v)
+                        :blur         (api/set-shape-blur v)
+                        :shadow       (api/set-shape-shadows v)
+                        :constraints-h (api/set-constraints-h v)
+                        :constraints-v (api/set-constraints-v v)
 
-                                    (= (:type self) :svg-raw)
-                                    (api/set-shape-svg-raw-content (api/get-static-markup self))
+                        :svg-attrs
+                        (when (= (:type self) :path)
+                          (api/set-shape-path-attrs v))
 
-                                    (= (:type self) :text)
-                                    (api/set-shape-text-content v))
-                    nil)]
+                        :masked-group
+                        (when (and (= (:type self) :group) (:masked-group self))
+                          (api/set-masked (:masked-group self)))
 
-      ;; TODO: set-wasm-attrs is called twice with every set
-      (if (and pending (seq pending))
-        (->> (rx/from pending)
-             (rx/mapcat identity)
-             (rx/reduce conj [])
-             (rx/subs! (fn [_]
-                         (api/update-shape-tiles)
-                         (api/clear-drawing-cache)
-                         (api/request-render "set-wasm-attrs-pending"))))
-        (do
-          (api/update-shape-tiles)
-          (api/request-render "set-wasm-attrs"))))))
+                        :content
+                        (cond
+                          (= (:type self) :path)
+                          (api/set-shape-path-content v)
+
+                          (= (:type self) :svg-raw)
+                          (api/set-shape-svg-raw-content (api/get-static-markup self))
+
+                          (= (:type self) :text)
+                          (into [] (api/set-shape-text-content v)))
+
+                        (:layout-item-margin
+                         :layout-item-margin-type
+                         :layout-item-h-sizing
+                         :layout-item-v-sizing
+                         :layout-item-max-h
+                         :layout-item-min-h
+                         :layout-item-max-w
+                         :layout-item-min-w
+                         :layout-item-absolute
+                         :layout-item-z-index)
+                        (api/set-layout-child self)
+
+                        (:layout-grid-rows
+                         :layout-grid-columns
+                         :layout-grid-cells)
+                        (when (ctl/grid-layout? self)
+                          (api/set-grid-layout self))
+
+                        (:layout
+                         :layout-flex-dir
+                         :layout-gap-type
+                         :layout-gap
+                         :layout-align-items
+                         :layout-align-content
+                         :layout-justify-items
+                         :layout-justify-content
+                         :layout-wrap-type
+                         :layout-padding-type
+                         :layout-padding)
+                        (cond
+                          (ctl/grid-layout? self)
+                          (api/set-grid-layout self)
+
+                          (ctl/flex-layout? self)
+                          (api/set-flex-layout self))
+
+                        nil)]
+
+          ;; TODO: set-wasm-attrs is called twice with every set
+          (if (and pending (seq pending))
+            (->> (rx/from pending)
+                 (rx/mapcat identity)
+                 (rx/reduce conj [])
+                 (rx/subs! (fn [_]
+                             (api/update-shape-tiles)
+                             (api/clear-drawing-cache)
+                             (api/request-render "set-wasm-attrs-pending"))))
+            (do
+              (api/update-shape-tiles)
+              (api/request-render "set-wasm-attrs"))))))))
 (defn- impl-assoc
   [self k v]
   (set-wasm-attrs self k v)

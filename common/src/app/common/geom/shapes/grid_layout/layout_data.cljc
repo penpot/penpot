@@ -39,7 +39,7 @@
 ;;
 ;;   5. If any track still has an infinite growth limit set its growth limit to its base size.
 
-;;   - Distribute extra space accross spaned tracks
+;; - Distribute extra space accross spaned tracks
 ;; - Maximize tracks
 ;;
 ;; - Expand flexible tracks
@@ -198,7 +198,7 @@
 
     track-list))
 
-(defn add-auto-size
+(defn stretch-tracks
   [track-list add-size]
   (->> track-list
        (mapv (fn [{:keys [type size max-size] :as track}]
@@ -493,11 +493,11 @@
 
          column-tracks (cond-> column-tracks
                          (= :stretch (:layout-justify-content parent))
-                         (add-auto-size column-add-auto))
+                         (stretch-tracks column-add-auto))
 
          row-tracks    (cond-> row-tracks
                          (= :stretch (:layout-align-content parent))
-                         (add-auto-size row-add-auto))
+                         (stretch-tracks row-add-auto))
 
          column-total-size (tracks-total-size column-tracks)
          row-total-size    (tracks-total-size row-tracks)

@@ -44,7 +44,7 @@ impl GridDirection {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum AlignItems {
     Start,
     End,
@@ -64,7 +64,7 @@ impl AlignItems {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum AlignContent {
     Start,
     End,
@@ -90,7 +90,7 @@ impl AlignContent {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum JustifyItems {
     Start,
     End,
@@ -110,7 +110,7 @@ impl JustifyItems {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum JustifyContent {
     Start,
     End,
@@ -151,7 +151,7 @@ impl WrapType {
         }
     }
 }
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum GridTrackType {
     Percent,
     Flex,
@@ -173,8 +173,8 @@ impl GridTrackType {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GridTrack {
-    track_type: GridTrackType,
-    value: f32,
+    pub track_type: GridTrackType,
+    pub value: f32,
 }
 
 impl GridTrack {
@@ -188,13 +188,13 @@ impl GridTrack {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GridCell {
-    row: i32,
-    row_span: i32,
-    column: i32,
-    column_span: i32,
-    align_self: Option<AlignSelf>,
-    justify_self: Option<JustifySelf>,
-    shape: Option<Uuid>,
+    pub row: i32,
+    pub row_span: i32,
+    pub column: i32,
+    pub column_span: i32,
+    pub align_self: Option<AlignSelf>,
+    pub justify_self: Option<JustifySelf>,
+    pub shape: Option<Uuid>,
 }
 
 impl GridCell {
