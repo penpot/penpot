@@ -575,6 +575,10 @@ impl Shape {
         self.hidden
     }
 
+    pub fn width(&self) -> f32 {
+        self.selrect.width()
+    }
+
     pub fn visually_insignificant(&self, scale: f32) -> bool {
         self.selrect.width() * scale < MIN_VISIBLE_SIZE
             || self.selrect.height() * scale < MIN_VISIBLE_SIZE
