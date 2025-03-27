@@ -27,6 +27,7 @@
    [app.util.http :as http]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [goog.object :as gobj]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
@@ -628,42 +629,41 @@
     (.encode encoder text)))
 
 (defn- add-text-leaf [leaf]
-  (let [text (dm/get-prop leaf :text)
-        font-id (f/serialize-font-id (dm/get-prop leaf :font-id))
-        font-style (f/serialize-font-style (dm/get-prop leaf :font-style))
-        font-weight (f/serialize-font-weight (dm/get-prop leaf :font-weight))
-        font-size (js/Number (dm/get-prop leaf :font-size))
-        buffer (utf8->buffer text)
-        size (.-byteLength buffer)
-        ptr (h/call wasm/internal-module "_alloc_bytes" size)
-        heap (gobj/get ^js wasm/internal-module "HEAPU8")
-        mem (js/Uint8Array. (.-buffer heap) ptr size)]
-    (.set mem buffer)
-    (h/call wasm/internal-module "_add_text_leaf"
-            (aget font-id 0)
-            (aget font-id 1)
-            (aget font-id 2)
-            (aget font-id 3)
-            font-weight font-style font-size)))
+  (let [text (dm/get-prop leaf :text)]
+    (when (and text (not (str/blank? text)))
+      (let [font-id (f/serialize-font-id (dm/get-prop leaf :font-id))
+            font-style (f/serialize-font-style (dm/get-prop leaf :font-style))
+            font-weight (f/serialize-font-weight (dm/get-prop leaf :font-weight))
+            font-size (js/Number (dm/get-prop leaf :font-size))
+            buffer (utf8->buffer text)
+            size (.-byteLength buffer)
+            ptr (h/call wasm/internal-module "_alloc_bytes" size)
+            heap (gobj/get ^js wasm/internal-module "HEAPU8")
+            mem (js/Uint8Array. (.-buffer heap) ptr size)]
+        (.set mem buffer)
+        (h/call wasm/internal-module "_add_text_leaf"
+                (aget font-id 0)
+                (aget font-id 1)
+                (aget font-id 2)
+                (aget font-id 3)
+                font-weight font-style font-size)))))
 
 (defn set-shape-text-content [content]
   (h/call wasm/internal-module "_clear_shape_text")
   (let [paragraph-set (first (dm/get-prop content :children))
         paragraphs (dm/get-prop paragraph-set :children)
-        total-paragraphs (count paragraphs)
-        fonts (fonts/get-content-fonts content)]
-
+        fonts (fonts/get-content-fonts content)
+        total-paragraphs (count paragraphs)]
     (loop [index 0]
       (when (< index total-paragraphs)
         (let [paragraph (nth paragraphs index)
-              leaves (dm/get-prop paragraph :children)
-              total-leaves (count leaves)]
-          (h/call wasm/internal-module "_add_text_paragraph")
-          (loop [index-leaves 0]
-            (when (< index-leaves total-leaves)
-              (let [leaf (nth leaves index-leaves)]
-                (add-text-leaf leaf)
-                (recur (inc index-leaves))))))
+              leaves (dm/get-prop paragraph :children)]
+          (when (seq leaves)
+            (h/call wasm/internal-module "_add_text_paragraph")
+            (loop [leaf-index 0]
+              (when (< leaf-index (count leaves))
+                (add-text-leaf (nth leaves leaf-index))
+                (recur (inc leaf-index))))))
         (recur (inc index))))
     (f/store-fonts fonts)))
 
