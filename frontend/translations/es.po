@@ -1031,17 +1031,15 @@ msgstr "Integrantes del equipo"
 msgid "dashboard.team-projects"
 msgstr "Proyectos del equipo"
 
-<<<<<<< HEAD
 #: src/app/main/ui/dashboard/templates.cljs:133
 msgid "dashboard.template.add-to-project"
 msgstr "Añadir a tu proyecto"
-=======
+
 msgid "dashboard.team-plan"
 msgstr "Plan del equipo"
 
 msgid "dashboard.team-plan.professional"
 msgstr "Profesional"
->>>>>>> d0f2e57b7 (construction: Visual indicators for unlilmited tier users)
 
 #: src/app/main/ui/settings/options.cljs:57
 msgid "dashboard.theme-change"
