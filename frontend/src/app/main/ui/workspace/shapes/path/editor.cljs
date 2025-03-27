@@ -9,9 +9,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as gsp]
-   [app.common.svg.path.command :as upc]
-   [app.common.svg.path.shapes-to-path :as ups]
+   [app.common.types.path :as path]
+   [app.common.types.path.segment :as path.segment]
    [app.main.data.workspace.path :as drp]
    [app.main.snap :as snap]
    [app.main.store :as st]
@@ -196,8 +195,8 @@
 (defn matching-handler? [content node handlers]
   (when (= 2 (count handlers))
     (let [[[i1 p1] [i2 p2]] handlers
-          p1 (upc/handler->point content i1 p1)
-          p2 (upc/handler->point content i2 p2)
+          p1 (path.segment/handler->point content i1 p1)
+          p2 (path.segment/handler->point content i2 p2)
 
           v1 (gpt/to-vec node p1)
           v2 (gpt/to-vec node p2)
@@ -227,34 +226,36 @@
          :as edit-path} (mf/deref edit-path-ref)
 
         selected-points (or selected-points #{})
+        shape (hooks/use-equal-memo shape)
 
-        shape (cond-> shape
-                (not= :path (:type shape))
-                (ups/convert-to-path {})
+        base-content
+        (get shape :content)
 
-                :always
-                hooks/use-equal-memo)
+        base-points
+        (mf/with-memo [base-content]
+          (path.segment/content->points base-content))
 
-        base-content (:content shape)
-        base-points (mf/use-memo (mf/deps base-content) #(->> base-content gsp/content->points))
+        content
+        (path/apply-content-modifiers base-content content-modifiers)
 
-        content (upc/apply-content-modifiers base-content content-modifiers)
-        content-points (mf/use-memo (mf/deps content) #(->> content gsp/content->points))
+        content-points
+        (mf/with-memo [content]
+          (path.segment/content->points content))
 
         point->base (->> (map hash-map content-points base-points) (reduce merge))
         base->point (map-invert point->base)
 
         points (into #{} content-points)
 
-        last-p (->> content last upc/command->point)
-        handlers (upc/content->handlers content)
+        last-p (->> content last path.segment/get-point)
+        handlers (path.segment/content->handlers content)
 
         start-p? (not (some? last-point))
 
         [snap-selected snap-points]
         (cond
           (some? drag-handler) [#{drag-handler} points]
-          (some? preview) [#{(upc/command->point preview)} points]
+          (some? preview) [#{(path.segment/get-point preview)} points]
           (some? moving-handler) [#{moving-handler} points]
           :else
           [(->> selected-points (map base->point) (into #{}))
@@ -282,7 +283,7 @@
      ms/mouse-position
      (mf/deps shape zoom)
      (fn [position]
-       (when-let [point (gsp/path-closest-point shape position)]
+       (when-let [point (path.segment/path-closest-point shape position)]
          (reset! hover-point (when (< (gpt/distance position point) (/ 10 zoom)) point)))))
 
     [:g.path-editor {:ref editor-ref}
@@ -313,7 +314,7 @@
      (for [[index position] (d/enumerate points)]
        (let [show-handler?
              (fn [[index prefix]]
-               (let [handler-position (upc/handler->point content index prefix)]
+               (let [handler-position (path.segment/handler->point content index prefix)]
                  (not= position handler-position)))
 
              pos-handlers (get handlers position)
@@ -327,7 +328,7 @@
          [:g.path-node {:key (dm/str index "-" (:x position) "-" (:y position))}
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
            (for [[hindex prefix] pos-handlers]
-             (let [handler-position (upc/handler->point content hindex prefix)
+             (let [handler-position (path.segment/handler->point content hindex prefix)
                    handler-hover? (contains? hover-handlers [hindex prefix])
                    moving-handler? (= handler-position moving-handler)
                    matching-handler? (matching-handler? content position pos-handlers)]

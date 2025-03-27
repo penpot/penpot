@@ -22,13 +22,14 @@
    [app.common.transit :as t]
    [app.common.types.color :as ctc]
    [app.common.types.grid :as ctg]
+   [app.common.types.path :as path]
+   [app.common.types.path.segment :as path.segment]
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctsl]
-   [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctsx]
    [app.common.types.token :as cto]
@@ -234,7 +235,7 @@
   [:map {:title "BoolAttrs"}
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
    [:bool-type [::sm/one-of bool-types]]
-   [:content ::ctsp/content]])
+   [:content ::path/content]])
 
 (def ^:private schema:rect-attrs
   [:map {:title "RectAttrs"}])
@@ -259,7 +260,7 @@
 
 (def ^:private schema:path-attrs
   [:map {:title "PathAttrs"}
-   [:content ::ctsp/content]])
+   [:content ::path/content]])
 
 (def ^:private schema:text-attrs
   [:map {:title "TextAttrs"}
@@ -525,7 +526,7 @@
 (defn setup-path
   [{:keys [content selrect points] :as shape}]
   (let [selrect (or selrect
-                    (gsh/content->selrect content)
+                    (path.segment/content->selrect content)
                     (grc/make-rect))
         points  (or points  (grc/rect->points selrect))]
     (-> shape

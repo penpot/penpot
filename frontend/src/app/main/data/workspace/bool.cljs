@@ -10,9 +10,10 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cph]
    [app.common.geom.shapes :as gsh]
-   [app.common.svg.path.shapes-to-path :as stp]
    [app.common.types.component :as ctc]
    [app.common.types.container :as ctn]
+   [app.common.types.path :as path]
+   [app.common.types.path.bool :as bool]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -30,7 +31,7 @@
         (or id (uuid/next))
 
         shapes
-        (mapv #(stp/convert-to-path % objects) shapes)
+        (mapv #(path/convert-to-path % objects) shapes)
 
         head
         (if (= type :difference) (first shapes) (last shapes))
@@ -38,7 +39,7 @@
         head
         (cond-> head
           (and (contains? head :svg-attrs) (empty? (:fills head)))
-          (assoc :fills stp/default-bool-fills))
+          (assoc :fills bool/default-fills))
 
         shape
         {:id shape-id
@@ -51,7 +52,7 @@
 
         shape
         (-> shape
-            (merge (select-keys head stp/style-properties))
+            (merge (select-keys head bool/style-properties))
             (cts/setup-shape)
             (gsh/update-bool-selrect shapes objects))]
 
@@ -108,12 +109,12 @@
   [type group objects]
   (let [shapes (->> (:shapes group)
                     (map #(get objects %))
-                    (mapv #(stp/convert-to-path % objects)))
+                    (mapv #(path/convert-to-path % objects)))
         head (if (= type :difference) (first shapes) (last shapes))
         head (cond-> head
                (and (contains? head :svg-attrs) (empty? (:fills head)))
-               (assoc :fills stp/default-bool-fills))
-        head-data (select-keys head stp/style-properties)]
+               (assoc :fills bool/default-fills))
+        head-data (select-keys head bool/style-properties)]
 
     (-> group
         (assoc :type :bool)
@@ -136,7 +137,7 @@
   (-> shape
       (assoc :type :group)
       (dissoc :bool-type)
-      (d/without-keys stp/style-group-properties)
+      (d/without-keys bool/style-group-properties)
       (gsh/update-group-selrect
        (mapv (d/getf objects)
              (:shapes shape)))))

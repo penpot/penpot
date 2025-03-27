@@ -4,15 +4,42 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.svg.path.bool
+(ns app.common.types.path.bool
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
-   [app.common.geom.shapes.path :as gsp]
    [app.common.math :as mth]
-   [app.common.svg.path.command :as upc]
-   [app.common.svg.path.subpath :as ups]))
+   [app.common.types.path.helpers :as helpers]
+   [app.common.types.path.segment :as segment]
+   [app.common.types.path.subpath :as subpath]))
+
+(def default-fills
+  [{:fill-color clr/black}])
+
+(def style-group-properties
+  [:shadow :blur])
+
+(def style-properties
+  (into style-group-properties
+        [:fill-color
+         :fill-opacity
+         :fill-color-gradient
+         :fill-color-ref-file
+         :fill-color-ref-id
+         :fill-image
+         :fills
+         :stroke-color
+         :stroke-color-ref-file
+         :stroke-color-ref-id
+         :stroke-opacity
+         :stroke-style
+         :stroke-width
+         :stroke-alignment
+         :stroke-cap-start
+         :stroke-cap-end
+         :strokes]))
 
 (defn add-previous
   ([content]
@@ -25,87 +52,92 @@
                   (assoc :prev first)
 
                   (some? prev)
-                  (assoc :prev (gsp/command->point prev))))))))
+                  (assoc :prev (helpers/command->point prev))))))))
 
 (defn close-paths
   "Removes the :close-path commands and replace them for line-to so we can calculate
   the intersections"
   [content]
 
-  (loop [head (first content)
-         content (rest content)
-         result []
-         last-move nil
-         last-p nil]
+  (loop [segments   (seq content)
+         result     []
+         last-move  nil
+         last-point nil]
+    (if-let [segment (first segments)]
+      (let [point
+            (helpers/command->point segment)
 
-    (if (nil? head)
-      result
-      (let [head-p (gsp/command->point head)
-            head (cond
-                   (and (= :close-path (:command head))
-                        (or (nil? last-p) ;; Ignore consecutive close-paths
-                            (< (gpt/distance last-p last-move) 0.01)))
-                   nil
+            segment
+            (cond
+              (and (= :close-path (:command segment))
+                   (or (nil? last-point) ;; Ignore consecutive close-paths
+                       (< (gpt/distance last-point last-move) 0.01)))
+              nil
 
-                   (= :close-path (:command head))
-                   (upc/make-line-to last-move)
+              (= :close-path (:command segment))
+              (helpers/make-line-to last-move)
 
-                   :else
-                   head)]
+              :else
+              segment)]
 
-        (recur (first content)
-               (rest content)
-               (cond-> result (some? head) (conj head))
-               (if (= :move-to (:command head))
-                 head-p
+        (recur (rest segments)
+               (cond-> result (some? segment) (conj segment))
+               (if (= :move-to (:command segment))
+                 point
                  last-move)
-               head-p)))))
+               point))
+      result)))
 
 (defn- split-command
   [cmd values]
   (case (:command cmd)
-    :line-to  (gsp/split-line-to-ranges (:prev cmd) cmd values)
-    :curve-to (gsp/split-curve-to-ranges (:prev cmd) cmd values)
+    :line-to  (helpers/split-line-to-ranges (:prev cmd) cmd values)
+    :curve-to (helpers/split-curve-to-ranges (:prev cmd) cmd values)
     [cmd]))
 
-(defn split-ts [seg-1 seg-2]
-  (cond
-    (and (= :line-to (:command seg-1))
-         (= :line-to (:command seg-2)))
-    (gsp/line-line-intersect (gsp/command->line seg-1) (gsp/command->line seg-2))
+(defn- split-ts
+  [seg-1 seg-2]
+  (let [cmd-1 (get seg-1 :command)
+        cmd-2 (get seg-2 :command)]
+    (cond
+      (and (= :line-to cmd-1)
+           (= :line-to cmd-2))
+      (helpers/line-line-intersect (helpers/command->line seg-1)
+                                   (helpers/command->line seg-2))
 
-    (and (= :line-to (:command seg-1))
-         (= :curve-to (:command seg-2)))
-    (gsp/line-curve-intersect (gsp/command->line seg-1) (gsp/command->bezier seg-2))
+      (and (= :line-to cmd-1)
+           (= :curve-to cmd-2))
+      (helpers/line-curve-intersect (helpers/command->line seg-1)
+                                    (helpers/command->bezier seg-2))
 
-    (and (= :curve-to (:command seg-1))
-         (= :line-to (:command seg-2)))
-    (let [[seg-2' seg-1']
-          (gsp/line-curve-intersect (gsp/command->line seg-2) (gsp/command->bezier seg-1))]
-      ;; Need to reverse because we send the arguments reversed
-      [seg-1' seg-2'])
+      (and (= :curve-to cmd-1)
+           (= :line-to cmd-2))
+      (let [[seg-2' seg-1']
+            (helpers/line-curve-intersect (helpers/command->line seg-2)
+                                          (helpers/command->bezier seg-1))]
+        ;; Need to reverse because we send the arguments reversed
+        [seg-1' seg-2'])
 
-    (and (= :curve-to (:command seg-1))
-         (= :curve-to (:command seg-2)))
-    (gsp/curve-curve-intersect (gsp/command->bezier seg-1) (gsp/command->bezier seg-2))
+      (and (= :curve-to cmd-1)
+           (= :curve-to cmd-2))
+      (helpers/curve-curve-intersect (helpers/command->bezier seg-1)
+                                     (helpers/command->bezier seg-2))
 
-    :else
-    [[] []]))
+      :else
+      [[] []])))
 
 (defn content-intersect-split
   [content-a content-b sr-a sr-b]
 
-  (let [command->selrect (memoize gsp/command->selrect)]
+  (let [command->selrect (memoize helpers/command->selrect)]
 
-    (letfn [(overlap-segment-selrect?
-              [segment selrect]
+    (letfn [(overlap-segment-selrect? [segment selrect]
               (if (= :move-to (:command segment))
                 false
                 (let [r1 (command->selrect segment)]
                   (grc/overlaps-rects? r1 selrect))))
 
-            (overlap-segments?
-              [seg-1 seg-2]
+            (overlap-segments? [seg-1 seg-2]
               (if (or (= :move-to (:command seg-1))
                       (= :move-to (:command seg-2)))
                 false
@@ -113,17 +145,14 @@
                       r2 (command->selrect seg-2)]
                   (grc/overlaps-rects? r1 r2))))
 
-            (split
-              [seg-1 seg-2]
+            (split [seg-1 seg-2]
               (if (not (overlap-segments? seg-1 seg-2))
                 [seg-1]
                 (let [[ts-seg-1 _] (split-ts seg-1 seg-2)]
                   (-> (split-command seg-1 ts-seg-1)
                       (add-previous (:prev seg-1))))))
 
-            (split-segment-on-content
-              [segment content content-sr]
-
+            (split-segment-on-content [segment content content-sr]
               (if (overlap-segment-selrect? segment content-sr)
                 (->> content
                      (filter #(overlap-segments? segment %))
@@ -133,8 +162,7 @@
                       [segment]))
                 [segment]))
 
-            (split-content
-              [content-a content-b sr-b]
+            (split-content [content-a content-b sr-b]
               (into []
                     (mapcat #(split-segment-on-content % content-b sr-b))
                     content-a))]
@@ -151,28 +179,28 @@
   [segment content content-sr content-geom]
 
   (let [point (case (:command segment)
-                :line-to  (-> (gsp/command->line segment)
-                              (gsp/line-values 0.5))
+                :line-to  (-> (helpers/command->line segment)
+                              (helpers/line-values 0.5))
 
-                :curve-to (-> (gsp/command->bezier segment)
-                              (gsp/curve-values 0.5)))]
+                :curve-to (-> (helpers/command->bezier segment)
+                              (helpers/curve-values 0.5)))]
 
     (and (grc/contains-point? content-sr point)
          (or
-          (gsp/is-point-in-geom-data? point content-geom)
-          (gsp/is-point-in-border? point content)))))
+          (helpers/is-point-in-geom-data? point content-geom)
+          (helpers/is-point-in-border? point content)))))
 
 (defn inside-segment?
   [segment content-sr content-geom]
   (let [point (case (:command segment)
-                :line-to  (-> (gsp/command->line segment)
-                              (gsp/line-values 0.5))
+                :line-to  (-> (helpers/command->line segment)
+                              (helpers/line-values 0.5))
 
-                :curve-to (-> (gsp/command->bezier segment)
-                              (gsp/curve-values 0.5)))]
+                :curve-to (-> (helpers/command->bezier segment)
+                              (helpers/curve-values 0.5)))]
 
     (and (grc/contains-point? content-sr point)
-         (gsp/is-point-in-geom-data? point content-geom))))
+         (helpers/is-point-in-geom-data? point content-geom))))
 
 (defn overlap-segment?
   "Finds if the current segment is overlapping against other
@@ -185,8 +213,8 @@
                      (contains? #{:line-to :curve-to} (:command segment)))
 
             (case (:command segment)
-              :line-to (let [[p1 q1] (gsp/command->line segment)
-                             [p2 q2] (gsp/command->line other)]
+              :line-to (let [[p1 q1] (helpers/command->line segment)
+                             [p2 q2] (helpers/command->line other)]
 
                          (when (or (and (< (gpt/distance p1 p2) 0.1)
                                         (< (gpt/distance q1 q2) 0.1))
@@ -194,8 +222,8 @@
                                         (< (gpt/distance q1 p2) 0.1)))
                            [segment other]))
 
-              :curve-to (let [[p1 q1 h11 h21] (gsp/command->bezier segment)
-                              [p2 q2 h12 h22] (gsp/command->bezier other)]
+              :curve-to (let [[p1 q1 h11 h21] (helpers/command->bezier segment)
+                              [p2 q2 h12 h22] (helpers/command->bezier other)]
 
                           (when (or (and (< (gpt/distance p1 p2) 0.1)
                                          (< (gpt/distance q1 q2) 0.1)
@@ -227,11 +255,11 @@
       result
 
       (let [result (if (not= (:prev current) prev)
-                     (conj result (upc/make-move-to (:prev current)))
+                     (conj result (helpers/make-move-to (:prev current)))
                      result)]
         (recur (first content)
                (rest content)
-               (gsp/command->point current)
+               (helpers/command->point current)
                (conj result (dissoc current :prev)))))))
 
 (defn remove-duplicated-segments
@@ -273,20 +301,43 @@
                  segments
                  result))))))
 
+(defn close-content
+  [content]
+  (into []
+        (mapcat :data)
+        (->> content
+             (subpath/close-subpaths)
+             (subpath/get-subpaths))))
+
+(defn- content->geom-data
+  [content]
+
+  (->> content
+       (close-content)
+       (filter #(not= (= :line-to (:command %))
+                      (= :curve-to (:command %))))
+       (mapv (fn [segment]
+               {:command (:command segment)
+                :segment segment
+                :geom (if (= :line-to (:command segment))
+                        (helpers/command->line segment)
+                        (helpers/command->bezier segment))
+                :selrect (helpers/command->selrect segment)}))))
+
 (defn create-union [content-a content-a-split content-b content-b-split sr-a sr-b]
   ;; Pick all segments in content-a that are not inside content-b
   ;; Pick all segments in content-b that are not inside content-a
-  (let [content-a-geom (gsp/content->geom-data content-a)
-        content-b-geom (gsp/content->geom-data content-b)
+  (let [content-a-geom (content->geom-data content-a)
+        content-b-geom (content->geom-data content-b)
 
         content
         (concat
          (->> content-a-split (filter #(not (contains-segment? % content-b sr-b content-b-geom))))
          (->> content-b-split (filter #(not (contains-segment? % content-a sr-a content-a-geom)))))
 
-        content-geom (gsp/content->geom-data content)
+        content-geom (content->geom-data content)
 
-        content-sr (gsp/content->selrect (fix-move-to content))
+        content-sr (segment/content->selrect (fix-move-to content))
 
         ;; Overlapping segments should be added when they are part of the border
         border-content
@@ -302,8 +353,8 @@
   ;; Pick all segments in content-a that are not inside content-b
   ;; Pick all segments in content b that are inside content-a
   ;;  removing overlapping
-  (let [content-a-geom (gsp/content->geom-data content-a)
-        content-b-geom (gsp/content->geom-data content-b)]
+  (let [content-a-geom (content->geom-data content-a)
+        content-b-geom (content->geom-data content-b)]
     (d/concat-vec
      (->> content-a-split (filter #(not (contains-segment? % content-b sr-b content-b-geom))))
 
@@ -315,12 +366,11 @@
 (defn create-intersection [content-a content-a-split content-b content-b-split sr-a sr-b]
   ;; Pick all segments in content-a that are inside content-b
   ;; Pick all segments in content-b that are inside content-a
-  (let [content-a-geom (gsp/content->geom-data content-a)
-        content-b-geom (gsp/content->geom-data content-b)]
+  (let [content-a-geom (content->geom-data content-a)
+        content-b-geom (content->geom-data content-b)]
     (d/concat-vec
      (->> content-a-split (filter #(contains-segment? % content-b sr-b content-b-geom)))
      (->> content-b-split (filter #(contains-segment? % content-a sr-a content-a-geom))))))
-
 
 (defn create-exclusion [content-a content-b]
   ;; Pick all segments
@@ -331,26 +381,37 @@
 
   (let [;; We need to reverse the second path when making a difference/intersection/exclude
         ;; and both shapes are in the same direction
-        should-reverse? (and (not= :union bool-type)
-                             (= (ups/clockwise? content-b)
-                                (ups/clockwise? content-a)))
+        should-reverse?
+        (and (not= :union bool-type)
+             (= (subpath/clockwise? content-b)
+                (subpath/clockwise? content-a)))
 
-        content-a (-> content-a
-                      (close-paths)
-                      (add-previous))
+        content-a
+        (-> content-a
+            (close-paths)
+            (add-previous))
 
-        content-b (-> content-b
-                      (close-paths)
-                      (cond-> should-reverse? (ups/reverse-content))
-                      (add-previous))
+        content-b
+        (-> content-b
+            (close-paths)
+            (cond-> should-reverse? (subpath/reverse-content))
+            (add-previous))
 
-        sr-a (gsp/content->selrect content-a)
-        sr-b (gsp/content->selrect content-b)
+        sr-a
+        (segment/content->selrect content-a)
+
+        sr-b
+        (segment/content->selrect content-b)
 
         ;; Split content in new segments in the intersection with the other path
-        [content-a-split content-b-split] (content-intersect-split content-a content-b sr-a sr-b)
-        content-a-split (->> content-a-split add-previous (filter is-segment?))
-        content-b-split (->> content-b-split add-previous (filter is-segment?))
+        [content-a-split content-b-split]
+        (content-intersect-split content-a content-b sr-a sr-b)
+
+        content-a-split
+        (->> content-a-split add-previous (filter is-segment?))
+
+        content-b-split
+        (->> content-b-split add-previous (filter is-segment?))
 
         content
         (case bool-type
@@ -362,14 +423,16 @@
     (-> content
         remove-duplicated-segments
         fix-move-to
-        ups/close-subpaths)))
+        subpath/close-subpaths)))
 
-(defn content-bool
+(defn calculate-content
+  "Create a bool content from a collection of contents and specified
+  type."
   [bool-type contents]
   ;; We apply the boolean operation in to each pair and the result to the next
   ;; element
   (if (seq contents)
     (->> contents
          (reduce (partial content-bool-pair bool-type))
-         (into []))
+         (vec))
     []))
