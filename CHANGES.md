@@ -56,6 +56,7 @@
   methods (add missing team-id prop)
 - Fix problem with viewer role and inspect mode [Taiga #9751](https://tree.taiga.io/project/penpot/issue/9751)
 - Fix error when clicking on a comment at the viewer's sidebar [Taiga #10465](https://tree.taiga.io/project/penpot/issue/10465)
+- Internal error when install a plugin by penpothub - Try plugin [Taiga #10542](https://tree.taiga.io/project/penpot/issue/10542)
 
 ## 2.5.3
 

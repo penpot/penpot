@@ -157,7 +157,8 @@
            (rt/nav :workspace
                    {:page-id (dm/get-in data [:pages 0])
                     :project-id project-id
-                    :file-id id})))
+                    :file-id id
+                    :team-id team-id})))
 
         create-file!
         (fn [plugin]
