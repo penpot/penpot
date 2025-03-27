@@ -46,6 +46,7 @@
   #{"fdata/objects-map"
     "fdata/pointer-map"
     "fdata/shape-data-type"
+    "fdata/path-data"
     "components/v2"
     "styles/v2"
     "layout/grid"
@@ -86,8 +87,9 @@
 ;; without migration applied)
 (def no-migration-features
   (-> #{"layout/grid"
+        "design-tokens/v1"
         "fdata/shape-data-type"
-        "design-tokens/v1"}
+        "fdata/path-data"}
       (into frontend-only-features)
       (into backend-only-features)))
 

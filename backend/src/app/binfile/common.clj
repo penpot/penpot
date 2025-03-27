@@ -434,12 +434,12 @@
                           (d/without-nils))))))
 
 (defn encode-file
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
-  (let [file (if (contains? (:features file) "fdata/objects-map")
+  [{:keys [::db/conn] :as cfg} {:keys [id features] :as file}]
+  (let [file (if (contains? features "fdata/objects-map")
                (feat.fdata/enable-objects-map file)
                file)
 
-        file (if (contains? (:features file) "fdata/pointer-map")
+        file (if (contains? features "fdata/pointer-map")
                (binding [pmap/*tracked* (pmap/create-tracked)]
                  (let [file (feat.fdata/enable-pointer-map file)]
                    (feat.fdata/persist-pointers! cfg id)
