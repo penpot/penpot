@@ -253,6 +253,7 @@
 
 (defn get-variant
   [{:keys [variants] :as font} font-variant-id]
+  (prn "get-variant" font-variant-id fonts)
   (or (d/seek #(= (:id %) font-variant-id) variants)
       (get-default-variant font)))
 

@@ -176,6 +176,26 @@
 
 (defn- get-string-length [string] (+ (count string) 1))
 
+(def ^:private fonts
+  (l/derived :fonts st/state))
+
+(defn- google-font-id->uuid
+  [font-id]
+  (let [font (get @fonts/fontsdb font-id)]
+    (:uuid font)))
+
+
+(defn ^:private font->ttf-id [font-uuid font-style font-weight]
+  (if (str/starts-with? font-uuid "gfont-")
+    font-uuid
+    (let [matching-font (d/seek (fn [[_ font]]
+                                  (and (= (:font-id font) font-uuid)
+                                       (= (:font-style font) font-style)
+                                       (= (:font-weight font) font-weight)))
+                                (seq @fonts))]
+      (when matching-font
+        (:ttf-file-id (second matching-font))))))
+
 ;; IMPORTANT: It should be noted that only TTF fonts can be stored.
 (defn- store-font-buffer
   [font-data font-array-buffer]
@@ -203,11 +223,29 @@
        (rx/mapcat wapi/read-file-as-array-buffer)
        (rx/map (fn [array-buffer] (store-font-buffer font-data array-buffer)))))
 
+(defn- google-font-ttf-url
+  [font-id font-variant-id]
+  (let [font (get @fonts/fontsdb font-id)
+        variant (d/seek (fn [variant]
+                          (= (:id variant) font-variant-id))
+                        (:variants font))
+        file (-> (:ttf-url variant)
+                 (str/replace "http://fonts.gstatic.com/s/" (u/join cf/public-uri "/internal/gfonts/font/")))]
+    file))
+
+(defn- font-id->ttf-url
+  [font-id font-variant-id]
+  (if (str/starts-with? font-id "gfont-")
+    ;; if font-id is a google font (starts with gfont-), we need to get the ttf url from Google Fonts API.
+    (google-font-ttf-url font-id font-variant-id)
+    ;; otherwise, we return the font from our public-uri
+    (str (u/join cf/public-uri "assets/by-id/" font-id))))
+
 (defn- store-font-id
   [font-data asset-id]
   (when asset-id
-    (let [uri (str (u/join cf/public-uri "assets/by-id/" asset-id))
-          id-buffer (uuid/get-u32 (:family-id font-data))
+    (let [uri (font-id->ttf-url asset-id (:font-variant-id font-data))
+          id-buffer (uuid/get-u32 (:wasm-id font-data))
           font-data (assoc font-data :family-id-buffer id-buffer)
           font-stored? (not= 0 (h/call internal-module "_is_font_uploaded"
                                        (aget id-buffer 0)
@@ -670,17 +708,6 @@
   (let [encoder (js/TextEncoder.)]
     (.encode encoder text)))
 
-(def ^:private fonts
-  (l/derived :fonts st/state))
-
-(defn ^:private font->ttf-id [font-uuid font-style font-weight]
-  (let [matching-font (d/seek (fn [[_ font]]
-                                (and (= (:font-id font) font-uuid)
-                                     (= (:font-style font) font-style)
-                                     (= (:font-weight font) font-weight)))
-                              (seq @fonts))]
-    (when matching-font
-      (:ttf-file-id (second matching-font)))))
 
 (defn- serialize-font-style
   [font-style]
@@ -692,9 +719,12 @@
 
 (defn- serialize-font-id
   [font-id]
-  (let [no-prefix (subs font-id (inc (str/index-of font-id "-")))
-        as-uuid (uuid/uuid no-prefix)]
-    (uuid/get-u32 as-uuid)))
+  (let [google-font? (str/starts-with? font-id "gfont-")]
+    (if google-font?
+      (uuid/get-u32 (google-font-id->uuid font-id))
+      (let [no-prefix (subs font-id (inc (str/index-of font-id "-")))
+            as-uuid (uuid/uuid no-prefix)]
+        (uuid/get-u32 as-uuid)))))
 
 (defn- serialize-font-weight
   [font-weight]
@@ -723,17 +753,25 @@
   [fonts]
   (keep (fn [font]
           (let [font-id (dm/get-prop font :font-id)
-                font-variant (dm/get-prop font :font-variant-id)
-                variant-parts (str/split font-variant #"\-")
+                google-font? (str/starts-with? font-id "gfont-")
+                font-variant-id (dm/get-prop font :font-variant-id)
+                variant-parts (str/split font-variant-id #"\-")
+                variant-parts (if (= (count variant-parts) 1)
+                                (conj variant-parts "400")
+                                variant-parts)
                 style (first variant-parts)
                 weight (serialize-font-weight (last variant-parts))
-                font-id (subs font-id (inc (str/index-of font-id "-")))
-                font-id (uuid/uuid font-id)
-                ttf-id (font->ttf-id font-id style weight)
+                font-id (if google-font?
+                          font-id
+                          (uuid/uuid (subs font-id (inc (str/index-of font-id "-")))))
+                asset-id (font->ttf-id font-id style weight)
+                wasm-id (if google-font? (google-font-id->uuid font-id) font-id)
                 font-data {:family-id font-id
+                           :wasm-id wasm-id
+                           :font-variant-id font-variant-id
                            :style (serialize-font-style style)
                            :weight weight}]
-            (store-font-id font-data ttf-id))) fonts))
+            (store-font-id font-data asset-id))) fonts))
 
 (defn set-shape-text-content [content]
   (h/call internal-module "_clear_shape_text")
@@ -1011,3 +1049,4 @@
                        (js/console.error cause)
                        (p/resolved false)))))
       (p/resolved false))))
+

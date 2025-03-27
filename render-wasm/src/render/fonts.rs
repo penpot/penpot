@@ -66,6 +66,8 @@ impl FontStore {
             return Ok(());
         }
 
+        println!("Adding font: {:?}", family);
+
         let alias = format!("{}", family);
         let typeface = self
             .font_mgr
