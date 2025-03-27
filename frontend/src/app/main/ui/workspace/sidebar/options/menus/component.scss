@@ -716,22 +716,19 @@
   gap: var(--sp-xs);
 }
 
-.variant-property-name-bg {
-  border-radius: $br-8;
-  background-color: var(--assets-item-background-color);
-}
-
 .variant-property-name {
   color: var(--color-foreground-primary);
-
-  width: $s-104;
+  height: var(--sp-xxxl);
 
   display: flex;
   align-items: center;
   justify-content: center;
-  height: var(--sp-xxxl);
 
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.variant-property-name-width {
+  width: $s-104;
 }

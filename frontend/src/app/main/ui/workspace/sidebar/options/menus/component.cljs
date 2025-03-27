@@ -281,25 +281,40 @@
          (fn [pos value]
            (st/emit! (dwv/update-property-value id-component pos value))))
 
+        update-property-name
+        (mf/use-fn
+         (mf/deps variant-id)
+         (fn [event]
+           (let [value (dom/get-target-val event)
+                 pos   (-> (dom/get-current-target event)
+                           (dom/get-data "position")
+                           int)]
+             (st/emit! (dwv/update-property-name variant-id pos value)))))
+
         switch-component
         (mf/use-fn
          (mf/deps shape)
          (fn [id]
            (st/emit! (dwl/component-swap shape (:component-file shape) id))))]
+
     [:*
      (for [[pos prop] (map vector (range) properties)]
 
        [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-container)}
         (if (ctk/main-instance? shape)
           [:*
-           [:span {:class (stl/css :variant-property-name :variant-property-name-bg)} (:name prop)]
+           [:div {:class (stl/css :variant-property-name-width)}
+            [:> input-with-values* {:name (:name prop)
+                                    :data-position pos
+                                    :on-blur update-property-name}]]
            [:> combobox* {:id (str "variant-prop-" (:id shape) pos)
                           :default-selected (if (str/empty? (:value prop)) "--" (:value prop))
                           :options (clj->js (get-options (:name prop)))
                           :on-change (partial change-property-value pos)}]]
 
           [:*
-           [:span {:class (stl/css :variant-property-name)} (:name prop)]
+           [:span {:class (stl/css :variant-property-name :variant-property-name-width)}
+            (:name prop)]
            [:& select {:default-value id-component
                        :options (filter-matching id-component (keyword (:name prop)))
                        :on-change switch-component}]])])]))
