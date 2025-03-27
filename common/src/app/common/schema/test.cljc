@@ -56,13 +56,8 @@
              (str "(pass=TRUE, tests=" (:num-tests params)  ", seed=" (:seed params) ", elapsed=" time "ms)"))))
 
 (defmethod ct/report #?(:clj ::thrunk :cljs [:cljs.test/default ::thrunk])
-  [{:keys [::params] :as m}]
-  (let [smallest (-> params :shrunk :smallest vec)]
-    (println)
-    (println "Condition failed with the following params:")
-    (println "Seed:" (:seed params))
-    (println)
-    (pp/pprint smallest)))
+  [_]
+  nil)
 
 (defmethod ct/report #?(:clj ::trial :cljs [:cljs.test/default ::trial])
   [_]
@@ -76,9 +71,12 @@
   (let [tvar (get-testing-var)
         tsym (get-testing-sym tvar)
         res  (:result params)]
-    (println)
+
+    (println "---------------------------------------------------------")
     (println "Generative test:" (str "'" tsym "'")
              (str "(pass=FALSE, tests=" (:num-tests params)  ", seed=" (:seed params)  ")"))
+    (pp/pprint (:fail params))
+    (println "---------------------------------------------------------")
 
     (when (ex/exception? res)
       #?(:clj (ex/print-throwable res)
