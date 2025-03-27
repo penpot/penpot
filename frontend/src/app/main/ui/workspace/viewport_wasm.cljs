@@ -291,10 +291,6 @@
       (when @canvas-init?
         (wasm.api/resize-viewbox (:width vport) (:height vport))))
 
-    (mf/with-effect [@canvas-init?  base-objects]
-      (when (and @canvas-init? @initialized?)
-        (wasm.api/set-objects base-objects)))
-
     (mf/with-effect [@canvas-init? preview-blend]
       (when (and @canvas-init? preview-blend)
         (wasm.api/request-render "with-effect")))

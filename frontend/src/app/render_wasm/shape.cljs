@@ -120,13 +120,14 @@
                       (api/set-shape-clip-content false))
       :rotation     (api/set-shape-rotation v)
       :transform    (api/set-shape-transform v)
-      :fills        (api/set-shape-fills v)
-      :strokes      (api/set-shape-strokes v)
+      :fills        (into [] (api/set-shape-fills v))
+      :strokes      (into [] (api/set-shape-strokes v))
       :blend-mode   (api/set-shape-blend-mode v)
       :opacity      (api/set-shape-opacity v)
       :hidden       (api/set-shape-hidden v)
       :shapes       (api/set-shape-children v)
       :blur         (api/set-shape-blur v)
+      :shadow       (api/set-shape-shadows v)
       :constraints-h (api/set-constraints-h v)
       :constraints-v (api/set-constraints-v v)
 
@@ -139,12 +140,17 @@
                       (api/set-shape-path-content v)
 
                       (= (:type self) :svg-raw)
-                      (api/set-shape-svg-raw-content (api/get-static-markup self)))
+                      (api/set-shape-svg-raw-content (api/get-static-markup self))
+
+                      (= (:type self) :text)
+                      (into [] (api/set-shape-text-content v)))
       nil)
     ;; when something synced with wasm
     ;; is modified, we need to request
     ;; a new render.
-    (api/clear-drawing-cache)
+    ;; TODO: set-wasm-attrs is called twice with every set
+    ;; (println "set-wasm-attrs" (:id self) k v)
+    (api/update-shape-tiles)
     (api/request-render "set-wasm-attrs")))
 
 (defn- impl-assoc

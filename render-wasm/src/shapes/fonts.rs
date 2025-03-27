@@ -1,6 +1,6 @@
 use std::fmt;
 
-use uuid::Uuid;
+use crate::uuid::Uuid;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum FontStyle {

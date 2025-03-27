@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use skia_safe as skia;
-use uuid::Uuid;
 
 use crate::render::RenderState;
 use crate::shapes::Shape;
+use crate::uuid::Uuid;
 
 /// This struct holds the state of the Rust application between JS calls.
 ///
@@ -59,6 +59,20 @@ impl<'a> State<'a> {
         self.current_shape = self.shapes.get_mut(&id);
     }
 
+    pub fn delete_shape(&mut self, id: Uuid) {
+        // We don't really do a self.shapes.remove so that redo/undo keep working
+        if let Some(shape) = self.shapes.get(&id) {
+            let (rsx, rsy, rex, rey) = self.render_state.get_tiles_for_rect(&shape);
+            for x in rsx..=rex {
+                for y in rsy..=rey {
+                    let tile = (x, y);
+                    self.render_state.surfaces.remove_cached_tile_surface(tile);
+                    self.render_state.tiles.remove_shape_at(tile, id);
+                }
+            }
+        }
+    }
+
     pub fn current_shape(&mut self) -> Option<&mut Shape> {
         self.current_shape.as_deref_mut()
     }
@@ -73,6 +87,19 @@ impl<'a> State<'a> {
                 shape.set_selrect(left, top, right, bottom);
                 // We don't need to update the tile for the root shape.
                 if !shape.id.is_nil() {
+                    self.render_state.update_tile_for(&shape);
+                }
+            }
+            None => panic!("Invalid current shape"),
+        }
+    }
+
+    pub fn update_tile_for_current_shape(&mut self) {
+        match self.current_shape.as_mut() {
+            Some(shape) => {
+                // We don't need to update the tile for the root shape.
+                // We can also have deleted the selected shape
+                if !shape.id.is_nil() && self.shapes.contains_key(&shape.id) {
                     self.render_state.update_tile_for(&shape);
                 }
             }

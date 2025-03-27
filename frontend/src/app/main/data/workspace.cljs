@@ -85,6 +85,7 @@
    [app.main.streams :as ms]
    [app.main.worker :as uw]
    [app.render-wasm :as wasm]
+   [app.render-wasm.api :as api]
    [app.util.code-gen.style-css :as css]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
@@ -348,8 +349,10 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (log/debug :hint "initialize-workspace" :file-id (dm/str file-id))
-      (let [stoper-s (rx/filter (ptk/type? ::finalize-workspace) stream)
-            rparams  (rt/get-params state)]
+      (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
+            rparams      (rt/get-params state)
+            features     (features/get-team-enabled-features state)
+            render-wasm? (contains? features "render-wasm/v1")]
 
         (->> (rx/merge
               (rx/of (ntf/hide)
@@ -395,6 +398,13 @@
                    (rx/filter dch/commit?)
                    (rx/map deref)
                    (rx/mapcat (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo?]}]
+                                (when render-wasm?
+                                  (let [added (->> redo-changes
+                                                   (filter #(= (:type %) :add-obj))
+                                                   (map :obj))]
+                                    (doseq [shape added]
+                                      (api/set-object [] shape))))
+
                                 (if (and save-undo? (seq undo-changes))
                                   (let [entry {:undo-changes undo-changes
                                                :redo-changes redo-changes

@@ -1,9 +1,8 @@
-use skia_safe as skia;
-use std::collections::{HashMap, HashSet};
-use uuid::Uuid;
-
+use crate::uuid::Uuid;
 use crate::view::Viewbox;
 use indexmap::IndexSet;
+use skia_safe as skia;
+use std::collections::{HashMap, HashSet};
 
 pub type Tile = (i32, i32);
 
@@ -62,6 +61,12 @@ impl TileHashMap {
 
     pub fn get_shapes_at(&mut self, tile: Tile) -> Option<&IndexSet<Uuid>> {
         return self.grid.get(&tile);
+    }
+
+    pub fn remove_shape_at(&mut self, tile: Tile, id: Uuid) {
+        if let Some(shapes) = self.grid.get_mut(&tile) {
+            shapes.shift_remove(&id);
+        }
     }
 
     pub fn get_tiles_of(&mut self, shape_id: Uuid) -> Option<&HashSet<Tile>> {

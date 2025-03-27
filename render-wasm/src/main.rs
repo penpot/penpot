@@ -8,13 +8,15 @@ mod render;
 mod shapes;
 mod state;
 mod utils;
+mod uuid;
 mod view;
 mod wasm;
 
 use crate::mem::SerializableResult;
 use crate::shapes::{BoolType, ConstraintH, ConstraintV, TransformEntry, Type};
-
 use crate::utils::uuid_from_u32_quartet;
+use crate::uuid::Uuid;
+use indexmap::IndexSet;
 use state::State;
 
 pub(crate) static mut STATE: Option<Box<State>> = None;
@@ -198,6 +200,28 @@ pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
     with_current_shape!(state, |shape: &mut Shape| {
         let id = uuid_from_u32_quartet(a, b, c, d);
         shape.add_child(id);
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn set_children() {
+    let bytes = mem::bytes();
+    let entries: IndexSet<Uuid> = bytes
+        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
+        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    let mut deleted = IndexSet::new();
+
+    with_current_shape!(state, |shape: &mut Shape| {
+        (_, deleted) = shape.compute_children_differences(&entries);
+        shape.children = entries.clone();
+    });
+
+    with_state!(state, {
+        for id in deleted {
+            state.delete_shape(id);
+        }
     });
 }
 
@@ -618,6 +642,13 @@ pub extern "C" fn add_shape_shadow(
 pub extern "C" fn clear_shape_shadows() {
     with_current_shape!(state, |shape: &mut Shape| {
         shape.clear_shadows();
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn update_shape_tiles() {
+    with_state!(state, {
+        state.update_tile_for_current_shape();
     });
 }
 

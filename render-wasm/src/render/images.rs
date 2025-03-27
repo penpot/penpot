@@ -1,6 +1,6 @@
+use crate::uuid::Uuid;
 use skia_safe as skia;
 use std::collections::HashMap;
-use uuid::Uuid;
 
 pub type Image = skia::Image;
 

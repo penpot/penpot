@@ -1,8 +1,8 @@
 #![allow(dead_code, unused_variables)]
 use crate::math::{Bounds, Matrix, Point, Vector, VectorExt};
 use crate::shapes::{GridData, LayoutData, Modifier, Shape};
+use crate::uuid::Uuid;
 use std::collections::{HashMap, VecDeque};
-use uuid::Uuid;
 
 use super::common::GetBounds;
 
