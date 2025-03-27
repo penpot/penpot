@@ -238,6 +238,14 @@ impl Surfaces {
             .reset_matrix();
     }
 
+    pub fn cache_clear_visited(&mut self) {
+        self.tiles.clear_visited();
+    }
+
+    pub fn cache_visit(&mut self, tile: Tile) {
+        self.tiles.visit(tile);
+    }
+
     pub fn cache_tile_surface(&mut self, tile: Tile, id: SurfaceId, color: skia::Color) {
         let sampling_options = self.sampling_options;
         let mut tile_surface = self.tiles.get_or_create(tile).unwrap();
@@ -272,12 +280,24 @@ impl Surfaces {
     }
 
     pub fn remove_cached_tiles(&mut self) {
-        self.tiles.clear();
+        self.tiles.clear_grid();
     }
 }
 
 pub struct SurfaceRef {
+    pub index: usize,
+    pub in_use: bool,
     pub surface: skia::Surface,
+}
+
+impl Clone for SurfaceRef {
+    fn clone(&self) -> Self {
+        Self {
+            index: self.index,
+            in_use: self.in_use,
+            surface: self.surface.clone(),
+        }
+    }
 }
 
 pub struct SurfacePool {
@@ -292,25 +312,47 @@ impl SurfacePool {
             surfaces.push(surface.new_surface_with_dimensions(dims).unwrap())
         }
 
-        SurfacePool {
+        Self {
             index: 0,
             surfaces: surfaces
                 .into_iter()
-                .map(|surface| SurfaceRef { surface: surface })
+                .enumerate()
+                .map(|(index, surface)| SurfaceRef {
+                    index,
+                    in_use: false,
+                    surface: surface,
+                })
                 .collect(),
         }
     }
 
-    pub fn allocate(&mut self) -> Result<skia::Surface, String> {
+    pub fn clear(&mut self) {
+        for surface in self.surfaces.iter_mut() {
+            surface.in_use = false;
+        }
+    }
+
+    pub fn deallocate(&mut self, surface_ref_to_deallocate: &SurfaceRef) {
+        let surface_ref = self
+            .surfaces
+            .get_mut(surface_ref_to_deallocate.index)
+            .unwrap();
+        surface_ref.in_use = false;
+    }
+
+    pub fn allocate(&mut self) -> Option<SurfaceRef> {
         let start = self.index;
         let len = self.surfaces.len();
         loop {
             self.index = (self.index + 1) % len;
             if self.index == start {
-                return Err("Not enough surfaces in the pool".into());
+                return None;
             }
-            if let Some(surface_ref) = self.surfaces.get(self.index) {
-                return Ok(surface_ref.surface.clone());
+            if let Some(surface_ref) = self.surfaces.get_mut(self.index) {
+                if !surface_ref.in_use {
+                    surface_ref.in_use = true;
+                    return Some(surface_ref.clone());
+                }
             }
         }
     }
@@ -318,14 +360,16 @@ impl SurfacePool {
 
 pub struct TileSurfaceCache {
     pool: SurfacePool,
-    grid: HashMap<Tile, skia::Surface>,
+    grid: HashMap<Tile, SurfaceRef>,
+    visited: HashMap<Tile, bool>,
 }
 
 impl TileSurfaceCache {
     pub fn new(pool: SurfacePool) -> Self {
-        TileSurfaceCache {
+        Self {
             pool,
             grid: HashMap::new(),
+            visited: HashMap::new(),
         }
     }
 
@@ -334,13 +378,30 @@ impl TileSurfaceCache {
     }
 
     pub fn get_or_create(&mut self, tile: Tile) -> Result<skia::Surface, String> {
-        let surface = self.pool.allocate()?;
-        self.grid.insert(tile, surface.clone());
-        Ok(surface)
+        if let Some(surface_ref) = self.pool.allocate() {
+            self.grid.insert(tile, surface_ref.clone());
+            Ok(surface_ref.surface.clone())
+        } else {
+            // TODO: I don't know yet how to improve this but I don't like it. I think
+            // there should be a better solution.
+            for (tile, surface_ref) in self.grid.iter() {
+                if !self.visited.contains_key(tile) {
+                    continue;
+                }
+                if !self.visited.get(tile).unwrap() {
+                    self.pool.deallocate(surface_ref);
+                }
+            }
+            if let Some(surface_ref) = self.pool.allocate() {
+                self.grid.insert(tile, surface_ref.clone());
+                return Ok(surface_ref.surface.clone());
+            }
+            return Err("Not enough surfaces".into());
+        }
     }
 
     pub fn get(&mut self, tile: Tile) -> Result<&mut skia::Surface, String> {
-        Ok(self.grid.get_mut(&tile).unwrap())
+        Ok(&mut self.grid.get_mut(&tile).unwrap().surface)
     }
 
     pub fn remove(&mut self, tile: Tile) -> bool {
@@ -351,7 +412,16 @@ impl TileSurfaceCache {
         true
     }
 
-    pub fn clear(&mut self) {
+    pub fn clear_grid(&mut self) {
         self.grid.clear();
+        self.pool.clear();
+    }
+
+    pub fn clear_visited(&mut self) {
+        self.visited.clear();
+    }
+
+    pub fn visit(&mut self, tile: Tile) {
+        self.visited.insert(tile, true);
     }
 }
