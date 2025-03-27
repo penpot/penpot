@@ -62,7 +62,7 @@ impl Shadow {
         self.hidden
     }
 
-    pub fn to_paint(&self, scale: f32) -> skia::Paint {
+    pub fn to_paint(&self, scale: f32, antialias: bool) -> skia::Paint {
         let mut paint = skia::Paint::default();
 
         let image_filter = match self.style {
@@ -71,7 +71,7 @@ impl Shadow {
         };
 
         paint.set_image_filter(image_filter);
-        paint.set_anti_alias(true);
+        paint.set_anti_alias(antialias);
 
         paint
     }
@@ -128,13 +128,13 @@ impl Shadow {
 
     // New methods for Drop Shadows
 
-    pub fn get_drop_shadow_paint(&self) -> skia::Paint {
+    pub fn get_drop_shadow_paint(&self, antialias: bool) -> skia::Paint {
         let mut paint = skia::Paint::default();
 
         let image_filter = self.get_drop_shadow_filter();
 
         paint.set_image_filter(image_filter);
-        paint.set_anti_alias(true);
+        paint.set_anti_alias(antialias);
 
         paint
     }
@@ -158,13 +158,13 @@ impl Shadow {
 
     // New methods for Inner Shadows
 
-    pub fn get_inner_shadow_paint(&self) -> skia::Paint {
+    pub fn get_inner_shadow_paint(&self, antialias: bool) -> skia::Paint {
         let mut paint = skia::Paint::default();
 
         let image_filter = self.get_inner_shadow_filter();
 
         paint.set_image_filter(image_filter);
-        paint.set_anti_alias(true);
+        paint.set_anti_alias(antialias);
 
         paint
     }

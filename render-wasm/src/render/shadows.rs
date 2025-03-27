@@ -3,27 +3,37 @@ use crate::shapes::{Shadow, Shape, Type};
 use skia_safe::{self as skia, Paint};
 
 // Drop Shadows
-pub fn render_drop_shadows(render_state: &mut RenderState, shape: &Shape) {
+pub fn render_drop_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
     if shape.has_fills() {
         for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
-            render_fill_drop_shadow(render_state, &shape, &shadow);
+            render_fill_drop_shadow(render_state, &shape, &shadow, antialias);
         }
     } else {
         let scale = render_state.get_scale();
         for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
-            render_stroke_drop_shadow(render_state, &shadow, scale);
+            render_stroke_drop_shadow(render_state, &shadow, scale, antialias);
         }
     }
 }
 
-fn render_fill_drop_shadow(render_state: &mut RenderState, shape: &Shape, shadow: &Shadow) {
-    let paint = &shadow.get_drop_shadow_paint();
+fn render_fill_drop_shadow(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    shadow: &Shadow,
+    antialias: bool,
+) {
+    let paint = &shadow.get_drop_shadow_paint(antialias);
     render_shadow_paint(render_state, shape, paint, SurfaceId::DropShadows);
 }
 
 // TODO: Stroke shadows
-fn render_stroke_drop_shadow(render_state: &mut RenderState, shadow: &Shadow, scale: f32) {
-    let shadow_paint = &shadow.to_paint(scale);
+fn render_stroke_drop_shadow(
+    render_state: &mut RenderState,
+    shadow: &Shadow,
+    scale: f32,
+    antialias: bool,
+) {
+    let shadow_paint = &shadow.to_paint(scale, antialias);
 
     render_state
         .surfaces
@@ -42,27 +52,37 @@ fn render_stroke_drop_shadow(render_state: &mut RenderState, shadow: &Shadow, sc
 }
 
 // Inner Shadows
-pub fn render_inner_shadows(render_state: &mut RenderState, shape: &Shape) {
+pub fn render_inner_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
     if shape.has_fills() {
         for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
-            render_fill_inner_shadow(render_state, &shape, &shadow);
+            render_fill_inner_shadow(render_state, &shape, &shadow, antialias);
         }
     } else {
         let scale = render_state.get_scale();
         for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
-            render_stroke_inner_shadow(render_state, &shadow, scale);
+            render_stroke_inner_shadow(render_state, &shadow, scale, antialias);
         }
     }
 }
 
-fn render_fill_inner_shadow(render_state: &mut RenderState, shape: &Shape, shadow: &Shadow) {
-    let paint = &shadow.get_inner_shadow_paint();
+fn render_fill_inner_shadow(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    shadow: &Shadow,
+    antialias: bool,
+) {
+    let paint = &shadow.get_inner_shadow_paint(antialias);
     render_shadow_paint(render_state, shape, paint, SurfaceId::InnerShadows);
 }
 
 // TODO: Stroke shadows
-fn render_stroke_inner_shadow(render_state: &mut RenderState, shadow: &Shadow, scale: f32) {
-    let shadow_paint = &shadow.to_paint(scale);
+fn render_stroke_inner_shadow(
+    render_state: &mut RenderState,
+    shadow: &Shadow,
+    scale: f32,
+    antialias: bool,
+) {
+    let shadow_paint = &shadow.to_paint(scale, antialias);
 
     render_state
         .surfaces
