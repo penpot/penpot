@@ -25,6 +25,7 @@
    [app.main.data.workspace.path.streams :as streams]
    [app.main.data.workspace.path.undo :as undo]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.features :as features]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
    [app.util.path.tools :as upt]
@@ -65,7 +66,8 @@
             point-change (->> (map hash-map old-points new-points) (reduce merge))]
 
         (when (and (some? new-content) (some? shape))
-          (let [changes (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
+          (let [features (features/get-team-enabled-features state)
+                changes  (changes/generate-path-changes it features objects page-id shape (:content shape) new-content)]
             (if (empty? new-content)
               (rx/of (dch/commit-changes changes)
                      (dwe/clear-edition-mode))

@@ -55,8 +55,7 @@
              (vec
               #?(:cljs (js/Int8Array. (.-buffer pdata))
                  :clj  (.array (.-buffer pdata))))))
-    (t/is (= (->> sample-content
-                  (mapv path/map->PathSegment))
+    (t/is (= sample-content
              (vec pdata)))))
 
 (t/deftest path-data-transit-roundtrip

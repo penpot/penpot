@@ -11,6 +11,9 @@
    [app.main.data.workspace.path.state :as st]
    [potok.v2.core :as ptk]))
 
+;; FIXME: deprecated, should be replaced with shemas and helpers
+;; defined on app.common.types.shape.path
+
 (def valid-commands
   #{:move-to
     :line-to
@@ -22,8 +25,6 @@
     :smooth-quadratic-bezier-curve-to
     :elliptical-arc
     :close-path})
-
-;; FIXME: should this schema be defined on common.types ?
 
 (def ^:private
   schema:path-content

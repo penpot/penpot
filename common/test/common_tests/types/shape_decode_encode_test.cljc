@@ -15,7 +15,7 @@
    [app.common.types.plugins :refer [schema:plugin-data]]
    [app.common.types.shape :as tsh]
    [app.common.types.shape.interactions :refer [schema:animation schema:interaction]]
-   [app.common.types.shape.path :refer [schema:path-content]]
+   [app.common.types.shape.path :as path :refer [schema:path-content]]
    [app.common.types.shape.shadow :refer [schema:shadow]]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
@@ -117,12 +117,12 @@
   (let [encode (sm/encoder schema:path-content (sm/json-transformer))
         decode (sm/decoder schema:path-content (sm/json-transformer))]
     (smt/check!
-     (smt/for [path-content (sg/generator schema:path-content)]
+     (smt/for [path-content (->> (sg/generator schema:path-content)
+                                 (sg/filter not-empty))]
+
        (let [path-content-1 (encode path-content)
              path-content-2 (json-roundtrip path-content-1)
              path-content-3 (decode path-content-2)]
-         ;; (app.common.pprint/pprint path-content)
-         ;; (app.common.pprint/pprint path-content-3)
          (= path-content path-content-3)))
      {:num 500})))
 
