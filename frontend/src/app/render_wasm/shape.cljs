@@ -114,7 +114,6 @@
       :parent-id    (api/set-parent-id v)
       :type         (api/set-shape-type v)
       :bool-type    (api/set-shape-bool-type v)
-      :bool-content (api/set-shape-bool-content v)
       :selrect      (api/set-shape-selrect v)
       :show-content (if (= (:type self) :frame)
                       (api/set-shape-clip-content (not v))
