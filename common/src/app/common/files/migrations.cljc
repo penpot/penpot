@@ -1247,9 +1247,11 @@
             ;; rollback, we still need to perform an other migration
             ;; for properly delete the bool-content prop from shapes
             ;; once the know the migration was OK
-            (if-let [content (:bool-content object)]
-              (assoc object :content content)
-              object))
+            (if (cfh/bool-shape? object)
+              (if-let [content (:bool-content object)]
+                (assoc object :content content)
+                object)
+              (dissoc object :bool-content :bool-type)))
 
           (update-container [container]
             (d/update-when container :objects update-vals update-object))]
