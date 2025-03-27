@@ -380,7 +380,10 @@ impl RenderState {
                 }
             }
             Type::Text(text_content) => {
-                text::render(self, text_content);
+                self.surfaces.apply_mut(&[SurfaceId::Fills], |s| {
+                    s.canvas().concat(&matrix);
+                });
+                text::render(self, &shape, text_content);
             }
             _ => {
                 self.surfaces.apply_mut(
@@ -594,6 +597,7 @@ impl RenderState {
         }
         let scale = self.get_scale();
         let mut should_stop = false;
+
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
                 if self.surfaces.has_cached_tile_surface(current_tile) {

@@ -26,14 +26,17 @@ impl TextContent {
         self.bounds = Rect::from_xywh(x, y, w, h);
     }
 
+    #[allow(dead_code)]
     pub fn width(&self) -> f32 {
         self.bounds.width()
     }
 
+    #[allow(dead_code)]
     pub fn x(&self) -> f32 {
         self.bounds.x()
     }
 
+    #[allow(dead_code)]
     pub fn y(&self) -> f32 {
         self.bounds.y()
     }
