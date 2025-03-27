@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-27 10:01+0000\n"
+"PO-Revision-Date: 2025-03-28 11:01+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -5519,7 +5519,7 @@ msgstr "kompakts"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
 msgid "workspace.options.layout.padding"
-msgstr "Papildināšana"
+msgstr "Atbīde"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
@@ -5529,7 +5529,7 @@ msgstr "Visas malas"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
 msgid "workspace.options.layout.padding-simple"
-msgstr "Vienkāršā papildināšana"
+msgstr "Vienkārša atbīde"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
@@ -6509,7 +6509,6 @@ msgid "workspace.token.no-themes-currently"
 msgstr "Pašlaik nav izskatu."
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.token.original-value"
 msgstr "Sākotnējā vērtība: %s"
 
@@ -7146,3 +7145,56 @@ msgstr "Kļūda: "
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:109
 msgid "workspace.token.group-name"
 msgstr "Kopas nosaukums"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:426, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:432
+msgid "workspace.layout_grid.editor.padding.bottom"
+msgstr "Apakšējā atbīde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:351, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:358
+msgid "workspace.layout_grid.editor.padding.horizontal"
+msgstr "Guleniskā atbīde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:441, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:447
+msgid "workspace.layout_grid.editor.padding.left"
+msgstr "Kreisā atbīde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:411, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:417
+msgid "workspace.layout_grid.editor.padding.right"
+msgstr "Labā atbīde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:337, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:343
+msgid "workspace.layout_grid.editor.padding.vertical"
+msgstr "Stateniskā atbīde"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:153
+msgid "workspace.token.num-active-sets"
+msgstr "%s spēkā esošas kopas"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:33
+msgid "workspace.token.number-too-large"
+msgstr "Nederīga tekstvienības vērtība. Aprēķinātā vērtība ir pārāk liela: %s"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:177
+msgid "workspace.token.paddings"
+msgstr "Atbīdes"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:37
+msgid "workspace.token.missing-references"
+msgstr "Trūkst tekstvienību atsauces: "
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:396, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:402
+msgid "workspace.layout_grid.editor.padding.top"
+msgstr "Augšējā atbīde"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:154
+msgid "workspace.token.no-active-sets"
+msgstr "Nav spēkā esošu kopu"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:216
+msgid "workspace.token.min-size"
+msgstr "Mazākais lielums"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:45
+msgid "workspace.token.opacity-range"
+msgstr ""
+"Necaurspīdīgumam ir jābūt starp 0 un 100 % vai 0 un 1 (piem., 50% jeb 0.5)."
