@@ -7,7 +7,8 @@
 (ns app.main.ui.shapes.bool
   (:require
    [app.common.data.macros :as dm]
-   [app.common.geom.shapes :as gsh]
+   [app.common.types.path :as path]
+
    [app.main.ui.hooks :as h]
    [app.main.ui.shapes.export :as use]
    [app.main.ui.shapes.path :refer [path-shape]]
@@ -30,7 +31,7 @@
                           content
 
                           (some? child-objs)
-                          (gsh/calc-bool-content shape child-objs))))
+                          (path/calc-bool-content shape child-objs))))
 
           shape     (mf/with-memo [shape content]
                       (assoc shape :content content))]

@@ -16,7 +16,6 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.text :as gsht]
    [app.common.logging :as l]
    [app.common.math :as mth]
@@ -27,6 +26,8 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.path :as path]
+   [app.common.types.path.segment :as path.segment]
    [app.common.types.shape :as cts]
    [app.common.types.shape.shadow :as ctss]
    [app.common.uuid :as uuid]
@@ -127,8 +128,8 @@
   [data _]
   (letfn [(migrate-path [shape]
             (if-not (contains? shape :content)
-              (let [content (gsp/segments->content (:segments shape) (:close? shape))
-                    selrect (gsh/content->selrect content)
+              (let [content (path.segment/segments->content (:segments shape) (:close? shape))
+                    selrect (path.segment/content->selrect content)
                     points  (grc/rect->points selrect)]
                 (-> shape
                     (dissoc :segments)
@@ -199,7 +200,7 @@
             (if (= (:type shape) :path)
               (let [{:keys [width height]} (grc/points->rect (:points shape))]
                 (if (or (mth/almost-zero? width) (mth/almost-zero? height))
-                  (let [selrect (gsh/content->selrect (:content shape))
+                  (let [selrect (path.segment/content->selrect (:content shape))
                         points (grc/rect->points selrect)
                         transform (gmt/matrix)
                         transform-inv (gmt/matrix)]
@@ -1260,6 +1261,21 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
+(defmethod migrate-data "0003-convert-path-content"
+  [data _]
+  (letfn [(update-object [object]
+            (if (or (cfh/bool-shape? object)
+                    (cfh/path-shape? object))
+              (update object :content path/content)
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1315,4 +1331,5 @@
          "legacy-66"
          "legacy-67"
          "0001-remove-tokens-from-groups"
-         "0002-normalize-bool-content"]))
+         "0002-normalize-bool-content"
+         "0003-convert-path-content"]))

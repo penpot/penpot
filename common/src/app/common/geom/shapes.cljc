@@ -10,13 +10,11 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
-   [app.common.geom.shapes.bool :as gsb]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.corners :as gsc]
    [app.common.geom.shapes.fit-frame :as gsff]
    [app.common.geom.shapes.intersect :as gsi]
-   [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]))
 
@@ -180,21 +178,12 @@
 ;; Constratins
 (dm/export gct/calc-child-modifiers)
 
-;; PATHS
-;; FIXME: rename
-(dm/export gsp/content->selrect)
-(dm/export gsp/transform-content)
-(dm/export gsp/open-path?)
-
 ;; Intersection
 (dm/export gsi/overlaps?)
 (dm/export gsi/overlaps-path?)
 (dm/export gsi/has-point?)
 (dm/export gsi/has-point-rect?)
 (dm/export gsi/rect-contains-shape?)
-
-;; Bool
-(dm/export gsb/calc-bool-content)
 
 ;; Constraints
 (dm/export gct/default-constraints-h)

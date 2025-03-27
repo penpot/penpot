@@ -7,15 +7,14 @@
 (ns app.main.ui.workspace.viewport.path-actions
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.types.path.segment :as path.segm]
    [app.main.data.workspace.path :as drp]
    [app.main.data.workspace.path.shortcuts :as sc]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.shapes.path.common :as pc]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.path.tools :as upt]
    [rumext.v2 :as mf]))
-
 
 (def ^:private pentool-icon
   (i/icon-xref :pentool (stl/css :pentool-icon :pathbar-icon)))
@@ -49,7 +48,7 @@
 
 
 (defn check-enabled [content selected-points]
-  (let [segments (upt/get-segments content selected-points)
+  (let [segments (path.segm/get-segments content selected-points)
         num-segments (count segments)
         num-points (count selected-points)
         points-selected? (seq selected-points)
@@ -58,7 +57,7 @@
         max-segments (-> num-points
                          (* (- num-points 1))
                          (/ 2))
-        is-curve? (some #(upt/is-curve? content %) selected-points)]
+        is-curve? (some #(path.segm/is-curve? content %) selected-points)]
 
     {:make-corner (and points-selected? is-curve?)
      :make-curve (and points-selected? (not is-curve?))

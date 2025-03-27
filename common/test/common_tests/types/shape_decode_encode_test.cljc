@@ -12,10 +12,10 @@
    [app.common.schema.generators :as sg]
    [app.common.schema.test :as smt]
    [app.common.types.color :refer [schema:color schema:gradient]]
+   [app.common.types.path :as path]
    [app.common.types.plugins :refer [schema:plugin-data]]
    [app.common.types.shape :as tsh]
    [app.common.types.shape.interactions :refer [schema:animation schema:interaction]]
-   [app.common.types.shape.path :refer [schema:path-content]]
    [app.common.types.shape.shadow :refer [schema:shadow]]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
@@ -112,17 +112,14 @@
          (= interaction interaction-3)))
      {:num 500})))
 
-
 (t/deftest shape-path-content-json-roundtrip
-  (let [encode (sm/encoder schema:path-content (sm/json-transformer))
-        decode (sm/decoder schema:path-content (sm/json-transformer))]
+  (let [encode (sm/encoder ::path/content (sm/json-transformer))
+        decode (sm/decoder ::path/content (sm/json-transformer))]
     (smt/check!
-     (smt/for [path-content (sg/generator schema:path-content)]
+     (smt/for [path-content (sg/generator ::path/content)]
        (let [path-content-1 (encode path-content)
              path-content-2 (json-roundtrip path-content-1)
              path-content-3 (decode path-content-2)]
-         ;; (app.common.pprint/pprint path-content)
-         ;; (app.common.pprint/pprint path-content-3)
          (= path-content path-content-3)))
      {:num 500})))
 

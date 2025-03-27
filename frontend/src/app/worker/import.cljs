@@ -11,13 +11,13 @@
    [app.common.exceptions :as ex]
    [app.common.files.builder :as fb]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as gpa]
    [app.common.json :as json]
    [app.common.logging :as log]
    [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.text :as ct]
    [app.common.time :as tm]
+   [app.common.types.path :as path]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
    [app.util.http :as http]
@@ -330,7 +330,7 @@
           (d/update-when :x + (:x frame))
           (d/update-when :y + (:y frame))
           (cond-> (= :path type)
-            (update :content gpa/move-content (gpt/point (:x frame) (:y frame)))))
+            (update :content path/move-content (gpt/point (:x frame) (:y frame)))))
 
       data)))
 

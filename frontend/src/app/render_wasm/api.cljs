@@ -11,8 +11,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
+   [app.common.types.path :as path]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.shape.path :as path]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.fonts :as fonts]
@@ -360,13 +360,14 @@
     (h/call wasm/internal-module "stringToUTF8" str offset size)
     (h/call wasm/internal-module "_set_shape_path_attrs" (count attrs))))
 
+;; FIXME: revisit on heap refactor is merged to use u32 instead u8
 (defn set-shape-path-content
   [content]
-  (let [pdata  (path/path-data content)
-        size   (* (count pdata) path/SEGMENT-BYTE-SIZE)
+  (let [pdata  (path/content content)
+        size   (path/get-byte-size content)
         offset (mem/alloc-bytes size)
         heap   (mem/get-heap-u8)]
-    (path/-write-to pdata (.-buffer heap) offset)
+    (path/write-to pdata (.-buffer heap) offset)
     (h/call wasm/internal-module "_set_shape_path_content")))
 
 (defn set-shape-svg-raw-content
@@ -375,8 +376,6 @@
         offset (mem/alloc-bytes size)]
     (h/call wasm/internal-module "stringToUTF8" content offset size)
     (h/call wasm/internal-module "_set_shape_svg_raw_content")))
-
-
 
 (defn set-shape-blend-mode
   [blend-mode]

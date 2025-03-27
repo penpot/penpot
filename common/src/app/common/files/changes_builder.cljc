@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.features :as cfeat]
    [app.common.files.changes :as cfc]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
