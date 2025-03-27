@@ -26,6 +26,7 @@
 }
 
 .name-wrapper {
+  @include use-typography("code-font");
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -41,6 +42,7 @@
 }
 
 .first-name-wrapper {
+  @include use-typography("code-font");
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -48,6 +50,7 @@
 }
 
 .last-name-wrapper {
+  @include use-typography("code-font");
   flex-shrink: 0;
 }
 
