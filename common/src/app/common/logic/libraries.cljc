@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.logic.libraries
+  #?(:cljs (:require-macros [app.common.logic.libraries :refer [shape-log container-log]]))
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -34,6 +35,33 @@
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
+
+(def log-shape-ids #{})
+(def log-container-ids #{})
+
+(defn enabled-shape?
+  [id container]
+  (or (empty? log-shape-ids)
+      (nil? id)
+      (let [ids (if container
+                  (into #{} (cfh/get-parent-ids-seq-with-self (:objects container) id))
+                  #{id})]
+        (seq (set/intersection log-shape-ids ids)))))
+
+(defmacro shape-log
+  [level id container & params]
+  `(when (enabled-shape? ~id ~container)
+     (log/log ~level ~@params)))
+
+(defn enabled-container?
+  [id]
+  (or (empty? log-container-ids)
+      (log-container-ids id)))
+
+(defmacro container-log
+  [level id & params]
+  `(when (enabled-container? ~id)
+     (log/log ~level ~@params)))
 
 (declare generate-sync-container)
 (declare generate-sync-shape)
@@ -72,10 +100,10 @@
 
 ;; ---- Components and instances creation ----
 
-(defn duplicate-component
+(defn- duplicate-component
   "Clone the root shape of the component and all children. Generate new
   ids from all of them."
-  [component new-component-id library-data]
+  [component new-component-id library-data force-id]
   (let [components-v2 (dm/get-in library-data [:options :components-v2])]
     (if components-v2
       (let [main-instance-page  (ctf/get-component-page library-data component)
@@ -111,7 +139,8 @@
                               (:parent-id main-instance-shape)
                               (:objects main-instance-page)
                               :update-new-shape update-new-shape
-                              :update-original-shape update-original-shape)
+                              :update-original-shape update-original-shape
+                              :force-id force-id)
 
             remap-frame
             (fn [shape]
@@ -151,7 +180,7 @@
 
 (defn generate-duplicate-component
   "Create a new component copied from the one with the given id."
-  [changes library component-id new-component-id components-v2]
+  [changes library component-id new-component-id components-v2 & {:keys [new-shape-id apply-changes-local-library?]}]
   (let [component          (ctkl/get-component (:data library) component-id)
         new-name           (:name component)
 
@@ -163,22 +192,34 @@
 
         [new-component-shape new-component-shapes  ; <- null in components-v2
          new-main-instance-shape new-main-instance-shapes]
-        (duplicate-component component new-component-id (:data library))]
+        (duplicate-component component new-component-id (:data library) new-shape-id)]
 
-    (-> changes
-        (pcb/with-page main-instance-page)
-        (pcb/with-objects (:objects main-instance-page))
-        (pcb/add-objects new-main-instance-shapes {:ignore-touched true})
-        (pcb/add-component (if components-v2
-                             new-component-id
-                             (:id new-component-shape))
-                           (:path component)
-                           new-name
-                           new-component-shapes
-                           []
-                           (:id new-main-instance-shape)
-                           (:id main-instance-page)
-                           (:annotation component)))))
+    [new-main-instance-shape
+     (-> changes
+         (pcb/with-page main-instance-page)
+         (pcb/with-objects (:objects main-instance-page))
+         (pcb/add-objects new-main-instance-shapes {:ignore-touched true})
+         (pcb/add-component (if components-v2
+                              new-component-id
+                              (:id new-component-shape))
+                            (:path component)
+                            new-name
+                            new-component-shapes
+                            []
+                            (:id new-main-instance-shape)
+                            (:id main-instance-page)
+                            (:annotation component)
+                            (:variant-id component)
+                            (:variant-properties component)
+                            {:apply-changes-local-library? apply-changes-local-library?})
+         ;; Update grid layout if the new main instance is inside
+         (pcb/update-shapes
+          [(:frame-id new-main-instance-shape)]
+          (fn [shape objects]
+            (cond-> shape
+              (ctl/grid-layout? shape)
+              (ctl/assign-cells objects)))
+          {:with-objects? true}))]))
 
 
 (defn generate-instantiate-component
@@ -258,7 +299,8 @@
   with a component."
   [changes container libraries shape-id]
   (let [shape (ctn/get-shape container shape-id)]
-    (log/debug :msg "Detach instance" :shape-id shape-id :container (:id container))
+    (shape-log :debug shape-id container
+               :msg "Detach instance" :shape-id shape-id :container (:id container))
     (generate-detach-recursive changes container libraries shape-id true (true? (:component-root shape)))))
 
 (defn- generate-detach-recursive
@@ -375,11 +417,12 @@
   (s/assert ::us/uuid file-id)
   (s/assert ::us/uuid library-id)
 
-  (log/info :msg "Sync file with library"
-            :asset-type asset-type
-            :asset-id asset-id
-            :file (pretty-file file-id libraries current-file-id)
-            :library (pretty-file library-id libraries current-file-id))
+  (container-log :info asset-id
+                 :msg "Sync file with library"
+                 :asset-type asset-type
+                 :asset-id asset-id
+                 :file (pretty-file file-id libraries current-file-id)
+                 :library (pretty-file library-id libraries current-file-id))
 
   (let [file          (get-in libraries [file-id :data])
         components-v2 (get-in file [:options :components-v2])]
@@ -413,11 +456,12 @@
   (s/assert ::us/uuid file-id)
   (s/assert ::us/uuid library-id)
 
-  (log/info :msg "Sync local components with library"
-            :asset-type asset-type
-            :asset-id asset-id
-            :file (pretty-file file-id libraries current-file-id)
-            :library (pretty-file library-id libraries current-file-id))
+  (container-log :info asset-id
+                 :msg "Sync local components with library"
+                 :asset-type asset-type
+                 :asset-id asset-id
+                 :file (pretty-file file-id libraries current-file-id)
+                 :library (pretty-file library-id libraries current-file-id))
 
   (let [file          (get-in libraries [file-id :data])
         components-v2 (get-in file [:options :components-v2])]
@@ -443,8 +487,8 @@
   [changes asset-type asset-id library-id container components-v2 libraries current-file-id]
 
   (if (cfh/page? container)
-    (log/debug :msg "Sync page in local file" :page-id (:id container))
-    (log/debug :msg "Sync component in local library" :component-id (:id container)))
+    (container-log :debug (:id container) :msg "Sync page in local file" :page-id (:id container))
+    (container-log :debug (:id container) :msg "Sync component in local library" :component-id (:id container)))
 
   (let [linked-shapes (->> (vals (:objects container))
                            (filter #(uses-assets? asset-type asset-id % library-id)))]
@@ -499,7 +543,7 @@
 
 (defmethod generate-sync-shape :colors
   [_ changes library-id _ shape _ libraries _]
-  (log/debug :msg "Sync colors of shape" :shape (:name shape))
+  (shape-log :debug (:id shape) nil :msg "Sync colors of shape" :shape (:name shape))
 
   ;; Synchronize a shape that uses some colors of the library. The value of the
   ;; color in the library is copied to the shape.
@@ -510,7 +554,7 @@
 
 (defmethod generate-sync-shape :typographies
   [_ changes library-id container shape _ libraries _]
-  (log/debug :msg "Sync typographies of shape" :shape (:name shape))
+  (shape-log :debug (:id shape) nil :msg "Sync typographies of shape" :shape (:name shape))
 
   ;; Synchronize a shape that uses some typographies of the library. The attributes
   ;; of the typography are copied to the shape."
@@ -672,7 +716,8 @@
   "Generate changes to synchronize one shape that is the root of a component
   instance, and all its children, from the given component."
   [changes file libraries container shape-id reset? components-v2]
-  (log/debug :msg "Sync shape direct" :shape-inst (str shape-id) :reset? reset?)
+  (shape-log :debug shape-id container
+             :msg "Sync shape direct" :shape-inst (str shape-id) :reset? reset?)
   (let [shape-inst (ctn/get-shape container shape-id)
         library    (dm/get-in libraries [(:component-file shape-inst) :data])
         component  (ctkl/get-component library (:component-id shape-inst) true)]
@@ -736,7 +781,8 @@
 
 (defn- generate-sync-shape-direct-recursive
   [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root? redirect-shaperef components-v2]
-  (log/debug :msg "Sync shape direct recursive"
+  (shape-log :debug (:id shape-inst) container
+             :msg "Sync shape direct recursive"
              :shape-inst (str (:name shape-inst) " " (pretty-uuid (:id shape-inst)))
              :component (:name component))
 
@@ -748,42 +794,35 @@
     (let [omit-touched?        (not reset?)
           clear-remote-synced? (and initial-root? reset?)
           set-remote-synced?   (and (not initial-root?) reset?)
-          changes (cond-> changes
-                    :always
-                    (update-attrs shape-inst
-                                  shape-main
-                                  root-inst
-                                  root-main
-                                  container
-                                  omit-touched?)
+          changes
+          (cond-> changes
+            :always
+            (update-attrs shape-inst
+                          shape-main
+                          root-inst
+                          root-main
+                          container
+                          omit-touched?)
 
-                    (ctl/flex-layout? shape-main)
-                    (update-flex-child-copy-attrs shape-main
-                                                  shape-inst
-                                                  library
-                                                  component
-                                                  container
-                                                  omit-touched?)
+            (ctl/flex-layout? shape-main)
+            (update-flex-child-copy-attrs shape-main
+                                          shape-inst
+                                          library
+                                          component
+                                          container
+                                          omit-touched?)
 
-                    (ctl/grid-layout? shape-main)
-                    (update-grid-copy-attrs shape-main
-                                            shape-inst
-                                            library
-                                            component
-                                            container
-                                            omit-touched?)
+            reset?
+            (change-touched shape-inst
+                            shape-main
+                            container
+                            {:reset-touched? true})
 
-                    reset?
-                    (change-touched shape-inst
-                                    shape-main
-                                    container
-                                    {:reset-touched? true})
+            clear-remote-synced?
+            (change-remote-synced shape-inst container nil)
 
-                    clear-remote-synced?
-                    (change-remote-synced shape-inst container nil)
-
-                    set-remote-synced?
-                    (change-remote-synced shape-inst container true))
+            set-remote-synced?
+            (change-remote-synced shape-inst container true))
 
           component-container (find-main-container container shape-inst shape-main library component)
 
@@ -794,7 +833,8 @@
                           (map #(redirect-shaperef %) children-inst) children-inst)
 
           only-inst (fn [changes child-inst]
-                      (log/trace :msg "Only inst"
+                      (shape-log :trace (:id child-inst) container
+                                 :msg "Only inst"
                                  :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst))))
                       (if-not (and omit-touched?
                                    (contains? (:touched shape-inst)
@@ -806,7 +846,8 @@
                         changes))
 
           only-main (fn [changes child-main]
-                      (log/trace :msg "Only main"
+                      (shape-log :trace (:id child-main) component-container
+                                 :msg "Only main"
                                  :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
                       (if-not (and omit-touched?
                                    (contains? (:touched shape-inst)
@@ -825,7 +866,8 @@
                         changes))
 
           both (fn [changes child-inst child-main]
-                 (log/trace :msg "Both"
+                 (shape-log :trace (:id child-inst) container
+                            :msg "Both"
                             :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
                             :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
                  (generate-sync-shape-direct-recursive changes
@@ -844,14 +886,16 @@
                                                        components-v2))
 
           swapped (fn [changes child-inst child-main]
-                    (log/trace :msg "Match slot"
+                    (shape-log :trace (:id child-inst) container
+                               :msg "Match slot"
                                :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
                                :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
                     ;; For now we don't make any sync here.
                     changes)
 
           moved (fn [changes child-inst child-main]
-                  (log/trace :msg "Move"
+                  (shape-log :trace (:id child-inst) container
+                             :msg "Move"
                              :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
                              :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
                   (move-shape
@@ -860,23 +904,37 @@
                    (d/index-of children-inst child-inst)
                    (d/index-of children-main child-main)
                    container
-                   omit-touched?))]
+                   omit-touched?))
 
-      (compare-children changes
-                        children-inst
-                        children-main
-                        container
-                        component-container
-                        file
-                        libraries
-                        only-inst
-                        only-main
-                        both
-                        swapped
-                        moved
-                        false
-                        reset?
-                        components-v2))))
+          changes
+          (compare-children changes
+                            shape-inst
+                            children-inst
+                            children-main
+                            container
+                            component-container
+                            file
+                            libraries
+                            only-inst
+                            only-main
+                            both
+                            swapped
+                            moved
+                            false
+                            reset?
+                            components-v2)
+
+          changes
+          (cond-> changes
+            (ctl/grid-layout? shape-inst)
+            (update-grid-copy-attrs
+             (:id shape-inst)
+             shape-main
+             library
+             component
+             omit-touched?))]
+
+      changes)))
 
 (defn generate-rename-component
   "Generate the changes for rename the component with the given id, in the current file library."
@@ -901,7 +959,7 @@
   "Generate changes to update the component a shape is linked to, from
   the values in the shape and all its children."
   [changes file libraries container shape-id components-v2]
-  (log/debug :msg "Sync shape inverse" :shape (str shape-id))
+  (shape-log :debug shape-id container :msg "Sync shape inverse" :shape (str shape-id))
   (let [redirect-shaperef (partial redirect-shaperef container libraries)
         shape-inst     (ctn/get-shape container shape-id)
         library        (dm/get-in libraries [(:component-file shape-inst) :data])
@@ -943,7 +1001,8 @@
 
 (defn- generate-sync-shape-inverse-recursive
   [changes container shape-inst component library file libraries shape-main root-inst root-main initial-root? redirect-shaperef components-v2]
-  (log/trace :msg "Sync shape inverse recursive"
+  (shape-log :trace (:id shape-inst) container
+             :msg "Sync shape inverse recursive"
              :shape (str (:name shape-inst))
              :component (:name component))
 
@@ -1036,7 +1095,8 @@
                                                         components-v2))
 
           swapped (fn [changes child-inst child-main]
-                    (log/trace :msg "Match slot"
+                    (shape-log :trace (:id child-inst) container
+                               :msg "Match slot"
                                :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
                                :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
                     ;; For now we don't make any sync here.
@@ -1053,6 +1113,7 @@
 
           changes
           (compare-children changes
+                            shape-inst
                             children-inst
                             children-main
                             container
@@ -1084,14 +1145,15 @@
 ;; ---- Operation generation helpers ----
 
 (defn- compare-children
-  [changes children-inst children-main container-inst container-main file libraries only-inst-cb only-main-cb both-cb swapped-cb moved-cb inverse? reset? components-v2]
-  (log/trace :msg "Compare children")
+  [changes shape-inst children-inst children-main container-inst container-main file libraries only-inst-cb only-main-cb both-cb swapped-cb moved-cb inverse? reset? components-v2]
+  (shape-log :trace (:id shape-inst) container-inst :msg "Compare children")
   (loop [children-inst (seq (or children-inst []))
          children-main (seq (or children-main []))
          changes       changes]
     (let [child-inst (first children-inst)
           child-main (first children-main)]
-      (log/trace :main (str (:name child-main) " " (pretty-uuid (:id child-main)))
+      (shape-log :trace (:id shape-inst) container-inst
+                 :main (str (:name child-main) " " (pretty-uuid (:id child-main)))
                  :inst (str (:name child-inst) " " (pretty-uuid (:id child-inst))))
       (cond
         (and (nil? child-inst) (nil? child-main))
@@ -1154,10 +1216,11 @@
 
 (defn- add-shape-to-instance
   [changes component-shape index component-page container root-instance root-main omit-touched? set-remote-synced? components-v2]
-  (log/info :msg (str "ADD [P " (pretty-uuid (:id container)) "] "
-                      (:name component-shape)
-                      " "
-                      (pretty-uuid (:id component-shape))))
+  (shape-log :info (:id component-shape) component-page
+             :msg (str "ADD [P " (pretty-uuid (:id container)) "] "
+                       (:name component-shape)
+                       " "
+                       (pretty-uuid (:id component-shape))))
   (let [component-parent-shape (ctn/get-shape component-page (:parent-id component-shape))
         parent-shape           (d/seek #(ctk/is-main-of? component-parent-shape % components-v2)
                                        (cfh/get-children-with-self (:objects container)
@@ -1229,10 +1292,11 @@
 
 (defn- add-shape-to-main
   [changes shape index component component-container page root-instance root-main components-v2]
-  (log/info :msg (str "ADD [C " (pretty-uuid (:id component-container)) "] "
-                      (:name shape)
-                      " "
-                      (pretty-uuid (:id shape))))
+  (shape-log :info (:id shape) page
+             :msg (str "ADD [C " (pretty-uuid (:id component-container)) "] "
+                       (:name shape)
+                       " "
+                       (pretty-uuid (:id shape))))
   (let [parent-shape           (ctn/get-shape page (:parent-id shape))
         component-parent-shape (d/seek #(ctk/is-main-of? % parent-shape components-v2)
                                        (cfh/get-children-with-self (:objects component-container)
@@ -1332,12 +1396,13 @@
 
 (defn- remove-shape
   [changes shape container omit-touched?]
-  (log/info :msg (str "REMOVE-SHAPE "
-                      (if (cfh/page? container) "[P " "[C ")
-                      (pretty-uuid (:id container)) "] "
-                      (:name shape)
-                      " "
-                      (pretty-uuid (:id shape))))
+  (shape-log :info (:id shape) container
+             :msg (str "REMOVE-SHAPE "
+                       (if (cfh/page? container) "[P " "[C ")
+                       (pretty-uuid (:id container)) "] "
+                       (:name shape)
+                       " "
+                       (pretty-uuid (:id shape))))
   (let [objects    (get container :objects)
         parents    (cfh/get-parent-ids objects (:id shape))
         parent     (first parents)
@@ -1384,16 +1449,17 @@
 
 (defn- move-shape
   [changes shape index-before index-after container omit-touched?]
-  (log/info :msg (str "MOVE "
-                      (if (cfh/page? container) "[P " "[C ")
-                      (pretty-uuid (:id container)) "] "
-                      (:name shape)
-                      " "
-                      (pretty-uuid (:id shape))
-                      " "
-                      index-before
-                      " -> "
-                      index-after))
+  (shape-log :info (:id shape) container
+             :msg (str "MOVE "
+                       (if (cfh/page? container) "[P " "[C ")
+                       (pretty-uuid (:id container)) "] "
+                       (:name shape)
+                       " "
+                       (pretty-uuid (:id shape))
+                       " "
+                       index-before
+                       " -> "
+                       index-after))
   (let [parent (ctn/get-shape container (:parent-id shape))
 
         changes' (-> changes
@@ -1424,13 +1490,14 @@
   (if (nil? (:shape-ref dest-shape))
     changes
     (do
-      (log/info :msg (str "CHANGE-TOUCHED "
-                          (if (cfh/page? container) "[P " "[C ")
-                          (pretty-uuid (:id container)) "] "
-                          (:name dest-shape)
-                          " "
-                          (pretty-uuid (:id dest-shape)))
-                :options options)
+      (shape-log :info (:id dest-shape) container
+                 :msg (str "CHANGE-TOUCHED "
+                           (if (cfh/page? container) "[P " "[C ")
+                           (pretty-uuid (:id container)) "] "
+                           (:name dest-shape)
+                           " "
+                           (pretty-uuid (:id dest-shape)))
+                 :options options)
       (let [new-touched (cond
                           reset-touched?
                           nil
@@ -1466,13 +1533,14 @@
   (if (nil? (:shape-ref shape))
     changes
     (do
-      (log/info :msg (str "CHANGE-REMOTE-SYNCED? "
-                          (if (cfh/page? container) "[P " "[C ")
-                          (pretty-uuid (:id container)) "] "
-                          (:name shape)
-                          " "
-                          (pretty-uuid (:id shape)))
-                :remote-synced remote-synced?)
+      (shape-log :info (:id shape) container
+                 :msg (str "CHANGE-REMOTE-SYNCED? "
+                           (if (cfh/page? container) "[P " "[C ")
+                           (pretty-uuid (:id container)) "] "
+                           (:name shape)
+                           " "
+                           (pretty-uuid (:id shape)))
+                 :remote-synced remote-synced?)
       (-> changes
           (update :redo-changes conj (make-change
                                       container
@@ -1535,16 +1603,17 @@
   in the destination shape will not be copied."
   [changes dest-shape origin-shape dest-root origin-root container omit-touched?]
 
-  (log/info :msg (str "SYNC "
-                      (:name origin-shape)
-                      " "
-                      (pretty-uuid (:id origin-shape))
-                      " -> "
-                      (if (cfh/page? container) "[P " "[C ")
-                      (pretty-uuid (:id container)) "] "
-                      (:name dest-shape)
-                      " "
-                      (pretty-uuid (:id dest-shape))))
+  (shape-log :info (:id dest-shape) container
+             :msg (str "SYNC "
+                       (:name origin-shape)
+                       " "
+                       (pretty-uuid (:id origin-shape))
+                       " -> "
+                       (if (cfh/page? container) "[P " "[C ")
+                       (pretty-uuid (:id container)) "] "
+                       (:name dest-shape)
+                       " "
+                       (pretty-uuid (:id dest-shape))))
 
   (let [;; To synchronize geometry attributes we need to make a prior
         ;; operation, because coordinates are absolute, but we need to
@@ -1711,30 +1780,50 @@
 
 (defn- update-grid-copy-attrs
   "Synchronizes the `layout-grid-cells` property from the main shape to the copies"
-  [changes shape-main shape-copy main-container main-component copy-container omit-touched?]
-  (let [ids-map
-        (into {}
-              (comp
-               (map #(dm/get-in copy-container [:objects %]))
-               (keep
-                (fn [copy-shape]
-                  (let [main-shape (ctf/get-ref-shape main-container main-component copy-shape)]
-                    [(:id main-shape) (:id copy-shape)]))))
-              (:shapes shape-copy))
+  [changes shape-copy-id shape-main main-container main-component omit-touched?]
+  (-> changes
+      (pcb/apply-changes-local)
+      (pcb/update-shapes
+       [shape-copy-id]
+       (fn [shape-copy objects]
+         (let [component-page
+               (ctf/get-component-page main-container main-component)
 
-        new-changes
-        (-> (pcb/empty-changes)
-            (pcb/with-container copy-container)
-            (pcb/with-objects (:objects copy-container))
-            (pcb/update-shapes
-             [(:id shape-copy)]
-             (fn [shape-copy]
+               component-swap-children
+               (->> shape-main
+                    :shapes
+                    (map #(get (:objects component-page) %))
+                    (filter #(some? (ctk/get-swap-slot %)))
+                    (group-by ctk/get-swap-slot))
+
+               ids-map
+               (into {}
+                     (comp
+                      (map #(get objects %))
+                      (keep
+                       (fn [copy-shape]
+                         (let [main-shape
+                               (if (some? (ctk/get-swap-slot copy-shape))
+                                 (first (get component-swap-children (ctk/get-swap-slot copy-shape)))
+                                 (ctf/get-ref-shape main-container main-component copy-shape))]
+                           [(:id main-shape) (:id copy-shape)]))))
+                     (:shapes shape-copy))
+
+               remove-orphan-cells
+               (fn [cells {:keys [shapes]}]
+                 (let [child? (set shapes)]
+                   (-> cells
+                       (update-vals
+                        (fn [cell]
+                          (update cell :shapes #(filterv child? %)))))))
                ;; Take cells from main and remap the shapes to assign it to the copy
-               (let [copy-cells (:layout-grid-cells shape-copy)
-                     main-cells (-> (ctl/remap-grid-cells shape-main ids-map) :layout-grid-cells)]
-                 (assoc shape-copy :layout-grid-cells (ctl/merge-cells copy-cells main-cells omit-touched?))))
-             {:ignore-touched true}))]
-    (pcb/concat-changes changes new-changes)))
+               copy-cells (-> shape-copy :layout-grid-cells (remove-orphan-cells shape-copy))
+               main-cells (-> shape-main (ctl/remap-grid-cells ids-map) :layout-grid-cells)]
+           (-> shape-copy
+               (assoc :layout-grid-cells
+                      (ctl/merge-cells main-cells copy-cells omit-touched?))
+               (ctl/assign-cells objects))))
+       {:ignore-touched true :with-objects? true})))
 
 (defn- update-grid-main-attrs
   "Synchronizes the `layout-grid-cells` property from the copy to the main shape"

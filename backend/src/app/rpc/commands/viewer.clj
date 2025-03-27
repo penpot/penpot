@@ -16,7 +16,8 @@
    [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
-   [app.util.services :as sv]))
+   [app.util.services :as sv]
+   [cuerdas.core :as str]))
 
 ;; --- QUERY: View Only Bundle
 
@@ -25,6 +26,27 @@
   (-> data
       (update :pages (fn [pages] (filterv #(contains? allowed %) pages)))
       (update :pages-index select-keys allowed)))
+
+(defn obfuscate-email
+  [email]
+  (let [[name domain]
+        (str/split email "@" 2)
+
+        [_ rest]
+        (str/split domain "." 2)
+
+        name
+        (if (> (count name) 3)
+          (str (subs name 0 1) (apply str (take (dec (count name)) (repeat "*"))))
+          "****")]
+
+    (str name "@****." rest)))
+
+(defn anonymize-member
+  [member]
+  (-> (select-keys member [:id :email :name :fullname :photo-id])
+      (update :email obfuscate-email)
+      (assoc :can-read true)))
 
 (defn- get-view-only-bundle
   [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id ::perms] :as params}]
@@ -37,7 +59,10 @@
         team    (-> (db/get conn :team {:id (:team-id project)})
                     (teams/decode-row))
 
-        members    (teams/get-team-members conn (:team-id project))
+        members    (cond->> (teams/get-team-members conn (:team-id project))
+                     (= :share-link (:type perms))
+                     (mapv anonymize-member))
+
         member-ids (into #{} (map :id) members)
 
         perms   (assoc perms :in-team (contains? member-ids profile-id))

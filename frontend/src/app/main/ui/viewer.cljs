@@ -565,7 +565,7 @@
       [:section#viewer-section {:ref viewer-section-ref
                                 :data-viewer-section true
                                 :class (stl/css-case :viewer-section true
-                                                     :fulscreen fullscreen?)
+                                                     :fullscreen fullscreen?)
                                 :on-click click-on-screen}
        (cond
          (empty? frames)

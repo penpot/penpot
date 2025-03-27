@@ -20,7 +20,7 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-(defn- impl-update-zoom
+(defn impl-update-zoom
   [{:keys [vbox] :as local} center zoom]
   (let [new-zoom (if (fn? zoom) (zoom (:zoom local)) zoom)
         old-zoom (:zoom local)

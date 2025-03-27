@@ -9,6 +9,7 @@
   (:refer-clojure :exclude [assert])
   (:require
    [app.binfile.common :as bfc]
+   [app.binfile.migrations :as bfm]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -473,7 +474,7 @@
                     (read-section options))))
               [:v1/metadata :v1/files :v1/rels :v1/sobjects])
 
-        (bfc/apply-pending-migrations! cfg)
+        (bfm/apply-pending-migrations! cfg)
 
         ;; Knowing that the ids of the created files are in index,
         ;; just lookup them and return it as a set

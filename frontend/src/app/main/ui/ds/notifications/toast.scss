@@ -26,6 +26,10 @@
   z-index: var(--toast-vertical-index);
 }
 
+.level-default {
+  --toast-icon-color: var(--color-icon-default);
+}
+
 .level-info {
   --toast-icon-color: var(--color-accent-info);
 }

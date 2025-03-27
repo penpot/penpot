@@ -7,7 +7,6 @@
 (ns app.common.types.shape.interactions
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.bounds :as gsb]
@@ -180,7 +179,7 @@
 
 (sm/register! ::interaction schema:interaction)
 
-(def check-interaction!
+(def check-interaction
   (sm/check-fn schema:interaction))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -203,18 +202,13 @@
 
 (defn set-event-type
   [interaction event-type shape]
-  (dm/assert!
-   "Should be an interraction map"
-   (check-interaction! interaction))
+  (assert (check-interaction interaction))
+  (assert (contains? event-types event-type)
+          "should be a valid event type")
 
-  (dm/assert!
-   "Should be a valid event type"
-   (contains? event-types event-type))
-
-  (dm/assert!
-   "The `:after-delay` event type incompatible with not frame shapes"
-   (or (not= event-type :after-delay)
-       (cfh/frame-shape? shape)))
+  (assert (or (not= event-type :after-delay)
+              (cfh/frame-shape? shape))
+          "the `:after-delay` event type incompatible with not frame shapes")
 
   (if (= (:event-type interaction) event-type)
     interaction
@@ -230,14 +224,9 @@
 
 (defn set-action-type
   [interaction action-type]
-
-  (dm/assert!
-   "Should be an interraction map"
-   (check-interaction! interaction))
-
-  (dm/assert!
-   "Should be a valid event type"
-   (contains? action-types action-type))
+  (assert (check-interaction interaction))
+  (assert (contains? action-types action-type)
+          "Should be a valid event type")
 
   (let [new-interaction
         (if (= (:action-type interaction) action-type)
@@ -284,18 +273,10 @@
 
 (defn set-delay
   [interaction delay]
-
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
-
-  (dm/assert!
-   "expected valid delay"
-   (sm/check-safe-int! delay))
-
-  (dm/assert!
-   "expected compatible interaction event type"
-   (has-delay interaction))
+  (assert (check-interaction interaction))
+  (assert (sm/check-safe-int delay))
+  (assert (has-delay interaction)
+          "expected compatible interaction event type")
 
   (assoc interaction :delay delay))
 
@@ -315,14 +296,9 @@
 
 (defn set-destination
   [interaction destination]
-
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
-
-  (dm/assert!
-   "expected compatible interaction event type"
-   (has-destination interaction))
+  (assert (check-interaction interaction))
+  (assert (has-destination interaction)
+          "expected compatible interaction event type")
 
   (cond-> interaction
     :always
@@ -340,17 +316,11 @@
 (defn set-preserve-scroll
   [interaction preserve-scroll]
 
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
-
-  (dm/assert!
-   "expected boolean for `preserve-scroll`"
-   (boolean? preserve-scroll))
-
-  (dm/assert!
-   "expected compatible interaction map with preserve-scroll"
-   (has-preserve-scroll interaction))
+  (assert (check-interaction interaction))
+  (assert (boolean? preserve-scroll)
+          "expected boolean for `preserve-scroll`")
+  (assert (has-preserve-scroll interaction)
+          "expected compatible interaction map with preserve-scroll")
 
   (assoc interaction :preserve-scroll preserve-scroll))
 
@@ -361,17 +331,11 @@
 (defn set-url
   [interaction url]
 
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
-
-  (dm/assert!
-   "expected a string for `url`"
-   (string? url))
-
-  (dm/assert!
-   "expected compatible interaction map with url param"
-   (has-url interaction))
+  (assert (check-interaction interaction))
+  (assert (string? url)
+          "expected a string for `url`")
+  (assert (has-url interaction)
+          "expected compatible interaction map with url param")
 
   (assoc interaction :url url))
 
@@ -382,17 +346,12 @@
 (defn set-overlay-pos-type
   [interaction overlay-pos-type shape objects]
 
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
+  (assert (check-interaction interaction))
 
-  (dm/assert!
-   "expected valid overlay positioning type"
-   (contains? overlay-positioning-types overlay-pos-type))
-
-  (dm/assert!
-   "expected compatible interaction map"
-   (has-overlay-opts interaction))
+  (assert (contains? overlay-positioning-types overlay-pos-type)
+          "expected valid overlay positioning type")
+  (assert (has-overlay-opts interaction)
+          "expected compatible interaction map")
 
   (assoc interaction
          :overlay-pos-type overlay-pos-type
@@ -403,17 +362,11 @@
 (defn toggle-overlay-pos-type
   [interaction overlay-pos-type shape objects]
 
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
-
-  (dm/assert!
-   "expected valid overlay positioning type"
-   (contains? overlay-positioning-types overlay-pos-type))
-
-  (dm/assert!
-   "expected compatible interaction map"
-   (has-overlay-opts interaction))
+  (assert (check-interaction interaction))
+  (assert (contains? overlay-positioning-types overlay-pos-type)
+          "expected valid overlay positioning type")
+  (assert (has-overlay-opts interaction)
+          "expected compatible interaction map")
 
   (let [new-pos-type (if (= (:overlay-pos-type interaction) overlay-pos-type)
                        :manual
@@ -427,17 +380,12 @@
 (defn set-overlay-position
   [interaction overlay-position]
 
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
+  (assert (check-interaction interaction))
+  (assert (gpt/point? overlay-position)
+          "expected valid overlay position")
+  (assert (has-overlay-opts interaction)
+          "expected compatible interaction map")
 
-  (dm/assert!
-   "expected valid overlay position"
-   (gpt/point? overlay-position))
-
-  (dm/assert!
-   "expected compatible interaction map"
-   (has-overlay-opts interaction))
 
   (assoc interaction
          :overlay-pos-type :manual
@@ -446,52 +394,34 @@
 (defn set-close-click-outside
   [interaction close-click-outside]
 
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
-
-  (dm/assert!
-   "expected boolean value for `close-click-outside`"
-   (boolean? close-click-outside))
-
-  (dm/assert!
-   "expected compatible interaction map"
-   (has-overlay-opts interaction))
+  (assert (check-interaction interaction))
+  (assert (boolean? close-click-outside)
+          "expected boolean value for `close-click-outside`")
+  (assert (has-overlay-opts interaction)
+          "expected compatible interaction map")
 
   (assoc interaction :close-click-outside close-click-outside))
 
 (defn set-background-overlay
   [interaction background-overlay]
 
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
-
-  (dm/assert!
-   "expected boolean value for `background-overlay`"
-   (boolean? background-overlay))
-
-  (dm/assert!
-   "expected compatible interaction map"
-   (has-overlay-opts interaction))
+  (assert (check-interaction interaction))
+  (assert (boolean? background-overlay)
+          "expected boolean value for `background-overlay`")
+  (assert (has-overlay-opts interaction)
+          "expected compatible interaction map")
 
   (assoc interaction :background-overlay background-overlay))
 
 (defn set-position-relative-to
   [interaction position-relative-to]
 
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
-
-  (dm/assert!
-   "expected valid uuid for `position-relative-to`"
-   (or (nil? position-relative-to)
-       (uuid? position-relative-to)))
-
-  (dm/assert!
-   "expected compatible interaction map"
-   (has-overlay-opts interaction))
+  (assert (check-interaction interaction))
+  (assert (or (nil? position-relative-to)
+              (uuid? position-relative-to))
+          "expected valid uuid for `position-relative-to`")
+  (assert (has-overlay-opts interaction)
+          "expected compatible interaction map")
 
   (assoc interaction :position-relative-to position-relative-to))
 
@@ -519,13 +449,9 @@
    frame-offset]       ;; if this interaction starts in a frame opened
                        ;; on another interaction, this is the position
                        ;; of that frame
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
-
-  (dm/assert!
-   "expected compatible interaction map"
-   (has-overlay-opts interaction))
+  (assert (check-interaction interaction))
+  (assert (has-overlay-opts interaction)
+          "expected compatible interaction map")
 
   (let [;; When the interactive item is inside a nested frame we need to add to the offset the position
         ;; of the parent-frame otherwise the position won't match
@@ -617,22 +543,15 @@
 
 (defn set-animation-type
   [interaction animation-type]
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
 
-  (dm/assert!
-   "expected valid value for `animation-type`"
-   (or (nil? animation-type)
-       (contains? animation-types animation-type)))
-
-  (dm/assert!
-   "expected interaction map compatible with animation"
-   (has-animation? interaction))
-
-  (dm/assert!
-   "expected allowed animation type"
-   (allowed-animation? (:action-type interaction) animation-type))
+  (assert (check-interaction interaction))
+  (assert (or (nil? animation-type)
+              (contains? animation-types animation-type))
+          "expected valid value for `animation-type`")
+  (assert (has-animation? interaction)
+          "expected interaction map compatible with animation")
+  (assert (allowed-animation? (:action-type interaction) animation-type)
+          "expected allowed animation type")
 
   (if (= (-> interaction :animation :animation-type) animation-type)
     interaction
@@ -668,17 +587,10 @@
 (defn set-duration
   [interaction duration]
 
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
-
-  (dm/assert!
-   "expected valid duration"
-   (sm/check-safe-int! duration))
-
-  (dm/assert!
-   "expected compatible interaction map"
-   (has-duration? interaction))
+  (assert (check-interaction interaction))
+  (assert (sm/check-safe-int duration))
+  (assert (has-duration? interaction)
+          "expected compatible interaction map")
 
   (update interaction :animation assoc :duration duration))
 
@@ -689,17 +601,11 @@
 (defn set-easing
   [interaction easing]
 
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
-
-  (dm/assert!
-   "expected valid easing"
-   (contains? easing-types easing))
-
-  (dm/assert!
-   "expected compatible interaction map"
-   (has-easing? interaction))
+  (assert (check-interaction interaction))
+  (assert (contains? easing-types easing)
+          "expected valid easing")
+  (assert (has-easing? interaction)
+          "expected compatible interaction map")
 
   (update interaction :animation assoc :easing easing))
 
@@ -712,17 +618,11 @@
 (defn set-way
   [interaction way]
 
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
-
-  (dm/assert!
-   "expected valid way"
-   (contains? way-types way))
-
-  (dm/assert!
-   "expected compatible interaction map"
-   (has-way? interaction))
+  (assert (check-interaction interaction))
+  (assert (contains? way-types way)
+          "expected valid way")
+  (assert (has-way? interaction)
+          "expected compatible interaction map")
 
   (update interaction :animation assoc :way way))
 
@@ -733,26 +633,20 @@
 (defn set-direction
   [interaction direction]
 
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
+  (assert (check-interaction interaction))
+  (assert (contains? direction-types direction)
+          "expected valid direction")
 
-  (dm/assert!
-   "expected valid direction"
-   (contains? direction-types direction))
-
-  (dm/assert!
-   "expected compatible interaction map"
-   (has-direction? interaction))
+  (assert (has-direction? interaction)
+          "expected compatible interaction map")
 
   (update interaction :animation assoc :direction direction))
 
 (defn invert-direction
   [animation]
-  (dm/assert!
-   "expected valid animation map"
-   (or (nil? animation)
-       (check-animation! animation)))
+  (assert (or (nil? animation)
+              (check-animation! animation))
+          "expected valid animation map")
 
   (case (:direction animation)
     :right
@@ -768,24 +662,18 @@
 
 (defn has-offset-effect?
   [interaction]
-  ; Offset-effect is ignored in slide animations of overlay actions
+  ;; Offset-effect is ignored in slide animations of overlay actions
   (and (= (:action-type interaction) :navigate)
        (= (-> interaction :animation :animation-type) :slide)))
 
 (defn set-offset-effect
   [interaction offset-effect]
 
-  (dm/assert!
-   "expected valid interaction map"
-   (check-interaction! interaction))
-
-  (dm/assert!
-   "expected valid boolean for `offset-effect`"
-   (boolean? offset-effect))
-
-  (dm/assert!
-   "expected compatible interaction map"
-   (has-offset-effect? interaction))
+  (assert (check-interaction interaction))
+  (assert (boolean? offset-effect)
+          "expected valid boolean for `offset-effect`")
+  (assert (has-offset-effect? interaction)
+          "expected compatible interaction map")
 
   (update interaction :animation assoc :offset-effect offset-effect))
 

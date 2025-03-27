@@ -15,6 +15,7 @@
   [:group :string]
   [:description [:maybe :string]]
   [:is-source :boolean]
+  [:id :string]
   [:modified-at {:optional true} ::sm/inst]
   [:sets :any]])
 
@@ -24,4 +25,4 @@
   [:name :string]
   [:description {:optional true} [:maybe :string]]
   [:modified-at {:optional true} ::sm/inst]
-  [:tokens :any]])
+  [:tokens {:optional true} :any]])

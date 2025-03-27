@@ -22,7 +22,8 @@
 ;; Change this to :info :debug or :trace to debug this module
 (log/set-level! :warn)
 
-(def discard-transaction-time-millis (* 20 1000))
+(def ^:private
+  discard-transaction-time-millis (* 20 1000))
 
 (def ^:private
   schema:undo-entry
@@ -30,7 +31,7 @@
    [:undo-changes [:vector ::cpc/change]]
    [:redo-changes [:vector ::cpc/change]]])
 
-(def check-undo-entry!
+(def check-undo-entry
   (sm/check-fn schema:undo-entry))
 
 (def MAX-UNDO-SIZE 50)
@@ -48,8 +49,7 @@
   (ptk/reify ::materialize-undo
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (assoc-in [:workspace-undo :index] index)))))
+      (update state :workspace-undo assoc :index index))))
 
 (defn- add-undo-entry
   [state entry]
@@ -88,12 +88,9 @@
 
 (defn append-undo
   [entry stack?]
-  (dm/assert!
-   "expected valid undo entry"
-   (check-undo-entry! entry))
 
-  (dm/assert!
-   (boolean? stack?))
+  (assert (check-undo-entry entry))
+  (assert (boolean? stack?))
 
   (ptk/reify ::append-undo
     ptk/UpdateEvent
@@ -118,17 +115,11 @@
 
 (defn start-undo-transaction
   "Start a transaction, so that every changes inside are added together in a single undo entry."
-  [id]
+  [id & {:keys [timeout] :or {timeout discard-transaction-time-millis}}]
   (ptk/reify ::start-undo-transaction
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rx/of (check-open-transactions))
-           ;; Wait the configured time
-           (rx/delay discard-transaction-time-millis)))
-
     ptk/UpdateEvent
     (update [_ state]
-      (log/info :msg "start-undo-transaction")
+      (log/info :hint "start-undo-transaction")
       ;; We commit the old transaction before starting the new one
       (let [current-tx    (get-in state [:workspace-undo :transaction])
             pending-tx    (get-in state [:workspace-undo :transactions-pending])]
@@ -136,20 +127,28 @@
           (nil? current-tx)  (assoc-in [:workspace-undo :transaction] empty-tx)
           (nil? pending-tx)  (assoc-in [:workspace-undo :transactions-pending] #{id})
           (some? pending-tx) (update-in [:workspace-undo :transactions-pending] conj id)
-          :always            (update-in [:workspace-undo :transactions-pending-ts] assoc id (dt/now)))))))
+          :always            (update-in [:workspace-undo :transactions-pending-ts] assoc id (dt/now)))))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (when (and timeout (pos? timeout))
+        (->> (rx/of (check-open-transactions timeout))
+             ;; Wait the configured time
+             (rx/delay timeout))))))
+
 
 (defn discard-undo-transaction []
   (ptk/reify ::discard-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
-      (log/info :msg "discard-undo-transaction")
+      (log/info :hint "discard-undo-transaction")
       (update state :workspace-undo dissoc :transaction :transactions-pending :transactions-pending-ts))))
 
 (defn commit-undo-transaction [id]
   (ptk/reify ::commit-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
-      (log/info :msg "commit-undo-transaction")
+      (log/info :hint "commit-undo-transaction")
       (let [state (-> state
                       (update-in [:workspace-undo :transactions-pending] disj id)
                       (update-in [:workspace-undo :transactions-pending-ts] dissoc id))]
@@ -166,15 +165,15 @@
       (assoc state :workspace-undo {}))))
 
 (defn check-open-transactions
-  []
+  [timeout]
   (ptk/reify ::check-open-transactions
     ptk/WatchEvent
     (watch [_ state _]
-      (log/info :msg "check-open-transactions")
+      (log/info :hint "check-open-transactions" :timeout timeout)
       (let [pending-ts (-> (dm/get-in state [:workspace-undo :transactions-pending-ts])
-                           (update-vals #(.toMillis (dt/diff (dt/now) %))))]
+                           (update-vals #(inst-ms (dt/diff (dt/now) %))))]
         (->> pending-ts
-             (filter (fn [[_ ts]] (>= ts discard-transaction-time-millis)))
+             (filter (fn [[_ ts]] (>= ts timeout)))
              (rx/from)
              (rx/tap #(js/console.warn (dm/str "FORCE COMMIT TRANSACTION AFTER " (second %) "MS")))
              (rx/map first)

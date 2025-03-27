@@ -73,13 +73,12 @@
           (fonts/register! :custom fonts))))))
 
 (defn fetch-fonts
-  []
-  (ptk/reify ::load-team-fonts
+  [team-id]
+  (ptk/reify ::fetch-fonts
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :get-font-variants {:team-id team-id})
-             (rx/map fonts-fetched))))))
+    (watch [_ _ _]
+      (->> (rp/cmd! :get-font-variants {:team-id team-id})
+           (rx/map fonts-fetched)))))
 
 (defn process-upload
   "Given a seq of blobs and the team id, creates a ready-to-use fonts

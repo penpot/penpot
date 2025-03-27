@@ -32,18 +32,18 @@
 
 .element-group {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(9, 1fr);
   column-gap: $s-4;
 }
 
 .input-wrapper {
-  grid-column: span 7;
+  grid-column: span 8;
   display: grid;
   grid-template-columns: subgrid;
 }
 
 .format-select {
-  grid-column: span 2;
+  grid-column: span 3;
   padding: 0;
 
   .dropdown-upwards {

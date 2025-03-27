@@ -7,7 +7,7 @@
 (ns app.main.ui.inspect.annotation
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.ui.components.copy-button :refer [copy-button]]
+   [app.main.ui.components.copy-button :refer [copy-button*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -18,7 +18,7 @@
    [:& title-bar {:collapsable false
                   :title       (tr "workspace.options.component.annotation")
                   :class       (stl/css :title-spacing-annotation)}
-    [:& copy-button {:data content
-                     :class (stl/css :copy-btn-title)}]]
+    [:> copy-button* {:data content
+                      :class (stl/css :copy-btn-title)}]]
 
    [:div {:class (stl/css :annotation-content)} content]])

@@ -243,7 +243,7 @@
 
 
 ;; export interface Export {
-;;   type: 'png' | 'jpeg' | 'svg' | 'pdf';
+;;   type: 'png' | 'jpeg' | 'webp' | 'svg' | 'pdf';
 ;;   scale: number;
 ;;   suffix: string;
 ;; }

@@ -172,47 +172,55 @@
             is-mask?        (and single? has-mask?)
             has-component?  (some true? (map ctc/instance-root? selected-shapes))
             is-component?   (and single? has-component?)
+            has-variant?    (some ctc/is-variant? selected-shapes)
 
             new-shape-id (uuid/next)
             undo-id      (js/Symbol)]
 
-        (rx/concat
-         (rx/of (dwu/start-undo-transaction undo-id))
-         (if (and is-group? (not is-component?) (not is-mask?))
-           ;; Create layout from a group:
-           ;;  When creating a layout from a group we remove the group and create the layout with its children
-           (let [parent-id    (:parent-id (first selected-shapes))
-                 shapes-ids   (:shapes (first selected-shapes))
-                 ordered-ids  (into (d/ordered-set) shapes-ids)
-                 group-index  (cfh/get-index-replacement selected objects)]
+        (if has-variant?
+          (rx/empty)
+          (rx/concat
+           (rx/of (dwu/start-undo-transaction undo-id))
+           (if (and is-group? (not is-component?) (not is-mask?))
+             ;; Create layout from a group:
+             ;;  When creating a layout from a group we remove the group and create the layout with its children
+             (let [parent-id    (:parent-id (first selected-shapes))
+                   shapes-ids   (:shapes (first selected-shapes))
+                   ordered-ids  (into (d/ordered-set) shapes-ids)
+                   group-index  (cfh/get-index-replacement selected objects)]
+               (rx/of
+                (dwse/select-shapes ordered-ids)
+                (dwsh/create-artboard-from-selection new-shape-id parent-id group-index (:name (first selected-shapes)))
+                (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
+                (create-layout-from-id new-shape-id type)
+                (dwsh/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
+                (dwsh/update-shapes selected ctl/toggle-fix-if-auto)
+                (dwsh/delete-shapes page-id selected)
+                (ptk/data-event :layout/update {:ids [new-shape-id]})
+                (dwu/commit-undo-transaction undo-id)))
+
+             ;; Create Layout from selection
              (rx/of
-              (dwse/select-shapes ordered-ids)
-              (dwsh/create-artboard-from-selection new-shape-id parent-id group-index (:name (first selected-shapes)))
+              (dwsh/create-artboard-from-selection new-shape-id)
               (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
               (create-layout-from-id new-shape-id type)
               (dwsh/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
-              (dwsh/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))
-              (dwsh/delete-shapes page-id selected)
-              (ptk/data-event :layout/update {:ids [new-shape-id]})
-              (dwu/commit-undo-transaction undo-id)))
+              (dwsh/update-shapes selected ctl/toggle-fix-if-auto)))
 
-           ;; Create Layout from selection
-           (rx/of
-            (dwsh/create-artboard-from-selection new-shape-id)
-            (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
-            (create-layout-from-id new-shape-id type)
-            (dwsh/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
-            (dwsh/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))))
-
-         (rx/of (ptk/data-event :layout/update {:ids [new-shape-id]})
-                (dwu/commit-undo-transaction undo-id)))))))
+           (rx/of (ptk/data-event :layout/update {:ids [new-shape-id]})
+                  (dwu/commit-undo-transaction undo-id))))))))
 
 (defn remove-layout
   [ids]
   (ptk/reify ::remove-shape-layout
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [undo-id (js/Symbol)]
+    (watch [_ state _]
+      (let [objects (dsh/lookup-page-objects state)
+            ids     (->> ids
+                         (remove #(->> %
+                                       (get objects)
+                                       (ctc/is-variant?))))
+            undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dwsh/update-shapes ids #(apply dissoc % layout-keys))
@@ -234,11 +242,12 @@
             selected-shapes  (map (d/getf objects) selected)
             single?          (= (count selected-shapes) 1)
             is-frame?        (= :frame (:type (first selected-shapes)))
+            is-variant-cont? (ctc/is-variant-container? (first selected-shapes))
             undo-id          (js/Symbol)]
 
         (rx/of
          (dwu/start-undo-transaction undo-id)
-         (if (and single? is-frame?)
+         (if (and single? is-frame? (not is-variant-cont?))
            (create-layout-from-id (first selected) type :from-frame? true)
            (create-layout-from-selection type))
          (dwu/commit-undo-transaction undo-id))))))
@@ -267,9 +276,15 @@
    (ptk/reify ::update-layout
      ptk/WatchEvent
      (watch [_ _ _]
-       (let [undo-id (js/Symbol)]
+       (let [undo-id       (js/Symbol)
+             padding-attrs (-> (get changes :layout-padding)
+                               keys
+                               set)]
          (rx/of (dwu/start-undo-transaction undo-id)
-                (dwsh/update-shapes ids (d/patch-object changes) options)
+                (dwsh/update-shapes ids (d/patch-object changes)
+                                    (cond-> options
+                                      (seq padding-attrs)
+                                      (assoc :changed-sub-attr padding-attrs)))
                 (ptk/data-event :layout/update {:ids ids})
                 (dwu/commit-undo-transaction undo-id)))))))
 
@@ -524,14 +539,20 @@
    (ptk/reify ::update-layout-child
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id (or (get options :page-id)
-                         (get state :current-page-id))
-             objects (dsh/lookup-page-objects state page-id)
+       (let [page-id      (or (get options :page-id)
+                              (get state :current-page-id))
+             objects      (dsh/lookup-page-objects state page-id)
              children-ids (->> ids (mapcat #(cfh/get-children-ids objects %)))
-             parent-ids (->> ids (map #(cfh/get-parent-id objects %)))
-             undo-id (js/Symbol)]
+             parent-ids   (->> ids (map #(cfh/get-parent-id objects %)))
+             undo-id      (js/Symbol)
+             margin-attrs (-> (get changes :layout-item-margin)
+                              keys
+                              set)]
          (rx/of (dwu/start-undo-transaction undo-id)
-                (dwsh/update-shapes ids (d/patch-object changes) options)
+                (dwsh/update-shapes ids (d/patch-object changes)
+                                    (cond-> options
+                                      (seq margin-attrs)
+                                      (assoc :changed-sub-attr margin-attrs)))
                 (dwsh/update-shapes children-ids (partial fix-child-sizing objects changes) options)
                 (dwsh/update-shapes
                  parent-ids

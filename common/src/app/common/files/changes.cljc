@@ -31,6 +31,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as ctt]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
@@ -336,7 +337,9 @@
       [:type [:= :mod-component]]
       [:id ::sm/uuid]
       [:shapes {:optional true} [:vector {:gen/max 3} :any]]
-      [:name {:optional true} :string]]]
+      [:name {:optional true} :string]
+      [:variant-id {:optional true} ::sm/uuid]
+      [:variant-properties {:optional true} [:vector ::ctv/variant-property]]]]
 
     [:del-component
      [:map {:title "DelComponentChange"}
@@ -371,49 +374,10 @@
       [:type [:= :del-typography]]
       [:id ::sm/uuid]]]
 
-    [:add-temporary-token-theme
-     [:map {:title "AddTemporaryTokenThemeChange"}
-      [:type [:= :add-temporary-token-theme]]
-      [:token-theme ::ctot/token-theme]]]
-
     [:update-active-token-themes
      [:map {:title "UpdateActiveTokenThemes"}
       [:type [:= :update-active-token-themes]]
       [:theme-ids [:set :string]]]]
-
-    [:delete-temporary-token-theme
-     [:map {:title "DeleteTemporaryTokenThemeChange"}
-      [:type [:= :delete-temporary-token-theme]]
-      [:id ::sm/uuid]
-      [:name :string]]]
-
-    [:add-token-theme
-     [:map {:title "AddTokenThemeChange"}
-      [:type [:= :add-token-theme]]
-      [:token-theme ::ctot/token-theme]]]
-
-    [:mod-token-theme
-     [:map {:title "ModTokenThemeChange"}
-      [:type [:= :mod-token-theme]]
-      [:group :string]
-      [:name :string]
-      [:token-theme ::ctot/token-theme]]]
-
-    [:del-token-theme
-     [:map {:title "DelTokenThemeChange"}
-      [:type [:= :del-token-theme]]
-      [:group :string]
-      [:name :string]]]
-
-    [:add-token-set
-     [:map {:title "AddTokenSetChange"}
-      [:type [:= :add-token-set]]
-      [:token-set ::ctot/token-set]]]
-
-    [:add-token-sets
-     [:map {:title "AddTokenSetsChange"}
-      [:type [:= :add-token-sets]]
-      [:token-sets [:sequential ::ctot/token-set]]]]
 
     [:rename-token-set-group
      [:map {:title "RenameTokenSetGroup"}
@@ -421,42 +385,40 @@
       [:set-group-path [:vector :string]]
       [:set-group-fname :string]]]
 
-    [:mod-token-set
-     [:map {:title "ModTokenSetChange"}
-      [:type [:= :mod-token-set]]
-      [:name :string]
-      [:token-set ::ctot/token-set]]]
-
-    [:move-token-set-before
-     [:map {:title "MoveTokenSetBefore"}
-      [:type [:= :move-token-set-before]]
+    [:move-token-set
+     [:map {:title "MoveTokenSet"}
+      [:type [:= :move-token-set]]
       [:from-path [:vector :string]]
       [:to-path [:vector :string]]
       [:before-path [:maybe [:vector :string]]]
-      [:before-group? [:maybe :boolean]]]]
+      [:before-group [:maybe :boolean]]]]
 
-    [:move-token-set-group-before
-     [:map {:title "MoveTokenSetGroupBefore"}
-      [:type [:= :move-token-set-group-before]]
+    [:move-token-set-group
+     [:map {:title "MoveTokenSetGroup"}
+      [:type [:= :move-token-set-group]]
       [:from-path [:vector :string]]
       [:to-path [:vector :string]]
       [:before-path [:maybe [:vector :string]]]
-      [:before-group? [:maybe :boolean]]]]
+      [:before-group [:maybe :boolean]]]]
 
-    [:del-token-set
-     [:map {:title "DelTokenSetChange"}
-      [:type [:= :del-token-set]]
-      [:name :string]]]
-
-    [:del-token-set-path
-     [:map {:title "DelTokenSetPathChange"}
-      [:type [:= :del-token-set-path]]
-      [:path :string]]]
+    [:set-token-theme
+     [:map {:title "SetTokenThemeChange"}
+      [:type [:= :set-token-theme]]
+      [:theme-name :string]
+      [:group :string]
+      [:theme [:maybe ::ctot/token-theme]]]]
 
     [:set-tokens-lib
      [:map {:title "SetTokensLib"}
       [:type [:= :set-tokens-lib]]
       [:tokens-lib :any]]]
+
+    [:set-token-set
+     [:map {:title "SetTokenSetChange"}
+      [:type [:= :set-token-set]]
+      [:set-name :string]
+      [:group? :boolean]
+      [:token-set [:maybe ::ctot/token-set]]]]
 
     [:set-token
      [:map {:title "SetTokenChange"}
@@ -1044,55 +1006,46 @@
                 (ctob/update-token-in-set lib' set-name token-name (fn [prev-token]
                                                                      (ctob/make-token (merge prev-token token)))))))))
 
-(defmethod process-change :add-temporary-token-theme
-  [data {:keys [token-theme]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/add-theme (ctob/make-token-theme token-theme)))))
+(defmethod process-change :set-token-set
+  [data {:keys [set-name group? token-set]}]
+  (update data :tokens-lib
+          (fn [lib]
+            (let [lib' (ctob/ensure-tokens-lib lib)]
+              (cond
+                (not token-set)
+                (if group?
+                  (ctob/delete-set-group lib' set-name)
+                  (ctob/delete-set lib' set-name))
+
+                (not (ctob/get-set lib' set-name))
+                (ctob/add-set lib' (ctob/make-token-set token-set))
+
+                :else
+                (ctob/update-set lib' set-name (fn [prev-token-set]
+                                                 (ctob/make-token-set (merge prev-token-set token-set)))))))))
+
+(defmethod process-change :set-token-theme
+  [data {:keys [group theme-name theme]}]
+  (update data :tokens-lib
+          (fn [lib]
+            (let [lib' (ctob/ensure-tokens-lib lib)]
+              (cond
+                (not theme)
+                (ctob/delete-theme lib' group theme-name)
+
+                (not (ctob/get-theme lib' group theme-name))
+                (ctob/add-theme lib' (ctob/make-token-theme theme))
+
+                :else
+                (ctob/update-theme lib'
+                                   group theme-name
+                                   (fn [prev-token-theme]
+                                     (ctob/make-token-theme (merge prev-token-theme theme)))))))))
 
 (defmethod process-change :update-active-token-themes
   [data {:keys [theme-ids]}]
   (update data :tokens-lib #(-> % (ctob/ensure-tokens-lib)
                                 (ctob/set-active-themes theme-ids))))
-
-(defmethod process-change :delete-temporary-token-theme
-  [data {:keys [group name]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/delete-theme group name))))
-
-(defmethod process-change :add-token-theme
-  [data {:keys [token-theme]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/add-theme (-> token-theme
-                                                    (ctob/make-token-theme))))))
-
-(defmethod process-change :mod-token-theme
-  [data {:keys [name group token-theme]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/update-theme group name
-                                                   (fn [prev-theme]
-                                                     (merge prev-theme token-theme))))))
-
-(defmethod process-change :del-token-theme
-  [data {:keys [group name]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/delete-theme group name))))
-
-(defmethod process-change :add-token-set
-  [data {:keys [token-set]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/add-set (ctob/make-token-set token-set)))))
-
-(defmethod process-change :add-token-sets
-  [data {:keys [token-sets]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/add-sets (map ctob/make-token-set token-sets)))))
 
 (defmethod process-change :rename-token-set-group
   [data {:keys [set-group-path set-group-fname]}]
@@ -1101,37 +1054,17 @@
                                  (ctob/ensure-tokens-lib)
                                  (ctob/rename-set-group set-group-path set-group-fname)))))
 
-(defmethod process-change :mod-token-set
-  [data {:keys [name token-set]}]
-  (update data :tokens-lib (fn [lib]
-                             (-> lib
-                                 (ctob/ensure-tokens-lib)
-                                 (ctob/update-set name (fn [prev-set]
-                                                         (merge prev-set (dissoc token-set :tokens))))))))
-
-(defmethod process-change :move-token-set-before
-  [data {:keys [from-path to-path before-path before-group?] :as changes}]
+(defmethod process-change :move-token-set
+  [data {:keys [from-path to-path before-path before-group] :as changes}]
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
-                                (ctob/move-set from-path to-path before-path before-group?))))
+                                (ctob/move-set from-path to-path before-path before-group))))
 
-(defmethod process-change :move-token-set-group-before
-  [data {:keys [from-path to-path before-path before-group?]}]
+(defmethod process-change :move-token-set-group
+  [data {:keys [from-path to-path before-path before-group]}]
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
-                                (ctob/move-set-group from-path to-path before-path before-group?))))
-
-(defmethod process-change :del-token-set
-  [data {:keys [name]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/delete-set-path name))))
-
-(defmethod process-change :del-token-set-path
-  [data {:keys [path]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/delete-set-path path))))
+                                (ctob/move-set-group from-path to-path before-path before-group))))
 
 ;; === Operations
 

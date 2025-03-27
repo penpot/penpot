@@ -266,10 +266,10 @@
 (defn export-shapes-event
   [exports origin]
   (let [types (reduce (fn [counts {:keys [type]}]
-                        (if (#{:png :pdf :svg :jpeg} type)
+                        (if (#{:png :jpeg :webp :svg :pdf} type)
                           (update counts type inc)
                           counts))
-                      {:png 0, :pdf 0, :svg 0, :jpeg 0}
+                      {:png 0, :jpeg 0, :webp 0, :pdf 0, :svg 0}
                       exports)]
     (ptk/event
      ::ev/event (merge types

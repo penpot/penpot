@@ -24,7 +24,7 @@
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.setup :as-alias setup]
-   [app.srepl.helpers :as srepl]
+   [app.srepl.main :as srepl]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
    [app.util.blob :as blob]
@@ -430,6 +430,50 @@
      ::yres/body    "OK"}))
 
 
+(defn- add-team-feature
+  [{:keys [params] :as request}]
+  (let [team-id (some-> params :team-id d/parse-uuid)
+        feature (some-> params :feature str)
+        skip-check (contains? params :skip-check)]
+
+    (when-not (contains? params :force)
+      (ex/raise :type :validation
+                :code :missing-force
+                :hint "missing force checkbox"))
+
+    (when (nil? team-id)
+      (ex/raise :type :validation
+                :code :invalid-team-id
+                :hint "provided invalid team id"))
+
+    (srepl/enable-team-feature! team-id feature :skip-check skip-check)
+
+    {::yres/status  200
+     ::yres/headers {"content-type" "text/plain"}
+     ::yres/body    "OK"}))
+
+(defn- remove-team-feature
+  [{:keys [params] :as request}]
+  (let [team-id   (some-> params :team-id d/parse-uuid)
+        feature   (some-> params :feature str)
+        skip-check (contains? params :skip-check)]
+
+    (when-not (contains? params :force)
+      (ex/raise :type :validation
+                :code :missing-force
+                :hint "missing force checkbox"))
+
+    (when (nil? team-id)
+      (ex/raise :type :validation
+                :code :invalid-team-id
+                :hint "provided invalid team id"))
+
+    (srepl/disable-team-feature! team-id feature :skip-check skip-check)
+
+    {::yres/status  200
+     ::yres/headers {"content-type" "text/plain"}
+     ::yres/body    "OK"}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OTHER SMALL VIEWS/HANDLERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -500,6 +544,10 @@
      {:handler (partial resend-email-notification cfg)}]
     ["/actions/reset-file-version"
      {:handler (partial reset-file-version cfg)}]
+    ["/actions/add-team-feature"
+     {:handler (partial add-team-feature)}]
+    ["/actions/remove-team-feature"
+     {:handler (partial remove-team-feature)}]
     ["/file/export" {:handler (partial export-handler cfg)}]
     ["/file/import" {:handler (partial import-handler cfg)}]
     ["/file/data" {:handler (partial file-data-handler cfg)}]

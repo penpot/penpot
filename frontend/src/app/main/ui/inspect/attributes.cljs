@@ -7,6 +7,8 @@
 (ns app.main.ui.inspect.attributes
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
+   [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.inspect.annotation :refer [annotation]]
@@ -20,6 +22,7 @@
    [app.main.ui.inspect.attributes.stroke :refer [stroke-panel]]
    [app.main.ui.inspect.attributes.svg :refer [svg-panel]]
    [app.main.ui.inspect.attributes.text :refer [text-panel]]
+   [app.main.ui.inspect.attributes.variant :refer [variant-panel*]]
    [app.main.ui.inspect.exports :refer [exports]]
    [rumext.v2 :as mf]))
 
@@ -31,15 +34,29 @@
    :circle   [:geometry :fill :stroke :shadow :blur :svg :layout-element]
    :path     [:geometry :fill :stroke :shadow :blur :svg :layout-element]
    :image    [:image :geometry :fill :stroke :shadow :blur :svg :layout-element]
-   :text     [:geometry :text :shadow :blur :stroke :layout-element]})
+   :text     [:geometry :text :shadow :blur :stroke :layout-element]
+   :variant  [:variant :geometry :fill :stroke :shadow :blur :layout :layout-element]})
 
 (mf/defc attributes
   [{:keys [page-id file-id shapes frame from libraries share-id objects]}]
-  (let [shapes  (hooks/use-equal-memo shapes)
-        type    (if (= (count shapes) 1) (-> shapes first :type) :multiple)
-        options (type->options type)
-        content (when (= (count shapes) 1)
-                  (ctkl/get-component-annotation (first shapes) libraries))]
+  (let [shapes             (hooks/use-equal-memo shapes)
+        first-shape        (first shapes)
+        data               (dm/get-in libraries [file-id :data])
+        first-component    (ctkl/get-component data (:component-id first-shape))
+        type               (cond
+                             (and (= (count shapes) 1)
+                                  (or (ctc/is-variant-container? first-shape)
+                                      (ctc/is-variant? first-component)))
+                             :variant
+
+                             (= (count shapes) 1)
+                             (:type first-shape)
+
+                             :else
+                             :multiple)
+        options            (type->options type)
+        annotation-content (when (= (count shapes) 1)
+                             (ctkl/get-component-annotation first-shape libraries))]
 
     [:div {:class (stl/css-case :element-options true
                                 :workspace-element-options (= from :workspace))}
@@ -54,14 +71,17 @@
              :blur             blur-panel
              :image            image-panel
              :text             text-panel
-             :svg              svg-panel)
+             :svg              svg-panel
+             :variant          variant-panel*)
         {:key idx
          :shapes shapes
          :objects objects
          :frame frame
-         :from from}])
-     (when content
-       [:& annotation {:content content}])
+         :from from
+         :libraries libraries
+         :file-id file-id}])
+     (when annotation-content
+       [:& annotation {:content annotation-content}])
      [:& exports
       {:shapes shapes
        :type type

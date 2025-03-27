@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+_SCRIPT_DIR=$(dirname $0);
+
+pushd $_SCRIPT_DIR;
+
+# Enable debugging if the script is run with --debug
+if [[ "$1" == "--debug" ]]; then
+    set -x
+fi
+
+. ./_build_env
+
+ALLOWED_RULES="
+        -A clippy::box_collection \
+        -A clippy::clone_on_copy \
+        -A clippy::derivable_impls \
+        -A clippy::enum_variant_names \
+        -A clippy::field_reassign_with_default \
+        -A clippy::from_over_into \
+        -A clippy::len_zero \
+        -A clippy::manual_map \
+        -A clippy::map_entry \
+        -A clippy::missing_safety_doc \
+        -A clippy::missing_transmute_annotations \
+        -A clippy::needless_borrow \
+        -A clippy::needless_borrows_for_generic_args \
+        -A clippy::needless_range_loop \
+        -A clippy::needless_return \
+        -A clippy::redundant_closure \
+        -A clippy::redundant_field_names \
+        -A clippy::single_match \
+        -A clippy::slow_vector_initialization \
+        -A clippy::too_many_arguments \
+        -A clippy::unnecessary_to_owned \
+        -A clippy::unused_unit \
+        -A clippy::unwrap_or_default \
+        -A clippy::useless_format \
+        -A clippy::wrong_self_convention \
+        -D static_mut_refs"
+
+# ./lint --fix
+if [[ "$1" == "--fix" ]]; then
+    cargo clippy \
+        --fix --allow-dirty \
+        --target=wasm32-unknown-emscripten \
+        -- -D warnings \
+        $ALLOWED_RULES
+else
+    cargo clippy \
+        --target=wasm32-unknown-emscripten \
+        -- -D warnings \
+        $ALLOWED_RULES
+fi
+popd

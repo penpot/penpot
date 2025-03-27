@@ -61,7 +61,8 @@
     "styles/v2"
     "layout/grid"
     "components/v2"
-    "plugins/runtime"})
+    "plugins/runtime"
+    "design-tokens/v1"})
 
 ;; A set of features which only affects on frontend and can be enabled
 ;; and disabled freely by the user any time. This features does not

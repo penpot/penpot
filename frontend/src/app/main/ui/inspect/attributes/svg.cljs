@@ -8,8 +8,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.components.title-bar :refer [inspect-title-bar]]
+   [app.main.ui.components.copy-button :refer [copy-button*]]
+   [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -24,7 +24,7 @@
     [:*
      [:div {:class (stl/css :attributes-subtitle)}
       [:span (d/name attr)]
-      [:& copy-button {:data (map->css value)}]]
+      [:> copy-button* {:data (map->css value)}]]
 
      (for [[attr-key attr-value] value]
        [:& svg-attr {:attr  attr-key :value attr-value :key (str/join "svg-key-" (d/name attr-key))}])]
@@ -37,8 +37,8 @@
       [:div {:class (stl/css :svg-row)}
        [:div {:class (stl/css :global/attr-label)} attr-name]
        [:div {:class (stl/css :global/attr-value)}
-        [:& copy-button {:data  (d/name value)
-                         :class (stl/css :copy-btn-title)}
+        [:> copy-button* {:data  (d/name value)
+                          :class (stl/css :copy-btn-title)}
          [:div {:class (stl/css :button-children)} (str value)]]]])))
 
 (mf/defc svg-block
@@ -52,7 +52,7 @@
   (let [shape (first shapes)]
     (when (seq (:svg-attrs shape))
       [:div {:class (stl/css :attributes-block)}
-       [:& inspect-title-bar
+       [:> inspect-title-bar*
         {:title (tr "workspace.sidebar.options.svg-attrs.title")
          :class (stl/css :title-spacing-svg)}]
        [:& svg-block {:shape shape}]])))

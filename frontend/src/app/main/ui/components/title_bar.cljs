@@ -51,8 +51,7 @@
                  :on-click on-btn-click}
         btn-children])]))
 
-(mf/defc inspect-title-bar
-  {::mf/props :obj}
+(mf/defc inspect-title-bar*
   [{:keys [class title]}]
   [:div {:class (dm/str (stl/css :title-bar) " " class)}
    [:div {:class (stl/css :title-only :inspect-title)} title]])

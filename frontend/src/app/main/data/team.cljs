@@ -64,13 +64,14 @@
           (update :profiles merge (d/index-by :id members))))))
 
 (defn fetch-members
-  []
-  (ptk/reify ::fetch-members
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :get-team-members {:team-id team-id})
-             (rx/map (partial members-fetched team-id)))))))
+  ([] (fetch-members nil))
+  ([team-id]
+   (ptk/reify ::fetch-members
+     ptk/WatchEvent
+     (watch [_ state _]
+       (when-let [team-id (or team-id (:current-team-id state))]
+         (->> (rp/cmd! :get-team-members {:team-id team-id})
+              (rx/map (partial members-fetched team-id))))))))
 
 (defn- invitations-fetched
   [team-id invitations]
@@ -88,41 +89,24 @@
         (->> (rp/cmd! :get-team-invitations {:team-id team-id})
              (rx/map (partial invitations-fetched team-id)))))))
 
-(defn set-current-team
-  [{:keys [id permissions features] :as team}]
-  (ptk/reify ::set-current-team
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          ;; FIXME: redundant operation, only necessary on workspace
-          ;; until workspace initialization is refactored
-          (update-in [:teams id] merge team)
-          (assoc :permissions permissions)
-          ;; FIXME: this is a redundant operation that only needed by
-          ;; workspace; ti will not be needed after workspace
-          ;; bootstrap & urls refactor
-          (assoc :current-team-id id)))
-
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (features/initialize (or features #{}))))
-
-    ptk/EffectEvent
-    (effect [_ _ _]
-      (swap! storage/global assoc ::current-team-id id))))
-
 (defn- team-initialized
-  []
+  [team-id]
   (ptk/reify ::team-initialized
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (:current-team-id state)
-            teams   (get state :teams)
-            team    (get teams team-id)]
+      (let [teams (get state :teams)
+            team  (get teams team-id)]
         (if (not team)
           (rx/throw (ex/error :type :authentication))
-          (rx/of (set-current-team team)
-                 (fetch-members)))))))
+          (let [permissions (get team :permissions)
+                features    (get team :features)]
+            (rx/of #(assoc % :permissions permissions)
+                   (features/initialize (or features #{}))
+                   (fetch-members team-id))))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (swap! storage/global assoc ::current-team-id team-id))))
 
 (defn initialize-team
   [team-id]
@@ -138,8 +122,7 @@
               (rx/of (fetch-teams))
               (->> stream
                    (rx/filter (ptk/type? ::teams-fetched))
-                   (rx/observe-on :async)
-                   (rx/map team-initialized)))
+                   (rx/map (partial team-initialized team-id))))
              (rx/take-until stopper))))))
 
 (defn finalize-team
@@ -169,7 +152,7 @@
             params  (assoc params :team-id team-id)]
         (->> (rp/cmd! :update-team-member-role params)
              (rx/mapcat (fn [_]
-                          (rx/of (fetch-members)
+                          (rx/of (fetch-members team-id)
                                  (fetch-teams)
                                  (ptk/data-event ::ev/event
                                                  {::ev/name "update-team-member-role"
@@ -187,7 +170,7 @@
             params  (assoc params :team-id team-id)]
         (->> (rp/cmd! :delete-team-member params)
              (rx/mapcat (fn [_]
-                          (rx/of (fetch-members)
+                          (rx/of (fetch-members team-id)
                                  (fetch-teams)
                                  (ptk/data-event ::ev/event
                                                  {::ev/name "delete-team-member"
@@ -367,12 +350,10 @@
 
 (defn create-invitations
   [{:keys [emails role team-id resend?] :as params}]
-  (dm/assert! (keyword? role))
-  (dm/assert! (uuid? team-id))
 
-  (dm/assert!
-   "expected a valid set of emails"
-   (sm/check-set-of-emails! emails))
+  (assert (keyword? role))
+  (assert (uuid? team-id))
+  (assert (sm/check-set-of-emails emails))
 
   (ptk/reify ::create-invitations
     ev/Event
@@ -393,11 +374,8 @@
 
 (defn copy-invitation-link
   [{:keys [email team-id] :as params}]
-  (dm/assert!
-   "expected a valid email"
-   (sm/check-email! email))
-
-  (dm/assert! (uuid? team-id))
+  (assert (sm/check-email email))
+  (assert (uuid? team-id))
 
   (ptk/reify ::copy-invitation-link
     IDeref
@@ -423,12 +401,9 @@
 
 (defn update-invitation-role
   [{:keys [email team-id role] :as params}]
-  (dm/assert!
-   "expected a valid email"
-   (sm/check-email! email))
-
-  (dm/assert! (uuid? team-id))
-  (dm/assert! (contains? ctt/valid-roles role))
+  (assert (sm/check-email email))
+  (assert (uuid? team-id))
+  (assert (contains? ctt/valid-roles role))
 
   (ptk/reify ::update-invitation-role
     IDeref
@@ -445,8 +420,9 @@
 
 (defn delete-invitation
   [{:keys [email team-id] :as params}]
-  (dm/assert! (sm/check-email! email))
-  (dm/assert! (uuid? team-id))
+  (assert (sm/check-email email))
+  (assert (uuid? team-id))
+
   (ptk/reify ::delete-invitation
     ptk/WatchEvent
     (watch [_ _ _]

@@ -24,7 +24,7 @@
 
           metadata? (mf/use-ctx use/include-metadata-ctx)
           content   (mf/with-memo [shape child-objs]
-                      (let [content (:bool-content shape)]
+                      (let [content (:content shape)]
                         (cond
                           (some? content)
                           content

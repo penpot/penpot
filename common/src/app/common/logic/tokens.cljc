@@ -1,31 +1,38 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
 (ns app.common.logic.tokens
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.types.tokens-lib :as ctob]))
 
 (defn generate-update-active-sets
-  "Copy the active sets from the currently active themes and move them to the hidden token theme and update the theme with `update-hidden-theme-fn`.
+  "Copy the active sets from the currently active themes and move them
+  to the hidden token theme and update the theme with
+  `update-theme-fn`.
 
-  Use this for managing sets active state without having to modify a user created theme (\"no themes selected\" state in the ui)."
-  [changes tokens-lib update-hidden-theme-fn]
+  Use this for managing sets active state without having to modify a
+  user created theme (\"no themes selected\" state in the ui)."
+  [changes tokens-lib update-theme-fn]
   (let [prev-active-token-themes (ctob/get-active-theme-paths tokens-lib)
         active-token-set-names   (ctob/get-active-themes-set-names tokens-lib)
 
-        prev-hidden-token-theme (ctob/get-hidden-theme tokens-lib)
-        hidden-token-theme      (-> (or (some-> prev-hidden-token-theme (ctob/set-sets active-token-set-names))
-                                        (ctob/make-hidden-token-theme :sets active-token-set-names))
-                                    (update-hidden-theme-fn))
+        prev-hidden-token-theme  (ctob/get-hidden-theme tokens-lib)
 
-        changes (-> changes
-                    (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} prev-active-token-themes))
-
-        changes (if prev-hidden-token-theme
-                  (pcb/update-token-theme changes hidden-token-theme prev-hidden-token-theme)
-                  (pcb/add-token-theme changes hidden-token-theme))]
-    changes))
+        hidden-token-theme       (-> (some-> prev-hidden-token-theme (ctob/set-sets active-token-set-names))
+                                     (update-theme-fn))]
+    (-> changes
+        (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} prev-active-token-themes)
+        (pcb/set-token-theme (:group prev-hidden-token-theme)
+                             (:name prev-hidden-token-theme)
+                             hidden-token-theme))))
 
 (defn generate-toggle-token-set
-  "Toggle a token set at `set-name` in `tokens-lib` without modifying a user theme."
+  "Toggle a token set at `set-name` in `tokens-lib` without modifying a
+  user theme."
   [changes tokens-lib set-name]
   (generate-update-active-sets changes tokens-lib #(ctob/toggle-set % set-name)))
 
@@ -48,17 +55,19 @@
 (defn vec-starts-with? [v1 v2]
   (= (subvec v1 0 (min (count v1) (count v2))) v2))
 
-(defn calculate-move-token-set-or-set-group
+(defn- calculate-move-token-set-or-set-group
   [tokens-lib {:keys [from-index to-index position collapsed-paths]
                :or {collapsed-paths #{}}}]
   (let [tree (-> (ctob/get-set-tree tokens-lib)
                  (ctob/walk-sets-tree-seq :skip-children-pred #(contains? collapsed-paths %)))
+
         from (nth tree from-index)
         to (nth tree to-index)
         before (case position
                  :top to
                  :bot (nth tree (inc to-index) nil)
                  :center nil)
+
         prev-before (if (:group? from)
                       (->> (drop (inc from-index) tree)
                            (filter (fn [element]
@@ -72,6 +81,7 @@
                                       (= :bot position)
                                       (:group? to)
                                       (not (get collapsed-paths (:path to)))))
+
         from-path (:path from)
         to-parent-path (if drop-as-direct-group-child?
                          (:path to)
@@ -117,15 +127,15 @@
 (defn generate-move-token-set
   "Create changes for dropping a token set or token set.
   Throws for impossible moves."
-  [changes tokens-lib drop-opts]
-  (if-let [drop-opts' (calculate-move-token-set-or-set-group tokens-lib drop-opts)]
-    (pcb/move-token-set-before changes drop-opts')
+  [changes tokens-lib params]
+  (if-let [params (calculate-move-token-set-or-set-group tokens-lib params)]
+    (pcb/move-token-set changes params)
     changes))
 
 (defn generate-move-token-set-group
   "Create changes for dropping a token set or token set group.
   Throws for impossible moves"
-  [changes tokens-lib drop-opts]
-  (if-let [drop-opts' (calculate-move-token-set-or-set-group tokens-lib drop-opts)]
-    (pcb/move-token-set-group-before changes drop-opts')
+  [changes tokens-lib params]
+  (if-let [params (calculate-move-token-set-or-set-group tokens-lib params)]
+    (pcb/move-token-set-group changes params)
     changes))

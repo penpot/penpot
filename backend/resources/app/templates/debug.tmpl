@@ -157,5 +157,77 @@ Debug Main Page
       </form>
     </fieldset>
   </section>
+
+  <section class="widget">
+    <h2>Feature Flags</h2>
+    <fieldset>
+      <legend>Enable</legend>
+      <desc>Add a feature flag to a team</desc>
+      <form method="post" action="/dbg/actions/add-team-feature">
+        <div class="row">
+          <input type="text" style="width:300px" name="team-id" placeholder="team-id" />
+        </div>
+        <div class="row">
+          <input type="text" style="width:100px" name="feature" placeholder="feature" value="" />
+        </div>
+
+        <div class="row">
+          <label for="check-feature">Skip feature check</label>
+          <input id="check-feature" type="checkbox" name="skip-check" />
+          <br />
+          <small>
+            Do not check if the feature is supported
+          </small>
+        </div>
+
+        <div class="row">
+          <label for="force-version">Are you sure?</label>
+          <input id="force-version" type="checkbox" name="force" />
+          <br />
+          <small>
+            This is a just a security double check for prevent non intentional submits.
+          </small>
+        </div>
+
+        <div class="row">
+          <input type="submit" value="Submit" />
+        </div>
+      </form>
+    </fieldset>
+    <fieldset>
+      <legend>Disable</legend>
+      <desc>Remove a feature flag from a team</desc>
+      <form method="post" action="/dbg/actions/remove-team-feature">
+        <div class="row">
+          <input type="text" style="width:300px" name="team-id" placeholder="team-id" />
+        </div>
+        <div class="row">
+          <input type="text" style="width:100px" name="feature" placeholder="feature" value="" />
+        </div>
+
+        <div class="row">
+          <label for="check-feature">Skip feature check</label>
+          <input id="check-feature" type="checkbox" name="skip-check" />
+          <br />
+          <small>
+            Do not check if the feature is supported
+          </small>
+        </div>
+
+        <div class="row">
+          <label for="force-version">Are you sure?</label>
+          <input id="force-version" type="checkbox" name="force" />
+          <br />
+          <small>
+            This is a just a security double check for prevent non intentional submits.
+          </small>
+        </div>
+
+        <div class="row">
+          <input type="submit" value="Submit" />
+        </div>
+      </form>
+    </fieldset>
+  </section>
 </main>
 {% endblock %}

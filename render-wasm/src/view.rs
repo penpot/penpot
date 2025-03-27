@@ -45,23 +45,14 @@ impl Viewbox {
         );
     }
 
-    pub fn set_zoom(&mut self, zoom: f32) {
-        self.zoom = zoom;
-        self.area
-            .set_wh(self.width / self.zoom, self.height / self.zoom);
-    }
-
-    pub fn set_pan_xy(&mut self, pan_x: f32, pan_y: f32) {
-        self.pan_x = pan_x;
-        self.pan_y = pan_y;
-        self.area.left = -pan_x;
-        self.area.top = -pan_y;
-    }
-
     pub fn set_wh(&mut self, width: f32, height: f32) {
         self.width = width;
         self.height = height;
         self.area
             .set_wh(self.width / self.zoom, self.height / self.zoom);
+    }
+
+    pub fn zoom(&self) -> f32 {
+        self.zoom
     }
 }

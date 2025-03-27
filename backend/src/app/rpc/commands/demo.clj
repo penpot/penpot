@@ -27,7 +27,7 @@
   {::rpc/auth false
    ::doc/added "1.15"
    ::doc/changes ["1.15" "This method is migrated from mutations to commands."]}
-  [{:keys [::db/pool] :as cfg} _]
+  [cfg _]
 
   (when-not (contains? cf/flags :demo-users)
     (ex/raise :type :validation
@@ -49,9 +49,11 @@
                   :password (profile/derive-password cfg password)
                   :props {}}]
 
-    (db/with-atomic [conn pool]
-      (let [profile (->> (auth/create-profile! conn params)
-                         (auth/create-profile-rels! conn))]
-        (with-meta {:email email
-                    :password password}
-          {::audit/profile-id (:id profile)})))))
+
+    (let [profile (db/tx-run! cfg (fn [{:keys [::db/conn]}]
+                                    (->> (auth/create-profile! conn params)
+                                         (auth/create-profile-rels! conn))))]
+      (with-meta {:email email
+                  :password password}
+        {::audit/profile-id (:id profile)}))))
+

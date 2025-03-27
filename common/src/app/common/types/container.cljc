@@ -501,7 +501,12 @@
 (defn- invalid-structure-for-component?
   "Check if the structure generated nesting children in parent is invalid in terms of nested components"
   [objects parent children pasting? libraries]
-  (let [; When we are pasting, the main shapes will be pasted as copies, unless the
+  (let [; If the original shapes had been cutted, and we are pasting them now, they aren't
+        ; in objects. We can add them to locate later
+        objects (merge objects
+                       (into {} (map (juxt :id identity) children)))
+
+        ; When we are pasting, the main shapes will be pasted as copies, unless the
         ; original component doesn't exist or is deleted. So for this function purposes, they
         ; are removed from the list
         remove? (fn [shape]

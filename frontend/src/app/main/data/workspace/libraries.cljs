@@ -123,7 +123,7 @@
 
      (dm/assert!
       "expect valid color structure"
-      (ctc/check-color! color))
+      (ctc/check-color color))
 
      (ptk/reify ::add-color
        ev/Event
@@ -140,10 +140,8 @@
 
 (defn add-recent-color
   [color]
-
-  (dm/assert!
-   "expected valid recent color structure"
-   (ctc/check-recent-color! color))
+  (assert (ctc/check-recent-color color)
+          "expected valid recent color structure")
 
   (ptk/reify ::add-recent-color
     ptk/UpdateEvent
@@ -182,7 +180,7 @@
 
     (dm/assert!
      "expected valid color data structure"
-     (ctc/check-color! color))
+     (ctc/check-color color))
 
     (dm/assert!
      "expected file-id"
@@ -200,7 +198,7 @@
 
     (dm/assert!
      "expected valid color data structure"
-     (ctc/check-color! color))
+     (ctc/check-color color))
 
     (dm/assert!
      "expected file-id"
@@ -529,10 +527,13 @@
        (let [libraries          (dsh/lookup-libraries state)
              library            (get libraries library-id)
              components-v2      (features/active-feature? state "components/v2")
-             changes (-> (pcb/empty-changes it nil)
-                         (cll/generate-duplicate-component library component-id new-component-id components-v2))]
 
-         (rx/of (dch/commit-changes changes)))))))
+             [main-instance changes]
+             (-> (pcb/empty-changes it nil)
+                 (cll/generate-duplicate-component library component-id new-component-id components-v2))]
+         (rx/of
+          (ptk/data-event :layout/update {:ids [(:id main-instance)]})
+          (dch/commit-changes changes)))))))
 
 (defn delete-component
   "Delete the component with the given id, from the current file library."
@@ -1188,20 +1189,19 @@
          (ctf/used-assets-changed-since file-data library sync-date))))))
 
 (defn notify-sync-file
+  ;; file-id is the id of the modified library
   [file-id]
   (dm/assert! (uuid? file-id))
   (ptk/reify ::notify-sync-file
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file         (dsh/lookup-file state file-id)
-
+      (let [file         (dsh/lookup-file state (:current-file-id state))
             file-data    (get file :data)
             ignore-until (get file :ignore-sync-until)
 
             libraries-need-sync
             (filter #(seq (assets-need-sync % file-data ignore-until))
                     (vals (get state :files)))
-
             do-more-info
             #(modal/show! :libraries-dialog {:starting-tab "updates" :file-id file-id})
 

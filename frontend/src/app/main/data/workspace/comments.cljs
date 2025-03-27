@@ -20,6 +20,7 @@
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.zoom :as dwz]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.streams :as ms]
@@ -102,26 +103,6 @@
                       ny (- (:y position) nh)]
                   (update local :vbox assoc :x nx :y ny)))))))
 
-(defn navigate
-  [thread]
-  (dm/assert!
-   "expected valid comment thread"
-   (dcmt/check-comment-thread! thread))
-  (ptk/reify ::open-comment-thread
-    ptk/WatchEvent
-    (watch [_ _ stream]
-      (rx/merge
-       (rx/of (dcm/go-to-workspace :file-id (:file-id thread)
-                                   :page-id (:page-id thread)))
-
-       (->> stream
-            (rx/filter (ptk/type? ::dcmt/comment-threads-fetched))
-            (rx/take 1)
-            (rx/mapcat #(rx/of (center-to-comment-thread thread)
-                               (dwd/select-for-drawing :comments)
-                               (with-meta (dcmt/open-thread thread)
-                                 {::ev/origin "workspace"}))))))))
-
 (defn update-comment-thread-position
   ([thread [new-x new-y]]
    (update-comment-thread-position thread [new-x new-y] nil))
@@ -153,9 +134,7 @@
 ;; Move comment threads that are inside a frame when that frame is moved"
 (defmethod ptk/resolve ::move-frame-comment-threads
   [_ ids]
-  (dm/assert!
-   "expected a valid coll of uuid's"
-   (sm/check-coll-of-uuid! ids))
+  (assert (sm/check-coll-of-uuid ids))
 
   (ptk/reify ::move-frame-comment-threads
     ptk/WatchEvent
@@ -192,6 +171,66 @@
              (map build-move-event)
              (rx/from))))))
 
+(defn overlap-bubbles?
+  "Detect if two bubbles overlap"
+  [zoom thread-1 thread-2]
+  (let [distance         (gpt/distance (:position thread-1) (:position thread-2))
+        distance-zoom    (* distance zoom)
+        distance-overlap 32]
+    (< distance-zoom distance-overlap)))
+
+(defn- calculate-zoom-scale-to-ungroup-current-bubble
+  "Calculate the minimum zoom scale needed to keep the current bubble ungrouped from the rest"
+  [zoom thread threads]
+  (let [threads-rest    (filterv #(not= (:id %) (:id thread)) threads)
+        zoom-scale-step 1.75]
+    (if (some #(overlap-bubbles? zoom thread %) threads-rest)
+      (calculate-zoom-scale-to-ungroup-current-bubble (* zoom zoom-scale-step) thread threads)
+      zoom)))
+
+(defn set-zoom-to-separate-grouped-bubbles
+  [thread]
+  (dm/assert!
+   "zoom-to-separate-bubbles"
+   (dcmt/check-comment-thread! thread))
+  (ptk/reify ::set-zoom-to-separate-grouped-bubbles
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [local        (:workspace-local state)
+            zoom         (:zoom local)
+            page-id      (:page-id thread)
+
+            threads-map  (:comment-threads state)
+            threads-all  (vals threads-map)
+            threads      (filterv #(= (:page-id %) page-id) threads-all)
+
+            updated-zoom (calculate-zoom-scale-to-ungroup-current-bubble zoom thread threads)
+            scale-zoom   (/ updated-zoom zoom)]
+
+        (rx/of (dwz/set-zoom scale-zoom))))))
+
+(defn navigate-to-comment-from-dashboard
+  [thread]
+  (dm/assert!
+   "expected valid comment thread"
+   (dcmt/check-comment-thread! thread))
+  (ptk/reify ::navigate-to-comment-from-dashboard
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (rx/merge
+       (rx/of (dcm/go-to-workspace :file-id (:file-id thread)
+                                   :page-id (:page-id thread)))
+
+       (->> stream
+            (rx/filter (ptk/type? :app.main.data.workspace/workspace-initialized))
+            (rx/observe-on :async)
+            (rx/take 1)
+            (rx/mapcat #(rx/of (dwd/select-for-drawing :comments)
+                               (set-zoom-to-separate-grouped-bubbles thread)
+                               (center-to-comment-thread thread)
+                               (with-meta (dcmt/open-thread thread)
+                                 {::ev/origin "workspace"}))))))))
+
 (defn navigate-to-comment
   [thread]
   (ptk/reify ::navigate-to-comment
@@ -208,6 +247,7 @@
          (rx/empty))
        (->> (rx/of
              (dwd/select-for-drawing :comments)
+             (set-zoom-to-separate-grouped-bubbles thread)
              (center-to-comment-thread thread)
              (with-meta (dcmt/open-thread thread) {::ev/origin "workspace"}))
             (rx/observe-on :async))))))

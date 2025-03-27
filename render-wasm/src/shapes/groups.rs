@@ -1,10 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct Group {
     pub masked: bool,
-}
-
-impl Group {
-    pub fn new(masked: bool) -> Self {
-        Group { masked }
-    }
 }

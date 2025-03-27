@@ -7,29 +7,44 @@
 @use "common/refactor/common-refactor.scss" as *;
 
 .dashboard-templates-section {
-  position: absolute;
+  background-color: var(--color-background-tertiary);
+  bottom: 0;
+  border-bottom-left-radius: $br-8;
+  border-bottom-right-radius: $br-8;
+  border-top-right-radius: $br-8;
   display: flex;
   flex-direction: column;
+  height: $s-244;
   justify-content: flex-end;
-  bottom: 0;
-  width: 100%;
-  height: $s-228;
+  margin-left: $s-6;
+  margin-right: $s-6;
+  margin-bottom: $s-6;
+  position: absolute;
   transition: bottom 300ms;
+  width: calc(100% - $s-12);
   pointer-events: none;
   &.collapsed {
     bottom: calc(-1 * $s-228);
+    background-color: transparent;
     transition: bottom 300ms;
+    .title-btn {
+      border-bottom-right-radius: $br-8;
+      border-bottom-left-radius: $br-8;
+    }
+    .content,
+    .content-description {
+      visibility: hidden;
+    }
   }
 }
 
 .title {
   pointer-events: all;
-  width: fit-content;
-  top: calc(-1 * $s-56);
+  width: $s-420;
+  top: calc(-1 * $s-40);
   text-align: right;
   height: $s-56;
   position: absolute;
-  right: calc(-1 * $s-24);
 }
 
 .title-btn {
@@ -38,12 +53,12 @@
   height: $s-56;
   display: inline-flex;
   align-items: center;
-  border-top-left-radius: $br-10;
-  border-top-right-radius: $br-10;
-  margin-right: $s-32;
+  border-top-left-radius: $br-8;
+  border-top-right-radius: $br-8;
   position: relative;
   z-index: $z-index-1;
-  background-color: var(--color-background-quaternary);
+  background-color: var(--color-background-tertiary);
+  width: 100%;
 }
 
 .title-text {
@@ -51,21 +66,30 @@
   vertical-align: middle;
   line-height: 1.2;
   font-size: $fs-16;
-  margin-left: $s-16;
+  margin-left: $s-12;
   margin-right: $s-8;
   color: var(--color-foreground-primary);
   font-weight: $fw400;
 }
 
+.title-icon-container {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: auto;
+  margin-right: $s-8;
+  color: var(--color-foreground-primary);
+}
+
 .title-icon {
   display: inline-block;
   vertical-align: middle;
-  margin-left: $s-16;
+  margin-left: auto;
   margin-right: $s-8;
-  color: var(--color-foreground-primary);
-  margin-left: $s-16;
-  margin-right: $s-16;
   transform: rotate(90deg);
+}
+
+.title-icon-text {
+  margin-right: $s-8;
 }
 
 .title-icon-collapsed {
@@ -74,26 +98,30 @@
 
 .arrow-icon {
   @extend .button-icon;
-  stroke: var(--icon-foreground);
+  stroke: var(--color-foreground-secondary);
 }
 
 .move-button {
   position: absolute;
-  top: $s-136;
+  top: $s-96;
   border: $s-2 solid var(--color-foreground-secondary);
   border-radius: 50%;
   text-align: center;
   width: $s-36;
   height: $s-36;
   cursor: pointer;
-  background-color: var(--color-foreground-primary);
+  background-color: var(--button-secondary-background-color-rest);
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: all;
 
   &:hover {
-    border: $s-2 solid var(--color-accent-tertiary);
+    border: $s-2 solid var(--color-background-tertiary);
+    background-color: var(--color-accent-primary);
+    .arrow-icon {
+      stroke: var(--color-background-tertiary);
+    }
   }
 }
 
@@ -108,19 +136,26 @@
   margin-right: $s-44;
 }
 
+.content-description {
+  font-size: $fs-14;
+  color: var(--color-foreground-primary);
+  margin-bottom: -8px;
+  margin-top: $s-16;
+  margin-left: $s-16;
+  visibility: visible;
+}
+
 .content {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax($s-276, $s-276));
   grid-auto-flow: column;
   pointer-events: all;
   height: $s-228;
-  margin-left: $s-6;
-  border-top-left-radius: $s-8;
-  background-color: var(--color-background-quaternary);
   overflow: scroll hidden;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
   scroll-snap-stop: always;
+  visibility: visible;
 }
 
 .card-container {
@@ -140,18 +175,24 @@
   font-size: $fs-16;
   cursor: pointer;
   color: var(--color-foreground-primary);
-  padding: $s-3 $s-6 $s-16 $s-6;
+  padding: 0 $s-4 $s-8 $s-4;
   border-radius: $br-8;
-
+  border: $s-2 solid transparent;
   &:hover {
-    background-color: var(--color-background-tertiary);
+    border-color: var(--color-accent-primary);
+    .download-icon {
+      stroke: var(--color-accent-primary);
+    }
+    .card-text {
+      color: var(--color-accent-primary);
+    }
   }
 }
 
 .img-container {
   width: 100%;
   height: $s-136;
-  margin-bottom: $s-16;
+  margin-bottom: $s-8;
   border-radius: $br-5;
   display: flex;
   justify-content: center;
@@ -171,8 +212,13 @@
 }
 
 .card-text {
-  font-weight: $fw500;
+  font-weight: $fw400;
   font-size: $fs-16;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 90%;
+  text-overflow: ellipsis;
+  text-align: left;
 }
 
 .download-icon {

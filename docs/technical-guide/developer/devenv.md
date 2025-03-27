@@ -157,3 +157,11 @@ similar to a webmail client. Simply navigate to:
 
 [http://localhost:1080](http://localhost:1080)
 
+## Team Feature Flags
+
+To test a Feature Flag, you can enable or disable them by team through the `dbg` page:
+
+1. Create a new team or navigate to an existing team in Penpot.
+2. Copy the `team-id` from the URL (e.g., `?team-id=1234bd95-69dd-805c-8005-c015415436ae`). If no team is selected, the default profile team will be used.
+3. Go to [http://localhost:3449/dbg](http://localhost:3449/dbg).
+4. Open the Feature Flag panel, enter the `team-id` and the `feature` name in either the enable or disable section, and click `Submit`.

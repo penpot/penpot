@@ -82,15 +82,22 @@
   "Assoc a k v pair, in the order position just before the other key."
   [o ks k v before-k]
   (let [f (fn [o']
-            (cond-> (reduce
-                     (fn [acc [k' v']]
-                       (cond
-                         (and before-k (= k' before-k)) (assoc acc k v k' v')
-                         (= k k') acc
-                         :else (assoc acc k' v')))
-                     (ordered-map)
-                     o')
-              (not before-k) (assoc k v)))]
+            (let [found  (volatile! false)
+                  result (reduce
+                          (fn [acc [k' v']]
+                            (cond
+                              (and before-k (= k' before-k))
+                              (do
+                                (vreset! found true)
+                                (assoc acc k v k' v'))
+
+                              (= k k') acc
+                              :else (assoc acc k' v')))
+                          (ordered-map)
+                          o')]
+              (if (or (not before-k) (not @found))
+                (assoc result k v)
+                result)))]
     (if (seq ks)
       (oupdate-in o ks f)
       (f o))))
@@ -1007,27 +1014,35 @@
 (def ^:const trail-zeros-regex-1 #"\.0+$")
 (def ^:const trail-zeros-regex-2 #"(\.\d*[^0])0+$")
 
-#?(:cljs
-   (defn format-precision
-     "Creates a number with predetermined precision and then removes the trailing 0.
+(defn format-precision
+  "Creates a number with predetermined precision and then removes the trailing 0.
   Examples:
     12.0123, 0 => 12
     12.0123, 1 => 12
     12.0123, 2 => 12.01"
-     [num precision]
+  [num precision]
 
-     (if (number? num)
-       (try
-         (let [num-str (mth/to-fixed num precision)
+  (if (number? num)
+    (try
+      (let [num-str (mth/to-fixed num precision)
                ;; Remove all trailing zeros after the comma 100.00000
-               num-str (str/replace num-str trail-zeros-regex-1 "")]
+            num-str (str/replace num-str trail-zeros-regex-1 "")]
            ;; Remove trailing zeros after a decimal number: 0.001|00|
-           (if-let [m (re-find trail-zeros-regex-2 num-str)]
-             (str/replace num-str (first m) (second m))
-             num-str))
-         (catch :default _
-           (str num)))
-       (str num))))
+        (if-let [m (re-find trail-zeros-regex-2 num-str)]
+          (str/replace num-str (first m) (second m))
+          num-str))
+      (catch #?(:clj Throwable :cljs :default) _
+        (str num)))
+    (str num)))
+
+(defn format-number
+  ([value]
+   (format-number value nil))
+  ([value {:keys [precision] :or {precision 2}}]
+   (let [value (if (string? value) (parse-double value) value)]
+     (when (num? value)
+       (let [value (format-precision value precision)]
+         (str value))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Util protocols

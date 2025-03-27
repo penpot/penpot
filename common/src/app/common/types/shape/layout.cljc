@@ -1642,11 +1642,11 @@
   "Given target cells update with source cells while trying to keep target as
   untouched as possible"
   [target-cells source-cells omit-touched?]
-  (if (not omit-touched?)
-    source-cells
-
-    (letfn [(get-data [cells id]
-              (dissoc (get cells id) :shapes :row :column :row-span :column-span))]
+  (if omit-touched?
+    (letfn [(merge-cells [source-cell target-cell]
+              (-> source-cell
+                  (d/patch-object
+                   (dissoc target-cell :row :column :row-span :column-span))))]
       (let [deleted-cells
             (into #{}
                   (filter #(not (contains? source-cells %)))
@@ -1654,15 +1654,22 @@
 
             touched-cells
             (into #{}
-                  (filter #(and
-                            (not (contains? deleted-cells %))
-                            (not= (get-data source-cells %)
-                                  (get-data target-cells %))))
+                  (filter #(not (contains? deleted-cells %)))
                   (keys target-cells))]
 
         (->> touched-cells
              (reduce
               (fn [cells id]
                 (-> cells
-                    (d/update-when id d/patch-object (get-data target-cells id))))
-              source-cells))))))
+                    (d/update-when id merge-cells (get target-cells id))))
+              source-cells))))
+    source-cells))
+
+(defn toggle-fix-if-auto
+  "Changes the sizing to fix if it's fill"
+  [shape]
+  (cond-> shape
+    (= (:layout-item-h-sizing shape) :fill)
+    (assoc :layout-item-h-sizing :fix)
+    (= (:layout-item-v-sizing shape) :fill)
+    (assoc :layout-item-v-sizing :fix)))

@@ -204,6 +204,9 @@
                   (rx/filter #(= % ::force-persist))))]
 
         (rx/merge
+         (->> notifier-s
+              (rx/map #(ptk/data-event ::persistence-notification)))
+
          (->> local-commits-s
               (rx/debounce 200)
               (rx/map (fn [_]

@@ -22,6 +22,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
@@ -232,6 +233,7 @@
 (mf/defc token-sets-section*
   {::mf/private true}
   [{:keys [resize-height] :as props}]
+
   (let [can-edit?
         (mf/use-ctx ctx/can-edit?)]
 
@@ -266,7 +268,7 @@
             {}))
 
         ;; Resolve tokens as second step
-        active-theme-tokens
+        active-theme-tokens'
         (sd/use-resolved-tokens* active-theme-tokens)
 
         ;; This only checks for the currently explicitly selected set
@@ -326,14 +328,14 @@
                            :is-open (get open-status type false)
                            :type type
                            :selected-shapes selected-shapes
-                           :active-theme-tokens active-theme-tokens
+                           :active-theme-tokens active-theme-tokens'
                            :tokens tokens}]))
 
      (for [type empty-group]
        [:> token-group* {:key (name type)
                          :type type
                          :selected-shapes selected-shapes
-                         :active-theme-tokens active-theme-tokens
+                         :active-theme-tokens active-theme-tokens'
                          :tokens []}])]))
 
 (mf/defc import-export-button*
@@ -408,7 +410,10 @@
       (when can-edit?
         [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                  :on-click on-display-file-explorer}
-         (tr "labels.import")])
+         [:div {:class (stl/css :import-menu-item)}
+          [:div (tr "labels.import")]
+          [:div {:class (stl/css :import-export-menu-item-icon) :title (tr "workspace.token.import-tooltip")}
+           [:> i/icon* {:icon-id i/info :aria-label (tr "workspace.token.import-tooltip")}]]]])
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                :on-click on-export}
        (tr "labels.export")]]]))

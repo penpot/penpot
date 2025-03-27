@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-12-28 16:02+0000\n"
+"PO-Revision-Date: 2025-02-04 21:02+0000\n"
 "Last-Translator: Late Night Defender <pongpeera054@protonmail.com>\n"
 "Language-Team: Thai "
 "<https://hosted.weblate.org/projects/penpot/frontend/th/>\n"
@@ -31,13 +31,13 @@ msgstr "ยืนยันรหัสผ่าน"
 msgid "auth.create-demo-account"
 msgstr "สร้างบัญชีสาธิตการใช้งาน"
 
-#: src/app/main/ui/auth/login.cljs:42
+#: src/app/main/ui/auth/login.cljs:43
 msgid "auth.demo-warning"
 msgstr ""
 "บริการนี้มีไว้สำหรับสาธิตการใช้งาน ห้ามใช้สำหรับชิ้นงานจริง "
 "เนื่องจากข้อมูลจะถูกลบเป็นระยะ ๆ"
 
-#: src/app/main/ui/auth/login.cljs:190, src/app/main/ui/viewer/login.cljs:84
+#: src/app/main/ui/auth/login.cljs:189, src/app/main/ui/viewer/login.cljs:84
 msgid "auth.forgot-password"
 msgstr "ลืมรหัสผ่าน?"
 
@@ -45,7 +45,7 @@ msgstr "ลืมรหัสผ่าน?"
 msgid "auth.fullname"
 msgstr "ชื่อเต็ม"
 
-#: src/app/main/ui/auth/login.cljs:283
+#: src/app/main/ui/auth/login.cljs:282
 msgid "auth.login-account-title"
 msgstr "ลงชื่อเข้าใช้บัญชีของฉัน"
 
@@ -53,31 +53,31 @@ msgstr "ลงชื่อเข้าใช้บัญชีของฉัน
 msgid "auth.login-here"
 msgstr "ลงชื่อเข้าใช้ที่นี่"
 
-#: src/app/main/ui/auth/login.cljs:196
+#: src/app/main/ui/auth/login.cljs:195
 msgid "auth.login-submit"
 msgstr "ลงชื่อเข้าใช้"
 
-#: src/app/main/ui/auth/login.cljs:286
+#: src/app/main/ui/auth/login.cljs:285
 msgid "auth.login-tagline"
 msgstr "Penpot เป็นเครื่องมือออกแบบที่ฟรีและโอเพนซอร์สสำหรับการดีไซน์และโค้ดร่วมกัน"
 
-#: src/app/main/ui/auth/login.cljs:223
+#: src/app/main/ui/auth/login.cljs:222
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
-#: src/app/main/ui/auth/login.cljs:229
+#: src/app/main/ui/auth/login.cljs:228
 msgid "auth.login-with-gitlab-submit"
 msgstr "GitLab"
 
-#: src/app/main/ui/auth/login.cljs:217
+#: src/app/main/ui/auth/login.cljs:216
 msgid "auth.login-with-google-submit"
 msgstr "Google"
 
-#: src/app/main/ui/auth/login.cljs:202
+#: src/app/main/ui/auth/login.cljs:201
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
-#: src/app/main/ui/auth/login.cljs:235, src/app/main/ui/auth/login.cljs:256
+#: src/app/main/ui/auth/login.cljs:234, src/app/main/ui/auth/login.cljs:255
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
@@ -101,7 +101,7 @@ msgstr "ลิงก์กู้คืนรหัสผ่านถูกส่
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "เข้าร่วมทีมสำเร็จ"
 
-#: src/app/main/ui/auth/login.cljs:180, src/app/main/ui/auth/register.cljs:95
+#: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/register.cljs:95
 msgid "auth.password"
 msgstr "รหัสผ่าน"
 
@@ -125,7 +125,7 @@ msgstr "ลืมรหัสผ่าน?"
 msgid "auth.recovery-submit"
 msgstr "เปลี่ยนรหัสผ่านของคุณ"
 
-#: src/app/main/ui/auth/login.cljs:299, src/app/main/ui/static.cljs:141, src/app/main/ui/viewer/login.cljs:87
+#: src/app/main/ui/auth/login.cljs:298, src/app/main/ui/static.cljs:141, src/app/main/ui/viewer/login.cljs:87
 msgid "auth.register"
 msgstr "ยังไม่มีบัญชี?"
 
@@ -137,7 +137,7 @@ msgstr "เราควรเรียกคุณในแดชบอร์ด
 msgid "auth.register-account-title"
 msgstr "ชื่อของคุณ"
 
-#: src/app/main/ui/auth/login.cljs:303, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/auth/register.cljs:240, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:91
+#: src/app/main/ui/auth/login.cljs:302, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/auth/register.cljs:240, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:91
 msgid "auth.register-submit"
 msgstr "สร้างบัญชี"
 
@@ -162,7 +162,7 @@ msgstr "โซลูชันโอเพนซอร์สสำหรับก
 msgid "auth.terms-and-privacy-agreement"
 msgstr "ฉันยอมรับ [ข้อกำหนดการให้บริการ](%s)และ[นโยบายความเป็นส่วนตัว](%s)"
 
-#: src/app/main/ui/auth/register.cljs:290, src/app/main/ui/dashboard/sidebar.cljs:1053, src/app/main/ui/workspace/main_menu.cljs:154
+#: src/app/main/ui/auth/register.cljs:290, src/app/main/ui/dashboard/sidebar.cljs:1054, src/app/main/ui/workspace/main_menu.cljs:154
 msgid "auth.terms-of-service"
 msgstr "เงื่อนไขการให้บริการ"
 
@@ -174,7 +174,7 @@ msgstr "เมื่อคุณสร้างบัญชี คุณยอ�
 msgid "auth.verification-email-sent"
 msgstr "เราได้ส่งอีเมลยืนยันให้กับ"
 
-#: src/app/main/ui/auth/login.cljs:173, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:88
+#: src/app/main/ui/auth/login.cljs:172, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:88
 msgid "auth.work-email"
 msgstr "อีเมลทำงาน"
 
@@ -247,6 +247,16 @@ msgstr "เลือกทั้งหมด"
 msgid "dasboard.team-hero.management"
 msgstr "การจัดการทีม"
 
+#: src/app/main/ui/dashboard/projects.cljs:90
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot เป็นเครื่องมือสำหรับการทำงานเป็นทีม "
+"เชิญชวนสมาชิกมาทำงานด้วยกันผ่านโปรเจกต์และไฟล์ต่าง ๆ เลย"
+
+#: src/app/main/ui/dashboard/projects.cljs:88
+msgid "dasboard.team-hero.title"
+msgstr "รวบรวมทีมเลย!"
+
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
 msgid "dasboard.tutorial-hero.info"
@@ -256,7 +266,7 @@ msgstr "เรียนรู้การใช้งาน Penpot เบื้�
 msgid "dashboard.access-tokens.copied-success"
 msgstr "คัดลอกโทเคนแล้ว"
 
-#: src/app/main/ui/settings/access_tokens.cljs:191
+#: src/app/main/ui/settings/access_tokens.cljs:190
 msgid "dashboard.access-tokens.create"
 msgstr "สร้างโทเคนใหม่"
 
@@ -264,11 +274,11 @@ msgstr "สร้างโทเคนใหม่"
 msgid "dashboard.access-tokens.create.success"
 msgstr "สร้างโทเคนสำหรับการเข้าถึงสำเร็จแล้ว"
 
-#: src/app/main/ui/settings/access_tokens.cljs:289
+#: src/app/main/ui/settings/access_tokens.cljs:288
 msgid "dashboard.access-tokens.empty.add-one"
 msgstr "กดปุ่ม \"สร้างโทเคนใหม่\" เพื่อสร้างโทเคน"
 
-#: src/app/main/ui/settings/access_tokens.cljs:288
+#: src/app/main/ui/settings/access_tokens.cljs:287
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "คุณยังไม่มีโทเคนที่สร้างไว้"
 
@@ -292,23 +302,23 @@ msgstr "90 วัน"
 msgid "dashboard.access-tokens.expiration-never"
 msgstr "ไม่มีวันหมดอายุ"
 
-#: src/app/main/ui/settings/access_tokens.cljs:271
+#: src/app/main/ui/settings/access_tokens.cljs:270
 msgid "dashboard.access-tokens.expired-on"
 msgstr "หมดอายุแล้วเมื่อ %s"
 
-#: src/app/main/ui/settings/access_tokens.cljs:272
+#: src/app/main/ui/settings/access_tokens.cljs:271
 msgid "dashboard.access-tokens.expires-on"
 msgstr "จะหมดอายุเมื่อ %s"
 
-#: src/app/main/ui/settings/access_tokens.cljs:270
+#: src/app/main/ui/settings/access_tokens.cljs:269
 msgid "dashboard.access-tokens.no-expiration"
 msgstr "ไม่มีวันหมดอายุ"
 
-#: src/app/main/ui/settings/access_tokens.cljs:186
+#: src/app/main/ui/settings/access_tokens.cljs:185
 msgid "dashboard.access-tokens.personal"
 msgstr "โทเคนการเข้าถึงส่วนบุคคล"
 
-#: src/app/main/ui/settings/access_tokens.cljs:187
+#: src/app/main/ui/settings/access_tokens.cljs:186
 msgid "dashboard.access-tokens.personal.description"
 msgstr ""
 "โทเคนการเข้าถึงส่วนบุคคลจะทำงานใกล้เคียงกับการยืนยันตัวตนด้วยชื่อผู้ใช้/"
@@ -327,7 +337,7 @@ msgstr "โทเคนนี้ไม่มีวันหมดอายุ"
 msgid "dashboard.change-email"
 msgstr "เปลี่ยนอีเมล"
 
-#: src/app/main/data/dashboard.cljs:288, src/app/main/data/dashboard.cljs:507
+#: src/app/main/data/dashboard.cljs:298, src/app/main/data/dashboard.cljs:526, src/app/main/data/workspace.cljs:544
 msgid "dashboard.copy-suffix"
 msgstr "(คัดลอก)"
 
@@ -351,23 +361,23 @@ msgstr "ดาวน์โหลดไฟล์ Penpot (.penpot)"
 msgid "dashboard.download-standard-file"
 msgstr "ดาวน์โหลดไฟล์มาตรฐาน (.svg + .json)"
 
-#: src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:285
+#: src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:286
 msgid "dashboard.empty-placeholder-drafts-subtitle"
 msgstr "เมื่อสมาชิกโปรเจกต์สร้างแบบร่าง จะปรากฏที่นี่"
 
-#: src/app/main/ui/dashboard/files.cljs:194, src/app/main/ui/dashboard/projects.cljs:280
+#: src/app/main/ui/dashboard/files.cljs:194, src/app/main/ui/dashboard/projects.cljs:281
 msgid "dashboard.empty-placeholder-drafts-title"
 msgstr "ยังไม่มีแบบร่าง"
 
-#: src/app/main/ui/dashboard/files.cljs:200, src/app/main/ui/dashboard/projects.cljs:286
+#: src/app/main/ui/dashboard/files.cljs:200, src/app/main/ui/dashboard/projects.cljs:287
 msgid "dashboard.empty-placeholder-files-subtitle"
 msgstr "เมื่อสมาชิกของโปรเจกต์สร้างไฟล์ จะแสดงผลที่นี่"
 
-#: src/app/main/ui/dashboard/files.cljs:195, src/app/main/ui/dashboard/projects.cljs:281
+#: src/app/main/ui/dashboard/files.cljs:195, src/app/main/ui/dashboard/projects.cljs:282
 msgid "dashboard.empty-placeholder-files-title"
 msgstr "ยังไม่มีไฟล์"
 
-#: src/app/main/ui/dashboard/placeholder.cljs:40
+#: src/app/main/ui/dashboard/placeholder.cljs:77
 #, markdown
 msgid "dashboard.empty-placeholder-libraries"
 msgstr ""
@@ -383,11 +393,11 @@ msgstr ""
 "ลองแชร์ไฟล์ของคุณหรือเพิ่มจาก[ไลบรารีและเทมเพลต](https://penpot.app/"
 "libraries-templates)ของเรา"
 
-#: src/app/main/ui/dashboard/placeholder.cljs:36
+#: src/app/main/ui/dashboard/placeholder.cljs:73
 msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
 msgstr "ไลบรารีที่เพิ่มลงในโปรเจกต์จะปรากฏที่นี่"
 
-#: src/app/main/ui/dashboard/placeholder.cljs:33
+#: src/app/main/ui/dashboard/placeholder.cljs:70
 msgid "dashboard.empty-placeholder-libraries-title"
 msgstr "ยังไม่มีไลบรารี"
 
@@ -423,42 +433,41 @@ msgstr "ดาวน์โหลด %s ไฟล์มาตรฐาน (.svg +
 msgid "dashboard.export.title"
 msgstr "ส่งออกไฟล์"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:313
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:316
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "ฟอนต์ที่หายไป"
 
-#: src/app/main/ui/dashboard/fonts.cljs:445
+#: src/app/main/ui/dashboard/fonts.cljs:447
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "ฟอนต์ที่กำหนดเองที่คุณอัปโหลดจะปรากฏที่นี่"
 
-#: src/app/main/ui/dashboard/fonts.cljs:448
+#: src/app/main/ui/dashboard/fonts.cljs:450
 msgid "dashboard.fonts.empty-placeholder-viewer"
 msgstr "ยังไม่มีฟอนต์ที่กำหนดเอง"
 
-#: src/app/main/ui/dashboard/fonts.cljs:449
+#: src/app/main/ui/dashboard/fonts.cljs:451
 msgid "dashboard.fonts.empty-placeholder-viewer-sub"
 msgstr "เมื่อสมาชิกโปรเจกต์เพิ่มฟอนต์ที่กำหนดเอง จะปรากฏที่นี่"
 
-#: src/app/main/ui/dashboard/fonts.cljs:198
+#: src/app/main/ui/dashboard/fonts.cljs:200
 msgid "dashboard.fonts.fonts-added"
 msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "เพิ่มแล้ว %s ฟอนต์"
 
-#: src/app/main/ui/dashboard/fonts.cljs:186
+#: src/app/main/ui/dashboard/fonts.cljs:188
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "คุณควรอัปโหลดเฉพาะฟอนต์ที่คุณเป็นเจ้าของหรือมีสิทธิ์ในการใช้งานใน Penpot "
-"ดูรายละอียดเพิ่มเติมในส่วนเนื้อหาของ[ข้อกำหนดการให้บริการของ "
-"Penpot](%s) "
+"ดูรายละอียดเพิ่มเติมในส่วนเนื้อหาของ[ข้อกำหนดการให้บริการของ Penpot](%s) "
 "นอกจากนี้คุณอาจต้องการอ่านเพิ่มเติมเกี่ยวกับ[ลิขสิทธิ์ฟอนต์](https://www."
 "typography.com/faq)"
 
-#: src/app/main/ui/dashboard/fonts.cljs:206
+#: src/app/main/ui/dashboard/fonts.cljs:208
 msgid "dashboard.fonts.upload-all"
 msgstr "อัปโหลดทั้งหมด"
 
-#: src/app/main/ui/dashboard/import.cljs:452, src/app/main/ui/dashboard/project_menu.cljs:109
+#: src/app/main/ui/dashboard/import.cljs:454, src/app/main/ui/dashboard/project_menu.cljs:109
 msgid "dashboard.import"
 msgstr "นำเข้าไฟล์ Penpot"
 
@@ -470,12 +479,12 @@ msgstr "ไม่สามารถนำเข้าไฟล์นี้ได
 msgid "dashboard.import.import-error"
 msgstr "พบปัญหาในการนำเข้าไฟล์ ไฟล์นี้จึงไม่ถูกนำเข้า"
 
-#: src/app/main/ui/dashboard/import.cljs:466
+#: src/app/main/ui/dashboard/import.cljs:468
 msgid "dashboard.import.import-message"
 msgid_plural "dashboard.import.import-message"
 msgstr[0] "นำเข้าสำเร็จแล้ว %s ไฟล์"
 
-#: src/app/main/ui/dashboard/import.cljs:461
+#: src/app/main/ui/dashboard/import.cljs:463
 msgid "dashboard.import.import-warning"
 msgstr "บางไฟล์มีวัตถุที่ไม่ถูกต้อง ซึ่งถูกนำออกให้แล้ว"
 
@@ -507,23 +516,23 @@ msgstr "กำลังอัปโหลดไฟล์: %s"
 msgid "dashboard.leave-team"
 msgstr "ออกจากทีม"
 
-#: src/app/main/ui/dashboard/templates.cljs:82, src/app/main/ui/dashboard/templates.cljs:157
+#: src/app/main/ui/dashboard/templates.cljs:83, src/app/main/ui/dashboard/templates.cljs:168
 msgid "dashboard.libraries-and-templates"
 msgstr "ไลบรารีและเทมเพลต"
 
-#: src/app/main/ui/dashboard/import.cljs:358, src/app/main/ui/workspace/libraries.cljs:150
+#: src/app/main/ui/dashboard/import.cljs:360, src/app/main/ui/workspace/libraries.cljs:151
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "พบปัญหาในการนำเข้าเทมเพลต เทมเพลตนี้จึงไม่ถูกนำเข้า"
 
-#: src/app/main/ui/dashboard/libraries.cljs:51
+#: src/app/main/ui/dashboard/libraries.cljs:66
 msgid "dashboard.libraries-title"
 msgstr "ไลบรารี"
 
-#: src/app/main/ui/dashboard/placeholder.cljs:55
+#: src/app/main/ui/dashboard/placeholder.cljs:100
 msgid "dashboard.loading-files"
 msgstr "กำลังโหลดไฟล์ของคุณ…"
 
-#: src/app/main/ui/dashboard/fonts.cljs:439
+#: src/app/main/ui/dashboard/fonts.cljs:441
 msgid "dashboard.loading-fonts"
 msgstr "กำลังโหลดฟอนต์ของคุณ…"
 
@@ -539,11 +548,11 @@ msgstr "ย้าน %s ไฟล์ไปยัง"
 msgid "dashboard.move-to-other-team"
 msgstr "ย้ายไปยังทีมอื่น"
 
-#: src/app/main/ui/dashboard/files.cljs:105, src/app/main/ui/dashboard/projects.cljs:252, src/app/main/ui/dashboard/projects.cljs:253
+#: src/app/main/ui/dashboard/files.cljs:105, src/app/main/ui/dashboard/projects.cljs:253, src/app/main/ui/dashboard/projects.cljs:254
 msgid "dashboard.new-file"
 msgstr "+ สร้างไฟล์ใหม่"
 
-#: src/app/main/data/dashboard.cljs:482, src/app/main/data/dashboard.cljs:591
+#: src/app/main/data/dashboard.cljs:497, src/app/main/data/dashboard.cljs:609
 msgid "dashboard.new-file-prefix"
 msgstr "สร้างไฟล์ใหม่"
 
@@ -551,7 +560,7 @@ msgstr "สร้างไฟล์ใหม่"
 msgid "dashboard.new-project"
 msgstr "+ สร้างโปรเจกต์ใหม่"
 
-#: src/app/main/data/dashboard.cljs:252, src/app/main/data/dashboard.cljs:594
+#: src/app/main/data/dashboard.cljs:257, src/app/main/data/dashboard.cljs:612
 msgid "dashboard.new-project-prefix"
 msgstr "สร้างโปรเจกต์ใหม่"
 
@@ -567,7 +576,7 @@ msgstr "บันทึกรหัสผ่านแล้ว"
 msgid "dashboard.open-in-new-tab"
 msgstr "เปิดไฟล์ในแท็บใหม่"
 
-#: src/app/main/ui/dashboard/files.cljs:118, src/app/main/ui/dashboard/projects.cljs:261, src/app/main/ui/dashboard/projects.cljs:262
+#: src/app/main/ui/dashboard/files.cljs:118, src/app/main/ui/dashboard/grid.cljs:426, src/app/main/ui/dashboard/projects.cljs:262, src/app/main/ui/dashboard/projects.cljs:263
 msgid "dashboard.options"
 msgstr "ตัวเลือก"
 
@@ -603,7 +612,7 @@ msgstr "เลือกภาษาของ UI"
 msgid "dashboard.select-ui-theme"
 msgstr "เลือกธีม"
 
-#: src/app/main/ui/dashboard/projects.cljs:304
+#: src/app/main/ui/dashboard/projects.cljs:305
 msgid "dashboard.show-all-files"
 msgstr "แสดงไฟล์ทั้งหมด"
 
@@ -659,7 +668,7 @@ msgstr "อีเมล"
 msgid "dashboard.your-name"
 msgstr "ชื่อของคุณ"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:39, src/app/main/ui/dashboard/fonts.cljs:35, src/app/main/ui/dashboard/libraries.cljs:40, src/app/main/ui/dashboard/projects.cljs:345, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:319, src/app/main/ui/dashboard/team.cljs:531, src/app/main/ui/dashboard/team.cljs:781, src/app/main/ui/dashboard/team.cljs:1045, src/app/main/ui/dashboard/team.cljs:1092
+#: src/app/main/ui/dashboard/file_menu.cljs:39, src/app/main/ui/dashboard/fonts.cljs:36, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:348, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:319, src/app/main/ui/dashboard/team.cljs:531, src/app/main/ui/dashboard/team.cljs:781, src/app/main/ui/dashboard/team.cljs:1045, src/app/main/ui/dashboard/team.cljs:1092
 msgid "dashboard.your-penpot"
 msgstr "Penpot ของคุณ"
 
@@ -667,7 +676,7 @@ msgstr "Penpot ของคุณ"
 msgid "ds.confirm-allow"
 msgstr "อนุญาต"
 
-#: src/app/main/ui/comments.cljs:653, src/app/main/ui/comments.cljs:686, src/app/main/ui/comments.cljs:755, src/app/main/ui/confirm.cljs:36, src/app/main/ui/workspace/plugins.cljs:330, src/app/main/ui/workspace/plugins.cljs:384
+#: src/app/main/ui/comments.cljs:672, src/app/main/ui/confirm.cljs:36, src/app/main/ui/workspace/plugins.cljs:330, src/app/main/ui/workspace/plugins.cljs:384
 msgid "ds.confirm-cancel"
 msgstr "ยกเลิก"
 
@@ -702,12 +711,11 @@ msgstr "กรุณาใส่อีเมลที่ถูกต้อง"
 msgid "errors.password-too-short"
 msgstr "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"
 
-#: src/app/main/ui/auth/login.cljs:114, src/app/main/ui/auth/login.cljs:118
+#: src/app/main/ui/auth/login.cljs:115, src/app/main/ui/auth/login.cljs:119
 msgid "errors.wrong-credentials"
 msgstr "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
 
-#: src/app/main/ui/settings/password.cljs
-#, unused
+#: src/app/main/ui/settings/password.cljs:24
 msgid "errors.wrong-old-password"
 msgstr "รหัสผ่านเดิมไม่ถูกต้อง"
 
@@ -729,7 +737,7 @@ msgstr "ความสูง"
 msgid "inspect.attributes.layout.left"
 msgstr "ซ้าย"
 
-#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:57
+#: src/app/main/ui/inspect/attributes/shadow.cljs:57
 msgid "inspect.attributes.shadow"
 msgstr "เงา"
 
@@ -738,27 +746,27 @@ msgstr "เงา"
 msgid "inspect.attributes.stroke.width"
 msgstr "ความกว้าง"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
+#: src/app/main/ui/inspect/attributes/text.cljs:109, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:320
 msgid "inspect.attributes.typography.font-size"
 msgstr "ขนาดฟอนต์"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:134, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:386
+#: src/app/main/ui/inspect/attributes/text.cljs:136, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389
 msgid "inspect.attributes.typography.letter-spacing"
 msgstr "ระยะห่างระหว่างตัวอักษร"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:100
+#: src/app/main/ui/inspect/right_sidebar.cljs:105
 msgid "inspect.tabs.code"
 msgstr "โคด"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:127
+#: src/app/main/ui/inspect/right_sidebar.cljs:132
 msgid "inspect.tabs.code.selected.frame"
 msgstr "บอร์ด"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:133
+#: src/app/main/ui/inspect/right_sidebar.cljs:138
 msgid "inspect.tabs.code.selected.svg-raw"
 msgstr "SVG"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1016, src/app/main/ui/workspace/main_menu.cljs:114
+#: src/app/main/ui/dashboard/sidebar.cljs:1017, src/app/main/ui/workspace/main_menu.cljs:114
 msgid "labels.community"
 msgstr "ชุมชน"
 
@@ -786,7 +794,7 @@ msgstr "ฟอนต์ที่กำหนดเอง"
 msgid "labels.dashboard"
 msgstr "แดชบอร์ด"
 
-#: src/app/main/ui/comments.cljs:903, src/app/main/ui/dashboard/fonts.cljs:256, src/app/main/ui/dashboard/team.cljs:950, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:205, src/app/main/ui/workspace/tokens/sidebar.cljs:198
+#: src/app/main/ui/comments.cljs:972, src/app/main/ui/dashboard/fonts.cljs:258, src/app/main/ui/dashboard/team.cljs:950, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:212, src/app/main/ui/workspace/tokens/sidebar.cljs:197
 msgid "labels.edit"
 msgstr "แก้ไข"
 
@@ -794,7 +802,7 @@ msgstr "แก้ไข"
 msgid "labels.editor"
 msgstr "เอดิเตอร์"
 
-#: src/app/main/ui/exports/assets.cljs:170, src/app/main/ui/workspace/tokens/sidebar.cljs:359
+#: src/app/main/ui/exports/assets.cljs:170, src/app/main/ui/workspace/tokens/sidebar.cljs:418
 msgid "labels.export"
 msgstr "ส่งออก"
 
@@ -802,7 +810,7 @@ msgstr "ส่งออก"
 msgid "labels.figma"
 msgstr "Figma"
 
-#: src/app/main/ui/dashboard/fonts.cljs:54, src/app/main/ui/dashboard/sidebar.cljs:834
+#: src/app/main/ui/dashboard/fonts.cljs:55, src/app/main/ui/dashboard/sidebar.cljs:834
 msgid "labels.fonts"
 msgstr "ฟอนต์"
 
@@ -814,15 +822,15 @@ msgstr "กราฟิกดีไซน์"
 msgid "labels.language"
 msgstr "ภาษา"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1039, src/app/main/ui/workspace/main_menu.cljs:138
+#: src/app/main/ui/dashboard/sidebar.cljs:1040, src/app/main/ui/workspace/main_menu.cljs:138
 msgid "labels.libraries-and-templates"
 msgstr "ไลบรารีและเทมเพลต"
 
-#: src/app/main/ui/auth/verify_token.cljs:100, src/app/main/ui/dashboard/grid.cljs:114, src/app/main/ui/dashboard/grid.cljs:133, src/app/main/ui/dashboard/import.cljs:253, src/app/main/ui/dashboard/placeholder.cljs:53, src/app/main/ui/ds/product/loader.cljs:52, src/app/main/ui/exports/files.cljs:62, src/app/main/ui/viewer.cljs:643, src/app/main/ui/workspace.cljs:126, src/app/main/ui.cljs:67, src/app/main/ui.cljs:105, src/app/main/ui.cljs:124
+#: src/app/main/ui/auth/verify_token.cljs:100, src/app/main/ui/dashboard/grid.cljs:115, src/app/main/ui/dashboard/grid.cljs:134, src/app/main/ui/dashboard/import.cljs:253, src/app/main/ui/dashboard/placeholder.cljs:98, src/app/main/ui/ds/product/loader.cljs:85, src/app/main/ui/exports/files.cljs:62, src/app/main/ui/viewer.cljs:643, src/app/main/ui/workspace.cljs:118, src/app/main/ui.cljs:66, src/app/main/ui.cljs:104, src/app/main/ui.cljs:123
 msgid "labels.loading"
 msgstr "กำลังโหลด…"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1071
+#: src/app/main/ui/dashboard/sidebar.cljs:1072
 msgid "labels.logout"
 msgstr "ลงชื่อออก"
 

@@ -120,7 +120,14 @@
         (mf/use-fn
          (fn [event]
            (dom/blur! (dom/get-target event))
-           (st/emit! (dwc/toggle-toolbar-visibility))))]
+           (st/emit! (dwc/toggle-toolbar-visibility))))
+
+        profile (mf/deref refs/profile)
+        props   (get profile :props)
+        test-tooltip-board-text
+        (if (not (:workspace-visited props))
+          (tr "workspace.toolbar.frame-first-time" (sc/get-tooltip :draw-frame))
+          (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame)))]
 
     (when-not ^boolean read-only?
       [:aside {:class (stl/css-case :main-toolbar true
@@ -140,7 +147,7 @@
         [:*
          [:li
           [:button
-           {:title (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
+           {:title test-tooltip-board-text
             :aria-label (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
             :class  (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :frame))
             :on-click select-drawtool

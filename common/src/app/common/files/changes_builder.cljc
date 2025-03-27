@@ -154,14 +154,15 @@
   (let [data (::file-data (meta changes))]
     (dm/get-in data [:pages-index uuid/zero :objects])))
 
-(defn- apply-changes-local
-  [changes]
+(defn apply-changes-local
+  [changes & {:keys [apply-to-library?]}]
   (dm/assert!
    "expected valid changes"
    (check-changes! changes))
 
   (if-let [file-data (::file-data (meta changes))]
-    (let [index         (::applied-changes-count (meta changes))
+    (let [library-data  (::library-data (meta changes))
+          index         (::applied-changes-count (meta changes))
           redo-changes  (:redo-changes changes)
           new-changes   (if (< index (count redo-changes))
                           (->> (subvec (:redo-changes changes) index)
@@ -169,28 +170,12 @@
                                          (assoc :page-id uuid/zero)
                                          (dissoc :component-id))))
                           [])
-          new-file-data (cfc/process-changes file-data new-changes)]
+          new-file-data (cfc/process-changes file-data new-changes)
+          new-library-data (if apply-to-library?
+                             (cfc/process-changes library-data new-changes)
+                             library-data)]
       (vary-meta changes assoc ::file-data new-file-data
-                 ::applied-changes-count (count redo-changes)))
-    changes))
-
-(defn apply-changes-local-library
-  [changes]
-  (dm/assert!
-   "expected valid changes"
-   (check-changes! changes))
-
-  (if-let [library-data (::library-data (meta changes))]
-    (let [index         (::applied-changes-count (meta changes))
-          redo-changes  (:redo-changes changes)
-          new-changes   (if (< index (count redo-changes))
-                          (->> (subvec (:redo-changes changes) index)
-                               (map #(-> %
-                                         (assoc :page-id uuid/zero)
-                                         (dissoc :component-id))))
-                          [])
-          new-library-data (cfc/process-changes library-data new-changes)]
-      (vary-meta changes assoc ::library-data new-library-data
+                 ::library-data new-library-data
                  ::applied-changes-count (count redo-changes)))
     changes))
 
@@ -782,13 +767,6 @@
         (update :undo-changes conj {:type :add-typography :typography prev-typography})
         (apply-changes-local))))
 
-(defn add-temporary-token-theme
-  [changes token-theme]
-  (-> changes
-      (update :redo-changes conj {:type :add-temporary-token-theme :token-theme token-theme})
-      (update :undo-changes conj {:type :delete-temporary-token-theme :id (:id token-theme) :name (:name token-theme)})
-      (apply-changes-local)))
-
 (defn update-active-token-themes
   [changes token-active-theme-ids prev-token-active-theme-ids]
   (-> changes
@@ -796,41 +774,31 @@
       (update :undo-changes conj {:type :update-active-token-themes :theme-ids prev-token-active-theme-ids})
       (apply-changes-local)))
 
-(defn add-token-theme
-  [changes token-theme]
-  (-> changes
-      (update :redo-changes conj {:type :add-token-theme :token-theme token-theme})
-      (update :undo-changes conj {:type :del-token-theme :group (:group token-theme) :name (:name token-theme)})
-      (apply-changes-local)))
-
-(defn update-token-theme
-  [changes token-theme prev-token-theme]
-  (let [name (or (:name prev-token-theme)
-                 (:name token-theme))
-        group (or (:group prev-token-theme)
-                  (:group token-theme))]
-    (-> changes
-        (update :redo-changes conj {:type :mod-token-theme :group group :name name :token-theme token-theme})
-        (update :undo-changes conj {:type :mod-token-theme :group group :name name :token-theme (or prev-token-theme token-theme)})
-        (apply-changes-local))))
-
-(defn delete-token-theme
-  [changes group name]
+(defn set-token-theme [changes group theme-name theme]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-token-theme (some-> (get library-data :tokens-lib)
-                                 (ctob/get-theme group name))]
+        prev-theme (some-> (get library-data :tokens-lib)
+                           (ctob/get-theme group theme-name))]
     (-> changes
-        (update :redo-changes conj {:type :del-token-theme :group group :name name})
-        (update :undo-changes conj {:type :add-token-theme :token-theme prev-token-theme})
+        (update :redo-changes conj {:type :set-token-theme
+                                    :theme-name theme-name
+                                    :group group
+                                    :theme theme})
+        (update :undo-changes conj (if prev-theme
+                                     {:type :set-token-theme
+                                      :group group
+                                      :theme-name (or
+                                                   ;; Undo of edit
+                                                   (:name theme)
+                                                   ;; Undo of delete
+                                                   theme-name)
+                                      :theme prev-theme}
+                                     ;; Undo of create
+                                     {:type :set-token-theme
+                                      :group group
+                                      :theme-name theme-name
+                                      :theme nil}))
         (apply-changes-local))))
-
-(defn add-token-set
-  [changes token-set]
-  (-> changes
-      (update :redo-changes conj {:type :add-token-set :token-set token-set})
-      (update :undo-changes conj {:type :del-token-set :name (:name token-set)})
-      (apply-changes-local)))
 
 (defn rename-token-set-group
   [changes set-group-path set-group-fname]
@@ -841,57 +809,34 @@
         (update :undo-changes conj {:type :rename-token-set-group :set-group-path undo-path :set-group-fname undo-fname})
         (apply-changes-local))))
 
-(defn update-token-set
-  [changes token-set prev-token-set]
-  (-> changes
-      (update :redo-changes conj {:type :mod-token-set :name (:name prev-token-set) :token-set token-set})
-      (update :undo-changes conj {:type :mod-token-set :name (:name token-set) :token-set (or prev-token-set token-set)})
-      (apply-changes-local)))
-
-(defn delete-token-set-path
-  [changes group? path]
-  (assert-library! changes)
-  (let [;; TODO Move leaking prefix to library
-        prefixed-path (if group?
-                        (ctob/set-group-path->set-group-prefixed-path path)
-                        (ctob/set-full-path->set-prefixed-full-path path))
-        prefixed-path-str (ctob/join-set-path prefixed-path)
-        library-data (::library-data (meta changes))
-        prev-token-sets (some-> (get library-data :tokens-lib)
-                                (ctob/get-path-sets prefixed-path-str))]
-    (-> changes
-        (update :redo-changes conj {:type :del-token-set-path :path prefixed-path-str})
-        (update :undo-changes conj {:type :add-token-sets :token-sets prev-token-sets})
-        (apply-changes-local))))
-
-(defn move-token-set-before
+(defn move-token-set
   [changes {:keys [from-path to-path before-path before-group? prev-before-path prev-before-group?] :as opts}]
   (-> changes
-      (update :redo-changes conj {:type :move-token-set-before
+      (update :redo-changes conj {:type :move-token-set
                                   :from-path from-path
                                   :to-path to-path
                                   :before-path before-path
-                                  :before-group? before-group?})
-      (update :undo-changes conj {:type :move-token-set-before
+                                  :before-group before-group?})
+      (update :undo-changes conj {:type :move-token-set
                                   :from-path to-path
                                   :to-path from-path
                                   :before-path prev-before-path
-                                  :before-group? prev-before-group?})
+                                  :before-group prev-before-group?})
       (apply-changes-local)))
 
-(defn move-token-set-group-before
+(defn move-token-set-group
   [changes {:keys [from-path to-path before-path before-group? prev-before-path prev-before-group?]}]
   (-> changes
-      (update :redo-changes conj {:type :move-token-set-group-before
+      (update :redo-changes conj {:type :move-token-set-group
                                   :from-path from-path
                                   :to-path to-path
                                   :before-path before-path
-                                  :before-group? before-group?})
-      (update :undo-changes conj {:type :move-token-set-group-before
+                                  :before-group before-group?})
+      (update :undo-changes conj {:type :move-token-set-group
                                   :from-path to-path
                                   :to-path from-path
                                   :before-path prev-before-path
-                                  :before-group? prev-before-group?})
+                                  :before-group prev-before-group?})
       (apply-changes-local)))
 
 (defn set-tokens-lib
@@ -930,10 +875,57 @@
                                       :token nil}))
         (apply-changes-local))))
 
+(defn rename-token-set
+  [changes name new-name]
+
+  (assert-library! changes)
+  (let [library-data   (::library-data (meta changes))
+        prev-token-set (some-> (get library-data :tokens-lib)
+                               (ctob/get-set name))]
+    (-> changes
+        (update :redo-changes conj {:type :set-token-set
+                                    :set-name name
+                                    :token-set (assoc prev-token-set :name new-name)
+                                    :group? false})
+        (update :undo-changes conj {:type :set-token-set
+                                    :set-name new-name
+                                    :token-set prev-token-set
+                                    :group? false})
+        (apply-changes-local))))
+
+(defn set-token-set
+  [changes set-name group? token-set]
+  (assert-library! changes)
+  (let [library-data   (::library-data (meta changes))
+        prev-token-set (some-> (get library-data :tokens-lib)
+                               (ctob/get-set set-name))]
+    (-> changes
+        (update :redo-changes conj {:type :set-token-set
+                                    :set-name set-name
+                                    :token-set token-set
+                                    :group? group?})
+        (update :undo-changes conj (if prev-token-set
+                                     {:type :set-token-set
+                                      :set-name (or
+                                                 ;; Undo of edit
+                                                 (:name token-set)
+                                                 ;; Undo of delete
+                                                 set-name)
+                                      :token-set prev-token-set
+                                      :group? group?}
+                                     ;; Undo of create
+                                     {:type :set-token-set
+                                      :set-name set-name
+                                      :token-set nil
+                                      :group? group?}))
+        (apply-changes-local))))
+
 (defn add-component
   ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page]
-   (add-component changes id path name new-shapes updated-shapes main-instance-id main-instance-page nil))
+   (add-component changes id path name new-shapes updated-shapes main-instance-id main-instance-page nil nil nil))
   ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page annotation]
+   (add-component changes id path name new-shapes updated-shapes main-instance-id main-instance-page annotation nil nil))
+  ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page annotation variant-id variant-properties & {:keys [apply-changes-local-library?]}]
    (assert-page-id! changes)
    (assert-objects! changes)
    (let [page-id (::page-id (meta changes))
@@ -974,7 +966,11 @@
                                       :main-instance-page main-instance-page
                                       :annotation annotation}
                                (some? new-shapes)  ;; this will be null in components-v2
-                               (assoc :shapes (vec new-shapes))))
+                               (assoc :shapes (vec new-shapes))
+                               (some? variant-id)
+                               (assoc :variant-id variant-id)
+                               (seq variant-properties)
+                               (assoc :variant-properties variant-properties)))
                        (into (map mk-change) updated-shapes))))
          (update :undo-changes
                  (fn [undo-changes]
@@ -987,7 +983,7 @@
                                    (map mk-change))
                              updated-shapes))))
 
-         (apply-changes-local)))))
+         (apply-changes-local {:apply-to-library? apply-changes-local-library?})))))
 
 (defn update-component
   [changes id update-fn & {:keys [apply-changes-local-library?]}]
@@ -997,29 +993,41 @@
         new-component  (update-fn prev-component)]
     (if prev-component
       (-> changes
-          (update :redo-changes conj {:type :mod-component
-                                      :id id
-                                      :name (:name new-component)
-                                      :path (:path new-component)
-                                      :main-instance-id (:main-instance-id new-component)
-                                      :main-instance-page (:main-instance-page new-component)
-                                      :annotation (:annotation new-component)
-                                      :variant-id (:variant-id new-component)
-                                      :variant-properties (:variant-properties new-component)
-                                      :objects (:objects new-component) ;; this won't exist in components-v2 (except for deleted components)
-                                      :modified-at (:modified-at new-component)})
-          (update :undo-changes conj {:type :mod-component
-                                      :id id
-                                      :name (:name prev-component)
-                                      :path (:path prev-component)
-                                      :main-instance-id (:main-instance-id prev-component)
-                                      :main-instance-page (:main-instance-page prev-component)
-                                      :annotation (:annotation prev-component)
-                                      :variant-id (:variant-id prev-component)
-                                      :variant-properties (:variant-properties prev-component)
-                                      :objects (:objects prev-component)})
+          (update :redo-changes conj (cond-> {:type :mod-component
+                                              :id id
+                                              :name (:name new-component)
+                                              :path (:path new-component)
+                                              :main-instance-id (:main-instance-id new-component)
+                                              :main-instance-page (:main-instance-page new-component)
+                                              :annotation (:annotation new-component)
+                                              :objects (:objects new-component) ;; this won't exist in components-v2 (except for deleted components)
+                                              :modified-at (:modified-at new-component)}
+                                       (some? (:variant-id new-component))
+                                       (assoc :variant-id (:variant-id new-component))
+                                       (nil? (:variant-id new-component))
+                                       (dissoc :variant-id)
+                                       (seq (:variant-properties new-component))
+                                       (assoc :variant-properties (:variant-properties new-component))
+                                       (not (seq (:variant-properties new-component)))
+                                       (dissoc :variant-properties)))
+          (update :undo-changes conj (cond-> {:type :mod-component
+                                              :id id
+                                              :name (:name prev-component)
+                                              :path (:path prev-component)
+                                              :main-instance-id (:main-instance-id prev-component)
+                                              :main-instance-page (:main-instance-page prev-component)
+                                              :annotation (:annotation prev-component)
+                                              :objects (:objects prev-component)}
+                                       (some? (:variant-id prev-component))
+                                       (assoc :variant-id (:variant-id prev-component))
+                                       (nil? (:variant-id prev-component))
+                                       (dissoc :variant-id)
+                                       (seq (:variant-properties prev-component))
+                                       (assoc :variant-properties (:variant-properties prev-component))
+                                       (not (seq (:variant-properties prev-component)))
+                                       (dissoc :variant-properties)))
           (cond-> apply-changes-local-library?
-            (apply-changes-local-library)))
+            (apply-changes-local {:apply-to-library? true})))
       changes)))
 
 (defn delete-component

@@ -206,6 +206,15 @@
   transform: translateX(-$s-40);
 }
 
+[data-fullscreen="true"] .viewer-content {
+  transform: translateY(-$s-48);
+  height: 100vh;
+}
+
+[data-fullscreen="true"] .viewer-section {
+  height: 100vh;
+}
+
 [data-force-visible="true"] .viewer-go-next {
   transform: translateX(0);
 }

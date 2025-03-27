@@ -158,13 +158,13 @@ impl Fill {
         })
     }
 
-    pub fn to_paint(&self, rect: &Rect) -> skia::Paint {
+    pub fn to_paint(&self, rect: &Rect, anti_alias: bool) -> skia::Paint {
         match self {
             Self::Solid(color) => {
                 let mut p = skia::Paint::default();
                 p.set_color(*color);
                 p.set_style(skia::PaintStyle::Fill);
-                p.set_anti_alias(true);
+                p.set_anti_alias(anti_alias);
                 p.set_blend_mode(skia::BlendMode::SrcOver);
                 p
             }
@@ -173,7 +173,7 @@ impl Fill {
                 p.set_shader(gradient.to_linear_shader(&rect));
                 p.set_alpha((gradient.opacity * 255.) as u8);
                 p.set_style(skia::PaintStyle::Fill);
-                p.set_anti_alias(true);
+                p.set_anti_alias(anti_alias);
                 p.set_blend_mode(skia::BlendMode::SrcOver);
                 p
             }
@@ -182,14 +182,14 @@ impl Fill {
                 p.set_shader(gradient.to_radial_shader(&rect));
                 p.set_alpha((gradient.opacity * 255.) as u8);
                 p.set_style(skia::PaintStyle::Fill);
-                p.set_anti_alias(true);
+                p.set_anti_alias(anti_alias);
                 p.set_blend_mode(skia::BlendMode::SrcOver);
                 p
             }
             Self::Image(image_fill) => {
                 let mut p = skia::Paint::default();
                 p.set_style(skia::PaintStyle::Fill);
-                p.set_anti_alias(true);
+                p.set_anti_alias(anti_alias);
                 p.set_blend_mode(skia::BlendMode::SrcOver);
                 p.set_alpha(image_fill.opacity);
                 p

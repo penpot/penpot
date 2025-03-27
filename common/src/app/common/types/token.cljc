@@ -60,7 +60,7 @@
   (token-types t))
 
 (def token-name-ref
-  [:and :string [:re #"^(?!\$)([a-zA-Z0-9-$]+\.?)*(?<!\.)$"]])
+  [:and :string [:re #"^(?!\$)([a-zA-Z0-9-$_]+\.?)*(?<!\.)$"]])
 
 (defn valid-token-name-ref?
   [n]
@@ -188,6 +188,8 @@
      (cond
        (some #{:stroke-color} changed-sub-attr) #{:stroke-color}
        (some #{:stroke-width} changed-sub-attr) #{:stroke-width})
+     (and (= :layout-padding shape-attr) (seq changed-sub-attr)) changed-sub-attr
+     (and (= :layout-item-margin shape-attr) (seq changed-sub-attr)) changed-sub-attr
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}

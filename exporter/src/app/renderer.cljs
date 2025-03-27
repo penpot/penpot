@@ -15,7 +15,7 @@
 
 (s/def ::name ::us/string)
 (s/def ::suffix ::us/string)
-(s/def ::type #{:jpeg :png :pdf :svg})
+(s/def ::type #{:png :jpeg :webp :pdf :svg})
 (s/def ::page-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::share-id ::us/uuid)
@@ -40,6 +40,7 @@
   (case type
     :png  (rb/render params on-object)
     :jpeg (rb/render params on-object)
+    :webp (rb/render params on-object)
     :pdf  (rp/render params on-object)
     :svg  (rs/render params on-object)))
 

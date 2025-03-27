@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.media :as cm]
+   [app.common.types.component :as ctc]
    [app.common.types.file :as ctf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -158,13 +159,14 @@
          (when ^boolean dragging?
            [:div {:class (stl/css :dragging)}])]
 
-        [:& cmm/component-item-thumbnail {:file-id file-id
-                                          :class (stl/css-case :thumbnail true
-                                                               :asset-list-thumbnail (not listing-thumbs?))
-                                          :root-shape root-shape
-                                          :component component
-                                          :container container
-                                          :is-hidden (not visible?)}]])]))
+        [:> cmm/component-item-thumbnail*
+         {:file-id file-id
+          :class (stl/css-case :thumbnail true
+                               :asset-list-thumbnail (not listing-thumbs?))
+          :root-shape root-shape
+          :component component
+          :container container
+          :is-hidden (not visible?)}]])]))
 
 (mf/defc components-group
   {::mf/wrap-props false}
@@ -310,6 +312,14 @@
         multi-assets?            (or (seq (:graphics selected))
                                      (seq (:colors selected))
                                      (seq (:typographies selected)))
+
+        any-variant?             (mf/with-memo [selected components current-component-id]
+                                   (let [selected-and-current (-> (d/nilv selected [])
+                                                                  (conj current-component-id)
+                                                                  set)]
+                                     (->> components
+                                          (filter #(contains? selected-and-current (:id %)))
+                                          (some ctc/is-variant?))))
 
         groups                   (mf/with-memo [components reverse-sort?]
                                    (grp/group-assets components reverse-sort?))
@@ -543,7 +553,7 @@
                     {:name    (tr "workspace.assets.rename")
                      :id      "assets-rename-component"
                      :handler on-rename})
-                  (when (and is-local (not (or multi-assets? read-only?)))
+                  (when (and is-local (not (or multi-assets? read-only? any-variant?)))
                     {:name    (if components-v2
                                 (tr "workspace.assets.duplicate-main")
                                 (tr "workspace.assets.duplicate"))
@@ -554,7 +564,7 @@
                     {:name    (tr "workspace.assets.delete")
                      :id      "assets-delete-component"
                      :handler on-delete})
-                  (when (and is-local (not (or multi-assets? read-only?)))
+                  (when (and is-local (not (or multi-assets? read-only? any-variant?)))
                     {:name   (tr "workspace.assets.group")
                      :id     "assets-group-component"
                      :handler on-group})

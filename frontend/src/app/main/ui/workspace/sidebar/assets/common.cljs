@@ -282,9 +282,8 @@
           (:id target-asset)
           (cfh/merge-path-item prefix (:name target-asset))))))))
 
-(mf/defc component-item-thumbnail
+(mf/defc component-item-thumbnail*
   "Component that renders the thumbnail image or the original SVG."
-  {::mf/props :obj}
   [{:keys [file-id root-shape component container class is-hidden]}]
   (let [page-id (:main-instance-page component)
         root-id (:main-instance-id component)
@@ -418,7 +417,9 @@
 
         do-add-variant
         #(when variants?
-           (st/emit! (dwv/transform-in-variant id)))
+           (if (ctk/is-variant? shape)
+             (st/emit! (dwv/add-new-variant id))
+             (st/emit! (dwv/transform-in-variant id))))
 
         do-show-local-component
         #(st/emit! (dwl/go-to-local-component :id component-id))
@@ -472,5 +473,6 @@
                          :action do-update-component})
                       (when (and variants? (not multi) main-instance?)
                         {:title (tr "workspace.shape.menu.add-variant")
+                         :shortcut :create-component
                          :action do-add-variant})]]
     (filter (complement nil?) menu-entries)))

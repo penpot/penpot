@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.align :as gal]
+   [app.common.geom.point :as gpt]
    [app.common.geom.rect :as gpr]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
@@ -82,6 +83,25 @@
         (update state :workspace-local
                 (fn [local]
                   (setup state local)))))))
+
+(defn calculate-centered-viewbox
+  "Updates the viewbox coordinates for a given center position"
+  [local position]
+  (let [vbox (:vbox local)
+        nw   (/ (:width vbox) 2)
+        nh   (/ (:height vbox) 2)
+        nx   (- (:x position) nw)
+        ny   (- (:y position) nh)]
+    (update local :vbox assoc :x nx :y ny)))
+
+(defn update-viewport-position-center
+  [position]
+  (assert (gpt/point? position) "expected a point instance for `position` param")
+
+  (ptk/reify ::update-viewport-position-center
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local calculate-centered-viewbox position))))
 
 (defn update-viewport-position
   [{:keys [x y] :or {x identity y identity}}]

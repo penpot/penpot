@@ -527,14 +527,14 @@
 
 (sv/defmethod ::update-team
   {::doc/added "1.17"
-   ::sm/params schema:update-team}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id name] :as params}]
-  (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id id)
-    (db/update! conn :team
-                {:name name}
-                {:id id})
-    nil))
+   ::sm/params schema:update-team
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id name]}]
+  (check-edition-permissions! conn profile-id id)
+  (db/update! conn :team
+              {:name name}
+              {:id id})
+  nil)
 
 
 ;; --- Mutation: Leave Team
@@ -592,10 +592,10 @@
 
 (sv/defmethod ::leave-team
   {::doc/added "1.17"
-   ::sm/params schema:leave-team}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (db/with-atomic [conn pool]
-    (leave-team conn (assoc params :profile-id profile-id))))
+   ::sm/params schema:leave-team
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  (leave-team conn (assoc params :profile-id profile-id)))
 
 ;; --- Mutation: Delete Team
 
@@ -627,16 +627,16 @@
 
 (sv/defmethod ::delete-team
   {::doc/added "1.17"
-   ::sm/params schema:delete-team}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
-  (db/with-atomic [conn pool]
-    (let [perms (get-permissions conn profile-id id)]
-      (when-not (:is-owner perms)
-        (ex/raise :type :validation
-                  :code :only-owner-can-delete-team))
+   ::sm/params schema:delete-team
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  (let [perms (get-permissions conn profile-id id)]
+    (when-not (:is-owner perms)
+      (ex/raise :type :validation
+                :code :only-owner-can-delete-team))
 
-      (delete-team conn id)
-      nil)))
+    (delete-team conn id)
+    nil))
 
 ;; --- Mutation: Team Update Role
 
@@ -714,31 +714,30 @@
 
 (sv/defmethod ::delete-team-member
   {::doc/added "1.17"
-   ::sm/params schema:delete-team-member}
-  [{:keys [::db/pool ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
-  (db/with-atomic [conn pool]
-    (let [team  (get-team pool :profile-id profile-id :team-id team-id)
-          perms (get-permissions conn profile-id team-id)]
-      (when-not (or (:is-owner perms)
-                    (:is-admin perms))
-        (ex/raise :type :validation
-                  :code :insufficient-permissions))
+   ::sm/params schema:delete-team-member
+   ::db/transaction true}
+  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
+  (let [team  (get-team conn :profile-id profile-id :team-id team-id)
+        perms (get-permissions conn profile-id team-id)]
+    (when-not (or (:is-owner perms)
+                  (:is-admin perms))
+      (ex/raise :type :validation
+                :code :insufficient-permissions))
 
-      (when (= member-id profile-id)
-        (ex/raise :type :validation
-                  :code :cant-remove-yourself))
+    (when (= member-id profile-id)
+      (ex/raise :type :validation
+                :code :cant-remove-yourself))
 
-      (db/delete! conn :team-profile-rel {:profile-id member-id
-                                          :team-id team-id})
+    (db/delete! conn :team-profile-rel {:profile-id member-id
+                                        :team-id team-id})
+    (mbus/pub! msgbus
+               :topic member-id
+               :message {:type :team-membership-change
+                         :change :removed
+                         :team-id team-id
+                         :team-name (:name team)})
 
-      (mbus/pub! msgbus
-                 :topic member-id
-                 :message {:type :team-membership-change
-                           :change :removed
-                           :team-id team-id
-                           :team-name (:name team)})
-
-      nil)))
+    nil))
 
 ;; --- Mutation: Update Team Photo
 
@@ -764,16 +763,16 @@
   (let [team  (get-team pool :profile-id profile-id :team-id team-id)
         photo (profile/upload-photo cfg params)]
 
-    (db/with-atomic [conn pool]
-      (check-admin-permissions! conn profile-id team-id)
-      ;; Mark object as touched for make it ellegible for tentative
-      ;; garbage collection.
-      (when-let [id (:photo-id team)]
-        (sto/touch-object! storage id))
+    (check-admin-permissions! pool profile-id team-id)
 
-      ;; Save new photo
-      (db/update! pool :team
-                  {:photo-id (:id photo)}
-                  {:id team-id})
+    ;; Mark object as touched for make it ellegible for tentative
+    ;; garbage collection.
+    (when-let [id (:photo-id team)]
+      (sto/touch-object! storage id))
 
-      (assoc team :photo-id (:id photo)))))
+    ;; Save new photo
+    (db/update! pool :team
+                {:photo-id (:id photo)}
+                {:id team-id})
+
+    (assoc team :photo-id (:id photo))))

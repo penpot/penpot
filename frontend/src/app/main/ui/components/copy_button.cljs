@@ -16,8 +16,7 @@
    [app.util.webapi :as wapi]
    [rumext.v2 :as mf]))
 
-(mf/defc copy-button
-  {::mf/props :obj}
+(mf/defc copy-button*
   [{:keys [data on-copied children class aria-label]}]
   (let [active* (mf/use-state false)
         active? (deref active*)

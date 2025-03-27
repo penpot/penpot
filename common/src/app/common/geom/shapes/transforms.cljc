@@ -95,8 +95,8 @@
         (d/update-when :x d/safe+ dx)
         (d/update-when :y d/safe+ dy)
         (d/update-when :position-data move-position-data mvec)
-        (cond-> (= :bool type) (update :bool-content gpa/move-content mvec))
-        (cond-> (= :path type) (update :content gpa/move-content mvec)))))
+        (cond-> (or (= :bool type) (= :path type))
+          (update :content gpa/move-content mvec)))))
 
 ;; --- Absolute Movement
 
@@ -317,13 +317,10 @@
         points  (gco/transform-points  (dm/get-prop shape :points) transform-mtx)
         selrect (gco/transform-selrect (dm/get-prop shape :selrect) transform-mtx)
 
-        shape   (if (= type :bool)
-                  (update shape :bool-content gpa/transform-content transform-mtx)
-                  shape)
         shape   (if (= type :text)
                   (update shape :position-data transform-position-data transform-mtx)
                   shape)
-        shape   (if (= type :path)
+        shape   (if (or (= type :path) (= type :bool))
                   (update shape :content gpa/transform-content transform-mtx)
                   (assoc shape
                          :x (dm/get-prop selrect :x)
@@ -355,11 +352,8 @@
             rotation (mod (+ (d/nilv (:rotation shape) 0)
                              (d/nilv (dm/get-in shape [:modifiers :rotation]) 0))
                           360)
-            shape    (if (= type :bool)
-                       (update shape :bool-content gpa/transform-content transform-mtx)
-                       shape)
 
-            shape    (if (= type :path)
+            shape    (if (or (= type :path) (= type :bool))
                        (update shape :content gpa/transform-content transform-mtx)
                        (assoc shape
                               :x (dm/get-prop selrect :x)
@@ -454,9 +448,14 @@
   "Calculates the selrect+points for the boolean shape"
   [shape children objects]
 
-  (let [bool-content     (gshb/calc-bool-content shape objects)
-        shape            (assoc shape :bool-content bool-content)
-        [points selrect] (gpa/content->points+selrect shape bool-content)]
+  (let [content
+        (gshb/calc-bool-content shape objects)
+
+        shape
+        (assoc shape :content content)
+
+        [points selrect]
+        (gpa/content->points+selrect shape content)]
 
     (if (and (some? selrect) (d/not-empty? points))
       (-> shape

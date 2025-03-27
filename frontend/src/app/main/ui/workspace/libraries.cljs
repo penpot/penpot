@@ -568,7 +568,6 @@
   [{:keys [starting-tab file-id] :as props :or {starting-tab :libraries}}]
   (let [files   (mf/deref refs/files)
         file    (get files file-id)
-        team-id (:team-id file)
         shared? (:is-shared file)
 
         linked-libraries
@@ -616,8 +615,8 @@
                   :id "updates"
                   :content updates-tab}]]
 
-    (mf/with-effect [team-id]
-      (st/emit! (dtm/fetch-shared-files team-id)))
+    (mf/with-effect []
+      (st/emit! (dtm/fetch-shared-files)))
 
     [:div {:class (stl/css :modal-overlay)
            :on-click close-dialog-outside

@@ -3,18 +3,21 @@
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
    [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.warnings :as wtw]
+   [app.util.i18n :refer [tr]]
+   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
-(l/set-level! "app.main.ui.workspace.tokens.style-dictionary" :warn)
+(l/set-level! :debug)
 
 ;; === Style Dictionary
 
@@ -40,7 +43,7 @@
          :warnings "silent"
          :errors {:brokenReferences "console"}}})
 
-(defn parse-sd-token-color-value
+(defn- parse-sd-token-color-value
   "Parses `value` of a color `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the value is not parseable and/or has missing references returns a map with `:errors`."
   [value]
@@ -48,18 +51,23 @@
     {:value value :unit (tinycolor/color-format tc)}
     {:errors [(wte/error-with-value :error.token/invalid-color value)]}))
 
-(defn parse-sd-token-dimensions-value
-  "Parses `value` of a dimensions `sd-token` into a map like `{:value 1 :unit \"px\"}`.
+(defn- parse-sd-token-numeric-value
+  "Parses `value` of a numeric `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (or
-   (wtt/parse-token-value value)
-   (if-let [references (seq (ctob/find-token-value-references value))]
-     {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
-      :references references}
-     {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
+  (let [parsed-value  (wtt/parse-token-value value)
+        out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
+                          (<= (:value parsed-value) sm/min-safe-int))]
+    (if (and parsed-value (not out-of-bounds))
+      parsed-value
+      (if out-of-bounds
+        {:errors [(wte/error-with-value :error.token/number-too-large value)]}
+        (if-let [references (seq (ctob/find-token-value-references value))]
+          {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+           :references references}
+          {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))))
 
-(defn parse-sd-token-opacity-value
+(defn- parse-sd-token-opacity-value
   "Parses `value` of a dimensions `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`.
   If the `value` is parseable but is out of range returns a map with `warnings`."
@@ -79,8 +87,34 @@
       (and (not has-references?) out-of-scope)
       {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-opacity value)]}
 
-      (and has-references? out-of-scope)
-      (assoc parsed-value :warnings [(wtw/warning-with-value :warning.style-dictionary/invalid-referenced-token-value value)])
+      (and has-references? out-of-scope parsed-value)
+      (assoc parsed-value :warnings [(wtw/warning-with-value :warning.style-dictionary/invalid-referenced-token-value-opacity value)])
+
+      :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
+
+
+(defn- parse-sd-token-stroke-width-value
+  "Parses `value` of a dimensions `sd-token` into a map like `{:value 1 :unit \"px\"}`.
+  If the `value` is not parseable and/or has missing references returns a map with `:errors`.
+  If the `value` is parseable but is out of range returns a map with `warnings`."
+  [value has-references?]
+
+  (let [parsed-value (wtt/parse-token-value value)
+        out-of-scope (< (:value parsed-value) 0)
+        references (seq (ctob/find-token-value-references value))]
+    (cond
+      (and parsed-value (not out-of-scope))
+      parsed-value
+
+      references
+      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+       :references references}
+
+      (and (not has-references?) out-of-scope)
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-stroke-width value)]}
+
+      (and has-references? out-of-scope parsed-value)
+      (assoc parsed-value :warnings [(wtw/warning-with-value :warning.style-dictionary/invalid-referenced-token-value-stroke-width value)])
 
       :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
 
@@ -124,7 +158,8 @@
            parsed-token-value (case (:type origin-token)
                                 :color (parse-sd-token-color-value value)
                                 :opacity (parse-sd-token-opacity-value value has-references?)
-                                (parse-sd-token-dimensions-value value))
+                                :stroke-width (parse-sd-token-stroke-width-value value has-references?)
+                                (parse-sd-token-numeric-value value))
            output-token (cond (:errors parsed-token-value)
                               (merge origin-token parsed-token-value)
                               (:warnings parsed-token-value)
@@ -157,9 +192,10 @@
     config)
 
   (build-dictionary [_]
-    (-> (sd. (clj->js config))
-        (.buildAllPlatforms "json")
-        (p/then #(.-allTokens ^js %)))))
+    (let [config' (clj->js config)]
+      (-> (sd. config')
+          (.buildAllPlatforms "json")
+          (p/then #(.-allTokens ^js %))))))
 
 (defn resolve-tokens-tree+
   ([tokens-tree get-token]
@@ -209,7 +245,6 @@
   [err]
   (let [[header-1 header-2 & errors] (str/split err "\n")]
     (when (and
-          ;; TODO: This needs translations
            (= header-1 "Error: ")
            (= header-2 "Reference Errors:"))
       errors)))
@@ -248,7 +283,7 @@
   (->> (map (fn [err]
               (case (:error/code err)
                 ;; TODO: This needs translations
-                :error.style-dictionary/missing-reference (str "Could not resolve reference token with the name: " (:error/value err))
+                :error.style-dictionary/missing-reference (tr "workspace.token.token-not-resolved" (:error/value err))
                 nil))
             errors)
        (str/join "\n")))
@@ -301,12 +336,16 @@
   [tokens & {:keys [interactive?]}]
   (let [state* (mf/use-state tokens)]
     (mf/with-effect [tokens interactive?]
-      (when (seq tokens)
-        (let [promise (if interactive?
+      (if (seq tokens)
+        (let [tpoint  (dt/tpoint-ms)
+              promise (if interactive?
                         (resolve-tokens-interactive+ tokens)
                         (resolve-tokens+ tokens))]
 
           (->> promise
                (p/fmap (fn [resolved-tokens]
-                         (reset! state* resolved-tokens)))))))
+                         (let [elapsed (tpoint)]
+                           (l/dbg :hint "use-resolved-tokens*" :elapsed elapsed)
+                           (reset! state* resolved-tokens))))))
+        (reset! state* tokens)))
     @state*))

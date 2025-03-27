@@ -43,6 +43,13 @@
   background-color: transparent;
 }
 
+.level-default {
+  --notification-bg-color: var(--color-background-default);
+  --notification-fg-color: var(--color-foreground-primary);
+  --notification-border-color: var(--color-accent-default);
+  --notification-icon-color: var(--color-icon-default);
+}
+
 .level-info {
   --notification-bg-color: var(--color-background-info);
   --notification-fg-color: var(--color-foreground-primary);
@@ -59,14 +66,14 @@
 
 .level-warning {
   --notification-bg-color: var(--color-background-warning);
-  --notification-fg-color: var(--color-foreground-warning);
+  --notification-fg-color: var(--color-foreground-primary);
   --notification-border-color: var(--color-accent-warning);
   --notification-icon-color: var(--color-accent-warning);
 }
 
 .level-success {
   --notification-bg-color: var(--color-background-success);
-  --notification-fg-color: var(--color-foreground-success);
+  --notification-fg-color: var(--color-foreground-primary);
   --notification-border-color: var(--color-accent-success);
   --notification-icon-color: var(--color-accent-success);
 }

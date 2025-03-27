@@ -108,6 +108,9 @@
                        (filter-fonts state fonts))
 
         recent-fonts (mf/deref refs/recent-fonts)
+        recent-fonts (mf/with-memo [state recent-fonts]
+                       (filter-fonts state recent-fonts))
+
 
         full-size?   (boolean (and full-size show-recent))
 

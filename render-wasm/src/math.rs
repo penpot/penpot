@@ -1,4 +1,11 @@
-use skia_safe::{Matrix, Point, Vector};
+use skia_safe as skia;
+
+pub type Rect = skia::Rect;
+pub type Matrix = skia::Matrix;
+pub type Vector = skia::Vector;
+pub type Point = skia::Point;
+
+const THRESHOLD: f32 = 0.001;
 
 pub trait VectorExt {
     fn new_points(a: &Point, b: &Point) -> Vector;
@@ -11,7 +18,20 @@ impl VectorExt for Vector {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+pub fn is_close_to(current: f32, value: f32) -> bool {
+    (current - value).abs() <= THRESHOLD
+}
+
+pub fn identitish(m: Matrix) -> bool {
+    is_close_to(m.scale_x(), 1.0)
+        && is_close_to(m.scale_y(), 1.0)
+        && is_close_to(m.translate_x(), 0.0)
+        && is_close_to(m.translate_y(), 0.0)
+        && is_close_to(m.skew_x(), 0.0)
+        && is_close_to(m.skew_y(), 0.0)
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Bounds {
     pub nw: Point,
     pub ne: Point,
@@ -19,7 +39,7 @@ pub struct Bounds {
     pub sw: Point,
 }
 
-fn vec_min_max(arr: &[Option<f32>]) -> Option<(f32, f32)> {
+fn vec_min_max(arr: &Vec<Option<f32>>) -> Option<(f32, f32)> {
     let mut minv: Option<f32> = None;
     let mut maxv: Option<f32> = None;
 
@@ -91,25 +111,29 @@ impl Bounds {
     }
 
     pub fn box_bounds(&self, other: &Self) -> Option<Self> {
+        self.from_points(other.points())
+    }
+
+    pub fn from_points(&self, points: Vec<Point>) -> Option<Self> {
         let hv = self.horizontal_vec();
         let vv = self.vertical_vec();
 
         let hr = Ray::new(self.nw, hv);
         let vr = Ray::new(self.nw, vv);
 
-        let (min_ht, max_ht) = vec_min_max(&[
-            intersect_rays_t(&hr, &Ray::new(other.nw, vv)),
-            intersect_rays_t(&hr, &Ray::new(other.ne, vv)),
-            intersect_rays_t(&hr, &Ray::new(other.sw, vv)),
-            intersect_rays_t(&hr, &Ray::new(other.se, vv)),
-        ])?;
+        let (min_ht, max_ht) = vec_min_max(
+            &points
+                .iter()
+                .map(|p| intersect_rays_t(&hr, &Ray::new(*p, vv)))
+                .collect(),
+        )?;
 
-        let (min_vt, max_vt) = vec_min_max(&[
-            intersect_rays_t(&vr, &Ray::new(other.nw, hv)),
-            intersect_rays_t(&vr, &Ray::new(other.ne, hv)),
-            intersect_rays_t(&vr, &Ray::new(other.sw, hv)),
-            intersect_rays_t(&vr, &Ray::new(other.se, hv)),
-        ])?;
+        let (min_vt, max_vt) = vec_min_max(
+            &points
+                .iter()
+                .map(|p| intersect_rays_t(&vr, &Ray::new(*p, hv)))
+                .collect(),
+        )?;
 
         let nw = intersect_rays(&Ray::new(hr.t(min_ht), vv), &Ray::new(vr.t(min_vt), hv))?;
         let ne = intersect_rays(&Ray::new(hr.t(max_ht), vv), &Ray::new(vr.t(min_vt), hv))?;
@@ -119,68 +143,165 @@ impl Bounds {
         Some(Self { nw, ne, se, sw })
     }
 
+    pub fn points(&self) -> Vec<Point> {
+        vec![self.nw, self.ne, self.se, self.sw]
+    }
+
     pub fn left(&self, p: Point) -> f32 {
         let hr = Ray::new(p, self.horizontal_vec());
         let vr = Ray::new(self.nw, self.vertical_vec());
-        if let Some(project_point) = intersect_rays(&hr, &vr) {
-            if vr.is_positive_side(&p) {
-                -Point::distance(project_point, p)
-            } else {
-                Point::distance(project_point, p)
-            }
+
+        let mut result = if let Some(project_point) = intersect_rays(&hr, &vr) {
+            Point::distance(project_point, p)
         } else {
-            // This should not happen. All points should have a proyection so the
-            // intersection ray should always exist
             0.0
+        };
+
+        if vr.is_positive_side(&p) {
+            result = -result;
         }
+
+        if self.flip_y() {
+            result = -result;
+        }
+
+        if self.flip_x() {
+            result = -result;
+        }
+
+        result
     }
 
     pub fn right(&self, p: Point) -> f32 {
         let hr = Ray::new(p, self.horizontal_vec());
         let vr = Ray::new(self.ne, self.vertical_vec());
-        if let Some(project_point) = intersect_rays(&hr, &vr) {
-            if vr.is_positive_side(&p) {
-                Point::distance(project_point, p)
-            } else {
-                -Point::distance(project_point, p)
-            }
+
+        let mut result = if let Some(project_point) = intersect_rays(&hr, &vr) {
+            Point::distance(project_point, p)
         } else {
-            // This should not happen. All points should have a proyection so the
-            // intersection ray should always exist
             0.0
+        };
+
+        if !vr.is_positive_side(&p) {
+            result = -result;
         }
+
+        if self.flip_y() {
+            result = -result;
+        }
+
+        if self.flip_x() {
+            result = -result;
+        }
+
+        result
     }
 
     pub fn top(&self, p: Point) -> f32 {
         let vr = Ray::new(p, self.vertical_vec());
         let hr = Ray::new(self.nw, self.horizontal_vec());
-        if let Some(project_point) = intersect_rays(&vr, &hr) {
-            if hr.is_positive_side(&p) {
-                Point::distance(project_point, p)
-            } else {
-                -Point::distance(project_point, p)
-            }
+
+        let mut result = if let Some(project_point) = intersect_rays(&vr, &hr) {
+            Point::distance(project_point, p)
         } else {
-            // This should not happen. All points should have a proyection so the
-            // intersection ray should always exist
             0.0
+        };
+
+        if !hr.is_positive_side(&p) {
+            result = -result;
         }
+
+        if self.flip_y() {
+            result = -result;
+        }
+
+        if self.flip_x() {
+            result = -result;
+        }
+
+        result
     }
 
     pub fn bottom(&self, p: Point) -> f32 {
         let vr = Ray::new(p, self.vertical_vec());
         let hr = Ray::new(self.sw, self.horizontal_vec());
-        if let Some(project_point) = intersect_rays(&vr, &hr) {
-            if hr.is_positive_side(&p) {
-                -Point::distance(project_point, p)
-            } else {
-                Point::distance(project_point, p)
-            }
+
+        let mut result = if let Some(project_point) = intersect_rays(&vr, &hr) {
+            Point::distance(project_point, p)
         } else {
-            // This should not happen. All points should have a proyection so the
-            // intersection ray should always exist
             0.0
+        };
+
+        if hr.is_positive_side(&p) {
+            result = -result;
         }
+
+        if self.flip_y() {
+            result = -result;
+        }
+
+        if self.flip_x() {
+            result = -result;
+        }
+
+        result
+    }
+
+    pub fn center(&self) -> Point {
+        // Calculates the centroid of the four points
+        Point::new(self.nw.x + self.se.x / 2.0, self.nw.y + self.se.y / 2.0)
+    }
+
+    pub fn transform_matrix(&self) -> Option<Matrix> {
+        let w2 = self.width() / 2.0;
+        let h2 = self.height() / 2.0;
+
+        let s1x = -w2;
+        let s1y = -h2;
+        let s2x = w2;
+        let s2y = -h2;
+        let s4x = -w2;
+        let s4y = h2;
+
+        let d1x = self.nw.x;
+        let d1y = self.nw.y;
+        let d2x = self.ne.x;
+        let d2y = self.ne.y;
+        let d4x = self.sw.x;
+        let d4y = self.sw.y;
+
+        // TODO: Check how fast is to calculate here the invert matrix
+        let mut target_points_matrix = Matrix::new_all(d1x, d2x, d4x, d1y, d2y, d4y, 1.0, 1.0, 1.0);
+        let source_points_matrix = Matrix::new_all(s1x, s2x, s4x, s1y, s2y, s4y, 1.0, 1.0, 1.0);
+
+        let source_points_matrix_inv = source_points_matrix.invert()?;
+        target_points_matrix.pre_concat(&source_points_matrix_inv);
+
+        // Ignore translations
+        target_points_matrix.set_translate_x(0.0);
+        target_points_matrix.set_translate_y(0.0);
+
+        Some(target_points_matrix)
+    }
+
+    // TODO: Probably we can improve performance here removing the access
+    pub fn flip_x(&self) -> bool {
+        let m = self.transform_matrix().unwrap_or(Matrix::default());
+        m.scale_x() < 0.0
+    }
+
+    // TODO: Probably we can improve performance here removing the access
+    pub fn flip_y(&self) -> bool {
+        let m = self.transform_matrix().unwrap_or(Matrix::default());
+        m.scale_y() < 0.0
+    }
+
+    pub fn to_rect(&self) -> Rect {
+        let minx = self.nw.x.min(self.ne.x).min(self.sw.x).min(self.se.x);
+        let miny = self.nw.y.min(self.ne.y).min(self.sw.y).min(self.se.y);
+        let maxx = self.nw.x.max(self.ne.x).max(self.sw.x).max(self.se.x);
+        let maxy = self.nw.y.max(self.ne.y).max(self.sw.y).max(self.se.y);
+        Rect::from_ltrb(minx, miny, maxx, maxy)
     }
 }
 
@@ -235,6 +356,40 @@ pub fn intersect_rays(ray1: &Ray, ray2: &Ray) -> Option<Point> {
     }
 }
 
+/*
+ * Creates a resizing matrix with width/height relative to the parent
+ * box and keepin the same transform as the parent.
+ */
+pub fn resize_matrix(
+    parent_bounds: &Bounds,
+    child_bounds: &Bounds,
+    new_width: f32,
+    new_height: f32,
+) -> Matrix {
+    let mut result = Matrix::default();
+    let scale_width = new_width / child_bounds.width();
+    let scale_height = new_height / child_bounds.height();
+
+    let center = child_bounds.center();
+    let mut parent_transform = parent_bounds
+        .transform_matrix()
+        .unwrap_or(Matrix::default());
+
+    parent_transform.post_translate(center);
+    parent_transform.pre_translate(-center);
+
+    let parent_transform_inv = &parent_transform.invert().unwrap();
+    let origin = parent_transform_inv.map_point(child_bounds.nw);
+
+    let mut scale = Matrix::scale((scale_width, scale_height));
+    scale.post_translate(origin);
+    scale.post_concat(&parent_transform);
+    scale.pre_translate(-origin);
+    scale.pre_concat(&parent_transform_inv);
+    result.post_concat(&scale);
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -279,12 +434,19 @@ mod tests {
 
     #[test]
     fn test_vec_min_max() {
-        assert_eq!(None, vec_min_max(&[]));
-        assert_eq!(None, vec_min_max(&[None, None]));
-        assert_eq!(Some((1.0, 1.0)), vec_min_max(&[None, Some(1.0)]));
+        assert_eq!(None, vec_min_max(&vec![]));
+        assert_eq!(None, vec_min_max(&vec![None, None]));
+        assert_eq!(Some((1.0, 1.0)), vec_min_max(&vec![None, Some(1.0)]));
         assert_eq!(
             Some((0.0, 1.0)),
-            vec_min_max(&[Some(0.3), None, Some(0.0), Some(0.7), Some(1.0), Some(0.1)])
+            vec_min_max(&vec![
+                Some(0.3),
+                None,
+                Some(0.0),
+                Some(0.7),
+                Some(1.0),
+                Some(0.1)
+            ])
         );
     }
 
@@ -317,14 +479,46 @@ mod tests {
     #[test]
     fn test_bounds_distances() {
         let b1 = Bounds::new(
-            Point::new(1.0, 10.0),
-            Point::new(8.0, 10.0),
-            Point::new(8.0, 1.0),
             Point::new(1.0, 1.0),
+            Point::new(8.0, 1.0),
+            Point::new(8.0, 10.0),
+            Point::new(1.0, 10.0),
         );
-        assert_eq!(b1.left(Point::new(4.0, 8.0)), -3.0);
-        assert_eq!(b1.top(Point::new(4.0, 8.0)), -2.0);
-        assert_eq!(b1.right(Point::new(7.0, 6.0),), -1.0);
-        assert_eq!(b1.bottom(Point::new(7.0, 6.0),), -5.0);
+        assert_eq!(b1.left(Point::new(4.0, 8.0)), 3.0);
+        assert_eq!(b1.top(Point::new(4.0, 8.0)), 7.0);
+        assert_eq!(b1.right(Point::new(7.0, 6.0),), 1.0);
+        assert_eq!(b1.bottom(Point::new(7.0, 6.0),), 4.0);
+    }
+
+    #[test]
+    fn test_transform_matrix() {
+        let b = Bounds::new(
+            Point::new(0.0, 0.0),
+            Point::new(50.0, 0.0),
+            Point::new(50.0, 50.0),
+            Point::new(0.0, 50.0),
+        );
+
+        assert_eq!(b.width(), 50.0);
+        assert_eq!(b.height(), 50.0);
+        assert_eq!(b.transform_matrix().unwrap(), Matrix::default());
+
+        let b = Bounds::new(
+            Point::new(-25.0, 1.0),
+            Point::new(1.0, -34.5),
+            Point::new(27.0, 1.0),
+            Point::new(1.0, 36.5),
+        );
+
+        assert!((b.width() - 44.0).abs() <= 0.1);
+        assert!((b.height() - 44.0).abs() <= 0.1);
+
+        let m = b.transform_matrix().unwrap();
+        assert!((m.scale_x() - 0.59).abs() <= 0.1);
+        assert!((m.skew_y() - -0.81).abs() <= 0.1);
+        assert!((m.skew_x() - 0.59).abs() <= 0.1);
+        assert!((m.scale_y() - 0.81).abs() <= 0.1);
+        assert!((m.translate_x() - 0.0).abs() <= 0.1);
+        assert!((m.translate_y() - 0.0).abs() <= 0.1);
     }
 }

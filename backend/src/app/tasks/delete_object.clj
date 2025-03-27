@@ -40,6 +40,11 @@
                   :file-id id
                   :cause cause))))
 
+    ;; Mark file change to be deleted
+    (db/update! conn :file-change
+                {:deleted-at deleted-at}
+                {:file-id id})
+
     ;; Mark file media objects to be deleted
     (db/update! conn :file-media-object
                 {:deleted-at deleted-at}

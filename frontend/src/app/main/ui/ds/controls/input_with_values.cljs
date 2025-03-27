@@ -23,7 +23,7 @@
 (mf/defc input-with-values*
   {::mf/props :obj
    ::mf/schema schema:input-with-values}
-  [{:keys [name values on-blur]}]
+  [{:keys [name values on-blur] :rest props}]
   (let [editing*  (mf/use-state false)
         editing?  (deref editing*)
         input-ref (mf/use-ref)
@@ -39,11 +39,10 @@
         (mf/use-fn
          (mf/deps on-blur)
          (fn [event]
-           (let [new-name (dom/get-target-val event)]
-             (dom/stop-propagation event)
-             (reset! editing* false)
-             (when on-blur
-               (on-blur new-name)))))
+           (dom/stop-propagation event)
+           (reset! editing* false)
+           (when on-blur
+             (on-blur event))))
         on-focus
         (mf/use-fn
          (fn [event]
@@ -57,18 +56,19 @@
                  esc?   (kbd/esc? event)
                  node   (dom/get-target event)]
              (when ^boolean enter? (dom/blur! node))
-             (when ^boolean esc? (dom/blur! node)))))]
+             (when ^boolean esc? (dom/blur! node)))))
+
+        props (mf/spread-props props {:ref input-ref
+                                      :class (stl/css :input-with-values-editing)
+                                      :default-value name
+                                      :auto-focus true
+                                      :on-focus on-focus
+                                      :on-blur on-stop-edit
+                                      :on-key-down handle-key-down})]
 
     (if editing?
       [:div {:class (stl/css :input-with-values-edit-container)}
-       [:> input*
-        {:ref input-ref
-         :class (stl/css :input-with-values-editing)
-         :default-value name
-         :auto-focus true
-         :on-focus on-focus
-         :on-blur on-stop-edit
-         :on-key-down handle-key-down}]]
+       [:> input* props]]
       [:div {:class (stl/css :input-with-values-container :input-with-values-grid)
              :title title :on-click on-edit}
        [:span {:class (stl/css :input-with-values-name)}  name]

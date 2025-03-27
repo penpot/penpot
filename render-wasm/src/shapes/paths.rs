@@ -1,4 +1,4 @@
-use skia_safe as skia;
+use skia_safe::{self as skia, Matrix};
 use std::array::TryFromSliceError;
 
 type Point = (f32, f32);
@@ -143,5 +143,9 @@ impl Path {
 
     pub fn is_open(&self) -> bool {
         self.open
+    }
+
+    pub fn transform(&mut self, mtx: &Matrix) {
+        self.skia_path.transform(mtx);
     }
 }

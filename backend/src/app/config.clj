@@ -12,6 +12,7 @@
    [app.common.exceptions :as ex]
    [app.common.flags :as flags]
    [app.common.schema :as sm]
+   [app.common.uri :as u]
    [app.common.version :as v]
    [app.util.overrides]
    [app.util.time :as dt]
@@ -230,7 +231,14 @@
 
 (defn- parse-flags
   [config]
-  (flags/parse flags/default (:flags config)))
+  (let [public-uri  (c/get config :public-uri)
+        public-uri  (some-> public-uri (u/uri))
+        extra-flags (if (and public-uri
+                             (= (:scheme public-uri) "http")
+                             (not= (:host public-uri) "localhost"))
+                      #{:disable-secure-session-cookies}
+                      #{})]
+    (flags/parse flags/default extra-flags (:flags config))))
 
 (defn read-env
   [prefix]

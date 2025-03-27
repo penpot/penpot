@@ -1019,26 +1019,26 @@
 (def valid-text?
   (validator ::text))
 
-(def check-safe-int!
+(def check-safe-int
   (check-fn ::safe-int))
 
-(def check-set-of-strings!
+(def check-set-of-strings
   (check-fn ::set-of-strings))
 
-(def check-email!
+(def check-email
   (check-fn ::email))
 
-(def check-uuid!
+(def check-uuid
   (check-fn ::uuid :hint "expected valid uuid instance"))
 
-(def check-string!
+(def check-string
   (check-fn :string :hint "expected string"))
 
-(def check-coll-of-uuid!
+(def check-coll-of-uuid
   (check-fn ::coll-of-uuid))
 
-(def check-set-of-uuid!
+(def check-set-of-uuid
   (check-fn ::set-of-uuid))
 
-(def check-set-of-emails!
+(def check-set-of-emails
   (check-fn [::set ::email]))

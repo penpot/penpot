@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.comments :as dcmt]
+   [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
@@ -112,9 +113,11 @@
 
         on-thread-click
         (mf/use-fn
-         (mf/deps page-id)
+         (mf/deps page-id from-viewer)
          (fn [thread]
-           (st/emit! (dwcm/navigate-to-comment thread))))]
+           (if from-viewer
+             (st/emit! (with-meta (dcmt/open-thread thread) {::ev/origin "viewer"}))
+             (st/emit! (dwcm/navigate-to-comment thread)))))]
 
     [:div  {:class (stl/css-case :comments-section true
                                  :from-viewer  from-viewer)}

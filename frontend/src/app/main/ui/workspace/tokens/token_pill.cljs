@@ -102,9 +102,11 @@
 
 (defn- generate-tooltip
   "Generates a tooltip for a given token"
-  [is-viewer shape token half-applied no-valid-value ref-not-in-active-set]
-  (let [{:keys [name value resolved-value type]} token
-        {:keys [title] :as token-props} (wtch/get-token-properties token)
+  [is-viewer shape theme-token token half-applied no-valid-value ref-not-in-active-set]
+  (let [{:keys [name value type resolved-value]} token
+        resolved-value-theme (:resolved-value theme-token)
+        resolved-value (or resolved-value-theme resolved-value)
+        {:keys [title] :as token-props} (wtch/get-token-properties theme-token)
         applied-tokens (:applied-tokens shape)
         app-token-vals (set (vals applied-tokens))
         app-token-keys (keys applied-tokens)
@@ -240,10 +242,11 @@
         ;; FIXME: missing deps
         on-hover
         (mf/use-fn
-         (mf/deps selected-shapes is-viewer?)
+         (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set)
          (fn [event]
            (let [node  (dom/get-current-target event)
-                 title (generate-tooltip is-viewer? (first selected-shapes) token
+                 theme-token (get active-theme-tokens (:name token))
+                 title (generate-tooltip is-viewer? (first selected-shapes) theme-token token
                                          half-applied? no-valid-value ref-not-in-active-set)]
              (dom/set-attribute! node "title" title))))]
 

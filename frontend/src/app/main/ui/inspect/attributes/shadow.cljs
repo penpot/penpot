@@ -9,8 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.components.title-bar :refer [inspect-title-bar]]
+   [app.main.ui.components.copy-button :refer [copy-button*]]
+   [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
    [app.main.ui.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
@@ -32,8 +32,8 @@
      [:div {:class (stl/css :shadow-row)}
       [:div {:class (stl/css :global/attr-label)} (->> shadow :style d/name (str "workspace.options.shadow-options.") (tr))]
       [:div {:class (stl/css :global/attr-value)}
-       [:& copy-button {:data  (shadow-copy-data shadow)
-                        :class (stl/css :color-row-copy-btn)}
+       [:> copy-button* {:data  (shadow-copy-data shadow)
+                         :class (stl/css :color-row-copy-btn)}
         [:div  {:class (stl/css :button-children)
                 :title  (dm/str (tr "workspace.options.shadow-options.offsetx") " "
                                 (tr "workspace.options.shadow-options.offsety") " "
@@ -53,7 +53,7 @@
 
     (when (and (seq shapes) (> (count shapes) 0))
       [:div {:class (stl/css :attributes-block)}
-       [:& inspect-title-bar
+       [:> inspect-title-bar*
         {:title (tr "inspect.attributes.shadow")
          :class (stl/css :title-spacing-shadow)}]
 

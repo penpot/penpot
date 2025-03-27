@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.files.variant :as cfv]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.main.data.helpers :as dsh]
@@ -240,7 +241,7 @@
         objects      (-> (dsh/get-page data page-id)
                          (get :objects))
 
-        related-components (dwv/find-related-components data objects variant-id)
+        related-components (cfv/find-variant-components data objects variant-id)
 
         flat-comps ;; Get a list like [{:id 0 :prop1 "v1" :prop2 "v2"} {:id 1, :prop1 "v3" :prop2 "v4"}]
         (map (fn [{:keys [id variant-properties]}]
@@ -288,11 +289,12 @@
     [:*
      (for [[pos prop] (map vector (range) properties)]
 
-       [:div {:key (str (:id shape) (:name prop)) :class (stl/css :variant-property-container)}
+       [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-container)}
         (if (ctk/main-instance? shape)
           [:*
            [:span {:class (stl/css :variant-property-name :variant-property-name-bg)} (:name prop)]
-           [:> combobox* {:default-selected (if (str/empty? (:value prop)) "--" (:value prop))
+           [:> combobox* {:id (str "variant-prop-" (:id shape) pos)
+                          :default-selected (if (str/empty? (:value prop)) "--" (:value prop))
                           :options (clj->js (get-options (:name prop)))
                           :on-change (partial change-property-value pos)}]]
 
@@ -322,10 +324,11 @@
            :key (str "swap-item-" (:id item))
            :on-click on-select}
      (when visible?
-       [:& cmm/component-item-thumbnail {:file-id (:file-id item)
-                                         :root-shape root-shape
-                                         :component item
-                                         :container container}])
+       [:> cmm/component-item-thumbnail*
+        {:file-id (:file-id item)
+         :root-shape root-shape
+         :component item
+         :container container}])
      [:span  {:class (stl/css-case :component-name true
                                    :selected (= (:id item) component-id))}
       (if is-search (:full-name item) (:name item))]]))
@@ -740,8 +743,7 @@
 
 (mf/defc variant-menu*
   [{:keys [shapes]}]
-  (let [;; TODO check multi. What is shown? User can change properties like width?
-        multi              (> (count shapes) 1)
+  (let [multi?             (> (count shapes) 1)
 
         shape              (first shapes)
         shape-name         (:name shape)
@@ -757,22 +759,17 @@
         first-variant      (get objects (first (:shapes shape)))
         variant-id         (:variant-id first-variant)
 
-        properties         (->> (dwv/find-related-components data objects variant-id)
-                                (mapcat :variant-properties)
-                                (group-by :name)
-                                (map (fn [[k v]]
-                                       {:name k
-                                        :values (distinct
-                                                 (map #(if (str/empty? (:value %)) "--" (:value %)) v))})))
+        properties         (mf/with-memo [data objects variant-id]
+                             (cfv/extract-properties-values data objects (:id shape)))
 
         menu-open*         (mf/use-state false)
         menu-open?         (deref menu-open*)
 
 
         menu-entries       [{:title (tr "workspace.shape.menu.add-variant-property")
-                             :action #(st/emit! (dwv/add-new-property variant-id))}]
-
-        show-menu?         (seq menu-entries)
+                             :action #(st/emit! (dwv/add-new-property variant-id))}
+                            {:title (tr "workspace.shape.menu.add-variant")
+                             :action #(st/emit! (dwv/add-new-variant (:id shape)))}]
 
         on-menu-click
         (mf/use-fn
@@ -790,15 +787,22 @@
         update-property-name
         (mf/use-fn
          (mf/deps variant-id)
-         (fn [pos new-name]
-           (st/emit! (dwv/update-property-name variant-id pos new-name))))
+         (fn [event]
+           (let [new-name (dom/get-target-val event)
+                 pos (-> (dom/get-current-target event)
+                         (dom/get-data "position")
+                         int)]
+             (st/emit! (dwv/update-property-name variant-id pos new-name)))))
 
         remove-property
         (mf/use-fn
-         (mf/deps variant-id)
-         (fn [pos]
-           (when (> (count properties) 1)
-             (st/emit! (dwv/remove-property variant-id pos)))))]
+         (mf/deps variant-id properties)
+         (fn [event]
+           (let [pos (-> (dom/get-current-target event)
+                         (dom/get-data "position")
+                         int)]
+             (when (> (count properties) 1)
+               (st/emit! (dwv/remove-property variant-id pos))))))]
     (when (seq shapes)
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
@@ -812,8 +816,8 @@
 
        [:div {:class (stl/css :element-content)}
         [:div {:class (stl/css-case :component-wrapper true
-                                    :with-actions show-menu?
-                                    :without-actions (not show-menu?))}
+                                    :with-actions (not multi?)
+                                    :without-actions multi?)}
          [:button {:class (stl/css-case :component-name-wrapper true
                                         :with-main true
                                         :swappeable false)}
@@ -823,12 +827,12 @@
           [:div {:class (stl/css :name-wrapper)}
            [:div {:class (stl/css :component-name)}
             [:span {:class (stl/css :component-name-inside)}
-             (if multi
+             (if multi?
                (tr "settings.multiple")
                (cfh/last-path shape-name))]]]]
 
 
-         (when show-menu?
+         (when-not multi?
            [:div {:class (stl/css :component-actions)}
             [:button {:class (stl/css-case :menu-btn true
                                            :selected menu-open?)
@@ -839,13 +843,18 @@
                                     :on-close on-menu-close
                                     :menu-entries menu-entries
                                     :main-instance true}]])]
-        [:*
-         (for [[pos property] (map vector (range) properties)]
-           (let [val (str/join ", " (:values property))]
-             [:div {:key (str (:id shape) (:name property)) :class (stl/css :variant-property-row)}
-              [:> input-with-values* {:name (:name property) :values val :on-blur (partial update-property-name pos)}]
-              [:> icon-button* {:variant "ghost"
-                                :aria-label (tr "workspace.shape.menu.remove-variant-property")
-                                :on-click (partial remove-property pos)
-                                :icon "remove"
-                                :disabled (<= (count properties) 1)}]]))]]])))
+        (when-not multi?
+          [:*
+           (for [[pos property] (map vector (range) properties)]
+             (let [val (str/join ", " (:value property))]
+               [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-row)}
+                [:> input-with-values* {:name (:name property)
+                                        :values val
+                                        :data-position pos
+                                        :on-blur update-property-name}]
+                [:> icon-button* {:variant "ghost"
+                                  :aria-label (tr "workspace.shape.menu.remove-variant-property")
+                                  :on-click remove-property
+                                  :data-position pos
+                                  :icon "remove"
+                                  :disabled (<= (count properties) 1)}]]))])]])))

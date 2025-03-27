@@ -50,6 +50,9 @@
         m3 (:m3 value)
         m4 (:m4 value)
 
+        m1-placeholder (if (and (not= value :multiple) (not= m1 m3)) (tr "settings.multiple") "--")
+        m2-placeholder (if (and (not= value :multiple) (not= m2 m4)) (tr "settings.multiple") "--")
+
         m1 (when (and (not= value :multiple) (= m1 m3)) m1)
         m2 (when (and (not= value :multiple) (= m2 m4)) m2)
 
@@ -74,14 +77,13 @@
                           (keyword))]
              (on-change :simple attr value))))]
 
-
     [:div {:class (stl/css :margin-simple)}
      [:div {:class (stl/css :vertical-margin)
             :title "Vertical margin"}
       [:span {:class (stl/css :icon)}
        i/margin-top-bottom]
       [:> numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder "--"
+                          :placeholder m1-placeholder
                           :data-name "m1"
                           :on-focus on-focus
                           :on-change on-change'
@@ -94,7 +96,7 @@
       [:span {:class (stl/css :icon)}
        i/margin-left-right]
       [:> numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder "--"
+                          :placeholder m2-placeholder
                           :data-name "m2"
                           :on-focus on-focus
                           :on-change on-change'

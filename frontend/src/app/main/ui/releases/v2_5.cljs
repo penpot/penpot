@@ -38,10 +38,10 @@
            "We’re thrilled to introduce Penpot 2.5"]
 
           [:p  {:class (stl/css :feature-content)}
-           "This release brings multi-step gradients, along with comment notifications, making it easier than ever to communicate with your team members. Now you also can easily copy/paste groups of styles between layers and share direct links to specific boards, among other new capabilities considered true gems for designers and team collaboration."]
+           "Packed with powerful new features and little big details. This release brings multi-step gradients, along with comment notifications, making it easier than ever to communicate with your team members. Now you also can easily copy/paste groups of styles between layers and share direct links to specific boards, among other new capabilities considered true gems for designers and team collaboration."]
 
           [:p  {:class (stl/css :feature-content)}
-           "But that’s not all—we’ve also tackled numerous bug fixes and optimizations that will improve performance when working with long texts."]
+           "But that’s not all—we’ve also tackled numerous bug fixes and optimizations."]
 
           [:p  {:class (stl/css :feature-content)}
            "Let’s dive in!"]]

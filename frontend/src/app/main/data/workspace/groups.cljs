@@ -120,6 +120,14 @@
                       (pcb/with-page-id page-id)
                       (pcb/with-objects objects)
                       (pcb/add-object group {:index group-idx})
+
+                      ;; Create a group needs to reset the constraints to scale/scale
+                      (pcb/update-shapes
+                       (map :id shapes)
+                       (fn [shape]
+                         (-> shape
+                             (d/assoc-when :constraints-h :scale)
+                             (d/assoc-when :constraints-v :scale))))
                       (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
                       (pcb/change-parent (:id group) (reverse shapes))
                       (pcb/update-shapes (map :id shapes-to-detach) ctk/detach-shape)
@@ -188,7 +196,9 @@
             (->> ids
                  (cfh/clean-loops objects)
                  (remove #(ctn/has-any-copy-parent? objects (get objects %)))
-                 (shapes-for-grouping objects))
+                 (shapes-for-grouping objects)
+                 (remove ctk/is-variant?))
+
             parents  (into #{} (map :parent-id) shapes)]
         (when-not (empty? shapes)
           (let [[group changes]

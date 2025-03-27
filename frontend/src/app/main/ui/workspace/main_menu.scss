@@ -106,6 +106,9 @@
 
   &.plugins {
     top: $s-180;
+    max-height: calc(100vh - $s-180);
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   &.help-info {

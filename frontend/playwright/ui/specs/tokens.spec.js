@@ -121,7 +121,11 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
-    await expect(tokensTabPanel.getByLabel("primary")).toBeEnabled();
+    await expect(
+      tokensTabPanel.getByRole("button", {
+        name: "color.primary",
+      }),
+    ).toBeEnabled();
 
     // Create token referencing the previous one with keyboard
 
@@ -138,8 +142,11 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(submitButton).toBeEnabled();
     await nameField.press("Enter");
 
-    const referenceToken = tokensTabPanel.getByLabel("color.secondary");
-    await expect(referenceToken).toBeEnabled();
+    await expect(
+      tokensTabPanel.getByRole("button", {
+        name: "color.secondary",
+      }),
+    ).toBeEnabled();
 
     // Tokens tab panel should have two tokens with the color red / #ff0000
     await expect(tokensTabPanel.getByTitle("#ff0000")).toHaveCount(2);
@@ -255,14 +262,8 @@ test.describe("Tokens: Tokens Tab", () => {
   });
 
   test("User edits theme and activates it in the sidebar", async ({ page }) => {
-    const {
-      workspacePage,
-      tokensUpdateCreateModal,
-      tokenThemesSetsSidebar,
-      tokensSidebar,
-      tokenContextMenuForToken,
-      tokenThemeUpdateCreateModal,
-    } = await setupTokensFile(page);
+    const { tokenThemesSetsSidebar, tokenThemeUpdateCreateModal } =
+      await setupTokensFile(page);
 
     await expect(tokenThemesSetsSidebar).toBeVisible();
 
@@ -315,7 +316,8 @@ test.describe("Tokens: Tokens Tab", () => {
     ).toBeVisible();
 
     await tokenThemeUpdateCreateModal
-      .getByRole("button", { name: "Close" })
+      .getByRole("button")
+      .getByText("close")
       .click();
     await expect(tokenThemeUpdateCreateModal).not.toBeVisible();
 
@@ -617,7 +619,7 @@ test.describe("Tokens: Themes modal", () => {
     ).toHaveCount(1);
   });
 
-  test("Create theme", async ({ page }) => {
+  test("Add new theme", async ({ page }) => {
     const { tokenThemeUpdateCreateModal, workspacePage } =
       await setupTokensFile(page);
 
@@ -625,7 +627,7 @@ test.describe("Tokens: Themes modal", () => {
 
     await tokenThemeUpdateCreateModal
       .getByRole("button", {
-        name: "Create theme",
+        name: "Add new theme",
       })
       .click();
 

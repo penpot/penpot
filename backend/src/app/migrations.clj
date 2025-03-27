@@ -435,7 +435,10 @@
     :fn (mg/resource "app/migrations/sql/0137-add-file-migration-table.sql")}
 
    {:name "0138-mod-file-data-fragment-table.sql"
-    :fn (mg/resource "app/migrations/sql/0138-mod-file-data-fragment-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0138-mod-file-data-fragment-table.sql")}
+
+   {:name "0139-mod-file-change-table.sql"
+    :fn (mg/resource "app/migrations/sql/0139-mod-file-change-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

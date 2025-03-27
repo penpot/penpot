@@ -36,11 +36,11 @@ msgstr "데모 계정을 생성하세요"
 msgid "auth.create-demo-profile"
 msgstr "그냥 해볼까요?"
 
-#: src/app/main/ui/auth/login.cljs:42
+#: src/app/main/ui/auth/login.cljs:43
 msgid "auth.demo-warning"
 msgstr "데모 서비스입니다. 실제 작업에 사용하지 마십시오. 생성된 프로젝트는 주기적으로 삭제될 것입니다."
 
-#: src/app/main/ui/auth/login.cljs:190, src/app/main/ui/viewer/login.cljs:84
+#: src/app/main/ui/auth/login.cljs:189, src/app/main/ui/viewer/login.cljs:84
 msgid "auth.forgot-password"
 msgstr "비밀번호를 잊어버리셨나요?"
 
@@ -48,7 +48,7 @@ msgstr "비밀번호를 잊어버리셨나요?"
 msgid "auth.fullname"
 msgstr "이름 (성명)"
 
-#: src/app/main/ui/auth/login.cljs:283
+#: src/app/main/ui/auth/login.cljs:282
 msgid "auth.login-account-title"
 msgstr "내 계정에 로그인하기"
 
@@ -56,31 +56,31 @@ msgstr "내 계정에 로그인하기"
 msgid "auth.login-here"
 msgstr "여기서 로그인하세요"
 
-#: src/app/main/ui/auth/login.cljs:196
+#: src/app/main/ui/auth/login.cljs:195
 msgid "auth.login-submit"
 msgstr "로그인"
 
-#: src/app/main/ui/auth/login.cljs:286
+#: src/app/main/ui/auth/login.cljs:285
 msgid "auth.login-tagline"
 msgstr "펜팟은 디자인과 코딩의 협업을 위한 무료 오픈소스 디자인 도구입니다"
 
-#: src/app/main/ui/auth/login.cljs:223
+#: src/app/main/ui/auth/login.cljs:222
 msgid "auth.login-with-github-submit"
 msgstr "깃허브 (GitHub)"
 
-#: src/app/main/ui/auth/login.cljs:229
+#: src/app/main/ui/auth/login.cljs:228
 msgid "auth.login-with-gitlab-submit"
 msgstr "깃랩 (GitLab)"
 
-#: src/app/main/ui/auth/login.cljs:217
+#: src/app/main/ui/auth/login.cljs:216
 msgid "auth.login-with-google-submit"
 msgstr "구글 (Google)"
 
-#: src/app/main/ui/auth/login.cljs:202
+#: src/app/main/ui/auth/login.cljs:201
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
-#: src/app/main/ui/auth/login.cljs:235, src/app/main/ui/auth/login.cljs:256
+#: src/app/main/ui/auth/login.cljs:234, src/app/main/ui/auth/login.cljs:255
 msgid "auth.login-with-oidc-submit"
 msgstr "오픈아이디 (OpenID)"
 
@@ -104,7 +104,7 @@ msgstr "비밀번호 복구를 위한 링크를 메일함으로 보냈어요"
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "팀에 성공적으로 합류했어요"
 
-#: src/app/main/ui/auth/login.cljs:180, src/app/main/ui/auth/register.cljs:95
+#: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/register.cljs:95
 msgid "auth.password"
 msgstr "비밀번호"
 
@@ -132,7 +132,7 @@ msgstr "비밀번호를 잊으셨나요?"
 msgid "auth.recovery-submit"
 msgstr "비밀번호를 바꾸세요"
 
-#: src/app/main/ui/auth/login.cljs:299, src/app/main/ui/static.cljs:141, src/app/main/ui/viewer/login.cljs:87
+#: src/app/main/ui/auth/login.cljs:298, src/app/main/ui/static.cljs:141, src/app/main/ui/viewer/login.cljs:87
 msgid "auth.register"
 msgstr "아직 계정이 없으신가요?"
 
@@ -140,7 +140,7 @@ msgstr "아직 계정이 없으신가요?"
 msgid "auth.register-account-tagline"
 msgstr "대시보드와 이메일 에서 당신을 어떻게 호칭할지 저희에게 알려주세요."
 
-#: src/app/main/ui/auth/login.cljs:303, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/auth/register.cljs:240, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:91
+#: src/app/main/ui/auth/login.cljs:302, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/auth/register.cljs:240, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:91
 msgid "auth.register-submit"
 msgstr "계정을 생성하세요"
 
@@ -157,7 +157,7 @@ msgstr "계정을 생성하세요"
 msgid "auth.sidebar-tagline"
 msgstr "디자인과 프로토타이핑을 위한 오픈소스 솔루션."
 
-#: src/app/main/ui/auth/register.cljs:290, src/app/main/ui/dashboard/sidebar.cljs:1053, src/app/main/ui/workspace/main_menu.cljs:154
+#: src/app/main/ui/auth/register.cljs:290, src/app/main/ui/dashboard/sidebar.cljs:1054, src/app/main/ui/workspace/main_menu.cljs:154
 msgid "auth.terms-of-service"
 msgstr "서비스 정책"
 
@@ -169,7 +169,7 @@ msgstr "새로운 계정을 생성하시면, 사용자는 펜팟의 서비스 �
 msgid "auth.verification-email-sent"
 msgstr "검증 메일을 ~에 보냈어요"
 
-#: src/app/main/ui/auth/login.cljs:173, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:88
+#: src/app/main/ui/auth/login.cljs:172, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:88
 msgid "auth.work-email"
 msgstr "작업용 이메일"
 
@@ -178,7 +178,7 @@ msgstr "작업용 이메일"
 msgid "branding-illustrations-marketing-pieces"
 msgstr "...브랜딩, 일러스트레이션, 마케팅 자료 등."
 
-#: src/app/main/ui/workspace/libraries.cljs:311
+#: src/app/main/ui/workspace/libraries.cljs:308
 msgid "common.publish"
 msgstr "발행하기"
 
@@ -247,7 +247,7 @@ msgstr "프로토타입을 공유해요"
 msgid "common.share-link.view-all"
 msgstr "모두 선택해요"
 
-#: src/app/main/ui/workspace/libraries.cljs:307
+#: src/app/main/ui/workspace/libraries.cljs:304
 msgid "common.unpublish"
 msgstr "발행취소하기"
 
@@ -297,7 +297,7 @@ msgstr "인터페이스 둘러보기"
 msgid "dashboard.access-tokens.copied-success"
 msgstr "복사된 토큰"
 
-#: src/app/main/ui/settings/access_tokens.cljs:191
+#: src/app/main/ui/settings/access_tokens.cljs:190
 msgid "dashboard.access-tokens.create"
 msgstr "새로운 토큰 생성하기"
 
@@ -305,11 +305,11 @@ msgstr "새로운 토큰 생성하기"
 msgid "dashboard.access-tokens.create.success"
 msgstr "엑세스 토큰이 성공적으로 생성되었습니다."
 
-#: src/app/main/ui/settings/access_tokens.cljs:289
+#: src/app/main/ui/settings/access_tokens.cljs:288
 msgid "dashboard.access-tokens.empty.add-one"
 msgstr "\"새로운 토큰 생성하기\" 버튼을 눌러 토큰을 생성하십시오."
 
-#: src/app/main/ui/settings/access_tokens.cljs:288
+#: src/app/main/ui/settings/access_tokens.cljs:287
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "현재 가지고 있는 토큰이 없습니다."
 
@@ -333,23 +333,23 @@ msgstr "90일"
 msgid "dashboard.access-tokens.expiration-never"
 msgstr "기한 없음"
 
-#: src/app/main/ui/settings/access_tokens.cljs:271
+#: src/app/main/ui/settings/access_tokens.cljs:270
 msgid "dashboard.access-tokens.expired-on"
 msgstr "%s에 만료되었습니다"
 
-#: src/app/main/ui/settings/access_tokens.cljs:272
+#: src/app/main/ui/settings/access_tokens.cljs:271
 msgid "dashboard.access-tokens.expires-on"
 msgstr "%s에 만료됩니다"
 
-#: src/app/main/ui/settings/access_tokens.cljs:270
+#: src/app/main/ui/settings/access_tokens.cljs:269
 msgid "dashboard.access-tokens.no-expiration"
 msgstr "만료 기한 없음"
 
-#: src/app/main/ui/settings/access_tokens.cljs:186
+#: src/app/main/ui/settings/access_tokens.cljs:185
 msgid "dashboard.access-tokens.personal"
 msgstr "개인용 엑세스 토큰"
 
-#: src/app/main/ui/settings/access_tokens.cljs:187
+#: src/app/main/ui/settings/access_tokens.cljs:186
 msgid "dashboard.access-tokens.personal.description"
 msgstr ""
 "개인용 엑세스 토큰은 펜팟의 로그인/암호 인증 시스템의 대안으로 사용되며, 어플리케이션의 펜팟 내부 API 엑세스를 위해 사용될 수 "
@@ -371,7 +371,7 @@ msgstr "공유 라이브러리로 추가하기"
 msgid "dashboard.change-email"
 msgstr "이메일을 변경해요"
 
-#: src/app/main/data/dashboard.cljs:288, src/app/main/data/dashboard.cljs:507
+#: src/app/main/data/dashboard.cljs:298, src/app/main/data/dashboard.cljs:526, src/app/main/data/workspace.cljs:544
 msgid "dashboard.copy-suffix"
 msgstr "(복사)"
 
@@ -423,7 +423,7 @@ msgstr "내보내요"
 msgid "errors.invalid-recovery-token"
 msgstr "복구 토큰이 유효하지 않습니다."
 
-#: src/app/main/ui/viewer/inspect/attributes/blur.cljs:26
+#: src/app/main/ui/inspect/attributes/blur.cljs:26
 msgid "inspect.attributes.blur"
 msgstr "흐림"
 
@@ -431,31 +431,31 @@ msgstr "흐림"
 msgid "inspect.attributes.blur.value"
 msgstr "값"
 
-#: src/app/main/ui/viewer/inspect/attributes/common.cljs:112
+#: src/app/main/ui/inspect/attributes/common.cljs:112
 msgid "inspect.attributes.color.hex"
 msgstr "HEX"
 
-#: src/app/main/ui/viewer/inspect/attributes/common.cljs:114
+#: src/app/main/ui/inspect/attributes/common.cljs:114
 msgid "inspect.attributes.color.hsla"
 msgstr "HSLA"
 
-#: src/app/main/ui/viewer/inspect/attributes/common.cljs:113
+#: src/app/main/ui/inspect/attributes/common.cljs:113
 msgid "inspect.attributes.color.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/viewer/inspect/attributes/fill.cljs:57
+#: src/app/main/ui/inspect/attributes/fill.cljs:57
 msgid "inspect.attributes.fill"
 msgstr "채우기"
 
-#: src/app/main/ui/viewer/inspect/attributes/common.cljs:99, src/app/main/ui/viewer/inspect/attributes/image.cljs:51
+#: src/app/main/ui/inspect/attributes/common.cljs:99, src/app/main/ui/inspect/attributes/image.cljs:51
 msgid "inspect.attributes.image.download"
 msgstr "소스 이미지 다운로드"
 
-#: src/app/main/ui/viewer/inspect/attributes/image.cljs:39
+#: src/app/main/ui/inspect/attributes/image.cljs:39
 msgid "inspect.attributes.image.height"
 msgstr "높이"
 
-#: src/app/main/ui/viewer/inspect/attributes/image.cljs:32
+#: src/app/main/ui/inspect/attributes/image.cljs:32
 msgid "inspect.attributes.image.width"
 msgstr "폭"
 
@@ -494,15 +494,15 @@ msgstr "위"
 msgid "inspect.attributes.layout.width"
 msgstr "폭"
 
-#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:57
+#: src/app/main/ui/inspect/attributes/shadow.cljs:57
 msgid "inspect.attributes.shadow"
 msgstr "그림자"
 
-#: src/app/main/ui/viewer/inspect/attributes/geometry.cljs:40
+#: src/app/main/ui/inspect/attributes/geometry.cljs:40
 msgid "inspect.attributes.size"
 msgstr "사이즈와 위치"
 
-#: src/app/main/ui/viewer/inspect/attributes/stroke.cljs:52
+#: src/app/main/ui/inspect/attributes/stroke.cljs:52
 msgid "inspect.attributes.stroke"
 msgstr "선"
 
@@ -535,91 +535,91 @@ msgstr "단색"
 msgid "inspect.attributes.stroke.width"
 msgstr "폭"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:81, src/app/main/ui/viewer/inspect/attributes/text.cljs:194
+#: src/app/main/ui/inspect/attributes/text.cljs:83, src/app/main/ui/inspect/attributes/text.cljs:196
 msgid "inspect.attributes.typography"
 msgstr "타이포그래피"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:89, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:299
+#: src/app/main/ui/inspect/attributes/text.cljs:91, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:302
 msgid "inspect.attributes.typography.font-family"
 msgstr "폰트 패밀리"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
+#: src/app/main/ui/inspect/attributes/text.cljs:109, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:320
 msgid "inspect.attributes.typography.font-size"
 msgstr "폰트 사이즈"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:98, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:333
+#: src/app/main/ui/inspect/attributes/text.cljs:100, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336
 msgid "inspect.attributes.typography.font-style"
 msgstr "폰트 스타일"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:146
+#: src/app/main/ui/inspect/attributes/text.cljs:148
 msgid "inspect.attributes.typography.text-decoration.strikethrough"
 msgstr "취소선"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:147
+#: src/app/main/ui/inspect/attributes/text.cljs:149
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "밑줄"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:156
+#: src/app/main/ui/inspect/attributes/text.cljs:158
 msgid "inspect.attributes.typography.text-transform"
 msgstr "텍스트 변형"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:158, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:429
+#: src/app/main/ui/inspect/attributes/text.cljs:160, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:432
 msgid "inspect.attributes.typography.text-transform.lowercase"
 msgstr "소문자"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:161, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:419
+#: src/app/main/ui/inspect/attributes/text.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:422
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "대문자"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:100
+#: src/app/main/ui/inspect/right_sidebar.cljs:105
 msgid "inspect.tabs.code"
 msgstr "코드"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:124
+#: src/app/main/ui/inspect/right_sidebar.cljs:129
 msgid "inspect.tabs.code.selected.circle"
 msgstr "원"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:125
+#: src/app/main/ui/inspect/right_sidebar.cljs:130
 msgid "inspect.tabs.code.selected.component"
 msgstr "컴포넌트"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:126
+#: src/app/main/ui/inspect/right_sidebar.cljs:131
 msgid "inspect.tabs.code.selected.curve"
 msgstr "커브"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:127
+#: src/app/main/ui/inspect/right_sidebar.cljs:132
 msgid "inspect.tabs.code.selected.frame"
 msgstr "보드"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:128
+#: src/app/main/ui/inspect/right_sidebar.cljs:133
 msgid "inspect.tabs.code.selected.group"
 msgstr "그룹"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:129
+#: src/app/main/ui/inspect/right_sidebar.cljs:134
 msgid "inspect.tabs.code.selected.image"
 msgstr "이미지"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:130
+#: src/app/main/ui/inspect/right_sidebar.cljs:135
 msgid "inspect.tabs.code.selected.mask"
 msgstr "마스크"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:131
+#: src/app/main/ui/inspect/right_sidebar.cljs:136
 msgid "inspect.tabs.code.selected.path"
 msgstr "패스"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:132
+#: src/app/main/ui/inspect/right_sidebar.cljs:137
 msgid "inspect.tabs.code.selected.rect"
 msgstr "사각형"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:133
+#: src/app/main/ui/inspect/right_sidebar.cljs:138
 msgid "inspect.tabs.code.selected.svg-raw"
 msgstr "SVG"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:134
+#: src/app/main/ui/inspect/right_sidebar.cljs:139
 msgid "inspect.tabs.code.selected.text"
 msgstr "텍스트"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:96
+#: src/app/main/ui/inspect/right_sidebar.cljs:101
 msgid "inspect.tabs.info"
 msgstr "정보"
 
@@ -635,7 +635,7 @@ msgstr "허가"
 msgid "labels.active"
 msgstr "활성화"
 
-#: src/app/main/ui/dashboard/fonts.cljs:179
+#: src/app/main/ui/dashboard/fonts.cljs:180
 msgid "labels.add-custom-font"
 msgstr "커스텀 폰트 추가"
 
@@ -643,7 +643,7 @@ msgstr "커스텀 폰트 추가"
 msgid "labels.admin"
 msgstr "관리자"
 
-#: src/app/main/ui/workspace/tokens/context_menu.cljs:63, src/app/main/ui/workspace/tokens/context_menu.cljs:101, src/app/main/ui/workspace/tokens/token_pill.cljs:110
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:66, src/app/main/ui/workspace/tokens/context_menu.cljs:100, src/app/main/ui/workspace/tokens/token_pill.cljs:118
 msgid "labels.all"
 msgstr "전체"
 
@@ -659,19 +659,19 @@ msgstr "뒤로"
 msgid "labels.bad-gateway.main-message"
 msgstr "잘못된 경로"
 
-#: src/app/main/data/common.cljs:135, src/app/main/ui/dashboard/change_owner.cljs:66, src/app/main/ui/dashboard/import.cljs:489, src/app/main/ui/dashboard/team.cljs:916, src/app/main/ui/delete_shared.cljs:35, src/app/main/ui/exports/assets.cljs:161, src/app/main/ui/exports/files.cljs:192, src/app/main/ui/settings/access_tokens.cljs:177, src/app/main/ui/viewer/share_link.cljs:204, src/app/main/ui/workspace/sidebar/assets/groups.cljs:145, src/app/main/ui/workspace/tokens/form.cljs:506, src/app/main/ui/workspace/tokens/modals/themes.cljs:198
+#: src/app/main/data/common.cljs:135, src/app/main/ui/dashboard/change_owner.cljs:66, src/app/main/ui/dashboard/import.cljs:489, src/app/main/ui/dashboard/team.cljs:916, src/app/main/ui/delete_shared.cljs:35, src/app/main/ui/exports/assets.cljs:161, src/app/main/ui/exports/files.cljs:192, src/app/main/ui/settings/access_tokens.cljs:176, src/app/main/ui/viewer/share_link.cljs:204, src/app/main/ui/workspace/sidebar/assets/groups.cljs:145, src/app/main/ui/workspace/tokens/form.cljs:572, src/app/main/ui/workspace/tokens/modals/themes.cljs:234
 msgid "labels.cancel"
 msgstr "취소"
 
-#: src/app/main/ui/dashboard/comments.cljs:87, src/app/main/ui/dashboard/projects.cljs:99, src/app/main/ui/exports/files.cljs:210, src/app/main/ui/settings/access_tokens.cljs:172, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:175, src/app/main/ui/workspace/comments.cljs:125, src/app/main/ui/workspace/libraries.cljs:645, src/app/main/ui/workspace/sidebar/debug.cljs:40, src/app/main/ui/workspace/sidebar/layers.cljs:300, src/app/main/ui/workspace/sidebar.cljs:275, src/app/main/ui/workspace/tokens/modals/themes.cljs:396, src/app/main/ui/workspace/tokens/modals.cljs:64
+#: src/app/main/ui/dashboard/comments.cljs:102, src/app/main/ui/dashboard/projects.cljs:99, src/app/main/ui/exports/files.cljs:210, src/app/main/ui/settings/access_tokens.cljs:171, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:175, src/app/main/ui/workspace/comments.cljs:128, src/app/main/ui/workspace/libraries.cljs:627, src/app/main/ui/workspace/sidebar/debug.cljs:40, src/app/main/ui/workspace/sidebar/layers.cljs:300, src/app/main/ui/workspace/sidebar.cljs:276, src/app/main/ui/workspace/tokens/modals/themes.cljs:59, src/app/main/ui/workspace/tokens/modals/themes.cljs:166, src/app/main/ui/workspace/tokens/modals/themes.cljs:446, src/app/main/ui/workspace/tokens/modals.cljs:64
 msgid "labels.close"
 msgstr "닫기"
 
-#: src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:123
+#: src/app/main/ui/viewer/comments.cljs:71, src/app/main/ui/workspace/comments.cljs:126
 msgid "labels.comments"
 msgstr "코멘트"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1016, src/app/main/ui/workspace/main_menu.cljs:114
+#: src/app/main/ui/dashboard/sidebar.cljs:1017, src/app/main/ui/workspace/main_menu.cljs:114
 msgid "labels.community"
 msgstr "커뮤니티"
 
@@ -679,7 +679,7 @@ msgstr "커뮤니티"
 msgid "labels.confirm-password"
 msgstr "비밀번호 확인하기"
 
-#: src/app/main/ui/dashboard/import.cljs:495, src/app/main/ui/exports/files.cljs:197, src/app/main/ui/onboarding/newsletter.cljs:101
+#: src/app/main/ui/dashboard/import.cljs:495, src/app/main/ui/exports/files.cljs:197, src/app/main/ui/onboarding/newsletter.cljs:106
 msgid "labels.continue"
 msgstr "계속하기"
 
@@ -687,7 +687,7 @@ msgstr "계속하기"
 msgid "labels.copy-invitation-link"
 msgstr "링크 복사하기"
 
-#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:153, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:190
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:153, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:197
 msgid "labels.create"
 msgstr "생성하기"
 
@@ -707,15 +707,15 @@ msgstr "커스텀 폰트"
 msgid "labels.dashboard"
 msgstr "대시보드"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:326, src/app/main/ui/dashboard/fonts.cljs:259, src/app/main/ui/dashboard/fonts.cljs:335, src/app/main/ui/dashboard/fonts.cljs:349, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:952, src/app/main/ui/settings/access_tokens.cljs:198, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:209, src/app/main/ui/workspace/sidebar/versions.cljs:136, src/app/main/ui/workspace/tokens/form.cljs:500, src/app/main/ui/workspace/tokens/modals/themes.cljs:365, src/app/main/ui/workspace/tokens/sets_context_menu.cljs:52
+#: src/app/main/ui/dashboard/file_menu.cljs:326, src/app/main/ui/dashboard/fonts.cljs:261, src/app/main/ui/dashboard/fonts.cljs:337, src/app/main/ui/dashboard/fonts.cljs:351, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:952, src/app/main/ui/settings/access_tokens.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:216, src/app/main/ui/workspace/sidebar/versions.cljs:136, src/app/main/ui/workspace/tokens/form.cljs:565, src/app/main/ui/workspace/tokens/modals/themes.cljs:414, src/app/main/ui/workspace/tokens/sets_context_menu.cljs:56
 msgid "labels.delete"
 msgstr "삭제하기"
 
-#: src/app/main/ui/comments.cljs:907
+#: src/app/main/ui/comments.cljs:976
 msgid "labels.delete-comment"
 msgstr "코멘트 삭제하기"
 
-#: src/app/main/ui/comments.cljs:830
+#: src/app/main/ui/comments.cljs:899
 msgid "labels.delete-comment-thread"
 msgstr "스레드 제거하기"
 
@@ -723,11 +723,11 @@ msgstr "스레드 제거하기"
 msgid "labels.delete-invitation"
 msgstr "초대장 제거하기"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:29, src/app/main/ui/dashboard/files.cljs:79, src/app/main/ui/dashboard/files.cljs:177, src/app/main/ui/dashboard/projects.cljs:227, src/app/main/ui/dashboard/projects.cljs:231, src/app/main/ui/dashboard/sidebar.cljs:814
+#: src/app/main/ui/dashboard/file_menu.cljs:29, src/app/main/ui/dashboard/files.cljs:79, src/app/main/ui/dashboard/files.cljs:177, src/app/main/ui/dashboard/projects.cljs:228, src/app/main/ui/dashboard/projects.cljs:232, src/app/main/ui/dashboard/sidebar.cljs:814
 msgid "labels.drafts"
 msgstr "초안"
 
-#: src/app/main/ui/comments.cljs:903, src/app/main/ui/dashboard/fonts.cljs:256, src/app/main/ui/dashboard/team.cljs:950, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:205, src/app/main/ui/workspace/tokens/sidebar.cljs:198
+#: src/app/main/ui/comments.cljs:972, src/app/main/ui/dashboard/fonts.cljs:258, src/app/main/ui/dashboard/team.cljs:950, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:212, src/app/main/ui/workspace/tokens/sidebar.cljs:197
 msgid "labels.edit"
 msgstr "편집"
 
@@ -743,11 +743,11 @@ msgstr "작성자"
 msgid "labels.expired-invitation"
 msgstr "기한이 만료된"
 
-#: src/app/main/ui/exports/assets.cljs:170, src/app/main/ui/workspace/tokens/sidebar.cljs:359
+#: src/app/main/ui/exports/assets.cljs:170, src/app/main/ui/workspace/tokens/sidebar.cljs:418
 msgid "labels.export"
 msgstr "내보내기"
 
-#: src/app/main/ui/dashboard/fonts.cljs:422
+#: src/app/main/ui/dashboard/fonts.cljs:424
 msgid "labels.font-family"
 msgstr "폰트 패밀리"
 
@@ -755,11 +755,11 @@ msgstr "폰트 패밀리"
 msgid "labels.font-providers"
 msgstr "폰트 공급자"
 
-#: src/app/main/ui/dashboard/fonts.cljs:423
+#: src/app/main/ui/dashboard/fonts.cljs:425
 msgid "labels.font-variants"
 msgstr "스타일"
 
-#: src/app/main/ui/dashboard/fonts.cljs:54, src/app/main/ui/dashboard/sidebar.cljs:834
+#: src/app/main/ui/dashboard/fonts.cljs:55, src/app/main/ui/dashboard/sidebar.cljs:834
 msgid "labels.fonts"
 msgstr "폰트"
 
@@ -767,7 +767,7 @@ msgstr "폰트"
 msgid "labels.go-back"
 msgstr "뒤로 가기"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1009, src/app/main/ui/workspace/main_menu.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1079, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1104, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1290
+#: src/app/main/ui/dashboard/sidebar.cljs:1010, src/app/main/ui/workspace/main_menu.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1088, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1113, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1299
 msgid "labels.help-center"
 msgstr "고객센터"
 
@@ -787,7 +787,7 @@ msgstr "뷰어"
 msgid "labels.webhooks"
 msgstr "웹훅"
 
-#: src/app/main/ui/comments.cljs:743
+#: src/app/main/ui/comments.cljs:818
 msgid "labels.write-new-comment"
 msgstr "새 코멘트 쓰기"
 
@@ -827,11 +827,11 @@ msgstr "웹훅 만들기"
 msgid "modals.create-webhook.title"
 msgstr "웹훅 생성하기"
 
-#: src/app/main/ui/comments.cljs:800
+#: src/app/main/ui/comments.cljs:869
 msgid "modals.delete-comment-thread.accept"
 msgstr "대회 지우기"
 
-#: src/app/main/ui/comments.cljs:798
+#: src/app/main/ui/comments.cljs:867
 msgid "modals.delete-comment-thread.title"
 msgstr "대화 지우기"
 
@@ -851,19 +851,19 @@ msgstr "파일 삭제중"
 msgid "modals.delete-file-multi-confirm.accept"
 msgstr "여러 파일 지우기"
 
-#: src/app/main/ui/dashboard/fonts.cljs:347
+#: src/app/main/ui/dashboard/fonts.cljs:349
 msgid "modals.delete-font-variant.title"
 msgstr "폰트 스타일 지우는 중"
 
-#: src/app/main/ui/dashboard/fonts.cljs:333
+#: src/app/main/ui/dashboard/fonts.cljs:335
 msgid "modals.delete-font.title"
 msgstr "폰트 지우는 중"
 
-#: src/app/main/ui/workspace/context_menu.cljs:627, src/app/main/ui/workspace/sidebar/sitemap.cljs:71
+#: src/app/main/ui/workspace/context_menu.cljs:643, src/app/main/ui/workspace/sidebar/sitemap.cljs:71
 msgid "modals.delete-page.body"
 msgstr "정말로 해당 페이지를 지우시겠습니까?"
 
-#: src/app/main/ui/workspace/context_menu.cljs:626, src/app/main/ui/workspace/sidebar/sitemap.cljs:70
+#: src/app/main/ui/workspace/context_menu.cljs:642, src/app/main/ui/workspace/sidebar/sitemap.cljs:70
 msgid "modals.delete-page.title"
 msgstr "페이지 삭제"
 

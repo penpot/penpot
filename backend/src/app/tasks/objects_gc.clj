@@ -26,7 +26,7 @@
 
 (defn- delete-profiles!
   [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/cursor conn [sql:get-profiles min-age chunk-size] {:chunk-size 5})
+  (->> (db/plan conn [sql:get-profiles min-age chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id photo-id]}]
                  (l/trc :hint "permanently delete" :rel "profile" :id (str id))
 
@@ -49,7 +49,7 @@
 
 (defn- delete-teams!
   [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/cursor conn [sql:get-teams min-age chunk-size] {:chunk-size 5})
+  (->> (db/plan conn [sql:get-teams min-age chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id photo-id deleted-at]}]
                  (l/trc :hint "permanently delete"
                         :rel "team"
@@ -77,7 +77,7 @@
 
 (defn- delete-fonts!
   [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/cursor conn [sql:get-fonts min-age chunk-size] {:chunk-size 5})
+  (->> (db/plan conn [sql:get-fonts min-age chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id team-id deleted-at] :as font}]
                  (l/trc :hint "permanently delete"
                         :rel "team-font-variant"
@@ -109,7 +109,7 @@
 
 (defn- delete-projects!
   [{:keys [::db/conn ::min-age ::chunk-size] :as cfg}]
-  (->> (db/cursor conn [sql:get-projects min-age chunk-size] {:chunk-size 5})
+  (->> (db/plan conn [sql:get-projects min-age chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id team-id deleted-at]}]
                  (l/trc :hint "permanently delete"
                         :rel "project"
@@ -135,7 +135,7 @@
 
 (defn- delete-files!
   [{:keys [::db/conn ::sto/storage ::min-age ::chunk-size] :as cfg}]
-  (->> (db/cursor conn [sql:get-files min-age chunk-size] {:chunk-size 5})
+  (->> (db/plan conn [sql:get-files min-age chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id deleted-at project-id] :as file}]
                  (l/trc :hint "permanently delete"
                         :rel "file"
@@ -164,7 +164,7 @@
 
 (defn delete-file-thumbnails!
   [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/cursor conn [sql:get-file-thumbnails min-age chunk-size] {:chunk-size 5})
+  (->> (db/plan conn [sql:get-file-thumbnails min-age chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id revn media-id deleted-at]}]
                  (l/trc :hint "permanently delete"
                         :rel "file-thumbnail"
@@ -193,7 +193,7 @@
 
 (defn delete-file-object-thumbnails!
   [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/cursor conn [sql:get-file-object-thumbnails min-age chunk-size] {:chunk-size 5})
+  (->> (db/plan conn [sql:get-file-object-thumbnails min-age chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id object-id media-id deleted-at]}]
                  (l/trc :hint "permanently delete"
                         :rel "file-tagged-object-thumbnail"
@@ -222,7 +222,7 @@
 
 (defn- delete-file-data-fragments!
   [{:keys [::db/conn ::sto/storage ::min-age ::chunk-size] :as cfg}]
-  (->> (db/cursor conn [sql:get-file-data-fragments min-age chunk-size] {:chunk-size 5})
+  (->> (db/plan conn [sql:get-file-data-fragments min-age chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id id deleted-at data-ref-id]}]
                  (l/trc :hint "permanently delete"
                         :rel "file-data-fragment"
@@ -248,7 +248,7 @@
 
 (defn- delete-file-media-objects!
   [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/cursor conn [sql:get-file-media-objects min-age chunk-size] {:chunk-size 5})
+  (->> (db/plan conn [sql:get-file-media-objects min-age chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id file-id deleted-at] :as fmo}]
                  (l/trc :hint "permanently delete"
                         :rel "file-media-object"
@@ -275,9 +275,9 @@
       FOR UPDATE
      SKIP LOCKED")
 
-(defn- delete-file-change!
+(defn- delete-file-changes!
   [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/cursor conn [sql:get-file-change min-age chunk-size] {:chunk-size 5})
+  (->> (db/plan conn [sql:get-file-change min-age chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id file-id deleted-at] :as xlog}]
                  (l/trc :hint "permanently delete"
                         :rel "file-change"
@@ -299,11 +299,11 @@
    #'delete-file-data-fragments!
    #'delete-file-object-thumbnails!
    #'delete-file-thumbnails!
+   #'delete-file-changes!
    #'delete-files!
    #'delete-projects!
    #'delete-fonts!
-   #'delete-teams!
-   #'delete-file-change!])
+   #'delete-teams!])
 
 (defn- execute-proc!
   "A generic function that executes the specified proc iterativelly
@@ -326,7 +326,7 @@
   [k v]
   {k (assoc v
             ::min-age (cf/get-deletion-delay)
-            ::chunk-size 50)})
+            ::chunk-size 100)})
 
 (defmethod ig/init-key ::handler
   [_ cfg]

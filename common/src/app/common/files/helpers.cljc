@@ -200,7 +200,7 @@
         result))))
 
 (defn get-parent-seq
-  "Returns a vector of parents of the specified shape."
+  "Returns a lazy seq of parents of the specified shape."
   ([objects shape-id]
    (get-parent-seq objects (get objects shape-id) shape-id))
 
@@ -282,6 +282,22 @@
 
       :else
       (get-root-frame objects (:frame-id frame)))))
+
+(defn get-parent-frame
+  "Similar to `get-frame, but always return the parent frame. When root
+  frame is provided, then itself is returned."
+  [objects shape-or-id]
+  (cond
+    (map? shape-or-id)
+    (get objects (dm/get-prop shape-or-id :frame-id))
+
+    (= uuid/zero shape-or-id)
+    (get objects uuid/zero)
+
+    :else
+    (some->> shape-or-id
+             (get objects)
+             (get-frame objects))))
 
 (defn valid-frame-target?
   [objects parent-id shape-id]
@@ -589,10 +605,9 @@
       (into xform:collect-media-refs (vals (:components data)))
       (into (keys (:media data)))))
 
-(defn relink-media-refs
-  "A function responsible to analyze all file data and replace the
-  old :component-file reference with the new ones, using the provided
-  file-index."
+(defn relink-refs
+  "A function responsible to analyze the file data or shape for references
+  and apply lookup-index on it."
   [data lookup-index]
   (letfn [(process-map-form [form]
             (cond-> form

@@ -86,6 +86,9 @@ $grayish-red: #bfbfbf;
   --color-foreground-error: #{$red-500};
   --color-accent-info: #{$blue-500};
   --color-background-info: #{$blue-200};
+  --color-background-default: #{$white};
+  --color-accent-default: #{$gray-100};
+  --color-icon-default: #{$blue-teal-700};
 
   --color-background-primary: #{$white};
   --color-background-secondary: #{$gray-200};
@@ -124,6 +127,9 @@ $grayish-red: #bfbfbf;
   --color-foreground-error: #{$red-500};
   --color-accent-info: #{$blue-500};
   --color-background-info: #{$blue-950};
+  --color-background-default: #{$gray-950};
+  --color-accent-default: #{$gray-800};
+  --color-icon-default: #{$grayish-blue-500};
 
   --color-background-primary: #{$gray-950};
   --color-background-secondary: #{$black};

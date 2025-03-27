@@ -342,13 +342,20 @@
   (-> (hex->hsl data)
       (conj opacity)))
 
-#?(:cljs
-   (defn format-hsla
-     [[h s l a]]
-     (let [precision 2
-           rounded-s (* 100 (parse-double (d/format-precision s precision)))
-           rounded-l (* 100 (parse-double (d/format-precision l precision)))]
-       (str/concat "" h ", " rounded-s "%, " rounded-l "%, " a))))
+(defn format-hsla
+  [[h s l a]]
+  (let [precision 2
+        rounded-h (int h)
+        rounded-s (d/format-number (* 100 s) precision)
+        rounded-l (d/format-number (* 100 l) precision)
+        rounded-a (d/format-number a precision)]
+    (str/concat "" rounded-h ", " rounded-s "%, " rounded-l "%, " rounded-a)))
+
+(defn format-rgba
+  [[r g b a]]
+  (let [precision 2
+        rounded-a (d/format-number a precision)]
+    (str/ffmt "%, %, %, %" r g b rounded-a)))
 
 (defn- hue->rgb
   "Helper for hsl->rgb"

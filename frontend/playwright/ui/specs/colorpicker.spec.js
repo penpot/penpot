@@ -13,6 +13,7 @@ test("Bug 7549 - User clicks on color swatch to display the color picker next to
   await workspacePage.setupEmptyFile(page);
 
   await workspacePage.goToWorkspace();
+  await workspacePage.moveButton.click();
   const swatch = workspacePage.page.getByRole("button", { name: "E8E9EA" });
   const swatchBox = await swatch.boundingBox();
   await swatch.click();
@@ -171,6 +172,7 @@ test("Bug 9900 - Color picker has no inputs for HSV values", async ({
   await workspacePage.setupEmptyFile(page);
 
   await workspacePage.goToWorkspace();
+  await workspacePage.moveButton.click();
   const swatch = workspacePage.page.getByRole("button", { name: "E8E9EA" });
   await swatch.click();
 

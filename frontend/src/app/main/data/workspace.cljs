@@ -44,6 +44,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence :as-alias dps]
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
    [app.main.data.project :as dpj]
@@ -51,6 +52,7 @@
    [app.main.data.workspace.collapse :as dwco]
    [app.main.data.workspace.colors :as dwcl]
    [app.main.data.workspace.comments :as dwcm]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.fix-broken-shapes :as fbs]
@@ -167,20 +169,12 @@
                          (let [data (assoc data :pages-index pages-index)]
                            (assoc file :data (d/removem (comp t/pointer? val) data))))))))))
 
-(defn- libraries-fetched
+(defn- check-libraries-synchronozation
   [file-id libraries]
-  (ptk/reify ::libraries-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [libraries (->> libraries
-                           (map (fn [l] (assoc l :library-of file-id)))
-                           (d/index-by :id))]
-        (update state :files merge libraries)))
-
+  (ptk/reify ::check-libraries-synchronozation
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file         (dsh/lookup-file state)
-            file-id      (get file :id)
+      (let [file         (dsh/lookup-file state file-id)
             ignore-until (get file :ignore-sync-until)
 
             needs-check?
@@ -193,6 +187,23 @@
           (->> (rx/of (dwl/notify-sync-file file-id))
                (rx/delay 1000)))))))
 
+(defn- library-resolved
+  [library]
+  (ptk/reify ::library-resolved
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :files assoc (:id library) library))))
+
+(defn- libraries-fetched
+  [file-id libraries]
+  (ptk/reify ::libraries-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :files merge
+              (->> libraries
+                   (map #(assoc % :library-of file-id))
+                   (d/index-by :id))))))
+
 (defn- fetch-libraries
   [file-id]
   (ptk/reify ::fetch-libries
@@ -202,20 +213,22 @@
         (->> (rp/cmd! :get-file-libraries {:file-id file-id})
              (rx/mapcat
               (fn [libraries]
-                (rx/merge
-                 (->> (rx/from libraries)
-                      (rx/merge-map
-                       (fn [{:keys [id synced-at]}]
-                         (->> (rp/cmd! :get-file {:id id :features features})
-                              (rx/map #(assoc % :synced-at synced-at)))))
-                      (rx/merge-map resolve-file)
-                      (rx/reduce conj [])
-                      (rx/map (partial libraries-fetched file-id)))
-                 (->> (rx/from libraries)
-                      (rx/map :id)
-                      (rx/mapcat (fn [file-id]
-                                   (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
-                      (rx/map dwl/library-thumbnails-fetched))))))))))
+                (rx/concat
+                 (rx/of (libraries-fetched file-id libraries))
+                 (rx/merge
+                  (->> (rx/from libraries)
+                       (rx/merge-map
+                        (fn [{:keys [id synced-at]}]
+                          (->> (rp/cmd! :get-file {:id id :features features})
+                               (rx/map #(assoc % :synced-at synced-at :library-of file-id)))))
+                       (rx/mapcat resolve-file)
+                       (rx/map library-resolved))
+                  (->> (rx/from libraries)
+                       (rx/map :id)
+                       (rx/mapcat (fn [file-id]
+                                    (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
+                       (rx/map dwl/library-thumbnails-fetched)))
+                 (rx/of (check-libraries-synchronozation file-id libraries))))))))))
 
 (defn- workspace-initialized
   [file-id]
@@ -252,7 +265,6 @@
     (watch [_ state _]
       (let [team-id    (:current-team-id state)
             file-id    (:id file)]
-
         (rx/of (dwn/initialize team-id file-id)
                (dwsl/initialize-shape-layout)
                (fetch-libraries file-id))))))
@@ -290,7 +302,8 @@
     (watch [_ state stream]
       (let [features     (features/get-team-enabled-features state)
             render-wasm? (contains? features "render-wasm/v1")
-            stopper-s    (rx/filter (ptk/type? ::finalize-workspace) stream)]
+            stopper-s    (rx/filter (ptk/type? ::finalize-workspace) stream)
+            team-id      (:current-team-id state)]
 
         (->> (rx/concat
               ;; Firstly load wasm module if it is enabled and fonts
@@ -304,7 +317,7 @@
                     (rx/filter (ptk/type? ::df/fonts-loaded))
                     (rx/take 1)
                     (rx/ignore))
-               (rx/of (df/fetch-fonts)))
+               (rx/of (df/fetch-fonts team-id)))
 
               ;; Then fetch file and thumbnails
               (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
@@ -334,7 +347,7 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (log/debug :hint "initialize-workspace" :file-id file-id)
+      (log/debug :hint "initialize-workspace" :file-id (dm/str file-id))
       (let [stoper-s (rx/filter (ptk/type? ::finalize-workspace) stream)
             rparams  (rt/get-params state)]
 
@@ -352,6 +365,11 @@
                                 (rx/of (dpj/initialize-project (:project-id file))
                                        (-> (workspace-initialized file-id)
                                            (with-meta {:file-id file-id}))))))
+
+              (->> stream
+                   (rx/filter (ptk/type? ::dps/persistence-notification))
+                   (rx/take 1)
+                   (rx/map dwc/set-workspace-visited))
 
               (when-let [component-id (some-> rparams :component-id parse-uuid)]
                 (->> stream
@@ -393,7 +411,7 @@
 
 (defn finalize-workspace
   [file-id]
-  (ptk/reify ::finalize-file
+  (ptk/reify ::finalize-workspace
     ptk/UpdateEvent
     (update [_ state]
       (-> state
@@ -404,6 +422,7 @@
            :workspace-media-objects
            :workspace-persistence
            :workspace-presence
+           :workspace-tokens
            :workspace-undo)
           (update :workspace-global dissoc :read-only?)
           (assoc-in [:workspace-global :options-mode] :design)))
@@ -416,6 +435,7 @@
                (dpj/finalize-project project-id)
                (dwsl/finalize-shape-layout)
                (dwcl/stop-picker)
+               (dwc/set-workspace-visited)
                (modal/hide)
                (ntf/hide))))))
 
@@ -473,11 +493,13 @@
     ptk/WatchEvent
     (watch [_ state _]
       (if-let [page (dsh/lookup-page state file-id page-id)]
-        (rx/of (initialize-page* file-id page-id page)
-               (dwth/watch-state-changes file-id page-id)
-               (dwl/watch-component-changes)
-               (when (cf/external-feature-flag "boards-02" "test")
-                 (select-frame-tool file-id page-id)))
+        (rx/concat (rx/of (initialize-page* file-id page-id page)
+                          (dwth/watch-state-changes file-id page-id)
+                          (dwl/watch-component-changes))
+                   (let [profile (:profile state)
+                         props   (get profile :props)]
+                     (when (not (:workspace-visited props))
+                       (rx/of (select-frame-tool file-id page-id)))))
         (rx/of (dcm/go-to-workspace :file-id file-id ::rt/replace true))))))
 
 (defn finalize-page
@@ -557,7 +579,7 @@
                                                  fdata
                                                  (gpt/point (:x shape) (:y shape))
                                                  true
-                                                 {:keep-ids? true})
+                                                 {:keep-ids? true :force-frame-id (:frame-id shape)})
                     children (into {} (map (fn [shape] [(:id shape) shape]) new-shapes))
                     objs (assoc objs id new-shape)]
                 (merge objs children)))

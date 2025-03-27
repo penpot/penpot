@@ -312,14 +312,14 @@
         content-a-split (->> content-a-split add-previous (filter is-segment?))
         content-b-split (->> content-b-split add-previous (filter is-segment?))
 
-        bool-content
+        content
         (case bool-type
           :union        (create-union        content-a content-a-split content-b content-b-split sr-a sr-b)
           :difference   (create-difference   content-a content-a-split content-b content-b-split sr-a sr-b)
           :intersection (create-intersection content-a content-a-split content-b content-b-split sr-a sr-b)
           :exclude      (create-exclusion    content-a-split content-b-split))]
 
-    (->> (fix-move-to bool-content)
+    (->> (fix-move-to content)
          (ups/close-subpaths))))
 
 (defn content-bool

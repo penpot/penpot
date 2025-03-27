@@ -175,7 +175,7 @@
         show-in-viewer-ref (mf/use-ref nil)
 
         ;; PRESETS
-        preset-state*         (mf/use-state false)
+        preset-state*          (mf/use-state false)
         show-presets-dropdown? (deref preset-state*)
 
         open-presets
@@ -205,11 +205,11 @@
 
         ;; ORIENTATION
 
-        orientation (when (= type :frame)
-                      (cond (> (:width values) (:height values))
-                            :horiz
-                            :else
-                            :vert))
+        orientation
+        (when (= type :frame)
+          (if (> (:width values) (:height values))
+            :horiz
+            :vert))
 
         on-orientation-change
         (mf/use-fn
@@ -235,13 +235,10 @@
              (run! #(st/emit! (udw/set-shape-proportion-lock % new-lock)) ids))))
 
         ;; POSITION
-
         do-position-change
         (mf/use-fn
-         (mf/deps ids)
-         (fn [shape' frame' value attr]
-           (let [to (+ value (attr frame'))]
-             (st/emit! (udw/update-position (:id shape') {attr to})))))
+         (fn [shape' value attr]
+           (st/emit! (udw/update-position (:id shape') {attr value}))))
 
         on-position-change
         (mf/use-fn
@@ -249,7 +246,7 @@
          (fn [value attr]
            (st/emit! (udw/trigger-bounding-box-cloaking ids))
            (binding [cts/*wasm-sync* true]
-             (doall (map #(do-position-change %1 %2 value attr) shapes frames)))))
+             (run! #(do-position-change %1 value attr) shapes))))
 
         ;; ROTATION
 

@@ -8,3 +8,11 @@ impl SVGRaw {
         SVGRaw { content: svg }
     }
 }
+
+impl Default for SVGRaw {
+    fn default() -> Self {
+        Self {
+            content: String::from(""),
+        }
+    }
+}

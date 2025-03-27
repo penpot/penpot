@@ -41,8 +41,10 @@
   z-index: $z-index-1;
   border-radius: 0 0 $s-8 $s-8;
   border-block-start: 0;
+
   .main-toolbar-options {
     opacity: $op-0;
+    visibility: hidden;
   }
 }
 
@@ -53,6 +55,7 @@
   margin: 0;
   opacity: $op-10;
   transition: opacity 0.3s ease;
+
   li {
     position: relative;
   }

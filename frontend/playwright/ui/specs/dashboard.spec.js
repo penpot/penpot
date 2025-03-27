@@ -105,10 +105,10 @@ test("Multiple elements in context", async ({ page }) => {
 
   await button.click({ button: "right" });
 
-  await expect(button.getByTestId("duplicate-multi")).toBeVisible();
-  await expect(button.getByTestId("file-move-multi")).toBeVisible();
-  await expect(button.getByTestId("file-binary-export-multi")).toBeVisible();
-  await expect(button.getByTestId("file-delete-multi")).toBeVisible();
+  await expect(page.getByTestId("duplicate-multi")).toBeVisible();
+  await expect(page.getByTestId("file-move-multi")).toBeVisible();
+  await expect(page.getByTestId("file-binary-export-multi")).toBeVisible();
+  await expect(page.getByTestId("file-delete-multi")).toBeVisible();
 });
 
 test("User has create file button", async ({ page }) => {

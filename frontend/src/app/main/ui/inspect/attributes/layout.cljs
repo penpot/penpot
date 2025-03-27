@@ -10,8 +10,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctl]
-   [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.components.title-bar :refer [inspect-title-bar]]
+   [app.main.ui.components.copy-button :refer [copy-button*]]
+   [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.util.code-gen.style-css :as css]
    [rumext.v2 :as mf]))
@@ -36,14 +36,14 @@
   (for [property properties]
     (when-let [value (css/get-css-value objects shape property)]
       (let [property-name (cmm/get-css-rule-humanized property)]
-        [:div {:class (stl/css :layout-row)}
+        [:div {:class (stl/css :layout-row)
+               :key   (dm/str "layout-" (:id shape) "-" (d/name property))}
          [:div {:title property-name
-                :key   (dm/str "layout-" (:id shape) "-" (d/name property))
                 :class (stl/css :global/attr-label)}
           property-name]
          [:div {:class (stl/css :global/attr-value)}
 
-          [:& copy-button {:data (css/get-css-property objects shape property)}
+          [:> copy-button* {:data (css/get-css-property objects shape property)}
            [:div {:class (stl/css :button-children)} value]]]]))))
 
 (mf/defc layout-panel
@@ -52,13 +52,13 @@
 
     (when (seq shapes)
       [:div {:class (stl/css :attributes-block)}
-       [:& inspect-title-bar
+       [:> inspect-title-bar*
         {:title "Layout"
          :class (stl/css :title-spacing-layout)}
 
         (when (= (count shapes) 1)
-          [:& copy-button {:data (css/get-shape-properties-css objects (first shapes) properties)
-                           :class (stl/css :copy-btn-title)}])]
+          [:> copy-button* {:data (css/get-shape-properties-css objects (first shapes) properties)
+                            :class (stl/css :copy-btn-title)}])]
 
        (for [shape shapes]
          [:& layout-block {:shape shape

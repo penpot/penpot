@@ -805,6 +805,8 @@
     "selectedTokenSets": {"light": "enabled"}
   } ],
   "$metadata": {
-    "tokenSetOrder": ["core", "light", "dark", "theme"]
+    "tokenSetOrder": ["core", "light", "dark", "theme"],
+    "activeSets": {}, 
+    "activeThemes": {}
   }
 }

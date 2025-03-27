@@ -84,6 +84,7 @@
                         (> active-themes-count 1) (tr "workspace.token.active-themes" active-themes-count)
                         (= active-themes-count 1) (some->> (first active-theme-paths)
                                                            (ctob/split-token-theme-path)
+                                                           (remove empty?)
                                                            (str/join " / "))
                         :else (tr "workspace.token.no-active-theme"))
 
@@ -138,4 +139,4 @@
            [:& theme-options {:active-theme-paths active-theme-paths
                               :themes themes
                               :on-close on-close-dropdown}]]])
-        (.-body js/document)))]))
+        (dom/get-body)))]))

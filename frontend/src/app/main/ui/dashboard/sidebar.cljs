@@ -959,6 +959,7 @@
         on-power-up-click
         (mf/use-fn
          (fn []
+           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
            (dom/open-new-window "https://penpot.app/pricing")))]
 
     [:*

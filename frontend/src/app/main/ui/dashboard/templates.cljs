@@ -28,7 +28,7 @@
   (i/icon-xref :arrow (stl/css :arrow-icon)))
 
 (def ^:private download-icon
-  (i/icon-xref :download (stl/css :download-icon)))
+  (i/icon-xref :add (stl/css :download-icon)))
 
 (def builtin-templates
   (l/derived :builtin-templates st/state))
@@ -37,6 +37,7 @@
   [template team-id project-id default-project-id section]
   (letfn [(on-finish []
             (st/emit!
+             (dd/fetch-recent-files team-id)
              (ptk/event ::ev/event {::ev/name "import-template-finish"
                                     ::ev/origin "dashboard"
                                     :template (:name template)
@@ -81,16 +82,21 @@
       [:span {:class (stl/css :title-text)}
        (tr "dashboard.libraries-and-templates")]
       (if ^boolean is-collapsed
-        [:span {:class (stl/css :title-icon :title-icon-collapsed)}
-         arrow-icon]
-        [:span {:class (stl/css :title-icon)}
-         arrow-icon])]]))
+        [:span {:class (stl/css :title-icon-container)}
+         [:span {:class (stl/css :title-icon-text)} (tr "labels.show")]
+         [:span {:class (stl/css :title-icon :title-icon-collapsed)}
+          arrow-icon]]
+        [:span {:class (stl/css :title-icon-container)}
+         [:span {:class (stl/css :title-icon-text)} (tr "labels.hide")]
+         [:span {:class (stl/css :title-icon)}
+          arrow-icon]])]]))
 
 (mf/defc card-item
   {::mf/wrap-props false}
   [{:keys [item index is-visible collapsed on-import]}]
   (let [id  (dm/str "card-container-" index)
         thb (assoc cf/public-uri :path (dm/str "/images/thumbnails/template-" (:id item) ".jpg"))
+        hover? (mf/use-state false)
 
         on-click
         (mf/use-fn
@@ -106,21 +112,26 @@
              (dom/stop-propagation event)
              (on-import item event))))]
 
-    [:a {:class (stl/css :card-container)
-         :tab-index (if (or (not is-visible) collapsed) "-1" "0")
-         :id id
-         :data-index index
-         :on-click on-click
-         :on-mouse-down dom/prevent-default
-         :on-key-down on-key-down}
-     [:div {:class (stl/css :template-card)}
+    [:div {:class (stl/css :card-container)
+           :tab-index (if (or (not is-visible) collapsed) "-1" "0")
+           :id id
+           :data-index index}
+     [:a {:class (stl/css :template-card)
+          :on-click on-click
+          :on-mouse-down dom/prevent-default
+          :on-mouse-enter #(reset! hover? true)
+          :on-mouse-leave #(reset! hover? false)
+          :on-key-down on-key-down}
       [:div {:class (stl/css :img-container)}
        [:img {:src (dm/str thb)
               :alt (:name item)
               :loading "lazy"
               :decoding "async"}]]
       [:div {:class (stl/css :card-name)}
-       [:span {:class (stl/css :card-text)} (:name item)]
+       [:span {:class (stl/css :card-text)}
+        (if @hover?
+          (tr "dashboard.template.add-to-project")
+          (:name item))]
        download-icon]]]))
 
 (mf/defc card-item-link
@@ -241,6 +252,9 @@
                                 :collapsed collapsed)}
      [:> title* {:on-click on-toggle-collapse
                  :is-collapsed collapsed}]
+
+     [:p {:class (stl/css :content-description)}
+      (tr "dashboard.libraries-and-templates.description")]
 
      [:div {:class (stl/css :content)
             :on-scroll on-scroll

@@ -336,8 +336,10 @@
 
 .sample-libraries-link {
   color: var(--color-accent-primary);
-  text-decoration: underline;
   font-weight: $fw400;
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .sample-libraries-container {

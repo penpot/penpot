@@ -34,13 +34,13 @@ msgstr "டெமோ கணக்கை உருவாக்கவும்"
 msgid "auth.create-demo-profile"
 msgstr "அதை முயற்சி செய்ய வேண்டுமா?"
 
-#: src/app/main/ui/auth/login.cljs:42
+#: src/app/main/ui/auth/login.cljs:43
 msgid "auth.demo-warning"
 msgstr ""
 "இது ஒரு டெமோ சேவை, உண்மையான வேலைக்கு பயன்படுத்த வேண்டாம், திட்டங்கள் "
 "அவ்வப்போது அழிக்கப்படும்."
 
-#: src/app/main/ui/auth/login.cljs:190, src/app/main/ui/viewer/login.cljs:84
+#: src/app/main/ui/auth/login.cljs:189, src/app/main/ui/viewer/login.cljs:84
 msgid "auth.forgot-password"
 msgstr "கடவுச்சொல்லை மறந்துவிட்டீர்களா?"
 
@@ -52,27 +52,27 @@ msgstr "முழு பெயர்"
 msgid "auth.login-here"
 msgstr "இங்கே உள்நுழைக"
 
-#: src/app/main/ui/auth/login.cljs:196
+#: src/app/main/ui/auth/login.cljs:195
 msgid "auth.login-submit"
 msgstr "உள்நுழை"
 
-#: src/app/main/ui/auth/login.cljs:223
+#: src/app/main/ui/auth/login.cljs:222
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
-#: src/app/main/ui/auth/login.cljs:229
+#: src/app/main/ui/auth/login.cljs:228
 msgid "auth.login-with-gitlab-submit"
 msgstr "கிட்லேப்"
 
-#: src/app/main/ui/auth/login.cljs:217
+#: src/app/main/ui/auth/login.cljs:216
 msgid "auth.login-with-google-submit"
 msgstr "கூகுள்"
 
-#: src/app/main/ui/auth/login.cljs:202
+#: src/app/main/ui/auth/login.cljs:201
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
-#: src/app/main/ui/auth/login.cljs:235, src/app/main/ui/auth/login.cljs:256
+#: src/app/main/ui/auth/login.cljs:234, src/app/main/ui/auth/login.cljs:255
 msgid "auth.login-with-oidc-submit"
 msgstr "ஓப்பன் ஐடி"
 
@@ -98,7 +98,7 @@ msgstr "கடவுச்சொல் மீட்பு இணைப்பு 
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "அணியில் வெற்றிகரமாக இணைந்தார்"
 
-#: src/app/main/ui/auth/login.cljs:180, src/app/main/ui/auth/register.cljs:95
+#: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/register.cljs:95
 msgid "auth.password"
 msgstr "கடவுச்சொல்"
 
@@ -126,11 +126,11 @@ msgstr "கடவுச்சொல்லை மறந்துவிட்�
 msgid "auth.recovery-submit"
 msgstr "உங்கள் கடவுச்சொல்லை மாற்றுக"
 
-#: src/app/main/ui/auth/login.cljs:299, src/app/main/ui/static.cljs:141, src/app/main/ui/viewer/login.cljs:87
+#: src/app/main/ui/auth/login.cljs:298, src/app/main/ui/static.cljs:141, src/app/main/ui/viewer/login.cljs:87
 msgid "auth.register"
 msgstr "இன்னும் கணக்கு இல்லையா?"
 
-#: src/app/main/ui/auth/login.cljs:303, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/auth/register.cljs:240, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:91
+#: src/app/main/ui/auth/login.cljs:302, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/auth/register.cljs:240, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:91
 msgid "auth.register-submit"
 msgstr "ஒரு கணக்கை உருவாக்கவும்"
 
@@ -143,7 +143,7 @@ msgstr "ஒரு கணக்கை உருவாக்கவும்"
 msgid "auth.sidebar-tagline"
 msgstr "வடிவமைப்பு மற்றும் முன்மாதிரிக்கான திறந்த மூல தீர்வு."
 
-#: src/app/main/ui/auth/register.cljs:290, src/app/main/ui/dashboard/sidebar.cljs:1053, src/app/main/ui/workspace/main_menu.cljs:154
+#: src/app/main/ui/auth/register.cljs:290, src/app/main/ui/dashboard/sidebar.cljs:1054, src/app/main/ui/workspace/main_menu.cljs:154
 msgid "auth.terms-of-service"
 msgstr "சேவை விதிமுறைகள்"
 
@@ -151,7 +151,7 @@ msgstr "சேவை விதிமுறைகள்"
 msgid "auth.verification-email-sent"
 msgstr "சரிபார்ப்பு மின்னஞ்சலை அனுப்பியுள்ளோம் இந்த முகவரிக்கு"
 
-#: src/app/main/ui/workspace/libraries.cljs:311
+#: src/app/main/ui/workspace/libraries.cljs:308
 msgid "common.publish"
 msgstr "வெளியிடுங்கள்"
 

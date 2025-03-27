@@ -275,31 +275,43 @@
                       (->> (snap/closest-snap-point page-id shapes objects layout zoom focus point)
                            (rx/map #(conj current %)))))
                    (rx/map #(resize shape initial-position layout %))
-                   (rx/share))]
+                   (rx/share))
+
+
+              modifiers-stream
+              (rx/merge
+               (->> resize-events-stream
+                    (rx/mapcat
+                     (fn [modifiers]
+                       (let [modif-tree (dwm/create-modif-tree ids modifiers)]
+                         (if (features/active-feature? state "render-wasm/v1")
+                           (rx/of
+                            (dwm/set-selrect-transform modifiers)
+                            (dwm/set-wasm-modifiers modif-tree (contains? layout :scale-text)))
+
+                           (rx/of (dwm/set-modifiers modif-tree (contains? layout :scale-text)))))))
+                    (rx/take-until stopper))
+
+               ;; The last event we need to use the old method so the elements are correctly positioned until
+               ;; all the logic is implemented in wasm
+               (if (features/active-feature? state "render-wasm/v1")
+                 (->> resize-events-stream
+                      (rx/take-until stopper)
+                      (rx/last)
+                      (rx/map #(dwm/apply-modifiers {:modifiers (dwm/create-modif-tree ids %)
+                                                     :ignore-constraints (contains? layout :scale-text)})))
+                 (rx/empty)))]
 
           (rx/concat
-           (rx/merge
-            (->> resize-events-stream
-                 (rx/mapcat
-                  (fn [modifiers]
-                    (let [modif-tree (dwm/create-modif-tree ids modifiers)]
-                      (if (features/active-feature? state "render-wasm/v1")
-                        (rx/of
-                         (dwm/set-selrect-transform modifiers)
-                         (dwm/set-wasm-modifiers modif-tree (contains? layout :scale-text)))
-
-                        (rx/of (dwm/set-modifiers modif-tree (contains? layout :scale-text)))))))
-                 (rx/take-until stopper))
-
-            ;; The last event we need to use the old method so the elements are correctly positioned until
-            ;; all the logic is implemented in wasm
-            (if (features/active-feature? state "render-wasm/v1")
-              (->> resize-events-stream
-                   (rx/take-until stopper)
-                   (rx/last)
-                   (rx/map #(dwm/apply-modifiers {:modifiers (dwm/create-modif-tree ids %)
-                                                  :ignore-constraints (contains? layout :scale-text)})))
-              (rx/empty)))
+           ;; This initial stream waits for some pixels to be move before making the resize
+           ;; if you make a click in the border will not make a resize
+           (->> ms/mouse-position
+                (rx/map #(gpt/to-vec initial-position %))
+                (rx/map #(gpt/length %))
+                (rx/filter #(> % (/ 10 zoom)))
+                (rx/take 1)
+                (rx/take-until stopper)
+                (rx/mapcat (fn [] modifiers-stream)))
 
            (rx/of
             (if (features/active-feature? state "render-wasm/v1")
@@ -328,35 +340,35 @@
              (rx/filter (ptk/type? ::trigger-bounding-box-cloaking) stream)))))))
 
 (defn update-dimensions
-  "Change size of shapes, from the sideber options form.
-  Will ignore pixel snap used in the options side panel"
+  "Change size of shapes, from the sidebar options form
+  (will ignore pixel snap)"
   ([ids attr value] (update-dimensions ids attr value nil))
   ([ids attr value options]
-   (dm/assert! (number? value))
-   (dm/assert!
-    "expected valid coll of uuids"
-    (every? uuid? ids))
-   (dm/assert!
-    "expected valid attr"
-    (contains? #{:width :height} attr))
-   (ptk/reify ::update-dimensions
-     ptk/UpdateEvent
-     (update [_ state]
-       (let [page-id (or (get options :page-id)
-                         (get state :current-page-id))
+   (assert (number? value))
+   (assert (every? uuid? ids)
+           "expected valid coll of uuids")
+   (assert (contains? #{:width :height} attr)
+           "expected valid attr")
 
-             objects (dsh/lookup-page-objects state page-id)
+   (ptk/reify ::update-dimensions
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [page-id
+             (or (get options :page-id)
+                 (get state :current-page-id))
+
+             objects
+             (dsh/lookup-page-objects state page-id)
+
              get-modifier
-             (fn [shape] (ctm/change-dimensions-modifiers shape attr value))
+             (fn [shape]
+               (ctm/change-dimensions-modifiers shape attr value))
+
              modif-tree
              (-> (dwm/build-modif-tree ids objects get-modifier)
                  (gm/set-objects-modifiers objects))]
 
-         (assoc state :workspace-modifiers modif-tree)))
-
-     ptk/WatchEvent
-     (watch [_ _ _]
-       (rx/of (dwm/apply-modifiers options))))))
+         (rx/of (dwm/apply-modifiers* objects modif-tree nil options)))))))
 
 (defn change-orientation
   "Change orientation of shapes, from the sidebar options form.
@@ -847,31 +859,44 @@
           (rx/of (reorder-selected-layout-child direction))
           (rx/of (nudge-selected-shapes direction shift?)))))))
 
+(defn- calculate-delta
+  [position bbox relative-to]
+  (let [current  (gpt/point (:x bbox) (:y bbox))
+        position (gpt/point (or (some-> (:x position) (+ (dm/get-prop relative-to :x)))
+                                (:x bbox))
+                            (or (some-> (:y position) (+ (dm/get-prop relative-to :y)))
+                                (:y bbox)))]
+    (gpt/subtract position current)))
+
 (defn update-position
-  "Move shapes to a new position"
+  "Move shapes to a new position. It will resolve to the current frame
+  of the shape, unless given the absolute option. In this case it will
+  resolve to the root frame of the page.
+
+  The position is a map that can have a partial position (it means it
+  can receive {:x 10}."
   ([id position] (update-position id position nil))
   ([id position options]
-   (dm/assert! (uuid? id))
+   (assert (uuid? id) "expected a valid uuid for `id`")
+   (assert (map? position) "expected a valid map for `position`")
 
    (ptk/reify ::update-position
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id    (or (get options :page-id)
-                            (get state :current-page-id))
-             objects    (dsh/lookup-page-objects state page-id)
-             shape      (get objects id)
-             ;; FIXME: performance rect
-             bbox       (-> shape :points grc/points->rect)
+       (let [page-id   (or (get options :page-id)
+                           (get state :current-page-id))
+             objects   (dsh/lookup-page-objects state page-id)
+             shape     (get objects id)
 
-             cpos       (gpt/point (:x bbox) (:y bbox))
-             pos        (gpt/point (or (:x position) (:x bbox))
-                                   (or (:y position) (:y bbox)))
+             bbox      (-> shape :points grc/points->rect)
+             frame     (if (:absolute? options)
+                         (cfh/get-frame objects)
+                         (cfh/get-parent-frame objects shape))
 
-             delta      (gpt/subtract pos cpos)
+             delta     (calculate-delta position bbox frame)
+             modifiers (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
 
-             modif-tree (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
-
-         (rx/of (dwm/apply-modifiers {:modifiers modif-tree
+         (rx/of (dwm/apply-modifiers {:modifiers modifiers
                                       :page-id page-id
                                       :ignore-constraints false
                                       :ignore-touched (:ignore-touched options)
@@ -968,7 +993,10 @@
      (watch [_ state _]
        (let [objects   (dsh/lookup-page-objects state)
              selected  (or ids (dsh/lookup-selected state {:omit-blocked? true}))
-             shapes    (map #(get objects %) selected)
+             shapes    (->> selected
+                            (map (d/getf objects))
+                            (remove ctk/is-variant-container?))
+             selected  (->> shapes (map :id))
              selrect   (gsh/shapes->rect shapes)
              center    (grc/rect->center selrect)
              modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point -1.0 1.0) center))]
@@ -983,7 +1011,10 @@
      (watch [_ state _]
        (let [objects   (dsh/lookup-page-objects state)
              selected  (or ids (dsh/lookup-selected state {:omit-blocked? true}))
-             shapes    (map #(get objects %) selected)
+             shapes    (->> selected
+                            (map #(get objects %))
+                            (remove ctk/is-variant-container?))
+             selected  (->> shapes (map :id))
              selrect   (gsh/shapes->rect shapes)
              center    (grc/rect->center selrect)
              modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point 1.0 -1.0) center))]

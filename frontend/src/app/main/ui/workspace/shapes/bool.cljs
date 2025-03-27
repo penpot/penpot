@@ -35,7 +35,7 @@
 
             shape      (cond-> shape
                          ^boolean child-sel?
-                         (dissoc :bool-content))]
+                         (dissoc :content))]
 
         [:> shape-container {:shape shape}
          [:& bool-shape {:shape shape

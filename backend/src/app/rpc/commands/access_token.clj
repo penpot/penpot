@@ -43,13 +43,8 @@
     (decode-row token)))
 
 (defn repl:create-access-token
-  [{:keys [::db/pool] :as system} profile-id name expiration]
-  (db/with-atomic [conn pool]
-    (let [props (:app.setup/props system)]
-      (create-access-token {::db/conn conn ::setup/props props}
-                           profile-id
-                           name
-                           expiration))))
+  [cfg profile-id name expiration]
+  (db/tx-run! cfg create-access-token profile-id name expiration))
 
 (def ^:private schema:create-access-token
   [:map {:title "create-access-token"}

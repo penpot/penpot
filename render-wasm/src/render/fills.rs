@@ -1,13 +1,15 @@
-use crate::shapes::{Fill, ImageFill, Kind, Shape};
-use skia_safe::{self as skia, RRect, Rect};
+use skia_safe::{self as skia, Paint, RRect};
 
-use super::RenderState;
+use super::{RenderState, SurfaceId};
+use crate::math::Rect as MathRect;
+use crate::shapes::{Fill, Frame, ImageFill, Rect, Shape, Type};
 
-fn draw_image_fill_in_container(
+fn draw_image_fill(
     render_state: &mut RenderState,
     shape: &Shape,
-    fill: &Fill,
     image_fill: &ImageFill,
+    paint: &Paint,
+    antialias: bool,
 ) {
     let image = render_state.images.get(&image_fill.id());
     if image.is_none() {
@@ -15,11 +17,9 @@ fn draw_image_fill_in_container(
     }
 
     let size = image_fill.size();
-    let canvas = render_state.drawing_surface.canvas();
-    let kind = &shape.kind;
+    let canvas = render_state.surfaces.canvas(SurfaceId::Fills);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
-    let paint = fill.to_paint(container);
 
     let width = size.0 as f32;
     let height = size.1 as f32;
@@ -43,7 +43,7 @@ fn draw_image_fill_in_container(
     let scaled_width = width * scale;
     let scaled_height = height * scale;
 
-    let dest_rect = Rect::from_xywh(
+    let dest_rect = MathRect::from_xywh(
         container.left - (scaled_width - container_width) / 2.0,
         container.top - (scaled_height - container_height) / 2.0,
         scaled_width,
@@ -54,33 +54,52 @@ fn draw_image_fill_in_container(
     canvas.save();
 
     // Set the clipping rectangle to the container bounds
-    match kind {
-        Kind::Rect(_, _) => {
-            canvas.clip_rect(container, skia::ClipOp::Intersect, true);
+    match &shape.shape_type {
+        Type::Rect(Rect {
+            corners: Some(corners),
+        })
+        | Type::Frame(Frame {
+            corners: Some(corners),
+            ..
+        }) => {
+            let rrect: RRect = RRect::new_rect_radii(container, &corners);
+            canvas.clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
         }
-        Kind::Circle(_) => {
+        Type::Rect(_) | Type::Frame(_) => {
+            canvas.clip_rect(container, skia::ClipOp::Intersect, antialias);
+        }
+        Type::Circle => {
             let mut oval_path = skia::Path::new();
             oval_path.add_oval(container, None);
-            canvas.clip_path(&oval_path, skia::ClipOp::Intersect, true);
+            canvas.clip_path(&oval_path, skia::ClipOp::Intersect, antialias);
         }
-        Kind::Path(path) | Kind::Bool(_, path) => {
-            if let Some(path_transform) = path_transform {
-                canvas.clip_path(
-                    &path.to_skia_path().transform(&path_transform),
-                    skia::ClipOp::Intersect,
-                    true,
-                );
+        shape_type @ (Type::Path(_) | Type::Bool(_)) => {
+            if let Some(path) = shape_type.path() {
+                if let Some(path_transform) = path_transform {
+                    canvas.clip_path(
+                        &path.to_skia_path().transform(&path_transform),
+                        skia::ClipOp::Intersect,
+                        antialias,
+                    );
+                }
             }
         }
-        Kind::SVGRaw(_) => {
-            canvas.clip_rect(container, skia::ClipOp::Intersect, true);
+        Type::SVGRaw(_) => {
+            canvas.clip_rect(container, skia::ClipOp::Intersect, antialias);
         }
-        Kind::Group(_) => unreachable!("A group should not have fills"),
+        Type::Group(_) => unreachable!("A group should not have fills"),
+        Type::Text(_) => unimplemented!("TODO"),
     }
 
     // Draw the image with the calculated destination rectangle
     if let Some(image) = image {
-        canvas.draw_image_rect(image, None, dest_rect, &paint);
+        canvas.draw_image_rect_with_sampling_options(
+            image,
+            None,
+            dest_rect,
+            render_state.sampling_options,
+            &paint,
+        );
     }
 
     // Restore the canvas to remove the clipping
@@ -90,37 +109,30 @@ fn draw_image_fill_in_container(
 /**
  * This SHOULD be the only public function in this module.
  */
-pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill) {
-    let canvas = render_state.drawing_surface.canvas();
-    let selrect = shape.selrect;
-    let path_transform = shape.to_path_transform();
-    let kind = &shape.kind;
-    match (fill, kind) {
-        (Fill::Image(image_fill), _) => {
-            draw_image_fill_in_container(render_state, shape, fill, image_fill);
-        }
-        (_, Kind::Rect(rect, None)) => {
-            canvas.draw_rect(rect, &fill.to_paint(&selrect));
-        }
-        (_, Kind::Rect(rect, Some(corners))) => {
-            let rrect = RRect::new_rect_radii(rect, &corners);
-            canvas.draw_rrect(rrect, &fill.to_paint(&selrect));
-        }
-        (_, Kind::Circle(rect)) => {
-            canvas.draw_oval(rect, &fill.to_paint(&selrect));
-        }
-        (_, Kind::Path(path)) | (_, Kind::Bool(_, path)) => {
-            let svg_attrs = &shape.svg_attrs;
-            let mut skia_path = &mut path.to_skia_path();
+pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill, antialias: bool) {
+    let paint = &fill.to_paint(&shape.selrect, antialias);
 
-            if let Some(path_transform) = path_transform {
-                skia_path = skia_path.transform(&path_transform);
-                if let Some("evenodd") = svg_attrs.get("fill-rule").map(String::as_str) {
-                    skia_path.set_fill_type(skia::PathFillType::EvenOdd);
-                }
-                canvas.draw_path(&skia_path, &fill.to_paint(&selrect));
-            }
+    match (fill, &shape.shape_type) {
+        (Fill::Image(image_fill), _) => {
+            draw_image_fill(render_state, shape, image_fill, paint, antialias);
         }
-        (_, _) => unreachable!("This shape should not have fills"),
+        (_, Type::Rect(_) | Type::Frame(_)) => {
+            render_state
+                .surfaces
+                .draw_rect_to(SurfaceId::Fills, shape, paint);
+        }
+        (_, Type::Circle) => {
+            render_state
+                .surfaces
+                .draw_circle_to(SurfaceId::Fills, shape, paint);
+        }
+        (_, Type::Path(_)) | (_, Type::Bool(_)) => {
+            render_state
+                .surfaces
+                .draw_path_to(SurfaceId::Fills, shape, paint);
+        }
+        (_, _) => {
+            unreachable!("This shape should not have fills")
+        }
     }
 }

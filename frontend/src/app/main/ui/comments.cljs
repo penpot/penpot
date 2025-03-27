@@ -17,6 +17,8 @@
    [app.main.data.comments :as dcm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.comments :as dwcm]
+   [app.main.data.workspace.viewport :as dwv]
+   [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -132,10 +134,11 @@
 
 (defn- blank-content?
   [content]
-  (or (str/blank? content)
-      (str/empty? content)
-      ;; If only one char and it's the zero-width whitespace
-      (and (= 1 (count content)) (= (first content) zero-width-space))))
+  (let [content (str/trim content)]
+    (or (str/blank? content)
+        (str/empty? content)
+        (and (= (count content) 1)
+             (= (first content) zero-width-space)))))
 
 ;; Component that renders the component content
 (mf/defc comment-content*
@@ -588,22 +591,25 @@
 (def ^:private schema:comment-avatar
   [:map
    [:class {:optional true} :string]
-   [:image :string]
+   [:image {:optional true} :string]
    [:variant {:optional true}
     [:maybe [:enum "read" "unread" "solved"]]]])
 
 (mf/defc comment-avatar*
   {::mf/schema schema:comment-avatar}
-  [{:keys [image variant class] :rest props}]
+  [{:keys [image variant class children] :rest props}]
   (let [variant (or variant "read")
-        class (dm/str class " " (stl/css-case :avatar true
-                                              :avatar-read (= variant "read")
-                                              :avatar-unread (= variant "unread")
-                                              :avatar-solved (= variant "solved")))
-        props (mf/spread-props props {:class class})]
+        class   (dm/str class " " (stl/css-case :avatar true
+                                                :avatar-read (= variant "read")
+                                                :avatar-unread (= variant "unread")
+                                                :avatar-solved (= variant "solved")))
+        props   (mf/spread-props props {:class class})]
+
     [:> :div props
-     [:img {:src image
-            :class (stl/css :avatar-image)}]
+     (if image
+       [:img {:src image
+              :class (stl/css :avatar-image)}]
+       [:div {:class (stl/css :avatar-text)} children])
      [:div {:class (stl/css-case :avatar-mask true
                                  :avatar-darken (= variant "solved"))}]]))
 
@@ -1071,22 +1077,106 @@
 
         [:> mentions-panel*]])]))
 
+(defn group-bubbles
+  "Group bubbles in different vectors by proximity"
+  ([zoom circles]
+   (group-bubbles zoom circles [] []))
+
+  ([zoom circles visited groups]
+   (if (empty? circles)
+     groups
+     (let [current (first circles)
+           remaining (rest circles)
+           overlapping-group (some (fn [group]
+                                     (when (some (partial dwcm/overlap-bubbles? zoom current) group) group))
+                                   groups)]
+       (if overlapping-group
+         (group-bubbles zoom remaining visited (map (fn [group]
+                                                      (if (= group overlapping-group)
+                                                        (cons current group)
+                                                        group))
+                                                    groups))
+         (group-bubbles zoom remaining visited (cons [current] groups)))))))
+
+(defn- inside-vbox?
+  "Checks if a bubble or a bubble group is inside a viewbox"
+  [thread-group wl]
+  (let [vbox      (:vbox wl)
+        positions (mapv :position thread-group)
+        position  (gpt/center-points positions)
+        pos-x     (:x position)
+        pos-y     (:y position)
+        x1        (:x vbox)
+        y1        (:y vbox)
+        x2        (+ x1 (:width vbox))
+        y2        (+ y1 (:height vbox))]
+    (and (> x2 pos-x x1) (> y2 pos-y y1))))
+
+(defn- calculate-zoom-scale
+  "Calculates the zoom level needed to ungroup the largest number of bubbles while
+   keeping them all visible in the viewbox."
+  [position zoom threads wl]
+  (let [num-threads         (count threads)
+        grouped-threads     (group-bubbles zoom threads)
+        num-grouped-threads (count grouped-threads)
+        zoom-scale-step     1.75
+        scaled-zoom         (* zoom zoom-scale-step)
+        zoomed-wl           (dwz/impl-update-zoom wl position scaled-zoom)
+        outside-vbox?       (complement inside-vbox?)]
+    (if (or (= num-threads num-grouped-threads)
+            (some #(outside-vbox? % zoomed-wl) grouped-threads))
+      zoom
+      (calculate-zoom-scale position scaled-zoom threads zoomed-wl))))
+
+(mf/defc comment-floating-group*
+  {::mf/wrap [mf/memo]}
+  [{:keys [thread-group zoom position-modifier]}]
+  (let [positions   (mapv :position thread-group)
+
+        position    (gpt/center-points positions)
+        position    (cond-> position
+                      (some? position-modifier)
+                      (gpt/transform position-modifier))
+        pos-x       (* (:x position) zoom)
+        pos-y       (* (:y position) zoom)
+
+        unread?     (some #(pos? (:count-unread-comments %)) thread-group)
+        num-threads (str (count thread-group))
+
+        test-id     (str/join "-" (map :seqn (sort-by :seqn thread-group)))
+
+        on-click
+        (mf/use-fn
+         (mf/deps thread-group position zoom)
+         (fn []
+           (let [wl           (deref refs/workspace-local)
+                 centered-wl  (dwv/calculate-centered-viewbox wl position)
+                 updated-zoom (calculate-zoom-scale position zoom thread-group centered-wl)
+                 scale-zoom   (/ updated-zoom zoom)]
+             (st/emit! (dwv/update-viewport-position-center position)
+                       (dwz/set-zoom position scale-zoom)))))]
+
+    [:div {:style {:top (dm/str pos-y "px")
+                   :left (dm/str pos-x "px")}
+           :on-click on-click
+           :class (stl/css :floating-preview-wrapper :floating-preview-bubble)}
+     [:> comment-avatar*
+      {:class (stl/css :avatar-lg)
+       :variant (if unread? "unread" "read")
+       :data-testid (dm/str "floating-thread-bubble-" test-id)}
+      num-threads]]))
+
 (mf/defc comment-floating-bubble*
   {::mf/wrap [mf/memo]}
   [{:keys [thread zoom is-open on-click origin position-modifier]}]
   (let [owner        (mf/with-memo [thread]
                        (dcm/get-owner thread))
-        base-pos     (cond-> (:position thread)
+
+        position     (:position thread)
+        position     (cond-> position
                        (some? position-modifier)
                        (gpt/transform position-modifier))
 
-        drag?        (mf/use-ref nil)
-        was-open?    (mf/use-ref nil)
-
-        dragging-ref (mf/use-ref false)
-        start-ref    (mf/use-ref nil)
-
-        position     (:position thread)
         frame-id     (:frame-id thread)
 
         state        (mf/use-state
@@ -1096,8 +1186,14 @@
                             :new-position-y nil
                             :new-frame-id frame-id}))
 
-        pos-x        (floor (* (or (:new-position-x @state) (:x base-pos)) zoom))
-        pos-y        (floor (* (or (:new-position-y @state) (:y base-pos)) zoom))
+        pos-x        (floor (* (or (:new-position-x @state) (:x position)) zoom))
+        pos-y        (floor (* (or (:new-position-y @state) (:y position)) zoom))
+
+        drag?        (mf/use-ref nil)
+        was-open?    (mf/use-ref nil)
+
+        dragging-ref (mf/use-ref false)
+        start-ref    (mf/use-ref nil)
 
         on-pointer-down
         (mf/use-fn
@@ -1258,8 +1354,8 @@
     [:div {:class (stl/css :cover)
            :on-click on-click*}
      [:div {:class (stl/css :location)}
-      [:> icon* {:icon-id "comments"
-                 :class (stl/css :location-icon)}]
+      [:div {:class (stl/css :location-icon)}
+       [:> icon* {:icon-id "comments"}]]
       [:div {:class (stl/css :location-text)}
        (str "#" (:seqn item))
        (str " " (:file-name item))

@@ -70,6 +70,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     );
     this.toolbarOptions = page.getByTestId("toolbar-options");
     this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
+    this.moveButton = page.getByRole("button", { name: "Move (V)" });
     this.boardButton = page.getByRole("button", { name: "Board (B)" });
     this.toggleToolbarButton = page.getByRole("button", {
       name: "Toggle toolbar",
@@ -170,6 +171,25 @@ export class WorkspacePage extends BaseWebSocketPage {
     );
   }
 
+  async setupFileWithComments() {
+    await this.mockRPC(
+      "get-comment-threads?file-id=*",
+      "workspace/get-comment-threads-unread.json",
+    );
+    await this.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "viewer/get-file-fragment-single-board.json",
+    );
+    await this.mockRPC(
+      "get-comments?thread-id=*",
+      "workspace/get-thread-comments.json",
+    );
+    await this.mockRPC(
+      "update-comment-thread-status",
+      "workspace/update-comment-thread-status.json",
+    );
+  }
+
   async clickWithDragViewportAt(x, y, width, height) {
     await this.page.waitForTimeout(100);
     await this.viewport.hover({ position: { x, y } });
@@ -264,5 +284,11 @@ export class WorkspacePage extends BaseWebSocketPage {
   async openTokenThemesModal(clickOptions = {}) {
     await this.tokenThemesSetsSidebar.getByText("Edit").click(clickOptions);
     await expect(this.tokenThemeUpdateCreateModal).toBeVisible();
+  }
+
+  async showComments(clickOptions = {}) {
+    await this.page
+      .getByRole("button", { name: "Comments (C)" })
+      .click(clickOptions);
   }
 }

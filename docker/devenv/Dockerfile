@@ -9,7 +9,7 @@ ENV NODE_VERSION=v22.13.1 \
     BABASHKA_VERSION=1.12.196 \
     CLJFMT_VERSION=0.13.0 \
     RUSTUP_VERSION=1.27.1 \
-    RUST_VERSION=1.82.0 \
+    RUST_VERSION=1.85.0 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -264,7 +264,8 @@ RUN set -eux; \
     ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host ${rustArch}; \
     rm rustup-init; \
     chmod -R a+w $RUSTUP_HOME $CARGO_HOME; \
-    rustup component add rustfmt;
+    rustup component add rustfmt; \
+    rustup component add clippy;
 
 WORKDIR /usr/local
 

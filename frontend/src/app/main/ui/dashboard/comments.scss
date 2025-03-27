@@ -14,7 +14,6 @@
 
 .thread-groups {
   height: calc(100% - $s-32);
-  overflow-y: scroll;
   max-height: $s-440;
   overflow: auto;
 }
@@ -72,6 +71,7 @@
   max-height: $s-480;
   min-height: $s-200;
   position: absolute;
+  overflow: hidden;
   width: 100%;
   z-index: $z-index-4;
 

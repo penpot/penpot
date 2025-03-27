@@ -1748,6 +1748,7 @@
                         "~:group": "Core",
                         "~:description": null,
                         "~:is-source": false,
+                        "~:id": "core-light",
                         "~:modified-at": "~m1737542746842",
                         "~:sets": {
                           "~#set": ["LightDark/light", "theme", "core"]
@@ -1763,6 +1764,7 @@
                         "~:group": "Core",
                         "~:description": null,
                         "~:is-source": false,
+                        "~:id": "core-dark",
                         "~:modified-at": "~m1737542746842",
                         "~:sets": {
                           "~#set": ["LightDark/dark", "theme", "core"]
@@ -1785,6 +1787,7 @@
                         "~:group": "",
                         "~:description": null,
                         "~:is-source": false,
+                        "~:id": "hidden-theme",
                         "~:modified-at": "~m1737542683555",
                         "~:sets": {
                           "~#set": ["LightDark/light", "theme", "core"]
