@@ -6,6 +6,8 @@
 
 (ns app.main.data.workspace.path.tools
   (:require
+   [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.svg.path.shapes-to-path :as upsp]
    [app.common.svg.path.subpath :as ups]
    [app.main.data.changes :as dch]
@@ -14,6 +16,7 @@
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.features :as features]
    [app.util.path.tools :as upt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -26,19 +29,34 @@
    (ptk/reify ::process-path-tool
      ptk/WatchEvent
      (watch [it state _]
-       (let [objects (dsh/lookup-page-objects state)
-             id (st/get-path-id state)
-             page-id (:current-page-id state)
-             shape (st/get-path state)
-             selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
-             points (or points selected-points)]
+       (let [page-id (get state :current-page-id)
+             objects (dsh/lookup-page-objects state page-id)
+
+             ;; FIXME: repeated operation?
+             shape   (st/get-path state)
+             id      (st/get-path-id state)
+
+             selected-points
+             (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
+
+             features
+             (features/get-team-enabled-features state)
+
+             points
+             (or points selected-points)]
+
          (when (and (seq points) (some? shape))
-           (let [new-content (-> (tool-fn (:content shape) points)
-                                 (ups/close-subpaths))
-                 changes (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
+           (let [new-content
+                 (-> (tool-fn (:content shape) points)
+                     (ups/close-subpaths))
+
+                 changes
+                 (changes/generate-path-changes it features objects page-id shape (:content shape) new-content)]
 
              (rx/concat
-              (rx/of (dwsh/update-shapes [id] upsp/convert-to-path))
+              (if (cfh/path-shape? shape)
+                (rx/empty)
+                (rx/of (dwsh/update-shapes [id] upsp/convert-to-path)))
               (rx/of (dch/commit-changes changes)
                      (when (empty? new-content)
                        (dwe/clear-edition-mode)))))))))))

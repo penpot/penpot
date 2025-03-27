@@ -130,7 +130,7 @@
   (sm/lazy-validator ::ctsp/content))
 
 (def valid-path-segment?
-  (sm/lazy-validator ::ctsp/segment))
+  (sm/lazy-validator ctsp/schema:path-segment))
 
 (def valid-rgb-color-string?
   (sm/lazy-validator ::ctc/rgb-color))

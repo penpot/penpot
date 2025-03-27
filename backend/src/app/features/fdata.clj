@@ -9,7 +9,9 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
+   [app.common.types.shape.path :as path]
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.storage :as sto]
@@ -30,7 +32,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn enable-objects-map
-  [file]
+  [file & _opts]
   (let [update-page
         (fn [page]
           (if (and (pmap/pointer-map? page)
@@ -136,10 +138,39 @@
 
 (defn enable-pointer-map
   "Enable the fdata/pointer-map feature on the file."
-  [file]
+  [file & _opts]
   (-> file
       (update :data (fn [fdata]
                       (-> fdata
                           (update :pages-index d/update-vals pmap/wrap)
                           (d/update-when :components pmap/wrap))))
       (update :features conj "fdata/pointer-map")))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PATH-DATA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn enable-path-data
+  "Enable the fdata/path-data feature on the file."
+  [file & _opts]
+  (letfn [(update-object [object]
+            (if (or (cfh/path-shape? object)
+                    (cfh/bool-shape? object))
+              (update object :content path/path-data)
+              object))
+
+          (update-container [container]
+            ;; NOTE: if we found a pointer and it is not modified, we
+            ;; skip updating objects for not creating additional
+            ;; pointers
+            (if (and (pmap/pointer-map? container)
+                     (not (pmap/modified? container)))
+              container
+              (d/update-when container :objects d/update-vals update-object)))]
+
+    (-> file
+        (update :data (fn [data]
+                        (-> data
+                            (update :pages-index d/update-vals update-container)
+                            (d/update-when :components d/update-vals update-container))))
+        (update :features conj "fdata/path-data"))))

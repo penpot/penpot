@@ -339,7 +339,7 @@
            (->> stream
                 (rx/filter (ptk/type? ::common/finish-path))
                 (rx/take 1)
-                (rx/merge-map #(rx/of (check-changed-content)))))
+                (rx/map check-changed-content)))
           (rx/empty))))))
 
 (defn check-changed-content []

@@ -17,6 +17,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.path :as path]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dc]
    [app.main.data.event :as ev]
@@ -48,40 +49,53 @@
 
 (defn update-shapes
   ([ids update-fn] (update-shapes ids update-fn nil))
-  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-touched undo-group with-objects? changed-sub-attr]
-                   :or {reg-objects? false save-undo? true stack-undo? false ignore-touched false with-objects? false}}]
+  ([ids update-fn
+    {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
+            ignore-touched undo-group with-objects? changed-sub-attr]
+     :or {reg-objects? false
+          save-undo? true
+          stack-undo? false
+          ignore-touched false
+          with-objects? false}}]
 
-   (assert (sm/check-coll-of-uuid ids))
-   (assert (fn? update-fn))
+   (assert (every? uuid? ids) "expect a coll of uuid for `ids`")
+   (assert (fn? update-fn) "the `update-fn` should be a valid function")
 
    (ptk/reify ::update-shapes
      ptk/WatchEvent
      (watch [it state _]
-       (let [page-id   (or page-id (:current-page-id state))
+       (let [page-id   (or page-id (get state :current-page-id))
              objects   (dsh/lookup-page-objects state page-id)
              ids       (into [] (filter some?) ids)
 
+             xf-update-layout
+             (comp
+              (map (d/getf objects))
+              (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs :with-objects? with-objects?})))
+              (map :id))
+
              update-layout-ids
-             (->> ids
-                  (map (d/getf objects))
-                  (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs :with-objects? with-objects?})))
-                  (map :id))
+             (->> (into [] xf-update-layout ids)
+                  (not-empty))
 
-             changes (-> (pcb/empty-changes it page-id)
-                         (pcb/set-save-undo? save-undo?)
-                         (pcb/set-stack-undo? stack-undo?)
-                         (cls/generate-update-shapes ids
-                                                     update-fn
-                                                     objects
-                                                     {:attrs attrs
-                                                      :changed-sub-attr changed-sub-attr
-                                                      :ignore-tree ignore-tree
-                                                      :ignore-touched ignore-touched
-                                                      :with-objects? with-objects?})
-                         (cond-> undo-group
-                           (pcb/set-undo-group undo-group)))
+             changes
+             (-> (pcb/empty-changes it page-id)
+                 (pcb/set-save-undo? save-undo?)
+                 (pcb/set-stack-undo? stack-undo?)
+                 (cls/generate-update-shapes ids
+                                             update-fn
+                                             objects
+                                             {:attrs attrs
+                                              :changed-sub-attr changed-sub-attr
+                                              :ignore-tree ignore-tree
+                                              :ignore-touched ignore-touched
+                                              :with-objects? with-objects?})
+                 (cond-> undo-group
+                   (pcb/set-undo-group undo-group)))
 
-             changes (add-undo-group changes state)]
+             changes
+             (add-undo-group changes state)]
+
          (rx/concat
           (if (seq (:redo-changes changes))
             (let [changes (cond-> changes reg-objects? (pcb/resize-parents ids))]
@@ -89,7 +103,7 @@
             (rx/empty))
 
           ;; Update layouts for properties marked
-          (if (d/not-empty? update-layout-ids)
+          (if update-layout-ids
             (rx/of (ptk/data-event :layout/update {:ids update-layout-ids}))
             (rx/empty))))))))
 
@@ -108,16 +122,28 @@
        (let [page-id  (:current-page-id state)
              objects  (dsh/lookup-page-objects state page-id)
 
+             features
+             (features/get-team-enabled-features state)
+
+             shape
+             (if (and (contains? features "fdata/path-data")
+                      (or (cfh/path-shape? shape)
+                          (cfh/bool-shape? shape)))
+               (update shape :content path/path-data)
+               shape)
+
              [shape changes]
              (-> (pcb/empty-changes it page-id)
                  (pcb/with-objects objects)
                  (cfsh/prepare-add-shape shape objects))
 
-             changes (cond-> changes
-                       (cfh/text-shape? shape)
-                       (pcb/set-undo-group (:id shape)))
+             changes
+             (cond-> changes
+               (cfh/text-shape? shape)
+               (pcb/set-undo-group (:id shape)))
 
-             undo-id (js/Symbol)]
+             undo-id
+             (js/Symbol)]
 
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id)

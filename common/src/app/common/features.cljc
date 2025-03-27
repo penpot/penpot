@@ -46,6 +46,7 @@
   #{"fdata/objects-map"
     "fdata/pointer-map"
     "fdata/shape-data-type"
+    "fdata/path-data"
     "components/v2"
     "styles/v2"
     "layout/grid"
@@ -87,6 +88,7 @@
 (def no-migration-features
   (-> #{"fdata/objects-map"
         "fdata/pointer-map"
+        "fdata/path-data"
         "layout/grid"
         "fdata/shape-data-type"
         "design-tokens/v1"}
@@ -114,6 +116,7 @@
     :feature-text-editor-v2 "text-editor/v2"
     :feature-render-wasm "render-wasm/v1"
     :feature-variants "variants/v1"
+    :feature-fdata-path-data "fdata/path-data"
     nil))
 
 (defn migrate-legacy-features

@@ -6,24 +6,22 @@
 
 (ns app.main.data.workspace.path.changes
   (:require
-   [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
+   [app.common.types.shape.path :as path]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
-   [app.main.data.workspace.path.common :refer [check-path-content!]]
    [app.main.data.workspace.path.helpers :as helpers]
    [app.main.data.workspace.path.state :as st]
+   [app.main.features :as features]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
 (defn generate-path-changes
   "Generates changes to update the new content of the shape"
-  [it objects page-id shape old-content new-content]
+  [it features objects page-id shape old-content new-content]
 
-  (dm/assert!
-   "expected valid path content"
-   (and (check-path-content! old-content)
-        (check-path-content! new-content)))
+  (assert (path/check-path-content old-content))
+  (assert (path/check-path-content new-content))
 
   (let [shape-id (:id shape)
 
@@ -35,16 +33,19 @@
 
         ;; We set the old values so the update-shapes works
         objects
-        (-> objects
-            (update
-             shape-id
-             assoc
-             :content old-content
-             :selrect old-selrect
-             :points old-points))
+        (update objects shape-id assoc
+                :content old-content
+                :selrect old-selrect
+                :points old-points)
 
-        changes (-> (pcb/empty-changes it page-id)
-                    (pcb/with-objects objects))]
+        changes
+        (-> (pcb/empty-changes it page-id)
+            (pcb/with-objects objects))
+
+        new-content
+        (if (contains? features "fdata/path-data")
+          (path/path-data new-content)
+          new-content)]
 
     (cond
       ;; https://tree.taiga.io/project/penpot/issue/2366
@@ -88,8 +89,10 @@
              id          (get-in state [:workspace-local :edition])
              old-content (get-in state [:workspace-local :edit-path id :old-content])
              shape       (st/get-path state)]
+
          (if (and (some? old-content) (some? (:id shape)))
-           (let [changes (generate-path-changes it objects page-id shape old-content (:content shape))]
+           (let [features (features/get-team-enabled-features state)
+                 changes  (generate-path-changes it features objects page-id shape old-content (:content shape))]
              (rx/of (dch/commit-changes changes)))
            (rx/empty)))))))
 

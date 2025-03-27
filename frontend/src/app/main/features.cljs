@@ -117,6 +117,7 @@
               ;; wasm render v1 isn't enabled by default even in devenv
               (rx/filter #(not (or (contains? cfeat/backend-only-features %)
                                    (= "text-editor/v2" %)
+                                   (= "fdata/path-data" %)
                                    (= "render-wasm/v1" %)
                                    (= "design-tokens/v1" %))))
               (rx/observe-on :async)
