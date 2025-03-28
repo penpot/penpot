@@ -55,6 +55,7 @@
 .custom-select-dropdown {
   @extend .dropdown-wrapper;
   margin-top: $s-2;
+  max-height: 70vh;
   width: $s-252;
   .dropdown-element {
     @extend .dropdown-element-base;
