@@ -1296,7 +1296,7 @@ Will return a value that matches this schema:
     (assert (map? tokens) "expected a map data structure for `data`")
 
     (add-set this (make-token-set :name (normalize-set-name set-name)
-                                     :tokens (flatten-nested-tokens-json tokens ""))))
+                                  :tokens (flatten-nested-tokens-json tokens ""))))
 
   (decode-dtcg-json [_ data]
     (assert (map? data) "expected a map data structure for `data`")

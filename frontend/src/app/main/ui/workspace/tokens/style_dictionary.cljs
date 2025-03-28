@@ -6,6 +6,7 @@
    [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
@@ -261,13 +262,19 @@
                       (catch js/Error e
                         (throw (wte/error-ex-info :error.import/json-parse-error data e))))))
           (rx/map (fn [json-data]
-                    (let [json-data' json-data]
-                      (try
-                        (if-not (ctob/has-legacy-format? json-data')
-                          (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data')
-                          (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data'))
-                        (catch js/Error e
-                          (throw (wte/error-ex-info :error.import/invalid-json-data json-data' e)))))))
+                    (try
+                      (cond
+                        (ctob/single-set? json-data)
+                        (ctob/decode-single-set-dtcg-json (deref refs/tokens-lib) file-name json-data)
+
+                        (ctob/has-legacy-format? json-data)
+                        (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data)
+
+                        :else
+                        (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data))
+
+                      (catch js/Error e
+                        (throw (wte/error-ex-info :error.import/invalid-json-data json-data e))))))
           (rx/mapcat (fn [tokens-lib]
                        (try
                          (-> (ctob/get-all-tokens tokens-lib)

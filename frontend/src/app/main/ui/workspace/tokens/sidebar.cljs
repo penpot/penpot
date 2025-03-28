@@ -40,10 +40,10 @@
    [app.util.i18n :refer [tr]]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]
-   [cuerdas.core :as str]
    [shadow.resource]))
 
 (def ref:token-type-open-status
