@@ -116,8 +116,8 @@ impl Stroke {
     pub fn delta(&self) -> f32 {
         match self.kind {
             StrokeKind::InnerStroke => 0.,
-            StrokeKind::CenterStroke => self.width / 2.,
-            StrokeKind::OuterStroke => self.width,
+            StrokeKind::CenterStroke => self.width,
+            StrokeKind::OuterStroke => self.width * 2.,
         }
     }
 
