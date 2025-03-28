@@ -44,6 +44,7 @@
 - Fix assets name on inspect tab [Taiga #10630](https://tree.taiga.io/project/penpot/issue/10630)
 - Fix chat icon overlaps "Show" button in carrousel section [Taiga #10542](https://tree.taiga.io/project/penpot/issue/10542)
 - Fix incorrect handling of background task result (now task rows are properly marked as completed)
+- Fix available size of resize handler [Taiga #10639](https://tree.taiga.io/project/penpot/issue/10639)
 
 
 ## 2.5.4

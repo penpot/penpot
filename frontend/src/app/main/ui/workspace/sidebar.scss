@@ -88,6 +88,12 @@ $width-settings-bar-max: $s-500;
   position: absolute;
   left: 0;
   width: 100%;
+  padding: $s-3 0 $s-1 0;
+  height: $s-6;
+  cursor: ns-resize;
+}
+
+.resize-handle-horiz {
   border-bottom: $s-2 solid var(--resize-area-border-color);
   cursor: ns-resize;
 }
