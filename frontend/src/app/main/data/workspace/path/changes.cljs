@@ -7,7 +7,7 @@
 (ns app.main.data.workspace.path.changes
   (:require
    [app.common.files.changes-builder :as pcb]
-   [app.common.types.shape.path :as path]
+   [app.common.types.path :as path]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.path.helpers :as helpers]

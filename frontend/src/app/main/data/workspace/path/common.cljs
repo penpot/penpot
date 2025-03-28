@@ -12,7 +12,7 @@
    [potok.v2.core :as ptk]))
 
 ;; FIXME: deprecated, should be replaced with shemas and helpers
-;; defined on app.common.types.shape.path
+;; defined on app.common.types.path
 
 (def valid-commands
   #{:move-to

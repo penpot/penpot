@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.types.shape.path
+(ns app.common.types.path
   (:require
    #?(:clj [app.common.fressian :as fres])
    #?(:clj [clojure.data.json :as json])
@@ -461,7 +461,6 @@
 (defn from-string
   [s]
   (from-plain (svg.path/parse s)))
-
 
 (defn path-data
   "Create an instance of PathData, returns itself if it is already

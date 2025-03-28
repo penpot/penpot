@@ -12,10 +12,10 @@
    [app.common.schema.generators :as sg]
    [app.common.schema.test :as smt]
    [app.common.types.color :refer [schema:color schema:gradient]]
+   [app.common.types.path :as path :refer [schema:path-content]]
    [app.common.types.plugins :refer [schema:plugin-data]]
    [app.common.types.shape :as tsh]
    [app.common.types.shape.interactions :refer [schema:animation schema:interaction]]
-   [app.common.types.shape.path :as path :refer [schema:path-content]]
    [app.common.types.shape.shadow :refer [schema:shadow]]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
