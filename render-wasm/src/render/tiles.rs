@@ -5,8 +5,14 @@ use skia_safe as skia;
 use std::collections::{HashMap, HashSet};
 
 pub type Tile = (i32, i32);
+pub type TileWithDistance = (i32, i32, i32);
 
 pub const TILE_SIZE: f32 = 512.;
+
+// @see https://en.wikipedia.org/wiki/Taxicab_geometry
+pub fn manhattan_distance(a: (i32, i32), b: (i32, i32)) -> i32 {
+    (a.0 - b.0).abs() + (a.1 - b.1).abs()
+}
 
 pub fn get_tile_dimensions() -> skia::ISize {
     (TILE_SIZE as i32, TILE_SIZE as i32).into()
