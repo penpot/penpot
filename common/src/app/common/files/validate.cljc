@@ -66,6 +66,8 @@
     :variant-not-main
     :parent-not-variant
     :variant-bad-name
+    :variant-bad-variant-name
+    :variant-component-bad-name
     :variant-no-properties})
 
 (def ^:private schema:error
@@ -414,7 +416,8 @@
 (defn- check-variant-container
   "Shape is a variant container, so:
      -all its children should be variants with variant-id equals to the shape-id
-     -all the components should have the same properties"
+     -all the components should have the same properties
+   "
   [shape file page]
   (let [shape-id   (:id shape)
         shapes     (:shapes shape)
@@ -439,7 +442,9 @@
   "Shape is a variant, so
      -it should be a main component
      -its parent should be a variant-container
-     -its variant-name is derived from the properties"
+     -its variant-name is derived from the properties
+     -its name should be tha same as its parent's
+   "
   [shape file page]
   (let [parent    (ctst/get-shape page (:parent-id shape))
         component (ctkl/get-component (:data file) (:component-id shape) true)
@@ -454,8 +459,16 @@
                     shape file page))
 
     (when-not (= name (:variant-name shape))
-      (report-error :variant-bad-name
+      (report-error :variant-bad-variant-name
                     (str/ffmt "Variant % has an invalid variant-name" (:id shape))
+                    shape file page))
+    (when-not (= (:name parent) (:name shape))
+      (report-error :variant-bad-name
+                    (str/ffmt "Variant % has an invalid name" (:id shape))
+                    shape file page))
+    (when-not (= (:name parent) (cfh/merge-path-item (:path component) (:name component)))
+      (report-error :variant-component-bad-name
+                    (str/ffmt "Component % has an invalid name" (:id shape))
                     shape file page))))
 
 (defn- check-shape
@@ -565,7 +578,9 @@
      -It should have at least one variant property"
   [component file]
   (let [component-page (ctf/get-component-page (:data file) component)
-        main-component (ctst/get-shape component-page (:main-instance-id component))]
+        main-component (if (:deleted component)
+                         (dm/get-in component [:objects (:main-instance-id component)])
+                         (ctst/get-shape component-page (:main-instance-id component)))]
     (when-not (ctk/is-variant? main-component)
       (report-error :not-a-variant
                     (str/ffmt "Shape % should be a variant" (:id main-component))

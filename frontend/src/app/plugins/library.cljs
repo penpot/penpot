@@ -19,6 +19,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.format :as format]
@@ -641,7 +642,7 @@
          :else
          (let [component (u/proxy->library-component self)
                value (dm/str (d/nilv (:path component) "") " / " value)]
-           (st/emit! (dwl/rename-component-and-main-instance id value)))))}
+           (st/emit! (dwv/rename-comp-or-variant-and-main id value)))))}
 
     :path
     {:this true

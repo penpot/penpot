@@ -51,7 +51,7 @@
 
 (def property-prefix "Property")
 (def property-regex (re-pattern (str property-prefix "(\\d+)")))
-(def value-prefix "Value")
+(def value-prefix "Value ")
 
 
 (defn properties-to-name

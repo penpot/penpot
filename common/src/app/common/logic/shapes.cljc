@@ -256,7 +256,7 @@
 
         child-heads-ids (map :id child-heads)
 
-        variant-heads (filter ctk/is-variant? child-heads)
+        variant-shapes (filter ctk/is-variant? shapes)
 
         component-main-parent
         (ctn/find-component-main objects parent false)
@@ -384,7 +384,7 @@
                                          #(-> (dissoc % :variant-id :variant-name)
                                               (assoc :name new-name))))))
               changes
-              variant-heads))))
+              variant-shapes))))
 
         ;; Add variant info and rename when moving into a different variant-container
         (cond-> (ctk/is-variant-container? parent)

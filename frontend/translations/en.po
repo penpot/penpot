@@ -1651,6 +1651,9 @@ msgstr "Upper Case"
 msgid "inspect.attributes.variant"
 msgstr "Variant properties"
 
+msgid "inspect.attributes.variants"
+msgstr "Variants properties"
+
 #: src/app/main/ui/inspect/right_sidebar.cljs:163
 msgid "inspect.empty.help"
 msgstr "If you want to know more about design inspect visit Penpot's help center"
@@ -4379,6 +4382,9 @@ msgstr "Components"
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:520
 msgid "workspace.assets.components.add-component"
 msgstr "Add component"
+
+msgid "workspace.assets.components.num-variants"
+msgstr "%s Variants"
 
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:127
 msgid "workspace.assets.create-group"

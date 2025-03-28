@@ -10,10 +10,12 @@
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.variant :as cfv]
    [app.common.logic.variant-properties :as clvp]
    [app.common.logic.variants :as clv]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.shape.layout :as ctsl]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
@@ -22,6 +24,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.util.dom :as dom]
@@ -144,6 +147,25 @@
       (dom/focus! (dom/get-element (str "variant-prop-" shape-id prop-num))))))
 
 
+(defn- resposition-and-resize-variant
+  "Resize the variant container, and move the shape (that is a variant) to the right"
+  [shape-id]
+  (ptk/reify ::resposition-and-resize-variant
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [page-id   (:current-page-id state)
+            objects   (dsh/lookup-page-objects state page-id)
+            shape     (get objects shape-id)
+            container (get objects (:parent-id shape))
+            width     (+ (:width container) (:width shape) 20) ;; 20 is the default gap for variants
+            x         (- width (+ (:width shape) 30))]         ;; 30 is the default margin for variants
+        (rx/of
+         (dwt/update-dimensions [(:parent-id shape)] :width width)
+         (dwt/update-position shape-id
+                              {:x x}
+                              {:absolute? false}))))))
+
+
 (defn add-new-variant
   "Create a new variant and add it to the variant-container"
   [shape-id]
@@ -161,6 +183,10 @@
             component-id        (:component-id shape)
             component           (ctkl/get-component data component-id)
 
+            container-id        (:parent-id shape)
+            variant-container   (get objects container-id)
+            has-layout?         (ctsl/any-layout? variant-container)
+
             new-component-id    (uuid/next)
             new-shape-id        (uuid/next)
 
@@ -177,6 +203,8 @@
          (rx/of
           (dwu/start-undo-transaction undo-id)
           (dch/commit-changes changes)
+          (when-not has-layout?
+            (resposition-and-resize-variant new-shape-id))
           (dwu/commit-undo-transaction undo-id)
           (ptk/data-event :layout/update {:ids [(:parent-id shape)]})
           (dws/select-shape new-shape-id))
@@ -196,7 +224,7 @@
             page-id      (:current-page-id state)
             objects      (dsh/lookup-page-objects state file-id page-id)
             main         (get objects main-instance-id)
-            main-id      (:id main)
+            parent       (get objects (:parent-id main))
             component-id (:component-id main)
             cpath        (cfh/split-path (:name main))
             name         (first cpath)
@@ -237,9 +265,16 @@
           (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
           (dwsl/create-layout-from-id variant-id :flex)
           (dwsh/update-shapes variant-vec #(merge % cont-props))
-          (dwsh/update-shapes [main-id] #(merge % main-props))
+          (dwsh/update-shapes [main-instance-id] #(merge % main-props))
           (cl/add-stroke variant-vec stroke-props)
-          (set-variant-id component-id variant-id))
+          (set-variant-id component-id variant-id)
+
+          ;; Set the position of the variant container so the main shape doesn't
+          ;; change its position
+          (when-not (ctsl/any-layout? parent)
+            (dwt/update-position variant-id
+                                 {:x (- (:x main) 30) :y (- (:y main) 30)}
+                                 {:absolute? true})))
 
          ;; Add the necessary number of new properties, with default values
          (rx/from
@@ -310,3 +345,40 @@
            (rx/from (map add-new-variant selected-ids))
            (rx/of (dwu/commit-undo-transaction undo-id)))
           (rx/of (dws/duplicate-selected true)))))))
+
+
+(defn rename-variant
+  [variant-id name]
+  (ptk/reify ::rename-variant
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [page-id            (:current-page-id state)
+            data               (dsh/lookup-file-data state)
+            objects            (-> (dsh/get-page data page-id)
+                                   (get :objects))
+            variant-components (cfv/find-variant-components data objects variant-id)
+            clean-name         (cfh/clean-path name)
+            undo-id            (js/Symbol)]
+
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id)
+                (dwsh/update-shapes [variant-id] #(assoc % :name clean-name)))
+         (rx/from (map
+                   #(dwl/rename-component-and-main-instance (:id %) clean-name)
+                   variant-components))
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
+
+
+(defn rename-comp-or-variant-and-main
+  [component-id name]
+  (ptk/reify ::rename-comp-or-variant-and-main
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [data               (dsh/lookup-file-data state)
+            component          (ctkl/get-component data component-id)]
+        (if (ctc/is-variant? component)
+          (rx/of (rename-variant (:variant-id component) name))
+          (rx/of (dwl/rename-component-and-main-instance component-id name)))))))
+
