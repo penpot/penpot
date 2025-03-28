@@ -265,7 +265,7 @@
                     (try
                       (cond
                         (ctob/single-set? json-data)
-                        (ctob/decode-single-set-dtcg-json (deref refs/tokens-lib) file-name json-data)
+                        (ctob/decode-single-set-dtcg-json (ctob/ensure-tokens-lib (deref refs/tokens-lib)) file-name json-data)
 
                         (ctob/has-legacy-format? json-data)
                         (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data)
