@@ -42,6 +42,9 @@
 - Fix actions when workspace is visited first time [Taiga #10548](https://tree.taiga.io/project/penpot/issue/10548)
 - Chat icon overlaps "Show" button in carrousel section [Taiga #10542](https://tree.taiga.io/project/penpot/issue/10542)
 - Fix assets name on inspect tab [Taiga #10630](https://tree.taiga.io/project/penpot/issue/10630)
+- Fix chat icon overlaps "Show" button in carrousel section [Taiga #10542](https://tree.taiga.io/project/penpot/issue/10542)
+- Fix incorrect handling of background task result (now task rows are properly marked as completed)
+
 
 ## 2.5.4
 

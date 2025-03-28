@@ -1227,18 +1227,15 @@ Will return a value that matches this schema:
         :none)))
 
   (get-active-themes-set-tokens [this]
-    (let [sets-order (get-ordered-set-names this)
-          active-themes (get-active-themes this)
-          order-theme-set (fn [theme]
-                            (filter #(contains? (set (:sets theme)) %) sets-order))]
-      (reduce
-       (fn [tokens theme]
-         (reduce
-          (fn [tokens' cur]
-            (merge tokens' (:tokens (get-set this cur))))
-          tokens (order-theme-set theme)))
-       (d/ordered-map)
-       active-themes)))
+    (let [theme-set-names  (get-active-themes-set-names this)
+          all-set-names    (get-ordered-set-names this)
+          active-set-names (filter theme-set-names all-set-names)
+          tokens           (reduce (fn [tokens set-name]
+                                     (let [set (get-set this set-name)]
+                                       (merge tokens (:tokens set))))
+                                   (d/ordered-map)
+                                   active-set-names)]
+      tokens))
 
   (encode-dtcg [this]
     (let [themes-xform
