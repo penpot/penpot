@@ -4,7 +4,7 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC",
   "private": true,
-  "packageManager": "yarn@4.7.0+sha512.5a0afa1d4c1d844b3447ee3319633797bcd6385d9a44be07993ae52ff4facabccafb4af5dcd1c2f9a94ac113e5e9ff56f6130431905884414229e284e37bb7c9",
+  "packageManager": "yarn@4.8.0+sha512.85ec3149b1ec48f47c2690e13b29197a8a84b09c2c936cc596dddfb49c517e3bc3b1881ec52b5d35ca4b7c437c3f0daae3a80e39438c93bbcc5fcece2df5f15a",
   "repository": {
     "type": "git",
     "url": "https://github.com/penpot/penpot"
