@@ -451,21 +451,28 @@ impl RenderState {
             },
         );
 
-        // TODO: Maybe we should calculate the interest area based on the actual viewport. See how.
-        let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox_with_interest(
+        // First we retrieve the extended area of the viewport that we could render.
+        let (isx, isy, iex, iey) = tiles::get_tiles_for_viewbox_with_interest(
             self.viewbox,
             VIEWPORT_INTEREST_AREA_THRESHOLD,
         );
-        debug::render_debug_tiles_for_viewbox(self, sx, sy, ex, ey);
-        let tile_center = ((ex - sx) / 2, (ey - sy) / 2);
+        // Then we get the real amount of tiles rendered for the current viewbox.
+        let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox);
+        debug::render_debug_tiles_for_viewbox(self, isx, isy, iex, iey);
+        let tile_center = ((iex - isx) / 2, (iey - isy) / 2);
         self.pending_tiles = vec![];
         self.surfaces.cache_clear_visited();
-        for y in sy..=ey {
-            for x in sx..=ex {
+        for y in isy..=iey {
+            for x in isx..=iex {
                 let tile = (x, y);
                 let distance = tiles::manhattan_distance(tile, tile_center);
                 self.pending_tiles.push((x, y, distance));
-                self.surfaces.cache_visit(tile);
+                // We only need to mark as visited the visible
+                // tiles, the ones that are outside the viewport
+                // should not be rendered.
+                if x >= sx && x <= ex && y >= sy && y <= ey {
+                    self.surfaces.cache_visit(tile);
+                }
             }
         }
         self.pending_nodes = vec![];
@@ -851,7 +858,7 @@ impl RenderState {
     ) {
         for (uuid, matrix) in modifiers {
             if let Some(shape) = tree.get(uuid) {
-                let mut shape = shape.clone();
+                let mut shape: Shape = shape.clone();
                 shape.apply_transform(matrix);
                 self.update_tile_for(&shape);
             }
