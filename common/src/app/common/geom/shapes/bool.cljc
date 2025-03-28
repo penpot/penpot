@@ -9,8 +9,9 @@
    [app.common.data :as d]
    [app.common.files.helpers :as cpf]
    [app.common.svg.path.bool :as pb]
-   [app.common.svg.path.shapes-to-path :as stp]))
+   [app.common.types.path.shape-to-path :as stp]))
 
+;; FIXME: move out of geom
 (defn calc-bool-content
   [shape objects]
 

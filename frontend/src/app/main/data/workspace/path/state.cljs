@@ -8,7 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cph]
-   [app.common.svg.path.shapes-to-path :as upsp]))
+   [app.common.types.path.shape-to-path :as upsp]))
 
 (defn path-editing?
   "Returns true if we're editing a path or creating a new one."
