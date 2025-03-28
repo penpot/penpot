@@ -480,9 +480,12 @@
           (let [old-val (get old attr)
                 new-val (get new attr)]
             (not= old-val new-val)))
-        new-obj (if with-objects?
-                  (update-fn object objects)
-                  (update-fn object))]
+
+        new-obj
+        (if with-objects?
+          (update-fn object objects)
+          (update-fn object))]
+
     (when-not (= object new-obj)
       (let [attrs (or attrs (d/concat-set (keys object) (keys new-obj)))]
         (filter (partial changed? object new-obj) attrs)))))
