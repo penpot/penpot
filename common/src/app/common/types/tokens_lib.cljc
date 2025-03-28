@@ -690,6 +690,27 @@
           (filter some?)
           first))))
 
+(defn- dtcg-set?
+  "Searches through parsed single set file and returns:
+   true when first node satisfies `dtcg-node?` predicate"
+  [data]
+  (let [branch? map?
+        children (fn [node] (vals node))
+        walk (fn walk [node]
+               (lazy-seq
+                (cons
+                 (dtcg-node? node)
+                 (when (branch? node)
+                   (mapcat walk (children node))))))]
+    (->> (walk data)
+         (filter true?)
+         first)))
+
+(defn single-set? [data]
+  (and (dtcg-set? data)
+       (not (contains? data "$metadata"))
+       (not (contains? data "$themes"))))
+
 ;; DEPRECATED
 (defn walk-sets-tree-seq
   "Walk sets tree as a flat list.
@@ -844,6 +865,7 @@ Will return a value that matches this schema:
   (get-active-themes-set-tokens [_] "set of set names that are active in the the active themes")
   (encode-dtcg [_] "Encodes library to a dtcg compatible json string")
   (decode-dtcg-json [_ parsed-json] "Decodes parsed json containing tokens and converts to library")
+  (decode-single-set-dtcg-json [_ set-name tokens] "Decodes parsed json containing single token set and converts to library")
   (decode-legacy-json [_ parsed-json] "Decodes parsed legacy json containing tokens and converts to library")
   (get-all-tokens [_] "all tokens in the lib")
   (validate [_]))
@@ -1286,6 +1308,12 @@ Will return a value that matches this schema:
           (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names)
           (assoc-in ["$metadata" "activeThemes"] active-themes-clear)
           (assoc-in ["$metadata" "activeSets"] active-sets))))
+
+  (decode-single-set-dtcg-json [this set-name tokens]
+    (assert (map? tokens) "expected a map data structure for `data`")
+
+    (add-set this (make-token-set :name (normalize-set-name set-name)
+                                  :tokens (flatten-nested-tokens-json tokens ""))))
 
   (decode-dtcg-json [_ data]
     (assert (map? data) "expected a map data structure for `data`")
