@@ -82,27 +82,27 @@
              (remove ctc/is-variant?)
              (remove #(ctn/has-any-copy-parent? objects %)))
 
-             shapes
-             (->> (cph/order-by-indexed-shapes objects ids)
-                  (into [] xform)
-                  (not-empty))]
+            shapes
+            (->> (cph/order-by-indexed-shapes objects ids)
+                 (into [] xform)
+                 (not-empty))]
 
-         (when shapes
-           (let [[shape index]
-                 (create-bool-shape force-shape-id type name (reverse shapes) objects)
+        (when shapes
+          (let [[shape index]
+                (create-bool-shape force-shape-id type name (reverse shapes) objects)
 
-                 shape-id
-                 (get shape :id)
+                shape-id
+                (get shape :id)
 
-                 changes
-                 (-> (pcb/empty-changes it page-id)
-                     (pcb/with-objects objects)
-                     (pcb/add-object shape {:index (inc index)})
-                     (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
-                     (pcb/change-parent shape-id shapes))]
+                changes
+                (-> (pcb/empty-changes it page-id)
+                    (pcb/with-objects objects)
+                    (pcb/add-object shape {:index (inc index)})
+                    (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
+                    (pcb/change-parent shape-id shapes))]
 
-             (rx/of (dch/commit-changes changes)
-                    (dws/select-shapes (d/ordered-set shape-id)))))))))
+            (rx/of (dch/commit-changes changes)
+                   (dws/select-shapes (d/ordered-set shape-id)))))))))
 
 (defn group->bool
   [type group objects]
