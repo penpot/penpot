@@ -154,15 +154,17 @@
   "Enable the fdata/path-data feature on the file."
   [file & _opts]
   (letfn [(update-object [object]
-
             (if (or (cfh/path-shape? object)
                     (cfh/bool-shape? object))
               (update object :content path/path-data)
               object))
 
           (update-container [container]
+            ;; NOTE: if we found a pointer and it is not modified, we
+            ;; skip updating objects for not creating additional
+            ;; pointers
             (if (and (pmap/pointer-map? container)
-                     (not (pmap/loaded? container)))
+                     (not (pmap/modified? container)))
               container
               (d/update-when container :objects d/update-vals update-object)))]
 

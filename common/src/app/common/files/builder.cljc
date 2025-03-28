@@ -283,6 +283,7 @@
 
           :else
           (let [objects (lookup-objects file)
+                ;; FIXME: this makes a duplicate operation
                 content (gsh/calc-bool-content bool objects)
                 bool'   (gsh/update-bool-selrect bool children objects)]
             (commit-change
