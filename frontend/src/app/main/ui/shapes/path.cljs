@@ -17,8 +17,14 @@
   (let [content (get shape :content)
         pdata   (mf/with-memo [content]
                   (try
-                    (if (path/path-data? content)
+                    (cond
+                      (nil? content)
+                      ""
+
+                      (path/path-data? content)
                       (.toString content)
+
+                      :else
                       (let [content (path/path-data content)]
                         (.toString content)))
                     (catch :default cause

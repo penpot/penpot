@@ -48,7 +48,6 @@
                         (map (d/getf objects))
                         (not-empty))]
 
-    ;; FIXME: revisit this, related to path content updates
     (if to-move
       (-> changes
           (cond-> (and remove-layout-data?
