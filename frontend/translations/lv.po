@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-28 11:01+0000\n"
+"PO-Revision-Date: 2025-03-29 12:01+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -4520,7 +4520,7 @@ msgstr "Padarīt savu plānu jaudīgāku"
 
 #: src/app/main/ui/workspace/main_menu.cljs:877
 msgid "workspace.header.menu.option.preferences"
-msgstr "Izvēles"
+msgstr "Pielāgojumi"
 
 #: src/app/main/ui/workspace/main_menu.cljs:866
 msgid "workspace.header.menu.option.view"
@@ -6517,7 +6517,6 @@ msgid "workspace.token.ref-not-valid"
 msgstr "Atsauce nav derīga vai tā nav nevienā aktīvā kopā"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:217, src/app/main/ui/workspace/tokens/form.cljs:221, src/app/main/ui/workspace/tokens/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.token.resolved-value"
 msgstr "Atrisinātā vērtība: %s"
 
@@ -7198,3 +7197,110 @@ msgstr "Mazākais lielums"
 msgid "workspace.token.opacity-range"
 msgstr ""
 "Necaurspīdīgumam ir jābūt starp 0 un 100 % vai 0 un 1 (piem., 50% jeb 0.5)."
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
+#, unused
+msgid "shortcuts.paste-props"
+msgstr "Ielīmēt īpašības"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:604
+#, unused
+msgid "shortcuts.plugins"
+msgstr "Spraudņu pārvaldnieks"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:176
+msgid "workspace.assets.manage-library"
+msgstr "Pārvaldīt bibliotēku"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:769
+msgid "workspace.shape.menu.add-variant-property"
+msgstr "Pievienot jaunu īpašību"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:17, src/app/main/ui/workspace/tokens/errors.cljs:21
+msgid "workspace.token.import-error"
+msgstr "Ievietošanas kļūda:"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
+msgid "workspace.token.import-tooltip"
+msgstr ""
+"JSON datnes ievietošana pārrakstīs visas pašreizējās tekstvienības, kopas un "
+"izskatus"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:13
+msgid "workspace.token.invalid-json"
+msgstr "Ievietošanas kļūda: JSON satur nederīgus tekstvienību datus."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:197
+msgid "workspace.token.label.group-optional"
+msgstr "Izvēles"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:208
+msgid "workspace.token.label.theme-placeholder"
+msgstr "Pievienot izskatu (piem., \"Gaišs\")"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:189
+msgid "workspace.token.margins"
+msgstr "Malas"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:222
+msgid "workspace.token.max-size"
+msgstr "Lielākais izmērs"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:237
+msgid "workspace.token.radius"
+msgstr "Rādiuss"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.token.reference-error"
+msgstr "Atsauču kļūdas: "
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:25
+msgid "workspace.token.self-reference"
+msgstr "Tekstvienībai ir atsauce uz sevi"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:98
+msgid "workspace.token.set-edit-placeholder"
+msgstr "Ievadīt nosaukumu (jāizmanto \"/\" kopām)"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:210
+msgid "workspace.token.size"
+msgstr "Izmērs"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:101
+msgid "workspace.token.themes-description"
+msgstr ""
+"Šeit var pārvaldīt savus izskatus, iespējot/atspējot tos un konfigurēt to "
+"spēkā esošās kopas."
+
+#: src/app/main/ui/workspace/tokens/form.cljs:525
+msgid "workspace.token.token-value-enter"
+msgstr "Jāievada vērtība vai aizstājvārds ar {aizstājvārds}"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:131
+msgid "workspace.toolbar.frame-first-time"
+msgstr "Izveidot dēli. Klikšķināt un pavilkt, lai norādītu tā izmēru. (%s)"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:46, src/app/main/ui/workspace/tokens/modals/themes.cljs:99
+msgid "workspace.token.themes-list"
+msgstr "Izskatu saraksts"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
+msgid "workspace.token.token-not-resolved"
+msgstr "Nevarēja atrisināt atsauces tekstvienību ar šādu nosaukumu: %s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:199
+msgid "workspace.token.label.group-placeholder"
+msgstr "Pievienot kopu (piem., \"Režīms\")"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:148
+msgid "workspace.token.sets-hint"
+msgstr "Labot izskatu un pārvaldīt kopas"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:29
+msgid "workspace.token.invalid-color"
+msgstr "Nederīga krāsas vērtība: %s"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/errors.cljs:45
+msgid "workspace.token.invalid-value"
+msgstr "Nederīga tekstvienības vērtība: %s"
