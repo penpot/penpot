@@ -1,17 +1,13 @@
 use super::{RenderState, SurfaceId};
-use crate::shapes::{Shadow, Shape, Type};
-use skia_safe::{self as skia, Paint};
+use crate::render::strokes;
+use crate::shapes::{Shadow, Shape, Stroke, Type};
+use skia_safe::Paint;
 
-// Drop Shadows
-pub fn render_drop_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
+// Fill Shadows
+pub fn render_fill_drop_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
     if shape.has_fills() {
         for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
             render_fill_drop_shadow(render_state, &shape, &shadow, antialias);
-        }
-    } else {
-        let scale = render_state.get_scale();
-        for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
-            render_stroke_drop_shadow(render_state, &shadow, scale, antialias);
         }
     }
 }
@@ -26,41 +22,10 @@ fn render_fill_drop_shadow(
     render_shadow_paint(render_state, shape, paint, SurfaceId::DropShadows);
 }
 
-// TODO: Stroke shadows
-fn render_stroke_drop_shadow(
-    render_state: &mut RenderState,
-    shadow: &Shadow,
-    scale: f32,
-    antialias: bool,
-) {
-    let shadow_paint = &shadow.to_paint(scale, antialias);
-
-    render_state
-        .surfaces
-        .draw_into(SurfaceId::Strokes, SurfaceId::Shadow, Some(shadow_paint));
-
-    render_state.surfaces.draw_into(
-        SurfaceId::Shadow,
-        SurfaceId::Current,
-        Some(&skia::Paint::default()),
-    );
-
-    render_state
-        .surfaces
-        .canvas(SurfaceId::Shadow)
-        .clear(skia::Color::TRANSPARENT);
-}
-
-// Inner Shadows
-pub fn render_inner_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
+pub fn render_fill_inner_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
     if shape.has_fills() {
         for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
             render_fill_inner_shadow(render_state, &shape, &shadow, antialias);
-        }
-    } else {
-        let scale = render_state.get_scale();
-        for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
-            render_stroke_inner_shadow(render_state, &shadow, scale, antialias);
         }
     }
 }
@@ -75,29 +40,46 @@ fn render_fill_inner_shadow(
     render_shadow_paint(render_state, shape, paint, SurfaceId::InnerShadows);
 }
 
-// TODO: Stroke shadows
-fn render_stroke_inner_shadow(
+pub fn render_stroke_drop_shadows(
     render_state: &mut RenderState,
-    shadow: &Shadow,
-    scale: f32,
+    shape: &Shape,
+    stroke: &Stroke,
     antialias: bool,
 ) {
-    let shadow_paint = &shadow.to_paint(scale, antialias);
+    if !shape.has_fills() {
+        for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
+            let filter = shadow.get_drop_shadow_filter();
+            strokes::render(
+                render_state,
+                &shape,
+                stroke,
+                Some(SurfaceId::Strokes), // FIXME
+                filter.as_ref(),
+                antialias,
+            )
+        }
+    }
+}
 
-    render_state
-        .surfaces
-        .draw_into(SurfaceId::Strokes, SurfaceId::Shadow, Some(shadow_paint));
-
-    render_state.surfaces.draw_into(
-        SurfaceId::Shadow,
-        SurfaceId::Overlay,
-        Some(&skia::Paint::default()),
-    );
-
-    render_state
-        .surfaces
-        .canvas(SurfaceId::Shadow)
-        .clear(skia::Color::TRANSPARENT);
+pub fn render_stroke_inner_shadows(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    stroke: &Stroke,
+    antialias: bool,
+) {
+    if !shape.has_fills() {
+        for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
+            let filter = shadow.get_inner_shadow_filter();
+            strokes::render(
+                render_state,
+                &shape,
+                stroke,
+                Some(SurfaceId::Strokes), // FIXME
+                filter.as_ref(),
+                antialias,
+            )
+        }
+    }
 }
 
 fn render_shadow_paint(

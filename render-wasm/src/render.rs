@@ -211,13 +211,7 @@ impl RenderState {
 
     pub fn apply_drawing_to_render_canvas(&mut self, shape: Option<&Shape>) {
         self.surfaces
-            .flush_and_submit(&mut self.gpu_state, SurfaceId::Fills);
-
-        self.surfaces
             .flush_and_submit(&mut self.gpu_state, SurfaceId::DropShadows);
-
-        self.surfaces
-            .flush_and_submit(&mut self.gpu_state, SurfaceId::InnerShadows);
 
         self.surfaces.draw_into(
             SurfaceId::DropShadows,
@@ -225,28 +219,26 @@ impl RenderState {
             Some(&skia::Paint::default()),
         );
 
+        self.surfaces
+            .flush_and_submit(&mut self.gpu_state, SurfaceId::Fills);
+
         self.surfaces.draw_into(
             SurfaceId::Fills,
             SurfaceId::Current,
             Some(&skia::Paint::default()),
         );
 
-        self.surfaces.draw_into(
-            SurfaceId::InnerShadows,
-            SurfaceId::Current,
-            Some(&skia::Paint::default()),
-        );
-
         let mut render_overlay_below_strokes = false;
         if let Some(shape) = shape {
-            render_overlay_below_strokes = shape.fills().len() > 0;
+            render_overlay_below_strokes = shape.has_fills();
         }
 
         if render_overlay_below_strokes {
             self.surfaces
-                .flush_and_submit(&mut self.gpu_state, SurfaceId::Overlay);
+                .flush_and_submit(&mut self.gpu_state, SurfaceId::InnerShadows);
+
             self.surfaces.draw_into(
-                SurfaceId::Overlay,
+                SurfaceId::InnerShadows,
                 SurfaceId::Current,
                 Some(&skia::Paint::default()),
             );
@@ -254,6 +246,7 @@ impl RenderState {
 
         self.surfaces
             .flush_and_submit(&mut self.gpu_state, SurfaceId::Strokes);
+
         self.surfaces.draw_into(
             SurfaceId::Strokes,
             SurfaceId::Current,
@@ -262,25 +255,22 @@ impl RenderState {
 
         if !render_overlay_below_strokes {
             self.surfaces
-                .flush_and_submit(&mut self.gpu_state, SurfaceId::Overlay);
+                .flush_and_submit(&mut self.gpu_state, SurfaceId::InnerShadows);
+
             self.surfaces.draw_into(
-                SurfaceId::Overlay,
+                SurfaceId::InnerShadows,
                 SurfaceId::Current,
                 Some(&skia::Paint::default()),
             );
         }
 
         self.surfaces
-            .draw_into(SurfaceId::Overlay, SurfaceId::Current, None);
-        self.surfaces
             .flush_and_submit(&mut self.gpu_state, SurfaceId::Current);
 
         self.surfaces.apply_mut(
             &[
-                SurfaceId::Shadow,
-                SurfaceId::InnerShadows,
                 SurfaceId::DropShadows,
-                SurfaceId::Overlay,
+                SurfaceId::InnerShadows,
                 SurfaceId::Fills,
                 SurfaceId::Strokes,
             ],
@@ -403,11 +393,13 @@ impl RenderState {
                 }
 
                 for stroke in shape.strokes().rev() {
-                    strokes::render(self, &shape, stroke, antialias);
+                    shadows::render_stroke_drop_shadows(self, &shape, stroke, antialias);
+                    strokes::render(self, &shape, stroke, None, None, antialias);
+                    shadows::render_stroke_inner_shadows(self, &shape, stroke, antialias);
                 }
 
-                shadows::render_inner_shadows(self, &shape, antialias);
-                shadows::render_drop_shadows(self, &shape, antialias);
+                shadows::render_fill_inner_shadows(self, &shape, antialias);
+                shadows::render_fill_drop_shadows(self, &shape, antialias);
             }
         };
 
