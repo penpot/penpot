@@ -10,7 +10,6 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
-   [app.common.geom.shapes.bool :as gsb]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.corners :as gsc]
@@ -192,9 +191,6 @@
 (dm/export gsi/has-point?)
 (dm/export gsi/has-point-rect?)
 (dm/export gsi/rect-contains-shape?)
-
-;; Bool
-(dm/export gsb/calc-bool-content)
 
 ;; Constraints
 (dm/export gct/default-constraints-h)

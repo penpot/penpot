@@ -12,11 +12,11 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
-   [app.common.geom.shapes.bool :as gshb]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpa]
    [app.common.math :as mth]
-   [app.common.types.modifiers :as ctm]))
+   [app.common.types.modifiers :as ctm]
+   [app.common.types.path :as path]))
 
 #?(:clj (set! *warn-on-reflection* true))
 
@@ -449,7 +449,7 @@
   [shape children objects]
 
   (let [content
-        (gshb/calc-bool-content shape objects)
+        (path/calc-bool-content shape objects)
 
         shape
         (assoc shape :content content)
