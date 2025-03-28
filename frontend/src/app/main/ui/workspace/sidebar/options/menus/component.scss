@@ -719,6 +719,7 @@
 .variant-property-name {
   color: var(--color-foreground-primary);
   height: var(--sp-xxxl);
+  width: $s-104;
 
   display: flex;
   align-items: center;
@@ -729,6 +730,8 @@
   white-space: nowrap;
 }
 
-.variant-property-name-width {
+.variant-property-name-wrapper {
+  display: flex;
+  flex: 0 0 auto;
   width: $s-104;
 }

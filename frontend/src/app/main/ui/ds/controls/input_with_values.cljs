@@ -29,7 +29,7 @@
         input-ref (mf/use-ref)
         input     (mf/ref-val input-ref)
 
-        title     (str name ": " values)
+        title     (if values (str name ": " values) name)
 
         on-edit
         (mf/use-fn
@@ -74,7 +74,8 @@
       [:div {:class (stl/css :input-with-values-edit-container)}
        [:> input* props]]
       [:div {:class (stl/css :input-with-values-container :input-with-values-grid)
-             :title title :on-click on-edit}
+             :title title
+             :on-click on-edit}
        [:span {:class (stl/css :input-with-values-name)} name]
        (when values
          [:span {:class (stl/css :input-with-values-values)} values])])))

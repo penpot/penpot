@@ -303,7 +303,7 @@
        [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-container)}
         (if (ctk/main-instance? shape)
           [:*
-           [:div {:class (stl/css :variant-property-name-width)}
+           [:div {:class (stl/css :variant-property-name-wrapper)}
             [:> input-with-values* {:name (:name prop)
                                     :data-position pos
                                     :on-blur update-property-name}]]
@@ -313,7 +313,7 @@
                           :on-change (partial change-property-value pos)}]]
 
           [:*
-           [:span {:class (stl/css :variant-property-name :variant-property-name-width)}
+           [:span {:class (stl/css :variant-property-name)}
             (:name prop)]
            [:& select {:default-value id-component
                        :options (filter-matching id-component (keyword (:name prop)))
