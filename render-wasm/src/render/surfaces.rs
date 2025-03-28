@@ -7,6 +7,8 @@ use super::{gpu_state::GpuState, tiles::Tile};
 use base64::{engine::general_purpose, Engine as _};
 use std::collections::HashMap;
 
+const POOL_CAPACITY_THRESHOLD: i32 = 4;
+
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {
     Target,
@@ -64,7 +66,6 @@ impl Surfaces {
         let shape_strokes = target.new_surface_with_dimensions(extra_tile_dims).unwrap();
         let debug = target.new_surface_with_dimensions((width, height)).unwrap();
 
-        const POOL_CAPACITY_THRESHOLD: i32 = 4;
         let pool_capacity =
             (width / tile_dims.width) * (height / tile_dims.height) * POOL_CAPACITY_THRESHOLD;
         let pool = SurfacePool::with_capacity(&mut target, tile_dims, pool_capacity as usize);
@@ -233,6 +234,14 @@ impl Surfaces {
         self.tiles.visit(tile);
     }
 
+    pub fn cache_visited_amount(&self) -> usize {
+        self.tiles.visited_amount()
+    }
+
+    pub fn cache_visited_capacity(&self) -> usize {
+        self.tiles.visited_capacity()
+    }
+
     pub fn cache_tile_surface(&mut self, tile: Tile, id: SurfaceId, color: skia::Color) {
         let sampling_options = self.sampling_options;
         let mut tile_surface = self.tiles.get_or_create(tile).unwrap();
@@ -319,27 +328,42 @@ impl SurfacePool {
         }
     }
 
+    pub fn capacity(&self) -> usize {
+        self.surfaces.len()
+    }
+
+    pub fn available(&self) -> usize {
+        let mut available: usize = 0;
+        for surface_ref in self.surfaces.iter() {
+            if surface_ref.in_use == false {
+                available += 1;
+            }
+        }
+        available
+    }
+
     pub fn deallocate(&mut self, surface_ref_to_deallocate: &SurfaceRef) {
         let surface_ref = self
             .surfaces
             .get_mut(surface_ref_to_deallocate.index)
             .unwrap();
         surface_ref.in_use = false;
+        self.index = surface_ref_to_deallocate.index;
     }
 
     pub fn allocate(&mut self) -> Option<SurfaceRef> {
         let start = self.index;
         let len = self.surfaces.len();
         loop {
-            self.index = (self.index + 1) % len;
-            if self.index == start {
-                return None;
-            }
             if let Some(surface_ref) = self.surfaces.get_mut(self.index) {
                 if !surface_ref.in_use {
                     surface_ref.in_use = true;
                     return Some(surface_ref.clone());
                 }
+            }
+            self.index = (self.index + 1) % len;
+            if self.index == start {
+                return None;
             }
         }
     }
@@ -373,6 +397,7 @@ impl TileSurfaceCache {
             // there should be a better solution.
             for (tile, surface_ref) in self.grid.iter() {
                 if !self.visited.contains_key(tile) {
+                    self.pool.deallocate(surface_ref);
                     continue;
                 }
                 if !self.visited.get(tile).unwrap() {
@@ -402,6 +427,14 @@ impl TileSurfaceCache {
     pub fn clear_grid(&mut self) {
         self.grid.clear();
         self.pool.clear();
+    }
+
+    pub fn visited_amount(&self) -> usize {
+        self.visited.len()
+    }
+
+    pub fn visited_capacity(&self) -> usize {
+        self.visited.capacity()
     }
 
     pub fn clear_visited(&mut self) {
