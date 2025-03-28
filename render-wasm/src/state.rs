@@ -111,4 +111,9 @@ impl<'a> State<'a> {
         self.render_state
             .rebuild_tiles(&mut self.shapes, &self.modifiers);
     }
+
+    pub fn rebuild_modifier_tiles(&mut self) {
+        self.render_state
+            .rebuild_modifier_tiles(&mut self.shapes, &self.modifiers);
+    }
 }

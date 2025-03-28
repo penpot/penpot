@@ -41,6 +41,7 @@ pub struct Surfaces {
     margins: skia::ISize,
 }
 
+#[allow(dead_code)]
 impl Surfaces {
     pub fn new(
         gpu_state: &mut GpuState,
@@ -301,6 +302,7 @@ pub struct SurfacePool {
     pub index: usize,
 }
 
+#[allow(dead_code)]
 impl SurfacePool {
     pub fn with_capacity(surface: &mut skia::Surface, dims: skia::ISize, capacity: usize) -> Self {
         let mut surfaces = Vec::with_capacity(capacity);
@@ -347,6 +349,11 @@ impl SurfacePool {
             .surfaces
             .get_mut(surface_ref_to_deallocate.index)
             .unwrap();
+
+        // This could happen when the "clear" method of the pool is called.
+        if surface_ref.in_use == false {
+            return;
+        }
         surface_ref.in_use = false;
         self.index = surface_ref_to_deallocate.index;
     }
@@ -375,6 +382,7 @@ pub struct TileSurfaceCache {
     visited: HashMap<Tile, bool>,
 }
 
+#[allow(dead_code)]
 impl TileSurfaceCache {
     pub fn new(pool: SurfacePool) -> Self {
         Self {
@@ -388,28 +396,46 @@ impl TileSurfaceCache {
         return self.grid.contains_key(&tile);
     }
 
+    fn remove_list(&mut self, marked: Vec<Tile>) {
+        for tile in marked.iter() {
+            self.grid.remove(tile);
+        }
+    }
+
+    fn try_get_or_create(&mut self, tile: Tile) -> Result<skia::Surface, String> {
+        // TODO: I don't know yet how to improve this but I don't like it. I think
+        // there should be a better solution.
+        let mut marked = vec![];
+        for (tile, surface_ref) in self.grid.iter_mut() {
+            let exists_as_visited = self.visited.contains_key(tile);
+            if !exists_as_visited {
+                marked.push(tile.clone());
+                self.pool.deallocate(surface_ref);
+                continue;
+            }
+
+            let is_visited = self.visited.get(tile).unwrap();
+            if !*is_visited {
+                marked.push(tile.clone());
+                self.pool.deallocate(surface_ref);
+            }
+        }
+
+        self.remove_list(marked);
+
+        if let Some(surface_ref) = self.pool.allocate() {
+            self.grid.insert(tile, surface_ref.clone());
+            return Ok(surface_ref.surface.clone());
+        }
+        return Err("Not enough surfaces".into());
+    }
+
     pub fn get_or_create(&mut self, tile: Tile) -> Result<skia::Surface, String> {
         if let Some(surface_ref) = self.pool.allocate() {
             self.grid.insert(tile, surface_ref.clone());
-            Ok(surface_ref.surface.clone())
-        } else {
-            // TODO: I don't know yet how to improve this but I don't like it. I think
-            // there should be a better solution.
-            for (tile, surface_ref) in self.grid.iter() {
-                if !self.visited.contains_key(tile) {
-                    self.pool.deallocate(surface_ref);
-                    continue;
-                }
-                if !self.visited.get(tile).unwrap() {
-                    self.pool.deallocate(surface_ref);
-                }
-            }
-            if let Some(surface_ref) = self.pool.allocate() {
-                self.grid.insert(tile, surface_ref.clone());
-                return Ok(surface_ref.surface.clone());
-            }
-            return Err("Not enough surfaces".into());
+            return Ok(surface_ref.surface.clone());
         }
+        self.try_get_or_create(tile)
     }
 
     pub fn get(&mut self, tile: Tile) -> Result<&mut skia::Surface, String> {
@@ -420,7 +446,8 @@ impl TileSurfaceCache {
         if !self.grid.contains_key(&tile) {
             return false;
         }
-        self.grid.remove(&tile);
+        let surface_ref_to_deallocate = self.grid.remove(&tile);
+        self.pool.deallocate(&surface_ref_to_deallocate.unwrap());
         true
     }
 
