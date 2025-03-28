@@ -690,9 +690,26 @@
           (filter some?)
           first))))
 
+(defn- dtcg-set?
+  "Searches through parsed single set file and returns:
+   true when first node satisfies `dtcg-node?` predicate"
+  [data]
+  (let [branch? map?
+        children (fn [node] (vals node))
+        walk (fn walk [node]
+               (lazy-seq
+                (cons
+                 (dtcg-node? node)
+                 (when (branch? node)
+                   (mapcat walk (children node))))))]
+    (->> (walk data)
+         (filter true?)
+         first)))
+
 (defn single-set? [data]
-  (not (and (contains? data "$themes")
-            (contains? data "$metadata"))))
+  (and (dtcg-set? data)
+       (not (contains? data "$metadata"))
+       (not (contains? data "$themes"))))
 
 ;; DEPRECATED
 (defn walk-sets-tree-seq
