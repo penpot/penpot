@@ -8,8 +8,8 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.common.svg.path.shapes-to-path :as upsp]
    [app.common.svg.path.subpath :as ups]
+   [app.common.types.path.shape-to-path :as upsp]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.edition :as dwe]

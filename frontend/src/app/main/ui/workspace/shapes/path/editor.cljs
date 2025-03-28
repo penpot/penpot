@@ -11,7 +11,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gsp]
    [app.common.svg.path.command :as upc]
-   [app.common.svg.path.shapes-to-path :as ups]
+   [app.common.types.path.shape-to-path :as ups]
    [app.main.data.workspace.path :as drp]
    [app.main.snap :as snap]
    [app.main.store :as st]
