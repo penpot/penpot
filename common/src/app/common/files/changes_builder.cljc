@@ -84,8 +84,7 @@
 
 (defn with-objects
   [changes objects]
-  (let [fdata (binding [cfeat/*current* #{"components/v2"}]
-                (ctf/make-file-data (uuid/next) uuid/zero))
+  (let [fdata (ctf/make-file-data (uuid/next) uuid/zero)
         fdata (assoc-in fdata [:pages-index uuid/zero :objects] objects)]
     (vary-meta changes assoc
                ::file-data fdata
