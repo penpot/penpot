@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.fonts :as fonts]
+   [app.main.fonts :as f]
    [app.main.store :as st]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.wasm :as wasm]
@@ -27,14 +27,23 @@
 
 (defn- google-font-id->uuid
   [font-id]
-  (let [font (get @fonts/fontsdb font-id)]
+  (let [font (get @f/fontsdb font-id)]
     (:uuid font)))
 
+(defn- custom-font-id->uuid
+  [font-id]
+  (uuid/uuid (subs font-id (inc (str/index-of font-id "-")))))
 
-(defn ^:private font->ttf-id [font-uuid font-style font-weight]
-  (if (str/starts-with? font-uuid "gfont-")
-    font-uuid
-    (let [matching-font (d/seek (fn [[_ font]]
+(defn- font-id->uuid [font-id]
+  (if (str/starts-with? font-id "gfont-")
+    (google-font-id->uuid font-id)
+    (custom-font-id->uuid font-id)))
+
+(defn ^:private font-id->ttf-id [font-id font-style font-weight]
+  (if (str/starts-with? font-id "gfont-")
+    font-id
+    (let [font-uuid (custom-font-id->uuid font-id)
+          matching-font (d/seek (fn [[_ font]]
                                   (and (= (:font-id font) font-uuid)
                                        (= (:font-style font) font-style)
                                        (= (:font-weight font) font-weight)))
@@ -71,7 +80,7 @@
 
 (defn- google-font-ttf-url
   [font-id font-variant-id]
-  (let [font (get @fonts/fontsdb font-id)
+  (let [font (get @f/fontsdb font-id)
         variant (d/seek (fn [variant]
                           (= (:id variant) font-variant-id))
                         (:variants font))
@@ -127,7 +136,6 @@
   [fonts]
   (keep (fn [font]
           (let [font-id (dm/get-prop font :font-id)
-                google-font? (str/starts-with? font-id "gfont-")
                 font-variant-id (dm/get-prop font :font-variant-id)
                 variant-parts (str/split font-variant-id #"\-")
                 variant-parts (if (= (count variant-parts) 1)
@@ -135,13 +143,9 @@
                                 variant-parts)
                 style (first variant-parts)
                 weight (serialize-font-weight (last variant-parts))
-                font-id (if google-font?
-                          font-id
-                          (uuid/uuid (subs font-id (inc (str/index-of font-id "-")))))
-                asset-id (font->ttf-id font-id style weight)
-                wasm-id (if google-font? (google-font-id->uuid font-id) font-id)
-                font-data {:family-id font-id
-                           :wasm-id wasm-id
+                asset-id (font-id->ttf-id font-id style weight)
+                wasm-id (font-id->uuid font-id)
+                font-data {:wasm-id wasm-id
                            :font-variant-id font-variant-id
                            :style (serialize-font-style style)
                            :weight weight}]
