@@ -81,7 +81,7 @@ Penpot offers integration into the development toolchain, thanks to its support 
 ### What’s great for design ###
 With Penpot you can design libraries to share and reuse; turn design elements into components and tokens to allow reusability and scalability; and build realistic user flows and interactions.
 
-###Design Tokens###
+### Design Tokens ###
 With Penpot’s standardized [design tokens](https://penpot.dev/collaboration/design-tokens) format, you can easily reuse and sync tokens across different platforms, workflows, and disciplines. 
 
 
