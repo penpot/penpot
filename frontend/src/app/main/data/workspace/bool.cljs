@@ -24,43 +24,92 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
-(defn selected-shapes-idx
-  [state]
-  (let [objects (dsh/lookup-page-objects state)]
-    (->> (dsh/lookup-selected state)
-         (cph/clean-loops objects))))
+(defn- create-bool-shape
+  [id type name shapes objects]
+  (let [shape-id
+        (or id (uuid/next))
 
-(defn create-bool-data
-  [bool-type name shapes objects]
-  (let [shapes (mapv #(stp/convert-to-path % objects) shapes)
-        head (if (= bool-type :difference) (first shapes) (last shapes))
-        head (cond-> head
-               (and (contains? head :svg-attrs) (empty? (:fills head)))
-               (assoc :fills stp/default-bool-fills))
+        shapes
+        (mapv #(stp/convert-to-path % objects) shapes)
 
-        head-data (select-keys head stp/style-properties)
+        head
+        (if (= type :difference) (first shapes) (last shapes))
 
-        bool-shape
-        (-> {:id (uuid/next)
-             :type :bool
-             :bool-type bool-type
-             :frame-id (:frame-id head)
-             :parent-id (:parent-id head)
-             :name name
-             :shapes (->> shapes (mapv :id))}
-            (merge head-data)
+        head
+        (cond-> head
+          (and (contains? head :svg-attrs) (empty? (:fills head)))
+          (assoc :fills stp/default-bool-fills))
+
+        shape
+        {:id shape-id
+         :type :bool
+         :bool-type type
+         :frame-id (:frame-id head)
+         :parent-id (:parent-id head)
+         :name name
+         :shapes (mapv :id shapes)}
+
+        shape
+        (-> shape
+            (merge (select-keys head stp/style-properties))
             (cts/setup-shape)
             (gsh/update-bool-selrect shapes objects))]
 
-    [bool-shape (cph/get-position-on-parent objects (:id head))]))
+    [shape (cph/get-position-on-parent objects (:id head))]))
+
+(defn create-bool
+  [type & {:keys [ids force-shape-id]}]
+
+  (assert (or (nil? ids) (every? uuid? ids)))
+
+  (ptk/reify ::create-bool-union
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id (:current-page-id state)
+            objects (dsh/lookup-page-objects state page-id)
+
+            name
+            (-> type d/name str/capital)
+
+            ids
+            (->> (or ids (dsh/lookup-selected state))
+                 (cph/clean-loops objects))
+
+            xform
+            (comp
+             (map (d/getf objects))
+             (remove cph/frame-shape?)
+             (remove ctc/is-variant?)
+             (remove #(ctn/has-any-copy-parent? objects %)))
+
+            shapes
+            (->> (cph/order-by-indexed-shapes objects ids)
+                 (into [] xform)
+                 (not-empty))]
+
+        (when shapes
+          (let [[shape index]
+                (create-bool-shape force-shape-id type name (reverse shapes) objects)
+
+                shape-id
+                (get shape :id)
+
+                changes
+                (-> (pcb/empty-changes it page-id)
+                    (pcb/with-objects objects)
+                    (pcb/add-object shape {:index (inc index)})
+                    (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
+                    (pcb/change-parent shape-id shapes))]
+
+            (rx/of (dch/commit-changes changes)
+                   (dws/select-shapes (d/ordered-set shape-id)))))))))
 
 (defn group->bool
-  [group bool-type objects]
-
+  [type group objects]
   (let [shapes (->> (:shapes group)
                     (map #(get objects %))
                     (mapv #(stp/convert-to-path % objects)))
-        head (if (= bool-type :difference) (first shapes) (last shapes))
+        head (if (= type :difference) (first shapes) (last shapes))
         head (cond-> head
                (and (contains? head :svg-attrs) (empty? (:fills head)))
                (assoc :fills stp/default-bool-fills))
@@ -68,86 +117,46 @@
 
     (-> group
         (assoc :type :bool)
-        (assoc :bool-type bool-type)
+        (assoc :bool-type type)
         (merge head-data)
         (gsh/update-bool-selrect shapes objects))))
 
-(defn bool->group
-  [shape objects]
-
-  (let [children (->> (:shapes shape)
-                      (mapv #(get objects %)))]
-    (-> shape
-        (assoc :type :group)
-        (dissoc :bool-type)
-        (d/without-keys stp/style-group-properties)
-        (gsh/update-group-selrect children))))
-
-(defn create-bool
-  ([bool-type]
-   (create-bool bool-type nil nil))
-  ([bool-type ids {:keys [id-ret]}]
-   (assert (or (nil? ids) (set? ids)))
-   (ptk/reify ::create-bool-union
-     ptk/WatchEvent
-     (watch [it state _]
-       (let [page-id (:current-page-id state)
-             objects (dsh/lookup-page-objects state)
-             name (-> bool-type d/name str/capital)
-             ids  (->> (or ids (dsh/lookup-selected state))
-                       (cph/clean-loops objects))
-             ordered-indexes (cph/order-by-indexed-shapes objects ids)
-             shapes (->> ordered-indexes
-                         (map (d/getf objects))
-                         (remove cph/frame-shape?)
-                         (remove ctc/is-variant?)
-                         (remove #(ctn/has-any-copy-parent? objects %)))]
-
-         (when-not (empty? shapes)
-           (let [[boolean-data index] (create-bool-data bool-type name (reverse shapes) objects)
-                 index (inc index)
-                 shape-id (:id boolean-data)
-                 changes (-> (pcb/empty-changes it page-id)
-                             (pcb/with-objects objects)
-                             (pcb/add-object boolean-data {:index index})
-                             (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
-                             (pcb/change-parent shape-id shapes))]
-             (when id-ret
-               (reset! id-ret shape-id))
-
-             (rx/of (dch/commit-changes changes)
-                    (dws/select-shapes (d/ordered-set shape-id))))))))))
-
 (defn group-to-bool
-  [shape-id bool-type]
+  [shape-id type]
   (ptk/reify ::group-to-bool
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
-            change-to-bool
-            (fn [shape] (group->bool shape bool-type objects))]
+      (let [objects   (dsh/lookup-page-objects state)
+            update-fn (partial group->bool type)]
         (when-not (ctn/has-any-copy-parent? objects (get objects shape-id))
-          (rx/of (dwsh/update-shapes [shape-id] change-to-bool {:reg-objects? true})))))))
+          (rx/of (dwsh/update-shapes [shape-id] update-fn {:with-objects? true :reg-objects? true})))))))
+
+(defn- bool->group
+  [shape objects]
+  (-> shape
+      (assoc :type :group)
+      (dissoc :bool-type)
+      (d/without-keys stp/style-group-properties)
+      (gsh/update-group-selrect
+       (mapv (d/getf objects)
+             (:shapes shape)))))
 
 (defn bool-to-group
   [shape-id]
   (ptk/reify ::bool-to-group
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
-            change-to-group
-            (fn [shape] (bool->group shape objects))]
+      (let [objects (dsh/lookup-page-objects state)]
         (when-not (ctn/has-any-copy-parent? objects (get objects shape-id))
-          (rx/of (dwsh/update-shapes [shape-id] change-to-group {:reg-objects? true})))))))
-
+          (rx/of (dwsh/update-shapes [shape-id] bool->group {:with-objects? true :reg-objects? true})))))))
 
 (defn change-bool-type
-  [shape-id bool-type]
+  [shape-id type]
   (ptk/reify ::change-bool-type
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects (dsh/lookup-page-objects state)
             change-type
-            (fn [shape] (assoc shape :bool-type bool-type))]
+            (fn [shape] (assoc shape :bool-type type))]
         (when-not (ctn/has-any-copy-parent? objects (get objects shape-id))
           (rx/of (dwsh/update-shapes [shape-id] change-type {:reg-objects? true})))))))
