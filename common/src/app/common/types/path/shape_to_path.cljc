@@ -14,8 +14,8 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.corners :as gso]
    [app.common.geom.shapes.path :as gsp]
-   [app.common.svg.path.bool :as pb]
    [app.common.svg.path.command :as pc]
+   [app.common.types.path.bool :as bool]
    [app.common.types.shape.radius :as ctsr]))
 
 (def default-bool-fills
@@ -205,7 +205,7 @@
         (:bool-type shape)
 
         content
-        (pb/content-bool bool-type (mapv :content children))]
+        (bool/content-bool bool-type (mapv :content children))]
 
     (-> shape
         (assoc :type :path)

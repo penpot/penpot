@@ -4,14 +4,17 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.svg.path.bool
+(ns app.common.types.path.bool
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
+   ;; FIXME: move out of shapes
    [app.common.geom.shapes.path :as gsp]
    [app.common.svg.path.command :as upc]
    [app.common.svg.path.subpath :as ups]))
+
+;; FIXME: revisit public private
 
 (defn add-previous
   ([content]
@@ -322,6 +325,8 @@
     (->> (fix-move-to content)
          (ups/close-subpaths))))
 
+
+;; FIXME: rename ? private?
 (defn content-bool
   [bool-type contents]
   ;; We apply the boolean operation in to each pair and the result to the next
@@ -331,4 +336,3 @@
          (reduce (partial content-bool-pair bool-type))
          (into []))
     []))
-

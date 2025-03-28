@@ -22,6 +22,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
@@ -284,7 +285,7 @@
           :else
           (let [objects (lookup-objects file)
                 ;; FIXME: this makes a duplicate operation
-                content (gsh/calc-bool-content bool objects)
+                content (path/calc-bool-content bool objects)
                 bool'   (gsh/update-bool-selrect bool children objects)]
             (commit-change
              file

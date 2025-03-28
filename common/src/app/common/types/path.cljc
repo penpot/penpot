@@ -8,10 +8,14 @@
   (:require
    #?(:clj [app.common.fressian :as fres])
    #?(:clj [clojure.data.json :as json])
+   [app.common.data :as d]
+   [app.common.files.helpers :as cpf]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.svg.path :as svg.path]
-   [app.common.transit :as t])
+   [app.common.transit :as t]
+   [app.common.types.path.bool :as bool]
+   [app.common.types.path.shape-to-path :as stp])
   (:import
    #?(:cljs [goog.string StringBuffer]
       :clj  [java.nio ByteBuffer])))
@@ -522,3 +526,24 @@
      :rfn (fn [r]
             (let [^bytes bytes (fres/read-object! r)]
               (path-data (ByteBuffer/wrap bytes))))}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; BOOLEANS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; FIXME: rename?
+(defn calc-bool-content
+  [shape objects]
+
+  (let [extract-content-xf
+        (comp (map (d/getf objects))
+              (filter (comp not :hidden))
+              (remove cpf/svg-raw-shape?)
+              (map #(stp/convert-to-path % objects))
+              (map :content))
+
+        shapes-content
+        (into [] extract-content-xf (:shapes shape))]
+
+    (bool/content-bool (:bool-type shape) shapes-content)))
+
