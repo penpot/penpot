@@ -43,9 +43,7 @@ Penpot is the first **open-source** design tool for design and code collaboratio
 Available on browser or self-hosted, Penpot works with open standards like SVG, CSS, HTML and JSON, and it’s free!
 
 The latest updates take Penpot even further. It’s the first design tool to integrate native [design tokens](https://penpot.dev/collaboration/design-tokens)—a single source of truth to improve efficiency and collaboration between product design and development.
-With the [huge 2.0 release](https://penpot.app/dev-diaries), Penpot took the platform to a whole new level. 
-
-This update introduces the ground-breaking [CSS Grid Layout feature](https://penpot.app/penpot-2.0), a complete UI redesign, a new Components system, and much more.
+With the [huge 2.0 release](https://penpot.app/dev-diaries), Penpot took the platform to a whole new level. This update introduces the ground-breaking [CSS Grid Layout feature](https://penpot.app/penpot-2.0), a complete UI redesign, a new Components system, and much more.
 For organizations that need extra service for its teams, [get in touch](https://cal.com/team/penpot/talk-to-us)
 
 🎇 Design, code, and Open Source meet at [Penpot Fest](https://penpot.app/penpotfest)! Be part of the 2025 edition in Madrid, Spain, on October 9-10.
@@ -138,7 +136,7 @@ Choose your way:
 
 - Create and [share Libraries & Templates](https://penpot.app/libraries-templates.html) that will be helpful for the community
 - Invite your [team to join](https://design.penpot.app/#/auth/register)
-- Give this repo a star and follow us on Social Media: [Mastodon](https://fosstodon.org/@penpot/), [Youtube](https://www.youtube.com/c/Penpot), [Instagram](https://instagram.com/penpot.app), [Linkedin](https://www.linkedin.com/company/penpotdesign),  [Peertube](https://peertube.kaleidos.net/a/penpot_app) and [X](https://twitter.com/penpotapp), .[BlueSky](https://bsky.app/profile/penpot.app)
+- Give this repo a star and follow us on Social Media: [Mastodon](https://fosstodon.org/@penpot/), [Youtube](https://www.youtube.com/c/Penpot), [Instagram](https://instagram.com/penpot.app), [Linkedin](https://www.linkedin.com/company/penpotdesign),  [Peertube](https://peertube.kaleidos.net/a/penpot_app), [X](https://twitter.com/penpotapp) and [BlueSky](https://bsky.app/profile/penpot.app)
 - Participate in the [Community](https://community.penpot.app/) space by asking and answering questions; reacting to others’ articles;  opening your own conversations and following along on decisions affecting the project.
 - Report bugs with our easy [guide for bugs hunting](https://help.penpot.app/contributing-guide/reporting-bugs/) or [GitHub issues](https://github.com/penpot/penpot/issues)
 - Become a [translator](https://help.penpot.app/contributing-guide/translations)
