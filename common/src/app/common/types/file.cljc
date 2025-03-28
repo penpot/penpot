@@ -123,15 +123,12 @@
    (make-file-data file-id (uuid/next)))
 
   ([file-id page-id]
-   (let [page (when (some? page-id)
-                (ctp/make-empty-page {:id page-id :name "Page 1"}))]
+   (cond-> (assoc empty-file-data :id file-id)
+     (some? page-id)
+     (ctpl/add-page (ctp/make-empty-page {:id page-id :name "Page 1"}))
 
-     (cond-> (assoc empty-file-data :id file-id)
-       (some? page-id)
-       (ctpl/add-page page)
-
-       (contains? cfeat/*current* "components/v2")
-       (assoc-in [:options :components-v2] true)))))
+     :always
+     (update :options assoc :components-v2 true))))
 
 (defn make-file
   [{:keys [id project-id name revn is-shared features
