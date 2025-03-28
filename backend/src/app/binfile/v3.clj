@@ -592,19 +592,6 @@
                {})
        (not-empty)))
 
-(defn- read-file-components
-  [{:keys [::bfc/input ::file-id ::entries]}]
-  (->> (keep (match-component-entry-fn file-id) entries)
-       (reduce (fn [result {:keys [id entry]}]
-                 (let [object (->> (read-entry input entry)
-                                   (decode-component)
-                                   (validate-component))]
-                   (if (= id (:id object))
-                     (assoc result id object)
-                     result)))
-               {})
-       (not-empty)))
-
 (defn- read-file-typographies
   [{:keys [::bfc/input ::file-id ::entries]}]
   (->> (keep (match-typography-entry-fn file-id) entries)
@@ -625,13 +612,49 @@
          (decode-tokens-lib)
          (validate-tokens-lib))))
 
+(defn- pre-decode-migrate-shape
+  "Applies a pre-decode phase migration to the shape"
+  [shape]
+  (if (= "bool" (:type shape))
+    (if-let [content (get shape :bool-content)]
+      (-> shape
+          (assoc :content content)
+          (dissoc :bool-content))
+      shape)
+    shape))
+
+(defn- pre-decode-migrate-component
+  "Applies a pre-decode phase migration to component"
+  [component]
+  (d/update-when component :objects
+                 (fn [objects]
+                   (reduce-kv (fn [objects id shape]
+                                (assoc objects id (pre-decode-migrate-shape shape)))
+                              objects
+                              objects))))
+
+(defn- read-file-components
+  [{:keys [::bfc/input ::file-id ::entries]}]
+  (->> (keep (match-component-entry-fn file-id) entries)
+       (reduce (fn [result {:keys [id entry]}]
+                 (let [object (->> (read-entry input entry)
+                                   (pre-decode-migrate-component)
+                                   (decode-component)
+                                   (validate-component))]
+                   (if (= id (:id object))
+                     (assoc result id object)
+                     result)))
+               {})
+       (not-empty)))
+
 (defn- read-file-shapes
   [{:keys [::bfc/input ::file-id ::page-id ::entries] :as cfg}]
   (->> (keep (match-shape-entry-fn file-id page-id) entries)
        (reduce (fn [result {:keys [id entry]}]
-                 (let [object (->> (read-entry input entry)
-                                   (decode-shape)
-                                   (validate-shape))]
+                 (let [object (-> (read-entry input entry)
+                                  (pre-decode-migrate-shape)
+                                  (decode-shape)
+                                  (validate-shape))]
                    (if (= id (:id object))
                      (assoc result id object)
                      result)))
@@ -734,7 +757,6 @@
                    (assoc :project-id project-id)
                    (dissoc :options)
                    (bfc/process-file))]
-
 
       (bfm/register-pending-migrations! cfg file)
       (bfc/save-file! cfg file ::db/return-keys false)
