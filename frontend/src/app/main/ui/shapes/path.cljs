@@ -7,9 +7,22 @@
 (ns app.main.ui.shapes.path
   (:require
    [app.common.logging :as log]
-   [app.common.types.shape.path :as path]
+   [app.common.types.path :as path]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
    [rumext.v2 :as mf]))
+
+(defn- content->string
+  [content]
+  (cond
+    (nil? content)
+    ""
+
+    (path/path-data? content)
+    (.toString content)
+
+    :else
+    (let [content (path/path-data content)]
+      (.toString content))))
 
 (mf/defc path-shape
   {::mf/props :obj}
@@ -17,16 +30,7 @@
   (let [content (get shape :content)
         pdata   (mf/with-memo [content]
                   (try
-                    (cond
-                      (nil? content)
-                      ""
-
-                      (path/path-data? content)
-                      (.toString content)
-
-                      :else
-                      (let [content (path/path-data content)]
-                        (.toString content)))
+                    (content->string content)
                     (catch :default cause
                       (log/error :hint "unexpected error on formatting path"
                                  :shape-name (:name shape)

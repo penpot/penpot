@@ -11,7 +11,7 @@
    [app.common.math :as mth]
    [app.common.pprint :as pp]
    [app.common.transit :as trans]
-   [app.common.types.shape.path :as path]
+   [app.common.types.path :as path]
    [clojure.test :as t]))
 
 (def sample-content

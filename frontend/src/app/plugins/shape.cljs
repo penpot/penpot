@@ -15,18 +15,18 @@
    [app.common.record :as crc]
    [app.common.schema :as sm]
    [app.common.spec :as us]
-   [app.common.svg.path :as path]
+   [app.common.svg.path :as svg.path]
    [app.common.text :as txt]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.grid :as ctg]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
    [app.common.uuid :as uuid]
@@ -1312,12 +1312,13 @@
              :get #(-> % u/proxy->shape :content upf/format-path)
              :set
              (fn [_ value]
-               (let [content (->> (path/parse value))]
+               (let [content (svg.path/parse value)]
                  (cond
                    (not (cfh/path-shape? data))
                    (u/display-not-valid :content-type type)
 
-                   (not (sm/validate ::ctsp/content content))
+                   ;; FIXME: revisit path content validation
+                   (not (sm/validate ::path/content content))
                    (u/display-not-valid :content value)
 
                    (not (r/check-permission plugin-id "content:write"))
