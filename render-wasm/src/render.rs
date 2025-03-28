@@ -844,6 +844,20 @@ impl RenderState {
         }
     }
 
+    pub fn rebuild_modifier_tiles(
+        &mut self,
+        tree: &mut HashMap<Uuid, Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) {
+        for (uuid, matrix) in modifiers {
+            if let Some(shape) = tree.get(uuid) {
+                let mut shape = shape.clone();
+                shape.apply_transform(matrix);
+                self.update_tile_for(&shape);
+            }
+        }
+    }
+
     pub fn get_scale(&self) -> f32 {
         self.viewbox.zoom() * self.options.dpr()
     }
