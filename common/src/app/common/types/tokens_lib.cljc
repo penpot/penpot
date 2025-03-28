@@ -690,6 +690,10 @@
           (filter some?)
           first))))
 
+(defn single-set? [data]
+  (not (and (contains? data "$themes")
+            (contains? data "$metadata"))))
+
 ;; DEPRECATED
 (defn walk-sets-tree-seq
   "Walk sets tree as a flat list.
