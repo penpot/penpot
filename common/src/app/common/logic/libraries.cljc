@@ -103,12 +103,12 @@
 (defn- duplicate-component
   "Clone the root shape of the component and all children. Generate new
   ids from all of them."
-  [component new-component-id library-data force-id]
+  [component new-component-id library-data force-id delta variant-id]
   (let [components-v2 (dm/get-in library-data [:options :components-v2])]
     (if components-v2
       (let [main-instance-page  (ctf/get-component-page library-data component)
             main-instance-shape (ctf/get-component-root library-data component)
-            delta               (gpt/point (+ (:width main-instance-shape) 50) 0)
+            delta               (d/nilv delta (gpt/point (+ (:width main-instance-shape) 50) 0))
 
             ids-map             (volatile! {})
             inverted-ids-map    (volatile! {})
@@ -130,6 +130,9 @@
                 ; Link the new main to the new component
                 (= (:component-id new-shape) (:id component))
                 (assoc :component-id new-component-id)
+
+                (some? variant-id)
+                (assoc :variant-id variant-id)
 
                 :always
                 (gsh/move delta)))
@@ -180,7 +183,7 @@
 
 (defn generate-duplicate-component
   "Create a new component copied from the one with the given id."
-  [changes library component-id new-component-id components-v2 & {:keys [new-shape-id apply-changes-local-library?]}]
+  [changes library component-id new-component-id components-v2 & {:keys [new-shape-id apply-changes-local-library? delta new-variant-id]}]
   (let [component          (ctkl/get-component (:data library) component-id)
         new-name           (:name component)
 
@@ -192,7 +195,7 @@
 
         [new-component-shape new-component-shapes  ; <- null in components-v2
          new-main-instance-shape new-main-instance-shapes]
-        (duplicate-component component new-component-id (:data library) new-shape-id)]
+        (duplicate-component component new-component-id (:data library) new-shape-id delta new-variant-id)]
 
     [new-main-instance-shape
      (-> changes
@@ -209,7 +212,7 @@
                             (:id new-main-instance-shape)
                             (:id main-instance-page)
                             (:annotation component)
-                            (:variant-id component)
+                            (d/nilv new-variant-id (:variant-id component))
                             (:variant-properties component)
                             {:apply-changes-local-library? apply-changes-local-library?})
          ;; Update grid layout if the new main instance is inside
@@ -376,6 +379,7 @@
          inside-component? (some? (ctn/get-instance-root (:objects page) parent))
          shapes            (cfh/get-children-with-self (:objects component) (:main-instance-id component))
          shapes            (map #(gsh/move % delta) shapes)
+         is-variant?       (ctk/is-variant? component)
 
          first-shape       (cond-> (first shapes)
                              (not (nil? parent-id))
@@ -389,7 +393,9 @@
                              inside-component?
                              (dissoc :component-root)
                              (not inside-component?)
-                             (assoc :component-root true))
+                             (assoc :component-root true)
+                             (and is-variant? (some? parent-id))
+                             (assoc :variant-id parent-id))
 
          changes           (-> changes
                                (pcb/with-page page)
@@ -400,7 +406,7 @@
          changes           (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                                    changes
                                    (rest shapes))]
-     {:changes (pcb/restore-component changes component-id (:id page) main-inst)
+     {:changes (pcb/restore-component changes component-id (:id page) main-inst parent-id)
       :shape (first shapes)})))
 
 ;; ---- General library synchronization functions ----
@@ -2146,52 +2152,89 @@
             (pcb/with-page changes page)
             frames)))
 
-(defn generate-duplicate-component-change
-  [changes objects page component-root parent-id frame-id delta libraries library-data]
-  (let [component-id (:component-id component-root)
-        file-id (:component-file component-root)
-        main-component    (ctf/get-component libraries file-id component-id)
-        moved-component   (gsh/move component-root delta)
-        pos               (gpt/point (:x moved-component) (:y moved-component))
-        origin-frame      (get-in page [:objects frame-id])
-        delta             (cond-> delta
-                            (some? origin-frame)
-                            (gpt/subtract (-> origin-frame :selrect gpt/point)))
+(defn- duplicate-variant
+  [changes library component base-pos parent-id]
+  (let [component-page   (ctpl/get-page (:data library) (:main-instance-page component))
+        component-shape  (dm/get-in component-page [:objects (:main-instance-id component)])
+        orig-pos         (gpt/point (:x component-shape) (:y component-shape))
+        delta            (gpt/subtract base-pos orig-pos)
+        new-component-id (uuid/next)
+        [shape changes]  (generate-duplicate-component changes
+                                                       library
+                                                       (:component-id component-shape)
+                                                       new-component-id
+                                                       true
+                                                       {:apply-changes-local-library? true
+                                                        :delta delta
+                                                        :new-variant-id parent-id})]
+    [shape
+     (-> changes
+         (pcb/change-parent parent-id [shape]))]))
 
-        instantiate-component
-        #(generate-instantiate-component changes
-                                         objects
-                                         file-id
-                                         (:component-id component-root)
-                                         pos
-                                         page
-                                         libraries
-                                         (:id component-root)
-                                         parent-id
-                                         frame-id
-                                         {})
+
+(defn generate-duplicate-component-change
+  [changes objects page main parent-id frame-id delta libraries library-data ids-map]
+  (let [main-id      (:id main)
+        component-id (:component-id main)
+        file-id      (:component-file main)
+        component    (ctf/get-component libraries file-id component-id)
+        pos          (as-> (gsh/move main delta) $
+                       (gpt/point (:x $) (:y $)))
+
+        ;; When we duplicate a variant alone, we will instanciate it
+        ;; When we duplicate a variant along with its variant-container, we will duplicate it
+        in-variant-container? (contains? ids-map (:variant-id main))
+
 
         restore-component
-        #(let [restore (prepare-restore-component changes library-data (:component-id component-root) page delta (:id component-root) parent-id frame-id)]
-           [(:shape restore) (:changes restore)])
+        #(let [origin-frame            (get-in page [:objects frame-id])
+               delta                   (cond-> delta
+                                         (some? origin-frame)
+                                         (gpt/subtract (-> origin-frame :selrect gpt/point)))
+               {:keys [shape changes]} (prepare-restore-component changes
+                                                                  library-data
+                                                                  component-id
+                                                                  page
+                                                                  delta
+                                                                  main-id
+                                                                  parent-id
+                                                                  frame-id)]
+           [shape changes])
 
         [_shape changes]
-        (if (nil? main-component)
+        (if (nil? component)
           (restore-component)
-          (instantiate-component))]
+          (if (and (ctk/is-variant? main) in-variant-container?)
+            (duplicate-variant changes
+                               (get libraries file-id)
+                               component
+                               pos
+                               parent-id)
+
+            (generate-instantiate-component changes
+                                            objects
+                                            file-id
+                                            component-id
+                                            pos
+                                            page
+                                            libraries
+                                            main-id
+                                            parent-id
+                                            frame-id
+                                            {})))]
     changes))
 
 (defn generate-duplicate-shape-change
-  ([changes objects page unames update-unames! ids-map obj delta level-delta libraries library-data file-id]
-   (generate-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true))
+  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id]
+   (generate-duplicate-shape-change changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true))
 
-  ([changes objects page unames update-unames! ids-map obj delta level-delta libraries library-data file-id frame-id parent-id duplicating-component? child? remove-swap-slot?]
+  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id frame-id parent-id duplicating-component? child? remove-swap-slot?]
    (cond
      (nil? obj)
      changes
 
      (ctf/is-main-of-known-component? obj libraries)
-     (generate-duplicate-component-change changes objects page obj parent-id frame-id delta libraries library-data)
+     (generate-duplicate-component-change changes objects page obj parent-id frame-id delta libraries library-data ids-map)
 
      :else
      (let [frame?      (cfh/frame-shape? obj)
@@ -2293,6 +2336,7 @@
                                                   page
                                                   unames
                                                   update-unames!
+                                                  ids
                                                   ids-map
                                                   child
                                                   delta
@@ -2335,6 +2379,7 @@
                                                        page
                                                        unames
                                                        update-unames!
+                                                       ids
                                                        ids-map
                                                        %2
                                                        delta
