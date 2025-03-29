@@ -9,10 +9,9 @@
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
+   [app.common.types.path.helpers :as helpers]
    [app.common.types.path.segment :as segm]
    [app.common.types.path.subpath :as subpath]))
-
-;; FIXME: revisit public private
 
 (defn add-previous
   ([content]
@@ -25,7 +24,7 @@
                   (assoc :prev first)
 
                   (some? prev)
-                  (assoc :prev (segm/command->point prev))))))))
+                  (assoc :prev (helpers/command->point prev))))))))
 
 (defn close-paths
   "Removes the :close-path commands and replace them for line-to so we can calculate
@@ -40,7 +39,7 @@
 
     (if (nil? head)
       result
-      (let [head-p (segm/command->point head)
+      (let [head-p (helpers/command->point head)
             head (cond
                    (and (= :close-path (:command head))
                         (or (nil? last-p) ;; Ignore consecutive close-paths
@@ -48,7 +47,7 @@
                    nil
 
                    (= :close-path (:command head))
-                   (segm/make-line-to last-move)
+                   (helpers/make-line-to last-move)
 
                    :else
                    head)]
@@ -64,30 +63,30 @@
 (defn- split-command
   [cmd values]
   (case (:command cmd)
-    :line-to  (segm/split-line-to-ranges (:prev cmd) cmd values)
-    :curve-to (segm/split-curve-to-ranges (:prev cmd) cmd values)
+    :line-to  (helpers/split-line-to-ranges (:prev cmd) cmd values)
+    :curve-to (helpers/split-curve-to-ranges (:prev cmd) cmd values)
     [cmd]))
 
 (defn split-ts [seg-1 seg-2]
   (cond
     (and (= :line-to (:command seg-1))
          (= :line-to (:command seg-2)))
-    (segm/line-line-intersect (segm/command->line seg-1) (segm/command->line seg-2))
+    (helpers/line-line-intersect (helpers/command->line seg-1) (helpers/command->line seg-2))
 
     (and (= :line-to (:command seg-1))
          (= :curve-to (:command seg-2)))
-    (segm/line-curve-intersect (segm/command->line seg-1) (segm/command->bezier seg-2))
+    (helpers/line-curve-intersect (helpers/command->line seg-1) (helpers/command->bezier seg-2))
 
     (and (= :curve-to (:command seg-1))
          (= :line-to (:command seg-2)))
     (let [[seg-2' seg-1']
-          (segm/line-curve-intersect (segm/command->line seg-2) (segm/command->bezier seg-1))]
+          (helpers/line-curve-intersect (helpers/command->line seg-2) (helpers/command->bezier seg-1))]
       ;; Need to reverse because we send the arguments reversed
       [seg-1' seg-2'])
 
     (and (= :curve-to (:command seg-1))
          (= :curve-to (:command seg-2)))
-    (segm/curve-curve-intersect (segm/command->bezier seg-1) (segm/command->bezier seg-2))
+    (helpers/curve-curve-intersect (helpers/command->bezier seg-1) (helpers/command->bezier seg-2))
 
     :else
     [[] []]))
@@ -95,7 +94,7 @@
 (defn content-intersect-split
   [content-a content-b sr-a sr-b]
 
-  (let [command->selrect (memoize segm/command->selrect)]
+  (let [command->selrect (memoize helpers/command->selrect)]
 
     (letfn [(overlap-segment-selrect?
               [segment selrect]
@@ -151,28 +150,28 @@
   [segment content content-sr content-geom]
 
   (let [point (case (:command segment)
-                :line-to  (-> (segm/command->line segment)
-                              (segm/line-values 0.5))
+                :line-to  (-> (helpers/command->line segment)
+                              (helpers/line-values 0.5))
 
-                :curve-to (-> (segm/command->bezier segment)
-                              (segm/curve-values 0.5)))]
+                :curve-to (-> (helpers/command->bezier segment)
+                              (helpers/curve-values 0.5)))]
 
     (and (grc/contains-point? content-sr point)
          (or
-          (segm/is-point-in-geom-data? point content-geom)
-          (segm/is-point-in-border? point content)))))
+          (helpers/is-point-in-geom-data? point content-geom)
+          (helpers/is-point-in-border? point content)))))
 
 (defn inside-segment?
   [segment content-sr content-geom]
   (let [point (case (:command segment)
-                :line-to  (-> (segm/command->line segment)
-                              (segm/line-values 0.5))
+                :line-to  (-> (helpers/command->line segment)
+                              (helpers/line-values 0.5))
 
-                :curve-to (-> (segm/command->bezier segment)
-                              (segm/curve-values 0.5)))]
+                :curve-to (-> (helpers/command->bezier segment)
+                              (helpers/curve-values 0.5)))]
 
     (and (grc/contains-point? content-sr point)
-         (segm/is-point-in-geom-data? point content-geom))))
+         (helpers/is-point-in-geom-data? point content-geom))))
 
 (defn overlap-segment?
   "Finds if the current segment is overlapping against other
@@ -185,8 +184,8 @@
                      (contains? #{:line-to :curve-to} (:command segment)))
 
             (case (:command segment)
-              :line-to (let [[p1 q1] (segm/command->line segment)
-                             [p2 q2] (segm/command->line other)]
+              :line-to (let [[p1 q1] (helpers/command->line segment)
+                             [p2 q2] (helpers/command->line other)]
 
                          (when (or (and (< (gpt/distance p1 p2) 0.1)
                                         (< (gpt/distance q1 q2) 0.1))
@@ -194,8 +193,8 @@
                                         (< (gpt/distance q1 p2) 0.1)))
                            [segment other]))
 
-              :curve-to (let [[p1 q1 h11 h21] (segm/command->bezier segment)
-                              [p2 q2 h12 h22] (segm/command->bezier other)]
+              :curve-to (let [[p1 q1 h11 h21] (helpers/command->bezier segment)
+                              [p2 q2 h12 h22] (helpers/command->bezier other)]
 
                           (when (or (and (< (gpt/distance p1 p2) 0.1)
                                          (< (gpt/distance q1 q2) 0.1)
@@ -227,25 +226,51 @@
       result
 
       (let [result (if (not= (:prev current) prev)
-                     (conj result (segm/make-move-to (:prev current)))
+                     (conj result (helpers/make-move-to (:prev current)))
                      result)]
         (recur (first content)
                (rest content)
-               (segm/command->point current)
+               (helpers/command->point current)
                (conj result (dissoc current :prev)))))))
+
+
+(defn close-content
+  [content]
+  (into []
+        (mapcat :data)
+        (->> content
+             (subpath/close-subpaths)
+             (subpath/get-subpaths))))
+
+(defn- content->geom-data
+  [content]
+
+  (->> content
+       (close-content)
+       (filter #(not= (= :line-to (:command %))
+                      (= :curve-to (:command %))))
+       (mapv (fn [segment]
+               {:command (:command segment)
+                :segment segment
+                :geom (if (= :line-to (:command segment))
+                        (helpers/command->line segment)
+                        (helpers/command->bezier segment))
+                :selrect (helpers/command->selrect segment)}))))
+
+
 
 (defn create-union [content-a content-a-split content-b content-b-split sr-a sr-b]
   ;; Pick all segments in content-a that are not inside content-b
   ;; Pick all segments in content-b that are not inside content-a
-  (let [content-a-geom (segm/content->geom-data content-a)
-        content-b-geom (segm/content->geom-data content-b)
+  (let [content-a-geom (content->geom-data content-a)
+        content-b-geom (content->geom-data content-b)
 
         content
         (concat
          (->> content-a-split (filter #(not (contains-segment? % content-b sr-b content-b-geom))))
          (->> content-b-split (filter #(not (contains-segment? % content-a sr-a content-a-geom)))))
 
-        content-geom (segm/content->geom-data content)
+        content-geom (content->geom-data content)
 
         content-sr (segm/content->selrect (fix-move-to content))
 
@@ -263,8 +288,8 @@
   ;; Pick all segments in content-a that are not inside content-b
   ;; Pick all segments in content b that are inside content-a
   ;;  removing overlapping
-  (let [content-a-geom (segm/content->geom-data content-a)
-        content-b-geom (segm/content->geom-data content-b)]
+  (let [content-a-geom (content->geom-data content-a)
+        content-b-geom (content->geom-data content-b)]
     (d/concat-vec
      (->> content-a-split (filter #(not (contains-segment? % content-b sr-b content-b-geom))))
 
@@ -276,8 +301,8 @@
 (defn create-intersection [content-a content-a-split content-b content-b-split sr-a sr-b]
   ;; Pick all segments in content-a that are inside content-b
   ;; Pick all segments in content-b that are inside content-a
-  (let [content-a-geom (segm/content->geom-data content-a)
-        content-b-geom (segm/content->geom-data content-b)]
+  (let [content-a-geom (content->geom-data content-a)
+        content-b-geom (content->geom-data content-b)]
     (d/concat-vec
      (->> content-a-split (filter #(contains-segment? % content-b sr-b content-b-geom)))
      (->> content-b-split (filter #(contains-segment? % content-a sr-a content-a-geom))))))

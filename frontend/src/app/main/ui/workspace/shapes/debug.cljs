@@ -13,6 +13,7 @@
    [app.common.geom.shapes.text :as gst]
    [app.common.math :as mth]
    [app.common.types.path.bool :as path.bool]
+   [app.common.types.path.helpers :as path.helpers]
    [app.common.types.path.segment :as path.segm]
    [app.common.types.path.shape-to-path :as stp]
    [app.common.types.path.subpath :as path.subp]
@@ -136,14 +137,14 @@
     [:*
      (for [[i cmd] (d/enumerate content-a-split)]
        (let [p1 (:prev cmd)
-             p2 (path.segm/command->point cmd)
+             p2 (path.helpers/command->point cmd)
 
              hp (case (:command cmd)
-                  :line-to  (-> (path.segm/command->line cmd)
-                                (path.segm/line-values 0.5))
+                  :line-to  (-> (path.helpers/command->line cmd)
+                                (path.helpers/line-values 0.5))
 
-                  :curve-to (-> (path.segm/command->bezier cmd)
-                                (path.segm/curve-values 0.5))
+                  :curve-to (-> (path.helpers/command->bezier cmd)
+                                (path.helpers/curve-values 0.5))
                   nil)]
          [:*
           (when p1
@@ -155,14 +156,14 @@
 
      (for [[i cmd] (d/enumerate content-b-split)]
        (let [p1 (:prev cmd)
-             p2 (path.segm/command->point cmd)
+             p2 (path.helpers/command->point cmd)
 
              hp (case (:command cmd)
-                  :line-to  (-> (path.segm/command->line cmd)
-                                (path.segm/line-values 0.5))
+                  :line-to  (-> (path.helpers/command->line cmd)
+                                (path.helpers/line-values 0.5))
 
-                  :curve-to (-> (path.segm/command->bezier cmd)
-                                (path.segm/curve-values 0.5))
+                  :curve-to (-> (path.helpers/command->bezier cmd)
+                                (path.helpers/curve-values 0.5))
                   nil)]
          [:*
           (when p1

@@ -11,6 +11,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.types.path :as path]
+   [app.common.types.path.helpers :as path.helpers]
    [app.common.types.path.segment :as path.segm]
    [app.common.types.path.shape-to-path :as upsp]
    [app.common.types.path.subpath :as path.subp]
@@ -117,7 +118,7 @@
       (let [id (st/get-path-id state)
             content (st/get-path state :content)
             to-point (cond-> to-point
-                       (:shift? to-point) (helpers/position-fixed-angle from-point))
+                       (:shift? to-point) (path.helpers/position-fixed-angle from-point))
 
             delta (gpt/subtract to-point from-point)
 
@@ -272,7 +273,7 @@
                (rx/map
                 (fn [{:keys [x y alt? shift?]}]
                   (let [pos (cond-> (gpt/point x y)
-                              shift? (helpers/position-fixed-angle point))]
+                              shift? (path.helpers/position-fixed-angle point))]
                     (modify-handler
                      id
                      index

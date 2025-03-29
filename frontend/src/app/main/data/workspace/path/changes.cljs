@@ -10,7 +10,6 @@
    [app.common.types.path :as path]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
-   [app.main.data.workspace.path.helpers :as helpers]
    [app.main.data.workspace.path.state :as st]
    [app.main.features :as features]
    [beicon.v2.core :as rx]
@@ -26,10 +25,10 @@
   (let [shape-id (:id shape)
 
         [old-points old-selrect]
-        (helpers/content->points+selrect shape old-content)
+        (path/content->points+selrect shape old-content)
 
         [new-points new-selrect]
-        (helpers/content->points+selrect shape new-content)
+        (path/content->points+selrect shape new-content)
 
         ;; We set the old values so the update-shapes works
         objects

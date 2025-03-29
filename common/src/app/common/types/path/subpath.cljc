@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.svg.path.command :as upc]))
+   [app.common.types.path.helpers :as helpers]))
 
 (defn pt=
   "Check if two points are close"
@@ -18,7 +18,7 @@
 (defn make-subpath
   "Creates a subpath either from a single command or with all the data"
   ([command]
-   (let [p (upc/command->point command)]
+   (let [p (helpers/command->point command)]
      (make-subpath p p [command])))
   ([from to data]
    {:from from
@@ -29,9 +29,9 @@
   "Adds a command to the subpath"
   [subpath command]
   (let [command (if (= :close-path (:command command))
-                  (upc/make-line-to (:from subpath))
+                  (helpers/make-line-to (:from subpath))
                   command)
-        p (upc/command->point command)]
+        p (helpers/command->point command)]
     (-> subpath
         (assoc :to p)
         (update :data conj command))))
@@ -62,7 +62,7 @@
             result))
 
         new-data (->> subpath :data d/with-prev reverse
-                      (reduce reverse-commands [(upc/make-move-to (:to subpath))]))]
+                      (reduce reverse-commands [(helpers/make-move-to (:to subpath))]))]
 
     (make-subpath (:to subpath) (:from subpath) new-data)))
 
@@ -181,10 +181,10 @@
       (if (nil? current)
         (> signed-area 0)
 
-        (let [{x1 :x y1 :y :as p} (upc/command->point current)
+        (let [{x1 :x y1 :y :as p} (helpers/command->point current)
               last? (nil? (first subpath))
               first-point (if (nil? first-point) p first-point)
-              {x2 :x y2 :y} (if last? first-point (upc/command->point (first subpath)))
+              {x2 :x y2 :y} (if last? first-point (helpers/command->point (first subpath)))
               signed-area (+ signed-area (- (* x1 y2) (* x2 y1)))]
 
           (recur (first subpath)

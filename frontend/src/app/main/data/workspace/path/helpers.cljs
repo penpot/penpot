@@ -6,12 +6,11 @@
 
 (ns app.main.data.workspace.path.helpers
   (:require
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.rect :as grc]
-   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.types.path.segment :as path.segm]
+   [app.common.types.path :as path]
+   [app.common.types.path.helpers :as path.helpers]
+   [app.common.types.path.segment :as path.segment]
    [app.main.data.workspace.path.common :as common]
    [app.util.mouse :as mse]
    [potok.v2.core :as ptk]))
@@ -28,95 +27,18 @@
         (and ^boolean (mse/mouse-event? event)
              ^boolean (mse/mouse-double-click-event? event)))))
 
-(defn content-center
-  [content]
-  (-> content
-      path.segm/content->selrect
-      grc/rect->center))
-
-(defn content->points+selrect
-  "Given the content of a shape, calculate its points and selrect"
-  [shape content]
-  (let [{:keys [flip-x flip-y]} shape
-        transform
-        (cond-> (:transform shape (gmt/matrix))
-          flip-x (gmt/scale (gpt/point -1 1))
-          flip-y (gmt/scale (gpt/point 1 -1)))
-
-        transform-inverse
-        (cond-> (gmt/matrix)
-          flip-x (gmt/scale (gpt/point -1 1))
-          flip-y (gmt/scale (gpt/point 1 -1))
-          :always (gmt/multiply (:transform-inverse shape (gmt/matrix))))
-
-        center (or (gsh/shape->center shape)
-                   (content-center content))
-
-        base-content (path.segm/transform-content
-                      content
-                      (gmt/transform-in center transform-inverse))
-
-        ;; Calculates the new selrect with points given the old center
-        points (-> (path.segm/content->selrect base-content)
-                   (grc/rect->points)
-                   (gsh/transform-points center transform))
-
-        points-center (gsh/points->center points)
-
-        ;; Points is now the selrect but the center is different so we can create the selrect
-        ;; through points
-        selrect (-> points
-                    (gsh/transform-points points-center transform-inverse)
-                    (grc/points->rect))]
-    [points selrect]))
-
 (defn update-selrect
   "Updates the selrect and points for a path"
   [shape]
-  (let [[points selrect] (content->points+selrect shape (:content shape))]
+  (let [[points selrect] (path/content->points+selrect shape (:content shape))]
     (assoc shape :points points :selrect selrect)))
-
-(defn closest-angle
-  [angle]
-  (cond
-    (or  (> angle 337.5)  (<= angle 22.5))  0
-    (and (> angle 22.5)   (<= angle 67.5))  45
-    (and (> angle 67.5)   (<= angle 112.5)) 90
-    (and (> angle 112.5)	(<= angle 157.5)) 135
-    (and (> angle 157.5)	(<= angle 202.5)) 180
-    (and (> angle 202.5)	(<= angle 247.5)) 225
-    (and (> angle 247.5)	(<= angle 292.5)) 270
-    (and (> angle 292.5)	(<= angle 337.5)) 315))
-
-(defn position-fixed-angle [point from-point]
-  (if (and from-point point)
-    (let [angle (mod (+ 360 (- (gpt/angle point from-point))) 360)
-          to-angle (closest-angle angle)
-          distance (gpt/distance point from-point)]
-      (gpt/angle->point from-point (mth/radians to-angle) distance))
-    point))
-
-(defn next-node
-  "Calculates the next-node to be inserted."
-  [shape position prev-point prev-handler]
-  (let [position (select-keys position [:x :y])
-        last-command (-> shape :content last :command)
-        add-line?   (and prev-point (not prev-handler) (not= last-command :close-path))
-        add-curve?  (and prev-point prev-handler (not= last-command :close-path))]
-    (cond
-      add-line?   {:command :line-to
-                   :params position}
-      add-curve?  {:command :curve-to
-                   :params (path.segm/make-curve-params position prev-handler)}
-      :else       {:command :move-to
-                   :params position})))
 
 (defn append-node
   "Creates a new node in the path. Usually used when drawing."
   [shape position prev-point prev-handler]
-  (let [command (next-node shape position prev-point prev-handler)]
+  (let [segment (path.segment/next-node (:content shape) position prev-point prev-handler)]
     (-> shape
-        (update :content (fnil conj []) command)
+        (update :content path.segment/append-segment segment)
         (update-selrect))))
 
 (defn angle-points [common p1 p2]
@@ -125,7 +47,7 @@
     (gpt/to-vec common p1)
     (gpt/to-vec common p2))))
 
-(defn calculate-opposite-delta [node handler opposite match-angle? match-distance? dx dy]
+(defn- calculate-opposite-delta [node handler opposite match-angle? match-distance? dx dy]
   (when (and (some? handler) (some? opposite))
     (let [;; To match the angle, the angle should be matching (angle between points 180deg)
           angle-handlers (angle-points node handler opposite)
@@ -159,14 +81,14 @@
 (defn move-handler-modifiers
   [content index prefix match-distance? match-angle? dx dy]
 
-  (let [[cx cy] (path.segm/prefix->coords prefix)
-        [op-idx op-prefix] (path.segm/opposite-index content index prefix)
+  (let [[cx cy] (path.helpers/prefix->coords prefix)
+        [op-idx op-prefix] (path.segment/opposite-index content index prefix)
 
-        node (path.segm/handler->node content index prefix)
-        handler (path.segm/handler->point content index prefix)
-        opposite (path.segm/handler->point content op-idx op-prefix)
+        node (path.segment/handler->node content index prefix)
+        handler (path.segment/handler->point content index prefix)
+        opposite (path.segment/handler->point content op-idx op-prefix)
 
-        [ocx ocy] (path.segm/prefix->coords op-prefix)
+        [ocx ocy] (path.helpers/prefix->coords op-prefix)
         [odx ody] (calculate-opposite-delta node handler opposite match-angle? match-distance? dx dy)
 
         hnv (if (some? handler)

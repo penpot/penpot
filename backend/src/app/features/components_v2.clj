@@ -35,8 +35,7 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.path :as ctsp]
-   [app.common.types.path.segment :as path.segm]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.text :as ctsx]
@@ -127,10 +126,10 @@
   (sm/lazy-validator ::ctsx/content))
 
 (def valid-path-content?
-  (sm/lazy-validator ::ctsp/content))
+  (sm/lazy-validator ::path/segments))
 
 (def valid-path-segment?
-  (sm/lazy-validator ctsp/schema:path-segment))
+  (sm/lazy-validator ::path/segment))
 
 (def valid-rgb-color-string?
   (sm/lazy-validator ::ctc/rgb-color))
@@ -580,7 +579,7 @@
                       (let [shape (update shape :content fix-path-content)]
                         (if (not (valid-path-content? (:content shape)))
                           shape
-                          (let [[points selrect] (path.segm/content->points+selrect shape (:content shape))]
+                          (let [[points selrect] (path/content->points+selrect shape (:content shape))]
                             (-> shape
                                 (dissoc :bool-content)
                                 (dissoc :bool-type)

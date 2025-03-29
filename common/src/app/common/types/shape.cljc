@@ -23,7 +23,6 @@
    [app.common.types.color :as ctc]
    [app.common.types.grid :as ctg]
    [app.common.types.path :as path]
-   [app.common.types.path.segment :as path.segm]
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.common.types.shape.blur :as ctsb]
@@ -526,7 +525,7 @@
 (defn setup-path
   [{:keys [content selrect points] :as shape}]
   (let [selrect (or selrect
-                    (path.segm/content->selrect content)
+                    (path/content->selrect content)
                     (grc/make-rect))
         points  (or points  (grc/rect->points selrect))]
     (-> shape

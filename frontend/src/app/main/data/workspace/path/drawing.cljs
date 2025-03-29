@@ -11,6 +11,7 @@
    [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.types.container :as ctn]
    [app.common.types.path :as path]
+   [app.common.types.path.helpers :as path.helpers]
    [app.common.types.path.segment :as path.segm]
    [app.common.types.path.shape-to-path :as upsp]
    [app.common.types.shape :as cts]
@@ -40,10 +41,10 @@
             fix-angle? shift?
             last-point (get-in state [:workspace-local :edit-path id :last-point])
             position (cond-> (gpt/point x y)
-                       fix-angle? (helpers/position-fixed-angle last-point))
+                       fix-angle? (path.helpers/position-fixed-angle last-point))
             shape (st/get-path state)
             {:keys [last-point prev-handler]} (get-in state [:workspace-local :edit-path id])
-            command (helpers/next-node shape position last-point prev-handler)]
+            command (path.segm/next-node shape position last-point prev-handler)]
         (assoc-in state [:workspace-local :edit-path id :preview] command)))))
 
 (defn add-node
@@ -55,7 +56,7 @@
             fix-angle? shift?
             {:keys [last-point prev-handler]} (get-in state [:workspace-local :edit-path id])
             position (cond-> (gpt/point x y)
-                       fix-angle? (helpers/position-fixed-angle last-point))]
+                       fix-angle? (path.helpers/position-fixed-angle last-point))]
         (if-not (= last-point position)
           (-> state
               (assoc-in  [:workspace-local :edit-path id :last-point] position)
@@ -81,7 +82,7 @@
              old-handler (path.segm/handler->point content index prefix)
 
              handler-position (cond-> (gpt/point x y)
-                                shift? (helpers/position-fixed-angle position))
+                                shift? (path.helpers/position-fixed-angle position))
 
              {dx :x dy :y} (if (some? old-handler)
                              (gpt/add (gpt/to-vec old-handler position)

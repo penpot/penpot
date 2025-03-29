@@ -15,8 +15,7 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.path :as path]
-   [app.common.types.path.segment :as path.segm]))
+   [app.common.types.path :as path]))
 
 #?(:clj (set! *warn-on-reflection* true))
 
@@ -96,7 +95,7 @@
         (d/update-when :y d/safe+ dy)
         (d/update-when :position-data move-position-data mvec)
         (cond-> (or (= :bool type) (= :path type))
-          (update :content path.segm/move-content mvec)))))
+          (update :content path/move-content mvec)))))
 
 ;; --- Absolute Movement
 
@@ -321,7 +320,7 @@
                   (update shape :position-data transform-position-data transform-mtx)
                   shape)
         shape   (if (or (= type :path) (= type :bool))
-                  (update shape :content path.segm/transform-content transform-mtx)
+                  (update shape :content path/transform-content transform-mtx)
                   (assoc shape
                          :x (dm/get-prop selrect :x)
                          :y (dm/get-prop selrect :y)
@@ -354,7 +353,7 @@
                           360)
 
             shape    (if (or (= type :path) (= type :bool))
-                       (update shape :content path.segm/transform-content transform-mtx)
+                       (update shape :content path/transform-content transform-mtx)
                        (assoc shape
                               :x (dm/get-prop selrect :x)
                               :y (dm/get-prop selrect :y)
@@ -455,7 +454,7 @@
         (assoc shape :content content)
 
         [points selrect]
-        (path.segm/content->points+selrect shape content)]
+        (path/content->points+selrect shape content)]
 
     (if (and (some? selrect) (d/not-empty? points))
       (-> shape

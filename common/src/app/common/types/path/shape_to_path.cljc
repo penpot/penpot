@@ -14,6 +14,7 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.corners :as gso]
    [app.common.types.path.bool :as bool]
+   [app.common.types.path.helpers :as helpers]
    [app.common.types.path.segment :as segm]
    [app.common.types.shape.radius :as ctsr]))
 
@@ -87,7 +88,7 @@
              :bottom-right (assoc to :x c2x)
              :bottom-left  (assoc to :y c2y))]
 
-    (segm/make-curve-to to h1 h2)))
+    (helpers/make-curve-to to h1 h2)))
 
 (defn- circle->path
   "Creates the bezier curves to approximate a circle shape"
@@ -108,11 +109,11 @@
         c1y (+ y (* (/ height 2) (- 1 c)))
         c2y (+ y (* (/ height 2) (+ 1 c)))]
 
-    [(segm/make-move-to p1)
-     (segm/make-curve-to p2 (assoc p1 :x c2x) (assoc p2 :y c1y))
-     (segm/make-curve-to p3 (assoc p2 :y c2y) (assoc p3 :x c2x))
-     (segm/make-curve-to p4 (assoc p3 :x c1x) (assoc p4 :y c2y))
-     (segm/make-curve-to p1 (assoc p4 :y c1y) (assoc p1 :x c1x))]))
+    [(helpers/make-move-to p1)
+     (helpers/make-curve-to p2 (assoc p1 :x c2x) (assoc p2 :y c1y))
+     (helpers/make-curve-to p3 (assoc p2 :y c2y) (assoc p3 :x c2x))
+     (helpers/make-curve-to p4 (assoc p3 :x c1x) (assoc p4 :y c2y))
+     (helpers/make-curve-to p1 (assoc p4 :y c1y) (assoc p1 :x c1x))]))
 
 (defn- draw-rounded-rect-path
   ([x y width height r]
@@ -131,19 +132,19 @@
          p7 (gpt/point (+ x r4) (+ height y))
          p8 (gpt/point x (+ height y (- r4)))]
      (-> []
-         (conj (segm/make-move-to p1))
+         (conj (helpers/make-move-to p1))
          (cond-> (not= p1 p2)
            (conj (make-corner-arc p1 p2 :top-left r1)))
-         (conj (segm/make-line-to p3))
+         (conj (helpers/make-line-to p3))
          (cond-> (not= p3 p4)
            (conj (make-corner-arc p3 p4 :top-right r2)))
-         (conj (segm/make-line-to p5))
+         (conj (helpers/make-line-to p5))
          (cond-> (not= p5 p6)
            (conj (make-corner-arc p5 p6 :bottom-right r3)))
-         (conj (segm/make-line-to p7))
+         (conj (helpers/make-line-to p7))
          (cond-> (not= p7 p8)
            (conj (make-corner-arc p7 p8 :bottom-left r4)))
-         (conj (segm/make-line-to p1))))))
+         (conj (helpers/make-line-to p1))))))
 
 (defn- rect->path
   "Creates a bezier curve that approximates a rounded corner rectangle"
@@ -204,6 +205,7 @@
     (-> shape
         (assoc :type :path)
         (assoc :content content)
+        (dissoc :bool-type)
         (d/without-keys dissoc-attrs))))
 
 ;; FIXME: revisit path data type !!!
@@ -221,7 +223,7 @@
      (bool-to-path shape objects)
 
      (:rect :circle :image :text)
-     (let [new-content
+     (let [content
            (if (= type :circle)
              (circle->path shape)
              (rect->path shape))
@@ -232,14 +234,14 @@
              (:flip-x shape) (gmt/scale (gpt/point -1 1))
              (:flip-y shape) (gmt/scale (gpt/point 1 -1)))
 
-           new-content
-           (cond-> new-content
+           content
+           (cond-> content
              (some? transform)
              (segm/transform-content (gmt/transform-in (gco/shape->center shape) transform)))]
 
        (-> shape
            (assoc :type :path)
-           (assoc :content new-content)
+           (assoc :content content)
            (cond-> (= :image type)
              (assoc :fill-image metadata))
            (d/without-keys dissoc-attrs)))

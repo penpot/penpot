@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.shapes.path
   (:require
    [app.common.types.path :as types.path]
-   [app.main.data.workspace.path.helpers :as helpers]
    [app.main.refs :as refs]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.shape :refer [shape-container]]
@@ -18,7 +17,7 @@
 (defn apply-content-modifiers
   [shape content-modifiers]
   (let [shape (update shape :content types.path/apply-content-modifiers content-modifiers)
-        [_ new-selrect] (helpers/content->points+selrect shape (:content shape))]
+        [_ new-selrect] (types.path/content->points+selrect shape (:content shape))]
     (assoc shape :selrect new-selrect)))
 
 (mf/defc path-wrapper
