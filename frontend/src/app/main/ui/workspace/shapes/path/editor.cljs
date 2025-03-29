@@ -11,6 +11,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gsp]
    [app.common.svg.path.command :as upc]
+   [app.common.types.path :as path]
    [app.common.types.path.shape-to-path :as ups]
    [app.main.data.workspace.path :as drp]
    [app.main.snap :as snap]
@@ -238,7 +239,7 @@
         base-content (:content shape)
         base-points (mf/use-memo (mf/deps base-content) #(->> base-content gsp/content->points))
 
-        content (upc/apply-content-modifiers base-content content-modifiers)
+        content (path/apply-content-modifiers base-content content-modifiers)
         content-points (mf/use-memo (mf/deps content) #(->> content gsp/content->points))
 
         point->base (->> (map hash-map content-points base-points) (reduce merge))

@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.shapes.path
   (:require
-   [app.common.svg.path.command :as upc]
+   [app.common.types.path :as types.path]
    [app.main.data.workspace.path.helpers :as helpers]
    [app.main.refs :as refs]
    [app.main.ui.shapes.path :as path]
@@ -17,7 +17,7 @@
 
 (defn apply-content-modifiers
   [shape content-modifiers]
-  (let [shape (update shape :content upc/apply-content-modifiers content-modifiers)
+  (let [shape (update shape :content types.path/apply-content-modifiers content-modifiers)
         [_ new-selrect] (helpers/content->points+selrect shape (:content shape))]
     (assoc shape :selrect new-selrect)))
 
