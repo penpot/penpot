@@ -4,68 +4,27 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.types.shape.path
+(ns app.common.types.impl
+  "Contains schemas and data type implementation for PathData binary
+  and plain formats"
   (:require
-   [app.common.schema :as sm])
+   #?(:clj [app.common.fressian :as fres])
+   #?(:clj [clojure.data.json :as json])
+   [app.common.data :as d]
+   [app.common.files.helpers :as cpf]
+   [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
+   [app.common.svg.path :as svg.path]
+   [app.common.transit :as t]
+   [app.common.types.path.bool :as bool]
+   [app.common.types.path.segment :as segment]
+   [app.common.types.path.shape-to-path :as stp]
+   [app.common.types.path.subpath :as subpath])
   (:import
    #?(:cljs [goog.string StringBuffer]
       :clj  [java.nio ByteBuffer])))
 
 #?(:clj (set! *warn-on-reflection* true))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; SCHEMA: PLAIN FORMAT
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def schema:line-to-segment
-  [:map
-   [:command [:= :line-to]]
-   [:params
-    [:map
-     [:x ::sm/safe-number]
-     [:y ::sm/safe-number]]]])
-
-(def schema:close-path-segment
-  [:map
-   [:command [:= :close-path]]])
-
-(def schema:move-to-segment
-  [:map
-   [:command [:= :move-to]]
-   [:params
-    [:map
-     [:x ::sm/safe-number]
-     [:y ::sm/safe-number]]]])
-
-(def schema:curve-to-segment
-  [:map
-   [:command [:= :curve-to]]
-   [:params
-    [:map
-     [:x ::sm/safe-number]
-     [:y ::sm/safe-number]
-     [:c1x ::sm/safe-number]
-     [:c1y ::sm/safe-number]
-     [:c2x ::sm/safe-number]
-     [:c2y ::sm/safe-number]]]])
-
-(def schema:path-segment
-  [:multi {:title "PathSegment"
-           :dispatch :command
-           :decode/json #(update % :command keyword)}
-   [:line-to schema:line-to-segment]
-   [:close-path schema:close-path-segment]
-   [:move-to schema:move-to-segment]
-   [:curve-to schema:curve-to-segment]])
-
-(def schema:path-content
-  [:vector schema:path-segment])
-
-(def check-path-content
-  (sm/check-fn schema:path-content))
-
-(sm/register! ::segment schema:path-segment)
-(sm/register! ::content schema:path-content)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TYPE: PATH-DATA
@@ -74,11 +33,10 @@
 (def ^:const SEGMENT-BYTE-SIZE 28)
 
 (defprotocol IPathData
-  (-write-to [_ buffer offset] "write the content to the specified buffer"))
+  (-write-to [_ buffer offset] "write the content to the specified buffer")
+  (-bytes [_] "get path data as byte array"))
 
-(defrecord PathSegment [command params])
-
-(defn- get-path-string
+(defn- to-string
   "Format the path data structure to string"
   [buffer size]
   (let [builder #?(:clj (java.lang.StringBuilder. (int (* size 4)))
@@ -140,6 +98,7 @@
     (.toString builder)))
 
 (defn- read-segment
+  "Read segment from binary buffer at specified index"
   [buffer index]
   (let [offset (* index SEGMENT-BYTE-SIZE)
         type   #?(:clj  (.getShort ^ByteBuffer buffer offset)
@@ -149,13 +108,15 @@
                    :cljs (.getFloat32 buffer (+ offset 20)))
               y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
                    :cljs (.getFloat32 buffer (+ offset 24)))]
-          (->PathSegment :move-to {:x x :y y}))
+          {:command :move-to
+           :params {:x x :y y}})
 
       2 (let [x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
                    :cljs (.getFloat32 buffer (+ offset 20)))
               y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
                    :cljs (.getFloat32 buffer (+ offset 24)))]
-          (->PathSegment :line-to {:x x :y y}))
+          {:command :line-to
+           :params {:x x :y y}})
 
       3 (let [c1x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 4))
                      :cljs (.getFloat32 buffer (+ offset 4)))
@@ -169,38 +130,43 @@
                      :cljs (.getFloat32 buffer (+ offset 20)))
               y   #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
                      :cljs (.getFloat32 buffer (+ offset 24)))]
+          {:command :curve-to
+           :params {:x x :y y :c1x c1x :c1y c1y :c2x c2x :c2y c2y}})
 
-          (->PathSegment :curve-to {:x x :y y :c1x c1x :c1y c1y :c2x c2x :c2y c2y}))
-
-      4 (->PathSegment :close-path {}))))
+      4 {:command :close-path
+         :params {}})))
 
 (defn- in-range?
   [size i]
   (and (< i size) (>= i 0)))
 
 #?(:clj
-   (deftype PathData [size buffer]
+   (deftype PathData [size buffer ^:unsynchronized-mutable hash]
      Object
      (toString [_]
-       (get-path-string buffer size))
+       (to-string buffer size))
 
-     clojure.lang.Sequential
-     clojure.lang.IPersistentCollection
-
-     (empty [_]
-       (throw (ex-info "not implemented" {})))
-     (equiv [_ other]
+     (equals [_ other]
        (if (instance? PathData other)
          (.equals ^ByteBuffer buffer (.-buffer ^PathData other))
          false))
 
+     json/JSONWriter
+     (-write [this writter options]
+       (json/-write (.toString this) writter options))
+
+     clojure.lang.IHashEq
+     (hasheq [this]
+       (when-not hash
+         (set! hash (clojure.lang.Murmur3/hashOrdered (seq this))))
+       hash)
+
+     clojure.lang.Sequential
+     clojure.lang.Seqable
      (seq [this]
        (when (pos? size)
          (->> (range size)
               (map (fn [i] (nth this i))))))
-
-     (cons [_ _val]
-       (throw (ex-info "not implemented" {})))
 
      clojure.lang.IReduceInit
      (reduce [_ f start]
@@ -225,13 +191,21 @@
          default))
 
      clojure.lang.Counted
-     (count [_] size))
+     (count [_] size)
+
+     IPathData
+     (-write-to [_ _ _]
+       (throw (RuntimeException. "not implemented")))
+
+     (-bytes [_]
+       (.array ^ByteBuffer buffer)))
 
    :cljs
-   (deftype PathData [size buffer dview]
+   #_:clj-kondo/ignore
+   (deftype PathData [size buffer dview ^:mutable __hash]
      Object
      (toString [_]
-       (get-path-string dview size))
+       (to-string dview size))
 
      IPathData
      (-write-to [_ into-buffer offset]
@@ -240,18 +214,21 @@
              mem  (js/Uint32Array. into-buffer offset size)]
          (.set mem (js/Uint32Array. buffer))))
 
+     (-bytes [_]
+       (js/Uint8Array. buffer))
+
      cljs.core/ISequential
      cljs.core/IEquiv
-     (-equiv [_ other]
+     (-equiv [this other]
        (if (instance? PathData other)
-         (let [obuffer (.-buffer other)
-               osize   (.-byteLength obuffer)
-               csize   (.-byteLength buffer)]
-           (if (= osize csize)
+         (let [obuffer (.-buffer other)]
+           (if (= (.-byteLength obuffer)
+                  (.-byteLength buffer))
              (let [cb (js/Uint32Array. buffer)
-                   ob (js/Uint32Array. obuffer)]
+                   ob (js/Uint32Array. obuffer)
+                   sz (alength cb)]
                (loop [i 0]
-                 (if (< i osize)
+                 (if (< i sz)
                    (if (= (aget ob i)
                           (aget cb i))
                      (recur (inc i))
@@ -284,8 +261,8 @@
            result)))
 
      cljs.core/IHash
-     (-hash [_]
-       (throw (ex-info "not-implemented" {})))
+     (-hash [coll]
+       (caching-hash coll hash-ordered-coll __hash))
 
      cljs.core/ICounted
      (-count [_] size)
@@ -305,22 +282,131 @@
      (-seq [this]
        (when (pos? size)
          (->> (range size)
-              (map (fn [i] (cljs.core/-nth this i))))))))
+              (map (fn [i] (cljs.core/-nth this i))))))
 
-(defn- from-bytes
+     cljs.core/IPrintWithWriter
+     (-pr-writer [this writer _]
+       (cljs.core/-write writer (str "#penpot/path-data \"" (.toString this) "\"")))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SCHEMA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def schema:safe-number
+  [:schema {:gen/gen (sg/small-int :max 100 :min -100)}
+   ::sm/safe-number])
+
+(def ^:private schema:line-to-segment
+  [:map
+   [:command [:= :line-to]]
+   [:params
+    [:map
+     [:x schema:safe-number]
+     [:y schema:safe-number]]]])
+
+(def ^:private schema:close-path-segment
+  [:map
+   [:command [:= :close-path]]])
+
+(def ^:private schema:move-to-segment
+  [:map
+   [:command [:= :move-to]]
+   [:params
+    [:map
+     [:x schema:safe-number]
+     [:y schema:safe-number]]]])
+
+(def ^:private schema:curve-to-segment
+  [:map
+   [:command [:= :curve-to]]
+   [:params
+    [:map
+     [:x schema:safe-number]
+     [:y schema:safe-number]
+     [:c1x schema:safe-number]
+     [:c1y schema:safe-number]
+     [:c2x schema:safe-number]
+     [:c2y schema:safe-number]]]])
+
+(def schema:path-segment
+  [:multi {:title "PathSegment"
+           :dispatch :command
+           :decode/json #(update % :command keyword)}
+   [:line-to schema:line-to-segment]
+   [:close-path schema:close-path-segment]
+   [:move-to schema:move-to-segment]
+   [:curve-to schema:curve-to-segment]])
+
+(def schema:path-segments
+  [:vector {:gen/gen (->> (sg/generator schema:path-segment)
+                          (sg/vector)
+                          (sg/filter not-empty)
+                          (sg/filter (fn [[e1]]
+                                       (= (:command e1) :move-to))))}
+   schema:path-segment])
+
+(def schema:content-like
+  [:sequential impl/schema:path-segment])
+
+(def check-content-like
+  (sm/check-fn schema:content-like))
+
+(def check-segment
+  (sm/check-fn schema:path-segment)
+
+(def ^:private check-path-segments
+  (sm/check-fn schema:path-segments))
+
+(defn path-data?
+  [o]
+  (instance? PathData o))
+
+(declare from-string)
+
+(sm/register!
+ {:type ::content
+  :pred path-data?
+  :type-properties
+  {:gen/gen (->> (sg/generator schema:path-segments)
+                 (sg/filter not-empty)
+                 (sg/fmap from-plain))
+   :encode/json identity
+   :decode/json (fn [s]
+                  (cond
+                    (string? s)
+                    (from-string s)
+
+                    (vector? s)
+                    (from-plain s)
+
+                    :else
+                    s))}})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CONSTRUCTORS & PREDICATES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(declare from-plain)
+
+(defn from-string
+  [s]
+  (from-plain (svg.path/parse s)))
+
+(defn from-bytes
   [buffer]
   #?(:clj
      (cond
        (instance? ByteBuffer buffer)
        (let [size  (.capacity ^ByteBuffer buffer)
              count (long (/ size SEGMENT-BYTE-SIZE))]
-         (PathData. count buffer))
+         (PathData. count buffer nil))
 
        (bytes? buffer)
        (let [size  (alength ^bytes buffer)
              count (long (/ size SEGMENT-BYTE-SIZE))]
          (PathData. count
-                    (ByteBuffer/wrap buffer)))
+                    (ByteBuffer/wrap buffer)
+                    nil))
 
        :else
        (throw (java.lang.IllegalArgumentException. "invalid data provided")))
@@ -332,14 +418,18 @@
              count (long (/ size SEGMENT-BYTE-SIZE))]
          (PathData. count
                     buffer
-                    (js/DataView. buffer)))
+                    (js/DataView. buffer)
+                    nil))
 
        (instance? js/DataView buffer)
        (let [dview  buffer
              buffer (.-buffer dview)
              size  (.-byteLength buffer)
              count (long (/ size SEGMENT-BYTE-SIZE))]
-         (PathData. count buffer dview))
+         (PathData. count buffer dview nil))
+
+       (instance? js/Uint8Array buffer)
+       (from-bytes (.-buffer buffer))
 
        :else
        (throw (js/Error. "invalid data provided")))))
@@ -347,19 +437,18 @@
 ;; FIXME: consider implementing with reduce
 ;; FIXME: consider ensure fixed precision for avoid doing it on formatting
 
-(defn- from-plain
+(defn from-plain
   "Create a PathData instance from plain data structures"
-  [content]
-  (assert (check-path-content content))
+  [segments]
+  (assert (check-path-segments segments))
 
-  (let [content (vec content)
-        total   (count content)
+  (let [total    (count segments)
         #?@(:cljs [buffer (new js/ArrayBuffer (* total SEGMENT-BYTE-SIZE))
                    dview  (new js/DataView buffer)]
             :clj  [buffer (ByteBuffer/allocate (* total SEGMENT-BYTE-SIZE))])]
     (loop [index 0]
       (when (< index total)
-        (let [segment (nth content index)
+        (let [segment (nth segments index)
               offset  (* index SEGMENT-BYTE-SIZE)]
           (case (get segment :command)
             :move-to
@@ -416,16 +505,35 @@
     #?(:cljs (from-bytes dview)
        :clj  (from-bytes buffer))))
 
-(defn path-data
-  "Create an instance of PathData, returns itself if it is already
-  PathData instance"
-  [data]
-  (cond
-    (instance? PathData data)
-    data
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SERIALIZATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-    (sequential? data)
-    (from-plain data)
+;; (def schema:path-content
+;;   [:or schema:path-plain-content ::path-data])
 
-    :else
-    (from-bytes data)))
+;; (def check-path-content
+;;   (sm/check-fn schema:path-content))
+
+;; (sm/register! ::content schema:path-content)
+
+(t/add-handlers!
+ {:id "penpot/path-data"
+  :class PathData
+  :wfn (fn [^PathData pdata]
+         (-bytes pdata))
+  :rfn path-data})
+
+#?(:clj
+   (fres/add-handlers!
+    {:name "penpot/path-data"
+     :class PathData
+     :wfn (fn [n w o]
+            (fres/write-tag! w n 1)
+            (let [buffer (.-buffer ^PathData o)
+                  bytes  (.array ^ByteBuffer buffer)]
+              (fres/write-bytes! w bytes)))
+     :rfn (fn [r]
+            (let [^bytes bytes (fres/read-object! r)]
+              (path-data (ByteBuffer/wrap bytes))))}))
+

@@ -18,6 +18,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.path :as path]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
@@ -579,7 +580,7 @@
   [objects object-modifiers text-modifiers options]
   (ptk/reify ::apply-modifiers*
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (let [ids
             (into [] xf:without-uuid-zero (keys object-modifiers))
 
@@ -590,6 +591,9 @@
 
             ignore-tree
             (calculate-ignore-tree object-modifiers objects)
+
+            features
+            (features/get-team-enabled-features state)
 
             options
             (-> options
@@ -610,6 +614,10 @@
                     (gsh/transform-shape modifiers)
                     (cond-> (d/not-empty? pos-data)
                       (assoc-position-data pos-data shape))
+                    (cond-> (and (contains? features "fdata/path-data")
+                                 (or (cfh/path-shape? shape)
+                                     (cfh/bool-shape? shape)))
+                      (update :content path/path-data))
                     (cond-> text-shape?
                       (update-grow-type shape)))))]
 

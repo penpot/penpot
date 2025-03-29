@@ -11,7 +11,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.svg.path.command :as upc]))
+   [app.common.types.path :as path]))
 
 (defn lookup-profile
   ([state]
@@ -157,7 +157,7 @@
                                   shape)
                       modifiers (dm/get-in content-modifiers [id :content-modifiers])
                       shape     (if (some? modifiers)
-                                  (update shape :content upc/apply-content-modifiers modifiers)
+                                  (update shape :content path/apply-content-modifiers modifiers)
                                   shape)]
                   (assoc result id shape))
                 result))

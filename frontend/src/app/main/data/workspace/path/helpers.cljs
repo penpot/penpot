@@ -11,7 +11,7 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.svg.path.command :as upc]
+   [app.common.types.path.segment :as path.segm]
    [app.main.data.workspace.path.common :as common]
    [app.util.mouse :as mse]
    [potok.v2.core :as ptk]))
@@ -31,7 +31,7 @@
 (defn content-center
   [content]
   (-> content
-      gsh/content->selrect
+      path.segm/content->selrect
       grc/rect->center))
 
 (defn content->points+selrect
@@ -52,12 +52,12 @@
         center (or (gsh/shape->center shape)
                    (content-center content))
 
-        base-content (gsh/transform-content
+        base-content (path.segm/transform-content
                       content
                       (gmt/transform-in center transform-inverse))
 
         ;; Calculates the new selrect with points given the old center
-        points (-> (gsh/content->selrect base-content)
+        points (-> (path.segm/content->selrect base-content)
                    (grc/rect->points)
                    (gsh/transform-points center transform))
 
@@ -107,7 +107,7 @@
       add-line?   {:command :line-to
                    :params position}
       add-curve?  {:command :curve-to
-                   :params (upc/make-curve-params position prev-handler)}
+                   :params (path.segm/make-curve-params position prev-handler)}
       :else       {:command :move-to
                    :params position})))
 
@@ -159,14 +159,14 @@
 (defn move-handler-modifiers
   [content index prefix match-distance? match-angle? dx dy]
 
-  (let [[cx cy] (upc/prefix->coords prefix)
-        [op-idx op-prefix] (upc/opposite-index content index prefix)
+  (let [[cx cy] (path.segm/prefix->coords prefix)
+        [op-idx op-prefix] (path.segm/opposite-index content index prefix)
 
-        node (upc/handler->node content index prefix)
-        handler (upc/handler->point content index prefix)
-        opposite (upc/handler->point content op-idx op-prefix)
+        node (path.segm/handler->node content index prefix)
+        handler (path.segm/handler->point content index prefix)
+        opposite (path.segm/handler->point content op-idx op-prefix)
 
-        [ocx ocy] (upc/prefix->coords op-prefix)
+        [ocx ocy] (path.segm/prefix->coords op-prefix)
         [odx ody] (calculate-opposite-delta node handler opposite match-angle? match-distance? dx dy)
 
         hnv (if (some? handler)

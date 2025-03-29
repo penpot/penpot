@@ -7,9 +7,12 @@
 (ns app.main.data.workspace.path.common
   (:require
    [app.common.schema :as sm]
-   [app.common.svg.path.subpath :as ups]
+   [app.common.types.path.subpath :as subpath]
    [app.main.data.workspace.path.state :as st]
    [potok.v2.core :as ptk]))
+
+;; FIXME: deprecated, should be replaced with shemas and helpers
+;; defined on app.common.types.path
 
 (def valid-commands
   #{:move-to
@@ -22,8 +25,6 @@
     :smooth-quadratic-bezier-curve-to
     :elliptical-arc
     :close-path})
-
-;; FIXME: should this schema be defined on common.types ?
 
 (def ^:private
   schema:path-content
@@ -59,4 +60,4 @@
       (let [id (st/get-path-id state)]
         (-> state
             (update-in [:workspace-local :edit-path id] clean-edit-state)
-            (update-in (st/get-path-location state :content) ups/close-subpaths))))))
+            (update-in (st/get-path-location state :content) subpath/close-subpaths))))))

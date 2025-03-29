@@ -5,12 +5,19 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.util.path.format
+  "Legacy path data formater, replaced by
+  app.common.types.path.PathData type.
+
+  WARNING: Pending to be removed from codebase once completly unused"
   (:require
-   [app.common.svg.path.command :as upc]
-   [app.common.svg.path.subpath :refer [pt=]]
+   [app.common.geom.point :as gpt]
+   [app.common.types.path.segment :as path.segm]
    [app.util.array :as arr]))
 
-;; TODO: move to common
+(defn pt=
+  "Check if two points are close"
+  [p1 p2]
+  (< (gpt/distance p1 p2) 0.1))
 
 (def path-precision 3)
 
@@ -115,7 +122,7 @@
   (try
     (let [result (make-array (count content))]
       (reduce (fn [last-move current]
-                (let [point         (upc/command->point current)
+                (let [point         (path.segm/get-point current)
                       current-move? (= :move-to (:command current))
                       last-move     (if current-move? point last-move)]
 

@@ -37,9 +37,8 @@
 (defn make-curve-params
   ([point]
    (make-curve-params point point point))
-
-  ([point handler] (make-curve-params point handler point))
-
+  ([point handler]
+   (make-curve-params point handler point))
   ([point h1 h2]
    {:x (:x point)
     :y (:y point)
@@ -72,34 +71,6 @@
     (-> command
         (assoc-in [:params cox] (:x point))
         (assoc-in [:params coy] (:y point)))))
-
-(defn apply-content-modifiers
-  "Apply to content a map with point translations"
-  [content modifiers]
-  (letfn [(apply-to-index [content [index params]]
-            (if (contains? content index)
-              (cond-> content
-                (and
-                 (or (:c1x params) (:c1y params) (:c2x params) (:c2y params))
-                 (= :line-to (get-in content [index :command])))
-
-                (-> (assoc-in [index :command] :curve-to)
-                    (assoc-in [index :params]
-                              (make-curve-params
-                               (get-in content [index :params])
-                               (get-in content [(dec index) :params]))))
-
-                (:x params) (update-in [index :params :x] + (:x params))
-                (:y params) (update-in [index :params :y] + (:y params))
-
-                (:c1x params) (update-in [index :params :c1x] + (:c1x params))
-                (:c1y params) (update-in [index :params :c1y] + (:c1y params))
-
-                (:c2x params) (update-in [index :params :c2x] + (:c2x params))
-                (:c2y params) (update-in [index :params :c2y] + (:c2y params)))
-              content))]
-    (let [content (if (vector? content) content (into [] content))]
-      (reduce apply-to-index content modifiers))))
 
 (defn get-handler [{:keys [params] :as command} prefix]
   (let [cx (d/prefix-keyword prefix :x)

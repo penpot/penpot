@@ -15,6 +15,8 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
 
+;; FIXME: move to logic?
+
 (defn prepare-add-shape
   [changes shape objects]
   (let [index   (:index (meta shape))
@@ -35,6 +37,7 @@
                       (pcb/update-shapes [(:parent-id shape)] #(ctl/push-into-cell % [id] row column)))
                     (cond-> (ctl/grid-layout? objects (:parent-id shape))
                       (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells {:with-objects? true})))]
+
     [shape changes]))
 
 (defn prepare-move-shapes-into-frame
@@ -44,6 +47,7 @@
         to-move    (->> shapes
                         (map (d/getf objects))
                         (not-empty))]
+
     (if to-move
       (-> changes
           (cond-> (and remove-layout-data?

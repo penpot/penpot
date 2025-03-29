@@ -6,10 +6,12 @@
 
 (ns common-tests.types.shape-path-data-test
   (:require
+   #?(:clj [app.common.fressian :as fres])
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.common.pprint :as pp]
-   [app.common.types.shape.path :as path]
+   [app.common.transit :as trans]
+   [app.common.types.path :as path]
    [clojure.test :as t]))
 
 (def sample-content
@@ -53,7 +55,22 @@
              (vec
               #?(:cljs (js/Int8Array. (.-buffer pdata))
                  :clj  (.array (.-buffer pdata))))))
-    (t/is (= (->> sample-content
-                  (mapv path/map->PathSegment))
+    (t/is (= sample-content
              (vec pdata)))))
+
+(t/deftest path-data-transit-roundtrip
+  (let [pdata (path/path-data sample-content)
+        result1 (trans/encode-str pdata)
+        expected "[\"~#penpot/path-data\",\"~bAAEAAAAAAAAAAAAAAAAAAAAAAABD8AAARFHAAAACAAAAAAAAAAAAAAAAAAAAAAAAQ9uAAERIgAAAAwAAQ7gAAEQ4QABDmwAARCpAAEOEAABEHoAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"]"
+        result2 (trans/decode-str result1)]
+
+    (t/is (= expected result1))
+    (t/is (= pdata result2))))
+
+#?(:clj
+   (t/deftest path-data-fresian
+     (let [pdata (path/path-data sample-content)
+           result1 (fres/encode pdata)
+           result2 (fres/decode result1)]
+       (t/is (= pdata result2)))))
 

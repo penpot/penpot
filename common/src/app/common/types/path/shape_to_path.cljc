@@ -4,34 +4,32 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.svg.path.shapes-to-path
+(ns app.common.types.path.shape-to-path
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.corners :as gso]
-   [app.common.geom.shapes.path :as gsp]
-   [app.common.svg.path.bool :as pb]
-   [app.common.svg.path.command :as pc]
+   [app.common.types.path.bool :as bool]
+   [app.common.types.path.segment :as segm]
    [app.common.types.shape.radius :as ctsr]))
 
-(def ^:const bezier-circle-c 0.551915024494)
+(def default-bool-fills
+  [{:fill-color clr/black}])
 
-(def dissoc-attrs
+(def ^:const ^:private bezier-circle-c
+  0.551915024494)
+
+(def ^:private dissoc-attrs
   [:x :y :width :height
    :rx :ry :r1 :r2 :r3 :r4
    :metadata])
 
-(def allowed-transform-types
-  #{:rect
-    :circle
-    :image})
-
 (def style-group-properties
-  [:shadow
-   :blur])
+  [:shadow :blur])
 
 (def style-properties
   (into style-group-properties
@@ -53,9 +51,7 @@
          :stroke-cap-end
          :strokes]))
 
-(def default-bool-fills [{:fill-color clr/black}])
-
-(defn make-corner-arc
+(defn- make-corner-arc
   "Creates a curvle corner for border radius"
   [from to corner radius]
   (let [x (case corner
@@ -91,9 +87,9 @@
              :bottom-right (assoc to :x c2x)
              :bottom-left  (assoc to :y c2y))]
 
-    (pc/make-curve-to to h1 h2)))
+    (segm/make-curve-to to h1 h2)))
 
-(defn circle->path
+(defn- circle->path
   "Creates the bezier curves to approximate a circle shape"
   [{:keys [x y width height]}]
   (let [mx (+ x (/ width 2))
@@ -112,13 +108,13 @@
         c1y (+ y (* (/ height 2) (- 1 c)))
         c2y (+ y (* (/ height 2) (+ 1 c)))]
 
-    [(pc/make-move-to p1)
-     (pc/make-curve-to p2 (assoc p1 :x c2x) (assoc p2 :y c1y))
-     (pc/make-curve-to p3 (assoc p2 :y c2y) (assoc p3 :x c2x))
-     (pc/make-curve-to p4 (assoc p3 :x c1x) (assoc p4 :y c2y))
-     (pc/make-curve-to p1 (assoc p4 :y c1y) (assoc p1 :x c1x))]))
+    [(segm/make-move-to p1)
+     (segm/make-curve-to p2 (assoc p1 :x c2x) (assoc p2 :y c1y))
+     (segm/make-curve-to p3 (assoc p2 :y c2y) (assoc p3 :x c2x))
+     (segm/make-curve-to p4 (assoc p3 :x c1x) (assoc p4 :y c2y))
+     (segm/make-curve-to p1 (assoc p4 :y c1y) (assoc p1 :x c1x))]))
 
-(defn draw-rounded-rect-path
+(defn- draw-rounded-rect-path
   ([x y width height r]
    (draw-rounded-rect-path x y width height r r r r))
 
@@ -135,21 +131,21 @@
          p7 (gpt/point (+ x r4) (+ height y))
          p8 (gpt/point x (+ height y (- r4)))]
      (-> []
-         (conj (pc/make-move-to p1))
+         (conj (segm/make-move-to p1))
          (cond-> (not= p1 p2)
            (conj (make-corner-arc p1 p2 :top-left r1)))
-         (conj (pc/make-line-to p3))
+         (conj (segm/make-line-to p3))
          (cond-> (not= p3 p4)
            (conj (make-corner-arc p3 p4 :top-right r2)))
-         (conj (pc/make-line-to p5))
+         (conj (segm/make-line-to p5))
          (cond-> (not= p5 p6)
            (conj (make-corner-arc p5 p6 :bottom-right r3)))
-         (conj (pc/make-line-to p7))
+         (conj (segm/make-line-to p7))
          (cond-> (not= p7 p8)
            (conj (make-corner-arc p7 p8 :bottom-left r4)))
-         (conj (pc/make-line-to p1))))))
+         (conj (segm/make-line-to p1))))))
 
-(defn rect->path
+(defn- rect->path
   "Creates a bezier curve that approximates a rounded corner rectangle"
   [{:keys [x y width height] :as shape}]
   (case (ctsr/radius-mode shape)
@@ -165,7 +161,7 @@
 
 (declare convert-to-path)
 
-(defn fix-first-relative
+(defn- fix-first-relative
   "Fix an issue with the simplify commands not changing the first relative"
   [content]
   (let [head (first content)]
@@ -173,16 +169,16 @@
       (and head (:relative head))
       (update 0 assoc :relative false))))
 
-(defn group-to-path
+(defn- group-to-path
   [group objects]
-  (let [xform (comp (map #(get objects %))
-                    (map #(-> (convert-to-path % objects))))
+  (let [xform (comp (map (d/getf objects))
+                    (map #(convert-to-path % objects)))
 
         child-as-paths (into [] xform (:shapes group))
-        head (last child-as-paths)
+        head (peek child-as-paths)
         head-data (select-keys head style-properties)
         content (into []
-                      (comp (filter #(= :path (:type %)))
+                      (comp (filter cfh/path-shape?)
                             (mapcat #(fix-first-relative (:content %))))
                       child-as-paths)]
     (-> group
@@ -191,19 +187,26 @@
         (merge head-data)
         (d/without-keys dissoc-attrs))))
 
-(defn bool-to-path
+(defn- bool-to-path
   [shape objects]
 
-  (let [children (->> (:shapes shape)
-                      (map #(get objects %))
-                      (map #(convert-to-path % objects)))
-        bool-type (:bool-type shape)
-        content (pb/content-bool bool-type (mapv :content children))]
+  (let [children
+        (->> (:shapes shape)
+             (map (d/getf objects))
+             (map #(convert-to-path % objects)))
+
+        bool-type
+        (:bool-type shape)
+
+        content
+        (bool/content-bool bool-type (mapv :content children))]
+
     (-> shape
         (assoc :type :path)
         (assoc :content content)
         (d/without-keys dissoc-attrs))))
 
+;; FIXME: revisit path data type !!!
 (defn convert-to-path
   "Transforms the given shape to a path"
   ([shape]
@@ -219,9 +222,9 @@
 
      (:rect :circle :image :text)
      (let [new-content
-           (case type
-             :circle (circle->path shape)
-             #_:else (rect->path shape))
+           (if (= type :circle)
+             (circle->path shape)
+             (rect->path shape))
 
            ;; Apply the transforms that had the shape
            transform
@@ -229,9 +232,10 @@
              (:flip-x shape) (gmt/scale (gpt/point -1 1))
              (:flip-y shape) (gmt/scale (gpt/point 1 -1)))
 
-           new-content (cond-> new-content
-                         (some? transform)
-                         (gsp/transform-content (gmt/transform-in (gco/shape->center shape) transform)))]
+           new-content
+           (cond-> new-content
+             (some? transform)
+             (segm/transform-content (gmt/transform-in (gco/shape->center shape) transform)))]
 
        (-> shape
            (assoc :type :path)
