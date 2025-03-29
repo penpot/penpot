@@ -22,6 +22,7 @@
    [app.common.schema :as sm :refer [max-safe-int min-safe-int]]
    [app.common.svg :as csvg]
    [app.common.svg.path :as path]
+   [app.common.types.path.segment :as path.segm]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
@@ -220,9 +221,9 @@
     (let [transform (csvg/parse-transform (:transform attrs))
           content   (cond-> (path/parse (:d attrs))
                       (some? transform)
-                      (gsh/transform-content transform))
+                      (path.segm/transform-content transform))
 
-          selrect    (gsh/content->selrect content)
+          selrect    (path.segm/content->selrect content)
           points     (grc/rect->points selrect)
           origin     (gpt/negate (gpt/point svg-data))
           attrs      (-> (dissoc attrs :d :transform)

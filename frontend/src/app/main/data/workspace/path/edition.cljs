@@ -10,11 +10,10 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as upg]
-   [app.common.svg.path.command :as upc]
-   [app.common.svg.path.subpath :as ups]
    [app.common.types.path :as path]
+   [app.common.types.path.segment :as path.segm]
    [app.common.types.path.shape-to-path :as upsp]
+   [app.common.types.path.subpath :as path.subp]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.edition :as dwe]
@@ -29,7 +28,6 @@
    [app.main.features :as features]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
-   [app.util.path.tools :as upt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -62,8 +60,8 @@
             content (:content shape)
             new-content (path/apply-content-modifiers content content-modifiers)
 
-            old-points (->> content upg/content->points)
-            new-points (->> new-content upg/content->points)
+            old-points (->> content path.segm/content->points)
+            new-points (->> new-content path.segm/content->points)
             point-change (->> (map hash-map old-points new-points) (reduce merge))]
 
         (when (and (some? new-content) (some? shape))
@@ -78,8 +76,8 @@
 
 (defn modify-content-point
   [content {dx :x dy :y} modifiers point]
-  (let [point-indices (upc/point-indices content point) ;; [indices]
-        handler-indices (upc/handler-indices content point) ;; [[index prefix]]
+  (let [point-indices (path.segm/point-indices content point) ;; [indices]
+        handler-indices (path.segm/handler-indices content point) ;; [[index prefix]]
 
         modify-point
         (fn [modifiers index]
@@ -166,7 +164,7 @@
             start-position (apply min-key #(gpt/distance start-position %) selected-points)
 
             content (st/get-path state :content)
-            points (upg/content->points content)]
+            points (path.segm/content->points content)]
 
         (rx/concat
          ;; This stream checks the consecutive mouse positions to do the dragging
@@ -259,13 +257,13 @@
             start-delta-y (dm/get-in modifiers [index cy] 0)
 
             content (st/get-path state :content)
-            points (upg/content->points content)
+            points (path.segm/content->points content)
 
-            point (-> content (get (if (= prefix :c1) (dec index) index)) (upc/command->point))
-            handler (-> content (get index) (upc/get-handler prefix))
+            point (-> content (get (if (= prefix :c1) (dec index) index)) (path.segm/get-point))
+            handler (-> content (get index) (path.segm/get-handler prefix))
 
-            [op-idx op-prefix] (upc/opposite-index content index prefix)
-            opposite (upc/handler->point content op-idx op-prefix)]
+            [op-idx op-prefix] (path.segm/opposite-index content index prefix)
+            opposite (path.segm/handler->point content op-idx op-prefix)]
 
         (streams/drag-stream
          (rx/concat
@@ -302,7 +300,7 @@
             content (st/get-path state :content)
             state (cond-> state
                     (cfh/path-shape? objects id)
-                    (st/set-content (ups/close-subpaths content)))]
+                    (st/set-content (path.subp/close-subpaths content)))]
         (cond-> state
           (or (not edit-path) (= :draw (:edit-mode edit-path)))
           (assoc-in [:workspace-local :edit-path id] {:edit-mode :move
@@ -346,7 +344,7 @@
             content (st/get-path state :content)]
         (-> state
             (assoc-in [:workspace-local :edit-path id :old-content] content)
-            (st/set-content (-> content (upt/split-segments #{from-p to-p} t))))))
+            (st/set-content (-> content (path.segm/split-segments #{from-p to-p} t))))))
 
     ptk/WatchEvent
     (watch [_ _ _]

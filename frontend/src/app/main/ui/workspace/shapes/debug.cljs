@@ -10,12 +10,12 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.text :as gst]
    [app.common.math :as mth]
-   [app.common.svg.path.subpath :as ups]
-   [app.common.types.path.bool :as pb]
+   [app.common.types.path.bool :as path.bool]
+   [app.common.types.path.segment :as path.segm]
    [app.common.types.path.shape-to-path :as stp]
+   [app.common.types.path.subpath :as path.subp]
    [app.main.refs :as refs]
    [app.util.color :as uc]
    [app.util.debug :as dbg]
@@ -110,40 +110,40 @@
 
         bool-type (:bool-type shape)
         should-reverse? (and (not= :union bool-type)
-                             (= (ups/clockwise? content-b)
-                                (ups/clockwise? content-a)))
+                             (= (path.subp/clockwise? content-b)
+                                (path.subp/clockwise? content-a)))
 
         content-a (-> (:content c1)
-                      (pb/close-paths)
-                      (pb/add-previous))
+                      (path.bool/close-paths)
+                      (path.bool/add-previous))
 
         content-b (-> (:content c2)
-                      (pb/close-paths)
-                      (cond-> should-reverse? (ups/reverse-content))
-                      (pb/add-previous))
+                      (path.bool/close-paths)
+                      (cond-> should-reverse? (path.subp/reverse-content))
+                      (path.bool/add-previous))
 
 
-        sr-a (gsp/content->selrect content-a)
-        sr-b (gsp/content->selrect content-b)
+        sr-a (path.segm/content->selrect content-a)
+        sr-b (path.segm/content->selrect content-b)
 
-        [content-a-split content-b-split] (pb/content-intersect-split content-a content-b sr-a sr-b)
+        [content-a-split content-b-split] (path.bool/content-intersect-split content-a content-b sr-a sr-b)
 
-        ;;content-a-geom (gsp/content->geom-data content-a)
-        ;;content-b-geom (gsp/content->geom-data content-b)
-        ;;content-a-split (->> content-a-split #_(filter #(pb/contains-segment? % content-b sr-b content-b-geom)))
-        ;;content-b-split (->> content-b-split #_(filter #(pb/contains-segment? % content-a sr-a content-a-geom)))
+        ;;content-a-geom (path.segm/content->geom-data content-a)
+        ;;content-b-geom (path.segm/content->geom-data content-b)
+        ;;content-a-split (->> content-a-split #_(filter #(path.bool/contains-segment? % content-b sr-b content-b-geom)))
+        ;;content-b-split (->> content-b-split #_(filter #(path.bool/contains-segment? % content-a sr-a content-a-geom)))
         ]
     [:*
      (for [[i cmd] (d/enumerate content-a-split)]
        (let [p1 (:prev cmd)
-             p2 (gsp/command->point cmd)
+             p2 (path.segm/command->point cmd)
 
              hp (case (:command cmd)
-                  :line-to  (-> (gsp/command->line cmd)
-                                (gsp/line-values 0.5))
+                  :line-to  (-> (path.segm/command->line cmd)
+                                (path.segm/line-values 0.5))
 
-                  :curve-to (-> (gsp/command->bezier cmd)
-                                (gsp/curve-values 0.5))
+                  :curve-to (-> (path.segm/command->bezier cmd)
+                                (path.segm/curve-values 0.5))
                   nil)]
          [:*
           (when p1
@@ -155,14 +155,14 @@
 
      (for [[i cmd] (d/enumerate content-b-split)]
        (let [p1 (:prev cmd)
-             p2 (gsp/command->point cmd)
+             p2 (path.segm/command->point cmd)
 
              hp (case (:command cmd)
-                  :line-to  (-> (gsp/command->line cmd)
-                                (gsp/line-values 0.5))
+                  :line-to  (-> (path.segm/command->line cmd)
+                                (path.segm/line-values 0.5))
 
-                  :curve-to (-> (gsp/command->bezier cmd)
-                                (gsp/curve-values 0.5))
+                  :curve-to (-> (path.segm/command->bezier cmd)
+                                (path.segm/curve-values 0.5))
                   nil)]
          [:*
           (when p1

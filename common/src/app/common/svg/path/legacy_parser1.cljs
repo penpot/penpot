@@ -12,10 +12,9 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as upg]
    [app.common.svg :as csvg]
    [app.common.svg.path.arc-to-bezier :as a2b]
-   [app.common.svg.path.command :as upc]
+   [app.common.types.path.segment :as path.segm]
    [cuerdas.core :as str]))
 
 (def commands-regex #"(?i)[mzlhvcsqta][^mzlhvcsqta]*")
@@ -160,7 +159,7 @@
 
 (defn smooth->curve
   [{:keys [params]} pos handler]
-  (let [{c1x :x c1y :y} (upg/calculate-opposite-handler pos handler)]
+  (let [{c1x :x c1y :y} (path.segm/calculate-opposite-handler pos handler)]
     {:c1x c1x
      :c1y c1y
      :c2x (:cx params)
@@ -262,7 +261,7 @@
 
                   (= :smooth-quadratic-bezier-curve-to (:command command))
                   (-> (assoc :command :curve-to)
-                      (update :params merge (quadratic->curve prev-pos (gpt/point params) (upg/calculate-opposite-handler prev-pos prev-qc)))))
+                      (update :params merge (quadratic->curve prev-pos (gpt/point params) (path.segm/calculate-opposite-handler prev-pos prev-qc)))))
 
                 result (if (= :elliptical-arc (:command command))
                          (into result (arc->beziers prev-pos command))
@@ -285,13 +284,13 @@
                           (gpt/point (get-in orig-command [:params :cx]) (get-in orig-command [:params :cy]))
 
                           :smooth-quadratic-bezier-curve-to
-                          (upg/calculate-opposite-handler prev-pos prev-qc)
+                          (path.segm/calculate-opposite-handler prev-pos prev-qc)
 
                           (gpt/point (get-in orig-command [:params :x]) (get-in orig-command [:params :y])))
 
                 next-pos (if (= :close-path (:command command))
                            prev-start
-                           (upc/command->point prev-pos command))
+                           (path.segm/get-point prev-pos command))
 
                 next-start (if (= :move-to (:command command)) next-pos prev-start)]
 

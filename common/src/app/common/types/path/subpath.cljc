@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.svg.path.subpath
+(ns app.common.types.path.subpath
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]

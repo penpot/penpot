@@ -8,8 +8,9 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.common.svg.path.subpath :as ups]
+   [app.common.types.path.segment :as path.segm]
    [app.common.types.path.shape-to-path :as upsp]
+   [app.common.types.path.subpath :as path.subp]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.edition :as dwe]
@@ -17,7 +18,6 @@
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.features :as features]
-   [app.util.path.tools :as upt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -48,7 +48,7 @@
          (when (and (seq points) (some? shape))
            (let [new-content
                  (-> (tool-fn (:content shape) points)
-                     (ups/close-subpaths))
+                     (path.subp/close-subpaths))
 
                  changes
                  (changes/generate-path-changes it features objects page-id shape (:content shape) new-content)]
@@ -68,7 +68,7 @@
    (process-path-tool
     (when point #{point})
     (fn [content points]
-      (reduce upt/make-corner-point content points)))))
+      (reduce path.segm/make-corner-point content points)))))
 
 (defn make-curve
   ([]
@@ -77,22 +77,22 @@
    (process-path-tool
     (when point #{point})
     (fn [content points]
-      (reduce upt/make-curve-point content points)))))
+      (reduce path.segm/make-curve-point content points)))))
 
 (defn add-node []
-  (process-path-tool (fn [content points] (upt/split-segments content points 0.5))))
+  (process-path-tool (fn [content points] (path.segm/split-segments content points 0.5))))
 
 (defn remove-node []
-  (process-path-tool upt/remove-nodes))
+  (process-path-tool path.segm/remove-nodes))
 
 (defn merge-nodes []
-  (process-path-tool upt/merge-nodes))
+  (process-path-tool path.segm/merge-nodes))
 
 (defn join-nodes []
-  (process-path-tool upt/join-nodes))
+  (process-path-tool path.segm/join-nodes))
 
 (defn separate-nodes []
-  (process-path-tool upt/separate-nodes))
+  (process-path-tool path.segm/separate-nodes))
 
 (defn toggle-snap []
   (ptk/reify ::toggle-snap

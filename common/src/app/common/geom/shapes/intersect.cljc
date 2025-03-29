@@ -13,9 +13,9 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
-   [app.common.geom.shapes.path :as gpp]
    [app.common.geom.shapes.text :as gte]
-   [app.common.math :as mth]))
+   [app.common.math :as mth]
+   [app.common.types.path.segment :as path.segm]))
 
 (defn orientation
   "Given three ordered points gives the orientation
@@ -186,7 +186,7 @@
           rect-lines   (points->lines rect-points)
           path-lines   (if simple?
                          (points->lines (:points shape))
-                         (gpp/path->lines shape))
+                         (path.segm/path->lines shape))
           start-point (-> shape :content (first) :params (gpt/point))]
 
       (or (intersects-lines? rect-lines path-lines)

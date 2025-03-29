@@ -22,6 +22,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.grid :as ctg]
    [app.common.types.path :as path]
+   [app.common.types.path.segment :as path.segm]
    [app.common.types.shape :as cts]
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
@@ -1325,6 +1326,6 @@
                    (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
 
                    :else
-                   (let [selrect  (gsh/content->selrect content)
+                   (let [selrect  (path.segm/content->selrect content)
                          points   (grc/rect->points selrect)]
                      (st/emit! (dwsh/update-shapes [id] (fn [shape] (assoc shape :content content :selrect selrect :points points))))))))}))))))

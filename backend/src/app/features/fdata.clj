@@ -11,7 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
-   [app.common.types.shape.path :as path]
+   [app.common.types.path :as path]
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.storage :as sto]

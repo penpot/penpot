@@ -9,9 +9,9 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.flex-layout :as gsl]
-   [app.common.svg.path.command :as upc]
    [app.common.types.container :as ctn]
    [app.common.types.path :as path]
+   [app.common.types.path.segment :as path.segm]
    [app.common.types.path.shape-to-path :as upsp]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
@@ -76,9 +76,9 @@
 
              index (or index (count content))
              prefix (or prefix :c1)
-             position (or position (upc/command->point (nth content (dec index))))
+             position (or position (path.segm/get-point (nth content (dec index))))
 
-             old-handler (upc/handler->point content index prefix)
+             old-handler (path.segm/handler->point content index prefix)
 
              handler-position (cond-> (gpt/point x y)
                                 shift? (helpers/position-fixed-angle position))
@@ -129,7 +129,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [content  (st/get-path state :content)
-            handlers (-> (upc/content->handlers content)
+            handlers (-> (path.segm/content->handlers content)
                          (get position))
 
             [idx prefix] (when (= (count handlers) 1)
