@@ -15,7 +15,9 @@
    [app.common.svg.path :as svg.path]
    [app.common.transit :as t]
    [app.common.types.path.bool :as bool]
-   [app.common.types.path.shape-to-path :as stp])
+   [app.common.types.path.segment :as segment]
+   [app.common.types.path.shape-to-path :as stp]
+   [app.common.types.path.subpath :as subpath])
   (:import
    #?(:cljs [goog.string StringBuffer]
       :clj  [java.nio ByteBuffer])))
@@ -527,24 +529,6 @@
             (let [^bytes bytes (fres/read-object! r)]
               (path-data (ByteBuffer/wrap bytes))))}))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; BUILDERS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn make-curve-params
-  ([point]
-   (make-curve-params point point point))
-  ([point handler]
-   (make-curve-params point handler point))
-  ([point h1 h2]
-   {:x (:x point)
-    :y (:y point)
-    :c1x (:x h1)
-    :c1y (:y h1)
-    :c2x (:x h2)
-    :c2y (:y h2)}))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TRANSFORMATIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -561,7 +545,7 @@
 
                 (-> (assoc-in [index :command] :curve-to)
                     (assoc-in [index :params]
-                              (make-curve-params
+                              (segment/make-curve-params
                                (get-in content [index :params])
                                (get-in content [(dec index) :params]))))
 
@@ -577,10 +561,8 @@
     (let [content (if (vector? content) content (into [] content))]
       (reduce apply-to-index content modifiers))))
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; BOOLEANS
+;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; FIXME: rename?
@@ -598,4 +580,16 @@
         (into [] extract-content-xf (:shapes shape))]
 
     (bool/content-bool (:bool-type shape) shapes-content)))
+
+(defn shape-with-open-path?
+  [shape]
+  (let [svg? (contains? shape :svg-attrs)
+        ;; No close subpaths for svgs imported
+        maybe-close (if svg? identity subpath/close-subpaths)]
+    (and (= :path (:type shape))
+         (not (->> shape
+                   :content
+                   (maybe-close)
+                   (subpath/get-subpaths)
+                   (every? subpath/is-closed?))))))
 

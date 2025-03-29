@@ -8,7 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as upg]
+   [app.common.types.path.segment :as path.segm]
    [app.main.constants :refer [zoom-half-pixel-precision]]
    [app.main.data.workspace.path.state :as pst]
    [app.main.snap :as snap]
@@ -170,7 +170,7 @@
 
         ranges-stream
         (->> content-stream
-             (rx/map upg/content->points)
+             (rx/map path.segm/content->points)
              (rx/map snap/create-ranges))]
 
     (->> ms/mouse-position

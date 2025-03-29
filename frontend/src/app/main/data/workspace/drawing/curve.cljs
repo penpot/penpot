@@ -9,11 +9,10 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
-   [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.flex-layout :as gslf]
    [app.common.geom.shapes.grid-layout :as gslg]
-   [app.common.geom.shapes.path :as gsp]
    [app.common.types.container :as ctn]
+   [app.common.types.path.segment :as path.segm]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -37,8 +36,8 @@
                  (fn [object]
                    (let [segments (-> (:segments object)
                                       (conj point))
-                         content  (gsp/segments->content segments)
-                         selrect  (gsh/content->selrect content)
+                         content  (path.segm/segments->content segments)
+                         selrect  (path.segm/content->selrect content)
                          points   (grc/rect->points selrect)]
                      (-> object
                          (assoc :segments segments)
@@ -81,8 +80,8 @@
       (update-in state [:workspace-drawing :object]
                  (fn [{:keys [segments] :as shape}]
                    (let [segments (ups/simplify segments simplify-tolerance)
-                         content  (gsp/segments->content segments)
-                         selrect  (gsh/content->selrect content)
+                         content  (path.segm/segments->content segments)
+                         selrect  (path.segm/content->selrect content)
                          points   (grc/rect->points selrect)]
                      (-> shape
                          (dissoc :segments)

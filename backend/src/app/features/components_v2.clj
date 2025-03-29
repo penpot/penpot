@@ -20,7 +20,6 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.path :as gshp]
    [app.common.logging :as l]
    [app.common.logic.libraries :as cll]
    [app.common.math :as mth]
@@ -36,9 +35,10 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.path :as ctsp]
+   [app.common.types.path.segment :as path.segm]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
-   [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.text :as ctsx]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -580,7 +580,7 @@
                       (let [shape (update shape :content fix-path-content)]
                         (if (not (valid-path-content? (:content shape)))
                           shape
-                          (let [[points selrect] (gshp/content->points+selrect shape (:content shape))]
+                          (let [[points selrect] (path.segm/content->points+selrect shape (:content shape))]
                             (-> shape
                                 (dissoc :bool-content)
                                 (dissoc :bool-type)
