@@ -11,6 +11,7 @@
    [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.svg.path.command :as upc]
    [app.common.types.container :as ctn]
+   [app.common.types.path :as path]
    [app.common.types.path.shape-to-path :as upsp]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
@@ -102,7 +103,7 @@
 
             modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
             content (-> (st/get-path state :content)
-                        (upc/apply-content-modifiers modifiers))
+                        (path/apply-content-modifiers modifiers))
 
             handler (get-in state [:workspace-local :edit-path id :drag-handler])]
         (-> state

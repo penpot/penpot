@@ -527,6 +527,58 @@
             (let [^bytes bytes (fres/read-object! r)]
               (path-data (ByteBuffer/wrap bytes))))}))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; BUILDERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn make-curve-params
+  ([point]
+   (make-curve-params point point point))
+  ([point handler]
+   (make-curve-params point handler point))
+  ([point h1 h2]
+   {:x (:x point)
+    :y (:y point)
+    :c1x (:x h1)
+    :c1y (:y h1)
+    :c2x (:x h2)
+    :c2y (:y h2)}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TRANSFORMATIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn apply-content-modifiers
+  "Apply to content a map with point translations"
+  [content modifiers]
+  (letfn [(apply-to-index [content [index params]]
+            (if (contains? content index)
+              (cond-> content
+                (and
+                 (or (:c1x params) (:c1y params) (:c2x params) (:c2y params))
+                 (= :line-to (get-in content [index :command])))
+
+                (-> (assoc-in [index :command] :curve-to)
+                    (assoc-in [index :params]
+                              (make-curve-params
+                               (get-in content [index :params])
+                               (get-in content [(dec index) :params]))))
+
+                (:x params) (update-in [index :params :x] + (:x params))
+                (:y params) (update-in [index :params :y] + (:y params))
+
+                (:c1x params) (update-in [index :params :c1x] + (:c1x params))
+                (:c1y params) (update-in [index :params :c1y] + (:c1y params))
+
+                (:c2x params) (update-in [index :params :c2x] + (:c2x params))
+                (:c2y params) (update-in [index :params :c2y] + (:c2y params)))
+              content))]
+    (let [content (if (vector? content) content (into [] content))]
+      (reduce apply-to-index content modifiers))))
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BOOLEANS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

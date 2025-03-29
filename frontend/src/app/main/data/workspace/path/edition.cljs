@@ -13,6 +13,7 @@
    [app.common.geom.shapes.path :as upg]
    [app.common.svg.path.command :as upc]
    [app.common.svg.path.subpath :as ups]
+   [app.common.types.path :as path]
    [app.common.types.path.shape-to-path :as upsp]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
@@ -59,7 +60,7 @@
             content-modifiers (dm/get-in state [:workspace-local :edit-path id :content-modifiers])
 
             content (:content shape)
-            new-content (upc/apply-content-modifiers content content-modifiers)
+            new-content (path/apply-content-modifiers content content-modifiers)
 
             old-points (->> content upg/content->points)
             new-points (->> new-content upg/content->points)
