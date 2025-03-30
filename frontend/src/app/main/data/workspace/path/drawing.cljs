@@ -324,7 +324,9 @@
       (let [id      (dm/get-in state [:workspace-local :edition])
             objects (dsh/lookup-page-objects state)
             content (dm/get-in objects [id :content])]
-        (update-in state [:workspace-local :edit-path id] assoc :old-content content)))
+        (if content
+          (update-in state [:workspace-local :edit-path id] assoc :old-content content)
+          state)))
 
     ptk/WatchEvent
     (watch [_ state stream]

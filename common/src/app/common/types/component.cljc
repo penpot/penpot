@@ -10,6 +10,7 @@
    [app.common.schema :as sm]
    [app.common.types.page :as ctp]
    [app.common.types.plugins :as ctpg]
+   [app.common.types.variant :as ctv]
    [cuerdas.core :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -17,15 +18,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def schema:component
-  [:map
-   [:id ::sm/uuid]
-   [:name :string]
-   [:path {:optional true} [:maybe :string]]
-   [:modified-at {:optional true} ::sm/inst]
-   [:objects {:gen/max 10 :optional true} ::ctp/objects]
-   [:main-instance-id ::sm/uuid]
-   [:main-instance-page ::sm/uuid]
-   [:plugin-data {:optional true} ::ctpg/plugin-data]])
+  [:merge
+   [:map
+    [:id ::sm/uuid]
+    [:name :string]
+    [:path {:optional true} [:maybe :string]]
+    [:modified-at {:optional true} ::sm/inst]
+    [:objects {:gen/max 10 :optional true} ::ctp/objects]
+    [:main-instance-id ::sm/uuid]
+    [:main-instance-page ::sm/uuid]
+    [:plugin-data {:optional true} ::ctpg/plugin-data]]
+   ::ctv/variant-component])
 
 (sm/register! ::component schema:component)
 
@@ -90,8 +93,8 @@
    :constraints-h           :constraints-group
    :constraints-v           :constraints-group
    :fixed-scroll            :constraints-group
-   :bool-type               :bool-group
-   :bool-content            :bool-group
+   :bool-type               :content-group
+   :bool-content            :content-group
    :exports                 :exports-group
    :grids                   :grids-group
 

@@ -13,6 +13,7 @@
    [app.common.features :as cfeat]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.variant :as cfv]
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
    [app.common.geom.proportions :as gpp]
@@ -25,7 +26,7 @@
    [app.common.schema :as sm]
    [app.common.text :as txt]
    [app.common.transit :as t]
-   [app.common.types.component :as ctk]
+   [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
@@ -44,6 +45,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence :as-alias dps]
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
    [app.main.data.project :as dpj]
@@ -74,6 +76,7 @@
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.variants :as dwva]
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.errors]
@@ -84,6 +87,7 @@
    [app.main.streams :as ms]
    [app.main.worker :as uw]
    [app.render-wasm :as wasm]
+   [app.render-wasm.api :as api]
    [app.util.code-gen.style-css :as css]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
@@ -168,20 +172,12 @@
                          (let [data (assoc data :pages-index pages-index)]
                            (assoc file :data (d/removem (comp t/pointer? val) data))))))))))
 
-(defn- libraries-fetched
+(defn- check-libraries-synchronozation
   [file-id libraries]
-  (ptk/reify ::libraries-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [libraries (->> libraries
-                           (map (fn [l] (assoc l :library-of file-id)))
-                           (d/index-by :id))]
-        (update state :files merge libraries)))
-
+  (ptk/reify ::check-libraries-synchronozation
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file         (dsh/lookup-file state)
-            file-id      (get file :id)
+      (let [file         (dsh/lookup-file state file-id)
             ignore-until (get file :ignore-sync-until)
 
             needs-check?
@@ -194,6 +190,23 @@
           (->> (rx/of (dwl/notify-sync-file file-id))
                (rx/delay 1000)))))))
 
+(defn- library-resolved
+  [library]
+  (ptk/reify ::library-resolved
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :files assoc (:id library) library))))
+
+(defn- libraries-fetched
+  [file-id libraries]
+  (ptk/reify ::libraries-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :files merge
+              (->> libraries
+                   (map #(assoc % :library-of file-id))
+                   (d/index-by :id))))))
+
 (defn- fetch-libraries
   [file-id]
   (ptk/reify ::fetch-libries
@@ -203,20 +216,22 @@
         (->> (rp/cmd! :get-file-libraries {:file-id file-id})
              (rx/mapcat
               (fn [libraries]
-                (rx/merge
-                 (->> (rx/from libraries)
-                      (rx/merge-map
-                       (fn [{:keys [id synced-at]}]
-                         (->> (rp/cmd! :get-file {:id id :features features})
-                              (rx/map #(assoc % :synced-at synced-at)))))
-                      (rx/merge-map resolve-file)
-                      (rx/reduce conj [])
-                      (rx/map (partial libraries-fetched file-id)))
-                 (->> (rx/from libraries)
-                      (rx/map :id)
-                      (rx/mapcat (fn [file-id]
-                                   (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
-                      (rx/map dwl/library-thumbnails-fetched))))))))))
+                (rx/concat
+                 (rx/of (libraries-fetched file-id libraries))
+                 (rx/merge
+                  (->> (rx/from libraries)
+                       (rx/merge-map
+                        (fn [{:keys [id synced-at]}]
+                          (->> (rp/cmd! :get-file {:id id :features features})
+                               (rx/map #(assoc % :synced-at synced-at :library-of file-id)))))
+                       (rx/mapcat resolve-file)
+                       (rx/map library-resolved))
+                  (->> (rx/from libraries)
+                       (rx/map :id)
+                       (rx/mapcat (fn [file-id]
+                                    (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
+                       (rx/map dwl/library-thumbnails-fetched)))
+                 (rx/of (check-libraries-synchronozation file-id libraries))))))))))
 
 (defn- workspace-initialized
   [file-id]
@@ -253,7 +268,6 @@
     (watch [_ state _]
       (let [team-id    (:current-team-id state)
             file-id    (:id file)]
-
         (rx/of (dwn/initialize team-id file-id)
                (dwsl/initialize-shape-layout)
                (fetch-libraries file-id))))))
@@ -337,8 +351,10 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (log/debug :hint "initialize-workspace" :file-id (dm/str file-id))
-      (let [stoper-s (rx/filter (ptk/type? ::finalize-workspace) stream)
-            rparams  (rt/get-params state)]
+      (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
+            rparams      (rt/get-params state)
+            features     (features/get-team-enabled-features state)
+            render-wasm? (contains? features "render-wasm/v1")]
 
         (->> (rx/merge
               (rx/of (ntf/hide)
@@ -354,6 +370,11 @@
                                 (rx/of (dpj/initialize-project (:project-id file))
                                        (-> (workspace-initialized file-id)
                                            (with-meta {:file-id file-id}))))))
+
+              (->> stream
+                   (rx/filter (ptk/type? ::dps/persistence-notification))
+                   (rx/take 1)
+                   (rx/map dwc/set-workspace-visited))
 
               (when-let [component-id (some-> rparams :component-id parse-uuid)]
                 (->> stream
@@ -379,6 +400,13 @@
                    (rx/filter dch/commit?)
                    (rx/map deref)
                    (rx/mapcat (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo?]}]
+                                (when render-wasm?
+                                  (let [added (->> redo-changes
+                                                   (filter #(= (:type %) :add-obj))
+                                                   (map :obj))]
+                                    (doseq [shape added]
+                                      (api/set-object [] shape))))
+
                                 (if (and save-undo? (seq undo-changes))
                                   (let [entry {:undo-changes undo-changes
                                                :redo-changes redo-changes
@@ -406,6 +434,7 @@
            :workspace-media-objects
            :workspace-persistence
            :workspace-presence
+           :workspace-tokens
            :workspace-undo)
           (update :workspace-global dissoc :read-only?)
           (assoc-in [:workspace-global :options-mode] :design)))
@@ -476,10 +505,13 @@
     ptk/WatchEvent
     (watch [_ state _]
       (if-let [page (dsh/lookup-page state file-id page-id)]
-        (rx/of (initialize-page* file-id page-id page)
-               (dwth/watch-state-changes file-id page-id)
-               (dwl/watch-component-changes)
-               (select-frame-tool file-id page-id))
+        (rx/concat (rx/of (initialize-page* file-id page-id page)
+                          (dwth/watch-state-changes file-id page-id)
+                          (dwl/watch-component-changes))
+                   (let [profile (:profile state)
+                         props   (get profile :props)]
+                     (when (not (:workspace-visited props))
+                       (rx/of (select-frame-tool file-id page-id)))))
         (rx/of (dcm/go-to-workspace :file-id file-id ::rt/replace true))))))
 
 (defn finalize-page
@@ -547,7 +579,7 @@
             name               (cfh/generate-unique-name base-name unames :suffix-fn suffix-fn)
             objects            (update-vals (:objects page) #(dissoc % :use-for-thumbnail))
 
-            main-instances-ids (set (keep #(when (ctk/main-instance? (val %)) (key %)) objects))
+            main-instances-ids (set (keep #(when (ctc/main-instance? (val %)) (key %)) objects))
             ids-to-remove      (set (apply concat (map #(cfh/get-children-ids objects %) main-instances-ids)))
 
             add-component-copy
@@ -764,27 +796,36 @@
   ([] (end-rename-shape nil nil))
   ([shape-id name]
    (ptk/reify ::end-rename-shape
+     ptk/UpdateEvent
+     (update [_ state]
+       ;; Remove rename state from workspace local state
+       (update state :workspace-local dissoc :shape-for-rename))
      ptk/WatchEvent
      (watch [_ state _]
        (when-let [shape-id (d/nilv shape-id (dm/get-in state [:workspace-local :shape-for-rename]))]
-         (let [shape (dsh/lookup-shape state shape-id)
-               name        (str/trim name)
-               clean-name  (cfh/clean-path name)
-               valid?      (and (not (str/ends-with? name "/"))
-                                (string? clean-name)
-                                (not (str/blank? clean-name)))]
-           (rx/concat
-            ;; Remove rename state from workspace local state
-            (rx/of #(update % :workspace-local dissoc :shape-for-rename))
+         (let [shape        (dsh/lookup-shape state shape-id)
+               name         (str/trim name)
+               clean-name   (cfh/clean-path name)
+               valid?       (and (not (str/ends-with? name "/"))
+                                 (string? clean-name)
+                                 (not (str/blank? clean-name)))
+               component-id (:component-id shape)
+               undo-id (js/Symbol)]
 
-            ;; Rename the shape if string is not empty/blank
-            (when valid?
-              (rx/of (update-shape shape-id {:name clean-name})))
 
-            ;; Update the component in case if shape is a main instance
-            (when (and valid? (:main-instance shape))
-              (when-let [component-id (:component-id shape)]
-                (rx/of (dwl/rename-component component-id clean-name)))))))))))
+           (when valid?
+             (if (ctc/is-variant-container? shape)
+               ;; Rename the full variant when it is a variant container
+               (rx/of (dwva/rename-variant shape-id clean-name))
+               (rx/of
+                (dwu/start-undo-transaction undo-id)
+                ;; Rename the shape if string is not empty/blank
+                (update-shape shape-id {:name clean-name})
+
+                ;; Update the component in case shape is a main instance
+                (when (and (some? component-id) (ctc/main-instance? shape))
+                  (dwl/rename-component component-id clean-name))
+                (dwu/commit-undo-transaction undo-id))))))))))
 
 ;; --- Update Selected Shapes attrs
 
@@ -1176,22 +1217,26 @@
   (ptk/reify ::show-component-in-assets
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)
-            fdata   (dsh/lookup-file-data state file-id)
-            cpath   (dm/get-in fdata [:components component-id :path])
-            cpath   (cfh/split-path cpath)
-            paths   (map (fn [i] (cfh/join-path (take (inc i) cpath)))
-                         (range (count cpath)))]
+      (let [file-id   (:current-file-id state)
+            fdata     (dsh/lookup-file-data state file-id)
+            component (cfv/get-primary-component fdata component-id)
+            cpath     (:path component)
+            cpath     (cfh/split-path cpath)
+            paths     (map (fn [i] (cfh/join-path (take (inc i) cpath)))
+                           (range (count cpath)))]
         (rx/concat
          (rx/from (map #(set-assets-group-open file-id :components % true) paths))
          (rx/of (dcm/go-to-workspace :layout :assets)
                 (set-assets-section-open file-id :library true)
                 (set-assets-section-open file-id :components true)
-                (select-single-asset file-id component-id :components)))))
+                (select-single-asset file-id (:id component) :components)))))
 
     ptk/EffectEvent
-    (effect [_ _ _]
-      (let [wrapper-id (str "component-shape-id-" component-id)]
+    (effect [_ state _]
+      (let [file-id   (:current-file-id state)
+            fdata     (dsh/lookup-file-data state file-id)
+            component (cfv/get-primary-component fdata component-id)
+            wrapper-id (str "component-shape-id-" (:id component))]
         (tm/schedule-on-idle #(dom/scroll-into-view-if-needed! (dom/get-element wrapper-id)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1358,7 +1403,7 @@
                                heads))))
 
           (advance-copy [file libraries page objects shape]
-            (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
+            (if (and (ctc/instance-head? shape) (not (ctc/main-instance? shape)))
               (let [level-delta (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)]
                 (if (pos? level-delta)
                   (reduce (partial advance-shape file libraries page level-delta)
@@ -2088,7 +2133,7 @@
               undo-id      (js/Symbol)]
 
           (rx/concat
-           (->> (filter ctk/instance-head? orig-shapes)
+           (->> (filter ctc/instance-head? orig-shapes)
                 (map (fn [{:keys [component-file]}]
                        (ptk/event ::ev/event
                                   {::ev/name "use-library-component"
@@ -2403,7 +2448,7 @@
       (let [objects (dsh/lookup-page-objects state)
             copies  (->> objects
                          vals
-                         (filter #(and (ctk/instance-head? %) (not (ctk/main-instance? %)))))
+                         (filter #(and (ctc/instance-head? %) (not (ctc/main-instance? %)))))
 
             copies-no-ref (filter #(not (:shape-ref %)) copies)
             find-childs-no-ref (fn [acc-map item]

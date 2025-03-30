@@ -160,7 +160,7 @@
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (when-not is-editing
+           (when (and can-edit? (not is-editing))
              (st/emit! (dt/assign-token-set-context-menu
                         {:position (dom/get-client-position event)
                          :is-group true
@@ -368,13 +368,13 @@
         (mf/use-fn
          (mf/deps collapsed-paths)
          (fn [tree-index position data]
-           (let [props {:from-index (:index data)
-                        :to-index tree-index
-                        :position position
-                        :collapsed-paths collapsed-paths}]
+           (let [params {:from-index (:index data)
+                         :to-index tree-index
+                         :position position
+                         :collapsed-paths collapsed-paths}]
              (if (:is-group data)
-               (st/emit! (dt/drop-token-set-group props))
-               (st/emit! (dt/drop-token-set props))))))
+               (st/emit! (dt/drop-token-set-group params))
+               (st/emit! (dt/drop-token-set params))))))
 
         on-toggle-collapse
         (mf/use-fn

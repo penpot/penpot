@@ -14,6 +14,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
+   [app.util.globals :as glob]
    [app.util.storage :as storage]
    [rumext.v2 :as mf]))
 
@@ -34,6 +35,28 @@
   (set! last-resize-type type))
 
 (defn use-resize-hook
+  "Allows a node to be resized by dragging, and calculates the new size based on the drag setting a maximum and minimum value.
+
+   Parameters:
+   - `key` - A unique key to identify the resize hook.
+   - `initial` - The initial size of the node.
+   - `min-val` - The minimum value the size can be.
+   - `max-val` - The maximum value the size can be. It can be a number or a string representing either a fixed value or a percentage (0 to 1).
+   - `axis` - The axis to resize on, either `:x` or `:y`.
+   - `negate?` - If `true`, the axis is negated.
+   - `resize-type` - The type of resize, either `:width` or `:height`.
+   - `on-change-size` - A function to call when the size changes.
+
+   Returns:
+   - An object with the following:
+
+     - `:on-pointer-down` - A function to call when the pointer is pressed down.
+     - `:on-lost-pointer-capture` - A function to call when the pointer is released.
+     - `:on-pointer-move` - A function to call when the pointer is moved.
+     - `:parent-ref` - A reference to the node.
+     - `:set-size` - A function to set the size.
+     - `:size` - The current size."
+
   ([key initial min-val max-val axis negate? resize-type]
    (use-resize-hook key initial min-val max-val axis negate? resize-type nil))
 
@@ -48,13 +71,25 @@
          start-size-ref (mf/use-ref nil)
          start-ref      (mf/use-ref nil)
 
-         window-height (dom/get-window-height)
+        ;;  Since Penpot is not responsive designed, this value will only refer to vertical axis.
+         window-height* (mf/use-state #(dom/get-window-height))
+         window-height (deref window-height*)
 
+        ;;  In case max-val is a string, we need to parse it as a double.
          max-val (mf/with-memo [max-val window-height]
                    (let [parsed-max-val (when (string? max-val) (d/parse-double max-val))]
                      (if parsed-max-val
                        (* window-height parsed-max-val)
                        max-val)))
+
+         set-size
+         (mf/use-fn
+          (mf/deps file-id key min-val max-val window-height)
+          (fn [new-size]
+            (let [new-size (mth/clamp new-size min-val max-val)]
+              (reset! current-size* new-size)
+              ;; Save the new size in the local storage for this file and this specific node.
+              (swap! storage/user update-persistent-state file-id key new-size))))
 
          on-pointer-down
          (mf/use-fn
@@ -89,20 +124,27 @@
                     start-size (mf/ref-val start-size-ref)
 
                     new-size (-> (+ start-size delta) (max min-val) (min max-val))]
-                (reset! current-size* new-size)
-                (swap! storage/user update-persistent-state file-id key new-size)))))
 
-         set-size
+                (set-size new-size)))))
+
+         on-resize-window
          (mf/use-fn
-          (mf/deps on-change-size file-id key)
-          (fn [new-size]
-            (let [new-size (mth/clamp new-size min-val max-val)]
-              (reset! current-size* new-size)
-              (swap! storage/user update-persistent-state file-id key new-size))))]
+          (fn []
+            (let [new-window-height (dom/get-window-height)]
+              (reset! window-height* new-window-height))))]
 
      (mf/with-effect [on-change-size current-size]
        (when on-change-size
          (on-change-size current-size)))
+
+     (mf/with-effect []
+       (.addEventListener glob/window "resize" on-resize-window)
+       (fn []
+         (.removeEventListener glob/window "resize" on-resize-window)))
+
+     (mf/with-effect [window-height]
+       (let [new-size (mth/clamp current-size min-val max-val)]
+         (set-size new-size)))
 
      {:on-pointer-down on-pointer-down
       :on-lost-pointer-capture on-lost-pointer-capture

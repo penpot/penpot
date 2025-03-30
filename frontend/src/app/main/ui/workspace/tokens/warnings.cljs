@@ -1,11 +1,16 @@
 (ns app.main.ui.workspace.tokens.warnings
   (:require
+   [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]))
 
 (def warning-codes
-  {:warning.style-dictionary/invalid-referenced-token-value
-   {:warning/code :warning.style-dictionary/invalid-referenced-token-value
-    :warning/fn (fn [value] (str/join "\n" [(str "Resolved value " value ".") "Opacity must be between 0 and 100% or 0 and 1  (e.g. 50% or 0.5)"]))}
+  {:warning.style-dictionary/invalid-referenced-token-value-opacity
+   {:warning/code :warning.style-dictionary/invalid-referenced-token-value-opacity
+    :warning/fn (fn [value] (str/join "\n" [(str (tr "workspace.token.resolved-value" value) ".") (tr "workspace.token.opacity-range")]))}
+
+   :warning.style-dictionary/invalid-referenced-token-value-stroke-width
+   {:warning/code :warning.style-dictionary/invalid-referenced-token-value-stroke-width
+    :warning/fn (fn [value] (str/join "\n" [(str (tr "workspace.token.resolved-value" value) ".") (tr "workspace.token.stroke-width-range")]))}
 
    :warning/unknown
    {:warning/code :warning/unknown

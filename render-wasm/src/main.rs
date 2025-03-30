@@ -1,28 +1,25 @@
 use skia_safe as skia;
 
 mod debug;
+mod emscripten;
 mod math;
 mod mem;
 mod render;
 mod shapes;
 mod state;
 mod utils;
+mod uuid;
 mod view;
 mod wasm;
 
 use crate::mem::SerializableResult;
 use crate::shapes::{BoolType, ConstraintH, ConstraintV, TransformEntry, Type};
-
 use crate::utils::uuid_from_u32_quartet;
+use crate::uuid::Uuid;
+use indexmap::IndexSet;
 use state::State;
 
 pub(crate) static mut STATE: Option<Box<State>> = None;
-
-extern "C" {
-    fn emscripten_GetProcAddress(
-        name: *const ::std::os::raw::c_char,
-    ) -> *const ::std::os::raw::c_void;
-}
 
 #[macro_export]
 macro_rules! with_state {
@@ -50,15 +47,6 @@ macro_rules! with_current_shape {
     };
 }
 
-fn init_gl() {
-    unsafe {
-        gl::load_with(|addr| {
-            let addr = std::ffi::CString::new(addr).unwrap();
-            emscripten_GetProcAddress(addr.into_raw() as *const _) as *const _
-        });
-    }
-}
-
 /// This is called from JS after the WebGL context has been created.
 #[no_mangle]
 pub extern "C" fn init(width: i32, height: i32) {
@@ -75,10 +63,9 @@ pub extern "C" fn clean_up() {
 }
 
 #[no_mangle]
-pub extern "C" fn clear_cache() {
+pub extern "C" fn clear_drawing_cache() {
     with_state!(state, {
-        let render_state = state.render_state();
-        render_state.clear_cache();
+        state.rebuild_tiles();
     });
 }
 
@@ -103,13 +90,6 @@ pub extern "C" fn set_canvas_background(raw_color: u32) {
 pub extern "C" fn render(timestamp: i32) {
     with_state!(state, {
         state.start_render_loop(timestamp).expect("Error rendering");
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn render_from_cache() {
-    with_state!(state, {
-        state.render_from_cache();
     });
 }
 
@@ -140,22 +120,13 @@ pub extern "C" fn resize_viewbox(width: i32, height: i32) {
 pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     with_state!(state, {
         let render_state = state.render_state();
-        render_state.invalidate_cache_if_needed();
+        let zoom_changed = zoom != render_state.viewbox.zoom;
         render_state.viewbox.set_all(zoom, x, y);
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn set_view_zoom(zoom: f32) {
-    with_state!(state, {
-        state.render_state().viewbox.set_zoom(zoom);
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn set_view_xy(x: f32, y: f32) {
-    with_state!(state, {
-        state.render_state().viewbox.set_pan_xy(x, y);
+        if zoom_changed {
+            with_state!(state, {
+                state.rebuild_tiles();
+            });
+        }
     });
 }
 
@@ -169,11 +140,10 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 
 #[no_mangle]
 pub unsafe extern "C" fn set_parent(a: u32, b: u32, c: u32, d: u32) {
-    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-    let id = uuid_from_u32_quartet(a, b, c, d);
-    if let Some(shape) = state.current_shape() {
+    with_current_shape!(state, |shape: &mut Shape| {
+        let id = uuid_from_u32_quartet(a, b, c, d);
         shape.set_parent(id);
-    }
+    });
 }
 
 #[no_mangle]
@@ -199,8 +169,8 @@ pub unsafe extern "C" fn set_shape_type(shape_type: u8) {
 
 #[no_mangle]
 pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.set_selrect(left, top, right, bottom);
+    with_state!(state, {
+        state.set_selrect_for_current_shape(left, top, right, bottom);
     });
 }
 
@@ -230,6 +200,28 @@ pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
     with_current_shape!(state, |shape: &mut Shape| {
         let id = uuid_from_u32_quartet(a, b, c, d);
         shape.add_child(id);
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn set_children() {
+    let bytes = mem::bytes();
+    let entries: IndexSet<Uuid> = bytes
+        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
+        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    let mut deleted = IndexSet::new();
+
+    with_current_shape!(state, |shape: &mut Shape| {
+        (_, deleted) = shape.compute_children_differences(&entries);
+        shape.children = entries.clone();
+    });
+
+    with_state!(state, {
+        for id in deleted {
+            state.delete_shape(id);
+        }
     });
 }
 
@@ -621,7 +613,7 @@ pub extern "C" fn set_modifiers() {
         for entry in entries {
             state.modifiers.insert(entry.id, entry.transform);
         }
-        state.render_state().clear_cache();
+        state.rebuild_modifier_tiles();
     });
 }
 
@@ -651,6 +643,13 @@ pub extern "C" fn clear_shape_shadows() {
 }
 
 #[no_mangle]
+pub extern "C" fn update_shape_tiles() {
+    with_state!(state, {
+        state.update_tile_for_current_shape();
+    });
+}
+
+#[no_mangle]
 pub extern "C" fn set_flex_layout_data(
     dir: u8,
     row_gap: f32,
@@ -665,7 +664,7 @@ pub extern "C" fn set_flex_layout_data(
     padding_bottom: f32,
     padding_left: f32,
 ) {
-    let dir = shapes::Direction::from_u8(dir);
+    let dir = shapes::FlexDirection::from_u8(dir);
     let align_items = shapes::AlignItems::from_u8(align_items);
     let align_content = shapes::AlignContent::from_u8(align_content);
     let justify_items = shapes::JustifyItems::from_u8(justify_items);
@@ -743,14 +742,90 @@ pub extern "C" fn set_layout_child_data(
 }
 
 #[no_mangle]
-pub extern "C" fn set_grid_layout_data() {}
+pub extern "C" fn set_grid_layout_data(
+    dir: u8,
+    row_gap: f32,
+    column_gap: f32,
+    align_items: u8,
+    align_content: u8,
+    justify_items: u8,
+    justify_content: u8,
+    padding_top: f32,
+    padding_right: f32,
+    padding_bottom: f32,
+    padding_left: f32,
+) {
+    let dir = shapes::GridDirection::from_u8(dir);
+    let align_items = shapes::AlignItems::from_u8(align_items);
+    let align_content = shapes::AlignContent::from_u8(align_content);
+    let justify_items = shapes::JustifyItems::from_u8(justify_items);
+    let justify_content = shapes::JustifyContent::from_u8(justify_content);
+
+    with_current_shape!(state, |shape: &mut Shape| {
+        shape.set_grid_layout_data(
+            dir,
+            row_gap,
+            column_gap,
+            align_items,
+            align_content,
+            justify_items,
+            justify_content,
+            padding_top,
+            padding_right,
+            padding_bottom,
+            padding_left,
+        );
+    });
+}
 
 #[no_mangle]
-pub extern "C" fn add_grid_track() {}
+pub extern "C" fn set_grid_columns() {
+    let bytes = mem::bytes();
+
+    let entries: Vec<_> = bytes
+        .chunks(size_of::<shapes::RawGridTrack>())
+        .map(|data| shapes::RawGridTrack::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    with_current_shape!(state, |shape: &mut Shape| {
+        shape.set_grid_columns(entries);
+    });
+
+    mem::free_bytes();
+}
 
 #[no_mangle]
-pub extern "C" fn set_grid_cell() {}
+pub extern "C" fn set_grid_rows() {
+    let bytes = mem::bytes();
+
+    let entries: Vec<_> = bytes
+        .chunks(size_of::<shapes::RawGridTrack>())
+        .map(|data| shapes::RawGridTrack::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    with_current_shape!(state, |shape: &mut Shape| {
+        shape.set_grid_rows(entries);
+    });
+
+    mem::free_bytes();
+}
+
+#[no_mangle]
+pub extern "C" fn set_grid_cells() {
+    let bytes = mem::bytes();
+
+    let entries: Vec<_> = bytes
+        .chunks(size_of::<shapes::RawGridCell>())
+        .map(|data| shapes::RawGridCell::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    with_current_shape!(state, |shape: &mut Shape| {
+        shape.set_grid_cells(entries);
+    });
+
+    mem::free_bytes();
+}
 
 fn main() {
-    init_gl();
+    init_gl!();
 }

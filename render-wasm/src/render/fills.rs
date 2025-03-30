@@ -9,6 +9,7 @@ fn draw_image_fill(
     shape: &Shape,
     image_fill: &ImageFill,
     paint: &Paint,
+    antialias: bool,
 ) {
     let image = render_state.images.get(&image_fill.id());
     if image.is_none() {
@@ -62,15 +63,15 @@ fn draw_image_fill(
             ..
         }) => {
             let rrect: RRect = RRect::new_rect_radii(container, &corners);
-            canvas.clip_rrect(rrect, skia::ClipOp::Intersect, true);
+            canvas.clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
         }
         Type::Rect(_) | Type::Frame(_) => {
-            canvas.clip_rect(container, skia::ClipOp::Intersect, true);
+            canvas.clip_rect(container, skia::ClipOp::Intersect, antialias);
         }
         Type::Circle => {
             let mut oval_path = skia::Path::new();
             oval_path.add_oval(container, None);
-            canvas.clip_path(&oval_path, skia::ClipOp::Intersect, true);
+            canvas.clip_path(&oval_path, skia::ClipOp::Intersect, antialias);
         }
         shape_type @ (Type::Path(_) | Type::Bool(_)) => {
             if let Some(path) = shape_type.path() {
@@ -78,13 +79,13 @@ fn draw_image_fill(
                     canvas.clip_path(
                         &path.to_skia_path().transform(&path_transform),
                         skia::ClipOp::Intersect,
-                        true,
+                        antialias,
                     );
                 }
             }
         }
         Type::SVGRaw(_) => {
-            canvas.clip_rect(container, skia::ClipOp::Intersect, true);
+            canvas.clip_rect(container, skia::ClipOp::Intersect, antialias);
         }
         Type::Group(_) => unreachable!("A group should not have fills"),
         Type::Text(_) => unimplemented!("TODO"),
@@ -108,12 +109,12 @@ fn draw_image_fill(
 /**
  * This SHOULD be the only public function in this module.
  */
-pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill) {
-    let paint = &fill.to_paint(&shape.selrect);
+pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill, antialias: bool) {
+    let paint = &fill.to_paint(&shape.selrect, antialias);
 
     match (fill, &shape.shape_type) {
         (Fill::Image(image_fill), _) => {
-            draw_image_fill(render_state, shape, image_fill, paint);
+            draw_image_fill(render_state, shape, image_fill, paint, antialias);
         }
         (_, Type::Rect(_) | Type::Frame(_)) => {
             render_state

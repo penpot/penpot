@@ -29,7 +29,6 @@
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.types.shape.shadow :as ctss]
-   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -97,13 +96,13 @@
                     (if (nil? migrations)
                       (generate-migrations-from-version version)
                       migrations)))
-          (migrate)
           (update :features (fnil into #{}) (deref cfeat/*new*))
           ;; NOTE: in some future we can consider to apply
           ;; a migration to the whole database and remove
           ;; this code from this function that executes on
           ;; each file migration operation
-          (update :features cfeat/migrate-legacy-features)))))
+          (update :features cfeat/migrate-legacy-features)
+          (migrate)))))
 
 (defn migrated?
   [file]
@@ -1226,32 +1225,7 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(defmethod migrate-data "Ensure hidden theme"
-  [data _]
-  (letfn [(update-tokens-lib [tokens-lib]
-            (let [hidden-theme (ctob/get-hidden-theme tokens-lib)]
-              (if (nil? hidden-theme)
-                (ctob/add-theme tokens-lib (ctob/make-hidden-token-theme))
-                tokens-lib)))]
-    (if (contains? data :tokens-lib)
-      (update data :tokens-lib update-tokens-lib)
-      data)))
-
-(defmethod migrate-data "Add token theme id"
-  [data _]
-  (letfn [(update-tokens-lib [tokens-lib]
-            (let [themes (ctob/get-themes tokens-lib)]
-              (reduce (fn [lib theme]
-                        (if (:id theme)
-                          lib
-                          (ctob/update-theme lib (:group theme) (:name theme) #(assoc % :id (str (uuid/next))))))
-                      tokens-lib
-                      themes)))]
-    (if (contains? data :tokens-lib)
-      (update data :tokens-lib update-tokens-lib)
-      data)))
-
-(defmethod migrate-data "Remove tokens from groups"
+(defmethod migrate-data "0001-remove-tokens-from-groups"
   [data _]
   (letfn [(update-object [object]
             (cond-> object
@@ -1265,6 +1239,26 @@
           (update-page [page]
             (d/update-when page :objects update-vals update-object))]
     (update data :pages-index update-vals update-page)))
+
+(defmethod migrate-data "0002-normalize-bool-content"
+  [data _]
+  (letfn [(update-object [object]
+            ;; NOTE: we still preserve the previous value for possible
+            ;; rollback, we still need to perform an other migration
+            ;; for properly delete the bool-content prop from shapes
+            ;; once the know the migration was OK
+            (if (cfh/bool-shape? object)
+              (if-let [content (:bool-content object)]
+                (assoc object :content content)
+                object)
+              (dissoc object :bool-content :bool-type)))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
 
 (def available-migrations
   (into (d/ordered-set)
@@ -1320,6 +1314,5 @@
          "legacy-65"
          "legacy-66"
          "legacy-67"
-         "Ensure hidden theme"
-         "Add token theme id"
-         "Remove tokens from groups"]))
+         "0001-remove-tokens-from-groups"
+         "0002-normalize-bool-content"]))

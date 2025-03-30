@@ -10,7 +10,6 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.media :as cm]
-   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -126,8 +125,7 @@
         profile (mf/deref refs/profile)
         props   (get profile :props)
         test-tooltip-board-text
-        (if (and (cf/external-feature-flag "boards-03" "test")
-                 (not (:workspace-visited props)))
+        (if (not (:workspace-visited props))
           (tr "workspace.toolbar.frame-first-time" (sc/get-tooltip :draw-frame))
           (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame)))]
 

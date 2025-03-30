@@ -12,9 +12,14 @@
 
 ### :bug: Bugs fixed
 
+- Fix path having a wrong selrect [Taiga #10257](https://tree.taiga.io/project/penpot/issue/10257)
+- Fix SVG `stroke-linecap` property when importing SVGs [Taiga #9489](https://tree.taiga.io/project/penpot/issue/9489)
+
 ## 2.6.0 (Unreleased)
 
 ### :rocket: Epics and highlights
+
+- Design Tokens
 
 ### :boom: Breaking changes & Deprecations
 
@@ -25,6 +30,16 @@
 - [COMMENTS] "Mark All as Read" Functionality in Dashboard [Taiga #9235](https://tree.taiga.io/project/penpot/us/9235)
 - [COMMENTS] Bubble Groups [Taiga #9236](https://tree.taiga.io/project/penpot/us/9236)
 - Change templates carrousel [Taiga #9803](https://tree.taiga.io/project/penpot/us/9803)
+- [DESIGN TOKENS] Tokens CRUD. Types added: Color, Opacity, Border radius, Dimension, Sizing, Spacing, Rotation and Stroke.
+- [DESIGN TOKENS] Create references (alias) that point to other tokens.
+- [DESIGN TOKENS] Math operations in token values.
+- [DESIGN TOKENS] Sets CRUD, grouping and reordering.
+- [DESIGN TOKENS] Multidimensional Themes and Sets management.
+- [DESIGN TOKENS] Apply/Remove tokens to/from elements from the Tokens tab.
+- [DESIGN TOKENS] Integration with components.
+- [DESIGN TOKENS] Import and export tokens from a JSON file.
+- [DESIGN TOKENS] Apply Themes and Sets at document level.
+- Add more descriptive tooltip to boards for first time users [Taiga #9426](https://tree.taiga.io/project/penpot/us/9426)
 
 ### :bug: Bugs fixed
 
@@ -35,10 +50,18 @@
 - Fix duplicate page with component over frame [Taiga #8151](https://tree.taiga.io/project/penpot/issue/8151) and [Taiga #9698](https://tree.taiga.io/project/penpot/issue/9698)
 - The plugin list in the navigation menu lacks scrolling, some plugins are not visible when a large number are installed [Taiga #9360](https://tree.taiga.io/project/penpot/us/9360)
 - Fix hidden toolbar click event still available [Taiga #10437](https://tree.taiga.io/project/penpot/us/10437)
+- Fix hovering over templates [Taiga #10545](https://tree.taiga.io/project/penpot/issue/10545)
+- Fix problem with default shadows value in plugins [Plugins #191](https://github.com/penpot/penpot-plugins/issues/191)
+- Fix problem with constraints when creating group [Taiga #10455](https://tree.taiga.io/project/penpot/issue/10455)
+- Fix opening pen with shortcut multiple times breaks toolbar [Taiga #10566](https://tree.taiga.io/project/penpot/issue/10566)
+- Fix actions when workspace is visited first time [Taiga #10548](https://tree.taiga.io/project/penpot/issue/10548)
+- Fix chat icon overlaps "Show" button in carrousel section [Taiga #10542](https://tree.taiga.io/project/penpot/issue/10542)
+- Fix incorrect handling of background task result (now task rows are properly marked as completed)
+
 
 ## 2.5.4
 
-### :sparkles: New features
+### :heart: Community contributions (Thank you!)
 
 - Add support for WEBP format on shape export [Github #6053](https://github.com/penpot/penpot/pull/6053) and [Github #6074](https://github.com/penpot/penpot/pull/6074)
 
@@ -50,6 +73,7 @@
   methods (add missing team-id prop)
 - Fix problem with viewer role and inspect mode [Taiga #9751](https://tree.taiga.io/project/penpot/issue/9751)
 - Fix error when clicking on a comment at the viewer's sidebar [Taiga #10465](https://tree.taiga.io/project/penpot/issue/10465)
+- Internal error when install a plugin by penpothub - Try plugin [Taiga #10542](https://tree.taiga.io/project/penpot/issue/10542)
 
 ## 2.5.3
 

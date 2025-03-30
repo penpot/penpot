@@ -32,6 +32,7 @@
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctsx]
    [app.common.types.token :as cto]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
@@ -233,7 +234,7 @@
   [:map {:title "BoolAttrs"}
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
    [:bool-type [::sm/one-of bool-types]]
-   [:bool-content ::ctsp/content]])
+   [:content ::ctsp/content]])
 
 (def ^:private schema:rect-attrs
   [:map {:title "RectAttrs"}])
@@ -317,7 +318,9 @@
       schema:frame-attrs
       schema:shape-attrs
       schema:shape-geom-attrs
-      schema:shape-base-attrs]]
+      schema:shape-base-attrs
+      ::ctv/variant-shape
+      ::ctv/variant-container]]
 
     [:bool
      [:merge {:title "BoolShape"}

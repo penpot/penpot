@@ -1,8 +1,8 @@
 use skia_safe as skia;
-use uuid::Uuid;
 
 use crate::mem::SerializableResult;
 use crate::utils::{uuid_from_u32_quartet, uuid_to_u32_quartet};
+use crate::uuid::Uuid;
 use skia::Matrix;
 
 #[derive(PartialEq, Debug, Clone)]
@@ -101,7 +101,7 @@ impl SerializableResult for TransformEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use uuid::uuid;
+    use crate::uuid::Uuid;
 
     #[test]
     fn test_serialization() {

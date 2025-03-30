@@ -11,9 +11,10 @@
   bottom: 0;
   border-bottom-left-radius: $br-8;
   border-bottom-right-radius: $br-8;
+  border-top-right-radius: $br-8;
   display: flex;
   flex-direction: column;
-  height: $s-228;
+  height: $s-244;
   justify-content: flex-end;
   margin-left: $s-6;
   margin-right: $s-6;
@@ -39,8 +40,8 @@
 
 .title {
   pointer-events: all;
-  width: 100%;
-  top: calc(-1 * $s-56);
+  width: $s-420;
+  top: calc(-1 * $s-40);
   text-align: right;
   height: $s-56;
   position: absolute;
@@ -102,8 +103,8 @@
 
 .move-button {
   position: absolute;
-  top: $s-80;
-  border: $s-2 solid var(--button-secondary-background-color-rest);
+  top: $s-96;
+  border: $s-2 solid var(--color-foreground-secondary);
   border-radius: 50%;
   text-align: center;
   width: $s-36;
@@ -139,7 +140,7 @@
   font-size: $fs-14;
   color: var(--color-foreground-primary);
   margin-bottom: -8px;
-  margin-top: -4px;
+  margin-top: $s-16;
   margin-left: $s-16;
   visibility: visible;
 }

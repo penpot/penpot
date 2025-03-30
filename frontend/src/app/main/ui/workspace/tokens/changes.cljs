@@ -304,13 +304,11 @@
      ptk/WatchEvent
      (watch [_ state _]
        (when (number? value)
-         (let [page-id' (or page-id (get state :current-page-id))]
-           (rx/concat
-            (map #(dwt/update-position % (zipmap attributes (repeat value))
-                                       {:ignore-touched true
-                                        :page-id page-id'})
-                 shape-ids))))))))
-
+         (let [page-id (or page-id (get state :current-page-id))]
+           (->> (rx/from shape-ids)
+                (rx/map #(dwt/update-position % (zipmap attributes (repeat value))
+                                              {:ignore-touched true
+                                               :page-id page-id})))))))))
 
 (defn update-layout-sizing-limits
   ([value shape-ids attributes] (update-layout-sizing-limits value shape-ids attributes nil))

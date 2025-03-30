@@ -14,7 +14,6 @@
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as-alias dps]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.notifications :as-alias wnt]
    [app.main.rasterizer :as thr]
    [app.main.refs :as refs]
@@ -292,11 +291,5 @@
                    (rx/buffer-until notifier-s)
                    (rx/mapcat #(into #{} %))
                    (rx/map #(update-thumbnail file-id page-id % "frame" "watch-state-changes"))))
-
-             ;; WARNING: This is a workaround for an AB test, in case we consolidate this change we should
-             ;; find a better way to handle this.
-             (->> notifier-s
-                  (rx/take 1)
-                  (rx/map dwc/set-workspace-visited))
 
              (rx/take-until stopper-s))))))

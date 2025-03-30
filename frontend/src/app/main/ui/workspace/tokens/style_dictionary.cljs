@@ -87,8 +87,34 @@
       (and (not has-references?) out-of-scope)
       {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-opacity value)]}
 
-      (and has-references? out-of-scope)
-      (assoc parsed-value :warnings [(wtw/warning-with-value :warning.style-dictionary/invalid-referenced-token-value value)])
+      (and has-references? out-of-scope parsed-value)
+      (assoc parsed-value :warnings [(wtw/warning-with-value :warning.style-dictionary/invalid-referenced-token-value-opacity value)])
+
+      :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
+
+
+(defn- parse-sd-token-stroke-width-value
+  "Parses `value` of a dimensions `sd-token` into a map like `{:value 1 :unit \"px\"}`.
+  If the `value` is not parseable and/or has missing references returns a map with `:errors`.
+  If the `value` is parseable but is out of range returns a map with `warnings`."
+  [value has-references?]
+
+  (let [parsed-value (wtt/parse-token-value value)
+        out-of-scope (< (:value parsed-value) 0)
+        references (seq (ctob/find-token-value-references value))]
+    (cond
+      (and parsed-value (not out-of-scope))
+      parsed-value
+
+      references
+      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+       :references references}
+
+      (and (not has-references?) out-of-scope)
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-stroke-width value)]}
+
+      (and has-references? out-of-scope parsed-value)
+      (assoc parsed-value :warnings [(wtw/warning-with-value :warning.style-dictionary/invalid-referenced-token-value-stroke-width value)])
 
       :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
 
@@ -132,6 +158,7 @@
            parsed-token-value (case (:type origin-token)
                                 :color (parse-sd-token-color-value value)
                                 :opacity (parse-sd-token-opacity-value value has-references?)
+                                :stroke-width (parse-sd-token-stroke-width-value value has-references?)
                                 (parse-sd-token-numeric-value value))
            output-token (cond (:errors parsed-token-value)
                               (merge origin-token parsed-token-value)
@@ -309,7 +336,7 @@
   [tokens & {:keys [interactive?]}]
   (let [state* (mf/use-state tokens)]
     (mf/with-effect [tokens interactive?]
-      (when (seq tokens)
+      (if (seq tokens)
         (let [tpoint  (dt/tpoint-ms)
               promise (if interactive?
                         (resolve-tokens-interactive+ tokens)
@@ -319,5 +346,6 @@
                (p/fmap (fn [resolved-tokens]
                          (let [elapsed (tpoint)]
                            (l/dbg :hint "use-resolved-tokens*" :elapsed elapsed)
-                           (reset! state* resolved-tokens))))))))
+                           (reset! state* resolved-tokens))))))
+        (reset! state* tokens)))
     @state*))

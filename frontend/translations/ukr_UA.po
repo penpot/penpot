@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-29 22:23+0000\n"
+"PO-Revision-Date: 2025-03-20 13:42+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
-"frontend/ukr_UA/>\n"
+"Language-Team: Ukrainian "
+"<https://hosted.weblate.org/projects/penpot/frontend/ukr_UA/>\n"
 "Language: ukr_UA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -39,13 +39,13 @@ msgstr "Створити обліковий запис для демо"
 msgid "auth.create-demo-profile"
 msgstr "Хочете лише спробувати?"
 
-#: src/app/main/ui/auth/login.cljs:42
+#: src/app/main/ui/auth/login.cljs:43
 msgid "auth.demo-warning"
 msgstr ""
 "Це демонстраційний варіант сервісу, не використовуйте для роботи, бо "
 "створені проєкти періодично очищуватимуться."
 
-#: src/app/main/ui/auth/login.cljs:190, src/app/main/ui/viewer/login.cljs:84
+#: src/app/main/ui/auth/login.cljs:189, src/app/main/ui/viewer/login.cljs:84
 msgid "auth.forgot-password"
 msgstr "Забули пароль?"
 
@@ -53,7 +53,7 @@ msgstr "Забули пароль?"
 msgid "auth.fullname"
 msgstr "Повне ім'я"
 
-#: src/app/main/ui/auth/login.cljs:283
+#: src/app/main/ui/auth/login.cljs:282
 msgid "auth.login-account-title"
 msgstr "Увійти до мого облікового запису"
 
@@ -61,39 +61,39 @@ msgstr "Увійти до мого облікового запису"
 msgid "auth.login-here"
 msgstr "Увійти тут."
 
-#: src/app/main/ui/auth/login.cljs:196
+#: src/app/main/ui/auth/login.cljs:195
 msgid "auth.login-submit"
 msgstr "Вхід"
 
-#: src/app/main/ui/auth/login.cljs:286
+#: src/app/main/ui/auth/login.cljs:285
 msgid "auth.login-tagline"
 msgstr ""
 "Penpot це вільний інструмент з відкритим сирцевим кодом для спільної роботи "
 "над дизайном та кодом"
 
-#: src/app/main/ui/auth/login.cljs:223
+#: src/app/main/ui/auth/login.cljs:222
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
-#: src/app/main/ui/auth/login.cljs:229
+#: src/app/main/ui/auth/login.cljs:228
 msgid "auth.login-with-gitlab-submit"
 msgstr "GitLab"
 
-#: src/app/main/ui/auth/login.cljs:217
+#: src/app/main/ui/auth/login.cljs:216
 msgid "auth.login-with-google-submit"
 msgstr "Google"
 
-#: src/app/main/ui/auth/login.cljs:202
+#: src/app/main/ui/auth/login.cljs:201
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
-#: src/app/main/ui/auth/login.cljs:235, src/app/main/ui/auth/login.cljs:256
+#: src/app/main/ui/auth/login.cljs:234, src/app/main/ui/auth/login.cljs:255
 msgid "auth.login-with-oidc-submit"
 msgstr "з OpenID"
 
 #: src/app/main/ui/auth/recovery.cljs:60
 msgid "auth.new-password"
-msgstr "Введіть новий пароль"
+msgstr "Вкажіть новий пароль"
 
 #: src/app/main/ui/auth/recovery.cljs:36
 msgid "auth.notifications.password-changed-successfully"
@@ -113,7 +113,7 @@ msgstr "На вашу скриньку надіслано лист з посил
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Успішно приєднано до команди"
 
-#: src/app/main/ui/auth/login.cljs:180, src/app/main/ui/auth/register.cljs:95
+#: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/register.cljs:95
 msgid "auth.password"
 msgstr "Пароль"
 
@@ -141,28 +141,28 @@ msgstr "Забули пароль?"
 msgid "auth.recovery-submit"
 msgstr "Змініть свій пароль"
 
-#: src/app/main/ui/auth/login.cljs:299, src/app/main/ui/static.cljs:141, src/app/main/ui/viewer/login.cljs:87
+#: src/app/main/ui/auth/login.cljs:298, src/app/main/ui/static.cljs:141, src/app/main/ui/viewer/login.cljs:87
 msgid "auth.register"
 msgstr "Не маєте облікового запису?"
 
 #: src/app/main/ui/auth/register.cljs:254
 msgid "auth.register-account-tagline"
-msgstr "Дайте нам знати як вас називати в панелі керування та у листах."
+msgstr "Скажіть, як до Вас звертатись у панелі керування та листах."
 
 #: src/app/main/ui/auth/register.cljs:253
 msgid "auth.register-account-title"
 msgstr "Ваше ім'я"
 
-#: src/app/main/ui/auth/login.cljs:303, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/auth/register.cljs:240, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:91
+#: src/app/main/ui/auth/login.cljs:302, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/auth/register.cljs:240, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:91
 msgid "auth.register-submit"
 msgstr "Створити обліковий запис"
 
 #: src/app/main/ui/auth/register.cljs:124
 msgid "auth.register-tagline"
 msgstr ""
-"З безкоштовний обліковим записом Penpot ви зможете створювати необмежену "
-"кількість команд та співпрацювати з іншими дизайнерами та розробниками над "
-"будь-якою кількістю проєктів. "
+"З безкоштовним обліковим записом Penpot Ви зможете створювати необмежену "
+"кількість команд і співпрацювати з іншими дизайнерами та розробниками над "
+"безліччю проєктів. "
 
 #: src/app/main/ui/auth/register.cljs:122
 msgid "auth.register-title"
@@ -180,21 +180,21 @@ msgstr ""
 "Я погоджуюсь із [умовами користування](%s) та [політикою "
 "конфіденційності](%s)."
 
-#: src/app/main/ui/auth/register.cljs:290, src/app/main/ui/dashboard/sidebar.cljs:1053, src/app/main/ui/workspace/main_menu.cljs:154
+#: src/app/main/ui/auth/register.cljs:290, src/app/main/ui/dashboard/sidebar.cljs:1054, src/app/main/ui/workspace/main_menu.cljs:154
 msgid "auth.terms-of-service"
 msgstr "Умови користування"
 
 #, unused
 msgid "auth.terms-privacy-agreement"
 msgstr ""
-"Створюючи обліковий запис, ви погоджуєтеся з нашими умовами користування та "
+"Створюючи обліковий запис, Ви погоджуєтеся з нашими умовами користування та "
 "політикою конфіденційності."
 
 #: src/app/main/ui/auth/register.cljs:275
 msgid "auth.verification-email-sent"
 msgstr "Ми надіслали лист для підтвердження облікового запису на"
 
-#: src/app/main/ui/auth/login.cljs:173, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:88
+#: src/app/main/ui/auth/login.cljs:172, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:88
 msgid "auth.work-email"
 msgstr "Робоча пошта"
 
@@ -203,11 +203,11 @@ msgstr "Робоча пошта"
 msgid "branding-illustrations-marketing-pieces"
 msgstr "...брендинг, ілюстрації, маркетингові матеріали тощо."
 
-#: src/app/main/ui/comments.cljs:504
+#: src/app/main/ui/comments.cljs:532
 msgid "comments.mentions.not-found"
-msgstr "Не знайдено людей для @%s"
+msgstr "Не знайдено людей за @%s"
 
-#: src/app/main/ui/workspace/libraries.cljs:311
+#: src/app/main/ui/workspace/libraries.cljs:308
 msgid "common.publish"
 msgstr "Опублікувати"
 
@@ -218,8 +218,8 @@ msgstr "Усі користувачі Penpot"
 #: src/app/main/ui/viewer/share_link.cljs:199
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
-"Ви впевнені, що хочете видалити це посилання? Якщо так, воно стане "
-"недоступним назавжди"
+"Ви впевнені, що хочете видалити це посилання? Якщо Ви це зробите, то "
+"посилання більше не буде доступним"
 
 #: src/app/main/ui/viewer/share_link.cljs:260, src/app/main/ui/viewer/share_link.cljs:290
 msgid "common.share-link.current-tag"
@@ -280,7 +280,7 @@ msgstr "Поділитись прототипами"
 msgid "common.share-link.view-all"
 msgstr "Вибрати все"
 
-#: src/app/main/ui/workspace/libraries.cljs:307
+#: src/app/main/ui/workspace/libraries.cljs:304
 msgid "common.unpublish"
 msgstr "Скасувати публікацію"
 
@@ -332,7 +332,7 @@ msgstr "Ознайомлення з інтерфейсом"
 msgid "dashboard.access-tokens.copied-success"
 msgstr "Токен скопійовано"
 
-#: src/app/main/ui/settings/access_tokens.cljs:191
+#: src/app/main/ui/settings/access_tokens.cljs:190
 msgid "dashboard.access-tokens.create"
 msgstr "Згенерувати новий токен"
 
@@ -340,11 +340,11 @@ msgstr "Згенерувати новий токен"
 msgid "dashboard.access-tokens.create.success"
 msgstr "Токен доступу успішно створено."
 
-#: src/app/main/ui/settings/access_tokens.cljs:289
+#: src/app/main/ui/settings/access_tokens.cljs:288
 msgid "dashboard.access-tokens.empty.add-one"
 msgstr "Натисніть на кнопку \"Згенерувати новий токен\" щоб створити його."
 
-#: src/app/main/ui/settings/access_tokens.cljs:288
+#: src/app/main/ui/settings/access_tokens.cljs:287
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Ви ще не створили жодного токену."
 
@@ -368,23 +368,23 @@ msgstr "90 днів"
 msgid "dashboard.access-tokens.expiration-never"
 msgstr "Ніколи"
 
-#: src/app/main/ui/settings/access_tokens.cljs:271
+#: src/app/main/ui/settings/access_tokens.cljs:270
 msgid "dashboard.access-tokens.expired-on"
 msgstr "Термін дії сплив %s"
 
-#: src/app/main/ui/settings/access_tokens.cljs:272
+#: src/app/main/ui/settings/access_tokens.cljs:271
 msgid "dashboard.access-tokens.expires-on"
 msgstr "Термін дії сплине %s"
 
-#: src/app/main/ui/settings/access_tokens.cljs:270
+#: src/app/main/ui/settings/access_tokens.cljs:269
 msgid "dashboard.access-tokens.no-expiration"
 msgstr "Без терміну дії"
 
-#: src/app/main/ui/settings/access_tokens.cljs:186
+#: src/app/main/ui/settings/access_tokens.cljs:185
 msgid "dashboard.access-tokens.personal"
 msgstr "Персональні токени доступу"
 
-#: src/app/main/ui/settings/access_tokens.cljs:187
+#: src/app/main/ui/settings/access_tokens.cljs:186
 msgid "dashboard.access-tokens.personal.description"
 msgstr ""
 "Персональні токени доступу є альтернативою нашій системі автентифікації "
@@ -399,6 +399,10 @@ msgstr "Термін дії токену сплине %s"
 msgid "dashboard.access-tokens.token-will-not-expire"
 msgstr "Токен не має терміну дії"
 
+#: src/app/main/ui/dashboard/placeholder.cljs:35
+msgid "dashboard.add-file"
+msgstr "Додати файл"
+
 #: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/workspace/main_menu.cljs:612
 msgid "dashboard.add-shared"
 msgstr "Додати як Спільну Бібліотеку"
@@ -407,7 +411,7 @@ msgstr "Додати як Спільну Бібліотеку"
 msgid "dashboard.change-email"
 msgstr "Змінити пошту"
 
-#: src/app/main/data/dashboard.cljs:288, src/app/main/data/dashboard.cljs:507
+#: src/app/main/data/dashboard.cljs:298, src/app/main/data/dashboard.cljs:526, src/app/main/data/workspace.cljs:544
 msgid "dashboard.copy-suffix"
 msgstr "(копія)"
 
@@ -443,23 +447,23 @@ msgstr "Створити дублікат"
 msgid "dashboard.duplicate-multi"
 msgstr "Створити дублікат % файлів"
 
-#: src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:285
+#: src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:286
 msgid "dashboard.empty-placeholder-drafts-subtitle"
 msgstr "Як тільки учасник проєкту створить чернетку, вона з'явиться тут."
 
-#: src/app/main/ui/dashboard/files.cljs:194, src/app/main/ui/dashboard/projects.cljs:280
+#: src/app/main/ui/dashboard/files.cljs:194, src/app/main/ui/dashboard/projects.cljs:281
 msgid "dashboard.empty-placeholder-drafts-title"
 msgstr "Чернеток ще немає."
 
-#: src/app/main/ui/dashboard/files.cljs:200, src/app/main/ui/dashboard/projects.cljs:286
+#: src/app/main/ui/dashboard/files.cljs:200, src/app/main/ui/dashboard/projects.cljs:287
 msgid "dashboard.empty-placeholder-files-subtitle"
 msgstr "Як тільки учасник проєкту створить файл, він зʼявиться тут."
 
-#: src/app/main/ui/dashboard/files.cljs:195, src/app/main/ui/dashboard/projects.cljs:281
+#: src/app/main/ui/dashboard/files.cljs:195, src/app/main/ui/dashboard/projects.cljs:282
 msgid "dashboard.empty-placeholder-files-title"
 msgstr "Файлів ще немає."
 
-#: src/app/main/ui/dashboard/placeholder.cljs:40
+#: src/app/main/ui/dashboard/placeholder.cljs:77
 #, markdown
 msgid "dashboard.empty-placeholder-libraries"
 msgstr ""
@@ -475,11 +479,11 @@ msgstr ""
 "чи додати з нашої [сторінки Бібліотек та "
 "шаблонів](https://penpot.app/libraries-templates)."
 
-#: src/app/main/ui/dashboard/placeholder.cljs:36
+#: src/app/main/ui/dashboard/placeholder.cljs:73
 msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
 msgstr "Додані до проєкту бібліотеки з'являться тут."
 
-#: src/app/main/ui/dashboard/placeholder.cljs:33
+#: src/app/main/ui/dashboard/placeholder.cljs:70
 msgid "dashboard.empty-placeholder-libraries-title"
 msgstr "Бібліотек ще немає."
 
@@ -519,7 +523,7 @@ msgstr "Інформація про те, як налаштувати експр
 
 #: src/app/main/ui/exports/assets.cljs:176
 msgid "dashboard.export-shapes.no-elements"
-msgstr "У вас немає елементів з налаштуваннями експорту."
+msgstr "У Вас немає елементів з налаштуваннями експорту."
 
 #: src/app/main/ui/exports/assets.cljs:187
 msgid "dashboard.export-shapes.title"
@@ -527,7 +531,7 @@ msgstr "Вибір експорту"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:259
 msgid "dashboard.export-standard-multi"
-msgstr "Завантажити %s стандартних файоів (.svg + .json)"
+msgstr "Завантажити %s стандартних файлів (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:157
 msgid "dashboard.export.detail"
@@ -536,7 +540,7 @@ msgstr "* Може містити компоненти, графіки, коль
 #: src/app/main/ui/exports/files.cljs:156
 msgid "dashboard.export.explain"
 msgstr ""
-"Файли, які ви хочете експортувати, використовують спільні бібліотеки. Що ви "
+"Файли, які Ви хочете експортувати, використовують спільні бібліотеки. Що "
 "плануєте зробити з їхніми ресурсами*?"
 
 #: src/app/main/ui/exports/files.cljs:165
@@ -573,36 +577,36 @@ msgstr "Додати ресурси спільної бібліотеки до �
 msgid "dashboard.export.title"
 msgstr "Експортувати файли"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:313
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:316
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Відсутній шрифт"
 
-#: src/app/main/ui/dashboard/fonts.cljs:210
+#: src/app/main/ui/dashboard/fonts.cljs:212
 msgid "dashboard.fonts.dismiss-all"
 msgstr "Відхилити усе"
 
-#: src/app/main/ui/dashboard/fonts.cljs:445
+#: src/app/main/ui/dashboard/fonts.cljs:447
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "Користувацькі шрифти, які ви завантажите, з'являться тут."
+msgstr "Користувацькі шрифти, які Ви завантажите, з'являться тут."
 
-#: src/app/main/ui/dashboard/fonts.cljs:448
+#: src/app/main/ui/dashboard/fonts.cljs:450
 msgid "dashboard.fonts.empty-placeholder-viewer"
-msgstr "Користувацьких шрифтів ще немає."
+msgstr "Немає користувацьких шрифтів."
 
-#: src/app/main/ui/dashboard/fonts.cljs:449
+#: src/app/main/ui/dashboard/fonts.cljs:451
 msgid "dashboard.fonts.empty-placeholder-viewer-sub"
 msgstr ""
-"Як тільки учасник проєкту завантажить користувацький шрифт, його буде "
-"відображено тут."
+"Як тільки учасник проєкту завантажить користувацький шрифт, він зʼявиться "
+"тут."
 
-#: src/app/main/ui/dashboard/fonts.cljs:198
+#: src/app/main/ui/dashboard/fonts.cljs:200
 msgid "dashboard.fonts.fonts-added"
 msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "%s шрифт було додано"
 msgstr[1] "%s шрифта було додано"
 msgstr[2] "% s шрифтів було додано"
 
-#: src/app/main/ui/dashboard/fonts.cljs:174
+#: src/app/main/ui/dashboard/fonts.cljs:175
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
@@ -612,32 +616,31 @@ msgstr ""
 "шрифтів**. Ви можете вивантажувати шрифти у таких форматах: **TTF, OTF і "
 "WOFF** (потрібен лише один)."
 
-#: src/app/main/ui/dashboard/fonts.cljs:186
+#: src/app/main/ui/dashboard/fonts.cljs:188
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"Ви повинні завантажувати лише ті шрифти, якими ви володієте або маєте "
-"ліцензію на використання в Penpot. Дізнайтеся більше в розділі \"Content "
-"Rights\" в [Умовах користування Penpot](%s). Ви "
-"також можете прочитати про [ліцензування "
-"шрифтів](https://www.typography.com/faq)."
+"Ви повинні завантажувати лише ті шрифти, якими володієте або маєте ліцензію "
+"на використання в Penpot. Дізнайтеся більше в розділі \"Content Rights\" в "
+"[Умовах користування Penpot](https://penpot.app/terms.html). Ви також "
+"можете прочитати про [ліцензування шрифтів](https://www.typography.com/faq)."
 
-#: src/app/main/ui/dashboard/fonts.cljs:206
+#: src/app/main/ui/dashboard/fonts.cljs:208
 msgid "dashboard.fonts.upload-all"
 msgstr "Вивантажити усе"
 
-#: src/app/main/ui/dashboard/fonts.cljs:191
+#: src/app/main/ui/dashboard/fonts.cljs:193
 #, markdown
 msgid "dashboard.fonts.warning-text"
 msgstr ""
-"Ми виявили можливу проблему у ваших шрифтах, пов'язану з вертикальною "
-"метрикою для різних операційних систем. Щоб перевірити її, ви можете "
+"Ми виявили можливу проблему у Ваших шрифтах, пов'язану з вертикальною "
+"метрикою для різних операційних систем. Щоб перевірити її, Ви можете "
 "скористатися сервісами вертикальної метрики шрифтів, наприклад, "
 "[цим](https://vertical-metrics.netlify.app/). Крім того, ми рекомендуємо "
 "використовувати [Transfonter](https://transfonter.org/) для генерації "
 "веб-шрифтів і виправлення помилок. "
 
-#: src/app/main/ui/dashboard/import.cljs:452, src/app/main/ui/dashboard/project_menu.cljs:109
+#: src/app/main/ui/dashboard/import.cljs:454, src/app/main/ui/dashboard/project_menu.cljs:109
 msgid "dashboard.import"
 msgstr "Імпортувати файли Penpot"
 
@@ -648,14 +651,14 @@ msgstr "Отакої! Ми не можемо імпортувати цей фа�
 #, unused
 msgid "dashboard.import.analyze-error.components-v2"
 msgstr ""
-"Файли з компонентами версії 2 активовані але ця команда, поки що, не "
+"Файли з компонентами версії 2 активовані, але ця команда поки що не "
 "підтримує їх."
 
-#: src/app/main/ui/dashboard.cljs:248
+#: src/app/main/ui/dashboard.cljs:247
 msgid "dashboard.import.bad-url"
 msgstr "Імпортування не вдалось. Посилання шаблону неправильне"
 
-#: src/app/main/ui/dashboard.cljs:242
+#: src/app/main/ui/dashboard.cljs:241
 msgid "dashboard.import.error"
 msgstr "Імпортування не вдалось. Спробуйте пізніше"
 
@@ -663,20 +666,20 @@ msgstr "Імпортування не вдалось. Спробуйте піз�
 msgid "dashboard.import.import-error"
 msgstr "Виникла проблема при спробі імпортувати файл. Його не було імпортовано."
 
-#: src/app/main/ui/dashboard/import.cljs:466
+#: src/app/main/ui/dashboard/import.cljs:468
 msgid "dashboard.import.import-message"
 msgid_plural "dashboard.import.import-message"
 msgstr[0] "%s файл успішно імпортовано."
 msgstr[1] "%s файли успішно імпортовано."
 msgstr[2] "%s файлів успішно імпортовано."
 
-#: src/app/main/ui/dashboard/import.cljs:461
+#: src/app/main/ui/dashboard/import.cljs:463
 msgid "dashboard.import.import-warning"
 msgstr "Деякі файли містили недійсні об'єкти, які було вилучено."
 
-#: src/app/main/ui/dashboard.cljs:249
+#: src/app/main/ui/dashboard.cljs:248
 msgid "dashboard.import.no-perms"
-msgstr "Ви не маєте права імпортувати цю команду"
+msgstr "Ви не маєте права імпортувати в цю команду"
 
 #: src/app/main/ui/dashboard/import.cljs:129
 msgid "dashboard.import.progress.process-colors"
@@ -696,7 +699,7 @@ msgstr "Обробка сторінки: %s"
 
 #: src/app/main/ui/dashboard/import.cljs:132
 msgid "dashboard.import.progress.process-typographies"
-msgstr "Обробка типографіки"
+msgstr "Обробка типографік"
 
 #: src/app/main/ui/dashboard/import.cljs:120
 msgid "dashboard.import.progress.upload-data"
@@ -714,29 +717,29 @@ msgstr "Запросити людей"
 msgid "dashboard.leave-team"
 msgstr "Покинути команду"
 
-#: src/app/main/ui/dashboard/templates.cljs:82, src/app/main/ui/dashboard/templates.cljs:157
+#: src/app/main/ui/dashboard/templates.cljs:83, src/app/main/ui/dashboard/templates.cljs:168
 msgid "dashboard.libraries-and-templates"
 msgstr "Бібліотеки та Шаблони"
 
-#: src/app/main/ui/dashboard/templates.cljs:158
+#: src/app/main/ui/dashboard/templates.cljs:169
 msgid "dashboard.libraries-and-templates.explore"
 msgstr "Дізнайтесь більше про них та як зробити внесок"
 
-#: src/app/main/ui/dashboard/import.cljs:358, src/app/main/ui/workspace/libraries.cljs:150
+#: src/app/main/ui/dashboard/import.cljs:360, src/app/main/ui/workspace/libraries.cljs:151
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "Виникла проблема під час імпортування шаблону. Його не було імпортовано."
 
-#: src/app/main/ui/dashboard/libraries.cljs:51
+#: src/app/main/ui/dashboard/libraries.cljs:66
 msgid "dashboard.libraries-title"
 msgstr "Бібліотеки"
 
-#: src/app/main/ui/dashboard/placeholder.cljs:55
+#: src/app/main/ui/dashboard/placeholder.cljs:100
 msgid "dashboard.loading-files"
 msgstr "завантаження ваших файлів…"
 
-#: src/app/main/ui/dashboard/fonts.cljs:439
+#: src/app/main/ui/dashboard/fonts.cljs:441
 msgid "dashboard.loading-fonts"
-msgstr "завантажую ваші шрифти…"
+msgstr "завантаження ваших шрифтів…"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:291, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
@@ -750,11 +753,11 @@ msgstr "Перемістити (%s) файлів до"
 msgid "dashboard.move-to-other-team"
 msgstr "Перенести в іншу команду"
 
-#: src/app/main/ui/dashboard/files.cljs:105, src/app/main/ui/dashboard/projects.cljs:252, src/app/main/ui/dashboard/projects.cljs:253
+#: src/app/main/ui/dashboard/files.cljs:105, src/app/main/ui/dashboard/projects.cljs:253, src/app/main/ui/dashboard/projects.cljs:254
 msgid "dashboard.new-file"
 msgstr "+ Новий файл"
 
-#: src/app/main/data/dashboard.cljs:482, src/app/main/data/dashboard.cljs:591
+#: src/app/main/data/dashboard.cljs:497, src/app/main/data/dashboard.cljs:609
 msgid "dashboard.new-file-prefix"
 msgstr "Новий файл"
 
@@ -762,31 +765,31 @@ msgstr "Новий файл"
 msgid "dashboard.new-project"
 msgstr "+ Новий проєкт"
 
-#: src/app/main/data/dashboard.cljs:252, src/app/main/data/dashboard.cljs:594
+#: src/app/main/data/dashboard.cljs:257, src/app/main/data/dashboard.cljs:612
 msgid "dashboard.new-project-prefix"
 msgstr "Новий проєкт"
 
 #: src/app/main/ui/dashboard/search.cljs:77
 msgid "dashboard.no-matches-for"
-msgstr "Жодних відповідностей для \"%s\" не знайдено"
+msgstr "Жодних відповідностей за \"%s\" не знайдено"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:850
 msgid "dashboard.no-projects-placeholder"
 msgstr "Закріплені проєкти з'являться тут"
 
-#: src/app/main/ui/dashboard/comments.cljs:84
+#: src/app/main/ui/dashboard/comments.cljs:90
 msgid "dashboard.notifications"
 msgstr "Сповіщення"
 
 #: src/app/main/ui/auth/verify_token.cljs:34
 msgid "dashboard.notifications.email-changed-successfully"
-msgstr "Адресу вашої електронної пошти було успішно змінено"
+msgstr "Адресу Вашої електронної пошти було успішно змінено"
 
 #: src/app/main/ui/auth/verify_token.cljs:28
 msgid "dashboard.notifications.email-verified-successfully"
-msgstr "Адресу вашої електронної пошти було успішно підтверджено"
+msgstr "Адресу Вашої електронної пошти було успішно підтверджено"
 
-#: src/app/main/ui/settings/notifications.cljs:42
+#: src/app/main/data/profile.cljs:260
 msgid "dashboard.notifications.notifications-saved"
 msgstr "Налаштування сповіщень оновлено"
 
@@ -806,7 +809,7 @@ msgstr "%s учасників"
 msgid "dashboard.open-in-new-tab"
 msgstr "Відкрити файл у новій вкладці"
 
-#: src/app/main/ui/dashboard/files.cljs:118, src/app/main/ui/dashboard/projects.cljs:261, src/app/main/ui/dashboard/projects.cljs:262
+#: src/app/main/ui/dashboard/files.cljs:118, src/app/main/ui/dashboard/grid.cljs:426, src/app/main/ui/dashboard/projects.cljs:262, src/app/main/ui/dashboard/projects.cljs:263
 msgid "dashboard.options"
 msgstr "Параметри"
 
@@ -816,33 +819,33 @@ msgstr "Змінити пароль"
 
 #: src/app/main/data/common.cljs:209
 msgid "dashboard.permissions-change.admin"
-msgstr "Відтепер ви адміністратор цієї команди."
+msgstr "Відтепер Ви адміністратор цієї команди."
 
 #: src/app/main/data/common.cljs:208
 msgid "dashboard.permissions-change.editor"
-msgstr "Відтепер ви редактор цієї команди."
+msgstr "Відтепер Ви редактор цієї команди."
 
 #: src/app/main/data/common.cljs:210
 msgid "dashboard.permissions-change.owner"
-msgstr "Відтепер ви власник цієї команди."
+msgstr "Відтепер Ви власник цієї команди."
 
 #: src/app/main/data/common.cljs:207
 msgid "dashboard.permissions-change.viewer"
-msgstr "Відтепер ви переглядач цієї команди."
+msgstr "Відтепер Ви переглядач цієї команди."
 
 #: src/app/main/ui/dashboard/pin_button.cljs:24, src/app/main/ui/dashboard/project_menu.cljs:96
 msgid "dashboard.pin-unpin"
 msgstr "Пришпилити/відшпилити"
 
-#: src/app/main/ui/dashboard.cljs:212
+#: src/app/main/ui/dashboard.cljs:208
 msgid "dashboard.plugins.bad-url"
 msgstr "Посилання плагіну неправильне"
 
-#: src/app/main/ui/dashboard.cljs:210
+#: src/app/main/ui/dashboard.cljs:206
 msgid "dashboard.plugins.parse-error"
 msgstr "Не вдається розібрати маніфест плагіну"
 
-#: src/app/main/ui/dashboard.cljs:173
+#: src/app/main/ui/dashboard.cljs:169
 msgid "dashboard.plugins.try-plugin"
 msgstr "Спробуйте плагін: "
 
@@ -861,7 +864,7 @@ msgstr "Видалити Спільну Бібліотеку"
 
 #: src/app/main/data/common.cljs:242
 msgid "dashboard.removed-from-team"
-msgstr "Більше ви не є частиною команди \"%s\"."
+msgstr "Ви більше не є частиною команди \"%s\"."
 
 #: src/app/main/ui/settings/profile.cljs:78
 msgid "dashboard.save-settings"
@@ -883,67 +886,67 @@ msgstr "Оберіть мову інтерфейсу"
 msgid "dashboard.select-ui-theme"
 msgstr "Оберіть тему"
 
-#: src/app/main/ui/settings/notifications.cljs:76
+#: src/app/main/ui/settings/notifications.cljs:57
 msgid "dashboard.settings.notifications.dashboard-comments.all"
 msgstr "Усі коментарі, згадки та відповіді"
 
-#: src/app/main/ui/settings/notifications.cljs:78
+#: src/app/main/ui/settings/notifications.cljs:59
 msgid "dashboard.settings.notifications.dashboard-comments.none"
 msgstr "Нічого"
 
-#: src/app/main/ui/settings/notifications.cljs:77
+#: src/app/main/ui/settings/notifications.cljs:58
 msgid "dashboard.settings.notifications.dashboard-comments.partial"
 msgstr "Тільки згадки та відповіді"
 
-#: src/app/main/ui/settings/notifications.cljs:73
+#: src/app/main/ui/settings/notifications.cljs:54
 msgid "dashboard.settings.notifications.dashboard-comments.title"
 msgstr "Коментарі до файлів"
 
-#: src/app/main/ui/settings/notifications.cljs:72
+#: src/app/main/ui/settings/notifications.cljs:53
 msgid "dashboard.settings.notifications.dashboard.title"
 msgstr "Сповіщення панелі керування"
 
-#: src/app/main/ui/settings/notifications.cljs:86
+#: src/app/main/ui/settings/notifications.cljs:67
 msgid "dashboard.settings.notifications.email-comments.all"
 msgstr "Усі коментарі, згадки та відповіді"
 
-#: src/app/main/ui/settings/notifications.cljs:88
+#: src/app/main/ui/settings/notifications.cljs:69
 msgid "dashboard.settings.notifications.email-comments.none"
 msgstr "Нічого"
 
-#: src/app/main/ui/settings/notifications.cljs:87
+#: src/app/main/ui/settings/notifications.cljs:68
 msgid "dashboard.settings.notifications.email-comments.partial"
 msgstr "Тільки згадки та відповіді"
 
-#: src/app/main/ui/settings/notifications.cljs:83
+#: src/app/main/ui/settings/notifications.cljs:64
 msgid "dashboard.settings.notifications.email-comments.title"
 msgstr "Коментарі до файлів"
 
-#: src/app/main/ui/settings/notifications.cljs:95
+#: src/app/main/ui/settings/notifications.cljs:76
 msgid "dashboard.settings.notifications.email-invites.all"
 msgstr "Усі види запрошень та запитів"
 
-#: src/app/main/ui/settings/notifications.cljs:98
+#: src/app/main/ui/settings/notifications.cljs:79
 msgid "dashboard.settings.notifications.email-invites.none"
 msgstr "Нічого"
 
-#: src/app/main/ui/settings/notifications.cljs:92
+#: src/app/main/ui/settings/notifications.cljs:73
 msgid "dashboard.settings.notifications.email-invites.title"
 msgstr "Запрошення та запити"
 
-#: src/app/main/ui/settings/notifications.cljs:82
+#: src/app/main/ui/settings/notifications.cljs:63
 msgid "dashboard.settings.notifications.email.title"
 msgstr "Сповіщення е-пошти"
 
-#: src/app/main/ui/settings/notifications.cljs:103
+#: src/app/main/ui/settings/notifications.cljs:84
 msgid "dashboard.settings.notifications.submit"
 msgstr "Оновити налаштування"
 
-#: src/app/main/ui/settings/notifications.cljs:71
+#: src/app/main/ui/settings/notifications.cljs:52
 msgid "dashboard.settings.notifications.title"
 msgstr "Сповіщення"
 
-#: src/app/main/ui/dashboard/projects.cljs:304
+#: src/app/main/ui/dashboard/projects.cljs:305
 msgid "dashboard.show-all-files"
 msgstr "Показати усі файли"
 
@@ -973,7 +976,7 @@ msgstr[2] "Файли були успішно дубліковані"
 msgid "dashboard.success-duplicate-project"
 msgstr "Ваш проєкт успішно дубліковано"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:131, src/app/main/ui/dashboard/grid.cljs:588, src/app/main/ui/dashboard/sidebar.cljs:159
+#: src/app/main/ui/dashboard/file_menu.cljs:131, src/app/main/ui/dashboard/grid.cljs:614, src/app/main/ui/dashboard/sidebar.cljs:159
 msgid "dashboard.success-move-file"
 msgstr "Файл було успішно переміщено"
 
@@ -1007,7 +1010,7 @@ msgstr "Результати пошуку"
 
 #: src/app/main/ui/dashboard/search.cljs:67
 msgid "dashboard.type-something"
-msgstr "Введіть для пошуку"
+msgstr "Вкажіть для пошуку"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:298, src/app/main/ui/workspace/main_menu.cljs:604
 msgid "dashboard.unpublish-shared"
@@ -1017,15 +1020,15 @@ msgstr "Вилучити бібліотеку з публікації"
 msgid "dashboard.update-settings"
 msgstr "Оновити налаштування"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:969
+#: src/app/main/ui/dashboard/sidebar.cljs:970
 msgid "dashboard.upgrade-plan.no-limits"
 msgstr "Без обмежень на креативність"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:968
+#: src/app/main/ui/dashboard/sidebar.cljs:969
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Безкоштовний"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:971
+#: src/app/main/ui/dashboard/sidebar.cljs:972
 msgid "dashboard.upgrade-plan.power-up"
 msgstr "Підсилити"
 
@@ -1039,7 +1042,7 @@ msgstr "Після спрацювання хуку дані події буду�
 
 #: src/app/main/ui/dashboard/team.cljs:954
 msgid "dashboard.webhooks.cant-edit"
-msgstr "Ви можете видаляти або редагувати лише створені вами вебхуки."
+msgstr "Ви можете видаляти або редагувати лише створені Вами вебхуки."
 
 #: src/app/main/ui/dashboard/team.cljs:900
 msgid "dashboard.webhooks.content-type"
@@ -1056,7 +1059,7 @@ msgstr "Вебхук успішно створено."
 #: src/app/main/ui/dashboard/team.cljs:930
 msgid "dashboard.webhooks.description"
 msgstr ""
-"Веб-хуки - це простий спосіб дозволити іншим веб-сайтам і додаткам "
+"Веб-хуки - це простий спосіб дозволити іншим веб-сайтам і застосункам "
 "отримувати сповіщення про певні події в Penpot. Ми надішлемо POST-запит на "
 "кожну з вказаних вами URL-адрес."
 
@@ -1084,7 +1087,7 @@ msgstr "Електронна пошта"
 msgid "dashboard.your-name"
 msgstr "Ваше ім'я"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:39, src/app/main/ui/dashboard/fonts.cljs:35, src/app/main/ui/dashboard/libraries.cljs:40, src/app/main/ui/dashboard/projects.cljs:345, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:319, src/app/main/ui/dashboard/team.cljs:531, src/app/main/ui/dashboard/team.cljs:781, src/app/main/ui/dashboard/team.cljs:1045, src/app/main/ui/dashboard/team.cljs:1092
+#: src/app/main/ui/dashboard/file_menu.cljs:39, src/app/main/ui/dashboard/fonts.cljs:36, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:348, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:319, src/app/main/ui/dashboard/team.cljs:531, src/app/main/ui/dashboard/team.cljs:781, src/app/main/ui/dashboard/team.cljs:1045, src/app/main/ui/dashboard/team.cljs:1092
 msgid "dashboard.your-penpot"
 msgstr "Ваш Penpot"
 
@@ -1104,11 +1107,11 @@ msgstr "Компоненти для оновлення:"
 msgid "ds.confirm-allow"
 msgstr "Дозволити"
 
-#: src/app/main/ui/comments.cljs:653, src/app/main/ui/comments.cljs:686, src/app/main/ui/comments.cljs:755, src/app/main/ui/confirm.cljs:36, src/app/main/ui/workspace/plugins.cljs:330, src/app/main/ui/workspace/plugins.cljs:384
+#: src/app/main/ui/comments.cljs:672, src/app/main/ui/confirm.cljs:36, src/app/main/ui/workspace/plugins.cljs:330, src/app/main/ui/workspace/plugins.cljs:384
 msgid "ds.confirm-cancel"
 msgstr "Скасувати"
 
-#: src/app/main/ui/confirm.cljs:37, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:141
+#: src/app/main/ui/confirm.cljs:37, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:148
 msgid "ds.confirm-ok"
 msgstr "Добре"
 
@@ -1120,27 +1123,27 @@ msgstr "Ви впевнені?"
 msgid "errors.auth-provider-not-allowed"
 msgstr "Провайдер автентифікації не дозволений для цього профілю"
 
-#: src/app/main/ui/auth/login.cljs:77
+#: src/app/main/ui/auth/login.cljs:78
 msgid "errors.auth-provider-not-configured"
 msgstr "Провайдер для автентифікації не налаштований."
 
 #: src/app/main/errors.cljs:112
 msgid "errors.auth.unable-to-login"
-msgstr "Схоже, ви не автентифіковані, або термін дії сесії сплинув."
+msgstr "Схоже, Ви не автентифіковані, або термін дії сесії минув."
 
-#: src/app/main/data/fonts.cljs:193, src/app/main/ui/dashboard/fonts.cljs:113
+#: src/app/main/data/fonts.cljs:192, src/app/main/ui/dashboard/fonts.cljs:114
 msgid "errors.bad-font"
 msgstr "Шрифт %s не можна завантажити"
 
-#: src/app/main/data/fonts.cljs:192
+#: src/app/main/data/fonts.cljs:191
 msgid "errors.bad-font-plural"
 msgstr "Шрифти %s не можна завантажити"
 
 #: src/app/main/data/workspace/media.cljs:198
 msgid "errors.cannot-upload"
-msgstr "Не можу вивантажити медіа."
+msgstr "Не можна вивантажити медіа."
 
-#: src/app/main/data/workspace.cljs:1463, src/app/main/data/workspace.cljs:1660
+#: src/app/main/data/workspace.cljs:1484, src/app/main/data/workspace.cljs:1682
 msgid "errors.clipboard-not-implemented"
 msgstr "Ваш браузер не може зробити це"
 
@@ -1152,7 +1155,7 @@ msgstr "Електронна пошта вже використовується"
 msgid "errors.email-already-validated"
 msgstr "Електронна пошта вже підтверджена."
 
-#, unused
+#: src/app/main/ui/auth/register.cljs:64, src/app/main/ui/settings/password.cljs:27
 msgid "errors.email-as-password"
 msgstr "Ви не можете використати електронну адресу як пароль"
 
@@ -1175,7 +1178,7 @@ msgstr ""
 #: src/app/main/errors.cljs:242
 msgid "errors.feature-mismatch"
 msgstr ""
-"Схоже, ви намагаєтесь відкрити файл, який має активовану функцію \"%s\", "
+"Схоже, Ви намагаєтесь відкрити файл, який має активовану функцію \"%s\", "
 "але поточна версія Penpot наразі не підтримує її або вона вимкнена."
 
 #: src/app/main/errors.cljs:246, src/app/main/errors.cljs:260
@@ -1194,16 +1197,16 @@ msgstr "Має містити принаймні 1 символ."
 #: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 #, unused
 msgid "errors.field-not-all-whitespace"
-msgstr "Ім'я повинно містити якийсь символ, окрім пробілу."
+msgstr "Ім'я повинно містити якийсь символ замість пробілу."
 
 #: src/app/main/errors.cljs:238
 msgid "errors.file-feature-mismatch"
 msgstr ""
 "Здається, існує невідповідність між увімкненими функціями та функціями "
-"файлу, який ви намагаєтеся відкрити. Перш ніж відкрити файл, потрібно "
+"файлу, який Ви намагаєтеся відкрити. Перш ніж відкрити файл, потрібно "
 "застосувати міграції для \"%s\"."
 
-#: src/app/main/data/auth.cljs:322, src/app/main/ui/auth/login.cljs:80, src/app/main/ui/auth/login.cljs:121, src/app/main/ui/auth/register.cljs:66, src/app/main/ui/auth/register.cljs:207, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:193, src/app/main/ui/onboarding/team_choice.cljs:112, src/app/main/ui/settings/access_tokens.cljs:80, src/app/main/ui/settings/feedback.cljs:49
+#: src/app/main/data/auth.cljs:322, src/app/main/ui/auth/login.cljs:81, src/app/main/ui/auth/login.cljs:122, src/app/main/ui/auth/register.cljs:66, src/app/main/ui/auth/register.cljs:207, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:193, src/app/main/ui/onboarding/team_choice.cljs:112, src/app/main/ui/settings/access_tokens.cljs:80, src/app/main/ui/settings/feedback.cljs:49
 msgid "errors.generic"
 msgstr "Виникла якась неполадка."
 
@@ -1216,8 +1219,7 @@ msgstr "Хибний колір"
 msgid "errors.invalid-email"
 msgstr "Будь ласка, вкажіть дійсну електрону адресу"
 
-#: src/app/main/ui/settings/change_email.cljs
-#, unused
+#: src/app/main/ui/settings/change_email.cljs:62
 msgid "errors.invalid-email-confirmation"
 msgstr "Підтвердження має відповідати електронній пошті"
 
@@ -1233,7 +1235,7 @@ msgstr "Хибне запрошення"
 msgid "errors.invite-invalid.info"
 msgstr "Це запрошення могло бути відкликане або його термін дії минув."
 
-#: src/app/main/ui/auth/login.cljs:106
+#: src/app/main/ui/auth/login.cljs:107
 msgid "errors.ldap-disabled"
 msgstr "Автентифікація через LDAP вимкнена."
 
@@ -1262,7 +1264,7 @@ msgstr "Схоже, це зображення є недійсним."
 #: src/app/main/ui/dashboard/team.cljs:615
 msgid "errors.member-is-muted"
 msgstr ""
-"Електронна пошта профілю, який ви намагаєтесь запросити, має приглушення "
+"Електронна пошта профілю, який Ви намагаєтесь запросити, має приглушення "
 "листів (скарги на спам або постійне пересилання)."
 
 #: src/app/main/errors.cljs:228
@@ -1272,7 +1274,7 @@ msgstr "Міграція триває"
 #: src/app/main/ui/settings/password.cljs
 #, unused
 msgid "errors.password-invalid-confirmation"
-msgstr "Підтвердження має відповідати паролю"
+msgstr "Підтверджувальний пароль має збігатись"
 
 #: src/app/main/ui/settings/password.cljs
 #, unused
@@ -1283,13 +1285,15 @@ msgstr "Пароль повинен мати, принаймні, 8 символ
 msgid "errors.paste-data-validation"
 msgstr "Недійсні дані в буфері обміну"
 
-#: src/app/main/data/auth.cljs:312, src/app/main/ui/auth/login.cljs:102, src/app/main/ui/auth/login.cljs:110
+#: src/app/main/data/auth.cljs:312, src/app/main/ui/auth/login.cljs:103, src/app/main/ui/auth/login.cljs:111
 msgid "errors.profile-blocked"
 msgstr "Профіль заблоковано"
 
 #: src/app/main/ui/auth/recovery_request.cljs:53, src/app/main/ui/dashboard/team.cljs:176, src/app/main/ui/dashboard/team.cljs:611, src/app/main/ui/onboarding/team_choice.cljs:96, src/app/main/ui/settings/change_email.cljs:33
 msgid "errors.profile-is-muted"
-msgstr "У вашому профілі приглушено листи (скарги на спам або постійне пересилання)."
+msgstr ""
+"Для Вашого профілю приглушено листи (скарги на спам або постійне "
+"пересилання)."
 
 #: src/app/main/data/auth.cljs:310, src/app/main/ui/auth/register.cljs:51
 msgid "errors.registration-disabled"
@@ -1302,17 +1306,17 @@ msgstr "Виявлено несумісну функцію \"%s\""
 #: src/app/main/ui/dashboard/sidebar.cljs:374, src/app/main/ui/dashboard/team.cljs:387
 msgid "errors.team-leave.insufficient-members"
 msgstr ""
-"Недостатньо учасників, щоб покинути команду, яку ви, ймовірно, хочете "
+"Недостатньо учасників, щоб покинути команду, яку Ви, ймовірно, хочете "
 "видалити."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:377, src/app/main/ui/dashboard/team.cljs:390
 msgid "errors.team-leave.member-does-not-exists"
-msgstr "Учасник, якого ви намагаєтеся призначити, не існує."
+msgstr "Учасник, якого Ви намагаєтеся призначити, не існує."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:380, src/app/main/ui/dashboard/team.cljs:393
 msgid "errors.team-leave.owner-cant-leave"
 msgstr ""
-"Власник не може покинути команду, тому ви повинні спершу призначити нового "
+"Власник не може покинути команду, тому Ви повинні спершу призначити нового "
 "власника."
 
 #: src/app/main/data/media.cljs:71
@@ -1359,12 +1363,11 @@ msgstr "Неочікувана помилка під час перевірки"
 msgid "errors.webhooks.unexpected-status"
 msgstr "Неочікуваний статус %s"
 
-#: src/app/main/ui/auth/login.cljs:114, src/app/main/ui/auth/login.cljs:118
+#: src/app/main/ui/auth/login.cljs:115, src/app/main/ui/auth/login.cljs:119
 msgid "errors.wrong-credentials"
 msgstr "Електронна пошта або пароль неправильні."
 
-#: src/app/main/ui/settings/password.cljs
-#, unused
+#: src/app/main/ui/settings/password.cljs:24
 msgid "errors.wrong-old-password"
 msgstr "Старий пароль неправильний"
 
@@ -1388,13 +1391,13 @@ msgstr "Спільнота Penpot"
 
 #: src/app/main/ui/settings/feedback.cljs:69
 msgid "feedback.subject"
-msgstr "Тема"
+msgstr "Причина"
 
 #: src/app/main/ui/settings/feedback.cljs:66
 msgid "feedback.subtitle"
 msgstr ""
 "Будь ласка, опишіть причину листа, вказавши чи є причина скаргою, ідеєю чи "
-"сумнівами. Учасник нашої команди відповість вам якомогашвидше."
+"сумнівами. Учасник нашої команди відповість вам якомога швидше."
 
 #: src/app/main/ui/settings/feedback.cljs:65
 msgid "feedback.title"
@@ -1412,11 +1415,11 @@ msgstr "Ми готові допомогти з вашими технічним�
 msgid "feedback.twitter-title"
 msgstr "Обліковий запис служби підтримки в X"
 
-#: src/app/main/ui/settings/notifications.cljs:38, src/app/main/ui/settings/password.cljs:29
+#: src/app/main/ui/settings/password.cljs:29
 msgid "generic.error"
 msgstr "Виникла помилка"
 
-#: src/app/main/ui/viewer/inspect/attributes/blur.cljs:26
+#: src/app/main/ui/inspect/attributes/blur.cljs:26
 msgid "inspect.attributes.blur"
 msgstr "Розмиття"
 
@@ -1424,31 +1427,31 @@ msgstr "Розмиття"
 msgid "inspect.attributes.blur.value"
 msgstr "Значення"
 
-#: src/app/main/ui/viewer/inspect/attributes/common.cljs:112
+#: src/app/main/ui/inspect/attributes/common.cljs:112
 msgid "inspect.attributes.color.hex"
 msgstr "HEX"
 
-#: src/app/main/ui/viewer/inspect/attributes/common.cljs:114
+#: src/app/main/ui/inspect/attributes/common.cljs:114
 msgid "inspect.attributes.color.hsla"
 msgstr "HSLA"
 
-#: src/app/main/ui/viewer/inspect/attributes/common.cljs:113
+#: src/app/main/ui/inspect/attributes/common.cljs:113
 msgid "inspect.attributes.color.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/viewer/inspect/attributes/fill.cljs:57
+#: src/app/main/ui/inspect/attributes/fill.cljs:57
 msgid "inspect.attributes.fill"
 msgstr "Заливка"
 
-#: src/app/main/ui/viewer/inspect/attributes/common.cljs:99, src/app/main/ui/viewer/inspect/attributes/image.cljs:51
+#: src/app/main/ui/inspect/attributes/common.cljs:99, src/app/main/ui/inspect/attributes/image.cljs:51
 msgid "inspect.attributes.image.download"
 msgstr "Завантажити вихідне зображення"
 
-#: src/app/main/ui/viewer/inspect/attributes/image.cljs:39
+#: src/app/main/ui/inspect/attributes/image.cljs:39
 msgid "inspect.attributes.image.height"
 msgstr "Висота"
 
-#: src/app/main/ui/viewer/inspect/attributes/image.cljs:32
+#: src/app/main/ui/inspect/attributes/image.cljs:32
 msgid "inspect.attributes.image.width"
 msgstr "Ширина"
 
@@ -1465,7 +1468,7 @@ msgstr "Висота"
 #: src/app/main/ui/inspect/attributes/layout.cljs
 #, unused
 msgid "inspect.attributes.layout.left"
-msgstr "Зліва"
+msgstr "Ліворуч"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs, src/app/main/ui/inspect/attributes/layout.cljs
 #, unused
@@ -1480,22 +1483,22 @@ msgstr "Обертання"
 #: src/app/main/ui/inspect/attributes/layout.cljs
 #, unused
 msgid "inspect.attributes.layout.top"
-msgstr "Згори"
+msgstr "Верх"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
 #, unused
 msgid "inspect.attributes.layout.width"
 msgstr "Ширина"
 
-#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:57
+#: src/app/main/ui/inspect/attributes/shadow.cljs:57
 msgid "inspect.attributes.shadow"
 msgstr "Тінь"
 
-#: src/app/main/ui/viewer/inspect/attributes/geometry.cljs:40
+#: src/app/main/ui/inspect/attributes/geometry.cljs:40
 msgid "inspect.attributes.size"
 msgstr "Розмір та розміщення"
 
-#: src/app/main/ui/viewer/inspect/attributes/stroke.cljs:52
+#: src/app/main/ui/inspect/attributes/stroke.cljs:52
 msgid "inspect.attributes.stroke"
 msgstr "Обведення"
 
@@ -1532,141 +1535,141 @@ msgstr "Суцільний"
 msgid "inspect.attributes.stroke.width"
 msgstr "Товщина"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:81, src/app/main/ui/viewer/inspect/attributes/text.cljs:194
+#: src/app/main/ui/inspect/attributes/text.cljs:83, src/app/main/ui/inspect/attributes/text.cljs:196
 msgid "inspect.attributes.typography"
 msgstr "Типографія"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:89, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:299
+#: src/app/main/ui/inspect/attributes/text.cljs:91, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:302
 msgid "inspect.attributes.typography.font-family"
 msgstr "Сімейство шрифта"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
+#: src/app/main/ui/inspect/attributes/text.cljs:109, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:320
 msgid "inspect.attributes.typography.font-size"
 msgstr "Розмір шрифта"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:98, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:333
+#: src/app/main/ui/inspect/attributes/text.cljs:100, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336
 msgid "inspect.attributes.typography.font-style"
 msgstr "Стиль шрифта"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:116
+#: src/app/main/ui/inspect/attributes/text.cljs:118
 msgid "inspect.attributes.typography.font-weight"
 msgstr "Товщина шрифта"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:134, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:386
+#: src/app/main/ui/inspect/attributes/text.cljs:136, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389
 msgid "inspect.attributes.typography.letter-spacing"
 msgstr "Відступ між літерами"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:125, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:369
+#: src/app/main/ui/inspect/attributes/text.cljs:127, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:372
 msgid "inspect.attributes.typography.line-height"
 msgstr "Висота лінії"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:143
+#: src/app/main/ui/inspect/attributes/text.cljs:145
 msgid "inspect.attributes.typography.text-decoration"
 msgstr "Оформлення тексту"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:145
+#: src/app/main/ui/inspect/attributes/text.cljs:147
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Немає"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:146
+#: src/app/main/ui/inspect/attributes/text.cljs:148
 msgid "inspect.attributes.typography.text-decoration.strikethrough"
 msgstr "Закреслений"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:147
+#: src/app/main/ui/inspect/attributes/text.cljs:149
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Підкреслений"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:156
+#: src/app/main/ui/inspect/attributes/text.cljs:158
 msgid "inspect.attributes.typography.text-transform"
 msgstr "Видозміна тексту"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:158, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:429
+#: src/app/main/ui/inspect/attributes/text.cljs:160, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:432
 msgid "inspect.attributes.typography.text-transform.lowercase"
 msgstr "Нижній регістр"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:159
+#: src/app/main/ui/inspect/attributes/text.cljs:161
 msgid "inspect.attributes.typography.text-transform.none"
 msgstr "Який є"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:160, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:425
+#: src/app/main/ui/inspect/attributes/text.cljs:162, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:428
 msgid "inspect.attributes.typography.text-transform.titlecase"
-msgstr "Титульний відмінок"
+msgstr "Заголовковий регістр"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:162
+#: src/app/main/ui/inspect/attributes/text.cljs:164
 msgid "inspect.attributes.typography.text-transform.unset"
 msgstr "Не встановлено"
 
-#: src/app/main/ui/viewer/inspect/attributes/text.cljs:161, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:419
+#: src/app/main/ui/inspect/attributes/text.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:422
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Верхній регістр"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:152
+#: src/app/main/ui/inspect/right_sidebar.cljs:163
 msgid "inspect.empty.help"
 msgstr ""
 "Якщо ви хочете дізнатися більше про інспекцію дизайну, відвідайте "
 "довідковий центр Penpot"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:155
+#: src/app/main/ui/inspect/right_sidebar.cljs:166
 msgid "inspect.empty.more-info"
 msgstr "Більше інформації про інспекцію"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:147
+#: src/app/main/ui/inspect/right_sidebar.cljs:158
 msgid "inspect.empty.select"
 msgstr "Оберіть фігуру, дошку або групу, щоб переглянути їх властивості та код"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:100
+#: src/app/main/ui/inspect/right_sidebar.cljs:105
 msgid "inspect.tabs.code"
 msgstr "Код"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:124
+#: src/app/main/ui/inspect/right_sidebar.cljs:129
 msgid "inspect.tabs.code.selected.circle"
 msgstr "Коло"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:125
+#: src/app/main/ui/inspect/right_sidebar.cljs:130
 msgid "inspect.tabs.code.selected.component"
 msgstr "Компонент"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:126
+#: src/app/main/ui/inspect/right_sidebar.cljs:131
 msgid "inspect.tabs.code.selected.curve"
 msgstr "Крива"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:127
+#: src/app/main/ui/inspect/right_sidebar.cljs:132
 msgid "inspect.tabs.code.selected.frame"
 msgstr "Кадр"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:128
+#: src/app/main/ui/inspect/right_sidebar.cljs:133
 msgid "inspect.tabs.code.selected.group"
 msgstr "Група"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:129
+#: src/app/main/ui/inspect/right_sidebar.cljs:134
 msgid "inspect.tabs.code.selected.image"
 msgstr "Зображення"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:130
+#: src/app/main/ui/inspect/right_sidebar.cljs:135
 msgid "inspect.tabs.code.selected.mask"
 msgstr "Маска"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:119
+#: src/app/main/ui/inspect/right_sidebar.cljs:124
 msgid "inspect.tabs.code.selected.multiple"
 msgstr "Виділено: %s"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:131
+#: src/app/main/ui/inspect/right_sidebar.cljs:136
 msgid "inspect.tabs.code.selected.path"
 msgstr "Контур"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:132
+#: src/app/main/ui/inspect/right_sidebar.cljs:137
 msgid "inspect.tabs.code.selected.rect"
 msgstr "Прямокутник"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:133
+#: src/app/main/ui/inspect/right_sidebar.cljs:138
 msgid "inspect.tabs.code.selected.svg-raw"
 msgstr "SVG"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:134
+#: src/app/main/ui/inspect/right_sidebar.cljs:139
 msgid "inspect.tabs.code.selected.text"
 msgstr "Текст"
 
-#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:96
+#: src/app/main/ui/inspect/right_sidebar.cljs:101
 msgid "inspect.tabs.info"
 msgstr "Інформація"
 
@@ -1686,15 +1689,15 @@ msgstr "Токени доступу"
 msgid "labels.active"
 msgstr "Активне"
 
-#: src/app/main/ui/workspace/libraries.cljs:173
+#: src/app/main/ui/workspace/libraries.cljs:176
 msgid "labels.add"
 msgstr "Додати"
 
-#: src/app/main/ui/dashboard/fonts.cljs:179
+#: src/app/main/ui/dashboard/fonts.cljs:180
 msgid "labels.add-custom-font"
 msgstr "Додати користувацькі шрифти"
 
-#: src/app/main/ui/workspace/libraries.cljs:173
+#: src/app/main/ui/workspace/libraries.cljs:176
 msgid "labels.adding"
 msgstr "Додавання..."
 
@@ -1706,7 +1709,7 @@ msgstr "Адміністратор"
 msgid "labels.adobe-xd"
 msgstr "Adobe ExpDesign"
 
-#: src/app/main/ui/workspace/tokens/context_menu.cljs:63, src/app/main/ui/workspace/tokens/context_menu.cljs:101, src/app/main/ui/workspace/tokens/token_pill.cljs:110
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:66, src/app/main/ui/workspace/tokens/context_menu.cljs:100, src/app/main/ui/workspace/tokens/token_pill.cljs:118
 msgid "labels.all"
 msgstr "Всі"
 
@@ -1728,7 +1731,7 @@ msgstr ""
 msgid "labels.bad-gateway.main-message"
 msgstr "Поганий шлюз"
 
-#: src/app/main/data/common.cljs:135, src/app/main/ui/dashboard/change_owner.cljs:66, src/app/main/ui/dashboard/import.cljs:489, src/app/main/ui/dashboard/team.cljs:916, src/app/main/ui/delete_shared.cljs:35, src/app/main/ui/exports/assets.cljs:161, src/app/main/ui/exports/files.cljs:192, src/app/main/ui/settings/access_tokens.cljs:177, src/app/main/ui/viewer/share_link.cljs:204, src/app/main/ui/workspace/sidebar/assets/groups.cljs:145, src/app/main/ui/workspace/tokens/form.cljs:506, src/app/main/ui/workspace/tokens/modals/themes.cljs:198
+#: src/app/main/data/common.cljs:135, src/app/main/ui/dashboard/change_owner.cljs:66, src/app/main/ui/dashboard/import.cljs:489, src/app/main/ui/dashboard/team.cljs:916, src/app/main/ui/delete_shared.cljs:35, src/app/main/ui/exports/assets.cljs:161, src/app/main/ui/exports/files.cljs:192, src/app/main/ui/settings/access_tokens.cljs:176, src/app/main/ui/viewer/share_link.cljs:204, src/app/main/ui/workspace/sidebar/assets/groups.cljs:145, src/app/main/ui/workspace/tokens/form.cljs:572, src/app/main/ui/workspace/tokens/modals/themes.cljs:234
 msgid "labels.cancel"
 msgstr "Скасувати"
 
@@ -1736,27 +1739,27 @@ msgstr "Скасувати"
 msgid "labels.canva"
 msgstr "Канва"
 
-#: src/app/main/ui/dashboard/comments.cljs:87, src/app/main/ui/dashboard/projects.cljs:99, src/app/main/ui/exports/files.cljs:210, src/app/main/ui/settings/access_tokens.cljs:172, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:175, src/app/main/ui/workspace/comments.cljs:125, src/app/main/ui/workspace/libraries.cljs:645, src/app/main/ui/workspace/sidebar/debug.cljs:40, src/app/main/ui/workspace/sidebar/layers.cljs:300, src/app/main/ui/workspace/sidebar.cljs:275, src/app/main/ui/workspace/tokens/modals/themes.cljs:396, src/app/main/ui/workspace/tokens/modals.cljs:64
+#: src/app/main/ui/dashboard/comments.cljs:102, src/app/main/ui/dashboard/projects.cljs:99, src/app/main/ui/exports/files.cljs:210, src/app/main/ui/settings/access_tokens.cljs:171, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:175, src/app/main/ui/workspace/comments.cljs:128, src/app/main/ui/workspace/libraries.cljs:627, src/app/main/ui/workspace/sidebar/debug.cljs:40, src/app/main/ui/workspace/sidebar/layers.cljs:300, src/app/main/ui/workspace/sidebar.cljs:276, src/app/main/ui/workspace/tokens/modals/themes.cljs:59, src/app/main/ui/workspace/tokens/modals/themes.cljs:166, src/app/main/ui/workspace/tokens/modals/themes.cljs:446, src/app/main/ui/workspace/tokens/modals.cljs:64
 msgid "labels.close"
 msgstr "Закрити"
 
-#: src/app/main/ui/workspace/tokens/sets.cljs:180
+#: src/app/main/ui/workspace/tokens/sets.cljs:219
 msgid "labels.collapse"
 msgstr "Згорнути"
 
-#: src/app/main/ui/comments.cljs:812
+#: src/app/main/ui/comments.cljs:881
 msgid "labels.comment"
 msgstr "Коментар"
 
-#: src/app/main/ui/comments.cljs:816
+#: src/app/main/ui/comments.cljs:885
 msgid "labels.comment.mark-as-solved"
 msgstr "Позначити як виконане"
 
-#: src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:123
+#: src/app/main/ui/viewer/comments.cljs:71, src/app/main/ui/workspace/comments.cljs:126
 msgid "labels.comments"
 msgstr "Коментарі"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1016, src/app/main/ui/workspace/main_menu.cljs:114
+#: src/app/main/ui/dashboard/sidebar.cljs:1017, src/app/main/ui/workspace/main_menu.cljs:114
 msgid "labels.community"
 msgstr "Спільнота"
 
@@ -1764,7 +1767,7 @@ msgstr "Спільнота"
 msgid "labels.confirm-password"
 msgstr "Підтвердити пароль"
 
-#: src/app/main/ui/dashboard/import.cljs:495, src/app/main/ui/exports/files.cljs:197, src/app/main/ui/onboarding/newsletter.cljs:101
+#: src/app/main/ui/dashboard/import.cljs:495, src/app/main/ui/exports/files.cljs:197, src/app/main/ui/onboarding/newsletter.cljs:106
 msgid "labels.continue"
 msgstr "Продовжити"
 
@@ -1784,7 +1787,7 @@ msgstr "Копіювати посилання"
 msgid "labels.copyright"
 msgstr "Калейдос @2024"
 
-#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:153, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:190
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:153, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:197
 msgid "labels.create"
 msgstr "Створити"
 
@@ -1794,7 +1797,7 @@ msgstr "Створити нову команду"
 
 #: src/app/main/ui/dashboard/team_form.cljs:115
 msgid "labels.create-team.placeholder"
-msgstr "Введіть ім'я нової команди"
+msgstr "Вкажіть ім'я нової команди"
 
 #, unused
 msgid "labels.custom-fonts"
@@ -1804,15 +1807,15 @@ msgstr "Користувацькі шрифти"
 msgid "labels.dashboard"
 msgstr "Панель керування"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:326, src/app/main/ui/dashboard/fonts.cljs:259, src/app/main/ui/dashboard/fonts.cljs:335, src/app/main/ui/dashboard/fonts.cljs:349, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:952, src/app/main/ui/settings/access_tokens.cljs:198, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:209, src/app/main/ui/workspace/sidebar/versions.cljs:136, src/app/main/ui/workspace/tokens/form.cljs:500, src/app/main/ui/workspace/tokens/modals/themes.cljs:365, src/app/main/ui/workspace/tokens/sets_context_menu.cljs:52
+#: src/app/main/ui/dashboard/file_menu.cljs:326, src/app/main/ui/dashboard/fonts.cljs:261, src/app/main/ui/dashboard/fonts.cljs:337, src/app/main/ui/dashboard/fonts.cljs:351, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:952, src/app/main/ui/settings/access_tokens.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:216, src/app/main/ui/workspace/sidebar/versions.cljs:136, src/app/main/ui/workspace/tokens/form.cljs:565, src/app/main/ui/workspace/tokens/modals/themes.cljs:414, src/app/main/ui/workspace/tokens/sets_context_menu.cljs:56
 msgid "labels.delete"
 msgstr "Видалити"
 
-#: src/app/main/ui/comments.cljs:907
+#: src/app/main/ui/comments.cljs:976
 msgid "labels.delete-comment"
 msgstr "Видалити коментар"
 
-#: src/app/main/ui/comments.cljs:830
+#: src/app/main/ui/comments.cljs:899
 msgid "labels.delete-comment-thread"
 msgstr "Видалити гілку"
 
@@ -1832,15 +1835,15 @@ msgstr "Розробка"
 msgid "labels.director"
 msgstr "Директор"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:199
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:206
 msgid "labels.discard"
 msgstr "Відхилити"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:29, src/app/main/ui/dashboard/files.cljs:79, src/app/main/ui/dashboard/files.cljs:177, src/app/main/ui/dashboard/projects.cljs:227, src/app/main/ui/dashboard/projects.cljs:231, src/app/main/ui/dashboard/sidebar.cljs:814
+#: src/app/main/ui/dashboard/file_menu.cljs:29, src/app/main/ui/dashboard/files.cljs:79, src/app/main/ui/dashboard/files.cljs:177, src/app/main/ui/dashboard/projects.cljs:228, src/app/main/ui/dashboard/projects.cljs:232, src/app/main/ui/dashboard/sidebar.cljs:814
 msgid "labels.drafts"
 msgstr "Чернетки"
 
-#: src/app/main/ui/comments.cljs:903, src/app/main/ui/dashboard/fonts.cljs:256, src/app/main/ui/dashboard/team.cljs:950, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:205, src/app/main/ui/workspace/tokens/sidebar.cljs:198
+#: src/app/main/ui/comments.cljs:972, src/app/main/ui/dashboard/fonts.cljs:258, src/app/main/ui/dashboard/team.cljs:950, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:212, src/app/main/ui/workspace/tokens/sidebar.cljs:197
 msgid "labels.edit"
 msgstr "Редагувати"
 
@@ -1860,7 +1863,7 @@ msgstr "Подія"
 msgid "labels.expired-invitation"
 msgstr "Сплинув термін дії"
 
-#: src/app/main/ui/exports/assets.cljs:170, src/app/main/ui/workspace/tokens/sidebar.cljs:359
+#: src/app/main/ui/exports/assets.cljs:170, src/app/main/ui/workspace/tokens/sidebar.cljs:418
 msgid "labels.export"
 msgstr "Експорт"
 
@@ -1876,7 +1879,7 @@ msgstr "Відгук надіслано"
 msgid "labels.figma"
 msgstr "Фіґма"
 
-#: src/app/main/ui/dashboard/fonts.cljs:422
+#: src/app/main/ui/dashboard/fonts.cljs:424
 msgid "labels.font-family"
 msgstr "Сімейство шрифтів"
 
@@ -1884,11 +1887,11 @@ msgstr "Сімейство шрифтів"
 msgid "labels.font-providers"
 msgstr "Постачальники шрифтів"
 
-#: src/app/main/ui/dashboard/fonts.cljs:423
+#: src/app/main/ui/dashboard/fonts.cljs:425
 msgid "labels.font-variants"
 msgstr "Стилі"
 
-#: src/app/main/ui/dashboard/fonts.cljs:54, src/app/main/ui/dashboard/sidebar.cljs:834
+#: src/app/main/ui/dashboard/fonts.cljs:55, src/app/main/ui/dashboard/sidebar.cljs:834
 msgid "labels.fonts"
 msgstr "Шрифти"
 
@@ -1900,11 +1903,11 @@ msgstr "Генеральний директор або Засновник"
 msgid "labels.freelancer"
 msgstr "Фрилансер"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1046, src/app/main/ui/workspace/main_menu.cljs:146
+#: src/app/main/ui/dashboard/sidebar.cljs:1047, src/app/main/ui/workspace/main_menu.cljs:146
 msgid "labels.github-repo"
 msgstr "Репозиторій Github"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1063, src/app/main/ui/settings/sidebar.cljs:125, src/app/main/ui/workspace/main_menu.cljs:175
+#: src/app/main/ui/dashboard/sidebar.cljs:1064, src/app/main/ui/settings/sidebar.cljs:125, src/app/main/ui/workspace/main_menu.cljs:175
 msgid "labels.give-feedback"
 msgstr "Надішліть відгук"
 
@@ -1916,15 +1919,15 @@ msgstr "Повернутись назад"
 msgid "labels.graphic-design"
 msgstr "Графічний дизайн"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1009, src/app/main/ui/workspace/main_menu.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1079, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1104, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1290
+#: src/app/main/ui/dashboard/sidebar.cljs:1010, src/app/main/ui/workspace/main_menu.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1088, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1113, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1299
 msgid "labels.help-center"
 msgstr "Центр Допомоги"
 
-#: src/app/main/ui/viewer/comments.cljs:103, src/app/main/ui/workspace/comments.cljs:72
+#: src/app/main/ui/viewer/comments.cljs:104, src/app/main/ui/workspace/comments.cljs:73
 msgid "labels.hide-resolved-comments"
 msgstr "Приховати вирішені коментарі"
 
-#: src/app/main/ui/workspace/tokens/sidebar.cljs:355
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:413
 msgid "labels.import"
 msgstr "Імпортувати"
 
@@ -1932,7 +1935,7 @@ msgstr "Імпортувати"
 msgid "labels.inactive"
 msgstr "Не активний"
 
-#: src/app/main/ui/dashboard/fonts.cljs:420
+#: src/app/main/ui/dashboard/fonts.cljs:422
 msgid "labels.installed-fonts"
 msgstr "Встановлені шрифти"
 
@@ -1958,11 +1961,11 @@ msgstr "Запрошення"
 msgid "labels.language"
 msgstr "Мова"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1039, src/app/main/ui/workspace/main_menu.cljs:138
+#: src/app/main/ui/dashboard/sidebar.cljs:1040, src/app/main/ui/workspace/main_menu.cljs:138
 msgid "labels.libraries-and-templates"
 msgstr "Бібліотеки та Шаблони"
 
-#: src/app/main/ui/auth/verify_token.cljs:100, src/app/main/ui/dashboard/grid.cljs:114, src/app/main/ui/dashboard/grid.cljs:133, src/app/main/ui/dashboard/import.cljs:253, src/app/main/ui/dashboard/placeholder.cljs:53, src/app/main/ui/ds/product/loader.cljs:52, src/app/main/ui/exports/files.cljs:62, src/app/main/ui/viewer.cljs:643, src/app/main/ui/workspace.cljs:126, src/app/main/ui.cljs:67, src/app/main/ui.cljs:105, src/app/main/ui.cljs:124
+#: src/app/main/ui/auth/verify_token.cljs:100, src/app/main/ui/dashboard/grid.cljs:115, src/app/main/ui/dashboard/grid.cljs:134, src/app/main/ui/dashboard/import.cljs:253, src/app/main/ui/dashboard/placeholder.cljs:98, src/app/main/ui/ds/product/loader.cljs:85, src/app/main/ui/exports/files.cljs:62, src/app/main/ui/viewer.cljs:643, src/app/main/ui/workspace.cljs:118, src/app/main/ui.cljs:66, src/app/main/ui.cljs:104, src/app/main/ui.cljs:123
 msgid "labels.loading"
 msgstr "Завантаження…"
 
@@ -1974,7 +1977,7 @@ msgstr "Увійти або зареєструватись"
 msgid "labels.login"
 msgstr "Увійти"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1071
+#: src/app/main/ui/dashboard/sidebar.cljs:1072
 msgid "labels.logout"
 msgstr "Вийти"
 
@@ -1994,11 +1997,11 @@ msgstr "Учасники"
 msgid "labels.new-password"
 msgstr "Новий пароль"
 
-#: src/app/main/ui/dashboard/templates.cljs:275, src/app/main/ui/onboarding/questions.cljs:55, src/app/main/ui/viewer.cljs:112
+#: src/app/main/ui/dashboard/templates.cljs:289, src/app/main/ui/onboarding/questions.cljs:55, src/app/main/ui/viewer.cljs:112
 msgid "labels.next"
 msgstr "Далі"
 
-#: src/app/main/ui/dashboard/comments.cljs:106, src/app/main/ui/workspace/comments.cljs:161
+#: src/app/main/ui/dashboard/comments.cljs:121, src/app/main/ui/workspace/comments.cljs:164
 msgid "labels.no-comments-available"
 msgstr "Ви все наздогнали! Нові повідомлення про коментарі з’являться тут."
 
@@ -2026,7 +2029,7 @@ msgstr "Отакої!"
 msgid "labels.notifications"
 msgstr "Сповіщення"
 
-#: src/app/main/ui/dashboard/projects.cljs:238, src/app/main/ui/dashboard/team.cljs:1147
+#: src/app/main/ui/dashboard/projects.cljs:239, src/app/main/ui/dashboard/team.cljs:1147
 msgid "labels.num-of-files"
 msgid_plural "labels.num-of-files"
 msgstr[0] "%s файл"
@@ -2060,7 +2063,7 @@ msgstr "Старий пароль"
 msgid "labels.only-yours"
 msgstr "Лише ваші"
 
-#: src/app/main/ui/comments.cljs:545, src/app/main/ui/comments.cljs:822, src/app/main/ui/comments.cljs:886, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:295, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:324
+#: src/app/main/ui/comments.cljs:891, src/app/main/ui/comments.cljs:955, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:293, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:322
 msgid "labels.options"
 msgstr "Параметри"
 
@@ -2088,7 +2091,7 @@ msgstr "Пароль"
 msgid "labels.pending-invitation"
 msgstr "Очікування"
 
-#: src/app/main/ui/comments.cljs:657, src/app/main/ui/comments.cljs:690, src/app/main/ui/comments.cljs:759
+#: src/app/main/ui/comments.cljs:678
 msgid "labels.post"
 msgstr "Публікація"
 
@@ -2112,7 +2115,7 @@ msgstr "Профіль"
 msgid "labels.projects"
 msgstr "Проєкти"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1029, src/app/main/ui/settings/sidebar.cljs:118, src/app/main/ui/workspace/main_menu.cljs:130
+#: src/app/main/ui/dashboard/sidebar.cljs:1030, src/app/main/ui/settings/sidebar.cljs:118, src/app/main/ui/workspace/main_menu.cljs:130
 msgid "labels.release-notes"
 msgstr "Примітки до випуску"
 
@@ -2130,7 +2133,7 @@ msgstr "Видалити"
 msgid "labels.remove-member"
 msgstr "Вилучити учасника"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:278, src/app/main/ui/dashboard/project_menu.cljs:88, src/app/main/ui/dashboard/sidebar.cljs:548, src/app/main/ui/workspace/sidebar/assets/groups.cljs:153, src/app/main/ui/workspace/sidebar/versions.cljs:130, src/app/main/ui/workspace/tokens/sets_context_menu.cljs:51
+#: src/app/main/ui/dashboard/file_menu.cljs:278, src/app/main/ui/dashboard/project_menu.cljs:88, src/app/main/ui/dashboard/sidebar.cljs:548, src/app/main/ui/workspace/sidebar/assets/groups.cljs:153, src/app/main/ui/workspace/sidebar/versions.cljs:130, src/app/main/ui/workspace/tokens/sets_context_menu.cljs:55
 msgid "labels.rename"
 msgstr "Перейменувати"
 
@@ -2138,23 +2141,23 @@ msgstr "Перейменувати"
 msgid "labels.rename-team"
 msgstr "Перейменувати команду"
 
-#: src/app/main/ui/comments.cljs:598
+#: src/app/main/ui/comments.cljs:641
 msgid "labels.replies"
 msgstr "відповіді"
 
-#: src/app/main/ui/comments.cljs:603
+#: src/app/main/ui/comments.cljs:646
 msgid "labels.replies.new"
 msgstr "нові відповіді"
 
-#: src/app/main/ui/comments.cljs:597
+#: src/app/main/ui/comments.cljs:640
 msgid "labels.reply"
 msgstr "відповідь"
 
-#: src/app/main/ui/comments.cljs:602
+#: src/app/main/ui/comments.cljs:645
 msgid "labels.reply.new"
 msgstr "нова відповідь"
 
-#: src/app/main/ui/comments.cljs:641
+#: src/app/main/ui/comments.cljs:721
 msgid "labels.reply.thread"
 msgstr "Відповідь"
 
@@ -2174,15 +2177,15 @@ msgstr "Повторити"
 msgid "labels.role"
 msgstr "Роль"
 
-#: src/app/main/ui/dashboard/fonts.cljs:385, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:191, src/app/main/ui/workspace/tokens/form.cljs:510
+#: src/app/main/ui/dashboard/fonts.cljs:387, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:198, src/app/main/ui/workspace/tokens/form.cljs:577
 msgid "labels.save"
 msgstr "Зберегти"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:425
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:506
 msgid "labels.search"
 msgstr "Пошук"
 
-#: src/app/main/ui/dashboard/fonts.cljs:425
+#: src/app/main/ui/dashboard/fonts.cljs:427
 msgid "labels.search-font"
 msgstr "Пошук шрифта"
 
@@ -2206,7 +2209,7 @@ msgstr "Ми проводимо програмне обслуговування 
 msgid "labels.service-unavailable.main-message"
 msgstr "Сервіс недосяжний"
 
-#: src/app/main/ui/workspace/tokens/sidebar.cljs:252
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:247
 msgid "labels.sets"
 msgstr "Набори"
 
@@ -2226,19 +2229,19 @@ msgstr "Поділитись прототипом"
 msgid "labels.shared-libraries"
 msgstr "Бібліотеки"
 
-#: src/app/main/ui/viewer/comments.cljs:82, src/app/main/ui/workspace/comments.cljs:54, src/app/main/ui/workspace/comments.cljs:134
+#: src/app/main/ui/viewer/comments.cljs:83, src/app/main/ui/workspace/comments.cljs:55, src/app/main/ui/workspace/comments.cljs:137
 msgid "labels.show-all-comments"
 msgstr "Показати усі коментарі"
 
-#: src/app/main/ui/viewer/comments.cljs:115
+#: src/app/main/ui/viewer/comments.cljs:116
 msgid "labels.show-comments-list"
 msgstr "Показати список коментарів"
 
-#: src/app/main/ui/workspace/comments.cljs:66, src/app/main/ui/workspace/comments.cljs:136
+#: src/app/main/ui/workspace/comments.cljs:67, src/app/main/ui/workspace/comments.cljs:139
 msgid "labels.show-mentions"
 msgstr "Показувати лише ваші згадки"
 
-#: src/app/main/ui/viewer/comments.cljs:91, src/app/main/ui/workspace/comments.cljs:60, src/app/main/ui/workspace/comments.cljs:135
+#: src/app/main/ui/viewer/comments.cljs:92, src/app/main/ui/workspace/comments.cljs:61, src/app/main/ui/workspace/comments.cljs:138
 msgid "labels.show-your-comments"
 msgstr "Показати лише ваші коментарі"
 
@@ -2266,11 +2269,11 @@ msgstr "Керівник команди"
 msgid "labels.team-member"
 msgstr "Учасник команди"
 
-#: src/app/main/ui/workspace/tokens/sidebar.cljs:183
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:182
 msgid "labels.themes"
 msgstr "Теми"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1023, src/app/main/ui/workspace/main_menu.cljs:122
+#: src/app/main/ui/dashboard/sidebar.cljs:1024, src/app/main/ui/workspace/main_menu.cljs:122
 msgid "labels.tutorials"
 msgstr "Посібники"
 
@@ -2286,15 +2289,15 @@ msgstr "Оновити"
 msgid "labels.update-team"
 msgstr "Оновити команду"
 
-#: src/app/main/ui/dashboard/fonts.cljs:245
+#: src/app/main/ui/dashboard/fonts.cljs:247
 msgid "labels.upload"
 msgstr "Вивантажити"
 
-#: src/app/main/ui/dashboard/fonts.cljs:173
+#: src/app/main/ui/dashboard/fonts.cljs:174
 msgid "labels.upload-custom-fonts"
 msgstr "Вивантажити користувацькі шрифти"
 
-#: src/app/main/ui/dashboard/fonts.cljs:244
+#: src/app/main/ui/dashboard/fonts.cljs:246
 msgid "labels.uploading"
 msgstr "Вивантажую…"
 
@@ -2310,15 +2313,15 @@ msgstr "Глядач"
 msgid "labels.webhooks"
 msgstr "Вебхуки"
 
-#: src/app/main/ui/comments.cljs:743
+#: src/app/main/ui/comments.cljs:818
 msgid "labels.write-new-comment"
 msgstr "Написати новий коментар"
 
 #: src/app/main/ui/dashboard/team.cljs:262
 msgid "labels.you"
-msgstr "(ви)"
+msgstr "(Ви)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:999
+#: src/app/main/ui/dashboard/sidebar.cljs:1000
 msgid "labels.your-account"
 msgstr "Ваш обліковий запис"
 
@@ -2326,23 +2329,23 @@ msgstr "Ваш обліковий запис"
 msgid "labels.youtube"
 msgstr "Ютуб"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:477, src/app/main/ui/workspace/colorpicker.cljs:478, src/app/main/ui/workspace/colorpicker.cljs:480
+#: src/app/main/ui/workspace/colorpicker.cljs:474, src/app/main/ui/workspace/colorpicker.cljs:475, src/app/main/ui/workspace/colorpicker.cljs:477
 msgid "media.choose-image"
 msgstr "Обрати зображення"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:245
+#: src/app/main/ui/workspace/colorpicker.cljs:241
 msgid "media.gradient"
 msgstr "Градієнт"
 
-#: src/app/main/data/workspace/media.cljs:274, src/app/main/ui/components/color_bullet.cljs:34, src/app/main/ui/components/color_bullet.cljs:47, src/app/main/ui/ds/utilities/swatch.cljs:40, src/app/main/ui/ds/utilities/swatch.cljs:53, src/app/main/ui/viewer/inspect/attributes/common.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:247, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:239
+#: src/app/main/data/workspace/media.cljs:274, src/app/main/ui/components/color_bullet.cljs:34, src/app/main/ui/components/color_bullet.cljs:47, src/app/main/ui/ds/utilities/swatch.cljs:40, src/app/main/ui/ds/utilities/swatch.cljs:53, src/app/main/ui/inspect/attributes/common.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:243, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:239
 msgid "media.image"
 msgstr "Зображення"
 
-#: src/app/main/ui/viewer/inspect/attributes/common.cljs:77
+#: src/app/main/ui/inspect/attributes/common.cljs:77
 msgid "media.image.short"
 msgstr ".img"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:470
+#: src/app/main/ui/workspace/colorpicker.cljs:467
 msgid "media.keep-aspect-ratio"
 msgstr "Зберігати співвідношення сторін"
 
@@ -2360,7 +2363,7 @@ msgstr "Завантаження зображення…"
 msgid "media.radial"
 msgstr "Круговий"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:243
+#: src/app/main/ui/workspace/colorpicker.cljs:239
 msgid "media.solid"
 msgstr "Суцільний"
 
@@ -2368,7 +2371,7 @@ msgstr "Суцільний"
 msgid "modals.add-shared-confirm-empty.hint"
 msgstr ""
 "Ваша бібліотека порожня. Після додавання до спільної бібліотеки створені "
-"вами ресурси стануть доступними для використання серед інших ваших файлів. "
+"Вами ресурси стануть доступними для використання серед інших Ваших файлів. "
 "Ви впевнені, що хочете опублікувати його?"
 
 #: src/app/main/data/common.cljs:136
@@ -2379,7 +2382,7 @@ msgstr "Додати як Спільну Бібліотеку"
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
 "Після додавання як спільної бібліотеки ресурси цієї файлової бібліотеки "
-"будуть доступні для використання серед решти ваших файлів."
+"будуть доступні для використання серед решти Ваших файлів."
 
 #: src/app/main/data/common.cljs:133
 msgid "modals.add-shared-confirm.message"
@@ -2387,7 +2390,7 @@ msgstr "Додати \"%s\" як Спільну Бібліотеку"
 
 #: src/app/main/ui/workspace/nudge.cljs:60
 msgid "modals.big-nudge"
-msgstr "Велике зміщення"
+msgstr "Великий зсув"
 
 #: src/app/main/ui/settings/change_email.cljs:111
 msgid "modals.change-email.confirm-email"
@@ -2411,7 +2414,7 @@ msgstr "Змінити електрону адресу"
 msgid "modals.change-email.title"
 msgstr "Змінити свою електрону адресу"
 
-#: src/app/main/ui/settings/access_tokens.cljs:154, src/app/main/ui/settings/access_tokens.cljs:160
+#: src/app/main/ui/settings/access_tokens.cljs:153, src/app/main/ui/settings/access_tokens.cljs:159
 msgid "modals.create-access-token.copy-token"
 msgstr "Скопіювати токен"
 
@@ -2427,7 +2430,7 @@ msgstr "Ім'я"
 msgid "modals.create-access-token.name.placeholder"
 msgstr "Ім'я допоможе зрозуміти для чого призначений токен"
 
-#: src/app/main/ui/settings/access_tokens.cljs:180
+#: src/app/main/ui/settings/access_tokens.cljs:179
 msgid "modals.create-access-token.submit-label"
 msgstr "Створити токен"
 
@@ -2451,15 +2454,15 @@ msgstr "Посилання на Payload"
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://savelife.in.ua/en"
 
-#: src/app/main/ui/settings/access_tokens.cljs:260
+#: src/app/main/ui/settings/access_tokens.cljs:259
 msgid "modals.delete-acces-token.accept"
 msgstr "Видалити токен"
 
-#: src/app/main/ui/settings/access_tokens.cljs:259
+#: src/app/main/ui/settings/access_tokens.cljs:258
 msgid "modals.delete-acces-token.message"
 msgstr "Ви впевнені що хочете видалити цей токен?"
 
-#: src/app/main/ui/settings/access_tokens.cljs:258
+#: src/app/main/ui/settings/access_tokens.cljs:257
 msgid "modals.delete-acces-token.title"
 msgstr "Видалити токен"
 
@@ -2473,31 +2476,31 @@ msgstr "Так, видалити мій обліковий запис"
 
 #: src/app/main/ui/settings/delete_account.cljs:53
 msgid "modals.delete-account.info"
-msgstr "Видаливши обліковий запис, ви втратите усі свої проєкти та архіви."
+msgstr "Видаливши обліковий запис, Ви втратите усі свої проєкти та архіви."
 
 #: src/app/main/ui/settings/delete_account.cljs:46
 msgid "modals.delete-account.title"
 msgstr "Ви впевнені, що хочете видалити обліковий запис?"
 
-#: src/app/main/ui/comments.cljs:800
+#: src/app/main/ui/comments.cljs:869
 msgid "modals.delete-comment-thread.accept"
 msgstr "Видалити бесіду"
 
-#: src/app/main/ui/comments.cljs:799
+#: src/app/main/ui/comments.cljs:868
 msgid "modals.delete-comment-thread.message"
 msgstr ""
 "Ви впевнені, що хочете видалити цю бесіду? Всі коментарі в цій гілці буде "
 "видалено."
 
-#: src/app/main/ui/comments.cljs:798
+#: src/app/main/ui/comments.cljs:867
 msgid "modals.delete-comment-thread.title"
 msgstr "Видалити бесіду"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:140
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:147
 msgid "modals.delete-component-annotation.message"
 msgstr "Ви впевнені, що хочете видалити цю анотацію?"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:139
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:146
 msgid "modals.delete-component-annotation.title"
 msgstr "Видалити анотацію"
 
@@ -2525,31 +2528,31 @@ msgstr "Ви впевнені, що хочете видалити %s файлі�
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "Видалення %s файлів"
 
-#: src/app/main/ui/dashboard/fonts.cljs:348
+#: src/app/main/ui/dashboard/fonts.cljs:350
 msgid "modals.delete-font-variant.message"
 msgstr ""
-"Ви впевнені, що хочете видалити стиль шрифта? Його не завантажиться, якщо "
+"Ви впевнені, що хочете видалити стиль шрифта? Він не завантажиться якщо "
 "буде використаний у файлі."
 
-#: src/app/main/ui/dashboard/fonts.cljs:347
+#: src/app/main/ui/dashboard/fonts.cljs:349
 msgid "modals.delete-font-variant.title"
 msgstr "Видалення стилю шрифта"
 
-#: src/app/main/ui/dashboard/fonts.cljs:334
+#: src/app/main/ui/dashboard/fonts.cljs:336
 msgid "modals.delete-font.message"
 msgstr ""
 "Ви впевнені, що хочете видалити цей шрифт? Він не завантажиться якщо буде "
 "використаний у файлі."
 
-#: src/app/main/ui/dashboard/fonts.cljs:333
+#: src/app/main/ui/dashboard/fonts.cljs:335
 msgid "modals.delete-font.title"
 msgstr "Видалення шрифта"
 
-#: src/app/main/ui/workspace/context_menu.cljs:627, src/app/main/ui/workspace/sidebar/sitemap.cljs:71
+#: src/app/main/ui/workspace/context_menu.cljs:643, src/app/main/ui/workspace/sidebar/sitemap.cljs:71
 msgid "modals.delete-page.body"
 msgstr "Ви впевнені, що хочете видалити цю сторінку?"
 
-#: src/app/main/ui/workspace/context_menu.cljs:626, src/app/main/ui/workspace/sidebar/sitemap.cljs:70
+#: src/app/main/ui/workspace/context_menu.cljs:642, src/app/main/ui/workspace/sidebar/sitemap.cljs:70
 msgid "modals.delete-page.title"
 msgstr "Видалити сторінку"
 
@@ -2686,7 +2689,7 @@ msgstr "Запросити учасників до команди"
 #: src/app/main/ui/dashboard/sidebar.cljs:432, src/app/main/ui/dashboard/team.cljs:421
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
-"Так як ви єдиний учасником цієї команди, її буде видалено разом з проєктами "
+"Так як Ви єдиний учасником цієї команди, її буде видалено разом з проєктами "
 "та файлами команди."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:431, src/app/main/ui/dashboard/team.cljs:420
@@ -2752,7 +2755,7 @@ msgstr[2] "Перемістити бібліотеки"
 
 #: src/app/main/ui/workspace/main_menu.cljs:271, src/app/main/ui/workspace/nudge.cljs:47
 msgid "modals.nudge-title"
-msgstr "Кількість зміщень"
+msgstr "Розмір зсуву"
 
 #: src/app/main/ui/dashboard/team.cljs:374
 msgid "modals.promote-owner-confirm.accept"
@@ -2761,7 +2764,7 @@ msgstr "Передати права власності"
 #: src/app/main/ui/dashboard/team.cljs:373
 msgid "modals.promote-owner-confirm.hint"
 msgstr ""
-"Якщо ви передасте права власності, ви зміните свою роль на Admin, втративши "
+"Якщо Ви передасте права власності, Ви зміните свою роль на Admin, втративши "
 "деякі повноваження над цією командою. "
 
 #: src/app/main/ui/dashboard/team.cljs:372
@@ -2774,15 +2777,15 @@ msgstr ""
 msgid "modals.promote-owner-confirm.title"
 msgstr "Новий власник команди"
 
-#: src/app/main/ui/workspace/libraries.cljs:273
+#: src/app/main/ui/workspace/libraries.cljs:270
 msgid "modals.publish-empty-library.accept"
 msgstr "Опублікувати"
 
-#: src/app/main/ui/workspace/libraries.cljs:272
+#: src/app/main/ui/workspace/libraries.cljs:269
 msgid "modals.publish-empty-library.message"
 msgstr "Ваша бібліотека порожня. Ви впевнені, що хочете опублікувати її?"
 
-#: src/app/main/ui/workspace/libraries.cljs:271
+#: src/app/main/ui/workspace/libraries.cljs:268
 msgid "modals.publish-empty-library.title"
 msgstr "Опублікувати пусту бібліотеку"
 
@@ -2796,7 +2799,7 @@ msgstr "Видалити як Спільну Бібліотеку"
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
 "Після вилучення як спільної бібліотеки, бібліотека файлів цього файлу "
-"перестане бути доступною для використання серед інших ваших файлів."
+"перестане бути доступною для використання серед інших Ваших файлів."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 #, unused
@@ -2805,7 +2808,7 @@ msgstr "Видалити \"%s\" як Спільну Бібліотеку"
 
 #: src/app/main/ui/workspace/nudge.cljs:53
 msgid "modals.small-nudge"
-msgstr "Мале зміщення"
+msgstr "Малий зсув"
 
 #: src/app/main/ui/delete_shared.cljs:52
 msgid "modals.unpublish-shared-confirm.accept"
@@ -2840,21 +2843,21 @@ msgstr ""
 msgid "modals.update-remote-component-in-bulk.message"
 msgstr "Оновити компоненти в спільній бібліотеці"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:393
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:403
 msgid "modals.update-remote-component.accept"
 msgstr "Оновити"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:392
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:402
 msgid "modals.update-remote-component.cancel"
 msgstr "Скасувати"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:391
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:401
 msgid "modals.update-remote-component.hint"
 msgstr ""
 "Ви збираєтесь оновити компонент у спільній бібліотеці. Це вплине також на "
 "файли, які її використовують."
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:390
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:400
 msgid "modals.update-remote-component.message"
 msgstr "Оновити компонент спільної бібліотеки"
 
@@ -2924,7 +2927,7 @@ msgstr "Запам'ятайте - якщо власник погодить, ви
 
 #: src/app/main/ui/static.cljs:303
 msgid "not-found.no-permission.done.success"
-msgstr "Ваш запит надіслано правильно!"
+msgstr "Ваш запит надіслано успішно!"
 
 #: src/app/main/ui/static.cljs:309
 msgid "not-found.no-permission.file"
@@ -2936,7 +2939,7 @@ msgstr "Відвідати ваш Penpot"
 
 #: src/app/main/ui/static.cljs:311, src/app/main/ui/static.cljs:320
 msgid "not-found.no-permission.if-approves"
-msgstr "Якщо власник погодить, ви будете запрошені до команди."
+msgstr "Якщо власник погодить, Ви будете запрошені до команди."
 
 #: src/app/main/ui/static.cljs:249, src/app/main/ui/static.cljs:261
 msgid "not-found.no-permission.penpot-file"
@@ -3018,27 +3021,27 @@ msgstr "Відео посібники"
 msgid "onboarding-v2.before-start.title"
 msgstr "Перш ніж почати"
 
-#: src/app/main/ui/onboarding/newsletter.cljs:63
+#: src/app/main/ui/onboarding/newsletter.cljs:68
 msgid "onboarding-v2.newsletter.desc"
 msgstr ""
 "Підпішиться на розсилку Penpot щоб бути у курсі подій розробки та останніх "
 "новин."
 
-#: src/app/main/ui/onboarding/newsletter.cljs:83
+#: src/app/main/ui/onboarding/newsletter.cljs:88
 msgid "onboarding-v2.newsletter.news"
 msgstr "Надсилати мені новини про Penpot (пости з блоґу, відео посібники, етери...)."
 
-#: src/app/main/ui/onboarding/newsletter.cljs:91
+#: src/app/main/ui/onboarding/newsletter.cljs:96
 msgid "onboarding-v2.newsletter.privacy1"
-msgstr "Ми турбуємось про конфіденційність, тому ви можете прочитати наші "
+msgstr "Ми турбуємось про конфіденційність, тому Ви можете прочитати наші "
 
-#: src/app/main/ui/onboarding/newsletter.cljs:97
+#: src/app/main/ui/onboarding/newsletter.cljs:102
 msgid "onboarding-v2.newsletter.privacy2"
 msgstr ""
 "Ми надсилатимемо вам лише ревеланті листи. Ви можете відписатись у "
 "будь-який час через посилання для відписки в листах розсилки."
 
-#: src/app/main/ui/onboarding/newsletter.cljs:71
+#: src/app/main/ui/onboarding/newsletter.cljs:76
 msgid "onboarding-v2.newsletter.updates"
 msgstr ""
 "Надсилати мені оновлення продуктів (нові можливості, випуски, "
@@ -3064,7 +3067,7 @@ msgstr "Участь у спільноті"
 #, unused
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
-"Тут ви дізнаєтеся, як співпрацювати з перекладами, запитами на покращення, "
+"Тут Ви дізнаєтеся, як співпрацювати з перекладами, запитами на покращення, "
 "внесками в основний код, пошуком помилок…"
 
 #, unused
@@ -3098,7 +3101,7 @@ msgstr "Ви зможете запрошувати пізніше"
 #: src/app/main/ui/onboarding/team_choice.cljs:240
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr ""
-"Після того, як ви назвали свою команду, ви зможете запрошувати людей "
+"Після того, як Ви назвали свою команду, Ви зможете запрошувати людей "
 "приєднатись до неї."
 
 #: src/app/main/ui/onboarding/team_choice.cljs:249
@@ -3115,7 +3118,7 @@ msgstr "Створити команду без запрошення"
 
 #: src/app/main/ui/dashboard/projects.cljs:95, src/app/main/ui/onboarding/team_choice.cljs:159
 msgid "onboarding.choice.team-up.invite-members"
-msgstr "Запристи учасників"
+msgstr "Запрости учасників"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:160
 msgid "onboarding.choice.team-up.invite-members-info"
@@ -3139,19 +3142,19 @@ msgstr "Ви зможете створити команду пізніше."
 msgid "onboarding.newsletter.accept"
 msgstr "Так, підписати"
 
-#: src/app/main/ui/onboarding/newsletter.cljs:40
+#: src/app/main/ui/onboarding/newsletter.cljs:42
 msgid "onboarding.newsletter.acceptance-message"
 msgstr ""
 "Ваш запит на підписку був надісланий, ми надішлемо вам лист для "
 "підтвердження запиту."
 
-#: src/app/main/ui/onboarding/newsletter.cljs:95
+#: src/app/main/ui/onboarding/newsletter.cljs:100
 msgid "onboarding.newsletter.policy"
 msgstr "Потіика Конфіденційності."
 
-#: src/app/main/ui/onboarding/newsletter.cljs:60
+#: src/app/main/ui/onboarding/newsletter.cljs:65
 msgid "onboarding.newsletter.title"
-msgstr "Бажаєте отримувати новити від Penpot?"
+msgstr "Бажаєте отримувати новини від Penpot?"
 
 #: src/app/main/ui/onboarding/questions.cljs:113
 msgid "onboarding.questions.lets-get-started"
@@ -3218,7 +3221,7 @@ msgid "onboarding.questions.step1.subtitle"
 msgstr ""
 "Розкажіть нам трохи про себе, щоб допомогти нам зробити Penpot зручним для "
 "вас. Ваші відповіді допоможуть нам визначити пріоритетність нових функцій і "
-"вказати вам правильний напрямок для початку роботи."
+"вказати Вам потрібний напрямок для початку роботи."
 
 #: src/app/main/ui/onboarding/questions.cljs:115
 msgid "onboarding.questions.step1.title"
@@ -3226,11 +3229,11 @@ msgstr "Допоможіть нам познайомитися з вами бл�
 
 #: src/app/main/ui/onboarding/questions.cljs:196
 msgid "onboarding.questions.step2.title"
-msgstr "Який з цих інструментів ви використовуєте найчастіше?"
+msgstr "Який з цих інструментів використовуєте найчастіше?"
 
 #: src/app/main/ui/onboarding/questions.cljs:289
 msgid "onboarding.questions.step3.question1"
-msgstr "Чим ви займаєтесь?"
+msgstr "Чим займаєтесь?"
 
 #: src/app/main/ui/onboarding/questions.cljs:303
 msgid "onboarding.questions.step3.question2"
@@ -3246,7 +3249,7 @@ msgstr "Розкажіть про вашу роботу"
 
 #: src/app/main/ui/onboarding/questions.cljs:370
 msgid "onboarding.questions.step4.title"
-msgstr "Звідки ви б хотіли почати?"
+msgstr "Звідки хотіли б почати?"
 
 #: src/app/main/ui/onboarding/questions.cljs:428
 msgid "onboarding.questions.step5.title"
@@ -3342,7 +3345,7 @@ msgstr "Повернутись на сторінку входу"
 msgid "settings.detach"
 msgstr "Від'єднати"
 
-#: src/app/main/ui/viewer/inspect/exports.cljs:147, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:90, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:622, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:162, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:355, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:366, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:386, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:413, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:315, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:182, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:380, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:397, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:247, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:172
+#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:90, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:712, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:831, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:162, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:357, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:352, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:363, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:383, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:394, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:410, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:302, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:182, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:383, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:400, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:247, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:173
 msgid "settings.multiple"
 msgstr "Змішаний"
 
@@ -3382,11 +3385,11 @@ msgstr "Редагувати"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:58
 msgid "shortcut-subsection.general-dashboard"
-msgstr "Загальний"
+msgstr "Загальні"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:59
 msgid "shortcut-subsection.general-viewer"
-msgstr "Загальний"
+msgstr "Загальні"
 
 #: src/app/main/ui/workspace/main_menu.cljs:829, src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
 msgid "shortcut-subsection.main-menu"
@@ -3490,7 +3493,7 @@ msgstr "Булева різниця"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:85
 msgid "shortcuts.bool-exclude"
-msgstr "Булеве виключення"
+msgstr "Логічне виключення"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:86
 msgid "shortcuts.bool-intersection"
@@ -3502,19 +3505,19 @@ msgstr "Булеве об'єднання"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:88
 msgid "shortcuts.bring-back"
-msgstr "Відправити на задній план"
+msgstr "На задній план"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:89
 msgid "shortcuts.bring-backward"
-msgstr "Відправити назад"
+msgstr "Посунути назад"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:90
 msgid "shortcuts.bring-forward"
-msgstr "Відправити вперед"
+msgstr "Посунути вперед"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:91
 msgid "shortcuts.bring-front"
-msgstr "Відправити на передній план"
+msgstr "Висунути вперед"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:92
 msgid "shortcuts.clear-undo"
@@ -3526,7 +3529,7 @@ msgstr "Скопіювати"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
 msgid "shortcuts.copy-link"
-msgstr "Копіювати посилання до буферу обміну"
+msgstr "Скопіювати посилання у буфер"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
 msgid "shortcuts.create-component"
@@ -3540,7 +3543,7 @@ msgstr "Створити новий"
 msgid "shortcuts.cut"
 msgstr "Вирізати"
 
-#: src/app/main/ui/workspace/right_header.cljs:116, src/app/main/ui/workspace/sidebar/shortcuts.cljs:98
+#: src/app/main/ui/workspace/right_header.cljs:84, src/app/main/ui/workspace/sidebar/shortcuts.cljs:98
 msgid "shortcuts.decrease-zoom"
 msgstr "Зменшити"
 
@@ -3640,7 +3643,7 @@ msgstr "Розподілити горизонтально"
 msgid "shortcuts.hide-ui"
 msgstr "Показати/приховати інтерфейс"
 
-#: src/app/main/ui/workspace/right_header.cljs:121, src/app/main/ui/workspace/sidebar/shortcuts.cljs:123
+#: src/app/main/ui/workspace/right_header.cljs:89, src/app/main/ui/workspace/sidebar/shortcuts.cljs:123
 msgid "shortcuts.increase-zoom"
 msgstr "Збільшити"
 
@@ -3670,7 +3673,7 @@ msgstr "Зменшити висоту лінії на 1"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
 msgid "shortcuts.line-height-inc"
-msgstr "Збільшити вистоу лінії на 1"
+msgstr "Збільшити висоту лінії на 1"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
 msgid "shortcuts.line-through"
@@ -3698,19 +3701,19 @@ msgstr "Перемістити"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:137
 msgid "shortcuts.move-fast-down"
-msgstr "Швидко рухати вниз"
+msgstr "Швидко перемістити униз"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:138
 msgid "shortcuts.move-fast-left"
-msgstr "Швидко рухати ліворуч"
+msgstr "Швидко перемістити ліворуч"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
 msgid "shortcuts.move-fast-right"
-msgstr "Швидко рухати праворуч"
+msgstr "Швидко перемістити праворуч"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:140
 msgid "shortcuts.move-fast-up"
-msgstr "Швидко рухати вгору"
+msgstr "Швидко перемістити вгору"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:141
 msgid "shortcuts.move-nodes"
@@ -3742,43 +3745,43 @@ msgstr "Скорочень не знайдено"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:147
 msgid "shortcuts.opacity-0"
-msgstr "Встановити непрозорість на 100%"
+msgstr "Непрозорість на 100%"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:148
 msgid "shortcuts.opacity-1"
-msgstr "Встановити непрозорість на 10%"
+msgstr "Непрозорість на 10%"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:149
 msgid "shortcuts.opacity-2"
-msgstr "Встановити непрозорість на 20%"
+msgstr "Непрозорість на 20%"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:150
 msgid "shortcuts.opacity-3"
-msgstr "Встановити непрозорість на 30%"
+msgstr "Непрозорість на 30%"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:151
 msgid "shortcuts.opacity-4"
-msgstr "Встановити непрозорість на 40%"
+msgstr "Непрозорість на 40%"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:152
 msgid "shortcuts.opacity-5"
-msgstr "Встановити непрозорість на 50%"
+msgstr "Непрозорість на 50%"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:153
 msgid "shortcuts.opacity-6"
-msgstr "Встановити непрозорість на 60%"
+msgstr "Непрозорість на 60%"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
 msgid "shortcuts.opacity-7"
-msgstr "Встановити непрозорість на 70%"
+msgstr "Непрозорість на 70%"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:155
 msgid "shortcuts.opacity-8"
-msgstr "Встановити непрозорість на 80%"
+msgstr "Непрозорість на 80%"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:156
 msgid "shortcuts.opacity-9"
-msgstr "Встановити непрозорість на 90%"
+msgstr "Непрозорість на 90%"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
 msgid "shortcuts.open-color-picker"
@@ -3906,7 +3909,7 @@ msgstr "Вирявняти по правому краю"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
 msgid "shortcuts.thumbnail-set"
-msgstr "Встановити мініатюри"
+msgstr "Вставити мініатюри"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:497, src/app/main/ui/workspace/sidebar/shortcuts.cljs:506
 msgid "shortcuts.title"
@@ -4024,15 +4027,15 @@ msgstr "Збільшити до обраного"
 msgid "title.dashboard.files"
 msgstr "%s - Penpot"
 
-#: src/app/main/ui/dashboard/fonts.cljs:39
+#: src/app/main/ui/dashboard/fonts.cljs:40
 msgid "title.dashboard.font-providers"
 msgstr "Постачальники шрифтів - %s - Penpot"
 
-#: src/app/main/ui/dashboard/fonts.cljs:38
+#: src/app/main/ui/dashboard/fonts.cljs:39
 msgid "title.dashboard.fonts"
 msgstr "Шрифти - %s - Penpot"
 
-#: src/app/main/ui/dashboard/projects.cljs:347
+#: src/app/main/ui/dashboard/projects.cljs:350
 msgid "title.dashboard.projects"
 msgstr "Проєкти - %s - Penpot"
 
@@ -4040,7 +4043,7 @@ msgstr "Проєкти - %s - Penpot"
 msgid "title.dashboard.search"
 msgstr "Пошук - %s - Penpot"
 
-#: src/app/main/ui/dashboard/libraries.cljs:42
+#: src/app/main/ui/dashboard/libraries.cljs:57
 msgid "title.dashboard.shared-libraries"
 msgstr "Спільні бібліотеки - %s - Penpot"
 
@@ -4048,7 +4051,7 @@ msgstr "Спільні бібліотеки - %s - Penpot"
 msgid "title.default"
 msgstr "Penpot - свобода дизайну для команд"
 
-#: src/app/main/ui/settings/access_tokens.cljs:281
+#: src/app/main/ui/settings/access_tokens.cljs:280
 msgid "title.settings.access-tokens"
 msgstr "Профіль - токени доступу"
 
@@ -4056,7 +4059,7 @@ msgstr "Профіль - токени доступу"
 msgid "title.settings.feedback"
 msgstr "Надіслати відгук - Penpot"
 
-#: src/app/main/ui/settings/notifications.cljs:64
+#: src/app/main/ui/settings/notifications.cljs:45
 msgid "title.settings.notifications"
 msgstr "Сповіщення - Penpot"
 
@@ -4092,7 +4095,7 @@ msgstr "Вебхуки - %s - Penpot"
 msgid "title.viewer"
 msgstr "%s - Режим перегляду - Penpot"
 
-#: src/app/main/ui/workspace.cljs:202
+#: src/app/main/ui/workspace.cljs:188
 msgid "title.workspace"
 msgstr "%s - Penpot"
 
@@ -4192,7 +4195,7 @@ msgstr "Розподілити вертикальні проміжки (%s)"
 msgid "workspace.align.vtop"
 msgstr "Вирівняти по верху (%s)"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:174, src/app/main/ui/workspace/sidebar/assets.cljs:179
+#: src/app/main/ui/workspace/sidebar/assets.cljs:171
 msgid "workspace.assets.add-library"
 msgstr "Додати бібліотеку"
 
@@ -4201,11 +4204,11 @@ msgstr "Додати бібліотеку"
 msgid "workspace.assets.assets"
 msgstr "Ресурси"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:146
+#: src/app/main/ui/workspace/sidebar/assets.cljs:144
 msgid "workspace.assets.box-filter-all"
 msgstr "Усі ресурси"
 
-#: src/app/main/ui/dashboard/grid.cljs:147, src/app/main/ui/dashboard/grid.cljs:179, src/app/main/ui/workspace/sidebar/assets/colors.cljs:486, src/app/main/ui/workspace/sidebar/assets.cljs:158
+#: src/app/main/ui/dashboard/grid.cljs:148, src/app/main/ui/dashboard/grid.cljs:180, src/app/main/ui/workspace/sidebar/assets/colors.cljs:486, src/app/main/ui/workspace/sidebar/assets.cljs:156
 msgid "workspace.assets.colors"
 msgstr "Кольори"
 
@@ -4213,11 +4216,11 @@ msgstr "Кольори"
 msgid "workspace.assets.colors.add-color"
 msgstr "Додати колір"
 
-#: src/app/main/ui/dashboard/grid.cljs:143, src/app/main/ui/dashboard/grid.cljs:158, src/app/main/ui/workspace/sidebar/assets/components.cljs:489, src/app/main/ui/workspace/sidebar/assets.cljs:149
+#: src/app/main/ui/dashboard/grid.cljs:144, src/app/main/ui/dashboard/grid.cljs:159, src/app/main/ui/workspace/sidebar/assets/components.cljs:499, src/app/main/ui/workspace/sidebar/assets.cljs:147
 msgid "workspace.assets.components"
 msgstr "Компоненти"
 
-#: src/app/main/ui/workspace/sidebar/assets/components.cljs:510
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:520
 msgid "workspace.assets.components.add-component"
 msgstr "Додати компонент"
 
@@ -4229,15 +4232,15 @@ msgstr "Створити групу"
 msgid "workspace.assets.create-group-hint"
 msgstr "Ваші елементи будуть автоматично названі як \"назва групи / назва елемента\""
 
-#: src/app/main/ui/workspace/context_menu.cljs:636, src/app/main/ui/workspace/sidebar/assets/colors.cljs:250, src/app/main/ui/workspace/sidebar/assets/components.cljs:554, src/app/main/ui/workspace/sidebar/assets/graphics.cljs:426, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:442
+#: src/app/main/ui/workspace/context_menu.cljs:652, src/app/main/ui/workspace/sidebar/assets/colors.cljs:250, src/app/main/ui/workspace/sidebar/assets/components.cljs:564, src/app/main/ui/workspace/sidebar/assets/graphics.cljs:426, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:442
 msgid "workspace.assets.delete"
 msgstr "Видалити"
 
-#: src/app/main/ui/workspace/context_menu.cljs:641, src/app/main/ui/workspace/sidebar/assets/components.cljs:549
+#: src/app/main/ui/workspace/context_menu.cljs:657, src/app/main/ui/workspace/sidebar/assets/components.cljs:559
 msgid "workspace.assets.duplicate"
 msgstr "Створити дуплікат"
 
-#: src/app/main/ui/workspace/sidebar/assets/components.cljs:548
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:558
 msgid "workspace.assets.duplicate-main"
 msgstr "Дублювати головний"
 
@@ -4245,19 +4248,19 @@ msgstr "Дублювати головний"
 msgid "workspace.assets.edit"
 msgstr "Редагувати"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:195
+#: src/app/main/ui/workspace/sidebar/assets.cljs:185
 msgid "workspace.assets.filter"
 msgstr "Фільтрувати"
 
-#: src/app/main/ui/workspace/sidebar/assets/graphics.cljs:386, src/app/main/ui/workspace/sidebar/assets.cljs:154
+#: src/app/main/ui/workspace/sidebar/assets/graphics.cljs:386, src/app/main/ui/workspace/sidebar/assets.cljs:152
 msgid "workspace.assets.graphics"
 msgstr "Графіка"
 
-#: src/app/main/ui/workspace/sidebar/assets/components.cljs:505
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:515
 msgid "workspace.assets.grid-view"
 msgstr "Перегляд сіткою"
 
-#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:254, src/app/main/ui/workspace/sidebar/assets/components.cljs:558, src/app/main/ui/workspace/sidebar/assets/graphics.cljs:430, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:447
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:254, src/app/main/ui/workspace/sidebar/assets/components.cljs:568, src/app/main/ui/workspace/sidebar/assets/graphics.cljs:430, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:447
 msgid "workspace.assets.group"
 msgstr "Група"
 
@@ -4265,27 +4268,23 @@ msgstr "Група"
 msgid "workspace.assets.group-name"
 msgstr "Ім'я групи"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:186
-msgid "workspace.assets.libraries"
-msgstr "Бібліотеки"
-
-#: src/app/main/ui/workspace/sidebar/assets/components.cljs:501
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:511
 msgid "workspace.assets.list-view"
 msgstr "Перегляд списком"
 
-#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:336
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:417
 msgid "workspace.assets.local-library"
 msgstr "локальна бібліотека"
 
-#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:320
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:321
 msgid "workspace.assets.not-found"
 msgstr "Не було знайдено ресурсів"
 
-#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:111
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:112
 msgid "workspace.assets.open-library"
 msgstr "Відкрити файл бібліотеки"
 
-#: src/app/main/ui/workspace/context_menu.cljs:639, src/app/main/ui/workspace/sidebar/assets/colors.cljs:242, src/app/main/ui/workspace/sidebar/assets/components.cljs:543, src/app/main/ui/workspace/sidebar/assets/graphics.cljs:423, src/app/main/ui/workspace/sidebar/assets/groups.cljs:62, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:433
+#: src/app/main/ui/workspace/context_menu.cljs:655, src/app/main/ui/workspace/sidebar/assets/colors.cljs:242, src/app/main/ui/workspace/sidebar/assets/components.cljs:553, src/app/main/ui/workspace/sidebar/assets/graphics.cljs:423, src/app/main/ui/workspace/sidebar/assets/groups.cljs:62, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:433
 msgid "workspace.assets.rename"
 msgstr "Перейменувати"
 
@@ -4293,7 +4292,7 @@ msgstr "Перейменувати"
 msgid "workspace.assets.rename-group"
 msgstr "Перейменувати групу"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:192
+#: src/app/main/ui/workspace/sidebar/assets.cljs:182
 msgid "workspace.assets.search"
 msgstr "Пошук ресурсів"
 
@@ -4310,18 +4309,18 @@ msgstr[2] "%s елементів обрано"
 msgid "workspace.assets.shared-library"
 msgstr "Спільна бібліотека"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:226
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:235
 msgid "workspace.assets.sidebar.components"
 msgid_plural "workspace.assets.sidebar.components"
 msgstr[0] "%s компонент"
 msgstr[1] "%s компоненти"
 msgstr[2] "%s компонентів"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:211
+#: src/app/main/ui/workspace/sidebar/assets.cljs:201
 msgid "workspace.assets.sort"
 msgstr "Сортувати"
 
-#: src/app/main/ui/dashboard/grid.cljs:151, src/app/main/ui/dashboard/grid.cljs:206, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:396, src/app/main/ui/workspace/sidebar/assets.cljs:162
+#: src/app/main/ui/dashboard/grid.cljs:152, src/app/main/ui/dashboard/grid.cljs:207, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:396, src/app/main/ui/workspace/sidebar/assets.cljs:160
 msgid "workspace.assets.typography"
 msgstr "Типографіка"
 
@@ -4334,27 +4333,27 @@ msgstr "Додати типографіку"
 msgid "workspace.assets.typography.font-id"
 msgstr "Шрифт"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:517
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:520
 msgid "workspace.assets.typography.font-size"
 msgstr "Розмір"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:513
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:516
 msgid "workspace.assets.typography.font-variant-id"
 msgstr "Варіант"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:535
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:538
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Перейти до файлу бібліотеки стилів для редагування"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:525
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:528
 msgid "workspace.assets.typography.letter-spacing"
 msgstr "Міжлітеральний відступ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:521
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:524
 msgid "workspace.assets.typography.line-height"
 msgstr "Висота лінії"
 
-#: src/app/main/ui/dashboard/grid.cljs:216, src/app/main/ui/workspace/libraries.cljs:562, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:476, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:501, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:608, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:627
+#: src/app/main/ui/dashboard/grid.cljs:217, src/app/main/ui/workspace/libraries.cljs:546, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:479, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:504, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:611, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:630
 msgid "workspace.assets.typography.sample"
 msgstr "Аа"
 
@@ -4362,7 +4361,7 @@ msgstr "Аа"
 msgid "workspace.assets.typography.text-styles"
 msgstr "Стилі тексту"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:529
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:532
 msgid "workspace.assets.typography.text-transform"
 msgstr "Перетворення тексту"
 
@@ -4370,55 +4369,55 @@ msgstr "Перетворення тексту"
 msgid "workspace.assets.ungroup"
 msgstr "Розгрупувати"
 
-#: src/app/main/ui/workspace/context_menu.cljs:748
+#: src/app/main/ui/workspace/context_menu.cljs:764
 msgid "workspace.context-menu.grid-cells.area"
 msgstr "Створити ділянку"
 
-#: src/app/main/ui/workspace/context_menu.cljs:751
+#: src/app/main/ui/workspace/context_menu.cljs:767
 msgid "workspace.context-menu.grid-cells.create-board"
 msgstr "Створити дошку"
 
-#: src/app/main/ui/workspace/context_menu.cljs:743
+#: src/app/main/ui/workspace/context_menu.cljs:759
 msgid "workspace.context-menu.grid-cells.merge"
 msgstr "Об'єднати клітинки"
 
-#: src/app/main/ui/workspace/context_menu.cljs:706
+#: src/app/main/ui/workspace/context_menu.cljs:722
 msgid "workspace.context-menu.grid-track.column.add-after"
 msgstr "Додати 1 стовпець праворуч"
 
-#: src/app/main/ui/workspace/context_menu.cljs:705
+#: src/app/main/ui/workspace/context_menu.cljs:721
 msgid "workspace.context-menu.grid-track.column.add-before"
 msgstr "Додати 1 стовпець ліворуч"
 
-#: src/app/main/ui/workspace/context_menu.cljs:707
+#: src/app/main/ui/workspace/context_menu.cljs:723
 msgid "workspace.context-menu.grid-track.column.delete"
 msgstr "Видалити стовпець"
 
-#: src/app/main/ui/workspace/context_menu.cljs:708
+#: src/app/main/ui/workspace/context_menu.cljs:724
 msgid "workspace.context-menu.grid-track.column.delete-shapes"
 msgstr "Видалити стовпець та фігури"
 
-#: src/app/main/ui/workspace/context_menu.cljs:704
+#: src/app/main/ui/workspace/context_menu.cljs:720
 msgid "workspace.context-menu.grid-track.column.duplicate"
 msgstr "Дублювати стовпець"
 
-#: src/app/main/ui/workspace/context_menu.cljs:713
+#: src/app/main/ui/workspace/context_menu.cljs:729
 msgid "workspace.context-menu.grid-track.row.add-after"
 msgstr "Додати 1 рядок знизу"
 
-#: src/app/main/ui/workspace/context_menu.cljs:712
+#: src/app/main/ui/workspace/context_menu.cljs:728
 msgid "workspace.context-menu.grid-track.row.add-before"
 msgstr "Додати 1 рядок вгорі"
 
-#: src/app/main/ui/workspace/context_menu.cljs:714
+#: src/app/main/ui/workspace/context_menu.cljs:730
 msgid "workspace.context-menu.grid-track.row.delete"
 msgstr "Видалити рядок"
 
-#: src/app/main/ui/workspace/context_menu.cljs:715
+#: src/app/main/ui/workspace/context_menu.cljs:731
 msgid "workspace.context-menu.grid-track.row.delete-shapes"
 msgstr "Видалити рядок та фігури"
 
-#: src/app/main/ui/workspace/context_menu.cljs:711
+#: src/app/main/ui/workspace/context_menu.cljs:727
 msgid "workspace.context-menu.grid-track.row.duplicate"
 msgstr "Дублювати рядок"
 
@@ -4426,11 +4425,11 @@ msgstr "Дублювати рядок"
 msgid "workspace.focus.focus-mode"
 msgstr "Режим фокусування"
 
-#: src/app/main/ui/workspace/context_menu.cljs:378, src/app/main/ui/workspace/context_menu.cljs:663
+#: src/app/main/ui/workspace/context_menu.cljs:380, src/app/main/ui/workspace/context_menu.cljs:679
 msgid "workspace.focus.focus-off"
 msgstr "Розфокосувати"
 
-#: src/app/main/ui/workspace/context_menu.cljs:377
+#: src/app/main/ui/workspace/context_menu.cljs:379
 msgid "workspace.focus.focus-on"
 msgstr "Фокусувати"
 
@@ -4461,7 +4460,7 @@ msgstr "Вимкнути масштабування тексту"
 
 #: src/app/main/ui/workspace/main_menu.cljs:228
 msgid "workspace.header.menu.disable-snap-guides"
-msgstr "Зробити неактивною прив'язку до орієнтирів"
+msgstr "Деактивувати прив'язку до орієнтирів"
 
 #: src/app/main/ui/workspace/main_menu.cljs:258
 msgid "workspace.header.menu.disable-snap-pixel-grid"
@@ -4469,7 +4468,7 @@ msgstr "Вимкнути прив'язку до пікселів"
 
 #: src/app/main/ui/workspace/main_menu.cljs:212
 msgid "workspace.header.menu.disable-snap-ruler-guides"
-msgstr "Зробити неактивною прив'язку до орієнтирів лінійок"
+msgstr "Деактивувати прив'язку до орієнтирів лінійок"
 
 #: src/app/main/ui/workspace/main_menu.cljs:244
 msgid "workspace.header.menu.enable-dynamic-alignment"
@@ -4542,7 +4541,7 @@ msgstr "Налаштування"
 
 #: src/app/main/ui/workspace/main_menu.cljs:866
 msgid "workspace.header.menu.option.view"
-msgstr "Вид"
+msgstr "Вигляд"
 
 #: src/app/main/ui/workspace/main_menu.cljs:471
 msgid "workspace.header.menu.redo"
@@ -4588,37 +4587,36 @@ msgstr "Перемкнутись на світлу тему"
 msgid "workspace.header.menu.undo"
 msgstr "Відхилити зміни"
 
-#: src/app/main/ui/viewer/header.cljs:98, src/app/main/ui/workspace/right_header.cljs:126
+#: src/app/main/ui/viewer/header.cljs:98, src/app/main/ui/workspace/right_header.cljs:94
 msgid "workspace.header.reset-zoom"
 msgstr "Скинути"
 
-#: src/app/main/ui/workspace/header.cljs
-#, unused
+#: src/app/main/ui/workspace/left_header.cljs:127
 msgid "workspace.header.save-error"
 msgstr "Помилка при збереженні"
 
-#: src/app/main/ui/workspace/right_header.cljs:58
+#: src/app/main/ui/workspace/left_header.cljs:126
 msgid "workspace.header.saved"
 msgstr "Збережено"
 
-#: src/app/main/ui/workspace/header.cljs
-#, unused
+#: src/app/main/ui/workspace/left_header.cljs:124, src/app/main/ui/workspace/left_header.cljs:125
 msgid "workspace.header.saving"
 msgstr "Збереження"
 
-#: src/app/main/ui/workspace/right_header.cljs:255
+#: src/app/main/ui/workspace/right_header.cljs:221
 msgid "workspace.header.share"
 msgstr "Поділитись"
 
 #: src/app/main/ui/workspace/right_header.cljs:48, src/app/main/ui/workspace/right_header.cljs:53
+#, unused
 msgid "workspace.header.unsaved"
 msgstr "Незбережені зміни"
 
-#: src/app/main/ui/workspace/right_header.cljs:260
+#: src/app/main/ui/workspace/right_header.cljs:226
 msgid "workspace.header.viewer"
 msgstr "Режим перегляду (%s)"
 
-#: src/app/main/ui/viewer/header.cljs:79, src/app/main/ui/workspace/right_header.cljs:109
+#: src/app/main/ui/viewer/header.cljs:79, src/app/main/ui/workspace/right_header.cljs:77
 msgid "workspace.header.zoom"
 msgstr "Збільшення"
 
@@ -4630,7 +4628,7 @@ msgstr "Заповнення - розширити щоб заповнити"
 msgid "workspace.header.zoom-fit"
 msgstr "Fit - зменшити масштаб до потрібного розміру"
 
-#: src/app/main/ui/workspace/right_header.cljs:129
+#: src/app/main/ui/workspace/right_header.cljs:97
 msgid "workspace.header.zoom-fit-all"
 msgstr "Збільшити щоб вмістити все"
 
@@ -4638,19 +4636,19 @@ msgstr "Збільшити щоб вмістити все"
 msgid "workspace.header.zoom-full-screen"
 msgstr "Повноекранний"
 
-#: src/app/main/ui/workspace/right_header.cljs:136
+#: src/app/main/ui/workspace/right_header.cljs:104
 msgid "workspace.header.zoom-selected"
-msgstr "Збільшити до виділеного"
+msgstr "Наблизити до виділеного"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:273, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:607
+#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:273, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:616
 msgid "workspace.layout_grid.editor.options.edit-grid"
 msgstr "Редагувати сітку"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1295
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1304
 msgid "workspace.layout_grid.editor.options.exit"
 msgstr "Вихід"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:478
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:486, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:487
 msgid "workspace.layout_grid.editor.padding.expand"
 msgstr "Показати параметри 4-стороннього внутрішнього відступу"
 
@@ -4660,13 +4658,13 @@ msgstr "Редагування сітки"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:65
 msgid "workspace.layout_grid.editor.top-bar.done"
-msgstr "Виконано"
+msgstr "Готово"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:62
 msgid "workspace.layout_grid.editor.top-bar.locate"
 msgstr "Розмістити"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1321
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1330
 msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
 msgstr "Розмістити макет сітки"
 
@@ -4675,7 +4673,7 @@ msgstr "Розмістити макет сітки"
 msgid "workspace.libraries.add"
 msgstr "Додати"
 
-#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
+#: src/app/main/ui/workspace/libraries.cljs:106, src/app/main/ui/workspace/libraries.cljs:132
 msgid "workspace.libraries.colors"
 msgstr "%s кольорів"
 
@@ -4705,43 +4703,43 @@ msgstr "Попередні кольори"
 msgid "workspace.libraries.colors.rgb-complementary"
 msgstr "Додатковий RGB"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:344
+#: src/app/main/ui/workspace/colorpicker.cljs:340
 msgid "workspace.libraries.colors.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:515
+#: src/app/main/ui/workspace/colorpicker.cljs:511
 msgid "workspace.libraries.colors.save-color"
 msgstr "Зберегти стиль кольору"
 
-#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
+#: src/app/main/ui/workspace/libraries.cljs:100, src/app/main/ui/workspace/libraries.cljs:124
 msgid "workspace.libraries.components"
 msgstr "%s компонентів"
 
-#: src/app/main/ui/workspace/libraries.cljs:374
+#: src/app/main/ui/workspace/libraries.cljs:371
 msgid "workspace.libraries.empty.add-some"
 msgstr "Або додайте кілька з них, щоб спробувати:"
 
-#: src/app/main/ui/workspace/libraries.cljs:368
+#: src/app/main/ui/workspace/libraries.cljs:365
 msgid "workspace.libraries.empty.no-libraries"
 msgstr "У команді немає Спільних Бібліотек"
 
-#: src/app/main/ui/workspace/libraries.cljs:372
+#: src/app/main/ui/workspace/libraries.cljs:369
 msgid "workspace.libraries.empty.some-templates"
 msgstr "деякі шаблони тут"
 
-#: src/app/main/ui/workspace/libraries.cljs:300
+#: src/app/main/ui/workspace/libraries.cljs:297
 msgid "workspace.libraries.file-library"
 msgstr "Бібліотека файлів"
 
-#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
+#: src/app/main/ui/workspace/libraries.cljs:103, src/app/main/ui/workspace/libraries.cljs:128
 msgid "workspace.libraries.graphics"
 msgstr "%s графіків"
 
-#: src/app/main/ui/workspace/libraries.cljs:294
+#: src/app/main/ui/workspace/libraries.cljs:291
 msgid "workspace.libraries.in-this-file"
 msgstr "БІБЛІОТЕКИ В ЦЬОМУ ФАЙЛІ"
 
-#: src/app/main/ui/workspace/libraries.cljs:629, src/app/main/ui/workspace/libraries.cljs:649
+#: src/app/main/ui/workspace/libraries.cljs:611, src/app/main/ui/workspace/libraries.cljs:631
 msgid "workspace.libraries.libraries"
 msgstr "БІБЛІОТЕКИ"
 
@@ -4750,71 +4748,64 @@ msgstr "БІБЛІОТЕКИ"
 msgid "workspace.libraries.library"
 msgstr "БІБЛІОТЕКА"
 
-#: src/app/main/ui/workspace/libraries.cljs:483
+#: src/app/main/ui/workspace/libraries.cljs:467
 msgid "workspace.libraries.library-updates"
 msgstr "ОНОВЛЕННЯ БІБЛІОТЕКИ"
 
-#: src/app/main/ui/workspace/libraries.cljs:363
+#: src/app/main/ui/workspace/libraries.cljs:360
 msgid "workspace.libraries.loading"
 msgstr "Завантаження…"
 
 #: src/app/main/ui/workspace/libraries.cljs:387
+#, unused
 msgid "workspace.libraries.more-templates"
 msgstr "Ви можете шукати "
 
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "більше шаблонів тут"
-
-#: src/app/main/ui/workspace/libraries.cljs:481
+#: src/app/main/ui/workspace/libraries.cljs:465
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "Тут ще немає спільних бібліотек, які потребують оновлення"
 
-#: src/app/main/ui/workspace/libraries.cljs:394
+#: src/app/main/ui/workspace/libraries.cljs:378
 msgid "workspace.libraries.no-matches-for"
 msgstr "Не знайдено збігів для \"%s\""
 
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "Немає доступних спільних бібліотек"
-
-#: src/app/main/ui/workspace/libraries.cljs:337
+#: src/app/main/ui/workspace/libraries.cljs:334
 msgid "workspace.libraries.search-shared-libraries"
 msgstr "Пошук спільних бібліотек"
 
-#: src/app/main/ui/workspace/libraries.cljs:333
+#: src/app/main/ui/workspace/libraries.cljs:330
 msgid "workspace.libraries.shared-libraries"
 msgstr "СПІЛЬНІ БІБЛІОТЕКИ"
 
-#: src/app/main/ui/workspace/libraries.cljs:355
+#: src/app/main/ui/workspace/libraries.cljs:352
 msgid "workspace.libraries.shared-library-btn"
 msgstr "Під'єднати бібліотеку"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:311
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:309
 msgid "workspace.libraries.text.multiple-typography"
 msgstr "Кілька типографік"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:314
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:312
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Від'язати усі типографіки"
 
-#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
+#: src/app/main/ui/workspace/libraries.cljs:109, src/app/main/ui/workspace/libraries.cljs:136
 msgid "workspace.libraries.typography"
 msgstr "%s типографік"
 
-#: src/app/main/ui/workspace/libraries.cljs:326
+#: src/app/main/ui/workspace/libraries.cljs:323
 msgid "workspace.libraries.unlink-library-btn"
 msgstr "Від'єднати бібліотеку"
 
-#: src/app/main/ui/workspace/libraries.cljs:503
+#: src/app/main/ui/workspace/libraries.cljs:487
 msgid "workspace.libraries.update"
 msgstr "Оновити"
 
-#: src/app/main/ui/workspace/libraries.cljs:579
+#: src/app/main/ui/workspace/libraries.cljs:563
 msgid "workspace.libraries.update.see-all-changes"
 msgstr "побачити усі зміни"
 
-#: src/app/main/ui/workspace/libraries.cljs:632
+#: src/app/main/ui/workspace/libraries.cljs:614
 msgid "workspace.libraries.updates"
 msgstr "ОНОВЛЕННЯ"
 
@@ -4846,45 +4837,45 @@ msgstr "Вибіркове розмиття"
 msgid "workspace.options.blur-options.toggle-blur"
 msgstr "Перемикання розмивання"
 
-#: src/app/main/ui/workspace/sidebar/options/page.cljs:38, src/app/main/ui/workspace/sidebar/options/page.cljs:45
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:42, src/app/main/ui/workspace/sidebar/options/page.cljs:50
 msgid "workspace.options.canvas-background"
 msgstr "Фон полотна"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:431
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:428
 msgid "workspace.options.clip-content"
 msgstr "Зміст кліпу"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:590, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:595
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:678, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:683, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:812
 msgid "workspace.options.component"
 msgstr "Компонент"
 
-#: src/app/main/ui/viewer/inspect/annotation.cljs:19, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:181
+#: src/app/main/ui/inspect/annotation.cljs:19, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:188
 msgid "workspace.options.component.annotation"
 msgstr "Анотація"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:600
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:688
 msgid "workspace.options.component.copy"
-msgstr "Копіювати"
+msgstr "Копія"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:173
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:180
 msgid "workspace.options.component.create-annotation"
 msgstr "Створіть анотацію"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:172
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:179
 msgid "workspace.options.component.edit-annotation"
 msgstr "Редагуйте анотацію"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:599
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:687, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:815
 msgid "workspace.options.component.main"
 msgstr "Головний"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:416
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:497
 msgid "workspace.options.component.swap"
 msgstr "Замінити компонент"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:460
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:541
 msgid "workspace.options.component.swap.empty"
-msgstr "У цій бібліотеці, поки що, немає ресурсів"
+msgstr "У цій бібліотеці немає ресурсів"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
 msgid "workspace.options.constraints"
@@ -4930,7 +4921,7 @@ msgstr "По верху та низу"
 msgid "workspace.options.design"
 msgstr "Дизайн"
 
-#: src/app/main/ui/viewer/inspect/exports.cljs:139
+#: src/app/main/ui/inspect/exports.cljs:140
 msgid "workspace.options.export"
 msgstr "Експортувати"
 
@@ -4939,22 +4930,22 @@ msgstr "Експортувати"
 msgid "workspace.options.export-multiple"
 msgstr "Експортувати обране"
 
-#: src/app/main/ui/viewer/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:248
+#: src/app/main/ui/inspect/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:249
 msgid "workspace.options.export-object"
 msgid_plural "workspace.options.export-object"
 msgstr[0] "Експортувати %s елемент"
 msgstr[1] "Експортувати %s елементи"
 msgstr[2] "Експортувати %s елементів"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:187
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:188
 msgid "workspace.options.export.add-export"
 msgstr "Додати експортування"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:234
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:200, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:235
 msgid "workspace.options.export.remove-export"
 msgstr "Видалити експортування"
 
-#: src/app/main/ui/viewer/inspect/exports.cljs:178, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:228
+#: src/app/main/ui/inspect/exports.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:229
 msgid "workspace.options.export.suffix"
 msgstr "Суфікс"
 
@@ -4962,7 +4953,7 @@ msgstr "Суфікс"
 msgid "workspace.options.exporting-complete"
 msgstr "Експортування завершено"
 
-#: src/app/main/ui/exports/assets.cljs:169, src/app/main/ui/exports/assets.cljs:240, src/app/main/ui/viewer/inspect/exports.cljs:194, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:247
+#: src/app/main/ui/exports/assets.cljs:169, src/app/main/ui/exports/assets.cljs:240, src/app/main/ui/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:248
 msgid "workspace.options.exporting-object"
 msgstr "Експортую…"
 
@@ -4985,6 +4976,10 @@ msgstr "Додати колір заливки"
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:164
 msgid "workspace.options.fill.remove-fill"
 msgstr "Видалити заливку"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:340, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:341
+msgid "workspace.options.fit-content"
+msgstr "Змінити розмір щоб заповнити"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:182
 msgid "workspace.options.flows.add-flow-start"
@@ -5098,7 +5093,7 @@ msgstr "Рядки"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:158
 msgid "workspace.options.grid.square"
-msgstr "Квадрат"
+msgstr "Квадратна"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:50
 msgid "workspace.options.group-fill"
@@ -5124,7 +5119,7 @@ msgstr "Орієнтири"
 msgid "workspace.options.guides.toggle-guide"
 msgstr "Перемкнути орієнтир"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:362
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:359
 msgid "workspace.options.height"
 msgstr "Висота"
 
@@ -5393,7 +5388,7 @@ msgstr "Відтінок"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:142
 msgid "workspace.options.layer-options.blend-mode.lighten"
-msgstr "Освітленн"
+msgstr "Світліше"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:153
 msgid "workspace.options.layer-options.blend-mode.luminosity"
@@ -5401,7 +5396,7 @@ msgstr "Сяяння"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:140
 msgid "workspace.options.layer-options.blend-mode.multiply"
-msgstr "Помножити"
+msgstr "Множення"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:138
 msgid "workspace.options.layer-options.blend-mode.normal"
@@ -5421,7 +5416,7 @@ msgstr "Екран"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:146
 msgid "workspace.options.layer-options.blend-mode.soft-light"
-msgstr "М'який світлий"
+msgstr "М'яке світло"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 #, unused
@@ -5440,26 +5435,26 @@ msgstr "Обрані шари"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:191, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:197
 msgid "workspace.options.layer-options.toggle-layer"
-msgstr "Перемкнути видімість шару"
+msgstr "Перемкнути видимість шару"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
 msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Додаткові параметри"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:561
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:563
 msgid "workspace.options.layout-item.layout-item-max-h"
 msgstr "Макс. Висота"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:528
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:530
 msgid "workspace.options.layout-item.layout-item-max-w"
 msgstr "Макс. Ширина"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:545
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:547
 msgid "workspace.options.layout-item.layout-item-min-h"
 msgstr "Мін.Висота"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:512
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:514
 msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "Мін.Ширина"
 
@@ -5573,11 +5568,11 @@ msgstr "простір між"
 msgid "workspace.options.layout.top"
 msgstr "Згори"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:171
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:157
 msgid "workspace.options.more-colors"
 msgstr "Більше кольорів"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:155
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:141
 msgid "workspace.options.more-lib-colors"
 msgstr "Більше кольорів бібліотеки"
 
@@ -5622,7 +5617,7 @@ msgstr "Згорнути незалежні радіуси"
 msgid "workspace.options.radius.show-single-corners"
 msgstr "Показати незалежні радіуси кутів"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:186
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:189
 msgid "workspace.options.recent-fonts"
 msgstr "Нещодавній"
 
@@ -5630,11 +5625,11 @@ msgstr "Нещодавній"
 msgid "workspace.options.retry"
 msgstr "Спробувати ще раз"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:406
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:403
 msgid "workspace.options.rotation"
 msgstr "Обернення"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:183
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:186
 msgid "workspace.options.search-font"
 msgstr "Пошук шрифту"
 
@@ -5642,7 +5637,7 @@ msgstr "Пошук шрифту"
 msgid "workspace.options.select-a-shape"
 msgstr "Оберіть фігуру, дошку чи групу щоб перетягнути з'єднання до іншої дошки."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:128
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:114
 msgid "workspace.options.selection-color"
 msgstr "Обрані кольори"
 
@@ -5654,55 +5649,55 @@ msgstr "Заливка обраного"
 msgid "workspace.options.selection-stroke"
 msgstr "Обведення виділення"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:305
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:292
 msgid "workspace.options.shadow-options.add-shadow"
 msgstr "Додати тінь"
 
-#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:40, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:202, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:204
+#: src/app/main/ui/inspect/attributes/shadow.cljs:40, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:168, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:170
 msgid "workspace.options.shadow-options.blur"
 msgstr "Розмиття"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:242
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:200
 msgid "workspace.options.shadow-options.color"
 msgstr "Колір тіні"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:146
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:112
 msgid "workspace.options.shadow-options.drop-shadow"
 msgstr "Падаюча тінь"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:147
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:113
 msgid "workspace.options.shadow-options.inner-shadow"
 msgstr "Внутрішня тінь"
 
-#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:190
+#: src/app/main/ui/inspect/attributes/shadow.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:158
 msgid "workspace.options.shadow-options.offsetx"
 msgstr "Вісь X"
 
-#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:39, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:228
+#: src/app/main/ui/inspect/attributes/shadow.cljs:39, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:190
 msgid "workspace.options.shadow-options.offsety"
 msgstr "Вісь Y"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:180, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:318
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:305
 msgid "workspace.options.shadow-options.remove-shadow"
 msgstr "Видалити тінь"
 
-#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:41, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:215, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:217
+#: src/app/main/ui/inspect/attributes/shadow.cljs:41, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:181
 msgid "workspace.options.shadow-options.spread"
 msgstr "Розтягнення"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:300
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:287
 msgid "workspace.options.shadow-options.title"
 msgstr "Тінь"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:299
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:286
 msgid "workspace.options.shadow-options.title.group"
 msgstr "Групова тінь"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:298
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:285
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "Тінь виділеного"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:176
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:144
 msgid "workspace.options.shadow-options.toggle-shadow"
 msgstr "Перемкнути тінь"
 
@@ -5710,7 +5705,7 @@ msgstr "Перемкнути тінь"
 msgid "workspace.options.show-fill-on-export"
 msgstr "Показати в експортованому"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:445
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:442
 msgid "workspace.options.show-in-viewer"
 msgstr "Показати у режимі перегляду"
 
@@ -5718,7 +5713,7 @@ msgstr "Показати у режимі перегляду"
 msgid "workspace.options.size"
 msgstr "Розмір"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:305
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:302
 msgid "workspace.options.size-presets"
 msgstr "Шаблони розміру"
 
@@ -5787,7 +5782,7 @@ msgstr "Трикутне"
 msgid "workspace.options.stroke-color"
 msgstr "Колір обведення"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:165
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:166
 msgid "workspace.options.stroke-width"
 msgstr "Довжина обведення"
 
@@ -5859,11 +5854,11 @@ msgstr "Автоматична ширина"
 msgid "workspace.options.text-options.grow-fixed"
 msgstr "Фіксована"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:392
 msgid "workspace.options.text-options.letter-spacing"
-msgstr "Міжлітеральний відступ"
+msgstr "Інтервал між літерами"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:371
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:374
 msgid "workspace.options.text-options.line-height"
 msgstr "Висота рядка"
 
@@ -5926,18 +5921,18 @@ msgstr "ВЕРХНІЙ РЕГІСТР"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:753
 msgid "workspace.options.use-play-button"
 msgstr ""
-"Використовуйте кнопку програвання в заголовку, щоб запустити перегляд "
+"Використовуйте кнопку відтворення в заголовку, щоб запустити перегляд "
 "прототипів."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:351
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:348
 msgid "workspace.options.width"
 msgstr "Ширина"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:383
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:380
 msgid "workspace.options.x"
 msgstr "Вісь абсцис (X)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:394
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:391
 msgid "workspace.options.y"
 msgstr "Вісь ординат (Y)"
 
@@ -5992,19 +5987,19 @@ msgstr "Дослідіть [більше плагінів](%s)"
 
 #: src/app/main/ui/workspace/plugins.cljs:209
 msgid "workspace.plugins.empty-plugins"
-msgstr "У вас ще немає жодного плагіну"
+msgstr "Ви поки не встановлювали жодного плагіна"
 
 #: src/app/main/ui/workspace/plugins.cljs:196
 msgid "workspace.plugins.error.manifest"
-msgstr "Маніфест плагіну неправильний."
+msgstr "Маніфест плагіна неправильний."
 
 #: src/app/main/data/plugins.cljs:86, src/app/main/ui/workspace/main_menu.cljs:743, src/app/main/ui/workspace/plugins.cljs:82
 msgid "workspace.plugins.error.need-editor"
-msgstr "Щоб використовувати цей плагін, ви маєте бути редактором"
+msgstr "Щоб використовувати цей плагін, Ви маєте бути редактором"
 
 #: src/app/main/ui/workspace/plugins.cljs:192
 msgid "workspace.plugins.error.url"
-msgstr "Плагіну не існує чи посилання неправильне."
+msgstr "Плагін не існує або посилання на нього неправильне."
 
 #: src/app/main/ui/workspace/plugins.cljs:188
 msgid "workspace.plugins.install"
@@ -6029,8 +6024,8 @@ msgstr "ОНОВИТИ ЦЕЙ ПЛАГІН"
 #: src/app/main/ui/workspace/plugins.cljs:376
 msgid "workspace.plugins.permissions-update.warning"
 msgstr ""
-"Плагін було модифіковано після вашого останнього використання. Тепер він "
-"також хоче отримати доступ до:"
+"Плагін було модифіковано після останнього використання. Тепер він також "
+"хоче отримати доступ до:"
 
 #: src/app/main/ui/workspace/plugins.cljs:283
 msgid "workspace.plugins.permissions.allow-download"
@@ -6055,9 +6050,10 @@ msgstr "Читати та модифікувати вміст файлів, до
 #: src/app/main/ui/workspace/plugins.cljs:323
 msgid "workspace.plugins.permissions.disclaimer"
 msgstr ""
-"Зауважте, що плагін створено третьою особою, тож впевніться що ви довіряєте "
-"йому перш ніж надавати дозволи. Для нас важлива приватність та безпека "
-"ваших даних. Якщо маєте якісь сумніви, то просимо зв'язатись з підтримкою."
+"Зауважте, що плагін створено зовнішньою стороною, тож впевніться що Ви "
+"довіряєте йому перш ніж надавати дозволи. Для нас важлива приватність та "
+"безпека Ваших даних. Якщо маєте якісь сумніви, звʼяжіться із службою "
+"підтримки."
 
 #: src/app/main/ui/workspace/plugins.cljs:263
 msgid "workspace.plugins.permissions.library-read"
@@ -6073,7 +6069,7 @@ msgstr "'%s' ПЛАГІН ЗАПИТУЄ ДОСТУП НА:"
 
 #: src/app/main/ui/workspace/plugins.cljs:250
 msgid "workspace.plugins.permissions.user-read"
-msgstr "Прочитати інформацію профілю поточного користувача."
+msgstr "Читати інформацію профілю поточного користувача."
 
 #: src/app/main/ui/workspace/plugins.cljs:214
 msgid "workspace.plugins.plugin-list-link"
@@ -6113,123 +6109,127 @@ msgstr "'%s' ПЛАГІН ВСТАНОВЛЕНО ДЛЯ ВАШОГО КОРИС�
 msgid "workspace.plugins.try-out.try"
 msgstr "СПРОБУВАТИ ПЛАГІН"
 
-#: src/app/main/ui/workspace/context_menu.cljs:537
+#: src/app/main/ui/workspace/context_menu.cljs:542
 msgid "workspace.shape.menu.add-flex"
 msgstr "Додати гнучкий макет"
 
-#: src/app/main/ui/workspace/context_menu.cljs:541
+#: src/app/main/ui/workspace/context_menu.cljs:546
 msgid "workspace.shape.menu.add-grid"
 msgstr "Додати макет сітки"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1004, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1030
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1013, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1039
 msgid "workspace.shape.menu.add-layout"
 msgstr "Додати макет"
 
-#: src/app/main/ui/workspace/context_menu.cljs:265
+#: src/app/main/ui/workspace/context_menu.cljs:266
 msgid "workspace.shape.menu.back"
 msgstr "Розмістити позаду"
 
-#: src/app/main/ui/workspace/context_menu.cljs:262
+#: src/app/main/ui/workspace/context_menu.cljs:263
 msgid "workspace.shape.menu.backward"
 msgstr "Перемістити назад"
 
-#: src/app/main/ui/workspace/context_menu.cljs:185
+#: src/app/main/ui/workspace/context_menu.cljs:186
 msgid "workspace.shape.menu.copy"
 msgstr "Копіювати"
 
-#: src/app/main/ui/workspace/context_menu.cljs:203
+#: src/app/main/ui/workspace/context_menu.cljs:204
 msgid "workspace.shape.menu.copy-css"
 msgstr "Копіювати як CSS"
 
-#: src/app/main/ui/workspace/context_menu.cljs:205
+#: src/app/main/ui/workspace/context_menu.cljs:206
 msgid "workspace.shape.menu.copy-css-nested"
 msgstr "Копіювати як CSS (вкладені шари)"
 
-#: src/app/main/ui/workspace/context_menu.cljs:188
+#: src/app/main/ui/workspace/context_menu.cljs:189
 msgid "workspace.shape.menu.copy-link"
 msgstr "Копіювати посилання в буфер обміну"
 
-#: src/app/main/ui/workspace/context_menu.cljs:201
+#: src/app/main/ui/workspace/context_menu.cljs:202
 msgid "workspace.shape.menu.copy-paste-as"
-msgstr "Копіювання/вставка як ..."
+msgstr "Копіювати/вставити як ..."
 
-#: src/app/main/ui/workspace/context_menu.cljs:213
+#: src/app/main/ui/workspace/context_menu.cljs:214
 msgid "workspace.shape.menu.copy-props"
 msgstr "Копіювати властивості"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:438
+#: src/app/main/ui/workspace/context_menu.cljs:211
+msgid "workspace.shape.menu.copy-text"
+msgstr "Копіювати як текст"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:454
 msgid "workspace.shape.menu.create-annotation"
 msgstr "Створити анотацію"
 
-#: src/app/main/ui/workspace/context_menu.cljs:364
+#: src/app/main/ui/workspace/context_menu.cljs:366
 msgid "workspace.shape.menu.create-artboard-from-selection"
 msgstr "Виділене на дошку"
 
-#: src/app/main/ui/workspace/context_menu.cljs:561
+#: src/app/main/ui/workspace/context_menu.cljs:568
 msgid "workspace.shape.menu.create-component"
 msgstr "Створити компонент"
 
-#: src/app/main/ui/workspace/context_menu.cljs:565
+#: src/app/main/ui/workspace/context_menu.cljs:572
 msgid "workspace.shape.menu.create-multiple-components"
 msgstr "Створити кілька компонентів"
 
-#: src/app/main/ui/workspace/context_menu.cljs:191
+#: src/app/main/ui/workspace/context_menu.cljs:192
 msgid "workspace.shape.menu.cut"
 msgstr "Вирізати"
 
-#: src/app/main/ui/workspace/context_menu.cljs:585, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:764, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1052
+#: src/app/main/ui/workspace/context_menu.cljs:598, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:773, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1061
 msgid "workspace.shape.menu.delete"
 msgstr "Вилучити"
 
-#: src/app/main/ui/workspace/context_menu.cljs:487
+#: src/app/main/ui/workspace/context_menu.cljs:489
 msgid "workspace.shape.menu.delete-flow-start"
 msgstr "Видалити початок потоку"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:443
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:459
 msgid "workspace.shape.menu.detach-instance"
 msgstr "Відокремити екземпляр"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:442
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:458
 msgid "workspace.shape.menu.detach-instances-in-bulk"
 msgstr "Відокремити екземпляри"
 
-#: src/app/main/ui/workspace/context_menu.cljs:428, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:75
+#: src/app/main/ui/workspace/context_menu.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:75
 msgid "workspace.shape.menu.difference"
 msgstr "Різниця"
 
-#: src/app/main/ui/workspace/context_menu.cljs:197
+#: src/app/main/ui/workspace/context_menu.cljs:198
 msgid "workspace.shape.menu.duplicate"
 msgstr "Дублювати"
 
-#: src/app/main/ui/workspace/context_menu.cljs:414
+#: src/app/main/ui/workspace/context_menu.cljs:416
 msgid "workspace.shape.menu.edit"
 msgstr "Редагувати"
 
-#: src/app/main/ui/workspace/context_menu.cljs:434
+#: src/app/main/ui/workspace/context_menu.cljs:436, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:85
 msgid "workspace.shape.menu.exclude"
 msgstr "Виключити"
 
-#: src/app/main/ui/workspace/context_menu.cljs:441, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:89
+#: src/app/main/ui/workspace/context_menu.cljs:443, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:89
 msgid "workspace.shape.menu.flatten"
-msgstr "Вирівнювати"
+msgstr "Вирівняти"
 
-#: src/app/main/ui/workspace/context_menu.cljs:282
+#: src/app/main/ui/workspace/context_menu.cljs:283
 msgid "workspace.shape.menu.flip-horizontal"
 msgstr "Перевернути по горизонталі"
 
-#: src/app/main/ui/workspace/context_menu.cljs:278
+#: src/app/main/ui/workspace/context_menu.cljs:279
 msgid "workspace.shape.menu.flip-vertical"
 msgstr "Перевернути по вертикалі"
 
-#: src/app/main/ui/workspace/context_menu.cljs:489
+#: src/app/main/ui/workspace/context_menu.cljs:491
 msgid "workspace.shape.menu.flow-start"
 msgstr "Початок потоку"
 
-#: src/app/main/ui/workspace/context_menu.cljs:256
+#: src/app/main/ui/workspace/context_menu.cljs:257
 msgid "workspace.shape.menu.forward"
-msgstr "Відсунути на задній план"
+msgstr "На передній план"
 
-#: src/app/main/ui/workspace/context_menu.cljs:259
+#: src/app/main/ui/workspace/context_menu.cljs:260
 msgid "workspace.shape.menu.front"
 msgstr "Висунути на перший план"
 
@@ -6238,107 +6238,107 @@ msgstr "Висунути на перший план"
 msgid "workspace.shape.menu.go-main"
 msgstr "Перейти до файлу головного компоненту"
 
-#: src/app/main/ui/workspace/context_menu.cljs:350
+#: src/app/main/ui/workspace/context_menu.cljs:352
 msgid "workspace.shape.menu.group"
 msgstr "Група"
 
-#: src/app/main/ui/workspace/context_menu.cljs:458, src/app/main/ui/workspace/sidebar/layer_item.cljs:145
+#: src/app/main/ui/workspace/context_menu.cljs:460, src/app/main/ui/workspace/sidebar/layer_item.cljs:151
 msgid "workspace.shape.menu.hide"
 msgstr "Приховати"
 
-#: src/app/main/ui/workspace/context_menu.cljs:658, src/app/main/ui/workspace/main_menu.cljs:414
+#: src/app/main/ui/workspace/context_menu.cljs:674, src/app/main/ui/workspace/main_menu.cljs:414
 msgid "workspace.shape.menu.hide-ui"
 msgstr "Показати / приховати інтерфейс"
 
-#: src/app/main/ui/workspace/context_menu.cljs:431
+#: src/app/main/ui/workspace/context_menu.cljs:433, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:80
 msgid "workspace.shape.menu.intersection"
 msgstr "Перехрестя"
 
-#: src/app/main/ui/workspace/context_menu.cljs:466, src/app/main/ui/workspace/sidebar/layer_item.cljs:153, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:204
+#: src/app/main/ui/workspace/context_menu.cljs:468, src/app/main/ui/workspace/sidebar/layer_item.cljs:159, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:204
 msgid "workspace.shape.menu.lock"
 msgstr "Заблокувати"
 
-#: src/app/main/ui/workspace/context_menu.cljs:355
+#: src/app/main/ui/workspace/context_menu.cljs:357
 msgid "workspace.shape.menu.mask"
-msgstr "Маскувати"
+msgstr "Додати маску"
 
-#: src/app/main/ui/workspace/context_menu.cljs:194, src/app/main/ui/workspace/context_menu.cljs:655
+#: src/app/main/ui/workspace/context_menu.cljs:195, src/app/main/ui/workspace/context_menu.cljs:671
 msgid "workspace.shape.menu.paste"
 msgstr "Вставити"
 
-#: src/app/main/ui/workspace/context_menu.cljs:217
+#: src/app/main/ui/workspace/context_menu.cljs:218
 msgid "workspace.shape.menu.paste-props"
 msgstr "Вставити властивості"
 
-#: src/app/main/ui/workspace/context_menu.cljs:424
+#: src/app/main/ui/workspace/context_menu.cljs:426
 msgid "workspace.shape.menu.path"
 msgstr "Шлях"
 
-#: src/app/main/ui/workspace/context_menu.cljs:528
+#: src/app/main/ui/workspace/context_menu.cljs:532
 msgid "workspace.shape.menu.remove-flex"
 msgstr "Видалити гнучкий макет"
 
-#: src/app/main/ui/workspace/context_menu.cljs:531
+#: src/app/main/ui/workspace/context_menu.cljs:535
 msgid "workspace.shape.menu.remove-grid"
 msgstr "Видалити макет сітки"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1022
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1031
 msgid "workspace.shape.menu.remove-layout"
 msgstr "Видалити макет"
 
-#: src/app/main/ui/workspace/context_menu.cljs:312
+#: src/app/main/ui/workspace/context_menu.cljs:313
 msgid "workspace.shape.menu.rename"
 msgstr "Перейменувати"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:447
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:463
 msgid "workspace.shape.menu.reset-overrides"
 msgstr "Відкликати зміни"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:450
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:466
 msgid "workspace.shape.menu.restore-main"
 msgstr "Відновити головний компонент"
 
-#: src/app/main/ui/workspace/context_menu.cljs:246
+#: src/app/main/ui/workspace/context_menu.cljs:247
 msgid "workspace.shape.menu.select-layer"
 msgstr "Обрати шар"
 
-#: src/app/main/ui/workspace/context_menu.cljs:455, src/app/main/ui/workspace/sidebar/layer_item.cljs:144
+#: src/app/main/ui/workspace/context_menu.cljs:457, src/app/main/ui/workspace/sidebar/layer_item.cljs:150
 msgid "workspace.shape.menu.show"
 msgstr "Показати"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:435
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:451
 msgid "workspace.shape.menu.show-in-assets"
 msgstr "Показати в панелі ресурсів"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:453, src/app/main/ui/workspace/sidebar/assets/components.cljs:563
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:469, src/app/main/ui/workspace/sidebar/assets/components.cljs:573
 msgid "workspace.shape.menu.show-main"
 msgstr "Показати головний компонент"
 
-#: src/app/main/ui/workspace/context_menu.cljs:297
+#: src/app/main/ui/workspace/context_menu.cljs:298
 msgid "workspace.shape.menu.thumbnail-remove"
 msgstr "Видалити мініатюру"
 
-#: src/app/main/ui/workspace/context_menu.cljs:299
+#: src/app/main/ui/workspace/context_menu.cljs:300
 msgid "workspace.shape.menu.thumbnail-set"
 msgstr "Встановити як мініатюру"
 
-#: src/app/main/ui/workspace/context_menu.cljs:419
+#: src/app/main/ui/workspace/context_menu.cljs:421
 msgid "workspace.shape.menu.transform-to-path"
 msgstr "Перетворити на шлях"
 
-#: src/app/main/ui/workspace/context_menu.cljs:346
+#: src/app/main/ui/workspace/context_menu.cljs:348
 msgid "workspace.shape.menu.ungroup"
 msgstr "Дегрупувати"
 
-#: src/app/main/ui/workspace/context_menu.cljs:425, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:70
+#: src/app/main/ui/workspace/context_menu.cljs:427, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:70
 msgid "workspace.shape.menu.union"
 msgstr "Об'єднання"
 
-#: src/app/main/ui/workspace/context_menu.cljs:463, src/app/main/ui/workspace/sidebar/layer_item.cljs:152, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:210
+#: src/app/main/ui/workspace/context_menu.cljs:465, src/app/main/ui/workspace/sidebar/layer_item.cljs:158, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:210
 msgid "workspace.shape.menu.unlock"
 msgstr "Розблокувати"
 
-#: src/app/main/ui/workspace/context_menu.cljs:360
+#: src/app/main/ui/workspace/context_menu.cljs:362
 msgid "workspace.shape.menu.unmask"
 msgstr "Зняти маску"
 
@@ -6347,7 +6347,7 @@ msgstr "Зняти маску"
 msgid "workspace.shape.menu.update-components-in-bulk"
 msgstr "Оновити головні компоненти"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:456
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:472
 msgid "workspace.shape.menu.update-main"
 msgstr "Оновити головний компонент"
 
@@ -6359,11 +6359,11 @@ msgstr "Приховати панель інструментів"
 msgid "workspace.sidebar.expand"
 msgstr "Розкрити панель інструментів"
 
-#: src/app/main/ui/workspace/right_header.cljs:246, src/app/main/ui/workspace/right_header.cljs:247
+#: src/app/main/ui/workspace/right_header.cljs:212, src/app/main/ui/workspace/right_header.cljs:213
 msgid "workspace.sidebar.history"
 msgstr "Історія"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:525, src/app/main/ui/workspace/sidebar.cljs:127, src/app/main/ui/workspace/sidebar.cljs:131, src/app/main/ui/workspace/sidebar.cljs:140
+#: src/app/main/ui/workspace/sidebar/layers.cljs:525, src/app/main/ui/workspace/sidebar.cljs:128, src/app/main/ui/workspace/sidebar.cljs:132, src/app/main/ui/workspace/sidebar.cljs:141
 msgid "workspace.sidebar.layers"
 msgstr "Шари"
 
@@ -6399,7 +6399,7 @@ msgstr "Фігури"
 msgid "workspace.sidebar.layers.texts"
 msgstr "Тексти"
 
-#: src/app/main/ui/viewer/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:101
+#: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:101
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "Імпортовані атрибути SVG"
 
@@ -6411,7 +6411,7 @@ msgstr "Сторінки"
 msgid "workspace.sidebar.sitemap.add-page"
 msgstr "Додати сторінку"
 
-#: src/app/main/ui/workspace/left_header.cljs:92
+#: src/app/main/ui/workspace/left_header.cljs:97
 msgid "workspace.sitemap"
 msgstr "Мапа сайту"
 
@@ -6429,43 +6429,43 @@ msgstr "%s активних тем"
 msgid "workspace.token.add set"
 msgstr "Додати набір"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:341
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:136
+msgid "workspace.token.applied-to"
+msgstr "Застосовано до"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:391
 msgid "workspace.token.back-to-themes"
 msgstr "Повернутись до списку тем"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:51
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:54
 msgid "workspace.token.create-new-theme"
 msgstr "Створити свою першу тему зараз."
 
-#: src/app/main/ui/workspace/tokens/sidebar.cljs:191, src/app/main/ui/workspace/tokens/sidebar.cljs:218
+#: src/app/main/ui/workspace/tokens/sets.cljs:134, src/app/main/ui/workspace/tokens/sidebar.cljs:190
 msgid "workspace.token.create-one"
 msgstr "Створити його."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
-msgid "workspace.token.create-theme-title"
-msgstr "Створити тему"
-
-#: src/app/main/ui/workspace/tokens/form.cljs:431
+#: src/app/main/ui/workspace/tokens/form.cljs:492
 msgid "workspace.token.create-token"
 msgstr "Створити новий %s токен"
 
-#: src/app/main/ui/workspace/tokens/context_menu.cljs:228
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:278
 msgid "workspace.token.delete"
 msgstr "Видалити токен"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:151
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159
 msgid "workspace.token.delete-theme-title"
 msgstr "Видалити тему"
 
-#: src/app/main/ui/workspace/tokens/context_menu.cljs:225
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:275
 msgid "workspace.token.duplicate"
 msgstr "Дублювати токен"
 
-#: src/app/main/ui/workspace/tokens/context_menu.cljs:212
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:262
 msgid "workspace.token.edit"
 msgstr "Змінити токен"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:333
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:383
 msgid "workspace.token.edit-theme-title"
 msgstr "Редагувати тему"
 
@@ -6473,105 +6473,127 @@ msgstr "Редагувати тему"
 msgid "workspace.token.edit-themes"
 msgstr "Редагувати теми"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:430
+#: src/app/main/ui/workspace/tokens/form.cljs:491
 msgid "workspace.token.edit-token"
 msgstr "Редагувати токен"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:481
+#: src/app/main/ui/workspace/tokens/form.cljs:544
 msgid "workspace.token.enter-token-description"
 msgstr "Додайте опис (необов'язково)"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:437
+#: src/app/main/ui/workspace/tokens/form.cljs:498
 msgid "workspace.token.enter-token-name"
-msgstr "Введіть %s ім'я токену"
+msgstr "Вкажіть %s ім'я токену"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
 msgid "workspace.token.grouping-set-alert"
 msgstr "Групування наборів токенів поки не підтримується."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
-msgid "workspace.token.new-theme"
-msgstr "Нова тема"
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:196
+msgid "workspace.token.label.group"
+msgstr "Група"
 
-#: src/app/main/ui/workspace/tokens/theme_select.cljs:88
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:206
+msgid "workspace.token.label.theme"
+msgstr "Тема"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:89
 msgid "workspace.token.no-active-theme"
 msgstr "Немає активної теми"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
-msgid "workspace.token.no-sets"
-msgstr "Немає наборів"
+#: src/app/main/ui/workspace/tokens/sets.cljs:110
+msgid "workspace.token.no-permisions-set"
+msgstr "Щоб активувати / деактивувати набір, Ви маєте бути редактором"
 
-#: src/app/main/ui/workspace/tokens/sets.cljs:401, src/app/main/ui/workspace/tokens/sets.cljs:405
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:199
+msgid "workspace.token.no-permission-themes"
+msgstr "Щоб використовувати ці теми Ви маєте бути редактором"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:504
 msgid "workspace.token.no-sets-create"
 msgstr "Ще не оголошено жодного набору. Створіть перший."
 
-#: src/app/main/ui/workspace/tokens/sidebar.cljs:215, src/app/main/ui/workspace/tokens/sidebar.cljs:221
+#: src/app/main/ui/workspace/tokens/sets.cljs:131, src/app/main/ui/workspace/tokens/sets.cljs:137
 msgid "workspace.token.no-sets-yet"
 msgstr "Тут ще немає наборів."
 
-#: src/app/main/ui/workspace/tokens/sidebar.cljs:187
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:186
 msgid "workspace.token.no-themes"
 msgstr "Тут немає тем."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:50
 msgid "workspace.token.no-themes-currently"
 msgstr "Наразі у вас немає жодної теми."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
-msgid "workspace.token.num-sets"
-msgstr "%s наборів"
-
-#: src/app/main/ui/workspace/tokens/token_pill.cljs:114
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:122
 #, fuzzy
 msgid "workspace.token.original-value"
-msgstr "Початкове значення: "
+msgstr "Початкове значення: %s"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:205, src/app/main/ui/workspace/tokens/form.cljs:208, src/app/main/ui/workspace/tokens/token_pill.cljs:115
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:128
+msgid "workspace.token.ref-not-valid"
+msgstr "Посилання недійсне або ні на одному із активних наборів"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:217, src/app/main/ui/workspace/tokens/form.cljs:221, src/app/main/ui/workspace/tokens/token_pill.cljs:123
 #, fuzzy
 msgid "workspace.token.resolved-value"
-msgstr "Розв'язане значення: "
+msgstr "Отримане значення: %s"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:203
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:240
 msgid "workspace.token.save-theme"
 msgstr "Зберегти тему"
 
-#: src/app/main/ui/workspace/tokens/sets.cljs:200, src/app/main/ui/workspace/tokens/sets.cljs:305
+#: src/app/main/ui/workspace/tokens/sets.cljs:239, src/app/main/ui/workspace/tokens/sets.cljs:340
 msgid "workspace.token.select-set"
 msgstr "Обрати набір."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:346
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:396
 msgid "workspace.token.set-selection-theme"
 msgstr ""
 "Визначити які набори токенів повинні бути використані як частину цього "
 "варіанту теми:"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs
-#, unused
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:136
 msgid "workspace.token.theme-name"
 msgstr "Тема %s"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
-msgid "workspace.token.themes"
-msgstr "Теми"
-
-#: src/app/main/ui/workspace/tokens/form.cljs:482
+#: src/app/main/ui/workspace/tokens/form.cljs:545
 msgid "workspace.token.token-description"
 msgstr "Опис"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:440
+#: src/app/main/ui/workspace/tokens/form.cljs:501
 msgid "workspace.token.token-name"
 msgstr "Ім'я"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:464
+#: src/app/main/ui/workspace/tokens/form.cljs:59
+msgid "workspace.token.token-name-validation-error"
+msgstr ""
+" недійсне імʼя токену.\n"
+"Імʼя має містити тільки літери та цифри, розділені крапкою та не мають "
+"починатись із символу \"$\"."
+
+#: src/app/main/ui/workspace/tokens/form.cljs:526
 msgid "workspace.token.token-value"
 msgstr "Значення"
 
-#: src/app/main/ui/workspace/tokens/sidebar.cljs:348
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:322
+msgid "workspace.token.tokens-section-title"
+msgstr "ТОКЕНИ -  %s"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:405
 msgid "workspace.token.tools"
 msgstr "Інструменти"
 
-#: src/app/main/ui/workspace/sidebar.cljs:134, src/app/main/ui/workspace/sidebar.cljs:143
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:131
+msgid "workspace.token.value-not-valid"
+msgstr "Значення недійсне"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:520
+msgid "workspace.token.warning-name-change"
+msgstr "Якщо перейменувати токен, посилання на старе імʼя буде розірвано."
+
+#: src/app/main/ui/workspace/sidebar.cljs:135, src/app/main/ui/workspace/sidebar.cljs:144
 msgid "workspace.toolbar.assets"
 msgstr "Ресурси"
 
@@ -6579,39 +6601,39 @@ msgstr "Ресурси"
 msgid "workspace.toolbar.color-palette"
 msgstr "Палітра кольорів (%s)"
 
-#: src/app/main/ui/workspace/right_header.cljs:235, src/app/main/ui/workspace/right_header.cljs:236
+#: src/app/main/ui/workspace/right_header.cljs:201, src/app/main/ui/workspace/right_header.cljs:202
 msgid "workspace.toolbar.comments"
 msgstr "Коментарі (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:181, src/app/main/ui/workspace/top_toolbar.cljs:182
+#: src/app/main/ui/workspace/top_toolbar.cljs:190, src/app/main/ui/workspace/top_toolbar.cljs:191
 msgid "workspace.toolbar.curve"
 msgstr "Крива (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:161, src/app/main/ui/workspace/top_toolbar.cljs:162
+#: src/app/main/ui/workspace/top_toolbar.cljs:170, src/app/main/ui/workspace/top_toolbar.cljs:171
 msgid "workspace.toolbar.ellipse"
 msgstr "Еліпс (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:143, src/app/main/ui/workspace/top_toolbar.cljs:144
+#: src/app/main/ui/workspace/top_toolbar.cljs:132, src/app/main/ui/workspace/top_toolbar.cljs:153
 msgid "workspace.toolbar.frame"
 msgstr "Дошка (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:60, src/app/main/ui/workspace/top_toolbar.cljs:61
+#: src/app/main/ui/workspace/top_toolbar.cljs:61, src/app/main/ui/workspace/top_toolbar.cljs:62
 msgid "workspace.toolbar.image"
 msgstr "Зображення (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:133, src/app/main/ui/workspace/top_toolbar.cljs:134
+#: src/app/main/ui/workspace/top_toolbar.cljs:142, src/app/main/ui/workspace/top_toolbar.cljs:143
 msgid "workspace.toolbar.move"
 msgstr "Перемістити (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:190, src/app/main/ui/workspace/top_toolbar.cljs:191
+#: src/app/main/ui/workspace/top_toolbar.cljs:199, src/app/main/ui/workspace/top_toolbar.cljs:200
 msgid "workspace.toolbar.path"
 msgstr "Шлях (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:201, src/app/main/ui/workspace/top_toolbar.cljs:202
+#: src/app/main/ui/workspace/top_toolbar.cljs:210, src/app/main/ui/workspace/top_toolbar.cljs:211
 msgid "workspace.toolbar.plugins"
 msgstr "Плагіни (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:152, src/app/main/ui/workspace/top_toolbar.cljs:153
+#: src/app/main/ui/workspace/top_toolbar.cljs:161, src/app/main/ui/workspace/top_toolbar.cljs:162
 msgid "workspace.toolbar.rect"
 msgstr "Прямокутник (%s)"
 
@@ -6620,7 +6642,7 @@ msgstr "Прямокутник (%s)"
 msgid "workspace.toolbar.shortcuts"
 msgstr "Скорочення (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:170, src/app/main/ui/workspace/top_toolbar.cljs:171
+#: src/app/main/ui/workspace/top_toolbar.cljs:179, src/app/main/ui/workspace/top_toolbar.cljs:180
 msgid "workspace.toolbar.text"
 msgstr "Текст (%s)"
 
@@ -6628,13 +6650,13 @@ msgstr "Текст (%s)"
 msgid "workspace.toolbar.text-palette"
 msgstr "Типографіки (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:220, src/app/main/ui/workspace/top_toolbar.cljs:221
+#: src/app/main/ui/workspace/top_toolbar.cljs:229, src/app/main/ui/workspace/top_toolbar.cljs:230
 msgid "workspace.toolbar.toggle-toolbar"
 msgstr "Перемкнути панель інструментів"
 
 #: src/app/main/ui/workspace/viewport/top_bar.cljs:39
 msgid "workspace.top-bar.read-only.done"
-msgstr "Виконано"
+msgstr "Готово"
 
 #: src/app/main/ui/workspace/viewport/top_bar.cljs:36
 #, markdown
@@ -6786,19 +6808,19 @@ msgstr "Операція над %s"
 msgid "workspace.undo.title"
 msgstr "Історія"
 
-#: src/app/main/data/workspace/libraries.cljs:1223, src/app/main/ui/workspace/sidebar/versions.cljs:261
+#: src/app/main/data/workspace/libraries.cljs:1224, src/app/main/ui/workspace/sidebar/versions.cljs:261
 msgid "workspace.updates.dismiss"
 msgstr "Відкинути"
 
-#: src/app/main/data/workspace/libraries.cljs:1221
+#: src/app/main/data/workspace/libraries.cljs:1222
 msgid "workspace.updates.more-info"
 msgstr "Більше про"
 
-#: src/app/main/data/workspace/libraries.cljs:1219
+#: src/app/main/data/workspace/libraries.cljs:1220
 msgid "workspace.updates.there-are-updates"
 msgstr "Є деякі оновлення в спільній бібліотеці"
 
-#: src/app/main/data/workspace/libraries.cljs:1225
+#: src/app/main/data/workspace/libraries.cljs:1226
 msgid "workspace.updates.update"
 msgstr "Оновити"
 
@@ -6858,11 +6880,11 @@ msgstr "Ви бажаєте відновити ці версії?"
 msgid "workspace.versions.snapshot-menu"
 msgstr "Відкрити меню знятків"
 
-#: src/app/main/ui/workspace/sidebar.cljs:284
+#: src/app/main/ui/workspace/sidebar.cljs:285
 msgid "workspace.versions.tab.actions"
 msgstr "Дії"
 
-#: src/app/main/ui/workspace/sidebar.cljs:281
+#: src/app/main/ui/workspace/sidebar.cljs:282
 msgid "workspace.versions.tab.history"
 msgstr "Історія"
 
@@ -6874,7 +6896,7 @@ msgstr "Відкрити меню версій"
 #, markdown
 msgid "workspace.versions.warning.subtext"
 msgstr ""
-"Якщо ви хочете збільшити це обмеження, зверніться до нас через "
+"Якщо Ви хочете збільшити це обмеження, зверніться до нас через "
 "[support@penpot.app](%s)"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:361

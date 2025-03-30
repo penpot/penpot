@@ -145,6 +145,7 @@
                   (conj :rect :circle :path :bool))]
     (or (= uuid/zero id)
         (and (or (str/includes? (str/lower (:name shape)) (str/lower search))
+                 (str/includes? (str/lower (:variant-name shape)) (str/lower search))
                  ;; Only for local development we allow search for ids. Otherwise will be hard
                  ;; search for numbers or single letter shape names (ie: "A")
                  (and *assert*

@@ -142,7 +142,7 @@ Shadow styles are serialized as `u8`:
 
 ## Layout
 
-### Direction
+### Flex Direction
 
 | Value | Field         |
 | ----- | ------------- |
@@ -150,6 +150,14 @@ Shadow styles are serialized as `u8`:
 | 1     | RowReverse    |
 | 2     | Column        |
 | 3     | ColumnReverse |
+| \_    | error         |
+
+### Grid Direction
+
+| Value | Field         |
+| ----- | ------------- |
+| 0     | Row           |
+| 1     | Column        |
 | \_    | error         |
 
 ### Align Items
@@ -208,6 +216,28 @@ Shadow styles are serialized as `u8`:
 | 6     | Stretch       |
 | \_    | error         |
 
+### Align Self
+
+| Value | Field   |
+| ----- | ------- |
+| 0     | Auto    |
+| 1     | Start   |
+| 2     | End     |
+| 3     | Center  |
+| 4     | Stretch |
+| \_    | error   |
+
+### Justify Self
+
+| Value | Field   |
+| ----- | ------- |
+| 0     | Auto    |
+| 1     | Start   |
+| 2     | End     |
+| 3     | Center  |
+| 4     | Stretch |
+| \_    | error   |
+
 ### Wrap type
 
 | Value | Field   |
@@ -224,6 +254,18 @@ Shadow styles are serialized as `u8`:
 | 1     | Fix   |
 | 2     | Auto  |
 | \_    | error |
+
+### Grid Track Type
+
+| Value | Field   |
+| ----- | ------- |
+| 0     | Percent |
+| 1     | Flex    |
+| 2     | Auto    |
+| 3     | Fixed   |
+| \_    | error   |
+
+
 
 ## Font
 

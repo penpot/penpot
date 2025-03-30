@@ -44,20 +44,21 @@
            on-toggle-collapse on-enable-drag on-disable-drag on-toggle-visibility on-toggle-blocking]}
    dref]
 
-  (let [id             (:id item)
-        name           (:name item)
-        blocked?       (:blocked item)
-        hidden?        (:hidden item)
-        has-shapes?    (-> item :shapes seq boolean)
-        touched?       (-> item :touched seq boolean)
-        parent-board? (and (cfh/frame-shape? item)
-                           (= uuid/zero (:parent-id item)))
-        absolute?      (ctl/item-absolute? item)
-        components-v2  (mf/use-ctx ctx/components-v2)
-        main-instance? (or (not components-v2) (:main-instance item))
-        variants?      (features/use-feature "variants/v1")
-        is-variant?    (when variants? (ctk/is-variant? item))
-        variant-name   (when is-variant? (:variant-name item))]
+  (let [id                    (:id item)
+        name                  (:name item)
+        blocked?              (:blocked item)
+        hidden?               (:hidden item)
+        has-shapes?           (-> item :shapes seq boolean)
+        touched?              (-> item :touched seq boolean)
+        parent-board?         (and (cfh/frame-shape? item)
+                                   (= uuid/zero (:parent-id item)))
+        absolute?             (ctl/item-absolute? item)
+        components-v2         (mf/use-ctx ctx/components-v2)
+        main-instance?        (or (not components-v2) (:main-instance item))
+        variants?             (features/use-feature "variants/v1")
+        is-variant?           (when variants? (ctk/is-variant? item))
+        variant-name          (when is-variant? (:variant-name item))
+        is-variant-container? (when variants? (ctk/is-variant-container? item))]
     [:*
      [:div {:id id
             :ref dref
@@ -72,7 +73,7 @@
                     :selected selected?
                     :type-frame (cfh/frame-shape? item)
                     :type-bool (cfh/bool-shape? item)
-                    :type-comp component-tree?
+                    :type-comp (or component-tree? is-variant-container?)
                     :hidden hidden?
                     :dnd-over dnd-over?
                     :dnd-over-top dnd-over-top?
@@ -132,7 +133,7 @@
                        :is-blocked blocked?
                        :parent-size parent-size
                        :is-selected selected?
-                       :type-comp component-tree?
+                       :type-comp (or component-tree? is-variant-container?)
                        :type-frame (cfh/frame-shape? item)
                        :variant-name variant-name
                        :is-hidden hidden?}]

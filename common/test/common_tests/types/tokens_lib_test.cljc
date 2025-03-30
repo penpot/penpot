@@ -84,52 +84,65 @@
     (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid params for token-set"
                             (ctob/make-token-set params)))))
 
-(t/deftest move-token-set
-  (t/testing "flat"
-    (let [tokens-lib (-> (ctob/make-tokens-lib)
-                         (ctob/add-set (ctob/make-token-set :name "A"))
-                         (ctob/add-set (ctob/make-token-set :name "B"))
-                         (ctob/add-set (ctob/make-token-set :name "Move")))
-          move (fn [from-path to-path before-path before-group?]
-                 (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
-                      (ctob/get-ordered-set-names)
-                      (into [])))]
-      (t/testing "move to top"
-        (t/is (= ["Move" "A" "B"] (move ["Move"] ["Move"] ["A"] false))))
+(t/deftest move-token-set-flat
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "A"))
+                       (ctob/add-set (ctob/make-token-set :name "B"))
+                       (ctob/add-set (ctob/make-token-set :name "Move")))
+        move (fn [from-path to-path before-path before-group?]
+               (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
+                    (ctob/get-ordered-set-names)
+                    (into [])))]
+    (t/testing "move to top"
+      (t/is (= ["Move" "A" "B"] (move ["Move"] ["Move"] ["A"] false))))
 
-      (t/testing "move in-between"
-        (t/is (= ["A" "Move" "B"] (move ["Move"] ["Move"] ["B"] false))))
+    (t/testing "move in-between"
+      (t/is (= ["A" "Move" "B"] (move ["Move"] ["Move"] ["B"] false))))
 
-      (t/testing "move to bottom"
-        (t/is (= ["A" "B" "Move"] (move ["Move"] ["Move"] nil false))))))
+    (t/testing "move to bottom"
+      (t/is (= ["A" "B" "Move"] (move ["Move"] ["Move"] nil false))))))
 
-  (t/testing "nested"
-    (let [tokens-lib (-> (ctob/make-tokens-lib)
-                         (ctob/add-set (ctob/make-token-set :name "Foo/Baz"))
-                         (ctob/add-set (ctob/make-token-set :name "Foo/Bar"))
-                         (ctob/add-set (ctob/make-token-set :name "Foo")))
-          move (fn [from-path to-path before-path before-group?]
-                 (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
-                      (ctob/get-ordered-set-names)
-                      (into [])))]
-      (t/testing "move outside of group"
-        (t/is (= ["Foo/Baz" "Bar" "Foo"] (move ["Foo" "Bar"] ["Bar"] ["Foo"] false)))
-        (t/is (= ["Bar" "Foo/Baz" "Foo"] (move ["Foo" "Bar"] ["Bar"] ["Foo" "Baz"] true)))
-        (t/is (= ["Foo/Baz" "Foo" "Bar"] (move ["Foo" "Bar"] ["Bar"] nil false))))
+(t/deftest move-token-set-nested
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "Foo/Baz"))
+                       (ctob/add-set (ctob/make-token-set :name "Foo/Bar"))
+                       (ctob/add-set (ctob/make-token-set :name "Foo")))
+        move (fn [from-path to-path before-path before-group?]
+               (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
+                    (ctob/get-ordered-set-names)
+                    (into [])))]
+    (t/testing "move outside of group"
+      (t/is (= ["Foo/Baz" "Bar" "Foo"] (move ["Foo" "Bar"] ["Bar"] ["Foo"] false)))
+      (t/is (= ["Bar" "Foo/Baz" "Foo"] (move ["Foo" "Bar"] ["Bar"] ["Foo" "Baz"] true)))
+      (t/is (= ["Foo/Baz" "Foo" "Bar"] (move ["Foo" "Bar"] ["Bar"] nil false))))
 
-      (t/testing "move inside of group"
-        (t/is (= ["Foo/Foo" "Foo/Baz" "Foo/Bar"] (move ["Foo"] ["Foo" "Foo"] ["Foo" "Baz"] false)))
-        (t/is (= ["Foo/Baz" "Foo/Bar" "Foo/Foo"] (move ["Foo"] ["Foo" "Foo"] nil false))))))
+    (t/testing "move inside of group"
+      (t/is (= ["Foo/Foo" "Foo/Baz" "Foo/Bar"] (move ["Foo"] ["Foo" "Foo"] ["Foo" "Baz"] false)))
+      (t/is (= ["Foo/Baz" "Foo/Bar" "Foo/Foo"] (move ["Foo"] ["Foo" "Foo"] nil false))))))
 
-  ;; FIXME
-  (t/testing "updates theme set names"
-    (let [tokens-lib (-> (ctob/make-tokens-lib)
-                         (ctob/add-set (ctob/make-token-set :name "Foo/Bar/Baz"))
-                         (ctob/add-set (ctob/make-token-set :name "Other"))
-                         (ctob/add-theme (ctob/make-token-theme :name "Theme"
-                                                                :sets #{"Foo/Bar/Baz"}))
-                         (ctob/move-set ["Foo" "Bar" "Baz"] ["Other/Baz"] nil nil))]
-      (t/is (= #{"Other/Baz"} (:sets (ctob/get-theme tokens-lib "" "Theme")))))))
+
+(t/deftest move-token-set-nested-2
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "a/b"))
+                       (ctob/add-set (ctob/make-token-set :name "a/a"))
+                       (ctob/add-set (ctob/make-token-set :name "b/a"))
+                       (ctob/add-set (ctob/make-token-set :name "b/b")))
+        move (fn [from-path to-path before-path before-group?]
+               (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
+                    (ctob/get-ordered-set-names)
+                    (vec)))]
+    (t/testing "move within group"
+      (t/is (= ["a/b" "a/a" "b/a" "b/b"] (vec (ctob/get-ordered-set-names tokens-lib))))
+      (t/is (= ["a/a" "a/b" "b/a" "b/b"] (move ["a" "b"] ["a" "b"] nil true))))))
+
+(t/deftest move-token-set-nested-3
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "Foo/Bar/Baz"))
+                       (ctob/add-set (ctob/make-token-set :name "Other"))
+                       (ctob/add-theme (ctob/make-token-theme :name "Theme"
+                                                              :sets #{"Foo/Bar/Baz"}))
+                       (ctob/move-set ["Foo" "Bar" "Baz"] ["Other/Baz"] nil nil))]
+    (t/is (= #{"Other/Baz"} (:sets (ctob/get-theme tokens-lib "" "Theme"))))))
 
 (t/deftest move-token-set-group
   (t/testing "reordering"
@@ -213,7 +226,7 @@
     (t/is (= (ctob/set-count tokens-lib) 0))))
 
 (t/deftest make-invalid-tokens-lib
-  (let [params {:sets nil :themes nil}]
+  (let [params {:sets {} :themes {}}]
     (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid token sets"
                             (ctob/make-tokens-lib params)))))
 
@@ -428,32 +441,225 @@
     (t/is (nil? token'))
     (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))))
 
-(t/deftest list-active-themes-tokens-in-order
-  (let [tokens-lib  (-> (ctob/make-tokens-lib)
-                        (ctob/add-theme (ctob/make-token-theme :name "out-of-order-theme"
-                                                               ;; Out of order sets in theme
-                                                               :sets ["unknown-set" "set-b" "set-a"]))
-                        (ctob/set-active-themes #{"/out-of-order-theme"})
+(t/deftest get-ordered-sets
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "group-1/set-a"))
+                       (ctob/add-set (ctob/make-token-set :name "group-1/set-b"))
+                       (ctob/add-set (ctob/make-token-set :name "group-2/set-a"))
+                       (ctob/add-set (ctob/make-token-set :name "group-1/set-c")))
 
-                        (ctob/add-set (ctob/make-token-set :name "set-a"))
-                        (ctob/add-token-in-set "set-a" (ctob/make-token :name "set-a-token"
-                                                                        :type :boolean
-                                                                        :value true))
-                        (ctob/add-set (ctob/make-token-set :name "set-b"))
-                        (ctob/add-token-in-set "set-b" (ctob/make-token :name "set-b-token"
-                                                                        :type :boolean
-                                                                        :value true))
-                        ;; Ignore this set
-                        (ctob/add-set (ctob/make-token-set :name "inactive-set"))
-                        (ctob/add-token-in-set "inactive-set" (ctob/make-token :name "inactive-set-token"
-                                                                               :type :boolean
-                                                                               :value true)))
+        ordered-sets (ctob/get-ordered-set-names tokens-lib)]
 
-        expected-order (ctob/get-ordered-set-names tokens-lib)
-        expected-tokens (ctob/get-active-themes-set-tokens tokens-lib)
-        expected-token-names (mapv key expected-tokens)]
-    (t/is (= '("set-a" "set-b" "inactive-set") expected-order))
-    (t/is (= ["set-a-token" "set-b-token"] expected-token-names))))
+    (t/is (= ordered-sets '("group-1/set-a"
+                            "group-1/set-b"
+                            "group-1/set-c"
+                            "group-2/set-a")))))
+
+(t/deftest list-active-themes-tokens-no-theme
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "set-a"
+                                                          :tokens {"token-1"
+                                                                   (ctob/make-token :name "token-1"
+                                                                                    :type :border-radius
+                                                                                    :value 10)
+                                                                   "token-2"
+                                                                   (ctob/make-token :name "token-2"
+                                                                                    :type :border-radius
+                                                                                    :value 20)}))
+                       (ctob/add-set (ctob/make-token-set :name "set-b"
+                                                          :tokens {"token-1"
+                                                                   (ctob/make-token :name "token-1"
+                                                                                    :type :border-radius
+                                                                                    :value 100)
+                                                                   "token-3"
+                                                                   (ctob/make-token :name "token-3"
+                                                                                    :type :border-radius
+                                                                                    :value 300)}))
+                       (ctob/add-set (ctob/make-token-set :name "set-c"
+                                                          :tokens {"token-1"
+                                                                   (ctob/make-token :name "token-1"
+                                                                                    :type :border-radius
+                                                                                    :value 1000)
+                                                                   "token-2"
+                                                                   (ctob/make-token :name "token-2"
+                                                                                    :type :border-radius
+                                                                                    :value 2000)
+                                                                   "token-3"
+                                                                   (ctob/make-token :name "token-3"
+                                                                                    :type :border-radius
+                                                                                    :value 3000)
+                                                                   "token-4"
+                                                                   (ctob/make-token :name "token-4"
+                                                                                    :type :border-radius
+                                                                                    :value 4000)}))
+                       (ctob/update-theme ctob/hidden-token-theme-group ctob/hidden-token-theme-name
+                                          #(ctob/enable-sets % #{"set-a" "set-b"})))
+
+        tokens (ctob/get-active-themes-set-tokens tokens-lib)]
+
+    (t/is (= (mapv key tokens) ["token-1" "token-2" "token-3"]))
+    (t/is (= (get-in tokens ["token-1" :value]) 100))
+    (t/is (= (get-in tokens ["token-2" :value]) 20))
+    (t/is (= (get-in tokens ["token-3" :value]) 300))))
+
+(t/deftest list-active-themes-tokens-one-theme
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "set-a"
+                                                          :tokens {"token-1"
+                                                                   (ctob/make-token :name "token-1"
+                                                                                    :type :border-radius
+                                                                                    :value 10)
+                                                                   "token-2"
+                                                                   (ctob/make-token :name "token-2"
+                                                                                    :type :border-radius
+                                                                                    :value 20)}))
+                       (ctob/add-set (ctob/make-token-set :name "set-b"
+                                                          :tokens {"token-1"
+                                                                   (ctob/make-token :name "token-1"
+                                                                                    :type :border-radius
+                                                                                    :value 100)
+                                                                   "token-3"
+                                                                   (ctob/make-token :name "token-3"
+                                                                                    :type :border-radius
+                                                                                    :value 300)}))
+                       (ctob/add-set (ctob/make-token-set :name "set-c"
+                                                          :tokens {"token-1"
+                                                                   (ctob/make-token :name "token-1"
+                                                                                    :type :border-radius
+                                                                                    :value 1000)
+                                                                   "token-2"
+                                                                   (ctob/make-token :name "token-2"
+                                                                                    :type :border-radius
+                                                                                    :value 2000)
+                                                                   "token-3"
+                                                                   (ctob/make-token :name "token-3"
+                                                                                    :type :border-radius
+                                                                                    :value 3000)
+                                                                   "token-4"
+                                                                   (ctob/make-token :name "token-4"
+                                                                                    :type :border-radius
+                                                                                    :value 4000)}))
+                       (ctob/add-theme (ctob/make-token-theme :name "single-theme"
+                                                              :sets #{"set-b" "set-c" "set-a"}))
+                       (ctob/set-active-themes #{"/single-theme"}))
+
+        tokens (ctob/get-active-themes-set-tokens tokens-lib)]
+
+    ;; Note that sets order inside the theme is undefined. What matters is order in that the
+    ;; sets have been added to the library.
+    (t/is (= (mapv key tokens) ["token-1" "token-2" "token-3" "token-4"]))
+    (t/is (= (get-in tokens ["token-1" :value]) 1000))
+    (t/is (= (get-in tokens ["token-2" :value]) 2000))
+    (t/is (= (get-in tokens ["token-3" :value]) 3000))
+    (t/is (= (get-in tokens ["token-4" :value]) 4000))))
+
+(t/deftest list-active-themes-tokens-two-themes
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "set-a"
+                                                          :tokens {"token-1"
+                                                                   (ctob/make-token :name "token-1"
+                                                                                    :type :border-radius
+                                                                                    :value 10)
+                                                                   "token-2"
+                                                                   (ctob/make-token :name "token-2"
+                                                                                    :type :border-radius
+                                                                                    :value 20)}))
+                       (ctob/add-set (ctob/make-token-set :name "set-b"
+                                                          :tokens {"token-1"
+                                                                   (ctob/make-token :name "token-1"
+                                                                                    :type :border-radius
+                                                                                    :value 100)
+                                                                   "token-3"
+                                                                   (ctob/make-token :name "token-3"
+                                                                                    :type :border-radius
+                                                                                    :value 300)}))
+                       (ctob/add-set (ctob/make-token-set :name "set-c"
+                                                          :tokens {"token-1"
+                                                                   (ctob/make-token :name "token-1"
+                                                                                    :type :border-radius
+                                                                                    :value 1000)
+                                                                   "token-2"
+                                                                   (ctob/make-token :name "token-2"
+                                                                                    :type :border-radius
+                                                                                    :value 2000)
+                                                                   "token-3"
+                                                                   (ctob/make-token :name "token-3"
+                                                                                    :type :border-radius
+                                                                                    :value 3000)
+                                                                   "token-4"
+                                                                   (ctob/make-token :name "token-4"
+                                                                                    :type :border-radius
+                                                                                    :value 4000)}))
+                       (ctob/add-theme (ctob/make-token-theme :name "theme-1"
+                                                              :sets #{"set-b"}))
+                       (ctob/add-theme (ctob/make-token-theme :name "theme-2"
+                                                              :sets #{"set-b" "set-a"}))
+                       (ctob/set-active-themes #{"/theme-1" "/theme-2"}))
+
+        tokens (ctob/get-active-themes-set-tokens tokens-lib)]
+
+    ;; Note that themes order is irrelevant. What matters is the union of the active sets
+    ;; and the order of the sets in the library.
+    (t/is (= (mapv key tokens) ["token-1" "token-2" "token-3"]))
+    (t/is (= (get-in tokens ["token-1" :value]) 100))
+    (t/is (= (get-in tokens ["token-2" :value]) 20))
+    (t/is (= (get-in tokens ["token-3" :value]) 300))))
+
+(t/deftest list-active-themes-tokens-bug-taiga-10617
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "Mode / Dark"
+                                                          :tokens {"red"
+                                                                   (ctob/make-token :name "red"
+                                                                                    :type :color
+                                                                                    :value "#700000")}))
+                       (ctob/add-set (ctob/make-token-set :name "Mode / Light"
+                                                          :tokens {"red"
+                                                                   (ctob/make-token :name "red"
+                                                                                    :type :color
+                                                                                    :value "#ff0000")}))
+                       (ctob/add-set (ctob/make-token-set :name "Device / Desktop"
+                                                          :tokens {"border1"
+                                                                   (ctob/make-token :name "border1"
+                                                                                    :type :border-radius
+                                                                                    :value 30)}))
+                       (ctob/add-set (ctob/make-token-set :name "Device / Mobile"
+                                                          :tokens {"border1"
+                                                                   (ctob/make-token :name "border1"
+                                                                                    :type :border-radius
+                                                                                    :value 50)}))
+                       (ctob/add-theme (ctob/make-token-theme :group "App"
+                                                              :name "Mobile"
+                                                              :sets #{"Mode / Dark" "Device / Mobile"}))
+                       (ctob/add-theme (ctob/make-token-theme :group "App"
+                                                              :name "Web"
+                                                              :sets #{"Mode / Dark" "Mode / Light" "Device / Desktop"}))
+                       (ctob/add-theme (ctob/make-token-theme :group "Brand"
+                                                              :name "Brand A"
+                                                              :sets #{"Mode / Dark" "Mode / Light" "Device / Desktop" "Device / Mobile"}))
+                       (ctob/add-theme (ctob/make-token-theme :group "Brand"
+                                                              :name "Brand B"
+                                                              :sets #{}))
+                       (ctob/set-active-themes #{"App/Web" "Brand/Brand A"}))
+
+        tokens (ctob/get-active-themes-set-tokens tokens-lib)]
+
+    (t/is (= (mapv key tokens) ["red" "border1"]))
+    (t/is (= (get-in tokens ["red" :value]) "#ff0000"))
+    (t/is (= (get-in tokens ["border1" :value]) 50))))
+
+(t/deftest list-active-themes-tokens-no-tokens
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "set-a")))
+
+        tokens (ctob/get-active-themes-set-tokens tokens-lib)]
+
+    (t/is (empty? tokens))))
+
+(t/deftest list-active-themes-tokens-no-sets
+  (let [tokens-lib (ctob/make-tokens-lib)
+        tokens (ctob/get-active-themes-set-tokens tokens-lib)]
+
+    (t/is (empty? tokens))))
 
 (t/deftest sets-at-path-active-state
   (let [tokens-lib  (-> (ctob/make-tokens-lib)

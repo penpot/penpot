@@ -26,7 +26,6 @@
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
    [app.main.ui.workspace.shapes.text.v2-editor :as editor-v2]
-   [app.main.ui.workspace.shapes.text.viewport-texts-html :as stvh]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
    [app.main.ui.workspace.viewport.debug :as wvd]
@@ -292,10 +291,6 @@
       (when @canvas-init?
         (wasm.api/resize-viewbox (:width vport) (:height vport))))
 
-    (mf/with-effect [@canvas-init?  base-objects]
-      (when (and @canvas-init? @initialized?)
-        (wasm.api/set-objects base-objects)))
-
     (mf/with-effect [@canvas-init? preview-blend]
       (when (and @canvas-init? preview-blend)
         (wasm.api/request-render "with-effect")))
@@ -326,21 +321,6 @@
      (when (:can-edit permissions)
        [:& top-bar/top-bar {:layout layout}])
      [:div {:class (stl/css :viewport-overlays)}
-      ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
-      ;; inside a foreign object "dummy" so this awkward behaviour is take into account
-      [:svg {:style {:top 0 :left 0 :position "fixed" :width "100%" :height "100%" :opacity (when-not (dbg/enabled? :html-text) 0)}}
-       [:foreignObject {:x 0 :y 0 :width "100%" :height "100%"}
-        [:div {:style {:pointer-events (when-not (dbg/enabled? :html-text) "none")
-                       ;; some opacity because to debug auto-width events will fill the screen
-                       :opacity 0.6}}
-         (when (and (:can-edit permissions) (not read-only?))
-           [:& stvh/viewport-texts
-            {:key (dm/str "texts-" page-id)
-             :page-id page-id
-             :objects objects
-             :modifiers modifiers
-             :edition edition}])]]]
-
       (when show-comments?
         [:> comments/comments-layer* {:vbox vbox
                                       :page-id page-id

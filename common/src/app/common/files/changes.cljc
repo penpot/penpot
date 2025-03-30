@@ -31,6 +31,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as ctt]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
@@ -336,7 +337,9 @@
       [:type [:= :mod-component]]
       [:id ::sm/uuid]
       [:shapes {:optional true} [:vector {:gen/max 3} :any]]
-      [:name {:optional true} :string]]]
+      [:name {:optional true} :string]
+      [:variant-id {:optional true} ::sm/uuid]
+      [:variant-properties {:optional true} [:vector ::ctv/variant-property]]]]
 
     [:del-component
      [:map {:title "DelComponentChange"}
@@ -382,21 +385,21 @@
       [:set-group-path [:vector :string]]
       [:set-group-fname :string]]]
 
-    [:move-token-set-before
-     [:map {:title "MoveTokenSetBefore"}
-      [:type [:= :move-token-set-before]]
+    [:move-token-set
+     [:map {:title "MoveTokenSet"}
+      [:type [:= :move-token-set]]
       [:from-path [:vector :string]]
       [:to-path [:vector :string]]
       [:before-path [:maybe [:vector :string]]]
-      [:before-group? [:maybe :boolean]]]]
+      [:before-group [:maybe :boolean]]]]
 
-    [:move-token-set-group-before
-     [:map {:title "MoveTokenSetGroupBefore"}
-      [:type [:= :move-token-set-group-before]]
+    [:move-token-set-group
+     [:map {:title "MoveTokenSetGroup"}
+      [:type [:= :move-token-set-group]]
       [:from-path [:vector :string]]
       [:to-path [:vector :string]]
       [:before-path [:maybe [:vector :string]]]
-      [:before-group? [:maybe :boolean]]]]
+      [:before-group [:maybe :boolean]]]]
 
     [:set-token-theme
      [:map {:title "SetTokenThemeChange"}
@@ -1051,17 +1054,17 @@
                                  (ctob/ensure-tokens-lib)
                                  (ctob/rename-set-group set-group-path set-group-fname)))))
 
-(defmethod process-change :move-token-set-before
-  [data {:keys [from-path to-path before-path before-group?] :as changes}]
+(defmethod process-change :move-token-set
+  [data {:keys [from-path to-path before-path before-group] :as changes}]
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
-                                (ctob/move-set from-path to-path before-path before-group?))))
+                                (ctob/move-set from-path to-path before-path before-group))))
 
-(defmethod process-change :move-token-set-group-before
-  [data {:keys [from-path to-path before-path before-group?]}]
+(defmethod process-change :move-token-set-group
+  [data {:keys [from-path to-path before-path before-group]}]
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
-                                (ctob/move-set-group from-path to-path before-path before-group?))))
+                                (ctob/move-set-group from-path to-path before-path before-group))))
 
 ;; === Operations
 

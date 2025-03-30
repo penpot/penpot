@@ -242,12 +242,13 @@
             selected-shapes  (map (d/getf objects) selected)
             single?          (= (count selected-shapes) 1)
             is-frame?        (= :frame (:type (first selected-shapes)))
-            is-variant-cont? (ctc/is-variant-container? (first selected-shapes))
+            has-layout?      (ctl/any-layout? (first selected-shapes))
+
             undo-id          (js/Symbol)]
 
         (rx/of
          (dwu/start-undo-transaction undo-id)
-         (if (and single? is-frame? (not is-variant-cont?))
+         (if (and single? is-frame? (not has-layout?))
            (create-layout-from-id (first selected) type :from-frame? true)
            (create-layout-from-selection type))
          (dwu/commit-undo-transaction undo-id))))))
