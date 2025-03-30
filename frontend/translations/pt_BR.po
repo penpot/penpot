@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-23 19:01+0000\n"
+"PO-Revision-Date: 2025-03-31 11:06+0000\n"
 "Last-Translator: Rick Benetti <rick@boz.solutions>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
@@ -5186,3 +5186,224 @@ msgstr "Somente menções e respostas"
 #: src/app/main/ui/settings/notifications.cljs:84
 msgid "dashboard.settings.notifications.submit"
 msgstr "Atualizar configurações"
+
+#: src/app/main/ui/onboarding/questions.cljs:51, src/app/main/ui/viewer.cljs:105
+msgid "labels.previous"
+msgstr "Anterior"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:92
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Seu arquivo foi duplicado com sucesso"
+msgstr[1] "Seus arquivos foram duplicados com sucesso"
+
+#: src/app/main/ui/dashboard/team.cljs:954
+msgid "dashboard.webhooks.cant-edit"
+msgstr "Você só pode excluir ou modificar os webhooks criados por você."
+
+#: src/app/main/ui/workspace/plugins.cljs:336, src/app/main/ui/workspace/plugins.cljs:390
+msgid "ds.confirm-allow"
+msgstr "Permissão"
+
+#: src/app/main/data/tokens.cljs:246
+msgid "errors.drop-token-set-parent-to-child"
+msgstr ""
+"Não é possível remover a configuração principal dentro de um caminho filho."
+
+#: src/app/util/forms.cljs:61
+msgid "errors.field-missing"
+msgstr "Campo vazio"
+
+#: src/app/util/forms.cljs:35, src/app/util/forms.cljs:84
+msgid "errors.invalid-data"
+msgstr "Data inválida"
+
+#: src/app/main/data/tokens.cljs:245
+msgid "errors.token-set-exists-on-drop"
+msgstr ""
+"Não é possível concluir a remoção, uma configuração com o mesmo nome já "
+"existe no caminho."
+
+#: src/app/main/data/tokens.cljs:79
+msgid "errors.token-theme-already-exists"
+msgstr "Existe uma opção de tema com o mesmo nome"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:118
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Peso da fonte"
+
+#: src/app/main/ui/comments.cljs:583
+msgid "labels.mention"
+msgstr "Menção"
+
+#: src/app/main/ui/onboarding/questions.cljs:250
+msgid "labels.product-management"
+msgstr "Gestão de Produtos"
+
+#: src/app/main/ui/workspace/main_menu.cljs:630
+msgid "dashboard.show-version-history"
+msgstr "Histórico de versões"
+
+#: src/app/main/data/auth.cljs:314
+msgid "errors.auth-provider-not-allowed"
+msgstr "Provedor de autenticação não permitido para este perfil"
+
+#: src/app/main/data/auth.cljs:316, src/app/main/ui/auth/register.cljs:54
+msgid "errors.email-domain-not-allowed"
+msgstr "Domínio não permitido"
+
+#: src/app/main/ui/settings/sidebar.cljs:99
+msgid "labels.notifications"
+msgstr "Notificações"
+
+#: src/app/main/ui/comments.cljs:678
+msgid "labels.post"
+msgstr "Publicar"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:133, src/app/main/ui/workspace/sidebar/versions.cljs:263
+msgid "labels.restore"
+msgstr "Restaurar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:506
+msgid "labels.search"
+msgstr "Buscar"
+
+#: src/app/main/ui/comments.cljs:646
+msgid "labels.replies.new"
+msgstr "novas respostas"
+
+#: src/app/main/ui/comments.cljs:640
+msgid "labels.reply"
+msgstr "resposta"
+
+#: src/app/main/ui/comments.cljs:645
+msgid "labels.reply.new"
+msgstr "nova resposta"
+
+#: src/app/main/ui/comments.cljs:721
+msgid "labels.reply.thread"
+msgstr "Resposta"
+
+#: src/app/main/ui/dashboard/templates.cljs:133
+msgid "dashboard.template.add-to-project"
+msgstr "Adicionar ao seu projeto"
+
+#: src/app/main/ui/comments.cljs:729, src/app/main/ui/comments.cljs:760, src/app/main/ui/comments.cljs:826
+msgid "errors.character-limit-exceeded"
+msgstr "Limite de caracteres excedido"
+
+#: src/app/util/forms.cljs
+#, unused
+msgid "errors.invalid-text"
+msgstr "Texto inválido"
+
+#: src/app/main/ui/dashboard/team.cljs:181, src/app/main/ui/onboarding/team_choice.cljs:100
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr ""
+"O número máximo (%s) de e-mails que podem ser convidados em uma única "
+"solicitação foi atingido"
+
+#, unused
+msgid "errors.validation"
+msgstr "Erro de validação"
+
+#: src/app/main/errors.cljs:233
+msgid "errors.team-feature-mismatch"
+msgstr "Recurso incompatível '%s' detectado"
+
+#: src/app/main/data/tokens.cljs:150, src/app/main/data/tokens.cljs:180
+msgid "errors.token-set-already-exists"
+msgstr "Já existe uma configuração com o mesmo nome"
+
+#: src/app/main/ui/ds/product/loader.cljs:28
+msgid "loader.tips.05.title"
+msgstr "Bibliotecas de Design"
+
+#: src/app/main/data/workspace/media.cljs:198
+msgid "errors.cannot-upload"
+msgstr "Não é possível carregar o arquivo de mídia."
+
+#: src/app/main/ui/onboarding/questions.cljs:85, src/app/main/ui/onboarding/questions.cljs:244, src/app/main/ui/onboarding/questions.cljs:255, src/app/main/ui/onboarding/questions.cljs:265
+msgid "labels.select-option"
+msgstr "Selecione uma opção"
+
+#: src/app/main/ui/onboarding/questions.cljs:100, src/app/main/ui/onboarding/questions.cljs:175, src/app/main/ui/onboarding/questions.cljs:251, src/app/main/ui/onboarding/questions.cljs:261, src/app/main/ui/onboarding/questions.cljs:351, src/app/main/ui/onboarding/questions.cljs:408
+msgid "labels.other-short"
+msgstr "Outra"
+
+#: src/app/main/ui/dashboard/templates.cljs:289, src/app/main/ui/onboarding/questions.cljs:55, src/app/main/ui/viewer.cljs:112
+msgid "labels.next"
+msgstr "Próximo"
+
+#: src/app/main/ui/onboarding/questions.cljs:249
+msgid "labels.marketing"
+msgstr "Marketing"
+
+#: src/app/main/ui/comments.cljs:891, src/app/main/ui/comments.cljs:955, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:293, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:322
+msgid "labels.options"
+msgstr "Opções"
+
+#: src/app/main/ui/onboarding/questions.cljs:140, src/app/main/ui/onboarding/questions.cljs:209, src/app/main/ui/onboarding/questions.cljs:298, src/app/main/ui/onboarding/questions.cljs:312, src/app/main/ui/onboarding/questions.cljs:383, src/app/main/ui/onboarding/questions.cljs:439
+msgid "labels.other"
+msgstr "Outra (específica)"
+
+#: src/app/main/data/common.cljs:87
+msgid "labels.refresh"
+msgstr "Recarregar"
+
+#: src/app/main/ui/comments.cljs:641
+msgid "labels.replies"
+msgstr "respostas"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-not-all-whitespace"
+msgstr "O nome deve conter algum caractere diferente de espaço."
+
+#: src/app/main/errors.cljs:250
+msgid "errors.version-not-supported"
+msgstr "O arquivo tem um número de versão incompatível"
+
+#, unused
+msgid "labels.ok"
+msgstr "Ok"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:970
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Sem limites para criatividade"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:969
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot Grátis"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:972
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Melhorar"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-max-length"
+msgstr "Deve conter no máximo 1 caractere."
+
+#, unused
+msgid "errors.field-min-length"
+msgstr "Deve conter pelo menos 1 caractere."
+
+#: src/app/main/errors.cljs:238
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Parece que há uma incompatibilidade entre os recursos habilitados e os "
+"recursos do arquivo que você está tentando abrir. Migrações para '%s' "
+"precisam ser aplicadas antes que o arquivo possa ser aberto."
+
+#: src/app/main/errors.cljs:228
+msgid "errors.migration-in-progress"
+msgstr "Migração em progresso"
+
+#: src/app/main/errors.cljs:137
+msgid "errors.paste-data-validation"
+msgstr "Dados inválidos na área de transferência"
+
+#: src/app/main/ui/onboarding/questions.cljs:245
+msgid "labels.product-design"
+msgstr "Produto ou UX Design"
