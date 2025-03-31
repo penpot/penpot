@@ -182,14 +182,27 @@
   ([shape-attr] (shape-attr->token-attrs shape-attr nil))
   ([shape-attr changed-sub-attr]
    (cond
-     (= :fills shape-attr) #{:fill}
-     (and (= :strokes shape-attr) (nil? changed-sub-attr)) #{:stroke-width :stroke-color}
+     (= :fills shape-attr)
+     #{:fill}
+
+     (and (= :strokes shape-attr) (nil? changed-sub-attr))
+     #{:stroke-width :stroke-color}
+
      (= :strokes shape-attr)
      (cond
        (some #{:stroke-color} changed-sub-attr) #{:stroke-color}
        (some #{:stroke-width} changed-sub-attr) #{:stroke-width})
-     (and (= :layout-padding shape-attr) (seq changed-sub-attr)) changed-sub-attr
-     (and (= :layout-item-margin shape-attr) (seq changed-sub-attr)) changed-sub-attr
+
+     (= :layout-padding shape-attr)
+     (if (seq changed-sub-attr)
+       changed-sub-attr
+       #{:p1 :p2 :p3 :p4})
+
+     (= :layout-item-margin shape-attr)
+     (if (seq changed-sub-attr)
+       changed-sub-attr
+       #{:m1 :m2 :m3 :m4})
+
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}

@@ -1639,7 +1639,21 @@
           (if (and (empty? roperations) (empty? applied-tokens))
             changes
             (let [all-parents (cfh/get-parent-ids (:objects container)
-                                                  (:id dest-shape))]
+                                                  (:id dest-shape))
+
+                  ;; Sync tokens of attributes ignored above.
+                  ;; FIXME: this probably may be merged with the other calculation
+                  ;;        of applied tokens, below, and to the calculation only once
+                  ;;        for all sync-attrs.
+                  applied-tokens (reduce (fn [applied-tokens attr]
+                                           (let [attr-group (get ctk/sync-attrs attr)
+                                                 token-attrs (cto/shape-attr->token-attrs attr)]
+                                             (if (not (and (touched attr-group)
+                                                           omit-touched?))
+                                               (into applied-tokens token-attrs)
+                                               applied-tokens)))
+                                         applied-tokens
+                                         ctk/swap-keep-attrs)]
               (cond-> changes
                 (seq roperations)
                 (-> (update :redo-changes conj (make-change
