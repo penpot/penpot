@@ -103,15 +103,13 @@
 
   (let [command->selrect (memoize helpers/command->selrect)]
 
-    (letfn [(overlap-segment-selrect?
-              [segment selrect]
+    (letfn [(overlap-segment-selrect? [segment selrect]
               (if (= :move-to (:command segment))
                 false
                 (let [r1 (command->selrect segment)]
                   (grc/overlaps-rects? r1 selrect))))
 
-            (overlap-segments?
-              [seg-1 seg-2]
+            (overlap-segments? [seg-1 seg-2]
               (if (or (= :move-to (:command seg-1))
                       (= :move-to (:command seg-2)))
                 false
@@ -119,17 +117,14 @@
                       r2 (command->selrect seg-2)]
                   (grc/overlaps-rects? r1 r2))))
 
-            (split
-              [seg-1 seg-2]
+            (split [seg-1 seg-2]
               (if (not (overlap-segments? seg-1 seg-2))
                 [seg-1]
                 (let [[ts-seg-1 _] (split-ts seg-1 seg-2)]
                   (-> (split-command seg-1 ts-seg-1)
                       (add-previous (:prev seg-1))))))
 
-            (split-segment-on-content
-              [segment content content-sr]
-
+            (split-segment-on-content [segment content content-sr]
               (if (overlap-segment-selrect? segment content-sr)
                 (->> content
                      (filter #(overlap-segments? segment %))
@@ -139,8 +134,7 @@
                       [segment]))
                 [segment]))
 
-            (split-content
-              [content-a content-b sr-b]
+            (split-content [content-a content-b sr-b]
               (into []
                     (mapcat #(split-segment-on-content % content-b sr-b))
                     content-a))]
@@ -324,26 +318,37 @@
 
   (let [;; We need to reverse the second path when making a difference/intersection/exclude
         ;; and both shapes are in the same direction
-        should-reverse? (and (not= :union bool-type)
-                             (= (subpath/clockwise? content-b)
-                                (subpath/clockwise? content-a)))
+        should-reverse?
+        (and (not= :union bool-type)
+             (= (subpath/clockwise? content-b)
+                (subpath/clockwise? content-a)))
 
-        content-a (-> content-a
-                      (close-paths)
-                      (add-previous))
+        content-a
+        (-> content-a
+            (close-paths)
+            (add-previous))
 
-        content-b (-> content-b
-                      (close-paths)
-                      (cond-> should-reverse? (subpath/reverse-content))
-                      (add-previous))
+        content-b
+        (-> content-b
+            (close-paths)
+            (cond-> should-reverse? (subpath/reverse-content))
+            (add-previous))
 
-        sr-a (segment/content->selrect content-a)
-        sr-b (segment/content->selrect content-b)
+        sr-a
+        (segment/content->selrect content-a)
+
+        sr-b
+        (segment/content->selrect content-b)
 
         ;; Split content in new segments in the intersection with the other path
-        [content-a-split content-b-split] (content-intersect-split content-a content-b sr-a sr-b)
-        content-a-split (->> content-a-split add-previous (filter is-segment?))
-        content-b-split (->> content-b-split add-previous (filter is-segment?))
+        [content-a-split content-b-split]
+        (content-intersect-split content-a content-b sr-a sr-b)
+
+        content-a-split
+        (->> content-a-split add-previous (filter is-segment?))
+
+        content-b-split
+        (->> content-b-split add-previous (filter is-segment?))
 
         content
         (case bool-type
