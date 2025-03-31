@@ -54,7 +54,7 @@
         (-> shape
             (merge (select-keys head bool/style-properties))
             (cts/setup-shape)
-            (gsh/update-bool-selrect shapes objects))]
+            (gsh/update-bool shapes objects))]
 
     [shape (cph/get-position-on-parent objects (:id head))]))
 
@@ -120,7 +120,7 @@
         (assoc :type :bool)
         (assoc :bool-type type)
         (merge head-data)
-        (gsh/update-bool-selrect shapes objects))))
+        (gsh/update-bool shapes objects))))
 
 (defn group-to-bool
   [shape-id type]

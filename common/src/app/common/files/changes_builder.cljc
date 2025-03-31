@@ -660,7 +660,7 @@
                                  nil               ;; so it does not need resize
 
                                  (= (:type parent) :bool)
-                                 (gsh/update-bool-selrect parent children objects)
+                                 (gsh/update-bool parent children objects)
 
                                  (= (:type parent) :group)
                                  (if (:masked-group parent)
