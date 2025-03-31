@@ -164,7 +164,7 @@
 (dm/export gtr/calculate-geometry)
 (dm/export gtr/update-group-selrect)
 (dm/export gtr/update-mask-selrect)
-(dm/export gtr/update-bool-selrect)
+(dm/export gtr/update-bool)
 (dm/export gtr/apply-transform)
 (dm/export gtr/transform-shape)
 (dm/export gtr/transform-selrect)
