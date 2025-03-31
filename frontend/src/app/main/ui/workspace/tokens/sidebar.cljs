@@ -40,6 +40,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]
@@ -367,9 +368,10 @@
          (fn [event]
            (let [file (-> (dom/get-target event)
                           (dom/get-files)
-                          (first))]
+                          (first))
+                 file-name (str/replace (.-name file) ".json" "")]
              (->> (wapi/read-file-as-text file)
-                  (sd/process-json-stream)
+                  (sd/process-json-stream {:file-name file-name})
                   (rx/subs! (fn [lib]
                               (st/emit! (ptk/data-event ::ev/event {::ev/name "import-tokens"})
                                         (dt/import-tokens-lib lib)))
