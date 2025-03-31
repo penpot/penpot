@@ -443,7 +443,7 @@
         (assoc :flip-x  (-> mask :flip-x))
         (assoc :flip-y  (-> mask :flip-y)))))
 
-(defn update-bool-selrect
+(defn update-bool
   "Calculates the selrect+points for the boolean shape"
   [shape children objects]
 
@@ -475,7 +475,7 @@
                   (update-mask-selrect shape children)
 
                   (cfh/bool-shape? shape)
-                  (update-bool-selrect shape children objects)
+                  (update-bool shape children objects)
 
                   (cfh/group-shape? shape)
                   (update-group-selrect shape children)
