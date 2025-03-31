@@ -8,8 +8,8 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segm]
-   [app.common.types.path.shape-to-path :as upsp]
    [app.common.types.path.subpath :as path.subp]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
@@ -32,7 +32,6 @@
        (let [page-id (get state :current-page-id)
              objects (dsh/lookup-page-objects state page-id)
 
-             ;; FIXME: repeated operation?
              shape   (st/get-path state)
              id      (st/get-path-id state)
 
@@ -56,7 +55,7 @@
              (rx/concat
               (if (cfh/path-shape? shape)
                 (rx/empty)
-                (rx/of (dwsh/update-shapes [id] upsp/convert-to-path)))
+                (rx/of (dwsh/update-shapes [id] path/convert-to-path)))
               (rx/of (dch/commit-changes changes)
                      (when (empty? new-content)
                        (dwe/clear-edition-mode)))))))))))

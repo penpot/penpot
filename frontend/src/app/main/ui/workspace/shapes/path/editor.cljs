@@ -8,10 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.types.path :as path]
-   [app.common.types.path.segment :as path.segm]
-   [app.common.types.path.shape-to-path :as ups]
+   [app.common.types.path.segment :as path.segment]
    [app.main.data.workspace.path :as drp]
    [app.main.snap :as snap]
    [app.main.store :as st]
@@ -196,8 +196,8 @@
 (defn matching-handler? [content node handlers]
   (when (= 2 (count handlers))
     (let [[[i1 p1] [i2 p2]] handlers
-          p1 (path.segm/handler->point content i1 p1)
-          p2 (path.segm/handler->point content i2 p2)
+          p1 (path.segment/handler->point content i1 p1)
+          p2 (path.segment/handler->point content i2 p2)
 
           v1 (gpt/to-vec node p1)
           v2 (gpt/to-vec node p2)
@@ -229,32 +229,32 @@
         selected-points (or selected-points #{})
 
         shape (cond-> shape
-                (not= :path (:type shape))
-                (ups/convert-to-path {})
+                (cfh/path-shape? shape)
+                (path/convert-to-path)
 
                 :always
                 hooks/use-equal-memo)
 
         base-content (:content shape)
-        base-points (mf/use-memo (mf/deps base-content) #(->> base-content path.segm/content->points))
+        base-points (mf/use-memo (mf/deps base-content) #(->> base-content path.segment/content->points))
 
         content (path/apply-content-modifiers base-content content-modifiers)
-        content-points (mf/use-memo (mf/deps content) #(->> content path.segm/content->points))
+        content-points (mf/use-memo (mf/deps content) #(->> content path.segment/content->points))
 
         point->base (->> (map hash-map content-points base-points) (reduce merge))
         base->point (map-invert point->base)
 
         points (into #{} content-points)
 
-        last-p (->> content last path.segm/get-point)
-        handlers (path.segm/content->handlers content)
+        last-p (->> content last path.segment/get-point)
+        handlers (path.segment/content->handlers content)
 
         start-p? (not (some? last-point))
 
         [snap-selected snap-points]
         (cond
           (some? drag-handler) [#{drag-handler} points]
-          (some? preview) [#{(path.segm/get-point preview)} points]
+          (some? preview) [#{(path.segment/get-point preview)} points]
           (some? moving-handler) [#{moving-handler} points]
           :else
           [(->> selected-points (map base->point) (into #{}))
@@ -282,7 +282,7 @@
      ms/mouse-position
      (mf/deps shape zoom)
      (fn [position]
-       (when-let [point (path.segm/path-closest-point shape position)]
+       (when-let [point (path.segment/path-closest-point shape position)]
          (reset! hover-point (when (< (gpt/distance position point) (/ 10 zoom)) point)))))
 
     [:g.path-editor {:ref editor-ref}
@@ -313,7 +313,7 @@
      (for [[index position] (d/enumerate points)]
        (let [show-handler?
              (fn [[index prefix]]
-               (let [handler-position (path.segm/handler->point content index prefix)]
+               (let [handler-position (path.segment/handler->point content index prefix)]
                  (not= position handler-position)))
 
              pos-handlers (get handlers position)
@@ -327,7 +327,7 @@
          [:g.path-node {:key (dm/str index "-" (:x position) "-" (:y position))}
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
            (for [[hindex prefix] pos-handlers]
-             (let [handler-position (path.segm/handler->point content hindex prefix)
+             (let [handler-position (path.segment/handler->point content hindex prefix)
                    handler-hover? (contains? hover-handlers [hindex prefix])
                    moving-handler? (= handler-position moving-handler)
                    matching-handler? (matching-handler? content position pos-handlers)]

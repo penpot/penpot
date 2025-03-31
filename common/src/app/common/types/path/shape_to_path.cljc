@@ -6,8 +6,8 @@
 
 (ns app.common.types.path.shape-to-path
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -18,9 +18,6 @@
    [app.common.types.path.segment :as segm]
    [app.common.types.shape.radius :as ctsr]))
 
-(def default-bool-fills
-  [{:fill-color clr/black}])
-
 (def ^:const ^:private bezier-circle-c
   0.551915024494)
 
@@ -28,29 +25,6 @@
   [:x :y :width :height
    :rx :ry :r1 :r2 :r3 :r4
    :metadata])
-
-(def style-group-properties
-  [:shadow :blur])
-
-(def style-properties
-  (into style-group-properties
-        [:fill-color
-         :fill-opacity
-         :fill-color-gradient
-         :fill-color-ref-file
-         :fill-color-ref-id
-         :fill-image
-         :fills
-         :stroke-color
-         :stroke-color-ref-file
-         :stroke-color-ref-id
-         :stroke-opacity
-         :stroke-style
-         :stroke-width
-         :stroke-alignment
-         :stroke-cap-start
-         :stroke-cap-end
-         :strokes]))
 
 (defn- make-corner-arc
   "Creates a curvle corner for border radius"
@@ -177,7 +151,7 @@
 
         child-as-paths (into [] xform (:shapes group))
         head (peek child-as-paths)
-        head-data (select-keys head style-properties)
+        head-data (select-keys head bool/style-properties)
         content (into []
                       (comp (filter cfh/path-shape?)
                             (mapcat #(fix-first-relative (:content %))))
@@ -208,43 +182,45 @@
         (dissoc :bool-type)
         (d/without-keys dissoc-attrs))))
 
-;; FIXME: revisit path data type !!!
 (defn convert-to-path
-  "Transforms the given shape to a path"
-  ([shape]
-   (convert-to-path shape {}))
-  ([{:keys [type metadata] :as shape} objects]
-   (assert (map? objects))
-   (case type
-     (:group :frame)
-     (group-to-path shape objects)
+  "Transforms the given shape to a path shape"
+  [shape objects]
+  (assert (map? objects))
+  ;; FIXME: add check-objects-like
+  ;; FIXME: add check-shape ?
 
-     :bool
-     (bool-to-path shape objects)
+  (let [type (dm/get-prop shape :type)]
 
-     (:rect :circle :image :text)
-     (let [content
-           (if (= type :circle)
-             (circle->path shape)
-             (rect->path shape))
+    (case type
+      (:group :frame)
+      (group-to-path shape objects)
 
-           ;; Apply the transforms that had the shape
-           transform
-           (cond-> (:transform shape (gmt/matrix))
-             (:flip-x shape) (gmt/scale (gpt/point -1 1))
-             (:flip-y shape) (gmt/scale (gpt/point 1 -1)))
+      :bool
+      (bool-to-path shape objects)
 
-           content
-           (cond-> content
-             (some? transform)
-             (segm/transform-content (gmt/transform-in (gco/shape->center shape) transform)))]
+      (:rect :circle :image :text)
+      (let [content
+            (if (= type :circle)
+              (circle->path shape)
+              (rect->path shape))
 
-       (-> shape
-           (assoc :type :path)
-           (assoc :content content)
-           (cond-> (= :image type)
-             (assoc :fill-image metadata))
-           (d/without-keys dissoc-attrs)))
+            ;; Apply the transforms that had the shape
+            transform
+            (cond-> (:transform shape (gmt/matrix))
+              (:flip-x shape) (gmt/scale (gpt/point -1 1))
+              (:flip-y shape) (gmt/scale (gpt/point 1 -1)))
 
-     ;; For the rest return the plain shape
-     shape)))
+            content
+            (cond-> content
+              (some? transform)
+              (segm/transform-content (gmt/transform-in (gco/shape->center shape) transform)))]
+
+        (-> shape
+            (assoc :type :path)
+            (assoc :content content)
+            (cond-> (= :image type)
+              (assoc :fill-image (get shape :metadata)))
+            (d/without-keys dissoc-attrs)))
+
+      ;; For the rest return the plain shape
+      shape)))

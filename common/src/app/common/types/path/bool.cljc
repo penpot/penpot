@@ -6,12 +6,39 @@
 
 (ns app.common.types.path.bool
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.types.path.helpers :as helpers]
    [app.common.types.path.segment :as segment]
    [app.common.types.path.subpath :as subpath]))
+
+(def default-fills
+  [{:fill-color clr/black}])
+
+(def style-group-properties
+  [:shadow :blur])
+
+(def style-properties
+  (into style-group-properties
+        [:fill-color
+         :fill-opacity
+         :fill-color-gradient
+         :fill-color-ref-file
+         :fill-color-ref-id
+         :fill-image
+         :fills
+         :stroke-color
+         :stroke-color-ref-file
+         :stroke-color-ref-id
+         :stroke-opacity
+         :stroke-style
+         :stroke-width
+         :stroke-alignment
+         :stroke-cap-start
+         :stroke-cap-end
+         :strokes]))
 
 (defn add-previous
   ([content]

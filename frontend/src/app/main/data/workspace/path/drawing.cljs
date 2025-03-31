@@ -12,8 +12,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]
-   [app.common.types.path.segment :as path.segm]
-   [app.common.types.path.shape-to-path :as upsp]
+   [app.common.types.path.segment :as path.segment]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -44,7 +43,7 @@
                        fix-angle? (path.helpers/position-fixed-angle last-point))
             shape (st/get-path state)
             {:keys [last-point prev-handler]} (get-in state [:workspace-local :edit-path id])
-            command (path.segm/next-node shape position last-point prev-handler)]
+            command (path.segment/next-node shape position last-point prev-handler)]
         (assoc-in state [:workspace-local :edit-path id :preview] command)))))
 
 (defn add-node
@@ -77,9 +76,9 @@
 
              index (or index (count content))
              prefix (or prefix :c1)
-             position (or position (path.segm/get-point (nth content (dec index))))
+             position (or position (path.segment/get-point (nth content (dec index))))
 
-             old-handler (path.segm/handler->point content index prefix)
+             old-handler (path.segment/handler->point content index prefix)
 
              handler-position (cond-> (gpt/point x y)
                                 shift? (path.helpers/position-fixed-angle position))
@@ -130,7 +129,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [content  (st/get-path state :content)
-            handlers (-> (path.segm/content->handlers content)
+            handlers (-> (path.segment/content->handlers content)
                          (get position))
 
             [idx prefix] (when (= (count handlers) 1)
@@ -336,7 +335,7 @@
             edit-mode (get-in state [:workspace-local :edit-path id :edit-mode])]
         (if (= :draw edit-mode)
           (rx/concat
-           (rx/of (dwsh/update-shapes [id] upsp/convert-to-path))
+           (rx/of (dwsh/update-shapes [id] path/convert-to-path))
            (rx/of (handle-drawing id))
            (->> stream
                 (rx/filter (ptk/type? ::common/finish-path))

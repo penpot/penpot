@@ -179,4 +179,10 @@
 
     [points selrect]))
 
+(defn convert-to-path
+  "Transform a shape to a path shape"
+  ([shape]
+   (stp/convert-to-path shape {}))
+  ([shape objects]
+   (stp/convert-to-path shape objects)))
 

@@ -13,7 +13,6 @@
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]
    [app.common.types.path.segment :as path.segm]
-   [app.common.types.path.shape-to-path :as upsp]
    [app.common.types.path.subpath :as path.subp]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
@@ -146,7 +145,7 @@
             selected? (contains? selected-points position)]
         (streams/drag-stream
          (rx/of
-          (dwsh/update-shapes [id] upsp/convert-to-path)
+          (dwsh/update-shapes [id] path/convert-to-path)
           (when-not selected? (selection/select-node position shift?))
           (drag-selected-points @ms/mouse-position))
          (rx/of (selection/select-node position shift?)))))))
@@ -230,7 +229,7 @@
                   mov-vec (gpt/multiply (get-displacement direction) scale)]
 
               (rx/concat
-               (rx/of (dwsh/update-shapes [id] upsp/convert-to-path))
+               (rx/of (dwsh/update-shapes [id] path/convert-to-path))
                (rx/merge
                 (->> move-events
                      (rx/take-until stopper)
@@ -268,7 +267,7 @@
 
         (streams/drag-stream
          (rx/concat
-          (rx/of (dwsh/update-shapes [id] upsp/convert-to-path))
+          (rx/of (dwsh/update-shapes [id] path/convert-to-path))
           (->> (streams/move-handler-stream handler point handler opposite points)
                (rx/map
                 (fn [{:keys [x y alt? shift?]}]
@@ -357,5 +356,5 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [id (st/get-path-id state)]
-        (rx/of (dwsh/update-shapes [id] upsp/convert-to-path)
+        (rx/of (dwsh/update-shapes [id] path/convert-to-path)
                (split-segments event))))))
