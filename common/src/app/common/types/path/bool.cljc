@@ -67,29 +67,36 @@
     :curve-to (helpers/split-curve-to-ranges (:prev cmd) cmd values)
     [cmd]))
 
-(defn split-ts [seg-1 seg-2]
-  (cond
-    (and (= :line-to (:command seg-1))
-         (= :line-to (:command seg-2)))
-    (helpers/line-line-intersect (helpers/command->line seg-1) (helpers/command->line seg-2))
+(defn- split-ts
+  [seg-1 seg-2]
+  (let [cmd-1 (get seg-1 :command)
+        cmd-2 (get seg-2 :command)]
+    (cond
+      (and (= :line-to cmd-1)
+           (= :line-to cmd-2))
+      (helpers/line-line-intersect (helpers/command->line seg-1)
+                                   (helpers/command->line seg-2))
 
-    (and (= :line-to (:command seg-1))
-         (= :curve-to (:command seg-2)))
-    (helpers/line-curve-intersect (helpers/command->line seg-1) (helpers/command->bezier seg-2))
+      (and (= :line-to cmd-1)
+           (= :curve-to cmd-2))
+      (helpers/line-curve-intersect (helpers/command->line seg-1)
+                                    (helpers/command->bezier seg-2))
 
-    (and (= :curve-to (:command seg-1))
-         (= :line-to (:command seg-2)))
-    (let [[seg-2' seg-1']
-          (helpers/line-curve-intersect (helpers/command->line seg-2) (helpers/command->bezier seg-1))]
-      ;; Need to reverse because we send the arguments reversed
-      [seg-1' seg-2'])
+      (and (= :curve-to cmd-1)
+           (= :line-to cmd-2))
+      (let [[seg-2' seg-1']
+            (helpers/line-curve-intersect (helpers/command->line seg-2)
+                                          (helpers/command->bezier seg-1))]
+        ;; Need to reverse because we send the arguments reversed
+        [seg-1' seg-2'])
 
-    (and (= :curve-to (:command seg-1))
-         (= :curve-to (:command seg-2)))
-    (helpers/curve-curve-intersect (helpers/command->bezier seg-1) (helpers/command->bezier seg-2))
+      (and (= :curve-to cmd-1)
+           (= :curve-to cmd-2))
+      (helpers/curve-curve-intersect (helpers/command->bezier seg-1)
+                                     (helpers/command->bezier seg-2))
 
-    :else
-    [[] []]))
+      :else
+      [[] []])))
 
 (defn content-intersect-split
   [content-a content-b sr-a sr-b]
