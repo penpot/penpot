@@ -31,34 +31,34 @@
   the intersections"
   [content]
 
-  (loop [head (first content)
-         content (rest content)
-         result []
-         last-move nil
-         last-p nil]
+  (loop [segments   (seq content)
+         result     []
+         last-move  nil
+         last-point nil]
+    (if-let [segment (first segments)]
+      (let [point
+            (helpers/command->point segment)
 
-    (if (nil? head)
-      result
-      (let [head-p (helpers/command->point head)
-            head (cond
-                   (and (= :close-path (:command head))
-                        (or (nil? last-p) ;; Ignore consecutive close-paths
-                            (< (gpt/distance last-p last-move) 0.01)))
-                   nil
+            segment
+            (cond
+              (and (= :close-path (:command segment))
+                   (or (nil? last-point) ;; Ignore consecutive close-paths
+                       (< (gpt/distance last-point last-move) 0.01)))
+              nil
 
-                   (= :close-path (:command head))
-                   (helpers/make-line-to last-move)
+              (= :close-path (:command segment))
+              (helpers/make-line-to last-move)
 
-                   :else
-                   head)]
+              :else
+              segment)]
 
-        (recur (first content)
-               (rest content)
-               (cond-> result (some? head) (conj head))
-               (if (= :move-to (:command head))
-                 head-p
+        (recur (rest segments)
+               (cond-> result (some? segment) (conj segment))
+               (if (= :move-to (:command segment))
+                 point
                  last-move)
-               head-p)))))
+               point))
+      result)))
 
 (defn- split-command
   [cmd values]
