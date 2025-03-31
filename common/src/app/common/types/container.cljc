@@ -545,12 +545,25 @@
            no-changes?
            (and (->> children (every? #(= parent-id (:parent-id %))))
                 (not pasting?))
+           ;; Are all the main shape of a component?
            all-main?
-           (->> children (every? #(ctk/main-instance? %)))]
+           (->> children (every? #(ctk/main-instance? %)))
+
+           ;; Are all the main shape of a cutted component?
+           all-comp-cut?
+           (when all-main?
+             (->> children
+                  (map #(ctkl/get-component (dm/get-in libraries [(:component-file %) :data])
+                                            (:component-id %)
+                                            true))
+                  (every? :deleted)))]
        (if (or no-changes?
                (and (not (invalid-structure-for-component? objects parent children pasting? libraries))
                     ;; If we are moving into a variant-container, all the items should be main
-                    (or all-main? (not (ctk/is-variant-container? parent)))))
+                    ;; so if we are pasting, only allow main instances that are cut-and-pasted
+                    (or (not (ctk/is-variant-container? parent))
+                        (and (not pasting?) all-main?)
+                        all-comp-cut?)))
          [parent-id (get-frame parent-id)]
          (recur (:parent-id parent) objects children pasting? libraries))))))
 
