@@ -1041,7 +1041,7 @@
                                   :page-id page-id})))
 
 (defn restore-component
-  [changes id page-id main-instance parent-id]
+  [changes id page-id shapes parent-id]
   (assert-library! changes)
   (-> changes
       (update :redo-changes conj {:type :restore-component
@@ -1050,7 +1050,8 @@
                                   :parent-id parent-id})
       (update :undo-changes conj {:type :del-component
                                   :id id
-                                  :main-instance main-instance})))
+                                  :shapes shapes
+                                  })))
 
 (defn reorder-grid-children
   [changes ids]
