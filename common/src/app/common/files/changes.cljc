@@ -739,7 +739,7 @@
                 group
 
                 (= :bool (:type group))
-                (gsh/update-bool-selrect group children objects)
+                (gsh/update-bool group children objects)
 
                 (:masked-group group)
                 (set-mask-selrect group children)
