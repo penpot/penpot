@@ -15,6 +15,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.variant-properties :as clvp]
    [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.types.color :as ctc]
@@ -381,6 +382,7 @@
          shapes            (map #(gsh/move % delta) shapes)
          is-variant?       (ctk/is-variant? component)
 
+
          first-shape       (cond-> (first shapes)
                              (not (nil? parent-id))
                              (assoc :parent-id parent-id)
@@ -394,7 +396,7 @@
                              (dissoc :component-root)
                              (not inside-component?)
                              (assoc :component-root true)
-                             (and is-variant? (some? parent-id))
+                             (and is-variant? (ctk/is-variant-container? parent))
                              (assoc :variant-id parent-id))
 
          changes           (-> changes
@@ -405,7 +407,10 @@
                              (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id))) ; on copy/paste old id is used later to reorder the paster layers
          changes           (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                                    changes
-                                   (rest shapes))]
+                                   (rest shapes))
+         changes           (cond-> changes
+                             (and is-variant? (not (ctk/is-variant-container? parent)))
+                             (clvp/generate-make-no-variant first-shape))]
      {:changes (pcb/restore-component changes component-id (:id page) main-inst parent-id)
       :shape (first shapes)})))
 
