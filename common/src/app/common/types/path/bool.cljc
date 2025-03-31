@@ -10,7 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.types.path.helpers :as helpers]
-   [app.common.types.path.segment :as segm]
+   [app.common.types.path.segment :as segment]
    [app.common.types.path.subpath :as subpath]))
 
 (defn add-previous
@@ -272,7 +272,7 @@
 
         content-geom (content->geom-data content)
 
-        content-sr (segm/content->selrect (fix-move-to content))
+        content-sr (segment/content->selrect (fix-move-to content))
 
         ;; Overlapping segments should be added when they are part of the border
         border-content
@@ -330,8 +330,8 @@
                       (cond-> should-reverse? (subpath/reverse-content))
                       (add-previous))
 
-        sr-a (segm/content->selrect content-a)
-        sr-b (segm/content->selrect content-b)
+        sr-a (segment/content->selrect content-a)
+        sr-b (segment/content->selrect content-b)
 
         ;; Split content in new segments in the intersection with the other path
         [content-a-split content-b-split] (content-intersect-split content-a content-b sr-a sr-b)
