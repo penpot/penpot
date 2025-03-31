@@ -19,22 +19,20 @@
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.render :as render]
-   [app.main.store :as st]
+   [app.render-wasm.api.fonts :as f]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.serializers :as sr]
+   [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.http :as http]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [goog.object :as gobj]
-   [lambdaisland.uri :as u]
-   [okulary.core :as l]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
-(defonce internal-frame-id nil)
-(defonce internal-module #js {})
+;; (defonce internal-frame-id nil)
+;; (defonce internal-module #js {})
 (defonce use-dpr? (contains? cf/flags :render-wasm-dpr))
 
 (def dpr
@@ -67,8 +65,8 @@
 ;; the window started rendering elements so it could be useful to measure time between frames).
 (defn- render
   [_]
-  (h/call internal-module "_render")
-  (set! internal-frame-id nil))
+  (h/call wasm/internal-module "_render")
+  (set! wasm/internal-frame-id nil))
 
 (defn- rgba-from-hex
   "Takes a hex color in #rrggbb format, and an opacity value from 0 to 1 and returns its 32-bit rgba representation"
@@ -91,20 +89,20 @@
 
 (defn cancel-render
   [_]
-  (when internal-frame-id
-    (js/cancelAnimationFrame internal-frame-id)
-    (set! internal-frame-id nil)))
+  (when wasm/internal-frame-id
+    (js/cancelAnimationFrame wasm/internal-frame-id)
+    (set! wasm/internal-frame-id nil)))
 
 (defn request-render
   [requester]
-  (when internal-frame-id (cancel-render requester))
+  (when wasm/internal-frame-id (cancel-render requester))
   (let [frame-id (js/requestAnimationFrame render)]
-    (set! internal-frame-id frame-id)))
+    (set! wasm/internal-frame-id frame-id)))
 
 (defn use-shape
   [id]
   (let [buffer (uuid/get-u32 id)]
-    (h/call internal-module "_use_shape"
+    (h/call wasm/internal-module "_use_shape"
             (aget buffer 0)
             (aget buffer 1)
             (aget buffer 2)
@@ -113,7 +111,7 @@
 (defn set-parent-id
   [id]
   (let [buffer (uuid/get-u32 id)]
-    (h/call internal-module "_set_parent"
+    (h/call wasm/internal-module "_set_parent"
             (aget buffer 0)
             (aget buffer 1)
             (aget buffer 2)
@@ -121,19 +119,19 @@
 
 (defn set-shape-clip-content
   [clip-content]
-  (h/call internal-module "_set_shape_clip_content" clip-content))
+  (h/call wasm/internal-module "_set_shape_clip_content" clip-content))
 
 (defn set-shape-type
   [type]
-  (h/call internal-module "_set_shape_type" (sr/translate-shape-type type)))
+  (h/call wasm/internal-module "_set_shape_type" (sr/translate-shape-type type)))
 
 (defn set-masked
   [masked]
-  (h/call internal-module "_set_shape_masked_group" masked))
+  (h/call wasm/internal-module "_set_shape_masked_group" masked))
 
 (defn set-shape-selrect
   [selrect]
-  (h/call internal-module "_set_shape_selrect"
+  (h/call wasm/internal-module "_set_shape_selrect"
           (dm/get-prop selrect :x1)
           (dm/get-prop selrect :y1)
           (dm/get-prop selrect :x2)
@@ -141,7 +139,7 @@
 
 (defn set-shape-transform
   [transform]
-  (h/call internal-module "_set_shape_transform"
+  (h/call wasm/internal-module "_set_shape_transform"
           (dm/get-prop transform :a)
           (dm/get-prop transform :b)
           (dm/get-prop transform :c)
@@ -151,17 +149,17 @@
 
 (defn set-shape-rotation
   [rotation]
-  (h/call internal-module "_set_shape_rotation" rotation))
+  (h/call wasm/internal-module "_set_shape_rotation" rotation))
 
 (defn set-shape-children
   [shape-ids]
   (let [ENTRY-SIZE 16
         ptr
-        (h/call internal-module "_alloc_bytes" (* ENTRY-SIZE (count shape-ids)))
+        (h/call wasm/internal-module "_alloc_bytes" (* ENTRY-SIZE (count shape-ids)))
 
         heap
         (js/Uint8Array.
-         (.-buffer (gobj/get ^js internal-module "HEAPU8"))
+         (.-buffer (gobj/get ^js wasm/internal-module "HEAPU8"))
          ptr
          (* ENTRY-SIZE (count shape-ids)))]
 
@@ -172,51 +170,10 @@
           (.set heap (sr/uuid->u8 id) offset)
           (recur (rest entries) (+ offset ENTRY-SIZE)))))
 
-    (h/call internal-module "_set_children")))
+    (h/call wasm/internal-module "_set_children")))
 
 (defn- get-string-length [string] (+ (count string) 1))
 
-;; IMPORTANT: It should be noted that only TTF fonts can be stored.
-(defn- store-font-buffer
-  [font-data font-array-buffer]
-  (let [id-buffer (:family-id-buffer font-data)
-        size (.-byteLength font-array-buffer)
-        ptr  (h/call internal-module "_alloc_bytes" size)
-        heap (gobj/get ^js internal-module "HEAPU8")
-        mem  (js/Uint8Array. (.-buffer heap) ptr size)]
-    (.set mem (js/Uint8Array. font-array-buffer))
-    (h/call internal-module "_store_font"
-            (aget id-buffer 0)
-            (aget id-buffer 1)
-            (aget id-buffer 2)
-            (aget id-buffer 3)
-            (:weight font-data)
-            (:style font-data))
-    true))
-
-(defn- store-font-url
-  [font-data font-url]
-  (->> (http/send! {:method :get
-                    :uri font-url
-                    :response-type :blob})
-       (rx/map :body)
-       (rx/mapcat wapi/read-file-as-array-buffer)
-       (rx/map (fn [array-buffer] (store-font-buffer font-data array-buffer)))))
-
-(defn- store-font-id
-  [font-data asset-id]
-  (when asset-id
-    (let [uri (str (u/join cf/public-uri "assets/by-id/" asset-id))
-          id-buffer (uuid/get-u32 (:family-id font-data))
-          font-data (assoc font-data :family-id-buffer id-buffer)
-          font-stored? (not= 0 (h/call internal-module "_is_font_uploaded"
-                                       (aget id-buffer 0)
-                                       (aget id-buffer 1)
-                                       (aget id-buffer 2)
-                                       (aget id-buffer 3)
-                                       (:weight font-data)
-                                       (:style font-data)))]
-      (when-not font-stored? (store-font-url font-data uri)))))
 
 (defn- store-image
   [id]
@@ -230,11 +187,11 @@
          (rx/mapcat wapi/read-file-as-array-buffer)
          (rx/map (fn [image]
                    (let [image-size (.-byteLength image)
-                         image-ptr  (h/call internal-module "_alloc_bytes" image-size)
-                         heap       (gobj/get ^js internal-module "HEAPU8")
+                         image-ptr  (h/call wasm/internal-module "_alloc_bytes" image-size)
+                         heap       (gobj/get ^js wasm/internal-module "HEAPU8")
                          mem        (js/Uint8Array. (.-buffer heap) image-ptr image-size)]
                      (.set mem (js/Uint8Array. image))
-                     (h/call internal-module "_store_image"
+                     (h/call wasm/internal-module "_store_image"
                              (aget buffer 0)
                              (aget buffer 1)
                              (aget buffer 2)
@@ -243,7 +200,7 @@
 
 (defn set-shape-fills
   [fills]
-  (h/call internal-module "_clear_shape_fills")
+  (h/call wasm/internal-module "_clear_shape_fills")
   (keep (fn [fill]
           (let [opacity  (or (:fill-opacity fill) 1.0)
                 color    (:fill-color fill)
@@ -252,23 +209,23 @@
             (cond
               (some? color)
               (let [rgba (rgba-from-hex color opacity)]
-                (h/call internal-module "_add_shape_solid_fill" rgba))
+                (h/call wasm/internal-module "_add_shape_solid_fill" rgba))
 
               (some? gradient)
               (let [stops     (:stops gradient)
                     n-stops   (count stops)
                     mem-size  (* 5 n-stops)
-                    stops-ptr (h/call internal-module "_alloc_bytes" mem-size)
-                    heap      (gobj/get ^js internal-module "HEAPU8")
+                    stops-ptr (h/call wasm/internal-module "_alloc_bytes" mem-size)
+                    heap      (gobj/get ^js wasm/internal-module "HEAPU8")
                     mem       (js/Uint8Array. (.-buffer heap) stops-ptr mem-size)]
                 (if (= (:type gradient) :linear)
-                  (h/call internal-module "_add_shape_linear_fill"
+                  (h/call wasm/internal-module "_add_shape_linear_fill"
                           (:start-x gradient)
                           (:start-y gradient)
                           (:end-x gradient)
                           (:end-y gradient)
                           opacity)
-                  (h/call internal-module "_add_shape_radial_fill"
+                  (h/call wasm/internal-module "_add_shape_radial_fill"
                           (:start-x gradient)
                           (:start-y gradient)
                           (:end-x gradient)
@@ -280,13 +237,13 @@
                                                                          offset (:offset stop)]
                                                                      [r g b a (* 100 offset)]))
                                                                  stops)))))
-                (h/call internal-module "_add_shape_fill_stops"))
+                (h/call wasm/internal-module "_add_shape_fill_stops"))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
                     buffer        (uuid/get-u32 id)
-                    cached-image? (h/call internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
-                (h/call internal-module "_add_shape_image_fill"
+                    cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
+                (h/call wasm/internal-module "_add_shape_image_fill"
                         (aget buffer 0)
                         (aget buffer 1)
                         (aget buffer 2)
@@ -300,7 +257,7 @@
 
 (defn set-shape-strokes
   [strokes]
-  (h/call internal-module "_clear_shape_strokes")
+  (h/call wasm/internal-module "_clear_shape_strokes")
   (keep (fn [stroke]
           (let [opacity   (or (:stroke-opacity stroke) 1.0)
                 color     (:stroke-color stroke)
@@ -312,26 +269,26 @@
                 cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
                 cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)]
             (case align
-              :inner (h/call internal-module "_add_shape_inner_stroke" width style cap-start cap-end)
-              :outer (h/call internal-module "_add_shape_outer_stroke" width style cap-start cap-end)
-              (h/call internal-module "_add_shape_center_stroke" width style cap-start cap-end))
+              :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end)
+              :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end)
+              (h/call wasm/internal-module "_add_shape_center_stroke" width style cap-start cap-end))
 
             (cond
               (some? gradient)
               (let [stops     (:stops gradient)
                     n-stops   (count stops)
                     mem-size  (* 5 n-stops)
-                    stops-ptr (h/call internal-module "_alloc_bytes" mem-size)
-                    heap      (gobj/get ^js internal-module "HEAPU8")
+                    stops-ptr (h/call wasm/internal-module "_alloc_bytes" mem-size)
+                    heap      (gobj/get ^js wasm/internal-module "HEAPU8")
                     mem       (js/Uint8Array. (.-buffer heap) stops-ptr mem-size)]
                 (if (= (:type gradient) :linear)
-                  (h/call internal-module "_add_shape_stroke_linear_fill"
+                  (h/call wasm/internal-module "_add_shape_stroke_linear_fill"
                           (:start-x gradient)
                           (:start-y gradient)
                           (:end-x gradient)
                           (:end-y gradient)
                           opacity)
-                  (h/call internal-module "_add_shape_stroke_radial_fill"
+                  (h/call wasm/internal-module "_add_shape_stroke_radial_fill"
                           (:start-x gradient)
                           (:start-y gradient)
                           (:end-x gradient)
@@ -343,13 +300,13 @@
                                                                          offset (:offset stop)]
                                                                      [r g b a (* 100 offset)]))
                                                                  stops)))))
-                (h/call internal-module "_add_shape_stroke_stops"))
+                (h/call wasm/internal-module "_add_shape_stroke_stops"))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
                     buffer        (uuid/get-u32 id)
-                    cached-image? (h/call internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
-                (h/call internal-module "_add_shape_image_stroke"
+                    cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
+                (h/call wasm/internal-module "_add_shape_image_stroke"
                         (aget buffer 0)
                         (aget buffer 1)
                         (aget buffer 2)
@@ -362,7 +319,7 @@
 
               (some? color)
               (let [rgba (rgba-from-hex color opacity)]
-                (h/call internal-module "_add_shape_stroke_solid_fill" rgba)))))
+                (h/call wasm/internal-module "_add_shape_stroke_solid_fill" rgba)))))
         strokes))
 
 
@@ -375,25 +332,25 @@
                   (merge style))
         str   (sr/serialize-path-attrs attrs)
         size  (count str)
-        ptr   (h/call internal-module "_alloc_bytes" size)]
-    (h/call internal-module "stringToUTF8" str ptr size)
-    (h/call internal-module "_set_shape_path_attrs" (count attrs))))
+        ptr   (h/call wasm/internal-module "_alloc_bytes" size)]
+    (h/call wasm/internal-module "stringToUTF8" str ptr size)
+    (h/call wasm/internal-module "_set_shape_path_attrs" (count attrs))))
 
 (defn set-shape-path-content
   [content]
   (let [pdata  (path/path-data content)
         size   (* (count pdata) path/SEGMENT-BYTE-SIZE)
-        offset (h/call internal-module "_alloc_bytes" size)
-        heap   (gobj/get ^js internal-module "HEAPU8")]
+        offset (h/call wasm/internal-module "_alloc_bytes" size)
+        heap   (gobj/get ^js wasm/internal-module "HEAPU8")]
     (path/-write-to pdata (.-buffer heap) offset)
-    (h/call internal-module "_set_shape_path_content")))
+    (h/call wasm/internal-module "_set_shape_path_content")))
 
 (defn set-shape-svg-raw-content
   [content]
   (let [size (get-string-length content)
-        ptr (h/call internal-module "_alloc_bytes" size)]
-    (h/call internal-module "stringToUTF8" content ptr size)
-    (h/call internal-module "_set_shape_svg_raw_content")))
+        ptr (h/call wasm/internal-module "_alloc_bytes" size)]
+    (h/call wasm/internal-module "stringToUTF8" content ptr size)
+    (h/call wasm/internal-module "_set_shape_svg_raw_content")))
 
 
 
@@ -401,31 +358,31 @@
   [blend-mode]
   ;; These values correspond to skia::BlendMode representation
   ;; https://rust-skia.github.io/doc/skia_safe/enum.BlendMode.html
-  (h/call internal-module "_set_shape_blend_mode" (sr/translate-blend-mode blend-mode)))
+  (h/call wasm/internal-module "_set_shape_blend_mode" (sr/translate-blend-mode blend-mode)))
 
 (defn set-shape-opacity
   [opacity]
-  (h/call internal-module "_set_shape_opacity" (or opacity 1)))
+  (h/call wasm/internal-module "_set_shape_opacity" (or opacity 1)))
 
 
 
 (defn set-constraints-h
   [constraint]
   (when constraint
-    (h/call internal-module "_set_shape_constraint_h" (sr/translate-constraint-h constraint))))
+    (h/call wasm/internal-module "_set_shape_constraint_h" (sr/translate-constraint-h constraint))))
 
 (defn set-constraints-v
   [constraint]
   (when constraint
-    (h/call internal-module "_set_shape_constraint_v" (sr/translate-constraint-v constraint))))
+    (h/call wasm/internal-module "_set_shape_constraint_v" (sr/translate-constraint-v constraint))))
 
 (defn set-shape-hidden
   [hidden]
-  (h/call internal-module "_set_shape_hidden" hidden))
+  (h/call wasm/internal-module "_set_shape_hidden" hidden))
 
 (defn set-shape-bool-type
   [bool-type]
-  (h/call internal-module "_set_shape_bool_type" (sr/translate-bool-type bool-type)))
+  (h/call wasm/internal-module "_set_shape_bool_type" (sr/translate-bool-type bool-type)))
 
 (defn- translate-blur-type
   [blur-type]
@@ -438,7 +395,7 @@
   (let [type   (-> blur :type sr/translate-blur-type)
         hidden (:hidden blur)
         value  (:value blur)]
-    (h/call internal-module "_set_shape_blur" type hidden value)))
+    (h/call wasm/internal-module "_set_shape_blur" type hidden value)))
 
 (defn set-shape-corners
   [corners]
@@ -446,7 +403,7 @@
         r2 (or (get corners 1) 0)
         r3 (or (get corners 2) 0)
         r4 (or (get corners 3) 0)]
-    (h/call internal-module "_set_shape_corners" r1 r2 r3 r4)))
+    (h/call wasm/internal-module "_set_shape_corners" r1 r2 r3 r4)))
 
 (defn set-flex-layout
   [shape]
@@ -466,7 +423,7 @@
         padding-right (or (dm/get-prop padding :p2) 0)
         padding-bottom (or (dm/get-prop padding :p3) 0)
         padding-left (or (dm/get-prop padding :p4) 0)]
-    (h/call internal-module
+    (h/call wasm/internal-module
             "_set_flex_layout_data"
             dir
             row-gap
@@ -500,7 +457,7 @@
         padding-bottom (or (dm/get-prop padding :p3) 0)
         padding-left (or (dm/get-prop padding :p4) 0)]
 
-    (h/call internal-module
+    (h/call wasm/internal-module
             "_set_grid_layout_data"
             dir
             row-gap
@@ -517,11 +474,11 @@
   ;; Send Rows
   (let [entry-size 5
         entries (:layout-grid-rows shape)
-        ptr (h/call internal-module "_alloc_bytes" (* entry-size (count entries)))
+        ptr (h/call wasm/internal-module "_alloc_bytes" (* entry-size (count entries)))
 
         heap
         (js/Uint8Array.
-         (.-buffer (gobj/get ^js internal-module "HEAPU8"))
+         (.-buffer (gobj/get ^js wasm/internal-module "HEAPU8"))
          ptr
          (* entry-size (count entries)))]
     (loop [entries (seq entries)
@@ -531,16 +488,16 @@
           (.set heap (sr/u8 (sr/translate-grid-track-type type)) (+ offset 0))
           (.set heap (sr/f32->u8 value) (+ offset 1))
           (recur (rest entries) (+ offset entry-size)))))
-    (h/call internal-module "_set_grid_rows"))
+    (h/call wasm/internal-module "_set_grid_rows"))
 
   ;; Send Columns
   (let [entry-size 5
         entries (:layout-grid-columns shape)
-        ptr (h/call internal-module "_alloc_bytes" (* entry-size (count entries)))
+        ptr (h/call wasm/internal-module "_alloc_bytes" (* entry-size (count entries)))
 
         heap
         (js/Uint8Array.
-         (.-buffer (gobj/get ^js internal-module "HEAPU8"))
+         (.-buffer (gobj/get ^js wasm/internal-module "HEAPU8"))
          ptr
          (* entry-size (count entries)))]
     (loop [entries (seq entries)
@@ -550,16 +507,16 @@
           (.set heap (sr/u8 (sr/translate-grid-track-type type)) (+ offset 0))
           (.set heap (sr/f32->u8 value) (+ offset 1))
           (recur (rest entries) (+ offset entry-size)))))
-    (h/call internal-module "_set_grid_columns"))
+    (h/call wasm/internal-module "_set_grid_columns"))
 
   ;; Send cells
   (let [entry-size 37
         entries (-> shape :layout-grid-cells vals)
-        ptr (h/call internal-module "_alloc_bytes" (* entry-size (count entries)))
+        ptr (h/call wasm/internal-module "_alloc_bytes" (* entry-size (count entries)))
 
         heap
         (js/Uint8Array.
-         (.-buffer (gobj/get ^js internal-module "HEAPU8"))
+         (.-buffer (gobj/get ^js wasm/internal-module "HEAPU8"))
          ptr
          (* entry-size (count entries)))]
 
@@ -603,7 +560,7 @@
 
           (recur (rest entries) (+ offset entry-size)))))
 
-    (h/call internal-module "_set_grid_cells")))
+    (h/call wasm/internal-module "_set_grid_cells")))
 
 (defn set-layout-child
   [shape]
@@ -627,7 +584,7 @@
         has-min-w (some? min-w)
         is-absolute (boolean (dm/get-prop shape :layout-item-absolute))
         z-index (-> (dm/get-prop shape :layout-item-z-index) (or 0))]
-    (h/call internal-module
+    (h/call wasm/internal-module
             "_set_layout_child_data"
             margin-top
             margin-right
@@ -650,7 +607,7 @@
 
 (defn set-shape-shadows
   [shadows]
-  (h/call internal-module "_clear_shape_shadows")
+  (h/call wasm/internal-module "_clear_shape_shadows")
   (let [total-shadows (count shadows)]
     (loop [index 0]
       (when (< index total-shadows)
@@ -663,80 +620,34 @@
               y (dm/get-prop shadow :offset-y)
               spread (dm/get-prop shadow :spread)
               style (dm/get-prop shadow :style)]
-          (h/call internal-module "_add_shape_shadow" rgba blur spread x y (sr/translate-shadow-style style) hidden)
+          (h/call wasm/internal-module "_add_shape_shadow" rgba blur spread x y (sr/translate-shadow-style style) hidden)
           (recur (inc index)))))))
 
 (defn utf8->buffer [text]
   (let [encoder (js/TextEncoder.)]
     (.encode encoder text)))
 
-(def ^:private fonts
-  (l/derived :fonts st/state))
-
-(defn ^:private font->ttf-id [font-uuid font-style font-weight]
-  (let [matching-font (d/seek (fn [[_ font]]
-                                (and (= (:font-id font) font-uuid)
-                                     (= (:font-style font) font-style)
-                                     (= (:font-weight font) font-weight)))
-                              (seq @fonts))]
-    (when matching-font
-      (:ttf-file-id (second matching-font)))))
-
-(defn- serialize-font-style
-  [font-style]
-  (case font-style
-    "normal" 0
-    "regular" 0
-    "italic" 1
-    0))
-
-(defn- serialize-font-id
-  [font-id]
-  (let [no-prefix (subs font-id (inc (str/index-of font-id "-")))
-        as-uuid (uuid/uuid no-prefix)]
-    (uuid/get-u32 as-uuid)))
-
-(defn- serialize-font-weight
-  [font-weight]
-  (js/Number font-weight))
-
 (defn- add-text-leaf [leaf]
   (let [text (dm/get-prop leaf :text)
-        font-id (serialize-font-id (dm/get-prop leaf :font-id))
-        font-style (serialize-font-style (dm/get-prop leaf :font-style))
-        font-weight (serialize-font-weight (dm/get-prop leaf :font-weight))
+        font-id (f/serialize-font-id (dm/get-prop leaf :font-id))
+        font-style (f/serialize-font-style (dm/get-prop leaf :font-style))
+        font-weight (f/serialize-font-weight (dm/get-prop leaf :font-weight))
         font-size (js/Number (dm/get-prop leaf :font-size))
         buffer (utf8->buffer text)
         size (.-byteLength buffer)
-        ptr (h/call internal-module "_alloc_bytes" size)
-        heap (gobj/get ^js internal-module "HEAPU8")
+        ptr (h/call wasm/internal-module "_alloc_bytes" size)
+        heap (gobj/get ^js wasm/internal-module "HEAPU8")
         mem (js/Uint8Array. (.-buffer heap) ptr size)]
     (.set mem buffer)
-    (h/call internal-module "_add_text_leaf"
+    (h/call wasm/internal-module "_add_text_leaf"
             (aget font-id 0)
             (aget font-id 1)
             (aget font-id 2)
             (aget font-id 3)
             font-weight font-style font-size)))
 
-(defn- store-fonts
-  [fonts]
-  (keep (fn [font]
-          (let [font-id (dm/get-prop font :font-id)
-                font-variant (dm/get-prop font :font-variant-id)
-                variant-parts (str/split font-variant #"\-")
-                style (first variant-parts)
-                weight (serialize-font-weight (last variant-parts))
-                font-id (subs font-id (inc (str/index-of font-id "-")))
-                font-id (uuid/uuid font-id)
-                ttf-id (font->ttf-id font-id style weight)
-                font-data {:family-id font-id
-                           :style (serialize-font-style style)
-                           :weight weight}]
-            (store-font-id font-data ttf-id))) fonts))
-
 (defn set-shape-text-content [content]
-  (h/call internal-module "_clear_shape_text")
+  (h/call wasm/internal-module "_clear_shape_text")
   (let [paragraph-set (first (dm/get-prop content :children))
         paragraphs (dm/get-prop paragraph-set :children)
         total-paragraphs (count paragraphs)
@@ -747,25 +658,25 @@
         (let [paragraph (nth paragraphs index)
               leaves (dm/get-prop paragraph :children)
               total-leaves (count leaves)]
-          (h/call internal-module "_add_text_paragraph")
+          (h/call wasm/internal-module "_add_text_paragraph")
           (loop [index-leaves 0]
             (when (< index-leaves total-leaves)
               (let [leaf (nth leaves index-leaves)]
                 (add-text-leaf leaf)
                 (recur (inc index-leaves))))))
         (recur (inc index))))
-    (store-fonts fonts)))
+    (f/store-fonts fonts)))
 
 (defn set-view-box
   [zoom vbox]
-  (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+  (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
   (render nil))
 
 (defn clear-drawing-cache []
-  (h/call internal-module "_clear_drawing_cache"))
+  (h/call wasm/internal-module "_clear_drawing_cache"))
 
 (defn update-shape-tiles []
-  (h/call internal-module "_update_shape_tiles"))
+  (h/call wasm/internal-module "_update_shape_tiles"))
 
 (defn set-object
   [objects shape]
@@ -889,11 +800,11 @@
 (defn propagate-modifiers
   [entries]
   (let [entry-size 40
-        ptr (h/call internal-module "_alloc_bytes" (* entry-size (count entries)))
+        ptr (h/call wasm/internal-module "_alloc_bytes" (* entry-size (count entries)))
 
         heap
         (js/Uint8Array.
-         (.-buffer (gobj/get ^js internal-module "HEAPU8"))
+         (.-buffer (gobj/get ^js wasm/internal-module "HEAPU8"))
          ptr
          (* entry-size (count entries)))]
 
@@ -905,35 +816,35 @@
           (.set heap (sr/matrix->u8 transform) (+ offset 16))
           (recur (rest entries) (+ offset entry-size)))))
 
-    (let [result-ptr (h/call internal-module "_propagate_modifiers")
-          heap (js/DataView. (.-buffer (gobj/get ^js internal-module "HEAPU8")))
+    (let [result-ptr (h/call wasm/internal-module "_propagate_modifiers")
+          heap (js/DataView. (.-buffer (gobj/get ^js wasm/internal-module "HEAPU8")))
           len (.getUint32 heap result-ptr true)
           result
           (->> (range 0 len)
                (mapv #(data->entry heap (+ result-ptr 4 (* % entry-size)))))]
-      (h/call internal-module "_free_bytes")
+      (h/call wasm/internal-module "_free_bytes")
 
       result)))
 
 (defn set-canvas-background
   [background]
   (let [rgba (rgba-from-hex background 1)]
-    (h/call internal-module "_set_canvas_background" rgba)
+    (h/call wasm/internal-module "_set_canvas_background" rgba)
     (request-render "set-canvas-background")))
 
 (defn set-modifiers
   [modifiers]
   (if (empty? modifiers)
-    (h/call internal-module "_clean_modifiers")
+    (h/call wasm/internal-module "_clean_modifiers")
 
     (let [ENTRY-SIZE 40
 
           ptr
-          (h/call internal-module "_alloc_bytes" (* ENTRY-SIZE (count modifiers)))
+          (h/call wasm/internal-module "_alloc_bytes" (* ENTRY-SIZE (count modifiers)))
 
           heap
           (js/Uint8Array.
-           (.-buffer (gobj/get ^js internal-module "HEAPU8"))
+           (.-buffer (gobj/get ^js wasm/internal-module "HEAPU8"))
            ptr
            (* ENTRY-SIZE (count modifiers)))]
 
@@ -945,15 +856,15 @@
             (.set heap (sr/matrix->u8 transform) (+ offset 16))
             (recur (rest entries) (+ offset ENTRY-SIZE)))))
 
-      (h/call internal-module "_set_modifiers")
+      (h/call wasm/internal-module "_set_modifiers")
 
       (request-render "set-modifiers"))))
 
 (defn initialize
   [base-objects zoom vbox background]
   (let [rgba (rgba-from-hex background 1)]
-    (h/call internal-module "_set_canvas_background" rgba)
-    (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+    (h/call wasm/internal-module "_set_canvas_background" rgba)
+    (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
     (set-objects base-objects)))
 
 (def ^:private canvas-options
@@ -965,7 +876,7 @@
 
 (defn resize-viewbox
   [width height]
-  (h/call internal-module "_resize_viewbox" width height))
+  (h/call wasm/internal-module "_resize_viewbox" width height))
 
 (defn- debug-flags
   []
@@ -975,7 +886,7 @@
 
 (defn assign-canvas
   [canvas]
-  (let [gl      (unchecked-get internal-module "GL")
+  (let [gl      (unchecked-get wasm/internal-module "GL")
         flags   (debug-flags)
         context (.getContext ^js canvas "webgl2" canvas-options)
         ;; Register the context with emscripten
@@ -986,15 +897,15 @@
     (.getExtension context "WEBGL_debug_renderer_info")
 
     ;; Initialize Wasm Render Engine
-    (h/call internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
-    (h/call internal-module "_set_render_options" flags dpr))
+    (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
+    (h/call wasm/internal-module "_set_render_options" flags dpr))
   (set! (.-width canvas) (* dpr (.-clientWidth ^js canvas)))
   (set! (.-height canvas) (* dpr (.-clientHeight ^js canvas))))
 
 (defn clear-canvas
   []
   ;; TODO: perform corresponding cleaning
-  (h/call internal-module "_clean_up"))
+  (h/call wasm/internal-module "_clean_up"))
 
 (defonce module
   (delay
@@ -1005,9 +916,10 @@
                        (let [default (unchecked-get module "default")]
                          (default))))
              (p/fmap (fn [module]
-                       (set! internal-module module)
+                       (set! wasm/internal-module module)
                        true))
              (p/merr (fn [cause]
                        (js/console.error cause)
                        (p/resolved false)))))
       (p/resolved false))))
+
