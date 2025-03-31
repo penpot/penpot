@@ -241,54 +241,6 @@
                   :disabled disabled?}
       (tr "workspace.token.save-theme")]]))
 
-(mf/defc create-theme
-  [{:keys [set-state]}]
-  (let [theme (ctob/make-token-theme :name "")
-        on-back #(set-state (constantly {:type :themes-overview}))
-        theme-state* (mf/use-state theme)
-        theme-state (deref theme-state*)
-        disabled? (-> (:name theme-state)
-                      (str/trim)
-                      (str/empty?))
-
-        on-change-field
-        (mf/use-fn
-         (fn [field value]
-           (swap! theme-state* #(assoc % field value))))
-
-        on-save-form
-        (mf/use-fn
-         (mf/deps theme-state)
-         (fn [e]
-           (dom/prevent-default e)
-           (let [theme (-> theme-state
-                           (update :name str/trim)
-                           (update :group str/trim)
-                           (update :description str/trim))]
-             (when-not (str/empty? (:name theme))
-               (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens-theme"})
-                         (wdt/create-token-theme theme)))
-             (on-back))))
-
-        close-modal
-        (mf/use-fn
-         (fn [e]
-           (dom/prevent-default e)
-           (st/emit! (modal/hide))))]
-
-    [:div {:class (stl/css :themes-modal-wrapper)}
-     [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
-      (tr "workspace.token.add-new-theme")]
-     [:form {:on-submit on-save-form}
-      [:div {:class (stl/css :create-theme-wrapper)}
-       [:> theme-inputs* {:theme theme
-                          :on-change-field on-change-field}]
-
-       [:div {:class (stl/css :button-footer)}
-        [:> theme-modal-buttons* {:close-modal close-modal
-                                  :on-save-form on-save-form
-                                  :disabled? disabled?}]]]]]))
-
 (defn- make-lib-with-theme
   [theme sets]
   (let [tlib (-> (ctob/make-tokens-lib)
@@ -296,40 +248,37 @@
         tlib (reduce ctob/add-set tlib sets)]
     (ctob/activate-theme tlib (:group theme) (:name theme))))
 
-(mf/defc controlled-edit-theme
-  [{:keys [state set-state]}]
-  (let [{:keys [theme-path]} @state
-        [_ theme-group theme-name] theme-path
-        ordered-token-sets (mf/deref refs/workspace-ordered-token-sets)
+(mf/defc edit-create-theme
+  [{:keys [set-state theme on-save edit-theme?]}]
+  (let [ordered-token-sets (mf/deref refs/workspace-ordered-token-sets)
         token-sets (mf/deref refs/workspace-token-sets-tree)
-        theme (mf/deref (refs/workspace-token-theme theme-group theme-name))
 
-        theme-state* (mf/use-state theme)
-        theme-state (deref theme-state*)
-        lib (make-lib-with-theme theme-state ordered-token-sets)
+        current-theme* (mf/use-state theme)
+        current-theme (deref current-theme*)
+        lib (make-lib-with-theme current-theme ordered-token-sets)
 
         ;; Form / Modal handlers
         on-back #(set-state (constantly {:type :themes-overview}))
-        disabled? (-> (:name theme-state)
+        disabled? (-> (:name current-theme)
                       (str/trim)
                       (str/empty?))
 
         on-change-field
         (mf/use-fn
          (fn [field value]
-           (swap! theme-state* #(assoc % field value))))
+           (swap! current-theme* #(assoc % field value))))
 
         on-save-form
         (mf/use-fn
-         (mf/deps theme theme-state)
+         (mf/deps current-theme on-save on-back)
          (fn [e]
            (dom/prevent-default e)
-           (let [theme' (-> theme-state
+           (let [theme' (-> current-theme
                             (update :name str/trim)
                             (update :group str/trim)
                             (update :description str/trim))]
-             (when-not (str/empty? (:name theme))
-               (st/emit! (wdt/update-token-theme [(:group theme) (:name theme)] theme')))
+             (when-not (str/empty? (:name theme'))
+               (on-save theme'))
              (on-back))))
 
         close-modal
@@ -338,39 +287,39 @@
            (dom/prevent-default e)
            (st/emit! (modal/hide))))
 
-        on-delete-token
+        on-delete-theme
         (mf/use-fn
-         (mf/deps theme on-back)
+         (mf/deps current-theme on-back)
          (fn []
-           (st/emit! (wdt/delete-token-theme (:group theme) (:name theme)))
+           (st/emit! (wdt/delete-token-theme (:group current-theme) (:name current-theme)))
            (on-back)))
 
         ;; Sets tree handlers
         token-set-group-active?
         (mf/use-fn
-         (mf/deps theme-state)
+         (mf/deps current-theme)
          (fn [group-path]
            (ctob/sets-at-path-all-active? lib group-path)))
 
         token-set-active?
         (mf/use-fn
-         (mf/deps theme-state)
+         (mf/deps current-theme)
          (fn [name]
-           (contains? (:sets theme-state) name)))
+           (contains? (:sets current-theme) name)))
 
         on-toggle-token-set
         (mf/use-fn
-         (mf/deps theme-state)
+         (mf/deps current-theme)
          (fn [set-name]
-           (swap! theme-state* #(ctob/toggle-set % set-name))))
+           (swap! current-theme* #(ctob/toggle-set % set-name))))
 
         on-toggle-token-set-group
         (mf/use-fn
-         (mf/deps theme-state ordered-token-sets)
+         (mf/deps current-theme ordered-token-sets)
          (fn [group-path]
-           (swap! theme-state* (fn [theme']
-                                 (let [lib' (make-lib-with-theme theme' ordered-token-sets)]
-                                   (clt/toggle-token-set-group group-path lib' theme'))))))
+           (swap! current-theme* (fn [theme']
+                                   (let [lib' (make-lib-with-theme theme' ordered-token-sets)]
+                                     (clt/toggle-token-set-group group-path lib' theme'))))))
 
         on-click-token-set
         (mf/use-fn
@@ -381,17 +330,20 @@
 
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
-      (tr "workspace.token.edit-theme-title")]
+      (if edit-theme?
+        (tr "workspace.token.edit-theme-title")
+        (tr "workspace.token.add-new-theme"))]
 
      [:form {:on-submit on-save-form :class (stl/css :edit-theme-form)}
       [:div {:class (stl/css :edit-theme-wrapper)}
-       [:button {:on-click on-back
-                 :class (stl/css :back-btn)
-                 :type "button"}
-        [:> icon* {:icon-id ic/arrow-left :aria-hidden true}]
-        (tr "workspace.token.back-to-themes")]
+       (when edit-theme?
+         [:button {:on-click on-back
+                   :class (stl/css :back-btn)
+                   :type "button"}
+          [:> icon* {:icon-id ic/arrow-left :aria-hidden true}]
+          (tr "workspace.token.back-to-themes")])
 
-       [:> theme-inputs* {:theme theme
+       [:> theme-inputs* {:theme current-theme
                           :on-change-field on-change-field}]
        [:> text* {:as "span"  :typography "body-small" :class (stl/css :select-sets-message)}
         (tr "workspace.token.set-selection-theme")]
@@ -408,15 +360,50 @@
           :origin "theme-modal"}]]
 
        [:div {:class (stl/css :edit-theme-footer)}
-        [:> button* {:variant "secondary"
-                     :type "button"
-                     :icon "delete"
-                     :on-click on-delete-token}
-         (tr "labels.delete")]
+        (when edit-theme?
+          [:> button* {:variant "secondary"
+                       :type "button"
+                       :icon "delete"
+                       :on-click on-delete-theme}
+           (tr "labels.delete")])
         [:div {:class (stl/css :button-footer)}
          [:> theme-modal-buttons* {:close-modal close-modal
                                    :on-save-form on-save-form
                                    :disabled? disabled?}]]]]]]))
+
+(mf/defc edit-theme
+  [{:keys [state set-state]}]
+  (let [{:keys [theme-path]} @state
+        [_ theme-group theme-name] theme-path
+        theme (mf/deref (refs/workspace-token-theme theme-group theme-name))
+
+        on-save
+        (mf/use-fn
+         (mf/deps theme)
+         (fn [theme']
+           (st/emit! (wdt/update-token-theme [(:group theme) (:name theme)] theme'))))]
+
+    [:& edit-create-theme
+     {:set-state set-state
+      :theme theme
+      :on-save on-save
+      :edit-theme? true}]))
+
+(mf/defc create-theme
+  [{:keys [set-state]}]
+  (let [theme (ctob/make-token-theme :name "")
+
+        on-save
+        (mf/use-fn
+         (fn [theme]
+           (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens-theme"})
+                     (wdt/create-token-theme theme))))]
+
+    [:& edit-create-theme
+     {:set-state set-state
+      :theme theme
+      :on-save on-save
+      :create-theme? true}]))
 
 (mf/defc themes-modal-body*
   {::mf/private true}
@@ -429,7 +416,7 @@
         component (case (:type @state)
                     :empty-themes empty-themes
                     :themes-overview (if (empty? themes) empty-themes themes-overview)
-                    :edit-theme controlled-edit-theme
+                    :edit-theme edit-theme
                     :create-theme create-theme)]
     [:& component {:state state
                    :set-state set-state}]))
