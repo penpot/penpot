@@ -360,14 +360,14 @@
     (->> (fix-move-to content)
          (subpath/close-subpaths))))
 
-
-;; FIXME: rename ? private?
-(defn content-bool
+(defn content
+  "Create a bool content from a collection of contents and specified
+  type."
   [bool-type contents]
   ;; We apply the boolean operation in to each pair and the result to the next
   ;; element
   (if (seq contents)
     (->> contents
-         (reduce (partial content-bool-pair bool-type))
-         (into []))
+         (reduce (partial content-bool-pair bool-type) contents)
+         (vec))
     []))

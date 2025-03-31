@@ -200,7 +200,7 @@
         (:bool-type shape)
 
         content
-        (bool/content-bool bool-type (mapv :content children))]
+        (bool/content bool-type (map :content children))]
 
     (-> shape
         (assoc :type :path)

@@ -111,10 +111,10 @@
               (map #(stp/convert-to-path % objects))
               (map :content))
 
-        shapes-content
-        (into [] extract-content-xf (:shapes shape))]
+        contents
+        (sequence extract-content-xf (:shapes shape))]
 
-    (bool/content-bool (:bool-type shape) shapes-content)))
+    (bool/content (:bool-type shape) contents)))
 
 (defn shape-with-open-path?
   [shape]
