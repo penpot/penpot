@@ -110,7 +110,7 @@
           :auto-focus true
           :default-value (:name file "")}]
         [:div
-         {:class (stl/css :file-name)
+         {:class (stl/css :file-name-container)
           :title file-name
           :on-double-click start-editing-name}
           ;;-- Persistende state widget
@@ -126,13 +126,8 @@
                          :saved (tr "workspace.header.saved")
                          :error (tr "workspace.header.save-error")
                          nil)}
-          (case persistence-status
-            :pending i/status-alert
-            :saving i/status-alert
-            :saved i/status-tick
-            :error i/status-wrong
-            nil)]
-         file-name])]
+          ]
+         [:div {:class (stl/css :file-name)} file-name]])]
      (when ^boolean shared?
        [:span {:class (stl/css :shared-badge)} i/library])
      [:div {:class (stl/css :menu-section)}
