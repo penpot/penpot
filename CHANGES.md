@@ -14,6 +14,7 @@
 
 - Fix path having a wrong selrect [Taiga #10257](https://tree.taiga.io/project/penpot/issue/10257)
 - Fix SVG `stroke-linecap` property when importing SVGs [Taiga #9489](https://tree.taiga.io/project/penpot/issue/9489)
+- Fix position problems cutting-pasting a component [Taiga #10677](https://tree.taiga.io/project/penpot/issue/10677)
 
 ## 2.6.0 (Unreleased)
 
