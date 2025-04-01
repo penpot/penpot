@@ -3,6 +3,7 @@ use skia_safe::{self as skia, Rect};
 
 use super::{tiles, RenderState, SurfaceId};
 
+#[cfg(target_arch = "wasm32")]
 use crate::run_script;
 
 const DEBUG_SCALE: f32 = 0.2;
@@ -170,19 +171,25 @@ pub fn render(render_state: &mut RenderState) {
     );
 }
 
+#[cfg(target_arch = "wasm32")]
 #[allow(dead_code)]
 pub fn console_debug_tile_surface(render_state: &mut RenderState, tile: tiles::Tile) {
     let base64_image = render_state.surfaces.base64_snapshot_tile(tile);
+
+    #[cfg(target_arch = "wasm32")]
     run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
 }
 
+#[cfg(target_arch = "wasm32")]
 #[allow(dead_code)]
 pub fn console_debug_surface(render_state: &mut RenderState, id: SurfaceId) {
     let base64_image = render_state.surfaces.base64_snapshot(id);
+
     run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
 }
 
 #[allow(dead_code)]
+#[cfg(target_arch = "wasm32")]
 pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId, rect: skia::Rect) {
     let int_rect = skia::IRect::from_ltrb(
         rect.left as i32,
@@ -190,7 +197,9 @@ pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId,
         rect.right as i32,
         rect.bottom as i32,
     );
+
     let base64_image = render_state.surfaces.base64_snapshot_rect(id, int_rect);
+
     if let Some(base64_image) = base64_image {
         run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
     }

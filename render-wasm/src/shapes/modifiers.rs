@@ -337,7 +337,7 @@ mod tests {
         shapes.insert(parent_id, parent.clone());
 
         let bounds =
-            calculate_group_bounds(&parent, &shapes, HashMap::<Uuid, Bounds>::new()).unwrap();
+            calculate_group_bounds(&parent, &shapes, &HashMap::<Uuid, Bounds>::new()).unwrap();
 
         assert_eq!(bounds.width(), 3.0);
         assert_eq!(bounds.height(), 3.0);
