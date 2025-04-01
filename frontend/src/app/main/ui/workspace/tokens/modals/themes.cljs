@@ -248,8 +248,8 @@
         tlib (reduce ctob/add-set tlib sets)]
     (ctob/activate-theme tlib (:group theme) (:name theme))))
 
-(mf/defc edit-create-theme
-  [{:keys [set-state theme on-save edit-theme?]}]
+(mf/defc edit-create-theme*
+  [{:keys [set-state theme on-save is-editing]}]
   (let [ordered-token-sets (mf/deref refs/workspace-ordered-token-sets)
         token-sets (mf/deref refs/workspace-token-sets-tree)
 
@@ -330,13 +330,13 @@
 
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
-      (if edit-theme?
+      (if is-editing
         (tr "workspace.token.edit-theme-title")
         (tr "workspace.token.add-new-theme"))]
 
      [:form {:on-submit on-save-form :class (stl/css :edit-theme-form)}
       [:div {:class (stl/css :edit-theme-wrapper)}
-       (when edit-theme?
+       (when is-editing
          [:button {:on-click on-back
                    :class (stl/css :back-btn)
                    :type "button"}
@@ -360,7 +360,7 @@
           :origin "theme-modal"}]]
 
        [:div {:class (stl/css :edit-theme-footer)}
-        (when edit-theme?
+        (when is-editing
           [:> button* {:variant "secondary"
                        :type "button"
                        :icon "delete"
@@ -383,11 +383,11 @@
          (fn [theme']
            (st/emit! (wdt/update-token-theme [(:group theme) (:name theme)] theme'))))]
 
-    [:& edit-create-theme
+    [:> edit-create-theme*
      {:set-state set-state
       :theme theme
       :on-save on-save
-      :edit-theme? true}]))
+      :is-editing true}]))
 
 (mf/defc create-theme
   [{:keys [set-state]}]
@@ -399,11 +399,10 @@
            (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens-theme"})
                      (wdt/create-token-theme theme))))]
 
-    [:& edit-create-theme
+    [:> edit-create-theme*
      {:set-state set-state
       :theme theme
-      :on-save on-save
-      :create-theme? true}]))
+      :on-save on-save}]))
 
 (mf/defc themes-modal-body*
   {::mf/private true}
