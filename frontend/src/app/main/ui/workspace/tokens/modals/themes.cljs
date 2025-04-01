@@ -258,7 +258,7 @@
         lib (make-lib-with-theme current-theme ordered-token-sets)
 
         ;; Form / Modal handlers
-        on-back #(set-state (constantly {:type :themes-overview}))
+        on-back (mf/use-fn #(set-state (constantly {:type :themes-overview})))
         disabled? (-> (:name current-theme)
                       (str/trim)
                       (str/empty?))
