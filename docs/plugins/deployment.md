@@ -35,12 +35,15 @@ Enter your email address and press ‘continue with Email’.
 Fill in your verification code.
 ![Vercel_login_verefication_code](/img/plugins/Vercel_login_verefication_code.webp)
 
-### Vercel deploy
+### Vercel import Git repository
 
+Vercel allows you to import an existing project from GitHub, GitLab, Bitbucket or Azure DevOps.
+You can also use the [Vercel CLI to deploy](https://vercel.com/guides/using-vercel-cli-for-custom-workflows) with any git provider.
 ![Vercel_deploy_new_project](/img/plugins/Vercel_deploy_new_project.webp)
 
 <a target="_blank" href="https://vercel.com/docs/deployments/">Vercel deployment documentation</a>.
 
+1. Go to <a target="_blank" href="https://vercel.com/new">New</a> and connect with your repository or choose [Import Third-Party Git Repository](https://vercel.com/new/git/third-party).
 
 ## 3.3. Netlify
 
