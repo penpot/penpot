@@ -20,6 +20,8 @@
 
 .text-row {
   @extend .attr-row;
+  height: unset;
+  min-height: $s-32;
   :global(.attr-value) {
     align-items: center;
   }
