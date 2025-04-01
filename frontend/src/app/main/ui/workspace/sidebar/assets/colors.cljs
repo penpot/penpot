@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.main.constants :refer [max-input-length]]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -220,6 +221,7 @@
          :on-blur input-blur
          :on-key-down input-key-down
          :auto-focus true
+         :max-length max-input-length
          :default-value (cfh/merge-path-item (:path color) (:name color))}]
 
        [:div {:title (if (= (:name color) default-name)
