@@ -613,10 +613,7 @@ pub extern "C" fn set_modifiers() {
         for entry in entries {
             state.modifiers.insert(entry.id, entry.transform);
         }
-        // TODO: Do a more specific rebuild of tiles. For
-        // example: using only the selected shapes to rebuild
-        // the tiles affected by the selected shapes.
-        state.rebuild_tiles();
+        state.rebuild_modifier_tiles();
     });
 }
 

@@ -33,6 +33,14 @@ pub fn get_tiles_for_viewbox(viewbox: Viewbox) -> (i32, i32, i32, i32) {
     get_tiles_for_rect(viewbox.area, tile_size)
 }
 
+pub fn get_tiles_for_viewbox_with_interest(
+    viewbox: Viewbox,
+    interest: i32,
+) -> (i32, i32, i32, i32) {
+    let (sx, sy, ex, ey) = get_tiles_for_viewbox(viewbox);
+    (sx - interest, sy - interest, ex + interest, ey + interest)
+}
+
 pub fn get_tile_pos(viewbox: Viewbox, (x, y): Tile) -> (f32, f32) {
     (
         x as f32 * get_tile_size(viewbox),

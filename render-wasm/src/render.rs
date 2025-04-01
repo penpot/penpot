@@ -28,6 +28,8 @@ pub use blend::BlendMode;
 pub use fonts::*;
 pub use images::*;
 
+// This is the extra are used for tile rendering.
+const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
 
@@ -449,26 +451,28 @@ impl RenderState {
             },
         );
 
+        // First we retrieve the extended area of the viewport that we could render.
+        let (isx, isy, iex, iey) = tiles::get_tiles_for_viewbox_with_interest(
+            self.viewbox,
+            VIEWPORT_INTEREST_AREA_THRESHOLD,
+        );
+        // Then we get the real amount of tiles rendered for the current viewbox.
         let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox);
-        debug::render_debug_tiles_for_viewbox(self, sx, sy, ex, ey);
-        /*
-        // TODO: Instead of rendering only the visible area
-        // we could apply an offset to the viewbox to render
-        // more tiles.
-        sx - interest_delta
-        sy - interest_delta
-        ex + interest_delta
-        ey + interest_delta
-        */
-        let tile_center = ((ex - sx) / 2, (ey - sy) / 2);
+        debug::render_debug_tiles_for_viewbox(self, isx, isy, iex, iey);
+        let tile_center = ((iex - isx) / 2, (iey - isy) / 2);
         self.pending_tiles = vec![];
         self.surfaces.cache_clear_visited();
-        for y in sy..=ey {
-            for x in sx..=ex {
+        for y in isy..=iey {
+            for x in isx..=iex {
                 let tile = (x, y);
                 let distance = tiles::manhattan_distance(tile, tile_center);
                 self.pending_tiles.push((x, y, distance));
-                self.surfaces.cache_visit(tile);
+                // We only need to mark as visited the visible
+                // tiles, the ones that are outside the viewport
+                // should not be rendered.
+                if x >= sx && x <= ex && y >= sy && y <= ey {
+                    self.surfaces.cache_visit(tile);
+                }
             }
         }
         self.pending_nodes = vec![];
@@ -843,6 +847,20 @@ impl RenderState {
                 for child_id in shape.children_ids().iter() {
                     nodes.push(*child_id);
                 }
+            }
+        }
+    }
+
+    pub fn rebuild_modifier_tiles(
+        &mut self,
+        tree: &mut HashMap<Uuid, Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) {
+        for (uuid, matrix) in modifiers {
+            if let Some(shape) = tree.get(uuid) {
+                let mut shape: Shape = shape.clone();
+                shape.apply_transform(matrix);
+                self.update_tile_for(&shape);
             }
         }
     }
