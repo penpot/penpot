@@ -68,7 +68,8 @@
     :variant-bad-name
     :variant-bad-variant-name
     :variant-component-bad-name
-    :variant-no-properties})
+    :variant-no-properties
+    :variant-component-bad-id})
 
 (def ^:private schema:error
   [:map {:title "ValidationError"}
@@ -469,6 +470,10 @@
     (when-not (= (:name parent) (cfh/merge-path-item (:path component) (:name component)))
       (report-error :variant-component-bad-name
                     (str/ffmt "Component % has an invalid name" (:id shape))
+                    shape file page))
+    (when-not (= (:variant-id component) (:variant-id shape))
+      (report-error :variant-component-bad-id
+                    (str/ffmt "Variant % has adifferent variant-id than its component" (:id shape))
                     shape file page))))
 
 (defn- check-shape

@@ -7,6 +7,8 @@
 (ns common-tests.logic.variants-test
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.geom.point :as gpt]
+   [app.common.logic.libraries :as cll]
    [app.common.logic.variant-properties :as clvp]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.files :as thf]
@@ -192,3 +194,43 @@
     ;; ==== Check
     (t/is (= (-> comp01' :variant-properties first :value) "NewValue1"))
     (t/is (= (-> comp02' :variant-properties first :value) "NewValue2"))))
+
+
+(t/deftest test-duplicate-variant-container
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        data    (:data file)
+        page    (thf/current-page file)
+        objects (:objects page)
+
+        variant-container (ths/get-shape file :v01)
+
+
+
+
+        ;; ==== Action
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (cll/generate-duplicate-changes objects                    ;; objects
+                                                    page                       ;; page
+                                                    #{(:id variant-container)} ;; ids
+                                                    (gpt/point 0 0)            ;; delta
+                                                    {(:id  file) file}         ;; libraries
+                                                    (:data file)               ;; library-data
+                                                    (:id file)))               ;; file-id
+
+        ;; ==== Get
+        file'   (thf/apply-changes file changes)
+        data'   (:data file')
+        page'   (thf/current-page file')
+        objects' (:objects page')]
+
+     ;; ==== Check
+    (thf/validate-file! file')
+    (t/is (= (count (:components data)) 2))
+    (t/is (= (count (:components data')) 4))
+    (t/is (= (count objects) 4))
+    (t/is (= (count objects') 7))))
