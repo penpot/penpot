@@ -182,10 +182,8 @@
        (= (:component-file shape) file-id)))
 
 (defn is-main-of?
-  [shape-main shape-inst components-v2]
-  (or (= (:shape-ref shape-inst) (:id shape-main))
-      (and (= (:shape-ref shape-inst) (:shape-ref shape-main))
-           (not components-v2))))
+  [shape-main shape-inst]
+  (= (:shape-ref shape-inst) (:id shape-main)))
 
 (defn main-instance?
   "Check if this shape is the root of the main instance of some

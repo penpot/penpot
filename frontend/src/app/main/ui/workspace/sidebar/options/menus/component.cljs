@@ -679,7 +679,7 @@
          (fn []
            (swap! state* update :render inc)))
 
-        menu-entries (cmm/generate-components-menu-entries shapes true)
+        menu-entries (cmm/generate-components-menu-entries shapes)
         show-menu?   (seq menu-entries)
         path         (->> component (:path) (cfh/split-path) (cfh/join-path-with-dot))]
 
