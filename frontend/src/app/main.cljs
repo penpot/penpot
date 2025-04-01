@@ -15,7 +15,6 @@
    [app.main.data.profile :as dp]
    [app.main.data.websocket :as ws]
    [app.main.errors]
-   [app.main.features :as feat]
    [app.main.rasterizer :as thr]
    [app.main.store :as st]
    [app.main.ui :as ui]
@@ -67,7 +66,6 @@
     (watch [_ _ stream]
       (rx/merge
        (rx/of (ev/initialize)
-              (feat/initialize)
               (dp/refresh-profile))
 
        ;; Watch for profile deletion events
