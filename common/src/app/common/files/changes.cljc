@@ -352,7 +352,8 @@
      [:map {:title "RestoreComponentChange"}
       [:type [:= :restore-component]]
       [:id ::sm/uuid]
-      [:page-id ::sm/uuid]]]
+      [:page-id ::sm/uuid]
+      [:parent-id {:optional true} [:maybe ::sm/uuid]]]]
 
     [:purge-component
      [:map {:title "PurgeComponentChange"}
