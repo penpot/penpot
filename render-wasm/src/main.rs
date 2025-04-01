@@ -95,11 +95,24 @@ pub extern "C" fn render(timestamp: i32) {
 
 #[no_mangle]
 pub extern "C" fn process_animation_frame(timestamp: i32) {
-    with_state!(state, {
-        state
-            .process_animation_frame(timestamp)
-            .expect("Error processing animation frame");
+    let result = std::panic::catch_unwind(|| {
+        with_state!(state, {
+            state
+                .process_animation_frame(timestamp)
+                .expect("Error processing animation frame");
+        });
     });
+
+    match result {
+        Ok(_) => {}
+        Err(err) => {
+            match err.downcast_ref::<String>() {
+                Some(message) => println!("process_animation_frame error: {}", message),
+                None => println!("process_animation_frame error: {:?}", err),
+            }
+            std::panic::resume_unwind(err);
+        }
+    }
 }
 
 #[no_mangle]
