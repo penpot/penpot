@@ -103,7 +103,7 @@
     "@penpot/draft-js": "portal:./vendor/draft-js",
     "@penpot/hljs": "portal:./vendor/hljs",
     "@penpot/mousetrap": "portal:./vendor/mousetrap",
-    "@penpot/svgo": "penpot/svgo#c6fba7a4dcfbc27b643e7fc0c94fc98cf680b77b",
+    "@penpot/svgo": "penpot/svgo#v3.1",
     "@penpot/text-editor": "portal:./text-editor",
     "@tokens-studio/sd-transforms": "^0.16.1",
     "compression": "^1.7.5",
