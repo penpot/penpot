@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.main.constants :refer [max-input-length]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -93,6 +94,7 @@
          :default-value value
          :on-key-up on-key-up
          :on-double-click on-dbl-click
+         :max-length max-input-length
          :on-blur cancel-edition}]
 
        [:span {:class (stl/css :editable-label-close)

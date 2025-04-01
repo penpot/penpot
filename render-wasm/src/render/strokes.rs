@@ -451,7 +451,13 @@ fn draw_image_stroke_in_container(
     // Compute scaled rect and clip to it
     let dest_rect = calculate_scaled_rect(size, container, stroke.delta());
     canvas.clip_rect(dest_rect, skia::ClipOp::Intersect, antialias);
-    canvas.draw_image_rect(image.unwrap(), None, dest_rect, &image_paint);
+    canvas.draw_image_rect_with_sampling_options(
+        image.unwrap(),
+        None,
+        dest_rect,
+        render_state.sampling_options,
+        &image_paint,
+    );
 
     // Clear outer stroke for paths if necessary. When adding an outer stroke we need to empty the stroke added too in the inner area.
     if let Type::Path(p) = &shape.shape_type {

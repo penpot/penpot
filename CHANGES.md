@@ -55,9 +55,13 @@
 - Fix problem with constraints when creating group [Taiga #10455](https://tree.taiga.io/project/penpot/issue/10455)
 - Fix opening pen with shortcut multiple times breaks toolbar [Taiga #10566](https://tree.taiga.io/project/penpot/issue/10566)
 - Fix actions when workspace is visited first time [Taiga #10548](https://tree.taiga.io/project/penpot/issue/10548)
+- Chat icon overlaps "Show" button in carrousel section [Taiga #10542](https://tree.taiga.io/project/penpot/issue/10542)
+- Fix assets name on inspect tab [Taiga #10630](https://tree.taiga.io/project/penpot/issue/10630)
 - Fix chat icon overlaps "Show" button in carrousel section [Taiga #10542](https://tree.taiga.io/project/penpot/issue/10542)
 - Fix incorrect handling of background task result (now task rows are properly marked as completed)
-
+- Fix available size of resize handler [Taiga #10639](https://tree.taiga.io/project/penpot/issue/10639)
+- Internal error when install a plugin by penpothub - Try plugin [Taiga #10542](https://tree.taiga.io/project/penpot/issue/10542)
+- Add character limitation to asset inputs [Taiga #10669](https://tree.taiga.io/project/penpot/issue/10669)
 
 ## 2.5.4
 
@@ -73,7 +77,6 @@
   methods (add missing team-id prop)
 - Fix problem with viewer role and inspect mode [Taiga #9751](https://tree.taiga.io/project/penpot/issue/9751)
 - Fix error when clicking on a comment at the viewer's sidebar [Taiga #10465](https://tree.taiga.io/project/penpot/issue/10465)
-- Internal error when install a plugin by penpothub - Try plugin [Taiga #10542](https://tree.taiga.io/project/penpot/issue/10542)
 
 ## 2.5.3
 

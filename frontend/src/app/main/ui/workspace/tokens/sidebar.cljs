@@ -40,6 +40,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]
@@ -319,8 +320,7 @@
 
     [:*
      [:& token-context-menu]
-     [:& title-bar {:all-clickable true
-                    :title (tr "workspace.token.tokens-section-title" selected-token-set-name)}]
+     [:span {:class (stl/css :sets-header)} (tr "workspace.token.tokens-section-title" selected-token-set-name)]
 
      (for [type filled-group]
        (let [tokens (get tokens-by-type type)]
@@ -368,9 +368,10 @@
          (fn [event]
            (let [file (-> (dom/get-target event)
                           (dom/get-files)
-                          (first))]
+                          (first))
+                 file-name (str/replace (.-name file) ".json" "")]
              (->> (wapi/read-file-as-text file)
-                  (sd/process-json-stream)
+                  (sd/process-json-stream {:file-name file-name})
                   (rx/subs! (fn [lib]
                               (st/emit! (ptk/data-event ::ev/event {::ev/name "import-tokens"})
                                         (dt/import-tokens-lib lib)))
@@ -439,6 +440,7 @@
       [:div {:class (stl/css :resize-area-horiz)
              :on-pointer-down on-pointer-down-pages
              :on-lost-pointer-capture on-lost-pointer-capture-pages
-             :on-pointer-move on-pointer-move-pages}]
+             :on-pointer-move on-pointer-move-pages}
+       [:div {:class (stl/css :resize-handle-horiz)}]]
       [:> tokens-section* {:tokens-lib tokens-lib}]]
      [:> import-export-button*]]))

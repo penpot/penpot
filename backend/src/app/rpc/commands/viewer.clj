@@ -78,7 +78,10 @@
                   :always
                   (update :data select-keys [:id :options :pages :pages-index :components]))
 
-        libs    (files/get-file-libraries conn file-id)
+        libs    (->> (files/get-file-libraries conn file-id)
+                     (mapv (fn [{:keys [id] :as lib}]
+                             (merge lib (files/get-file cfg id)))))
+
         links   (->> (db/query conn :share-link {:file-id file-id})
                      (mapv (fn [row]
                              (-> row

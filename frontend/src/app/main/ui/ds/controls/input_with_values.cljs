@@ -16,9 +16,8 @@
 (def ^:private schema:input-with-values
   [:map
    [:name :string]
-   [:values :string]
+   [:values {:optional true} :string]
    [:on-blur {:optional true} fn?]])
-
 
 (mf/defc input-with-values*
   {::mf/props :obj
@@ -26,15 +25,19 @@
   [{:keys [name values on-blur] :rest props}]
   (let [editing*  (mf/use-state false)
         editing?  (deref editing*)
+
         input-ref (mf/use-ref)
         input     (mf/ref-val input-ref)
-        title     (str name ": " values)
+
+        title     (if values (str name ": " values) name)
+
         on-edit
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
            (reset! editing* true)
            (dom/focus! input)))
+
         on-stop-edit
         (mf/use-fn
          (mf/deps on-blur)
@@ -43,6 +46,7 @@
            (reset! editing* false)
            (when on-blur
              (on-blur event))))
+
         on-focus
         (mf/use-fn
          (fn [event]
@@ -70,6 +74,8 @@
       [:div {:class (stl/css :input-with-values-edit-container)}
        [:> input* props]]
       [:div {:class (stl/css :input-with-values-container :input-with-values-grid)
-             :title title :on-click on-edit}
-       [:span {:class (stl/css :input-with-values-name)}  name]
-       [:span {:class (stl/css :input-with-values-values)} values]])))
+             :title title
+             :on-click on-edit}
+       [:span {:class (stl/css :input-with-values-name)} name]
+       (when values
+         [:span {:class (stl/css :input-with-values-values)} values])])))
