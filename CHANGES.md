@@ -61,7 +61,7 @@
 - Fix incorrect handling of background task result (now task rows are properly marked as completed)
 - Fix available size of resize handler [Taiga #10639](https://tree.taiga.io/project/penpot/issue/10639)
 - Internal error when install a plugin by penpothub - Try plugin [Taiga #10542](https://tree.taiga.io/project/penpot/issue/10542)
-
+- Add character limitation to asset inputs [Taiga #10669](https://tree.taiga.io/project/penpot/issue/10669)
 
 ## 2.5.4
 
