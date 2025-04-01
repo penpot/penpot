@@ -7,7 +7,9 @@
 (ns app.main.ui.workspace.tokens.components.controls.input-tokens
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.constants :refer [max-input-length]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [rumext.v2 :as mf]))
 
@@ -18,6 +20,7 @@
    [:placeholder {:optional true} :string]
    [:default-value {:optional true} [:maybe :string]]
    [:class {:optional true} :string]
+   [:max-length {:optional true} :int]
    [:error {:optional true} :boolean]
    [:value {:optional true} :string]])
 
@@ -25,12 +28,13 @@
   {::mf/props :obj
    ::mf/forward-ref true
    ::mf/schema schema::input-tokens}
-  [{:keys [class label id error value children] :rest props} ref]
+  [{:keys [class label id max-length error value children] :rest props} ref]
   (let [ref   (or ref (mf/use-ref))
         props (mf/spread-props props {:id id
                                       :type "text"
                                       :class (stl/css :input)
                                       :aria-invalid error
+                                      :max-length (d/nilv max-length max-input-length)
                                       :value value
                                       :ref ref})]
     [:div {:class (dm/str class " " (stl/css-case :wrapper true

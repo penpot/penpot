@@ -110,7 +110,9 @@
             [:div {:class (stl/css :resize-area-horiz)
                    :on-pointer-down on-pointer-down-pages
                    :on-lost-pointer-capture on-lost-pointer-capture-pages
-                   :on-pointer-move on-pointer-move-pages}])
+                   :on-pointer-move on-pointer-move-pages}
+
+             [:div {:class (stl/css :resize-handle-horiz)}]])
 
           [:& layers-toolbox {:size-parent size
                               :size size-pages}]])

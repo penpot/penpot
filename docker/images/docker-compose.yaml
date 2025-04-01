@@ -52,7 +52,7 @@ services:
   ## penpot to the internet, or a different host than `localhost`.
 
   # traefik:
-  #   image: traefik:v2.9
+  #   image: traefik:v3.3
   #   networks:
   #     - penpot
   #   command:
@@ -88,28 +88,15 @@ services:
       - penpot
 
     labels:
-      - "traefik.enable=true"
+      # - "traefik.enable=true"
 
-      ## HTTP: example of labels for the case where penpot will be exposed to the
-      ## internet with only HTTP (without HTTPS) using traefik.
+      # ## HTTPS: example of labels for the case where penpot will be exposed to the
+      # ## internet with HTTPS using traefik.
 
-      # - "traefik.http.routers.penpot-http.entrypoints=web"
-      # - "traefik.http.routers.penpot-http.rule=Host(`<DOMAIN_NAME>`)"
-      # - "traefik.http.services.penpot-http.loadbalancer.server.port=80"
-
-      ## HTTPS: example of labels for the case where penpot will be exposed to the
-      ## internet with HTTPS using traefik.
-
-      # - "traefik.http.middlewares.http-redirect.redirectscheme.scheme=https"
-      # - "traefik.http.middlewares.http-redirect.redirectscheme.permanent=true"
-      # - "traefik.http.routers.penpot-http.entrypoints=web"
-      # - "traefik.http.routers.penpot-http.rule=Host(`<DOMAIN_NAME>`)"
-      # - "traefik.http.routers.penpot-http.middlewares=http-redirect"
-      # - "traefik.http.routers.penpot-https.entrypoints=websecure"
       # - "traefik.http.routers.penpot-https.rule=Host(`<DOMAIN_NAME>`)"
-      # - "traefik.http.services.penpot-https.loadbalancer.server.port=80"
-      # - "traefik.http.routers.penpot-https.tls=true"
+      # - "traefik.http.routers.penpot-https.entrypoints=websecure"
       # - "traefik.http.routers.penpot-https.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.penpot-https.tls=true"
 
     environment:
       << : [*penpot-flags, *penpot-http-body-size]
@@ -130,8 +117,7 @@ services:
     networks:
       - penpot
 
-    ## Configuration envronment variables for the backend
-    ## container.
+    ## Configuration envronment variables for the backend container.
 
     environment:
       << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size]

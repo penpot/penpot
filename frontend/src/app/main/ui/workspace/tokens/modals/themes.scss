@@ -32,8 +32,8 @@
 }
 
 .themes-modal-wrapper {
-  display: grid;
-  grid-template-rows: 0fr minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: $s-16;
   max-height: $s-688;
 }
@@ -120,6 +120,15 @@
   gap: $s-4;
 }
 
+.group-title-icon {
+  flex-shrink: 0;
+}
+
+.group-title-name {
+  flex-grow: 1;
+  @include textEllipsis;
+}
+
 .theme-group-rows-wrapper {
   display: flex;
   flex-direction: column;
@@ -136,26 +145,26 @@
 }
 
 .theme-row {
-  display: flex;
   align-items: center;
-  gap: $s-12;
+  display: flex;
   justify-content: space-between;
+  gap: $s-16;
 }
 
-.theme-row-left {
-  display: flex;
-  align-items: center;
-  gap: $s-16;
+.theme-name-row {
+  @include textEllipsis;
+  flex-grow: 1;
 }
 
 .theme-name {
   color: var(--color-foreground-primary);
 }
 
-.theme-row-right {
-  display: flex;
+.theme-actions-row {
   align-items: center;
+  display: flex;
   gap: $s-6;
+  flex-shrink: 0;
 }
 
 .sets-count-button {

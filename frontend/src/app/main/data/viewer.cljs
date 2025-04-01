@@ -189,6 +189,8 @@
               (assoc :share-links share-links)
               (assoc :current-team-id team-id)
               (assoc :teams {team-id team})
+              (assoc :files (-> (d/index-by :id libraries)
+                                (assoc (:id file) file)))
               (assoc :viewer {:libraries (d/index-by :id libraries)
                               :users (d/index-by :id users)
                               :permissions permissions

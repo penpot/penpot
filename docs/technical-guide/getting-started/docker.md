@@ -200,6 +200,8 @@ server {
 }
 ```
 
+For full documentation, go to the [official website][2]
+
 ### Example with CADDY SERVER
 
 ```bash
@@ -212,4 +214,15 @@ penpot.mycompany.com {
 }
 ```
 
+For full documentation, go to the [official website][3]
+
+### Example with TRAEFIK
+
+In the [Penpot's docker-compose.yaml][4] file, there is a simple example with Traefik.
+For full documentation, go to the [official website][5]
+
 [1]: /technical-guide/configuration/
+[2]: https://nginx.org/en/docs/index.html
+[3]: https://caddyserver.com/docs/
+[4]: https://github.com/penpot/penpot/blob/develop/docker/images/docker-compose.yaml
+[5]: https://doc.traefik.io/traefik/

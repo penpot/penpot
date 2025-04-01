@@ -245,6 +245,9 @@ export class WorkspacePage extends BaseWebSocketPage {
   async clickAssets(clickOptions = {}) {
     await this.sidebar.getByText("Assets").click(clickOptions);
   }
+  async clickLayers(clickOptions = {}) {
+    await this.sidebar.getByText("Layers").click(clickOptions);
+  }
 
   async openLibrariesModal(clickOptions = {}) {
     await this.sidebar.getByTestId("libraries").click(clickOptions);

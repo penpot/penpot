@@ -41,7 +41,7 @@
                      :sub-item grouped?
                      :is-selected selected?)
              :on-click select-theme}
-        [:> text* {:as "span" :typography "body-small" :class (stl/css :label)} name]
+        [:> text* {:as "span" :typography "body-small" :class (stl/css :label) :title name} name]
         [:> icon* {:icon-id i/tick
                    :aria-hidden true
                    :class (stl/css-case :check-icon true
@@ -58,7 +58,7 @@
                :aria-labelledby (dm/str group "-label")
                :role "group"}
           (when (seq group)
-            [:> text* {:as "span" :typography "headline-small" :class (stl/css :group) :id (dm/str group "-label")} group])
+            [:> text* {:as "span" :typography "headline-small" :class (stl/css :group) :id (dm/str (str/kebab group) "-label") :title group} group])
           [:& themes-list {:themes themes
                            :active-theme-paths active-theme-paths
                            :on-close on-close

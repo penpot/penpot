@@ -94,6 +94,7 @@
       :type "text"
       :on-blur on-submit
       :on-key-down on-key-down
+      :maxlength "256"
       :auto-focus true
       :placeholder (tr "workspace.token.set-edit-placeholder")
       :default-value default-value}]))
@@ -226,6 +227,7 @@
          :on-submit on-edit-submit'}]
        [:*
         [:div {:class (stl/css :set-name)
+               :title label
                :on-double-click on-double-click
                :id label-id}
          label]
@@ -498,7 +500,7 @@
            (when (fn? on-start-edition)
              (on-start-edition v))))]
 
-    [:fieldset {:class (stl/css :sets-list)}
+    [:div {:class (stl/css :sets-list)}
      (if ^boolean empty-state?
        [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message-sets)}
         (tr "workspace.token.no-sets-create")]

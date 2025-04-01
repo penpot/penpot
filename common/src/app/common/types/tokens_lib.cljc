@@ -665,20 +665,20 @@
      ["$value" :map]
      ["$type" :string]]]))
 
-(defn has-legacy-format?
+(defn get-json-format
   "Searches through parsed token file and returns:
-   - true when first node satisfies `legacy-node?` predicate
-   - false when first node satisfies `dtcg-node?` predicate
-   - nil if neither combination is found"
+   - `:json-format/legacy` when first node satisfies `legacy-node?` predicate
+   - `:json-format/dtcg` when first node satisfies `dtcg-node?` predicate
+   - `nil` if neither combination is found"
   ([data]
-   (has-legacy-format? data legacy-node? dtcg-node?))
+   (get-json-format data legacy-node? dtcg-node?))
   ([data legacy-node? dtcg-node?]
    (let [branch? map?
          children (fn [node] (vals node))
          check-node (fn [node]
                       (cond
-                        (legacy-node? node) true
-                        (dtcg-node? node) false
+                        (legacy-node? node) :json-format/legacy
+                        (dtcg-node? node) :json-format/dtcg
                         :else nil))
          walk (fn walk [node]
                 (lazy-seq
@@ -689,6 +689,10 @@
      (->> (walk data)
           (filter some?)
           first))))
+
+(defn single-set? [data]
+  (and (not (contains? data "$metadata"))
+       (not (contains? data "$themes"))))
 
 ;; DEPRECATED
 (defn walk-sets-tree-seq
@@ -826,6 +830,24 @@
 
 (declare make-tokens-lib)
 
+(defn- legacy-nodes->dtcg-nodes [sets-data]
+  (walk/postwalk
+   (fn [node]
+     (cond-> node
+       (and (map? node)
+            (contains? node "value")
+            (sequential? (get node "value")))
+       (update "value"
+               (fn [seq-value]
+                 (map #(set/rename-keys % {"type" "$type"}) seq-value)))
+
+       (and (map? node)
+            (and (contains? node "type")
+                 (contains? node "value")))
+       (set/rename-keys  {"value" "$value"
+                          "type" "$type"})))
+   sets-data))
+
 (defprotocol ITokensLib
   "A library of tokens, sets and themes."
   (set-path-exists? [_ path] "if a set at `path` exists")
@@ -844,6 +866,8 @@ Will return a value that matches this schema:
   (get-active-themes-set-tokens [_] "set of set names that are active in the the active themes")
   (encode-dtcg [_] "Encodes library to a dtcg compatible json string")
   (decode-dtcg-json [_ parsed-json] "Decodes parsed json containing tokens and converts to library")
+  (decode-single-set-json [_ set-name tokens] "Decodes parsed json containing single token set and converts to library")
+  (decode-single-set-legacy-json [_ set-name tokens] "Decodes parsed legacy json containing single token set and converts to library")
   (decode-legacy-json [_ parsed-json] "Decodes parsed legacy json containing tokens and converts to library")
   (get-all-tokens [_] "all tokens in the lib")
   (validate [_]))
@@ -1287,6 +1311,17 @@ Will return a value that matches this schema:
           (assoc-in ["$metadata" "activeThemes"] active-themes-clear)
           (assoc-in ["$metadata" "activeSets"] active-sets))))
 
+  (decode-single-set-json [this set-name tokens]
+    (assert (map? tokens) "expected a map data structure for `data`")
+
+    (add-set this (make-token-set :name (normalize-set-name set-name)
+                                  :tokens (flatten-nested-tokens-json tokens ""))))
+
+
+  (decode-single-set-legacy-json [this set-name tokens]
+    (assert (map? tokens) "expected a map data structure for `data`")
+    (decode-single-set-json this set-name (legacy-nodes->dtcg-nodes tokens)))
+
   (decode-dtcg-json [_ data]
     (assert (map? data) "expected a map data structure for `data`")
 
@@ -1370,22 +1405,7 @@ Will return a value that matches this schema:
   (decode-legacy-json [this parsed-legacy-json]
     (let [other-data (select-keys parsed-legacy-json ["$themes" "$metadata"])
           sets-data (dissoc parsed-legacy-json "$themes" "$metadata")
-          dtcg-sets-data (walk/postwalk
-                          (fn [node]
-                            (cond-> node
-                              (and (map? node)
-                                   (contains? node "value")
-                                   (sequential? (get node "value")))
-                              (update "value"
-                                      (fn [seq-value]
-                                        (map #(set/rename-keys % {"type" "$type"}) seq-value)))
-
-                              (and (map? node)
-                                   (and (contains? node "type")
-                                        (contains? node "value")))
-                              (set/rename-keys  {"value" "$value"
-                                                 "type" "$type"})))
-                          sets-data)]
+          dtcg-sets-data (legacy-nodes->dtcg-nodes sets-data)]
       (decode-dtcg-json this (merge other-data
                                     dtcg-sets-data))))
   (get-all-tokens [this]

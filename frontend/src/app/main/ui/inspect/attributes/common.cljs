@@ -32,16 +32,11 @@
           (get-in state [libraries-place file-id :data :colors]))]
     (l/derived get-library st/state)))
 
-(defn- get-colors-library [color]
-  (let [colors-library-v  (-> (mf/use-memo
-                               (mf/deps (:file-id color))
-                               #(make-colors-library-ref :viewer-libraries (:file-id color)))
-                              mf/deref)
-        colors-library-ws (-> (mf/use-memo
-                               (mf/deps (:file-id color))
-                               #(make-colors-library-ref :libraries (:file-id color)))
-                              mf/deref)]
-    (or colors-library-v colors-library-ws)))
+(defn- use-colors-library [color]
+  (-> (mf/use-memo
+       (mf/deps (:file-id color))
+       #(make-colors-library-ref :files (:file-id color)))
+      mf/deref))
 
 (defn- get-file-colors []
   (or (mf/deref file-colors-ref) (mf/deref refs/workspace-file-colors)))
@@ -54,7 +49,7 @@
     (str/capital $)))
 
 (mf/defc color-row [{:keys [color format copy-data on-change-format]}]
-  (let [colors-library     (get-colors-library color)
+  (let [colors-library     (use-colors-library color)
         file-colors        (get-file-colors)
         color-library-name (get-in (or colors-library file-colors) [(:id color) :name])
         color              (assoc color :color-library-name color-library-name)
@@ -85,7 +80,8 @@
 
             (when color-library-name
               [:div {:class (stl/css :second-row)}
-               [:div {:class (stl/css :color-name-library)}
+               [:div {:class (stl/css :color-name-library)
+                      :data-testid "color-library-name"}
                 color-library-name]])]]
 
           [:div {:class (stl/css :image-download)}
@@ -146,6 +142,7 @@
 
         (when color-library-name
           [:div {:class (stl/css :second-row)}
-           [:div {:class (stl/css :color-name-library)}
+           [:div {:class (stl/css :color-name-library)
+                  :data-testid "color-library-name"}
             color-library-name]])]])))
 

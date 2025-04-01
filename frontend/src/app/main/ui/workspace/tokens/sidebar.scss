@@ -38,12 +38,17 @@
   padding-block-end: $s-16;
 }
 
-.themes-header {
+.themes-header,
+.sets-header {
   @include use-typography("headline-small");
   display: block;
-  margin-bottom: $s-8;
-  padding-left: $s-8;
+  padding: $s-8;
   color: var(--title-foreground-color);
+  word-break: break-word;
+}
+
+.sets-header {
+  margin-block-start: $s-8;
 }
 
 .themes-wrapper {
@@ -170,6 +175,12 @@
   position: absolute;
   left: 0;
   width: 100%;
+  padding: $s-3 0 $s-1 0;
+  height: $s-6;
+  cursor: ns-resize;
+}
+
+.resize-handle-horiz {
   border-bottom: $s-2 solid var(--resize-area-border-color);
   cursor: ns-resize;
 }

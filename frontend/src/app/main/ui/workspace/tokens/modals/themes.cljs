@@ -106,9 +106,9 @@
            [:> heading* {:level 3
                          :class (stl/css :theme-group-label)
                          :typography "body-large"}
-            [:span {:class (stl/css :group-title) :title (tr "workspace.token.group-name")}
-             [:> icon* {:icon-id "group"}]
-             group]])
+            [:div {:class (stl/css :group-title) :title (str (tr "workspace.token.group-name") ": " group)}
+             [:> icon* {:icon-id "group" :class (stl/css :group-title-icon)}]
+             [:> text* {:as "span" :typography "body-medium" :class (stl/css :group-title-name)} group]]])
          [:ul {:class (stl/css :theme-group-rows-wrapper)}
           (for [[_ {:keys [group name] :as theme}] themes
                 :let [theme-id (ctob/theme-path theme)
@@ -126,7 +126,7 @@
                                             :theme-path [(:id theme) (:group theme) (:name theme)]})))]]
             [:li {:key theme-id
                   :class (stl/css :theme-row)}
-             [:div {:class (stl/css :theme-row-left)}
+             [:div {:class (stl/css :theme-switch-row)}
 
               ;; FIXME: FIREEEEEEEEEE THIS
               [:div {:on-click (fn [e]
@@ -135,11 +135,12 @@
                                  (st/emit! (wdt/toggle-token-theme-active? group name)))}
                [:& switch {:name (tr "workspace.token.theme-name" name)
                            :on-change (constantly nil)
-                           :selected? selected?}]]
-              [:> text* {:as "span"  :typography "body-medium" :class (stl/css :theme-name)} name]]
+                           :selected? selected?}]]]
+             [:div {:class (stl/css :theme-name-row)}
+              [:> text* {:as "span"  :typography "body-medium" :class (stl/css :theme-name) :title name} name]]
 
 
-             [:div {:class (stl/css :theme-row-right)}
+             [:div {:class (stl/css :theme-actions-row)}
               (let [sets-count (some-> theme :sets seq count)]
                 [:> button* {:class (stl/css-case :sets-count-button sets-count
                                                   :sets-count-empty-button (not sets-count))
@@ -205,6 +206,7 @@
       [:> input-tokens* {:id "theme-input"
                          :label (tr "workspace.token.label.theme")
                          :type "text"
+                         :max-length 256
                          :placeholder (tr "workspace.token.label.theme-placeholder")
                          :on-change on-update-name
                          :value (mf/ref-val theme-name-ref)

@@ -6,6 +6,7 @@
    [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
@@ -249,33 +250,51 @@
            (= header-2 "Reference Errors:"))
       errors)))
 
-(defn process-json-stream [data-stream]
-  (->> data-stream
-       (rx/map (fn [data]
-                 (try
-                   (t/decode-str data)
-                   (catch js/Error e
-                     (throw (wte/error-ex-info :error.import/json-parse-error data e))))))
-       (rx/map (fn [json-data]
-                 (try
-                   (if-not (ctob/has-legacy-format? json-data)
-                     (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data)
-                     (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data))
-                   (catch js/Error e
-                     (throw (wte/error-ex-info :error.import/invalid-json-data json-data e))))))
-       (rx/mapcat (fn [tokens-lib]
+(defn process-json-stream
+  ([data-stream]
+   (process-json-stream nil data-stream))
+  ([params data-stream]
+   (let [{:keys [file-name]} params]
+     (->> data-stream
+          (rx/map (fn [data]
                     (try
-                      (-> (ctob/get-all-tokens tokens-lib)
-                          (resolve-tokens-with-errors+)
-                          (p/then (fn [_] tokens-lib))
-                          (p/catch (fn [sd-error]
-                                     (let [reference-errors (reference-errors sd-error)
-                                           err (if reference-errors
-                                                 (wte/error-ex-info :error.import/style-dictionary-reference-errors reference-errors sd-error)
-                                                 (wte/error-ex-info :error.import/style-dictionary-unknown-error sd-error sd-error))]
-                                       (throw err)))))
+                      (t/decode-str data)
                       (catch js/Error e
-                        (p/rejected (wte/error-ex-info :error.import/style-dictionary-unknown-error "" e))))))))
+                        (throw (wte/error-ex-info :error.import/json-parse-error data e))))))
+          (rx/map (fn [json-data]
+                    (let [single-set? (ctob/single-set? json-data)
+                          json-format (ctob/get-json-format json-data)]
+                      (try
+                        (cond
+                          (and single-set?
+                               (= :json-format/legacy json-format))
+                          (ctob/decode-single-set-legacy-json (ctob/ensure-tokens-lib (deref refs/tokens-lib)) file-name json-data)
+
+                          (and single-set?
+                               (= :json-format/dtcg json-format))
+                          (ctob/decode-single-set-json (ctob/ensure-tokens-lib (deref refs/tokens-lib)) file-name json-data)
+
+                          (= :json-format/legacy json-format)
+                          (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data)
+
+                          :else
+                          (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data))
+
+                        (catch js/Error e
+                          (throw (wte/error-ex-info :error.import/invalid-json-data json-data e)))))))
+          (rx/mapcat (fn [tokens-lib]
+                       (try
+                         (-> (ctob/get-all-tokens tokens-lib)
+                             (resolve-tokens-with-errors+)
+                             (p/then (fn [_] tokens-lib))
+                             (p/catch (fn [sd-error]
+                                        (let [reference-errors (reference-errors sd-error)
+                                              err (if reference-errors
+                                                    (wte/error-ex-info :error.import/style-dictionary-reference-errors reference-errors sd-error)
+                                                    (wte/error-ex-info :error.import/style-dictionary-unknown-error sd-error sd-error))]
+                                          (throw err)))))
+                         (catch js/Error e
+                           (p/rejected (wte/error-ex-info :error.import/style-dictionary-unknown-error "" e))))))))))
 
 ;; === Errors
 
