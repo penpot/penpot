@@ -13,7 +13,6 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.helpers :as dsh]
-   [app.main.features :as features]
    [app.main.worker :as uw]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
@@ -182,8 +181,8 @@
       (let [file-id     (or file-id (:current-file-id state))
             uchg        (vec undo-changes)
             rchg        (vec redo-changes)
-            features    (features/get-team-enabled-features state)
-            permissions (:permissions state)]
+            features    (get state :features)
+            permissions (get state :permissions)]
 
         ;; Prevent commit changes by a viewer team member (it really should never happen)
         (when (:can-edit permissions)

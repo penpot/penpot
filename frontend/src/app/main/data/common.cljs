@@ -16,7 +16,6 @@
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as-alias dps]
-   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -107,7 +106,7 @@
   (ptk/reify ::show-shared-dialog
     ptk/WatchEvent
     (watch [_ state _]
-      (let [features (features/get-team-enabled-features state)
+      (let [features (get state :features)
             file     (dsh/lookup-file state)
             data     (get file :data)]
 
@@ -164,8 +163,8 @@
   (ptk/reify ::export-files
     ptk/WatchEvent
     (watch [_ state _]
-      (let [features (features/get-team-enabled-features state)
-            team-id  (:current-team-id state)]
+      (let [features (get state :features)
+            team-id  (get state :current-team-id)]
         (->> (rx/from files)
              (rx/mapcat
               (fn [file]

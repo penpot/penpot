@@ -184,7 +184,7 @@
       ptk/UpdateEvent
       (update [_ state]
         (let [team-id (:id team)
-              team    {:members users}]
+              team    (assoc team :members users)]
           (-> state
               (assoc :share-links share-links)
               (assoc :current-team-id team-id)

@@ -25,7 +25,6 @@
   (let [claims (-> {}
                    (into (::session/token-claims request))
                    (into (::actoken/token-claims request)))]
-
     {:request/path       (:path request)
      :request/method     (:method request)
      :request/params     (:params request)

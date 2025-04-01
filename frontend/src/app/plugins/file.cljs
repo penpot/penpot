@@ -13,7 +13,6 @@
    [app.main.data.exports.files :as exports.files]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.versions :as dwv]
-   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.worker :as uw]
@@ -237,7 +236,7 @@
 
              :else
              (let [file       (u/locate-file id)
-                   features   (features/get-team-enabled-features @st/state)
+                   features   (:features @st/state)
                    team-id    (:current-team-id @st/state)
                    format     (case format
                                 "zip"    :legacy-zip

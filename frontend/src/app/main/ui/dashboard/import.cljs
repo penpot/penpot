@@ -15,7 +15,6 @@
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.errors :as errors]
-   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.ds.product.loader :refer [loader*]]
@@ -162,29 +161,32 @@
 
 (defn- analyze-entries
   [state entries]
-  (->> (uw/ask-many!
-        {:cmd :analyze-import
-         :files entries
-         :features @features/features-ref})
-       (rx/mapcat #(rx/delay emit-delay (rx/of %)))
-       (rx/filter some?)
-       (rx/subs!
-        (fn [message]
-          (swap! state update-with-analyze-result message)))))
+  (let [features (get @st/state :features)]
+    (->> (uw/ask-many!
+          {:cmd :analyze-import
+           :files entries
+           :features features})
+         (rx/mapcat #(rx/delay emit-delay (rx/of %)))
+         (rx/filter some?)
+         (rx/subs!
+          (fn [message]
+            (swap! state update-with-analyze-result message))))))
 
 (defn- import-files
   [state project-id entries]
   (st/emit! (ptk/data-event ::ev/event {::ev/name "import-files"
                                         :num-files (count entries)}))
-  (->> (uw/ask-many!
-        {:cmd :import-files
-         :project-id project-id
-         :files entries
-         :features @features/features-ref})
-       (rx/filter (comp uuid? :file-id))
-       (rx/subs!
-        (fn [message]
-          (swap! state update-entry-status message)))))
+
+  (let [features (get @st/state :features)]
+    (->> (uw/ask-many!
+          {:cmd :import-files
+           :project-id project-id
+           :files entries
+           :features features})
+         (rx/filter (comp uuid? :file-id))
+         (rx/subs!
+          (fn [message]
+            (swap! state update-entry-status message))))))
 
 (mf/defc import-entry*
   {::mf/props :obj

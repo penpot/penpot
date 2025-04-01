@@ -1398,7 +1398,7 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [features (features/get-team-enabled-features state)]
+      (let [features (get state :features)]
         (rx/concat
          (rx/merge
           (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})

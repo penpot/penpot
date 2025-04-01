@@ -27,7 +27,6 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shortcuts]
    [app.main.errors :as errors]
-   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.debug :as dbg]
@@ -393,7 +392,7 @@
    (ptk/reify ::repair-current-file
      ptk/EffectEvent
      (effect [_ state _]
-       (let [features (features/get-team-enabled-features state)
+       (let [features (:features state)
              sid      (:session-id state)
 
              file     (dsh/lookup-file state)
@@ -430,7 +429,3 @@
 (defn ^:export set-shape-ref
   [id shape-ref]
   (st/emit! (dw/set-shape-ref id shape-ref)))
-
-(defn ^:export enable-text-v2
-  []
-  (st/emit! (features/enable-feature "text-editor/v2")))

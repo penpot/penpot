@@ -101,7 +101,7 @@
           (let [permissions (get team :permissions)
                 features    (get team :features)]
             (rx/of #(assoc % :permissions permissions)
-                   (features/initialize (or features #{}))
+                   (features/initialize features)
                    (fetch-members team-id))))))
 
     ptk/EffectEvent
@@ -255,12 +255,12 @@
   (dm/assert! (string? name))
   (ptk/reify ::create-team
     ptk/WatchEvent
-    (watch [it state _]
+    (watch [it _ _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
-            features (features/get-enabled-features state)
-            params {:name name :features features}]
+            features features/global-enabled-features
+            params   {:name name :features features}]
         (->> (rp/cmd! :create-team (with-meta params (meta it)))
              (rx/tap on-success)
              (rx/map team-created)
@@ -272,11 +272,11 @@
   [{:keys [name emails role] :as params}]
   (ptk/reify ::create-team-with-invitations
     ptk/WatchEvent
-    (watch [it state _]
+    (watch [it _ _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
-            features (features/get-enabled-features state)
+            features features/global-enabled-features
             params   {:name name
                       :emails emails
                       :role role
