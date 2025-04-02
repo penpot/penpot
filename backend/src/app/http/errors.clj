@@ -62,7 +62,8 @@
        ::yres/body data}
 
       (binding [l/*context* (request->context request)]
-        (l/err :hint "restriction error" :data data)
+        (l/err :hint "restriction error"
+               :cause err)
         {::yres/status 400
          ::yres/body data}))))
 
@@ -102,7 +103,7 @@
       (= code :invalid-image)
       (binding [l/*context* (request->context request)]
         (let [cause (or parent-cause err)]
-          (l/warn :hint "unexpected error on processing image" :cause cause)
+          (l/warn :hint "image process error" :cause cause)
           {::yres/status 400 ::yres/body data}))
 
       :else
@@ -177,7 +178,7 @@
   (let [state (.getSQLState ^java.sql.SQLException error)
         cause (or parent-cause error)]
     (binding [l/*context* (request->context request)]
-      (l/error :hint "PSQL error"
+      (l/error :hint "postgresql error"
                :cause cause)
       (cond
         (= state "57014")
