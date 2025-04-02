@@ -37,6 +37,7 @@
 .project-name,
 .file-name {
   @include uppercaseTitleTipography;
+  @include textEllipsis;
   height: $s-16;
   width: 100%;
   padding-bottom: $s-2;
