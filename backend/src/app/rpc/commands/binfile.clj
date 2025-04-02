@@ -38,7 +38,6 @@
 (def ^:private
   schema:export-binfile
   [:map {:title "export-binfile"}
-   [:name [:string {:max 250}]]
    [:file-id ::sm/uuid]
    [:version {:optional true} ::sm/int]
    [:include-libraries ::sm/boolean]
@@ -78,7 +77,7 @@
   "Export a penpot file in a binary format."
   {::doc/added "1.15"
    ::webhooks/event? true
-   ::sm/result schema:export-binfile}
+   ::sm/params schema:export-binfile}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id version file-id] :as params}]
   (files/check-read-permissions! pool profile-id file-id)
   (fn [_]

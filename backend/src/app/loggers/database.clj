@@ -53,11 +53,16 @@
                    (assoc :logger/name logger)
                    (assoc :logger/level level)
                    (dissoc :request/params :value :params :data))]
+
       (merge
        {:context (-> (into (sorted-map) ctx)
                      (pp/pprint-str :length 50))
         :props   (pp/pprint-str props :length 50)
-        :hint    (or (ex-message cause) @message)
+        :hint    (or (when-let [message (ex-message cause)]
+                       (if-let [props-hint (:hint props)]
+                         (str props-hint ": " message)
+                         message))
+                     @message)
         :trace   (or (::trace record)
                      (some-> cause (ex/format-throwable :data? false :explain? false :header? false :summary? false)))}
 
