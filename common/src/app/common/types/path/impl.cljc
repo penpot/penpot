@@ -7,9 +7,12 @@
 (ns app.common.types.path.impl
   "Contains schemas and data type implementation for PathData binary
   and plain formats"
+  #?(:cljs
+     (:require-macros [app.common.types.path.impl]))
   (:require
    #?(:clj [app.common.fressian :as fres])
    #?(:clj [clojure.data.json :as json])
+   #?(:cljs [app.common.weak-map :as weak-map])
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
@@ -29,7 +32,8 @@
   (-get-byte-size [_] "get byte size"))
 
 (defprotocol ITransformable
-  (-transform [_ m] "apply a transform"))
+  (-transform [_ m] "apply a transform")
+  (-walk [_ f]))
 
 (defn- transform!
   "Apply a transformation to a segment located under specified offset"
@@ -215,8 +219,28 @@
        (.set dst-view src-view)
        dst-buff)))
 
+(defmacro with-cache
+  "A helper macro that facilitates cache handling for content
+  instance"
+  [target key & expr]
+  (if (:ns &env)
+    (let [cache (gensym "cache-")
+          target (with-meta target {:tag 'js})]
+      `(let [~cache (.-cache ~target)
+             ~'result (.get ~cache ~key)]
+         (if ~'result
+           (do
+             ~'result)
+           (let [~'result (do ~@expr)]
+             (.set ~cache ~key ~'result)
+             ~'result))))
+    `(do ~@expr)))
+
+
 #?(:clj
-   (deftype PathData [size buffer ^:unsynchronized-mutable hash]
+   (deftype PathData [size
+                      ^ByteBuffer buffer
+                      ^:unsynchronized-mutable hash]
      Object
      (toString [_]
        (to-string buffer size))
@@ -235,6 +259,30 @@
                (transform! buffer offset m)
                (recur (inc index)))))
          (PathData. size buffer nil)))
+
+     (-walk [_ f]
+       (loop [index 0
+              result (transient [])]
+         (if (< index size)
+           (let [offset (* index SEGMENT-BYTE-SIZE)
+                 type   (.getShort ^ByteBuffer buffer offset)
+                 c1x    (.getFloat ^ByteBuffer buffer (+ offset 4))
+                 c1y    (.getFloat ^ByteBuffer buffer (+ offset 8))
+                 c2x    (.getFloat ^ByteBuffer buffer (+ offset 12))
+                 c2y    (.getFloat ^ByteBuffer buffer (+ offset 16))
+                 x      (.getFloat ^ByteBuffer buffer (+ offset 20))
+                 y      (.getFloat ^ByteBuffer buffer (+ offset 24))
+                 type   (case type
+                          1 :line-to
+                          2 :move-to
+                          3 :curve-to
+                          4 :close-path)
+                 res    (f type c1x c1y c2x c2y x y)]
+             (recur (inc index)
+                    (if (some? res)
+                      (conj! result res)
+                      result)))
+           (persistent! result))))
 
      json/JSONWriter
      (-write [this writter options]
@@ -290,7 +338,7 @@
 
    :cljs
    #_:clj-kondo/ignore
-   (deftype PathData [size buffer dview ^:mutable __hash]
+   (deftype PathData [size buffer dview cache ^:mutable __hash]
      Object
      (toString [_]
        (to-string dview size))
@@ -317,7 +365,33 @@
              (let [offset (* index SEGMENT-BYTE-SIZE)]
                (transform! dview offset m)
                (recur (inc index)))))
-         (PathData. size buffer dview nil)))
+         (PathData. size buffer dview (weak-map/create) nil)))
+
+     (-walk [_ f]
+       (let [farray (js/Float32Array. buffer)
+             iarray (js/Int32Array. buffer)]
+         (loop [index 0
+                result (transient [])]
+           (if (< index size)
+             (let [offset (* index SEGMENT-BYTE-SIZE)
+                   type   (.getInt16 dview offset)
+                   c1x    (.getFloat32 dview (+ offset 4))
+                   c1y    (.getFloat32 dview (+ offset 8))
+                   c2x    (.getFloat32 dview (+ offset 12))
+                   c2y    (.getFloat32 dview (+ offset 16))
+                   x      (.getFloat32 dview (+ offset 20))
+                   y      (.getFloat32 dview (+ offset 24))
+                   type   (case type
+                            1 :line-to
+                            2 :move-to
+                            3 :curve-to
+                            4 :close-path)
+                   res    (f type c1x c1y c2x c2y x y)]
+               (recur (inc index)
+                      (if (some? res)
+                        (conj! result res)
+                        result)))
+             (persistent! result)))))
 
      cljs.core/ISequential
      cljs.core/IEquiv
@@ -383,8 +457,11 @@
      cljs.core/ISeqable
      (-seq [this]
        (when (pos? size)
-         (->> (range size)
-              (map (fn [i] (cljs.core/-nth this i))))))
+         ((fn next-seq [i]
+            (when (< i size)
+              (cons (read-segment dview i)
+                    (lazy-seq (next-seq (inc i))))))
+          0)))
 
      cljs.core/IPrintWithWriter
      (-pr-writer [this writer _]
@@ -526,6 +603,7 @@
          (PathData. count
                     buffer
                     (js/DataView. buffer)
+                    (weak-map/create)
                     nil))
 
        (instance? js/DataView buffer)
@@ -533,7 +611,7 @@
              buffer (.-buffer dview)
              size  (.-byteLength buffer)
              count (long (/ size SEGMENT-BYTE-SIZE))]
-         (PathData. count buffer dview nil))
+         (PathData. count buffer dview (weak-map/create) nil))
 
        (instance? js/Uint8Array buffer)
        (from-bytes (.-buffer buffer))
