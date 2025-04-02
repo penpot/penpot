@@ -11,6 +11,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
+   [app.common.geom.point :as gpt]
    [app.common.logic.variant-properties :as clvp]
    [app.common.logic.variants :as clv]
    [app.common.types.component :as ctc]
@@ -248,6 +249,12 @@
                           :stroke-color "#bb97d8" ;; todo use color var?
                           :stroke-opacity 1
                           :stroke-width 2}
+
+            ;; Move the position of the variant container so the main shape doesn't
+            ;; change its position
+            delta        (if (ctsl/any-layout? parent)
+                           (gpt/point 0 0)
+                           (gpt/point -30 -30))
             undo-id      (js/Symbol)]
 
 
@@ -261,20 +268,13 @@
             (dwl/rename-component component-id name))
 
           ;; Create variant container
-          (dwsh/create-artboard-from-selection variant-id)
+          (dwsh/create-artboard-from-selection variant-id nil nil nil delta)
           (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
           (dwsl/create-layout-from-id variant-id :flex)
           (dwsh/update-shapes variant-vec #(merge % cont-props))
           (dwsh/update-shapes [main-instance-id] #(merge % main-props))
           (cl/add-stroke variant-vec stroke-props)
-          (set-variant-id component-id variant-id)
-
-          ;; Set the position of the variant container so the main shape doesn't
-          ;; change its position
-          (when-not (ctsl/any-layout? parent)
-            (dwt/update-position variant-id
-                                 {:x (- (:x main) 30) :y (- (:y main) 30)}
-                                 {:absolute? true})))
+          (set-variant-id component-id variant-id))
 
          ;; Add the necessary number of new properties, with default values
          (rx/from
