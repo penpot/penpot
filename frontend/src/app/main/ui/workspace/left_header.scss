@@ -37,7 +37,6 @@
 .project-name,
 .file-name {
   @include uppercaseTitleTipography;
-  @include textEllipsis;
   height: $s-16;
   width: 100%;
   padding-bottom: $s-2;
@@ -52,6 +51,10 @@
   align-items: center;
   display: flex;
   flex-direction: row;
+}
+
+.file-name-label {
+  @include textEllipsis;
 }
 
 .file-name-input {

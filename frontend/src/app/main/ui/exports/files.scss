@@ -199,6 +199,7 @@
 .file-entry {
   .file-name {
     @include flexRow;
+
     .file-icon {
       @include flexCenter;
       height: $s-16;
@@ -211,6 +212,7 @@
     }
     .file-name-label {
       @include bodyLargeTypography;
+      @include textEllipsis;
     }
   }
   &.loading {
