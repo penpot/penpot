@@ -25,8 +25,8 @@
 }
 
 .element-options {
-  display: grid;
-  grid-auto-rows: min-content;
+  display: flex;
+  flex-direction: column;
   gap: $s-8;
   width: 100%;
   height: calc(100vh - $s-80);
