@@ -34,24 +34,31 @@
   max-width: calc(100% - $s-64);
 }
 
+.file-name-container {
+  display: flex;
+  gap: $s-4;
+  align-items: center;
+}
+
 .project-name,
-.file-name {
+.file-name-container {
   @include uppercaseTitleTipography;
-  @include textEllipsis;
   height: $s-16;
-  width: 100%;
   padding-bottom: $s-2;
   color: var(--title-foreground-color);
   cursor: pointer;
 }
 
+.project-name {
+  @include textEllipsis;
+}
+
 .file-name {
   @include smallTitleTipography;
+  @include textEllipsis;
+  flex: 1;
   text-transform: none;
   color: var(--title-foreground-color-hover);
-  align-items: center;
-  display: flex;
-  flex-direction: row;
 }
 
 .file-name-input {
