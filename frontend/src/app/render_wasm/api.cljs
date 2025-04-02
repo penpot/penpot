@@ -756,6 +756,17 @@
               (set-shape-fills fills)
               (set-shape-strokes strokes)))))
 
+(defn process-object
+  [shape]
+  (let [pending (set-object [] shape)]
+    (when-let [pending (seq pending)]
+      (->> (rx/from pending)
+           (rx/mapcat identity)
+           (rx/reduce conj [])
+           (rx/subs! (fn [_]
+                       (clear-drawing-cache)
+                       (request-render "set-objects")))))))
+
 (defn set-objects
   [objects]
   (let [shapes        (into [] (vals objects))
