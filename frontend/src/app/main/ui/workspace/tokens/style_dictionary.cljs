@@ -6,7 +6,6 @@
    [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
@@ -268,11 +267,11 @@
                         (cond
                           (and single-set?
                                (= :json-format/legacy json-format))
-                          (ctob/decode-single-set-legacy-json (ctob/ensure-tokens-lib (deref refs/tokens-lib)) file-name json-data)
+                          (ctob/decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) file-name json-data)
 
                           (and single-set?
                                (= :json-format/dtcg json-format))
-                          (ctob/decode-single-set-json (ctob/ensure-tokens-lib (deref refs/tokens-lib)) file-name json-data)
+                          (ctob/decode-single-set-json (ctob/ensure-tokens-lib nil) file-name json-data)
 
                           (= :json-format/legacy json-format)
                           (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data)
