@@ -405,7 +405,7 @@
                                                    (filter #(= (:type %) :add-obj))
                                                    (map :obj))]
                                     (doseq [shape added]
-                                      (api/set-object [] shape))))
+                                      (api/process-object shape))))
 
                                 (if (and save-undo? (seq undo-changes))
                                   (let [entry {:undo-changes undo-changes
