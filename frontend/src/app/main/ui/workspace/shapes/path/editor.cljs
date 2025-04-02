@@ -204,7 +204,7 @@
           angle (gpt/angle-with-other v1 v2)]
       (<= (- 180 angle) 0.1))))
 
-(mf/defc path-editor
+(mf/defc path-editor*
   [{:keys [shape zoom]}]
 
   (let [editor-ref (mf/use-ref nil)
@@ -261,11 +261,12 @@
           [(->> selected-points (map base->point) (into #{}))
            (->> points (remove selected-points) (into #{}))])
 
-        show-snap? (and snap-toggled
-                        (or (some? drag-handler)
-                            (some? preview)
-                            (some? moving-handler)
-                            moving-nodes))
+        show-snap?
+        (and snap-toggled
+             (or (some? drag-handler)
+                 (some? preview)
+                 (some? moving-handler)
+                 moving-nodes))
 
         handle-double-click-outside
         (fn [_]
