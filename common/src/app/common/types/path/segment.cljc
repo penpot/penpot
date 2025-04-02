@@ -166,6 +166,16 @@
     (some->> (seq content)
              (into [] (keep segment->point)))))
 
+(defn get-points
+  "Returns points for the given segment, faster version of
+  the `content->points`."
+  [content]
+  (impl/with-cache content "get-points"
+    (impl/-walk content
+                (fn [type _ _ _ _ x y]
+                  (when (not= type :close-path)
+                    (gpt/point x y))))))
+
 (defn segments->content
   ([segments]
    (segments->content segments false))
