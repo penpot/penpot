@@ -16,6 +16,7 @@
 - Fix SVG `stroke-linecap` property when importing SVGs [Taiga #9489](https://tree.taiga.io/project/penpot/issue/9489)
 - Fix position problems cutting-pasting a component [Taiga #10677](https://tree.taiga.io/project/penpot/issue/10677)
 - Fix design tab has a horizontal scroll [Taiga #10660](https://tree.taiga.io/project/penpot/issue/10660)
+- Fix Storybook link 'list of all available icons' wrong path [Taiga #10705](https://tree.taiga.io/project/penpot/issue/10705)
 
 ## 2.6.0 (Unreleased)
 
