@@ -209,7 +209,17 @@
   This method allows send flash notifications to specified target destinations.
   The message can be a free text or a preconfigured one.
 
-  The destination can be: all, profile-id, team-id, or a coll of them."
+  The destination can be: all, profile-id, team-id, or a coll of them.
+  It also can be:
+
+  {:email \"some@example.com\"}
+  [[:email \"some@example.com\"], ...]
+
+  Command examples:
+
+  (notify! :dest :all :code :maintenance)
+  (notify! :dest :all :code :upgrade-version)
+  "
   [& {:keys [dest code message level]
       :or {code :generic level :info}
       :as params}]
@@ -231,7 +241,7 @@
                          :subs-id dest
                          :message message}
                 message (->> (dissoc params :dest :code :message :level)
-                                 (merge message))]
+                             (merge message))]
             (mbus/pub! msgbus
                        :topic dest
                        :message message)))
