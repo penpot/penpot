@@ -370,6 +370,6 @@
       (if edata
         [:> static/exception-page* {:data edata :route route}]
         [:> error-boundary* {:fallback static/internal-error*}
-         [:& notifications/current-notification]
+         [:> notifications/current-notification*]
          (when route
            [:> page* {:route route :profile profile}])])]]))

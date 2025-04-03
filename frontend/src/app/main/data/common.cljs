@@ -73,7 +73,7 @@
   (st/emit! (ntf/hide)))
 
 (defn handle-notification
-  [{:keys [message code level] :as params}]
+  [{:keys [message code] :as params}]
   (ptk/reify ::show-notification
     ptk/WatchEvent
     (watch [_ _ _]
@@ -81,9 +81,6 @@
         :upgrade-version
         (rx/of (ntf/dialog
                 :content (tr "notifications.by-code.upgrade-version")
-                :controls :inline-actions
-                :type :inline
-                :level level
                 :accept {:label (tr "labels.refresh")
                          :callback force-reload!}
                 :tag :notification))
@@ -91,16 +88,14 @@
         :maintenance
         (rx/of (ntf/dialog
                 :content (tr "notifications.by-code.maintenance")
-                :controls :inline-actions
-                :type level
                 :accept {:label (tr "labels.accept")
                          :callback hide-notifications!}
                 :tag :notification))
 
         (rx/of (ntf/dialog
                 :content message
-                :controls :close
-                :type level
+                :accept {:label (tr "labels.close")
+                         :callback hide-notifications!}
                 :tag :notification))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
