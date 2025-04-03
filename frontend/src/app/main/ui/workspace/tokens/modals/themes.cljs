@@ -33,11 +33,11 @@
    [rumext.v2 :as mf]))
 
 (mf/defc empty-themes
-  [{:keys [set-state]}]
+  [{:keys [change-view]}]
   (let [create-theme
         (mf/use-fn
-         (mf/deps set-state)
-         #(set-state (fn [_] {:type :create-theme})))
+         (mf/deps change-view)
+         #(change-view :create-theme))
         close-modal
         (mf/use-fn
          #(st/emit! (modal/hide)))]
@@ -78,17 +78,17 @@
                        :label ""}]]))
 
 (mf/defc themes-overview
-  [{:keys [set-state]}]
+  [{:keys [change-view]}]
   (let [active-theme-ids (mf/deref refs/workspace-active-theme-paths)
         themes-groups (mf/deref refs/workspace-token-theme-tree-no-hidden)
 
         create-theme
         (mf/use-fn
-         (mf/deps set-state)
+         (mf/deps change-view)
          (fn [e]
            (dom/prevent-default e)
            (dom/stop-propagation e)
-           (set-state (fn [_] {:type :create-theme}))))
+           (change-view :create-theme)))
 
         close-modal
         (mf/use-fn
@@ -122,8 +122,7 @@
                       (fn [e]
                         (dom/prevent-default e)
                         (dom/stop-propagation e)
-                        (set-state (fn [_] {:type :edit-theme
-                                            :theme-path [(:id theme) (:group theme) (:name theme)]})))]]
+                        (change-view :edit-theme {:theme-path [(:id theme) (:group theme) (:name theme)]}))]]
             [:li {:key theme-id
                   :class (stl/css :theme-row)}
              [:div {:class (stl/css :theme-switch-row)}
@@ -249,7 +248,7 @@
     (ctob/activate-theme tlib (:group theme) (:name theme))))
 
 (mf/defc edit-create-theme*
-  [{:keys [set-state theme on-save is-editing]}]
+  [{:keys [state change-view theme on-save is-editing]}]
   (let [ordered-token-sets (mf/deref refs/workspace-ordered-token-sets)
         token-sets (mf/deref refs/workspace-token-sets-tree)
 
@@ -257,8 +256,12 @@
         current-theme (deref current-theme*)
         lib (make-lib-with-theme current-theme ordered-token-sets)
 
+        has-back-button? (contains? #{:empty-themes :themes-overview} (:prev-type state))
+
         ;; Form / Modal handlers
-        on-back (mf/use-fn #(set-state (constantly {:type :themes-overview})))
+        on-back (mf/use-fn
+                 (mf/deps change-view)
+                 #(change-view :themes-overview))
         disabled? (-> (:name current-theme)
                       (str/trim)
                       (str/empty?))
@@ -336,7 +339,7 @@
 
      [:form {:on-submit on-save-form :class (stl/css :edit-theme-form)}
       [:div {:class (stl/css :edit-theme-wrapper)}
-       (when is-editing
+       (when has-back-button?
          [:button {:on-click on-back
                    :class (stl/css :back-btn)
                    :type "button"}
@@ -372,8 +375,8 @@
                                    :disabled? disabled?}]]]]]]))
 
 (mf/defc edit-theme
-  [{:keys [state set-state]}]
-  (let [{:keys [theme-path]} @state
+  [{:keys [state change-view]}]
+  (let [{:keys [theme-path]} state
         [_ theme-group theme-name] theme-path
         theme (mf/deref (refs/workspace-token-theme theme-group theme-name))
 
@@ -384,15 +387,15 @@
            (st/emit! (wdt/update-token-theme [(:group theme) (:name theme)] theme'))))]
 
     [:> edit-create-theme*
-     {:set-state set-state
+     {:state state
+      :change-view change-view
       :theme theme
       :on-save on-save
       :is-editing true}]))
 
 (mf/defc create-theme
-  [{:keys [set-state]}]
+  [{:keys [state change-view]}]
   (let [theme (ctob/make-token-theme :name "")
-
         on-save
         (mf/use-fn
          (fn [theme]
@@ -400,25 +403,35 @@
                      (wdt/create-token-theme theme))))]
 
     [:> edit-create-theme*
-     {:set-state set-state
+     {:state state
+      :change-view change-view
       :theme theme
       :on-save on-save}]))
 
 (mf/defc themes-modal-body*
   {::mf/private true}
   []
-  (let [themes    (mf/deref refs/workspace-token-themes-no-hidden)
-        state     (mf/use-state #(if (empty? themes)
-                                   {:type :create-theme}
-                                   {:type :themes-overview}))
-        set-state (mf/use-fn #(swap! state %))
-        component (case (:type @state)
+  (let [themes      (mf/deref refs/workspace-token-themes-no-hidden)
+        state*      (mf/use-state #(if (empty? themes)
+                                     {:type :create-theme}
+                                     {:type :themes-overview}))
+        state       (deref state*)
+
+        change-view (mf/use-fn
+                     (fn [type & [state']]
+                       (swap! state* (fn [current-state]
+                                       (merge
+                                        {:type type
+                                         :prev-type (:type current-state)}
+                                        state')))))
+
+        component (case (:type state)
                     :empty-themes empty-themes
                     :themes-overview (if (empty? themes) empty-themes themes-overview)
                     :edit-theme edit-theme
                     :create-theme create-theme)]
     [:& component {:state state
-                   :set-state set-state}]))
+                   :change-view change-view}]))
 
 (mf/defc token-themes-modal
   {::mf/wrap-props false
