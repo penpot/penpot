@@ -3,6 +3,7 @@ use skia_safe::{self as skia, Matrix, RRect, Rect};
 use crate::uuid::Uuid;
 use std::collections::HashMap;
 
+use crate::performance;
 use crate::view::Viewbox;
 #[cfg(target_arch = "wasm32")]
 use crate::{run_script, run_script_int};
@@ -33,17 +34,6 @@ pub use images::*;
 const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
-
-#[cfg(target_arch = "wasm32")]
-fn get_time() -> i32 {
-    run_script_int!("performance.now()")
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-fn get_time() -> i32 {
-    let now = std::time::Instant::now();
-    now.elapsed().as_millis() as i32
-}
 
 pub struct NodeRenderState {
     pub id: Uuid,
@@ -220,6 +210,7 @@ impl RenderState {
     }
 
     pub fn apply_drawing_to_render_canvas(&mut self, shape: Option<&Shape>) {
+        performance::begin_measure!("apply_drawing_to_render_canvas");
         self.surfaces
             .flush_and_submit(&mut self.gpu_state, SurfaceId::DropShadows);
 
@@ -445,6 +436,8 @@ impl RenderState {
                 self.cancel_animation_frame(frame_id);
             }
         }
+        performance::begin_measure!("render");
+        performance::begin_measure!("start_render_loop");
         let scale = self.get_scale();
         self.reset_canvas();
         self.surfaces.apply_mut(
@@ -468,6 +461,8 @@ impl RenderState {
         let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox);
         debug::render_debug_tiles_for_viewbox(self, isx, isy, iex, iey);
         let tile_center = ((iex - isx) / 2, (iey - isy) / 2);
+
+        performance::begin_measure!("tile_cache");
         self.pending_tiles = vec![];
         self.surfaces.cache_clear_visited();
         for y in isy..=iey {
@@ -475,7 +470,7 @@ impl RenderState {
                 let tile = (x, y);
                 let distance = tiles::manhattan_distance(tile, tile_center);
                 self.pending_tiles.push((x, y, distance));
-                // We only need to mark as visited the visible
+                // We only need to mark! as visited the visible
                 // tiles, the ones that are outside the viewport
                 // should not be rendered.
                 if x >= sx && x <= ex && y >= sy && y <= ey {
@@ -483,6 +478,8 @@ impl RenderState {
                 }
             }
         }
+        performance::end_measure!("tile_cache");
+
         self.pending_nodes = vec![];
         // reorder by distance to the center.
         self.pending_tiles.sort_by(|a, b| b.2.cmp(&a.2));
@@ -490,11 +487,14 @@ impl RenderState {
         self.render_in_progress = true;
         self.apply_drawing_to_render_canvas(None);
         self.process_animation_frame(tree, modifiers, timestamp)?;
+        performance::end_measure!("start_render_loop");
         Ok(())
     }
 
     #[cfg(target_arch = "wasm32")]
     pub fn request_animation_frame(&mut self) -> i32 {
+        #[cfg(feature = "profile-raf")]
+        performance::mark!("request_animation_frame");
         run_script_int!("requestAnimationFrame(_process_animation_frame)")
     }
 
@@ -505,6 +505,8 @@ impl RenderState {
 
     #[cfg(target_arch = "wasm32")]
     pub fn cancel_animation_frame(&mut self, frame_id: i32) {
+        #[cfg(feature = "profile-raf")]
+        performance::mark!("cancel_animation_frame");
         run_script!(format!("cancelAnimationFrame({})", frame_id))
     }
 
@@ -517,6 +519,7 @@ impl RenderState {
         modifiers: &HashMap<Uuid, Matrix>,
         timestamp: i32,
     ) -> Result<(), String> {
+        performance::begin_measure!("process_animation_frame");
         if self.render_in_progress {
             self.render_shape_tree(tree, modifiers, timestamp)?;
             self.flush();
@@ -526,16 +529,19 @@ impl RenderState {
                     self.cancel_animation_frame(frame_id);
                 }
                 self.render_request_id = Some(self.request_animation_frame());
+            } else {
+                performance::end_measure!("render");
             }
         }
+        performance::end_measure!("process_animation_frame");
         Ok(())
     }
 
     pub fn render_shape_enter(&mut self, element: &mut Shape, mask: bool) {
         // Masked groups needs two rendering passes, the first one rendering
         // the content and the second one rendering the mask so we need to do
-        // an extra save_layer to keep all the masked group separate from other
-        // already drawn elements.
+        // an extra save_layer to keep all the masked group separate from
+        // other already drawn elements.
         match element.shape_type {
             Type::Group(group) => {
                 if group.masked {
@@ -620,9 +626,11 @@ impl RenderState {
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
                 if self.surfaces.has_cached_tile_surface(current_tile) {
+                    performance::begin_measure!("render_shape_tree::cached");
                     let tile_rect = self.get_current_tile_bounds();
                     self.surfaces
                         .draw_cached_tile_surface(current_tile, tile_rect);
+                    performance::end_measure!("render_shape_tree::cached");
 
                     if self.options.is_debug_visible() {
                         debug::render_workspace_current_tile(
@@ -633,6 +641,7 @@ impl RenderState {
                         );
                     }
                 } else {
+                    performance::begin_measure!("render_shape_tree::uncached");
                     let mut i = 0;
                     let mut is_empty = true;
                     while let Some(node_render_state) = self.pending_nodes.pop() {
@@ -745,12 +754,13 @@ impl RenderState {
 
                         // We try to avoid doing too many calls to get_time
                         if i % NODE_BATCH_THRESHOLD == 0
-                            && get_time() - timestamp > MAX_BLOCKING_TIME_MS
+                            && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS
                         {
                             return Ok(());
                         }
                         i += 1;
                     }
+                    performance::end_measure!("render_shape_tree::uncached");
                     let tile_rect = self.get_current_tile_bounds();
                     if !is_empty {
                         self.apply_render_to_final_canvas(tile_rect);
@@ -850,6 +860,7 @@ impl RenderState {
         tree: &mut HashMap<Uuid, Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
     ) {
+        performance::begin_measure!("rebuild_tiles");
         self.tiles.invalidate();
         self.surfaces.remove_cached_tiles();
         let mut nodes = vec![Uuid::nil()];
@@ -867,6 +878,7 @@ impl RenderState {
                 }
             }
         }
+        performance::end_measure!("rebuild_tiles");
     }
 
     pub fn rebuild_modifier_tiles(

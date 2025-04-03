@@ -22,6 +22,7 @@
    [app.render-wasm.deserializers :as dr]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
+   [app.render-wasm.performance :as perf]
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
@@ -190,6 +191,7 @@
   [shape-ids]
   (let [num-shapes (count shape-ids)]
     (when (> num-shapes 0)
+      (perf/begin-measure "set-shape-children")
       (let [offset (mem/alloc-bytes (* CHILD-ENTRY-SIZE num-shapes))
             heap (mem/get-heap-u32)]
 
@@ -198,8 +200,11 @@
           (when-not (empty? entries)
             (let [id (first entries)]
               (sr/heapu32-set-uuid id heap (mem/ptr8->ptr32 current-offset))
-              (recur (rest entries) (+ current-offset CHILD-ENTRY-SIZE)))))))
-    (h/call wasm/internal-module "_set_children")))
+              (recur (rest entries) (+ current-offset CHILD-ENTRY-SIZE)))))
+
+        (let [result (h/call wasm/internal-module "_set_children")]
+          (perf/end-measure "set-shape-children")
+          result)))))
 
 (defn- get-string-length [string] (+ (count string) 1))
 
@@ -701,6 +706,7 @@
 
 (defn set-object
   [objects shape]
+  (perf/begin-measure "set-object")
   (let [id           (dm/get-prop shape :id)
         parent-id    (dm/get-prop shape :parent-id)
         type         (dm/get-prop shape :type)
@@ -771,12 +777,15 @@
     (when (ctl/grid-layout? shape)
       (set-grid-layout shape))
 
-    (into [] (concat
-              (if (and (= type :text) (some? content))
-                (set-shape-text-content content)
-                [])
-              (set-shape-fills fills)
-              (set-shape-strokes strokes)))))
+    (let [pending (into [] (concat
+                            (if (and (= type :text) (some? content))
+                              (set-shape-text-content content)
+                              [])
+                            (set-shape-fills fills)
+                            (set-shape-strokes strokes)))]
+      (perf/end-measure "set-object")
+      pending)))
+
 
 (defn process-object
   [shape]
@@ -791,6 +800,7 @@
 
 (defn set-objects
   [objects]
+  (perf/begin-measure "set-objects")
   (let [shapes        (into [] (vals objects))
         total-shapes  (count shapes)
         pending
@@ -800,6 +810,7 @@
                   pending' (set-object objects shape)]
               (recur (inc index) (into pending pending')))
             pending))]
+    (perf/end-measure "set-objects")
     (clear-drawing-cache)
     (request-render "set-objects")
     (when-let [pending (seq pending)]

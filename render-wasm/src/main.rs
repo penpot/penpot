@@ -5,6 +5,7 @@ mod debug;
 mod emscripten;
 mod math;
 mod mem;
+mod performance;
 mod render;
 mod shapes;
 mod state;
