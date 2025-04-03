@@ -1464,16 +1464,16 @@ __metadata:
   languageName: node
   linkType: soft
 
-"@penpot/svgo@penpot/svgo#c6fba7a4dcfbc27b643e7fc0c94fc98cf680b77b":
+"@penpot/svgo@penpot/svgo#v3.1":
   version: 4.0.0
-  resolution: "@penpot/svgo@https://github.com/penpot/svgo.git#commit=c6fba7a4dcfbc27b643e7fc0c94fc98cf680b77b"
+  resolution: "@penpot/svgo@https://github.com/penpot/svgo.git#commit=a46262c12c0d967708395972c374eb2adead4180"
   dependencies:
     "@trysound/sax": "npm:0.2.0"
     css-select: "npm:^5.1.0"
-    css-tree: "npm:^3.0.0"
+    css-tree: "npm:^3.1.0"
     csso: "npm:^5.0.5"
     lodash: "npm:^4.17.21"
-  checksum: 10c0/af452f31196bcd237c390a12fea2da4c1d4005ae6d759c38f2169c9975c2178f85ec72077e96a8a40ded38748c2c1449dbdaf0d15f37ca3237622d766ac49ec8
+  checksum: 10c0/db5f81c99dec2765721d73b69bb30594869ebf657380dfb46709c79775b6c0dc1af678fe9fe51bbe2272a2c78d19c2694a12ec6578bcc41235fa4aff475c9416
   languageName: node
   linkType: hard
 
@@ -4326,13 +4326,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"css-tree@npm:^3.0.0":
-  version: 3.0.1
-  resolution: "css-tree@npm:3.0.1"
+"css-tree@npm:^3.1.0":
+  version: 3.1.0
+  resolution: "css-tree@npm:3.1.0"
   dependencies:
-    mdn-data: "npm:2.12.1"
+    mdn-data: "npm:2.12.2"
     source-map-js: "npm:^1.0.1"
-  checksum: 10c0/9f117f3067e68e9edb0b3db0134f420db1a62bede3e84d8835767ecfaa6f8ced5e87989cf39b65ffe65d788c134c8ea9abd7393d7c35838a9da84326adf57a9b
+  checksum: 10c0/b5715852c2f397c715ca00d56ec53fc83ea596295ae112eb1ba6a1bda3b31086380e596b1d8c4b980fe6da09e7d0fc99c64d5bb7313030dd0fba9c1415f30979
   languageName: node
   linkType: hard
 
@@ -5883,7 +5883,7 @@ __metadata:
     "@penpot/draft-js": "portal:./vendor/draft-js"
     "@penpot/hljs": "portal:./vendor/hljs"
     "@penpot/mousetrap": "portal:./vendor/mousetrap"
-    "@penpot/svgo": "penpot/svgo#c6fba7a4dcfbc27b643e7fc0c94fc98cf680b77b"
+    "@penpot/svgo": "penpot/svgo#v3.1"
     "@penpot/text-editor": "portal:./text-editor"
     "@playwright/test": "npm:1.48.1"
     "@storybook/addon-essentials": "npm:^8.5.2"
@@ -8270,10 +8270,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mdn-data@npm:2.12.1":
-  version: 2.12.1
-  resolution: "mdn-data@npm:2.12.1"
-  checksum: 10c0/1a09f441bdd423f2b0ab712665a1a3329fe7b15e9a2dad8c1c10c521ddb204ed186e7ac91052fd53a5ae0a07ac6eae53b5bcbb59ba8a1fb654268611297eea4a
+"mdn-data@npm:2.12.2":
+  version: 2.12.2
+  resolution: "mdn-data@npm:2.12.2"
+  checksum: 10c0/b22443b71d70f72ccc3c6ba1608035431a8fc18c3c8fc53523f06d20e05c2ac10f9b53092759a2ca85cf02f0d37036f310b581ce03e7b99ac74d388ef8152ade
   languageName: node
   linkType: hard
 

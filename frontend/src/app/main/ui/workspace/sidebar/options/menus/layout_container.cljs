@@ -16,7 +16,6 @@
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.shape-layout :as dwsl]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -976,8 +975,6 @@
         grid-justify-content-row    (:layout-justify-content values)
         grid-justify-content-column (:layout-align-content values)
 
-        grid-enabled?  (features/use-feature "layout/grid")
-
         on-column-justify-change
         (mf/use-fn
          (mf/deps ids)
@@ -1007,24 +1004,22 @@
 
        (if (and (not multiple) (:layout values))
          [:div {:class (stl/css :title-actions)}
-          (when ^boolean grid-enabled?
-            [:*
-             [:> icon-button* {:variant "ghost"
-                               :aria-label (tr "workspace.shape.menu.add-layout")
-                               :on-click on-toggle-dropdown-visibility
-                               :icon "menu"}]
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.shape.menu.add-layout")
+                            :on-click on-toggle-dropdown-visibility
+                            :icon "menu"}]
 
-             [:& dropdown {:show show-dropdown?
-                           :on-close on-hide-dropdown}
-              [:div {:class (stl/css :layout-options)}
-               [:button {:class (stl/css :layout-option)
-                         :data-type "flex"
-                         :on-click on-add-layout}
-                "Flex layout"]
-               [:button {:class (stl/css :layout-option)
-                         :data-type "grid"
-                         :on-click on-add-layout}
-                "Grid layout"]]]])
+          [:& dropdown {:show show-dropdown?
+                        :on-close on-hide-dropdown}
+           [:div {:class (stl/css :layout-options)}
+            [:button {:class (stl/css :layout-option)
+                      :data-type "flex"
+                      :on-click on-add-layout}
+             "Flex layout"]
+            [:button {:class (stl/css :layout-option)
+                      :data-type "grid"
+                      :on-click on-add-layout}
+             "Grid layout"]]]
 
           (when has-layout?
             [:> icon-button* {:variant "ghost"
@@ -1033,29 +1028,23 @@
                               :icon "remove"}])]
 
          [:div {:class (stl/css :title-actions)}
-          (if ^boolean grid-enabled?
-            [:*
-             [:> icon-button* {:variant "ghost"
-                               :aria-label (tr "workspace.shape.menu.add-layout")
-                               :on-click on-toggle-dropdown-visibility
-                               :icon "add"}]
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.shape.menu.add-layout")
+                            :on-click on-toggle-dropdown-visibility
+                            :icon "add"}]
 
-             [:& dropdown {:show show-dropdown?
-                           :on-close on-hide-dropdown}
-              [:div {:class (stl/css :layout-options)}
-               [:button {:class (stl/css :layout-option)
-                         :data-type "flex"
-                         :on-click on-add-layout}
-                "Flex layout"]
-               [:button {:class (stl/css :layout-option)
-                         :data-type "grid"
-                         :on-click on-add-layout}
-                "Grid layout"]]]]
-
-            [:button {:class (stl/css :add-layout)
+          [:& dropdown {:show show-dropdown?
+                        :on-close on-hide-dropdown}
+           [:div {:class (stl/css :layout-options)}
+            [:button {:class (stl/css :layout-option)
                       :data-type "flex"
                       :on-click on-add-layout}
-             i/add])
+             "Flex layout"]
+            [:button {:class (stl/css :layout-option)
+                      :data-type "grid"
+                      :on-click on-add-layout}
+             "Grid layout"]]]
+
           (when has-layout?
             [:> icon-button* {:variant "ghost"
                               :aria-label (tr "workspace.shape.menu.delete")

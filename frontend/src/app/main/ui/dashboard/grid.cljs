@@ -17,7 +17,6 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.project :as dpj]
    [app.main.data.team :as dtm]
-   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.rasterizer :as thr]
    [app.main.refs :as refs]
@@ -60,7 +59,7 @@
   (->> (wrk/ask! {:cmd :thumbnails/generate-for-file
                   :revn revn
                   :file-id file-id
-                  :features (features/get-team-enabled-features @st/state)})
+                  :features (get @st/state :features)})
        (rx/mapcat (fn [{:keys [fonts] :as result}]
                     (->> (fonts/render-font-styles fonts)
                          (rx/map (fn [styles]

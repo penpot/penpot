@@ -12,7 +12,6 @@
    [app.common.schema :as sm]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
-   [app.main.features :as features]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -47,7 +46,7 @@
   (ptk/reify ::export-files
     ptk/WatchEvent
     (watch [_ state _]
-      (let [features (features/get-team-enabled-features state)
+      (let [features (get state :features)
             team-id  (:current-team-id state)
             evname   (if (= format :legacy-zip)
                        "export-standard-files"

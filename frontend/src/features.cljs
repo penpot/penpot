@@ -20,13 +20,12 @@
   nil)
 
 (defn ^:export get-enabled []
-  (clj->js (features/get-enabled-features @st/state)))
+  (clj->js features/global-enabled-features))
 
 (defn ^:export get-team-enabled []
-  (clj->js (features/get-team-enabled-features @st/state)))
+  (clj->js (get @st/state :features)))
 
 (defn ^:export plugins []
   (st/emit! (features/enable-feature "plugins/runtime"))
   (plugins/init-plugins-runtime!)
   nil)
-
