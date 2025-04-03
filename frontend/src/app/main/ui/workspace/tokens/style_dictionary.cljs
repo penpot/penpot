@@ -240,7 +240,21 @@
 
 ;; === Import
 
-(defn reference-errors
+(defn- decode-single-set-json
+  "Decodes parsed json containing single token set and converts to library"
+  [this set-name tokens]
+  (assert (map? tokens) "expected a map data structure for `data`")
+
+  (ctob/add-set this (ctob/make-token-set :name (ctob/normalize-set-name set-name)
+                                          :tokens (ctob/flatten-nested-tokens-json tokens ""))))
+
+(defn- decode-single-set-legacy-json
+  "Decodes parsed legacy json containing single token set and converts to library"
+  [this set-name tokens]
+  (assert (map? tokens) "expected a map data structure for `data`")
+  (decode-single-set-json this set-name (ctob/legacy-nodes->dtcg-nodes tokens)))
+
+(defn- reference-errors
   "Extracts reference errors from StyleDictionary."
   [err]
   (let [[header-1 header-2 & errors] (str/split err "\n")]
@@ -267,11 +281,11 @@
                         (cond
                           (and single-set?
                                (= :json-format/legacy json-format))
-                          (ctob/decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) file-name json-data)
+                          (decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) file-name json-data)
 
                           (and single-set?
                                (= :json-format/dtcg json-format))
-                          (ctob/decode-single-set-json (ctob/ensure-tokens-lib nil) file-name json-data)
+                          (decode-single-set-json (ctob/ensure-tokens-lib nil) file-name json-data)
 
                           (= :json-format/legacy json-format)
                           (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data)
