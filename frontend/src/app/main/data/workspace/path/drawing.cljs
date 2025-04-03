@@ -9,9 +9,10 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.flex-layout :as gsl]
-   [app.common.svg.path.command :as upc]
-   [app.common.svg.path.shapes-to-path :as upsp]
    [app.common.types.container :as ctn]
+   [app.common.types.path :as path]
+   [app.common.types.path.helpers :as path.helpers]
+   [app.common.types.path.segment :as path.segment]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -19,7 +20,7 @@
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
-   [app.main.data.workspace.path.common :as common :refer [check-path-content!]]
+   [app.main.data.workspace.path.common :as common]
    [app.main.data.workspace.path.helpers :as helpers]
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.path.streams :as streams]
@@ -39,10 +40,10 @@
             fix-angle? shift?
             last-point (get-in state [:workspace-local :edit-path id :last-point])
             position (cond-> (gpt/point x y)
-                       fix-angle? (helpers/position-fixed-angle last-point))
+                       fix-angle? (path.helpers/position-fixed-angle last-point))
             shape (st/get-path state)
             {:keys [last-point prev-handler]} (get-in state [:workspace-local :edit-path id])
-            command (helpers/next-node shape position last-point prev-handler)]
+            command (path.segment/next-node shape position last-point prev-handler)]
         (assoc-in state [:workspace-local :edit-path id :preview] command)))))
 
 (defn add-node
@@ -54,7 +55,7 @@
             fix-angle? shift?
             {:keys [last-point prev-handler]} (get-in state [:workspace-local :edit-path id])
             position (cond-> (gpt/point x y)
-                       fix-angle? (helpers/position-fixed-angle last-point))]
+                       fix-angle? (path.helpers/position-fixed-angle last-point))]
         (if-not (= last-point position)
           (-> state
               (assoc-in  [:workspace-local :edit-path id :last-point] position)
@@ -75,12 +76,12 @@
 
              index (or index (count content))
              prefix (or prefix :c1)
-             position (or position (upc/command->point (nth content (dec index))))
+             position (or position (path.segment/get-point (nth content (dec index))))
 
-             old-handler (upc/handler->point content index prefix)
+             old-handler (path.segment/handler->point content index prefix)
 
              handler-position (cond-> (gpt/point x y)
-                                shift? (helpers/position-fixed-angle position))
+                                shift? (path.helpers/position-fixed-angle position))
 
              {dx :x dy :y} (if (some? old-handler)
                              (gpt/add (gpt/to-vec old-handler position)
@@ -102,7 +103,7 @@
 
             modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
             content (-> (st/get-path state :content)
-                        (upc/apply-content-modifiers modifiers))
+                        (path/apply-content-modifiers modifiers))
 
             handler (get-in state [:workspace-local :edit-path id :drag-handler])]
         (-> state
@@ -110,7 +111,7 @@
             (update-in [:workspace-local :edit-path id] dissoc :drag-handler)
             (update-in [:workspace-local :edit-path id] dissoc :content-modifiers)
             (assoc-in  [:workspace-local :edit-path id :prev-handler] handler)
-            (update-in (st/get-path-location state) helpers/update-selrect))))
+            (update-in (st/get-path-location state) path/update-geometry))))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -128,7 +129,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [content  (st/get-path state :content)
-            handlers (-> (upc/content->handlers content)
+            handlers (-> (path.segment/content->handlers content)
                          (get position))
 
             [idx prefix] (when (= (count handlers) 1)
@@ -254,7 +255,12 @@
     (update [_ state]
       (let [objects      (dsh/lookup-page-objects state)
             content      (get-in state [:workspace-drawing :object :content] [])
-            position     (gpt/point (get-in content [0 :params] nil))
+
+            ;; FIXME: use native operation for retrieve the first position
+            position     (-> (nth content 0)
+                             (get :params)
+                             (gpt/point))
+
             frame-id     (->> (ctst/top-nested-frame objects position)
                               (ctn/get-first-not-copy-parent objects) ;; We don't want to change the structure of component copies
                               :id)
@@ -274,11 +280,10 @@
   (ptk/reify ::handle-new-shape-result
     ptk/UpdateEvent
     (update [_ state]
-      (let [content (get-in state [:workspace-drawing :object :content] [])]
+      (let [content (dm/get-in state [:workspace-drawing :object :content])]
 
-        (dm/assert!
-         "expected valid path content"
-         (check-path-content! content))
+        (assert (path/check-path-content content)
+                "expected valid path content instance")
 
         (if (> (count content) 1)
           (assoc-in state [:workspace-drawing :object :initialized?] true)
@@ -286,8 +291,8 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [content (get-in state [:workspace-drawing :object :content] [])]
-        (if (and (seq content) (> (count content) 1))
+      (when-let [content (dm/get-in state [:workspace-drawing :object :content])]
+        (if (> (count content) 1)
           (rx/of (setup-frame)
                  (dwdc/handle-finish-drawing)
                  (dwe/start-edition-mode shape-id)
@@ -300,9 +305,8 @@
   (ptk/reify ::handle-new-shape
     ptk/UpdateEvent
     (update [_ state]
-      (let [shape (cts/setup-shape {:type :path})]
-        (-> state
-            (update :workspace-drawing assoc :object shape))))
+      (let [shape (cts/setup-shape {:type :path :content (path/content nil)})]
+        (update state :workspace-drawing assoc :object shape)))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -334,12 +338,12 @@
             edit-mode (get-in state [:workspace-local :edit-path id :edit-mode])]
         (if (= :draw edit-mode)
           (rx/concat
-           (rx/of (dwsh/update-shapes [id] upsp/convert-to-path))
+           (rx/of (dwsh/update-shapes [id] path/convert-to-path))
            (rx/of (handle-drawing id))
            (->> stream
                 (rx/filter (ptk/type? ::common/finish-path))
                 (rx/take 1)
-                (rx/merge-map #(rx/of (check-changed-content)))))
+                (rx/map check-changed-content)))
           (rx/empty))))))
 
 (defn check-changed-content []

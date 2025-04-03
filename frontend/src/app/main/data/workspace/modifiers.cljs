@@ -18,6 +18,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.path :as path]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
@@ -610,6 +611,9 @@
                     (gsh/transform-shape modifiers)
                     (cond-> (d/not-empty? pos-data)
                       (assoc-position-data pos-data shape))
+                    (cond-> (or (cfh/path-shape? shape)
+                                (cfh/bool-shape? shape))
+                      (update :content path/content))
                     (cond-> text-shape?
                       (update-grow-type shape)))))]
 

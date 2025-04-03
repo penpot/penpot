@@ -156,6 +156,10 @@
   [file-id & {:as opts}]
   (process-file! file-id feat.fdata/enable-pointer-map opts))
 
+(defn enable-path-data-feature-on-file!
+  [file-id & {:as opts}]
+  (process-file! file-id feat.fdata/enable-path-data opts))
+
 (defn enable-storage-features-on-file!
   [file-id & {:as opts}]
   (enable-objects-map-feature-on-file! file-id opts)
@@ -391,10 +395,11 @@
   "Apply a function to the file. Optionally save the changes or not.
   The function receives the decoded and migrated file data."
   [file-id update-fn & {:keys [rollback?] :or {rollback? true} :as opts}]
-  (db/tx-run! (assoc main/system ::db/rollback rollback?)
-              (fn [system]
-                (binding [h/*system* system]
-                  (h/process-file! system file-id update-fn opts)))))
+  (let [file-id (h/parse-uuid file-id)]
+    (db/tx-run! (assoc main/system ::db/rollback rollback?)
+                (fn [system]
+                  (binding [h/*system* system]
+                    (h/process-file! system file-id update-fn opts))))))
 
 (defn process-team-files!
   "Apply a function to each file of the specified team."

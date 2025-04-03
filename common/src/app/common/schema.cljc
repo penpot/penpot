@@ -9,6 +9,7 @@
   #?(:cljs (:require-macros [app.common.schema :refer [ignoring]]))
   (:require
    [app.common.data :as d]
+   [app.common.math :as mth]
    [app.common.pprint :as pp]
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
@@ -801,7 +802,8 @@
 
           gen  (sg/one-of
                 (sg/small-int :max max :min min)
-                (sg/small-double :max max :min min))]
+                (->> (sg/small-double :max max :min min)
+                     (sg/fmap #(mth/precision % 2))))]
 
       {:pred pred
        :type-properties

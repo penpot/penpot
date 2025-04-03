@@ -46,6 +46,7 @@
         ids (hooks/use-equal-memo ids)
         parents-by-ids-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         parents (mf/deref parents-by-ids-ref)]
+
     [:*
      [:& layer-menu {:ids ids
                      :type type
