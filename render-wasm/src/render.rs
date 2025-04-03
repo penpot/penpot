@@ -4,7 +4,7 @@ use crate::uuid::Uuid;
 use std::collections::HashMap;
 
 use crate::view::Viewbox;
-use crate::{run_script, run_script_int};
+use crate::{performance, run_script, run_script_int};
 
 mod blend;
 mod debug;
@@ -32,10 +32,6 @@ pub use images::*;
 const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
-
-fn get_time() -> i32 {
-    run_script_int!("performance.now()")
-}
 
 pub struct NodeRenderState {
     pub id: Uuid,
@@ -437,6 +433,7 @@ impl RenderState {
                 self.cancel_animation_frame(frame_id);
             }
         }
+        performance::mark("render::begin".to_string());
         let scale = self.get_scale();
         self.reset_canvas();
         self.surfaces.apply_mut(
@@ -460,6 +457,8 @@ impl RenderState {
         let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox);
         debug::render_debug_tiles_for_viewbox(self, isx, isy, iex, iey);
         let tile_center = ((iex - isx) / 2, (iey - isy) / 2);
+
+        performance::mark("tile-cache::begin".to_string());
         self.pending_tiles = vec![];
         self.surfaces.cache_clear_visited();
         for y in isy..=iey {
@@ -475,6 +474,9 @@ impl RenderState {
                 }
             }
         }
+        performance::mark("tile-cache::end".to_string());
+        performance::measure("tile-cache".to_string(), "tile-cache::begin".to_string(),"tile-cache::end".to_string());
+
         self.pending_nodes = vec![];
         // reorder by distance to the center.
         self.pending_tiles.sort_by(|a, b| b.2.cmp(&a.2));
@@ -508,6 +510,9 @@ impl RenderState {
                     self.cancel_animation_frame(frame_id);
                 }
                 self.render_request_id = Some(self.request_animation_frame());
+            } else {
+                performance::mark("render::end".to_string());
+                performance::measure("render".to_string(), "render::begin".to_string(), "render::end".to_string());
             }
         }
         Ok(())
@@ -727,7 +732,7 @@ impl RenderState {
 
                         // We try to avoid doing too many calls to get_time
                         if i % NODE_BATCH_THRESHOLD == 0
-                            && get_time() - timestamp > MAX_BLOCKING_TIME_MS
+                            && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS
                         {
                             return Ok(());
                         }
@@ -832,6 +837,7 @@ impl RenderState {
         tree: &mut HashMap<Uuid, Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
     ) {
+        performance::mark("rebuild-tiles::begin".to_string());
         self.tiles.invalidate();
         self.surfaces.remove_cached_tiles();
         let mut nodes = vec![Uuid::nil()];
@@ -849,6 +855,8 @@ impl RenderState {
                 }
             }
         }
+        performance::mark("rebuild-tiles::end".to_string());
+        performance::measure("rebuild-tiles".to_string(), "rebuild-tiles::begin".to_string(), "rebuild-tiles::end".to_string());
     }
 
     pub fn rebuild_modifier_tiles(
