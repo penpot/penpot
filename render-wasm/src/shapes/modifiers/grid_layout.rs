@@ -240,34 +240,77 @@ fn stretch_tracks(
         .for_each(|t| t.size = f32::min(t.max_size, t.size + add_size));
 }
 
+fn justify_to_align(justify: JustifyContent) -> AlignContent {
+    match justify {
+        JustifyContent::Start => AlignContent::Start,
+        JustifyContent::End => AlignContent::End,
+        JustifyContent::Center => AlignContent::Center,
+        JustifyContent::SpaceBetween => AlignContent::SpaceBetween,
+        JustifyContent::SpaceAround => AlignContent::SpaceAround,
+        JustifyContent::SpaceEvenly => AlignContent::SpaceEvenly,
+        JustifyContent::Stretch => AlignContent::Stretch,
+    }
+}
+
 fn assign_anchors(
     column: bool,
     layout_data: &LayoutData,
     layout_bounds: &Bounds,
     tracks: &mut Vec<TrackData>,
 ) {
+    let tot_track_length = tracks.iter().map(|t| t.size).sum::<f32>();
+
     let mut cursor = layout_bounds.nw;
 
-    let (v, gap, padding_start) = if column {
+    let (v, gap, size, padding_start, padding_end, align) = if column {
         (
             layout_bounds.hv(1.0),
-            layout_data.row_gap,
+            layout_data.column_gap,
+            layout_bounds.width(),
             layout_data.padding_left,
+            layout_data.padding_right,
+            justify_to_align(layout_data.justify_content),
         )
     } else {
         (
             layout_bounds.vv(1.0),
-            layout_data.column_gap,
+            layout_data.row_gap,
+            layout_bounds.height(),
             layout_data.padding_top,
+            layout_data.padding_bottom,
+            layout_data.align_content,
         )
     };
 
-    cursor = cursor + (v * padding_start);
+    let tot_gap = gap * (tracks.len() - 1) as f32;
+    let tot_size = tot_track_length + tot_gap;
+
+    let (real_margin, real_gap) = match align {
+        AlignContent::End => (size - padding_end - tot_size, gap),
+
+        AlignContent::Center => ((size - tot_size) / 2.0, gap),
+
+        AlignContent::SpaceBetween => (
+            padding_start,
+            f32::max(gap, (size - tot_size) / (tracks.len() - 1) as f32),
+        ),
+        AlignContent::SpaceAround => {
+            let effective_gap = (size - tot_size) / tracks.len() as f32;
+            (effective_gap / 2.0, effective_gap)
+        }
+        AlignContent::SpaceEvenly => {
+            let effective_gap = (size - tot_size) / (tracks.len() + 1) as f32;
+            (padding_start + effective_gap, effective_gap)
+        }
+        _ => (padding_start + 0.0, gap),
+    };
+
+    cursor = cursor + (v * real_margin);
 
     for track in tracks {
         track.anchor_start = cursor;
         track.anchor_end = cursor + (v * track.size);
-        cursor = track.anchor_end + (v * gap);
+        cursor = track.anchor_end + (v * real_gap);
     }
 }
 

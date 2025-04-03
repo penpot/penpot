@@ -366,91 +366,140 @@ fn calculate_track_positions(
         align_content = &AlignContent::Start;
     }
 
-    match align_content {
-        AlignContent::End => {
-            let total_across_size_gap: f32 =
-                total_across_size + (tracks.len() - 1) as f32 * layout_axis.gap_across;
+    let total_across_size_gap: f32 =
+        total_across_size + (tracks.len() - 1) as f32 * layout_axis.gap_across;
 
-            let delta =
-                layout_axis.across_size - total_across_size_gap - layout_axis.padding_across_end;
-            let mut next_anchor = layout_bounds.nw + layout_axis.across_v * delta;
+    let (real_margin, real_gap) = match align_content {
+        AlignContent::End => (
+            layout_axis.across_size - total_across_size_gap - layout_axis.padding_across_end,
+            layout_axis.gap_across,
+        ),
 
-            for track in tracks.iter_mut() {
-                track.anchor = next_anchor;
-                next_anchor = next_anchor
-                    + layout_axis.across_v * (track.across_size + layout_axis.gap_across);
-            }
-        }
+        AlignContent::Center => (
+            (layout_axis.across_size - total_across_size_gap) / 2.0,
+            layout_axis.gap_across,
+        ),
 
-        AlignContent::Center => {
-            let total_across_size_gap: f32 =
-                total_across_size + (tracks.len() - 1) as f32 * layout_axis.gap_across;
-            let center_margin = (layout_axis.across_size - total_across_size_gap) / 2.0;
-
-            let mut next_anchor = layout_bounds.nw + layout_axis.across_v * center_margin;
-
-            for track in tracks.iter_mut() {
-                track.anchor = next_anchor;
-                next_anchor = next_anchor
-                    + layout_axis.across_v * (track.across_size + layout_axis.gap_across);
-            }
-        }
-
-        AlignContent::SpaceBetween => {
-            let mut next_anchor =
-                layout_bounds.nw + layout_axis.across_v * layout_axis.padding_across_start;
-
-            let effective_gap = f32::max(
+        AlignContent::SpaceBetween => (
+            layout_axis.padding_across_start,
+            f32::max(
                 layout_axis.gap_across,
                 (layout_axis.across_space() - total_across_size) / (tracks.len() - 1) as f32,
-            );
-
-            for track in tracks.iter_mut() {
-                track.anchor = next_anchor;
-                next_anchor =
-                    next_anchor + layout_axis.across_v * (track.across_size + effective_gap);
-            }
-        }
+            ),
+        ),
 
         AlignContent::SpaceAround => {
             let effective_gap =
                 (layout_axis.across_space() - total_across_size) / tracks.len() as f32;
-
-            let mut next_anchor = layout_bounds.nw
-                + layout_axis.across_v * (layout_axis.padding_across_start + effective_gap / 2.0);
-
-            for track in tracks.iter_mut() {
-                track.anchor = next_anchor;
-                next_anchor =
-                    next_anchor + layout_axis.across_v * (track.across_size + effective_gap);
-            }
+            (effective_gap / 2.0, effective_gap)
         }
 
         AlignContent::SpaceEvenly => {
             let effective_gap =
                 (layout_axis.across_space() - total_across_size) / (tracks.len() + 1) as f32;
-
-            let mut next_anchor = layout_bounds.nw
-                + layout_axis.across_v * (layout_axis.padding_across_start + effective_gap);
-
-            for track in tracks.iter_mut() {
-                track.anchor = next_anchor;
-                next_anchor =
-                    next_anchor + layout_axis.across_v * (track.across_size + effective_gap);
-            }
+            (
+                layout_axis.padding_across_start + effective_gap,
+                effective_gap,
+            )
         }
 
-        _ => {
-            let mut next_anchor =
-                layout_bounds.nw + layout_axis.across_v * layout_axis.padding_across_start;
+        _ => (layout_axis.padding_across_start, layout_axis.gap_across),
+    };
 
-            for track in tracks.iter_mut() {
-                track.anchor = next_anchor;
-                next_anchor = next_anchor
-                    + layout_axis.across_v * (track.across_size + layout_axis.gap_across);
-            }
-        }
+    let mut next_anchor = layout_bounds.nw + layout_axis.across_v * real_margin;
+
+    for track in tracks.iter_mut() {
+        track.anchor = next_anchor;
+        next_anchor = next_anchor + layout_axis.across_v * real_gap;
     }
+
+    /*
+        match align_content {
+            AlignContent::End => {
+                let total_across_size_gap: f32 =
+                    total_across_size + (tracks.len() - 1) as f32 * layout_axis.gap_across;
+
+                let delta =
+                    layout_axis.across_size - total_across_size_gap - layout_axis.padding_across_end;
+                let mut next_anchor = layout_bounds.nw + layout_axis.across_v * delta;
+
+                for track in tracks.iter_mut() {
+                    track.anchor = next_anchor;
+                    next_anchor = next_anchor
+                        + layout_axis.across_v * (track.across_size + layout_axis.gap_across);
+                }
+            }
+
+            AlignContent::Center => {
+                let total_across_size_gap: f32 =
+                    total_across_size + (tracks.len() - 1) as f32 * layout_axis.gap_across;
+                let center_margin = (layout_axis.across_size - total_across_size_gap) / 2.0;
+
+                let mut next_anchor = layout_bounds.nw + layout_axis.across_v * center_margin;
+
+                for track in tracks.iter_mut() {
+                    track.anchor = next_anchor;
+                    next_anchor = next_anchor
+                        + layout_axis.across_v * (track.across_size + layout_axis.gap_across);
+                }
+            }
+
+            AlignContent::SpaceBetween => {
+                let mut next_anchor =
+                    layout_bounds.nw + layout_axis.across_v * layout_axis.padding_across_start;
+
+                let effective_gap = f32::max(
+                    layout_axis.gap_across,
+                    (layout_axis.across_space() - total_across_size) / (tracks.len() - 1) as f32,
+                );
+
+                for track in tracks.iter_mut() {
+                    track.anchor = next_anchor;
+                    next_anchor =
+                        next_anchor + layout_axis.across_v * (track.across_size + effective_gap);
+                }
+            }
+
+            AlignContent::SpaceAround => {
+                let effective_gap =
+                    (layout_axis.across_space() - total_across_size) / tracks.len() as f32;
+
+                let mut next_anchor = layout_bounds.nw
+                    + layout_axis.across_v * (layout_axis.padding_across_start + effective_gap / 2.0);
+
+                for track in tracks.iter_mut() {
+                    track.anchor = next_anchor;
+                    next_anchor =
+                        next_anchor + layout_axis.across_v * (track.across_size + effective_gap);
+                }
+            }
+
+            AlignContent::SpaceEvenly => {
+                let effective_gap =
+                    (layout_axis.across_space() - total_across_size) / (tracks.len() + 1) as f32;
+
+                let mut next_anchor = layout_bounds.nw
+                    + layout_axis.across_v * (layout_axis.padding_across_start + effective_gap);
+
+                for track in tracks.iter_mut() {
+                    track.anchor = next_anchor;
+                    next_anchor =
+                        next_anchor + layout_axis.across_v * (track.across_size + effective_gap);
+                }
+            }
+
+            _ => {
+                let mut next_anchor =
+                    layout_bounds.nw + layout_axis.across_v * layout_axis.padding_across_start;
+
+                for track in tracks.iter_mut() {
+                    track.anchor = next_anchor;
+                    next_anchor = next_anchor
+                        + layout_axis.across_v * (track.across_size + layout_axis.gap_across);
+                }
+    }
+
+        }*/
 }
 
 fn calculate_track_data(

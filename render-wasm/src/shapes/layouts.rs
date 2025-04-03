@@ -64,7 +64,7 @@ impl AlignItems {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum AlignContent {
     Start,
     End,
@@ -110,7 +110,7 @@ impl JustifyItems {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum JustifyContent {
     Start,
     End,
