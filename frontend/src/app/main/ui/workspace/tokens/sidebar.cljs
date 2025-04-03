@@ -304,6 +304,16 @@
                                   tokens)]
             (ctob/group-by-type tokens)))
 
+        active-token-sets-names
+        (mf/with-memo [tokens-lib]
+          (some-> tokens-lib (ctob/get-active-themes-set-names)))
+
+        token-set-active?
+        (mf/use-fn
+         (mf/deps active-token-sets-names)
+         (fn [name]
+           (contains? active-token-sets-names name)))
+
         [empty-group filled-group]
         (mf/with-memo [tokens-by-type]
           (get-sorted-token-groups tokens-by-type))]
@@ -320,7 +330,14 @@
 
     [:*
      [:& token-context-menu]
-     [:span {:class (stl/css :sets-header)} (tr "workspace.token.tokens-section-title" selected-token-set-name)]
+     [:div {:class (stl/css :sets-header-container)}
+      [:span {:class (stl/css :sets-header)} (tr "workspace.token.tokens-section-title" selected-token-set-name)]
+      [:div {:class (stl/css :sets-header-status) :title (tr "workspace.token.inactive-set-description")}
+       (when (not (token-set-active? selected-token-set-name))
+         [:*
+          [:> i/icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
+          [:span {:class (stl/css :sets-header-status-text)}
+           (tr "workspace.token.inactive-set")]])]]
 
      (for [type filled-group]
        (let [tokens (get tokens-by-type type)]
