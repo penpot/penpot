@@ -579,12 +579,10 @@
                       (let [shape (update shape :content fix-path-content)]
                         (if (not (valid-path-content? (:content shape)))
                           shape
-                          (let [[points selrect] (path/content->points+selrect shape (:content shape))]
-                            (-> shape
-                                (dissoc :bool-content)
-                                (dissoc :bool-type)
-                                (assoc :points points)
-                                (assoc :selrect selrect)))))
+                          (-> shape
+                              (dissoc :bool-content)
+                              (dissoc :bool-type)
+                              (path/update-geometry))))
 
                       ;; When we fount a bool shape with no content,
                       ;; we convert it to a simple rect

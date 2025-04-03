@@ -337,10 +337,11 @@
     (h/call wasm/internal-module "stringToUTF8" str ptr size)
     (h/call wasm/internal-module "_set_shape_path_attrs" (count attrs))))
 
+;; FIXME: revisit on heap refactor is merged to use u32 instead u8
 (defn set-shape-path-content
   [content]
-  (let [pdata  (path/path-data content)
-        size   (* (count pdata) path/SEGMENT-BYTE-SIZE)
+  (let [pdata  (path/content content)
+        size   (path/get-byte-size content)
         offset (h/call wasm/internal-module "_alloc_bytes" size)
         heap   (gobj/get ^js wasm/internal-module "HEAPU8")]
     (path/write-to pdata (.-buffer heap) offset)

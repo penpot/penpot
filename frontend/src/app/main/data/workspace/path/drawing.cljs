@@ -20,7 +20,7 @@
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
-   [app.main.data.workspace.path.common :as common :refer [check-path-content!]]
+   [app.main.data.workspace.path.common :as common]
    [app.main.data.workspace.path.helpers :as helpers]
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.path.streams :as streams]
@@ -111,7 +111,7 @@
             (update-in [:workspace-local :edit-path id] dissoc :drag-handler)
             (update-in [:workspace-local :edit-path id] dissoc :content-modifiers)
             (assoc-in  [:workspace-local :edit-path id :prev-handler] handler)
-            (update-in (st/get-path-location state) helpers/update-selrect))))
+            (update-in (st/get-path-location state) path/update-geometry))))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -255,7 +255,12 @@
     (update [_ state]
       (let [objects      (dsh/lookup-page-objects state)
             content      (get-in state [:workspace-drawing :object :content] [])
-            position     (gpt/point (get-in content [0 :params] nil))
+
+            ;; FIXME: use native operation for retrieve the first position
+            position     (-> (nth content 0)
+                             (get :params)
+                             (gpt/point))
+
             frame-id     (->> (ctst/top-nested-frame objects position)
                               (ctn/get-first-not-copy-parent objects) ;; We don't want to change the structure of component copies
                               :id)
@@ -275,11 +280,10 @@
   (ptk/reify ::handle-new-shape-result
     ptk/UpdateEvent
     (update [_ state]
-      (let [content (get-in state [:workspace-drawing :object :content] [])]
+      (let [content (dm/get-in state [:workspace-drawing :object :content])]
 
-        (dm/assert!
-         "expected valid path content"
-         (check-path-content! content))
+        (assert (path/check-path-content content)
+                "expected valid path content instance")
 
         (if (> (count content) 1)
           (assoc-in state [:workspace-drawing :object :initialized?] true)
@@ -287,8 +291,8 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [content (get-in state [:workspace-drawing :object :content] [])]
-        (if (and (seq content) (> (count content) 1))
+      (when-let [content (dm/get-in state [:workspace-drawing :object :content])]
+        (if (> (count content) 1)
           (rx/of (setup-frame)
                  (dwdc/handle-finish-drawing)
                  (dwe/start-edition-mode shape-id)
@@ -301,9 +305,8 @@
   (ptk/reify ::handle-new-shape
     ptk/UpdateEvent
     (update [_ state]
-      (let [shape (cts/setup-shape {:type :path})]
-        (-> state
-            (update :workspace-drawing assoc :object shape))))
+      (let [shape (cts/setup-shape {:type :path :content (path/content nil)})]
+        (update state :workspace-drawing assoc :object shape)))
 
     ptk/WatchEvent
     (watch [_ state stream]

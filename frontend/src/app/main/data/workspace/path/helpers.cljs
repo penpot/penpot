@@ -27,19 +27,13 @@
         (and ^boolean (mse/mouse-event? event)
              ^boolean (mse/mouse-double-click-event? event)))))
 
-(defn update-selrect
-  "Updates the selrect and points for a path"
-  [shape]
-  (let [[points selrect] (path/content->points+selrect shape (:content shape))]
-    (assoc shape :points points :selrect selrect)))
-
 (defn append-node
   "Creates a new node in the path. Usually used when drawing."
   [shape position prev-point prev-handler]
   (let [segment (path.segment/next-node (:content shape) position prev-point prev-handler)]
     (-> shape
         (update :content path.segment/append-segment segment)
-        (update-selrect))))
+        (path/update-geometry))))
 
 (defn angle-points [common p1 p2]
   (mth/abs

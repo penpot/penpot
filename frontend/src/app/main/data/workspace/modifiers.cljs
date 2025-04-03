@@ -580,7 +580,7 @@
   [objects object-modifiers text-modifiers options]
   (ptk/reify ::apply-modifiers*
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [_ _ _]
       (let [ids
             (into [] xf:without-uuid-zero (keys object-modifiers))
 
@@ -591,9 +591,6 @@
 
             ignore-tree
             (calculate-ignore-tree object-modifiers objects)
-
-            features
-            (features/get-team-enabled-features state)
 
             options
             (-> options
@@ -614,10 +611,9 @@
                     (gsh/transform-shape modifiers)
                     (cond-> (d/not-empty? pos-data)
                       (assoc-position-data pos-data shape))
-                    (cond-> (and (contains? features "fdata/path-data")
-                                 (or (cfh/path-shape? shape)
-                                     (cfh/bool-shape? shape)))
-                      (update :content path/path-data))
+                    (cond-> (or (cfh/path-shape? shape)
+                                (cfh/bool-shape? shape))
+                      (update :content path/content))
                     (cond-> text-shape?
                       (update-grow-type shape)))))]
 

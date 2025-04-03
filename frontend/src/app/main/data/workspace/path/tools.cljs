@@ -9,15 +9,13 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.types.path :as path]
-   [app.common.types.path.segment :as path.segm]
-   [app.common.types.path.subpath :as path.subp]
+   [app.common.types.path.segment :as path.segment]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.features :as features]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -38,19 +36,16 @@
              selected-points
              (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
 
-             features
-             (features/get-team-enabled-features state)
-
              points
              (or points selected-points)]
 
          (when (and (seq points) (some? shape))
            (let [new-content
                  (-> (tool-fn (:content shape) points)
-                     (path.subp/close-subpaths))
+                     (path/close-subpaths))
 
                  changes
-                 (changes/generate-path-changes it features objects page-id shape (:content shape) new-content)]
+                 (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
 
              (rx/concat
               (if (cfh/path-shape? shape)
@@ -67,7 +62,7 @@
    (process-path-tool
     (when point #{point})
     (fn [content points]
-      (reduce path.segm/make-corner-point content points)))))
+      (reduce path.segment/make-corner-point content points)))))
 
 (defn make-curve
   ([]
@@ -76,22 +71,22 @@
    (process-path-tool
     (when point #{point})
     (fn [content points]
-      (reduce path.segm/make-curve-point content points)))))
+      (reduce path.segment/make-curve-point content points)))))
 
 (defn add-node []
-  (process-path-tool (fn [content points] (path.segm/split-segments content points 0.5))))
+  (process-path-tool (fn [content points] (path.segment/split-segments content points 0.5))))
 
 (defn remove-node []
-  (process-path-tool path.segm/remove-nodes))
+  (process-path-tool path.segment/remove-nodes))
 
 (defn merge-nodes []
-  (process-path-tool path.segm/merge-nodes))
+  (process-path-tool path.segment/merge-nodes))
 
 (defn join-nodes []
-  (process-path-tool path.segm/join-nodes))
+  (process-path-tool path.segment/join-nodes))
 
 (defn separate-nodes []
-  (process-path-tool path.segm/separate-nodes))
+  (process-path-tool path.segment/separate-nodes))
 
 (defn toggle-snap []
   (ptk/reify ::toggle-snap

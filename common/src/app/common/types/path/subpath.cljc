@@ -125,6 +125,9 @@
 (defn is-closed? [subpath]
   (pt= (:from subpath) (:to subpath)))
 
+(def ^:private xf-mapcat-data
+  (mapcat :data))
+
 (defn close-subpaths
   "Searches a path for possible subpaths that can create closed loops and merge them"
   [content]
@@ -153,20 +156,17 @@
                        new-subpaths)))
             result))]
 
-    (->> closed-subpaths
-         (mapcat :data)
-         (into []))))
 
+    (into [] xf-mapcat-data closed-subpaths)))
+
+;; FIXME: revisit this fn impl for perfromance
 (defn reverse-content
   "Given a content reverse the order of the commands"
   [content]
-
-  (->> content
-       (get-subpaths)
+  (->> (get-subpaths content)
        (mapv reverse-subpath)
        (reverse)
-       (mapcat :data)
-       (into [])))
+       (into [] xf-mapcat-data)))
 
 ;; https://mathworld.wolfram.com/PolygonArea.html
 (defn clockwise?

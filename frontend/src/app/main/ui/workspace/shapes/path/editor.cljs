@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segment]
@@ -227,19 +226,21 @@
          :as edit-path} (mf/deref edit-path-ref)
 
         selected-points (or selected-points #{})
+        shape (hooks/use-equal-memo shape)
 
-        shape (cond-> shape
-                (cfh/path-shape? shape)
-                (path/convert-to-path)
+        base-content
+        (get shape :content)
 
-                :always
-                hooks/use-equal-memo)
+        base-points
+        (mf/with-memo [base-content]
+          (path.segment/content->points base-content))
 
-        base-content (:content shape)
-        base-points (mf/use-memo (mf/deps base-content) #(->> base-content path.segment/content->points))
+        content
+        (path/apply-content-modifiers base-content content-modifiers)
 
-        content (path/apply-content-modifiers base-content content-modifiers)
-        content-points (mf/use-memo (mf/deps content) #(->> content path.segment/content->points))
+        content-points
+        (mf/with-memo [content]
+          (path.segment/content->points content))
 
         point->base (->> (map hash-map content-points base-points) (reduce merge))
         base->point (map-invert point->base)

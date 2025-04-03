@@ -8,7 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cph]
-   [app.common.types.path :as path]))
+   [app.common.types.path.shape-to-path :as stp]))
 
 (defn path-editing?
   "Returns true if we're editing a path or creating a new one."
@@ -63,7 +63,7 @@
   [state & ks]
   (let [path-loc (get-path-location state)
         shape    (-> (get-in state path-loc)
-                     (path/convert-to-path))]
+                     (stp/convert-to-path {}))]
     (if (empty? ks)
       shape
       (get-in shape ks))))

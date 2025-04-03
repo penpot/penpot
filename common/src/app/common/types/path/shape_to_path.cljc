@@ -26,6 +26,10 @@
    :rx :ry :r1 :r2 :r3 :r4
    :metadata])
 
+(defn without-position-attrs
+  [shape]
+  (d/without-keys shape dissoc-attrs))
+
 (defn- make-corner-arc
   "Creates a curvle corner for border radius"
   [from to corner radius]
@@ -136,6 +140,9 @@
 
 (declare convert-to-path)
 
+;; FIXME: this looks unnecesary because penpot already normalizes all
+;; path content to be absolute. There are no relative segments on
+;; penpot.
 (defn- fix-first-relative
   "Fix an issue with the simplify commands not changing the first relative"
   [content]
@@ -154,7 +161,9 @@
         head-data (select-keys head bool/style-properties)
         content (into []
                       (comp (filter cfh/path-shape?)
-                            (mapcat #(fix-first-relative (:content %))))
+                            (map :content)
+                            (map vec)
+                            (mapcat fix-first-relative))
                       child-as-paths)]
     (-> group
         (assoc :type :path)
@@ -174,7 +183,7 @@
         (:bool-type shape)
 
         content
-        (bool/content bool-type (map :content children))]
+        (bool/calculate-content bool-type (map :content children))]
 
     (-> shape
         (assoc :type :path)

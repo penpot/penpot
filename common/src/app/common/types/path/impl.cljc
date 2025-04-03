@@ -10,6 +10,7 @@
   (:require
    #?(:clj [app.common.fressian :as fres])
    #?(:clj [clojure.data.json :as json])
+   [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.svg.path :as svg.path]
@@ -21,15 +22,79 @@
 
 #?(:clj (set! *warn-on-reflection* true))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; TYPE: PATH-DATA
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (def ^:const SEGMENT-BYTE-SIZE 28)
 
 (defprotocol IPathData
   (-write-to [_ buffer offset] "write the content to the specified buffer")
-  (-bytes [_] "get path data as byte array"))
+  (-get-byte-size [_] "get byte size"))
+
+(defprotocol ITransformable
+  (-transform [_ m] "apply a transform"))
+
+(defn- transform!
+  "Apply a transformation to a segment located under specified offset"
+  [buffer offset m]
+  (let [a (dm/get-prop m :a)
+        b (dm/get-prop m :b)
+        c (dm/get-prop m :c)
+        d (dm/get-prop m :d)
+        e (dm/get-prop m :e)
+        f (dm/get-prop m :f)
+        t #?(:clj  (.getShort ^ByteBuffer buffer offset)
+             :cljs (.getInt16 buffer offset))]
+
+    (case t
+      (1 2)
+      (let [x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
+                 :cljs (.getFloat32 buffer (+ offset 20)))
+            y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
+                 :cljs (.getFloat32 buffer (+ offset 24)))
+            x (+ (* x a) (* y c) e)
+            y (+ (* x b) (* y d) f)]
+        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 20) x)
+           :cljs (.setFloat32 buffer (+ offset 20) x))
+        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 24) y)
+           :cljs (.setFloat32 buffer (+ offset 24) y)))
+
+      3
+      (let [c1x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 4))
+                   :cljs (.getFloat32 buffer (+ offset 4)))
+            c1y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 8))
+                   :cljs (.getFloat32 buffer (+ offset 8)))
+            c2x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 12))
+                   :cljs (.getFloat32 buffer (+ offset 12)))
+            c2y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 16))
+                   :cljs (.getFloat32 buffer (+ offset 16)))
+            x   #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
+                   :cljs (.getFloat32 buffer (+ offset 20)))
+            y   #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
+                   :cljs (.getFloat32 buffer (+ offset 24)))
+
+            c1x (+ (* c1x a) (* c1y c) e)
+            c1y (+ (* c1x b) (* c1y d) f)
+            c2x (+ (* c2x a) (* c2y c) e)
+            c2y (+ (* c2x b) (* c2y d) f)
+            x   (+ (* x a) (* y c) e)
+            y   (+ (* x b) (* y d) f)]
+
+        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 4) c1x)
+           :cljs (.setFloat32 buffer (+ offset 4) c1x))
+        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 8) c1y)
+           :cljs (.setFloat32 buffer (+ offset 8) c1y))
+        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 12) c2x)
+           :cljs (.setFloat32 buffer (+ offset 12) c2x))
+        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 16) c2y)
+           :cljs (.setFloat32 buffer (+ offset 16) c2y))
+        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 20) x)
+           :cljs (.setFloat32 buffer (+ offset 20) x))
+        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 24) y)
+           :cljs (.setFloat32 buffer (+ offset 24) y)))
+
+      nil)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TYPE: PATH-DATA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- to-string
   "Format the path data structure to string"
@@ -135,6 +200,21 @@
   [size i]
   (and (< i size) (>= i 0)))
 
+(defn- clone-buffer
+  [buffer]
+  #?(:clj
+     (let [src (.array ^ByteBuffer buffer)
+           len (alength ^bytes src)
+           dst (byte-array len)]
+       (System/arraycopy src 0 dst 0 len)
+       (ByteBuffer/wrap dst))
+     :cljs
+     (let [src-view (js/Uint32Array. buffer)
+           dst-buff (js/ArrayBuffer. (.-byteLength buffer))
+           dst-view (js/Uint32Array. dst-buff)]
+       (.set dst-view src-view)
+       dst-buff)))
+
 #?(:clj
    (deftype PathData [size buffer ^:unsynchronized-mutable hash]
      Object
@@ -145,6 +225,16 @@
        (if (instance? PathData other)
          (.equals ^ByteBuffer buffer (.-buffer ^PathData other))
          false))
+
+     ITransformable
+     (-transform [_ m]
+       (let [buffer (clone-buffer buffer)]
+         (loop [index 0]
+           (when (< index size)
+             (let [offset (* index SEGMENT-BYTE-SIZE)]
+               (transform! buffer offset m)
+               (recur (inc index)))))
+         (PathData. size buffer nil)))
 
      json/JSONWriter
      (-write [this writter options]
@@ -158,10 +248,13 @@
 
      clojure.lang.Sequential
      clojure.lang.Seqable
-     (seq [this]
+     (seq [_]
        (when (pos? size)
-         (->> (range size)
-              (map (fn [i] (nth this i))))))
+         ((fn next-seq [i]
+            (when (< i size)
+              (cons (read-segment buffer i)
+                    (lazy-seq (next-seq (inc i))))))
+          0)))
 
      clojure.lang.IReduceInit
      (reduce [_ f start]
@@ -189,11 +282,11 @@
      (count [_] size)
 
      IPathData
-     (-write-to [_ _ _]
-       (throw (RuntimeException. "not implemented")))
+     (-get-byte-size [_]
+       (* size SEGMENT-BYTE-SIZE))
 
-     (-bytes [_]
-       (.array ^ByteBuffer buffer)))
+     (-write-to [_ _ _]
+       (throw (RuntimeException. "not implemented"))))
 
    :cljs
    #_:clj-kondo/ignore
@@ -203,14 +296,28 @@
        (to-string dview size))
 
      IPathData
-     (-write-to [_ into-buffer offset]
-       (assert (instance? js/ArrayBuffer into-buffer) "expected an instance of Uint32Array")
-       (let [size (.-byteLength buffer)
-             mem  (js/Uint32Array. into-buffer offset size)]
-         (.set mem (js/Uint32Array. buffer))))
+     (-get-byte-size [_]
+       (.-byteLength buffer))
 
-     (-bytes [_]
-       (js/Uint8Array. buffer))
+     (-write-to [_ into-buffer offset]
+       ;; NOTE: we still use u8 because until the heap refactor merge
+       ;; we can't guarrantee the alignment of offset on 4 bytes
+       (assert (instance? js/ArrayBuffer into-buffer))
+       (let [size (.-byteLength buffer)
+             mem  (js/Uint8Array. into-buffer offset size)]
+         (.set mem (js/Uint8Array. buffer))))
+
+     ITransformable
+     (-transform [this m]
+       (let [buffer (clone-buffer buffer)
+             dview  (js/DataView. buffer)]
+         (loop [index 0]
+
+           (when (< index size)
+             (let [offset (* index SEGMENT-BYTE-SIZE)]
+               (transform! dview offset m)
+               (recur (inc index)))))
+         (PathData. size buffer dview nil)))
 
      cljs.core/ISequential
      cljs.core/IEquiv
@@ -431,6 +538,9 @@
        (instance? js/Uint8Array buffer)
        (from-bytes (.-buffer buffer))
 
+       (instance? js/Int8Array buffer)
+       (from-bytes (.-buffer buffer))
+
        :else
        (throw (js/Error. "invalid data provided")))))
 
@@ -505,6 +615,23 @@
     #?(:cljs (from-bytes dview)
        :clj  (from-bytes buffer))))
 
+(defn path-data
+  "Create an instance of PathData, returns itself if it is already
+  PathData instance"
+  [data]
+  (cond
+    (path-data? data)
+    data
+
+    (nil? data)
+    (from-plain [])
+
+    (sequential? data)
+    (from-plain data)
+
+    :else
+    (throw (ex-info "unexpected data" {:data data}))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SERIALIZATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -513,7 +640,9 @@
  {:id "penpot/path-data"
   :class PathData
   :wfn (fn [^PathData pdata]
-         (-bytes pdata))
+         (let [buffer (.-buffer pdata)]
+           #?(:cljs (js/Uint8Array. buffer)
+              :clj  (.array ^ByteBuffer buffer))))
   :rfn from-bytes})
 
 #?(:clj

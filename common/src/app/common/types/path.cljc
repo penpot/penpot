@@ -22,40 +22,28 @@
 
 #?(:clj (set! *warn-on-reflection* true))
 
-(def SEGMENT-BYTE-SIZE impl/SEGMENT-BYTE-SIZE)
-
-(defn path-data?
+(defn content?
   [o]
   (impl/path-data? o))
 
-(defn from-string
-  [s]
-  (impl/from-string s))
-
 (defn content
-  "Create an instance of PathData, returns itself if it is already
-  PathData instance"
+  "Create path content from plain data or bytes, returns itself if it
+  is already PathData instance"
   [data]
-  (cond
-    (impl/path-data? data)
-    data
+  (impl/path-data data))
 
-    (nil? data)
-    (impl/from-plain [])
-
-    (vector? data)
-    (impl/from-plain data)
-
-    :else
-    (impl/from-bytes data)))
-
-(defn path-data
+(defn from-bytes
   [data]
-  (content data))
+  (impl/from-bytes data))
 
 (defn check-path-content
   [content]
   (impl/check-content-like content))
+
+(defn get-byte-size
+  "Get byte size of a path content"
+  [content]
+  (impl/-get-byte-size content))
 
 (defn write-to
   [content buffer offset]
@@ -65,9 +53,16 @@
 ;; TRANSFORMATIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; MOVE TO segment
+(defn close-subpaths
+  "Given a content, searches a path for possible subpaths that can
+  create closed loops and merge them; then return the transformed path
+  conten as PathData instance"
+  [content]
+  (-> (subpath/close-subpaths content)
+      (impl/from-plain)))
+
 (defn apply-content-modifiers
-  "Apply to content a map with point translations"
+  "Apply delta modifiers over the path content"
   [content modifiers]
   (assert (impl/check-content-like content))
 
@@ -93,20 +88,89 @@
                 (:c2x params) (update-in [index :params :c2x] + (:c2x params))
                 (:c2y params) (update-in [index :params :c2y] + (:c2y params)))
               content))]
-    (let [content (if (vector? content) content (into [] content))]
-      (reduce apply-to-index content modifiers))))
+
+    (impl/path-data
+     (reduce apply-to-index (vec content) modifiers))))
+
+(defn transform-content
+  "Applies a transformation matrix over content and returns a new
+  content as PathData instance."
+  [content transform]
+  (segment/transform-content content transform))
+
+(defn move-content
+  [content move-vec]
+  (if (gpt/zero? move-vec)
+    content
+    (segment/move-content content move-vec)))
+
+(defn update-geometry
+  "Update shape with new geometry calculated from provided content"
+  ([shape content]
+   (update-geometry (assoc shape :content content)))
+  ([shape]
+   (let [flip-x
+         (get shape :flip-x)
+
+         flip-y
+         (get shape :flip-y)
+
+         ;; NOTE: we ensure that content is PathData instance
+         content
+         (impl/path-data
+          (get shape :content))
+
+         ;; Ensure plain format once
+         transform
+         (cond-> (:transform shape (gmt/matrix))
+           flip-x (gmt/scale (gpt/point -1 1))
+           flip-y (gmt/scale (gpt/point 1 -1)))
+
+         transform-inverse
+         (cond-> (gmt/matrix)
+           flip-x (gmt/scale (gpt/point -1 1))
+           flip-y (gmt/scale (gpt/point 1 -1))
+           :always (gmt/multiply (:transform-inverse shape (gmt/matrix))))
+
+         center
+         (or (some-> (dm/get-prop shape :selrect) grc/rect->center)
+             (segment/content-center content))
+
+         base-content
+         (segment/transform-content content (gmt/transform-in center transform-inverse))
+
+         ;; Calculates the new selrect with points given the old center
+         points
+         (-> (segment/content->selrect base-content)
+             (grc/rect->points)
+             (gco/transform-points center transform))
+
+         points-center
+         (gco/points->center points)
+
+         ;; Points is now the selrect but the center is different so we can create the selrect
+         ;; through points
+         selrect
+         (-> points
+             (gco/transform-points points-center transform-inverse)
+             (grc/points->rect))]
+
+     (-> shape
+         (assoc :content content)
+         (assoc :points points)
+         (assoc :selrect selrect)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; HELPERS
+;; PATH SHAPE HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; FIXME: rename?
-(defn calc-bool-content
+(defn- calc-bool-content*
+  "Calculate the boolean content from shape and objects. Returns plain
+  vector of segments"
   [shape objects]
-
   (let [extract-content-xf
         (comp (map (d/getf objects))
-              (filter (comp not :hidden))
+              (remove :hidden)
               (remove cpf/svg-raw-shape?)
               (map #(stp/convert-to-path % objects))
               (map :content))
@@ -114,7 +178,14 @@
         contents
         (sequence extract-content-xf (:shapes shape))]
 
-    (bool/content (:bool-type shape) contents)))
+    (bool/calculate-content (:bool-type shape) contents)))
+
+(defn calc-bool-content
+  "Calculate the boolean content from shape and objects. Returns a
+  packed PathData instance"
+  [shape objects]
+  (-> (calc-bool-content* shape objects)
+      (impl/path-data)))
 
 (defn shape-with-open-path?
   [shape]
@@ -128,61 +199,11 @@
                    (subpath/get-subpaths)
                    (every? subpath/is-closed?))))))
 
-;; FIXME: ensure type
-(defn transform-content
-  [content transform]
-  (segment/transform-content content transform))
-
-;; FIXME: ensure type
-(defn move-content
-  [content move-vec]
-  (segment/move-content content move-vec))
-
-(defn content->selrect
-  [content]
-  (segment/content->selrect content))
-
-(defn content->points+selrect
-  "Given the content of a shape, calculate its points and selrect"
-  [shape content]
-  (let [{:keys [flip-x flip-y]} shape
-        transform
-        (cond-> (:transform shape (gmt/matrix))
-          flip-x (gmt/scale (gpt/point -1 1))
-          flip-y (gmt/scale (gpt/point 1 -1)))
-
-        transform-inverse
-        (cond-> (gmt/matrix)
-          flip-x (gmt/scale (gpt/point -1 1))
-          flip-y (gmt/scale (gpt/point 1 -1))
-          :always (gmt/multiply (:transform-inverse shape (gmt/matrix))))
-
-        center (or (some-> (dm/get-prop shape :selrect) grc/rect->center)
-                   (segment/content-center content))
-
-        base-content (transform-content
-                      content
-                      (gmt/transform-in center transform-inverse))
-
-        ;; Calculates the new selrect with points given the old center
-        points (-> (content->selrect base-content)
-                   (grc/rect->points)
-                   (gco/transform-points center transform))
-
-        points-center (gco/points->center points)
-
-        ;; Points is now the selrect but the center is different so we can create the selrect
-        ;; through points
-        selrect (-> points
-                    (gco/transform-points points-center transform-inverse)
-                    (grc/points->rect))]
-
-    [points selrect]))
-
 (defn convert-to-path
   "Transform a shape to a path shape"
   ([shape]
-   (stp/convert-to-path shape {}))
+   (convert-to-path shape {}))
   ([shape objects]
-   (stp/convert-to-path shape objects)))
+   (-> (stp/convert-to-path shape objects)
+       (update :content impl/path-data))))
 

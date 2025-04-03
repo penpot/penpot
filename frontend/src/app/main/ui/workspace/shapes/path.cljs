@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.shapes.path
   (:require
+   [app.common.data.macros :as dm]
    [app.common.types.path :as types.path]
    [app.main.refs :as refs]
    [app.main.ui.shapes.path :as path]
@@ -14,25 +15,31 @@
    [app.main.ui.workspace.shapes.path.common :as pc]
    [rumext.v2 :as mf]))
 
-(defn apply-content-modifiers
+(defn- apply-content-modifiers
   [shape content-modifiers]
-  (let [shape (update shape :content types.path/apply-content-modifiers content-modifiers)
-        [_ new-selrect] (types.path/content->points+selrect shape (:content shape))]
-    (assoc shape :selrect new-selrect)))
+  (let [shape (update shape :content types.path/apply-content-modifiers content-modifiers)]
+    (types.path/update-geometry shape)))
 
 (mf/defc path-wrapper
   {::mf/wrap-props false}
-  [props]
-  (let [shape (unchecked-get props "shape")
-        content-modifiers-ref (pc/make-content-modifiers-ref (:id shape))
-        content-modifiers (mf/deref content-modifiers-ref)
-        editing-id (mf/deref refs/selected-edition)
-        editing? (= editing-id (:id shape))
+  [{:keys [shape]}]
+  (let [shape-id (dm/get-prop shape :id)
+
+        content-modifiers-ref
+        (pc/make-content-modifiers-ref shape-id)
+
+        content-modifiers
+        (mf/deref content-modifiers-ref)
+
+        editing-id
+        (mf/deref refs/selected-edition)
+
+        editing?
+        (= editing-id shape-id)
 
         shape
-        (mf/use-memo
-         (mf/deps shape content-modifiers)
-         #(cond-> shape
+        (mf/with-memo [shape content-modifiers]
+          (cond-> shape
             (some? content-modifiers)
             (apply-content-modifiers content-modifiers)))]
 

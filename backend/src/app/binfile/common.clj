@@ -435,11 +435,7 @@
 
 (defn encode-file
   [{:keys [::db/conn] :as cfg} {:keys [id features] :as file}]
-  (let [file (if (contains? features "fdata/path-data")
-               (feat.fdata/enable-path-data file)
-               file)
-
-        file (if (contains? features "fdata/objects-map")
+  (let [file (if (contains? features "fdata/objects-map")
                (feat.fdata/enable-objects-map file)
                file)
 

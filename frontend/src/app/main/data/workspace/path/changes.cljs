@@ -11,40 +11,32 @@
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.path.state :as st]
-   [app.main.features :as features]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
 (defn generate-path-changes
   "Generates changes to update the new content of the shape"
-  [it features objects page-id shape old-content new-content]
+  [it objects page-id shape old-content new-content]
 
   (assert (path/check-path-content old-content))
   (assert (path/check-path-content new-content))
 
   (let [shape-id (:id shape)
 
-        [old-points old-selrect]
-        (path/content->points+selrect shape old-content)
-
-        [new-points new-selrect]
-        (path/content->points+selrect shape new-content)
-
         ;; We set the old values so the update-shapes works
         objects
-        (update objects shape-id assoc
-                :content old-content
-                :selrect old-selrect
-                :points old-points)
+        (update objects shape-id
+                (fn [shape]
+                  (-> shape
+                      (assoc :content old-content)
+                      (path/update-geometry))))
 
         changes
         (-> (pcb/empty-changes it page-id)
             (pcb/with-objects objects))
 
         new-content
-        (if (contains? features "fdata/path-data")
-          (path/path-data new-content)
-          new-content)]
+        (path/content new-content)]
 
     (cond
       ;; https://tree.taiga.io/project/penpot/issue/2366
@@ -60,10 +52,9 @@
       (-> changes
           (pcb/update-shapes [shape-id]
                              (fn [shape]
-                               (assoc shape
-                                      :content new-content
-                                      :selrect new-selrect
-                                      :points new-points)))
+                               (-> shape
+                                   (assoc :content new-content)
+                                   (path/update-geometry))))
           (pcb/resize-parents [shape-id])))))
 
 (defn save-path-content
@@ -90,8 +81,7 @@
              shape       (st/get-path state)]
 
          (if (and (some? old-content) (some? (:id shape)))
-           (let [features (features/get-team-enabled-features state)
-                 changes  (generate-path-changes it features objects page-id shape old-content (:content shape))]
+           (let [changes (generate-path-changes it objects page-id shape old-content (:content shape))]
              (rx/of (dch/commit-changes changes)))
            (rx/empty)))))))
 

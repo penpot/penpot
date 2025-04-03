@@ -8,12 +8,15 @@
   "A collection of helpers for work with plain segment type"
   (:require
    [app.common.data :as d]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.math :as mth]
    [app.common.types.path.helpers :as helpers]
    [app.common.types.path.impl :as impl]
    [clojure.set :as set]))
+
+#?(:clj (set! *warn-on-reflection* true))
 
 (defn get-point
   "Get a point for a segment"
@@ -43,7 +46,6 @@
                (contains? params cy))
       (gpt/point (get params cx)
                  (get params cy)))))
-
 
 ;; FIXME: rename segments->handlers
 (defn content->handlers
@@ -113,22 +115,28 @@
   (->> (d/enumerate content)
        (filterv (fn [[_ cmd]] (= (get-point cmd) point)))))
 
-(defn handler->point [content index prefix]
+;; FIXME: candidate to be optimized with native data type operation
+(defn handler->point
+  [content index prefix]
   (when (and (some? index)
-             (some? prefix)
-             (contains? content index))
-    (let [[cx cy] (helpers/prefix->coords prefix)]
-      (if (= :curve-to (get-in content [index :command]))
-        (gpt/point (get-in content [index :params cx])
-                   (get-in content [index :params cy]))
+             (some? prefix))
+    (when (and (<= 0 index)
+               (< index (count content)))
+      (let [segment (nth content index)
+            params  (get segment :params)]
+        (if (= :curve-to (:command segment))
+          (let [[cx cy] (helpers/prefix->coords prefix)]
+            (gpt/point (get params cx)
+                       (get params cy)))
+          (gpt/point (get params :x)
+                     (get params :y)))))))
 
-        (gpt/point (get-in content [index :params :x])
-                   (get-in content [index :params :y]))))))
-
-(defn handler->node [content index prefix]
+;; FIXME: revisit this function
+(defn handler->node
+  [content index prefix]
   (if (= prefix :c1)
-    (get-point (get content (dec index)))
-    (get-point (get content index))))
+    (get-point (nth content (dec index)))
+    (get-point (nth content index))))
 
 (defn calculate-opposite-handler
   "Given a point and its handler, gives the symmetric handler"
@@ -142,15 +150,9 @@
   (let [phv (gpt/to-vec point handler)]
     (gpt/add point (gpt/negate phv))))
 
-;; (defn opposite-handler-keep-distance
-;;   "Calculates the coordinates of the opposite handler but keeping the old distance"
-;;   [point handler old-opposite]
-;;   (let [old-distance (gpt/distance point old-opposite)
-;;         phv (gpt/to-vec point handler)
-;;         phv2 (gpt/multiply
-;;               (gpt/unit (gpt/negate phv))
-;;               (gpt/point old-distance))]
-;;     (gpt/add point phv2)))
+;; FIXME: revisit, this function is executed many times per render on
+;; path editor it is easy to be implemented in function of PathData
+;; type in a more efficient way
 
 (defn content->points
   "Returns the points in the given content"
@@ -219,12 +221,13 @@
 
 (def ^:const path-closest-point-accuracy 0.01)
 
-;; FIXME: move to helpers?
+;; FIXME: move to helpers?, this function need performance review, it
+;; is executed so many times on path edition
 (defn- curve-closest-point
   [position start end h1 h2]
   (let [d (memoize (fn [t] (gpt/distance position (helpers/curve-values start end h1 h2 t))))]
-    (loop [t1 0
-           t2 1]
+    (loop [t1 0.0
+           t2 1.0]
       (if (<= (mth/abs (- t1 t2)) path-closest-point-accuracy)
         (-> (helpers/curve-values start end h1 h2 t1)
             ;; store the segment info
@@ -249,7 +252,8 @@
 
                         :else
                         [ht t2])]
-          (recur t1 t2))))))
+          (recur (double t1)
+                 (double t2)))))))
 
 (defn- line-closest-point
   "Point on line"
@@ -771,56 +775,21 @@
         (replace-points point->merge-point))))
 
 (defn transform-content
+  "Applies a transformation matrix over content and returns a new
+  content as PathData instance."
   [content transform]
   (if (some? transform)
-    (let [set-tr
-          (fn [params px py]
-            (let [tr-point (-> (gpt/point (get params px) (get params py))
-                               (gpt/transform transform))]
-              (assoc params
-                     px (:x tr-point)
-                     py (:y tr-point))))
-
-          transform-params
-          (fn [{:keys [x c1x c2x] :as params}]
-            (cond-> params
-              (some? x)   (set-tr :x :y)
-              (some? c1x) (set-tr :c1x :c1y)
-              (some? c2x) (set-tr :c2x :c2y)))]
-
-      (into []
-            (map #(update % :params transform-params))
-            content))
+    (impl/-transform content transform)
     content))
 
 (defn move-content
+  "Applies a displacement over content and returns a new content as
+  PathData instance. Implemented in function of `transform-content`."
   [content move-vec]
-  (let [dx (:x move-vec)
-        dy (:y move-vec)
+  (let [transform (gmt/translate-matrix move-vec)]
+    (transform-content content transform)))
 
-        set-tr
-        (fn [params px py]
-          (cond-> params
-            (d/num? dx)
-            (update px + dx)
-
-            (d/num? dy)
-            (update py + dy)))
-
-        transform-params
-        (fn [{:keys [x y c1x c1y c2x c2y] :as params}]
-          (cond-> params
-            (d/num? x y)   (set-tr :x :y)
-            (d/num? c1x c1y) (set-tr :c1x :c1y)
-            (d/num? c2x c2y) (set-tr :c2x :c2y)))
-
-        update-command
-        (fn [command]
-          (update command :params transform-params))]
-
-    (->> content
-         (into [] (map update-command)))))
-
+;; FIXME: add optimizations
 (defn content->selrect
   [content]
   (let [extremities

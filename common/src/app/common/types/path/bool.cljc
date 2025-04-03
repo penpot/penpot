@@ -335,7 +335,6 @@
      (->> content-a-split (filter #(contains-segment? % content-b sr-b content-b-geom)))
      (->> content-b-split (filter #(contains-segment? % content-a sr-a content-a-geom))))))
 
-
 (defn create-exclusion [content-a content-b]
   ;; Pick all segments
   (d/concat-vec content-a content-b))
@@ -387,7 +386,7 @@
     (->> (fix-move-to content)
          (subpath/close-subpaths))))
 
-(defn content
+(defn calculate-content
   "Create a bool content from a collection of contents and specified
   type."
   [bool-type contents]
@@ -395,6 +394,6 @@
   ;; element
   (if (seq contents)
     (->> contents
-         (reduce (partial content-bool-pair bool-type) contents)
+         (reduce (partial content-bool-pair bool-type))
          (vec))
     []))

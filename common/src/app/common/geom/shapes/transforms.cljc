@@ -76,7 +76,11 @@
               position-data)
         position-data))))
 
-;; FIXME: revist usage of mutability
+;; FIXME: review performance of this; this function is executing too
+;; many times, including when the point vector is 0,0. This function
+;; can be implemented in function of transform which is already mor
+;; performant
+
 (defn move
   "Move the shape relatively to its current
   position applying the provided delta."
@@ -445,22 +449,11 @@
 
 (defn update-bool
   "Calculates the selrect+points for the boolean shape"
-  [shape children objects]
+  [shape _children objects]
 
-  (let [content
-        (path/calc-bool-content shape objects)
-
-        shape
-        (assoc shape :content content)
-
-        [points selrect]
-        (path/content->points+selrect shape content)]
-
-    (if (and (some? selrect) (d/not-empty? points))
-      (-> shape
-          (assoc :selrect selrect)
-          (assoc :points points))
-      (update-group-selrect shape children))))
+  (let [content (path/calc-bool-content shape objects)
+        shape   (assoc shape :content content)]
+    (path/update-geometry shape)))
 
 (defn update-shapes-geometry
   [objects ids]

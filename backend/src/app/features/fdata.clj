@@ -156,7 +156,7 @@
   (letfn [(update-object [object]
             (if (or (cfh/path-shape? object)
                     (cfh/bool-shape? object))
-              (update object :content path/path-data)
+              (update object :content path/content)
               object))
 
           (update-container [container]

@@ -17,11 +17,11 @@
     (nil? content)
     ""
 
-    (path/path-data? content)
+    (path/content? content)
     (.toString content)
 
     :else
-    (let [content (path/path-data content)]
+    (let [content (path/content content)]
       (.toString content))))
 
 (mf/defc path-shape
