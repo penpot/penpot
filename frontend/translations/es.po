@@ -6924,6 +6924,14 @@ msgstr "Valor"
 msgid "workspace.token.token-value-enter"
 msgstr "Introduce un valor o un alias usando {alias}"
 
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:345
+msgid "workspace.token.inactive-set"
+msgstr "Inactivo"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:340
+msgid "workspace.token.inactive-set-description"
+msgstr "Set inactivo. Cambia el tema o activa el set para ver los cambios en el canvas."
+
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
 msgid "workspace.token.tools"
 msgstr "Herramientas"
