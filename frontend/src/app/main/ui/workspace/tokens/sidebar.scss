@@ -39,7 +39,7 @@
 }
 
 .themes-header,
-.sets-header {
+.sets-header-container {
   @include use-typography("headline-small");
   display: block;
   padding: $s-8;
@@ -47,8 +47,29 @@
   word-break: break-word;
 }
 
-.sets-header {
+.sets-header-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $s-4;
   margin-block-start: $s-8;
+}
+
+.sets-header {
+  flex: 1;
+}
+
+.sets-header-status {
+  @include use-typography("body-small");
+  text-transform: none;
+  color: var(--color-foreground-secondary);
+  display: flex;
+  align-items: center;
+  gap: $s-4;
+}
+
+.sets-header-status-text {
+  font-style: italic;
 }
 
 .themes-wrapper {

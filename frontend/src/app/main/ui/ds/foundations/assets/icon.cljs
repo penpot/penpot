@@ -134,6 +134,7 @@
 (def ^:icon-id exit "exit")
 (def ^:icon-id expand "expand")
 (def ^:icon-id external-link "external-link")
+(def ^:icon-id eye-off "eye-off")
 (def ^:icon-id feedback "feedback")
 (def ^:icon-id fill-content "fill-content")
 (def ^:icon-id filter "filter")
