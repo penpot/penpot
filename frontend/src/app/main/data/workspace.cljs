@@ -698,7 +698,7 @@
 (defn rename-file
   [id name]
   {:pre [(uuid? id) (string? name)]}
-  (let [name (str/prune name 200)]
+  (let [name (dm/truncate name 200)]
     (ptk/reify ::rename-file
       IDeref
       (-deref [_]

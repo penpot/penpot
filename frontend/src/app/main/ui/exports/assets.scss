@@ -304,6 +304,7 @@
     }
     .file-name-label {
       @include bodyLargeTypography;
+      @include textEllipsis;
     }
   }
   &.loading {

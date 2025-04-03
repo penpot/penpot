@@ -54,6 +54,10 @@
   flex-direction: row;
 }
 
+.file-name-label {
+  @include textEllipsis;
+}
+
 .file-name-input {
   @include flexCenter;
   width: 100%;
