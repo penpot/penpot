@@ -191,20 +191,33 @@
                :style {:fill "none"
                        :stroke-width 0}}]]))
 
-(mf/defc path-preview [{:keys [zoom command from]}]
-  [:g.preview {:style {:pointer-events "none"}}
-   (when (not= :move-to (:command command))
-     [:path {:style {:fill "none"
-                     :stroke pc/black-color
-                     :stroke-width (/ handler-stroke-width zoom)
-                     :stroke-dasharray (/ path-preview-dasharray zoom)}
-             :d (upf/format-path [{:command :move-to
-                                   :params {:x (:x from)
-                                            :y (:y from)}}
-                                  command])}])
-   [:> path-point* {:position (:params command)
-                    :is-preview true
-                    :zoom zoom}]])
+(mf/defc path-preview*
+  {::mf/private true}
+  [{:keys [zoom segment from]}]
+
+  (let [path
+        (when (not= :move-to (:command segment))
+          (let [segments [{:command :move-to
+                           :params from}]
+                segments (conj segments segment)]
+            (path/content segments)))
+
+        position
+        (mf/with-memo [segment]
+          ;; FIXME: use a helper from common for this
+          (gpt/point (:params segment)))]
+
+    [:g.preview {:style {:pointer-events "none"}}
+     (when (some? path)
+       [:path {:style {:fill "none"
+                       :stroke pc/black-color
+                       :stroke-width (/ handler-stroke-width zoom)
+                       :stroke-dasharray (/ path-preview-dasharray zoom)}
+               :d (str path)}])
+
+     [:> path-point* {:position position
+                      :is-preview true
+                      :zoom zoom}]]))
 
 (mf/defc path-snap [{:keys [selected points zoom]}]
   (let [ranges       (mf/use-memo (mf/deps selected points) #(snap/create-ranges points selected))
@@ -322,9 +335,9 @@
                      :stroke pc/accent-color
                      :strokeWidth (/ 1 zoom)}}]
      (when (and preview (not drag-handler))
-       [:& path-preview {:command preview
-                         :from last-p
-                         :zoom zoom}])
+       [:> path-preview* {:segment preview
+                          :from last-p
+                          :zoom zoom}])
 
      (when (and drag-handler last-p)
        [:g.drag-handler {:pointer-events "none"}
