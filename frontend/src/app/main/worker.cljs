@@ -17,8 +17,10 @@
   []
   (let [worker (uw/init cf/worker-uri err/on-error)]
     (uw/ask! worker {:cmd :configure
-                     :key :public-uri
-                     :val cf/public-uri})
+                     :config {:public-uri cf/public-uri
+                              :build-data cf/build-date
+                              :version cf/version}})
+
     (set! instance worker)))
 
 (defn ask!
