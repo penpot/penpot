@@ -9,6 +9,7 @@
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
    [app.render-wasm.api :as api]
+   [beicon.v2.core :as rx]
    [clojure.core :as c]
    [cuerdas.core :as str]))
 
@@ -110,49 +111,53 @@
   [self k v]
   (when ^boolean shape/*wasm-sync*
     (api/use-shape (:id self))
-    (case k
-      :parent-id    (api/set-parent-id v)
-      :type         (api/set-shape-type v)
-      :bool-type    (api/set-shape-bool-type v)
-      :selrect      (api/set-shape-selrect v)
-      :show-content (if (= (:type self) :frame)
-                      (api/set-shape-clip-content (not v))
-                      (api/set-shape-clip-content false))
-      :rotation     (api/set-shape-rotation v)
-      :transform    (api/set-shape-transform v)
-      :fills        (into [] (api/set-shape-fills v))
-      :strokes      (into [] (api/set-shape-strokes v))
-      :blend-mode   (api/set-shape-blend-mode v)
-      :opacity      (api/set-shape-opacity v)
-      :hidden       (api/set-shape-hidden v)
-      :shapes       (api/set-shape-children v)
-      :blur         (api/set-shape-blur v)
-      :shadow       (api/set-shape-shadows v)
-      :constraints-h (api/set-constraints-h v)
-      :constraints-v (api/set-constraints-v v)
+    (let [pending (case k
+                    :parent-id    (api/set-parent-id v)
+                    :type         (api/set-shape-type v)
+                    :bool-type    (api/set-shape-bool-type v)
+                    :selrect      (api/set-shape-selrect v)
+                    :show-content (if (= (:type self) :frame)
+                                    (api/set-shape-clip-content (not v))
+                                    (api/set-shape-clip-content false))
+                    :rotation     (api/set-shape-rotation v)
+                    :transform    (api/set-shape-transform v)
+                    :fills        (into [] (api/set-shape-fills v))
+                    :strokes      (into [] (api/set-shape-strokes v))
+                    :blend-mode   (api/set-shape-blend-mode v)
+                    :opacity      (api/set-shape-opacity v)
+                    :hidden       (api/set-shape-hidden v)
+                    :shapes       (api/set-shape-children v)
+                    :blur         (api/set-shape-blur v)
+                    :shadow       (api/set-shape-shadows v)
+                    :constraints-h (api/set-constraints-h v)
+                    :constraints-v (api/set-constraints-v v)
+                    :svg-attrs    (when (= (:type self) :path)
+                                    (api/set-shape-path-attrs v))
+                    :masked-group (when (and (= (:type self) :group) (:masked-group self))
+                                    (api/set-masked (:masked-group self)))
+                    :content      (cond
+                                    (= (:type self) :path)
+                                    (api/set-shape-path-content v)
 
-      :svg-attrs    (when (= (:type self) :path)
-                      (api/set-shape-path-attrs v))
-      :masked-group (when (and (= (:type self) :group) (:masked-group self))
-                      (api/set-masked (:masked-group self)))
-      :content      (cond
-                      (= (:type self) :path)
-                      (api/set-shape-path-content v)
+                                    (= (:type self) :svg-raw)
+                                    (api/set-shape-svg-raw-content (api/get-static-markup self))
 
-                      (= (:type self) :svg-raw)
-                      (api/set-shape-svg-raw-content (api/get-static-markup self))
+                                    (= (:type self) :text)
+                                    (api/set-shape-text-content v))
+                    nil)]
 
-                      (= (:type self) :text)
-                      (into [] (api/set-shape-text-content v)))
-      nil)
-    ;; when something synced with wasm
-    ;; is modified, we need to request
-    ;; a new render.
-    ;; TODO: set-wasm-attrs is called twice with every set
-    ;; (println "set-wasm-attrs" (:id self) k v)
-    (api/update-shape-tiles)
-    (api/request-render "set-wasm-attrs")))
-
+      ;; TODO: set-wasm-attrs is called twice with every set
+      (if (and pending (seq pending))
+        (->> (rx/from pending)
+             (rx/mapcat identity)
+             (rx/reduce conj [])
+             (rx/subs! (fn [_]
+                         (api/update-shape-tiles)
+                         (api/clear-drawing-cache)
+                         (api/request-render "set-wasm-attrs-pending"))))
+        (do
+          (api/update-shape-tiles)
+          (api/request-render "set-wasm-attrs"))))))
 (defn- impl-assoc
   [self k v]
   (set-wasm-attrs self k v)
