@@ -23,8 +23,7 @@
    [app.util.path.format :as upf]
    [clojure.set :refer [map-invert]]
    [goog.events :as events]
-   [rumext.v2 :as mf])
-  (:import goog.events.EventType))
+   [rumext.v2 :as mf]))
 
 (def point-radius 5)
 (def point-radius-selected 4)
@@ -257,9 +256,9 @@
 (mf/defc path-editor*
   [{:keys [shape zoom]}]
 
-  (let [editor-ref (mf/use-ref nil)
+  (let [editor-ref    (mf/use-ref nil)
         edit-path-ref (pc/make-edit-path-ref (:id shape))
-        hover-point (mf/use-state nil)
+        hover-point   (mf/use-state nil)
 
         {:keys [edit-mode
                 drag-handler
@@ -286,7 +285,8 @@
           (path.segment/content->points base-content))
 
         content
-        (path/apply-content-modifiers base-content content-modifiers)
+        (mf/with-memo [base-content content-modifiers]
+          (path/apply-content-modifiers base-content content-modifiers))
 
         content-points
         (mf/with-memo [content]
@@ -295,37 +295,37 @@
         point->base (->> (map hash-map content-points base-points) (reduce merge))
         base->point (map-invert point->base)
 
-        points (into #{} content-points)
+        points
+        (mf/with-memo [content-points]
+          (into #{} content-points))
 
         last-p (->> content last path.segment/get-point)
-        handlers (path.segment/content->handlers content)
 
-        is-path-start (not (some? last-point))
+        handlers
+        (mf/with-memo [content]
+          (path.segment/content->handlers content))
+
+        is-path-start
+        (not (some? last-point))
 
         show-snap?
         (and ^boolean snap-toggled
              (or (some? drag-handler)
                  (some? preview)
                  (some? moving-handler)
-                 moving-nodes))
+                 moving-nodes))]
 
-        handle-double-click-outside
-        (fn [_]
-          (when (= edit-mode :move)
-            (st/emit! :interrupt)))]
-
-    (mf/use-layout-effect
-     (mf/deps edit-mode)
-     (fn []
-       (let [keys [(events/listen (dom/get-root) EventType.DBLCLICK handle-double-click-outside)]]
-         #(doseq [key keys]
-            (events/unlistenByKey key)))))
+    (mf/with-layout-effect [edit-mode]
+      (let [key (events/listen (dom/get-root) "dblclick"
+                               #(when (= edit-mode :move)
+                                  (st/emit! :interrupt)))]
+        #(events/unlistenByKey key)))
 
     (hooks/use-stream
      ms/mouse-position
-     (mf/deps shape zoom)
+     (mf/deps base-content zoom)
      (fn [position]
-       (when-let [point (path.segment/path-closest-point shape position)]
+       (when-let [point (path.segment/closest-point base-content position)]
          (reset! hover-point (when (< (gpt/distance position point) (/ 10 zoom)) point)))))
 
     [:g.path-editor {:ref editor-ref}
@@ -353,31 +353,45 @@
                          :is-start-path is-path-start
                          :zoom zoom}]])
 
-     (for [[index position] (d/enumerate points)]
-       (let [show-handler?
+     (for [position points]
+       (let [pos-x (dm/get-prop position :x)
+             pos-y (dm/get-prop position :y)
+
+             show-handler?
              (fn [[index prefix]]
+               ;; FIXME: handler->point is executed twice for each
+               ;; render, this can be optimized
                (let [handler-position (path.segment/handler->point content index prefix)]
                  (not= position handler-position)))
 
-             pos-handlers (get handlers position)
-             point-selected? (contains? selected-points (get point->base position))
-             point-hover? (contains? hover-points (get point->base position))
-             is-last (= last-point (get point->base position))
+             position-handlers
+             (->> (get handlers position)
+                  (filter show-handler?)
+                  (not-empty))
 
-             pos-handlers (->> pos-handlers (filter show-handler?))
-             is-curve (boolean (seq pos-handlers))]
+             point-selected?
+             (contains? selected-points (get point->base position))
 
-         [:g.path-node {:key (dm/str index "-" (:x position) "-" (:y position))}
+             point-hover?
+             (contains? hover-points (get point->base position))
+
+             is-last
+             (= last-point (get point->base position))
+
+             is-curve
+             (boolean position-handlers)]
+
+         [:g.path-node {:key (dm/str pos-x "-" pos-y)}
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
-           (for [[hindex prefix] pos-handlers]
-             (let [handler-position (path.segment/handler->point content hindex prefix)
-                   handler-hover? (contains? hover-handlers [hindex prefix])
-                   moving-handler? (= handler-position moving-handler)
-                   matching-handler? (matching-handler? content position pos-handlers)]
+           (for [[hindex prefix] position-handlers]
+             (let [handler-position  (path.segment/handler->point content hindex prefix)
+                   handler-hover?    (contains? hover-handlers [hindex prefix])
+                   moving-handler?   (= handler-position moving-handler)
+                   matching-handler? (matching-handler? content position position-handlers)]
 
                (when (and position handler-position)
                  [:> path-handler*
-                  {:key (dm/str (dm/str index "-" (:x position) "-" (:y position)) "-" hindex "-" (d/name prefix))
+                  {:key (dm/str hindex "-" (d/name prefix))
                    :point position
                    :handler handler-position
                    :index hindex
@@ -386,6 +400,7 @@
                    :is-hover handler-hover?
                    :snap-angle (and moving-handler? matching-handler?)
                    :edit-mode edit-mode}])))]
+
           [:> path-point* {:position position
                            :zoom zoom
                            :edit-mode edit-mode
