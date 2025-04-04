@@ -32,16 +32,12 @@
     (let [tc (tinycolor color-str)]
       (str/starts-with? (.getFormat tc) "hex"))))
 
-(defn ->string [^js tc]
-  (.toString tc))
+(defn ->string [^js tc format]
+  (.toString tc format))
 
 (defn ->hex-string [^js tc]
   (assert (tinycolor? tc))
   (.toHexString tc))
-
-(defn ->rgba-string [^js tc]
-  (assert (tinycolor? tc))
-  (.toRgbString tc))
 
 (defn color-format [^js tc]
   (assert (tinycolor? tc))
