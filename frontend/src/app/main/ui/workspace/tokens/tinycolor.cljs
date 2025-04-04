@@ -32,16 +32,20 @@
     (let [tc (tinycolor color-str)]
       (str/starts-with? (.getFormat tc) "hex"))))
 
-(defn ->string [^js tc]
-  (.toString tc))
+(def output-format->valid-input-format
+  "Tinycolor doesn't accept the `a` suffix it gives you via `.getFormat` for `.toString`, so we have to remove it with this table."
+  {"rgba" "rgb"
+   "rgb"  "rgb"
+   "hsva" "hsv"
+   "hsv"  "hsv"})
+
+(defn ->string [^js tc format]
+  (let [format' (get output-format->valid-input-format format "hex")]
+    (.toString tc format')))
 
 (defn ->hex-string [^js tc]
   (assert (tinycolor? tc))
   (.toHexString tc))
-
-(defn ->rgba-string [^js tc]
-  (assert (tinycolor? tc))
-  (.toRgbString tc))
 
 (defn color-format [^js tc]
   (assert (tinycolor? tc))
