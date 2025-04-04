@@ -361,11 +361,15 @@
                            (let [prev-format (some-> color
                                                      (tinycolor/valid-color)
                                                      (tinycolor/color-format))
-                                 format (if prev-format
-                                          (if (and (= prev-format "hex") (not= alpha 1))
-                                            "rgba"
-                                            prev-format)
-                                          (if (or (nil? alpha) (= alpha 1)) "hex" "rgba"))
+                                 to-rgba? (and
+                                           (< alpha 1)
+                                           (or (= prev-format "hex") (not prev-format)))
+                                 to-hex? (and (not prev-format) (= alpha 1))
+                                 format (cond
+                                          to-rgba? "rgba"
+                                          to-hex? "hex"
+                                          prev-format prev-format
+                                          :else "hex")
                                  color-value (-> (tinycolor/valid-color hex-value)
                                                  (tinycolor/set-alpha (or alpha 1))
                                                  (tinycolor/->string format)
