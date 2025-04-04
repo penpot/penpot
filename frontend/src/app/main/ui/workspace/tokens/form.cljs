@@ -315,7 +315,8 @@
                            (valid-name? @token-name-ref))
 
         ;; Value
-        color (mf/use-state (when color? (:value token)))
+        color* (mf/use-state (when color? (:value token)))
+        color (deref color*)
         color-ramp-open* (mf/use-state false)
         color-ramp-open? (deref color-ramp-open*)
         value-input-ref (mf/use-ref nil)
@@ -338,7 +339,7 @@
 
                      :else
                      (:resolved-value token-or-err))]
-             (when color? (reset! color (if error? nil v)))
+             (when color? (reset! color* (if error? nil v)))
              (reset! token-resolve-result* v))))
 
         on-update-value-debounced (use-debonced-resolve-callback token-name-ref token active-theme-tokens set-resolve-value)
@@ -355,13 +356,23 @@
                              (reset! value-ref value')
                              (on-update-value-debounced value'))))
         on-update-color (mf/use-fn
-                         (mf/deps on-update-value-debounced)
+                         (mf/deps color on-update-value-debounced)
                          (fn [hex-value alpha]
-                           (let [color-value (if (= 1 alpha)
-                                               hex-value
-                                               (-> (tinycolor/valid-color hex-value)
-                                                   (tinycolor/set-alpha alpha)
-                                                   (tinycolor/->rgba-string)))]
+                           (let [prev-format (some-> color
+                                                     (tinycolor/valid-color)
+                                                     (tinycolor/color-format))
+                                 to-rgba? (and
+                                           (< alpha 1)
+                                           (or (= prev-format "hex") (not prev-format)))
+                                 to-hex? (and (not prev-format) (= alpha 1))
+                                 format (cond
+                                          to-rgba? "rgba"
+                                          to-hex? "hex"
+                                          prev-format prev-format
+                                          :else "hex")
+                                 color-value (-> (tinycolor/valid-color hex-value)
+                                                 (tinycolor/set-alpha (or alpha 1))
+                                                 (tinycolor/->string format))]
                              (reset! value-ref color-value)
                              (dom/set-value! (mf/ref-val value-input-ref) color-value)
                              (on-update-value-debounced color-value))))
@@ -538,7 +549,9 @@
          :on-blur on-update-value}
         (when color?
           [:> input-token-color-bullet*
-           {:color @color :on-click on-display-colorpicker'}])]
+           {:data-testid "token-form-color-bullet"
+            :color color
+            :on-click on-display-colorpicker'}])]
        (when color-ramp-open?
          [:> ramp* {:color (some-> (or token-resolve-result (:value token))
                                    (tinycolor/valid-color))

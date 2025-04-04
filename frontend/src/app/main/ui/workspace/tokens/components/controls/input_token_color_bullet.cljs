@@ -14,14 +14,16 @@
 (def ^:private schema::input-token-color-bullet
   [:map
    [:color [:maybe :string]]
-   [:on-click fn?]])
+   [:on-click fn?]
+   [:data-testid {:optional true} :string]])
 
 (mf/defc input-token-color-bullet*
   {::mf/props :obj
    ::mf/schema schema::input-token-color-bullet}
-  [{:keys [color on-click]}]
+  [{:keys [color on-click data-testid]}]
   [:div {:class (stl/css :input-token-color-bullet)
-         :on-click on-click}
+         :on-click on-click
+         :data-testid data-testid}
    (if-let [color' (wtt/color-bullet-color color)]
      [:> color-bullet {:color color' :mini true}]
      [:div {:class (stl/css :input-token-color-bullet-placeholder)}])])

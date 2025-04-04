@@ -32,16 +32,23 @@
     (let [tc (tinycolor color-str)]
       (str/starts-with? (.getFormat tc) "hex"))))
 
-(defn ->string [^js tc]
-  (.toString tc))
+(def stringify-accepted-formats-table
+  "Conversion table for supported color spaces to use with tinycolor `.toString` method.
+  `.toString` doesn't accept the alpha `a` suffix it gives you via `.getFormat`, so we remove it."
+  {"rgba" "rgb"
+   "rgb"  "rgb"
+   "hsva" "hsv"
+   "hsv"  "hsv"})
+
+(defn ->string
+  "Stringify `tc` to `format` with regards to `stringify-accepted-formats-table`, uses `hex` as per default."
+  [^js tc format]
+  (let [format' (get stringify-accepted-formats-table format "hex")]
+    (.toString tc format')))
 
 (defn ->hex-string [^js tc]
   (assert (tinycolor? tc))
   (.toHexString tc))
-
-(defn ->rgba-string [^js tc]
-  (assert (tinycolor? tc))
-  (.toRgbString tc))
 
 (defn color-format [^js tc]
   (assert (tinycolor? tc))
