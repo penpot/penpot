@@ -47,8 +47,7 @@
                                                 file-mdf
                                                 {(:id file-mdf) file-mdf}
                                                 page-mdf
-                                                (:id copy-root)
-                                                true)
+                                                (:id copy-root))
 
         file'     (thf/apply-changes file changes)
 
@@ -99,8 +98,7 @@
                                                 {(:id file-mdf) file-mdf
                                                  (:id library) library}
                                                 page-mdf
-                                                (:id copy-root)
-                                                true)
+                                                (:id copy-root))
 
         file'     (thf/apply-changes file changes)
 
@@ -151,8 +149,7 @@
                                                 file-mdf
                                                 {(:id file-mdf) file-mdf}
                                                 page-mdf
-                                                (:id copy-root)
-                                                true)
+                                                (:id copy-root))
 
         file'   (thf/apply-changes file changes)
 
@@ -198,8 +195,7 @@
                                                 file-mdf
                                                 {(:id file-mdf) file-mdf}
                                                 page-mdf
-                                                (:id copy-root)
-                                                true)
+                                                (:id copy-root))
 
         file'   (thf/apply-changes file changes)
 
@@ -246,8 +242,7 @@
                                                 file-mdf
                                                 {(:id file-mdf) file-mdf}
                                                 page-mdf
-                                                (:id copy-root)
-                                                true)
+                                                (:id copy-root))
 
         file'   (thf/apply-changes file changes)
 
@@ -291,8 +286,7 @@
                                                 file-mdf
                                                 {(:id file-mdf) file-mdf}
                                                 page-mdf
-                                                (:id copy2-root)
-                                                true)
+                                                (:id copy2-root))
 
         file'     (thf/apply-changes file changes)
 
@@ -338,8 +332,7 @@
                                                 file-mdf
                                                 {(:id file-mdf) file-mdf}
                                                 page-mdf
-                                                (:id copy2-root)
-                                                true)
+                                                (:id copy2-root))
 
         file'     (thf/apply-changes file changes)
 

@@ -24,7 +24,6 @@
    [app.main.ui.workspace.sidebar.assets.colors :refer [colors-section]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.components :refer [components-section]]
-   [app.main.ui.workspace.sidebar.assets.graphics :refer [graphics-section]]
    [app.main.ui.workspace.sidebar.assets.typographies :refer [typographies-section]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -145,11 +144,10 @@
 
 (mf/defc file-library-content*
   {::mf/private true}
-  [{:keys [file is-local is-loaded open-status-ref on-clear-selection filters colors media typographies components count-variants]}]
+  [{:keys [file is-local is-loaded open-status-ref on-clear-selection filters colors typographies components count-variants]}]
   (let [open-status       (mf/deref open-status-ref)
 
         file-id           (:id file)
-        project-id        (:project-id file)
 
         filters-section   (:section filters)
         has-filters-term? (not ^boolean (str/empty? (:term filters)))
@@ -164,11 +162,6 @@
                  (= filters-section "components"))
              (or (pos? (count components))
                  (not has-filters-term?)))
-
-        show-graphics?
-        (and (or (= filters-section "all")
-                 (= filters-section "graphics"))
-             (pos? (count media)))
 
         show-colors?
         (and (or (= filters-section "all")
@@ -187,9 +180,6 @@
 
         force-open-colors?
         (when ^boolean has-filters-term? (> 60 (count colors)))
-
-        force-open-graphics?
-        (when ^boolean has-filters-term? (> 60 (count media)))
 
         force-open-typographies?
         (when ^boolean has-filters-term? (> 60 (count typographies)))
@@ -213,9 +203,6 @@
 
         on-component-click
         (mf/use-fn (mf/deps on-asset-click) (partial on-asset-click :components))
-
-        on-graphics-click
-        (mf/use-fn (mf/deps on-asset-click) (partial on-asset-click :graphics))
 
         on-colors-click
         (mf/use-fn (mf/deps on-asset-click) (partial on-asset-click :colors))
@@ -266,23 +253,6 @@
             :on-clear-selection on-clear-selection
             :count-variants count-variants}])
 
-        (when ^boolean show-graphics?
-          [:& graphics-section
-           {:file-id file-id
-            :project-id project-id
-            :local? is-local
-            :objects media
-            :listing-thumbs? listing-thumbs?
-            :open? (or ^boolean force-open-graphics?
-                       ^boolean (get open-status :graphics false))
-            :force-open? force-open-graphics?
-            :open-status-ref open-status-ref
-            :reverse-sort? reverse-sort?
-            :selected selected
-            :on-asset-click on-graphics-click
-            :on-assets-delete on-assets-delete
-            :on-clear-selection on-clear-selection}])
-
         (when ^boolean show-colors?
           [:& colors-section
            {:file-id file-id
@@ -315,7 +285,6 @@
             :on-clear-selection on-clear-selection}])
 
         (when (and (not ^boolean show-components?)
-                   (not ^boolean show-graphics?)
                    (not ^boolean show-colors?)
                    (not ^boolean show-typography?))
           [:div  {:class (stl/css :asset-title)}
@@ -333,7 +302,6 @@
         library      (use-library-ref file-id)
 
         colors       (:colors library)
-        media        (:media library)
         typographies (:typographies library)
 
         filters-term (:term filters)
@@ -349,11 +317,6 @@
           (as-> (into [] (ctkl/components-seq library)) $
             (cmm/apply-filters $ filters)
             (remove #(cfv/is-secondary-variant? % library) $)))
-
-        filtered-media
-        (mf/with-memo [filters media]
-          (-> (vals media)
-              (cmm/apply-filters filters)))
 
         filtered-typographies
         (mf/with-memo [filters typographies]
@@ -372,7 +335,6 @@
         (and (not (str/blank? filters-term))
              (or (> 60 (count filtered-colors))
                  (> 60 (count filtered-components))
-                 (> 60 (count filtered-media))
                  (> 60 (count filtered-typographies))))
 
         open?
@@ -415,7 +377,6 @@
          :filters filters
          :colors filtered-colors
          :components filtered-components
-         :media filtered-media
          :typographies filtered-typographies
          :on-clear-selection unselect-all
          :open-status-ref open-status-ref

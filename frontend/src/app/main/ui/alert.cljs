@@ -9,6 +9,7 @@
   (:require
    [app.main.data.modal :as modal]
    [app.main.store :as st]
+   [app.main.ui.components.link :as lk]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -21,6 +22,7 @@
    ::mf/register-as :alert}
   [{:keys [message
            scd-message
+           link-message
            title
            on-accept
            hint
@@ -59,8 +61,16 @@
       [:div {:class (stl/css :modal-content)}
        (when (and (string? message) (not= message ""))
          [:h3 {:class (stl/css :modal-msg)} message])
+       (when (seq link-message)
+         [:h3 {:class (stl/css :modal-msg)}
+          [:span (:before link-message)]
+          [:& lk/link {:action (:on-click link-message)
+                       :class (stl/css :link)}
+           (:text link-message)]
+          [:span (:after link-message)]])
        (when (and (string? scd-message) (not= scd-message ""))
          [:h3 {:class (stl/css :modal-scd-msg)} scd-message])
+
        (when (string? hint)
          [:p {:class (stl/css :modal-hint)} hint])]
 

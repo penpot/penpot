@@ -24,7 +24,6 @@
                                  {:data data}
                                  component-id
                                  new-component-id
-                                 true
                                  {:new-shape-id new-shape-id :apply-changes-local-library? true}))]
     (-> changes
         (clvp/generate-update-property-value new-component-id prop-num value)

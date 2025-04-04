@@ -40,8 +40,6 @@
                                     (:objects page)
                                     (:id page)
                                     (:id file)
-                                    true
-                                    nil
                                     nil)
 
         file' (thf/apply-changes file changes)
@@ -74,8 +72,6 @@
                                     (:objects page)
                                     (:id page)
                                     (:id file)
-                                    true
-                                    nil
                                     cfsh/prepare-create-artboard-from-selection)
 
         file' (thf/apply-changes file changes)
@@ -111,8 +107,6 @@
                                     (:objects page)
                                     (:id page)
                                     (:id file)
-                                    true
-                                    nil
                                     cfsh/prepare-create-artboard-from-selection)
 
         file' (thf/apply-changes file changes)
@@ -151,8 +145,6 @@
                                     (:objects page)
                                     (:id page)
                                     (:id file)
-                                    true
-                                    nil
                                     cfsh/prepare-create-artboard-from-selection)
 
         file' (thf/apply-changes file changes)
@@ -191,8 +183,6 @@
                                     (:objects page)
                                     (:id page)
                                     (:id file)
-                                    true
-                                    nil
                                     nil)
 
         file' (thf/apply-changes file changes)
@@ -232,8 +222,6 @@
                                     (:objects page)
                                     (:id page)
                                     (:id file)
-                                    true
-                                    nil
                                     cfsh/prepare-create-artboard-from-selection)
 
         file' (thf/apply-changes file changes)
@@ -265,8 +253,7 @@
         changes   (cll/generate-rename-component (pcb/empty-changes)
                                                  (:id component)
                                                  "Test component after"
-                                                 (:data file)
-                                                 true)
+                                                 (:data file))
 
         file' (thf/apply-changes file changes)
 
@@ -445,8 +432,8 @@
     (t/is (some? copy1-child'))
     (t/is (ctk/instance-root? copy1-root'))
     (t/is (ctk/instance-of? copy1-root' (:id file') (:id component')))
-    (t/is (ctk/is-main-of? main1-root' copy1-root' true))
-    (t/is (ctk/is-main-of? main1-child' copy1-child' true))
+    (t/is (ctk/is-main-of? main1-root' copy1-root'))
+    (t/is (ctk/is-main-of? main1-child' copy1-child'))
     (t/is (ctst/parent-of? copy1-root' copy1-child'))))
 
 (t/deftest test-instantiate-component-from-lib
@@ -489,8 +476,8 @@
     (t/is (some? copy1-child'))
     (t/is (ctk/instance-root? copy1-root'))
     (t/is (ctk/instance-of? copy1-root' (:id library) (:id component')))
-    (t/is (ctk/is-main-of? main1-root' copy1-root' true))
-    (t/is (ctk/is-main-of? main1-child' copy1-child' true))
+    (t/is (ctk/is-main-of? main1-root' copy1-root'))
+    (t/is (ctk/is-main-of? main1-child' copy1-child'))
     (t/is (ctst/parent-of? copy1-root' copy1-child'))))
 
 (t/deftest test-instantiate-nested-component
@@ -533,8 +520,8 @@
     (t/is (some? copy1-child'))
     (t/is (ctk/instance-root? copy1-root'))
     (t/is (ctk/instance-of? copy1-root' (:id file') (:id component')))
-    (t/is (ctk/is-main-of? main1-root' copy1-root' true))
-    (t/is (ctk/is-main-of? main1-child' copy1-child' true))
+    (t/is (ctk/is-main-of? main1-root' copy1-root'))
+    (t/is (ctk/is-main-of? main1-child' copy1-child'))
     (t/is (ctst/parent-of? copy1-root' copy1-child'))))
 
 (t/deftest test-instantiate-nested-component-from-lib
@@ -580,8 +567,8 @@
     (t/is (some? copy1-child'))
     (t/is (ctk/instance-root? copy1-root'))
     (t/is (ctk/instance-of? copy1-root' (:id library) (:id component')))
-    (t/is (ctk/is-main-of? main1-root' copy1-root' true))
-    (t/is (ctk/is-main-of? main1-child' copy1-child' true))
+    (t/is (ctk/is-main-of? main1-root' copy1-root'))
+    (t/is (ctk/is-main-of? main1-child' copy1-child'))
     (t/is (ctst/parent-of? copy1-root' copy1-child'))))
 
 (t/deftest test-detach-copy

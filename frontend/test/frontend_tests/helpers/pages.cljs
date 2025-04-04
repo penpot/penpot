@@ -146,8 +146,6 @@
                                     (:objects page)
                                     (:id page)
                                     current-file-id
-                                    true
-                                    dwg/prepare-create-group
                                     cfsh/prepare-create-artboard-from-selection)]
 
     (swap! idmap assoc instance-label (:id group)

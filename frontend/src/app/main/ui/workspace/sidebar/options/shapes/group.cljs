@@ -13,7 +13,6 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
@@ -70,7 +69,6 @@
     [:div {:class (stl/css :options)}
      [:& layer-menu {:type type :ids layer-ids :values layer-values}]
      [:> measures-menu* {:type type :ids measure-ids :values measure-values :shape shape}]
-     [:& component-menu {:shapes [shape]}] ;;remove this in components-v2
 
      [:& layout-container-menu
       {:type type

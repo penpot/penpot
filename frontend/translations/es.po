@@ -1245,6 +1245,18 @@ msgstr ""
 "del fichero que se esta intentando abrir. Falta aplicar migraciones para "
 "'%s' antes de poder abrir el fichero."
 
+msgid "errors.deprecated"
+msgstr "¡Lo sentimos! Este es un fichero antiguo que utiliza un tipo de recurso de Penpot obsoleto, y no puedes abrirlo."
+
+msgid "errors.deprecated.contact.before"
+msgstr "Aunque Penpot ya no da soporte a este tipo de Recursos, puedes"
+
+msgid "errors.deprecated.contact.text"
+msgstr "contactar con nosotros"
+
+msgid "errors.deprecated.contact.after"
+msgstr "para que podamos ayudarte."
+
 #: src/app/main/data/auth.cljs:322, src/app/main/ui/auth/login.cljs:81, src/app/main/ui/auth/login.cljs:122, src/app/main/ui/auth/register.cljs:66, src/app/main/ui/auth/register.cljs:207, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:193, src/app/main/ui/onboarding/team_choice.cljs:112, src/app/main/ui/settings/access_tokens.cljs:80, src/app/main/ui/settings/feedback.cljs:49
 msgid "errors.generic"
 msgstr "Ha ocurrido algún error."

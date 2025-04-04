@@ -104,7 +104,6 @@
   "Translate a flag to a feature name"
   [flag]
   (case flag
-    :feature-components-v2 "components/v2"
     :feature-styles-v2 "styles/v2"
     :feature-fdata-objects-map "fdata/objects-map"
     :feature-fdata-pointer-map "fdata/pointer-map"
@@ -241,7 +240,13 @@
                    :code :file-feature-mismatch
                    :feature (first not-supported)
                    :hint (str/ffmt "file features '%' not enabled"
-                                   (str/join "," not-supported))))))
+                                   (str/join "," not-supported)))))
+
+     ;; Components v1 is deprecated
+     (when-not (contains? file-features "components/v2")
+       (ex/raise :type :restriction
+                 :code :file-in-components-v1
+                 :hint "components v1 is deprecated")))
 
    enabled-features))
 

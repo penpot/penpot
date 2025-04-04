@@ -308,7 +308,6 @@
 
         menu-state               (mf/use-state cmm/initial-context-menu-state)
         read-only?               (mf/use-ctx ctx/workspace-read-only?)
-        components-v2            (mf/use-ctx ctx/components-v2)
         toggle-list-style        (mf/use-ctx cmm/assets-toggle-list-style)
 
         selected                 (:components selected)
@@ -521,7 +520,7 @@
                             :title (tr "workspace.assets.grid-view")
                             :id "opt-grid"}]]])
 
-      (when (and components-v2 (not read-only?) is-local)
+      (when (and (not read-only?) is-local)
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.assets.components.add-component")
                           :on-click add-component
@@ -561,9 +560,7 @@
                      :id      "assets-rename-component"
                      :handler on-rename})
                   (when (and is-local (not (or multi-assets? read-only? any-variant?)))
-                    {:name    (if components-v2
-                                (tr "workspace.assets.duplicate-main")
-                                (tr "workspace.assets.duplicate"))
+                    {:name    (tr "workspace.assets.duplicate-main")
                      :id     "assets-duplicate-component"
                      :handler on-duplicate})
 
@@ -576,7 +573,7 @@
                      :id     "assets-group-component"
                      :handler on-group})
 
-                  (when (and components-v2 (not multi-assets?))
+                  (when (not multi-assets?)
                     {:name   (tr "workspace.shape.menu.show-main")
                      :id     "assets-show-main-component"
                      :handler on-show-main})]}]]]))

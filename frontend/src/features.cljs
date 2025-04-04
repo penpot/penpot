@@ -12,9 +12,6 @@
    [app.plugins :as plugins]
    [app.util.timers :as tm]))
 
-(defn ^:export is-components-v2 []
-  (features/active-feature? @st/state "components/v2"))
-
 (defn ^:export grid []
   (tm/schedule-on-idle #(st/emit! (features/toggle-feature "layout/grid")))
   nil)

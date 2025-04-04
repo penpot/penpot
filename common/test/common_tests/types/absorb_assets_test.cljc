@@ -54,7 +54,7 @@
     (t/is (= (count components') 1))
 
     (t/is (ctk/instance-of? copy-root' (:id file') (:id component')))
-    (t/is (ctk/is-main-of? main-root' copy-root' true))
+    (t/is (ctk/is-main-of? main-root' copy-root'))
     (t/is (ctk/main-instance-of? (:id main-root') (:id (second pages')) component'))))
 
 (t/deftest absorb-colors

@@ -82,7 +82,7 @@
         (pcb/update-shapes ids update-fn {:attrs #{:blocked :hidden}}))))
 
 (defn generate-delete-shapes
-  [changes file page objects ids {:keys [components-v2 ignore-touched component-swap]}]
+  [changes file page objects ids {:keys [ignore-touched component-swap]}]
   (let [ids           (cfh/clean-loops objects ids)
 
         in-component-copy?
@@ -97,21 +97,20 @@
                  (not component-swap))))
 
         [ids-to-delete ids-to-hide]
-        (if components-v2
-          (loop [ids-seq       (seq ids)
-                 ids-to-delete []
-                 ids-to-hide   []]
-            (let [id (first ids-seq)]
-              (if (nil? id)
-                [ids-to-delete ids-to-hide]
-                (if (in-component-copy? id)
-                  (recur (rest ids-seq)
-                         ids-to-delete
-                         (conj ids-to-hide id))
-                  (recur (rest ids-seq)
-                         (conj ids-to-delete id)
-                         ids-to-hide)))))
-          [ids []])
+        (loop [ids-seq       (seq ids)
+               ids-to-delete []
+               ids-to-hide   []]
+          (let [id (first ids-seq)]
+            (if (nil? id)
+              [ids-to-delete ids-to-hide]
+              (if (in-component-copy? id)
+                (recur (rest ids-seq)
+                       ids-to-delete
+                       (conj ids-to-hide id))
+                (recur (rest ids-seq)
+                       (conj ids-to-delete id)
+                       ids-to-hide)))))
+
 
         changes (-> changes
                     (pcb/with-page page)
@@ -190,16 +189,15 @@
           #{})
 
         components-to-delete
-        (if components-v2
-          (reduce (fn [components id]
-                    (let [shape (get objects id)]
-                      (if (and (= (:component-file shape) (:id file)) ;; Main instances should exist only in local file
-                               (:main-instance shape))                ;; but check anyway
-                        (conj components (:component-id shape))
-                        components)))
-                  []
-                  (into ids-to-delete all-children))
-          [])
+        (reduce (fn [components id]
+                  (let [shape (get objects id)]
+                    (if (and (= (:component-file shape) (:id file)) ;; Main instances should exist only in local file
+                             (:main-instance shape))                ;; but check anyway
+                      (conj components (:component-id shape))
+                      components)))
+                []
+                (into ids-to-delete all-children))
+
 
         ids-set (set ids-to-delete)
 

@@ -24,7 +24,6 @@
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.features :as features]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -171,12 +170,10 @@
              page          (dsh/get-page fdata page-id)
              objects       (:objects page)
 
-             components-v2 (features/active-feature? state "components/v2")
              undo-id (or (:undo-id options) (js/Symbol))
              [all-parents changes] (-> (pcb/empty-changes it (:id page))
                                        (cls/generate-delete-shapes fdata page objects ids
-                                                                   {:components-v2 components-v2
-                                                                    :ignore-touched (:component-swap options)
+                                                                   {:ignore-touched (:component-swap options)
                                                                     :undo-group (:undo-group options)
                                                                     :undo-id undo-id}))]
 

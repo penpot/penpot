@@ -1462,8 +1462,6 @@
                                     (:objects page)
                                     (:id page)
                                     file-id
-                                    true
-                                    nil
                                     cfsh/prepare-create-artboard-from-selection)]
 
     (shape-cb shape)
