@@ -324,6 +324,43 @@
          (reduce find-min-point)
          (first))))
 
+
+(defn closest-point
+  "Given a path and a position"
+  [content position]
+
+  (let [point+distance
+        (fn [[cur-cmd prev-cmd]]
+          (let [from-p (helpers/command->point prev-cmd)
+                to-p   (helpers/command->point cur-cmd)
+                h1 (gpt/point (get-in cur-cmd [:params :c1x])
+                              (get-in cur-cmd [:params :c1y]))
+                h2 (gpt/point (get-in cur-cmd [:params :c2x])
+                              (get-in cur-cmd [:params :c2y]))
+                point
+                (case (:command cur-cmd)
+                  :line-to
+                  (line-closest-point position from-p to-p)
+
+                  :curve-to
+                  (curve-closest-point position from-p to-p h1 h2)
+
+                  nil)]
+            (when point
+              [point (gpt/distance point position)])))
+
+        find-min-point
+        (fn [[min-p min-dist :as acc] [cur-p cur-dist :as cur]]
+          (if (and (some? acc) (or (not cur) (<= min-dist cur-dist)))
+            [min-p min-dist]
+            [cur-p cur-dist]))]
+
+    (->> content
+         (d/with-prev)
+         (map point+distance)
+         (reduce find-min-point)
+         (first))))
+
 (defn- remove-line-curves
   "Remove all curves that have both handlers in the same position that the
   beginning and end points. This makes them really line-to commands"
