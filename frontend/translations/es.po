@@ -1078,7 +1078,7 @@ msgid "dashboard.power-up.unlimited-plan"
 msgstr "Plan ilimitado"
 
 msgid "dashboard.power-up.unlimited.top-description"
-msgstr "Almacenamiento extra y autoguardado de versiones..."
+msgstr "Editores adicionales, almacenamiento y versión autoguardada, copia de seguridad de archivos y mucho más."
 
 #, markdown
 msgid "dashboard.power-up.unlimited.bottom-description"
@@ -1091,16 +1091,19 @@ msgid "dashboard.power-up.unlimited.cta"
 msgstr "Echa un vistazo"
 
 msgid "dashboard.power-up.enterprise.description"
-msgstr "Seguridad avanzada, registros de actividad y mucho más."
+msgstr "Seguridad avanzada, registros de actividad, asistencia dedicada y mucho más."
 
 msgid "dashboard.power-up.trial.top-title"
 msgstr "Plan Unlimited (Prueba)"
 
 msgid "dashboard.power-up.trial.top-description"
-msgstr "Editores extra, almacenamiento y autoguardado..."
+msgstr "Editores adicionales, almacenamiento y versión autoguardada, copia de seguridad de archivos y mucho más."
 
 msgid "dashboard.power-up.trial.bottom-description"
 msgstr "¿Disfrutas de la prueba? Desbloquea el acceso completo para siempre."
+
+msgid "dashboard.power-up.subscribe"
+msgstr "Suscríbete"
 
 #: src/app/main/ui/dashboard/team.cljs:909
 msgid "dashboard.webhooks.active"
@@ -4300,7 +4303,7 @@ msgid "title.settings.profile"
 msgstr "Perfil - Penpot"
 
 msgid "settings.plans.section-plan"
-msgstr "Tu plan"
+msgstr "Tu suscripción"
 
 msgid "settings.plans.other-plans"
 msgstr "Otros planes de penpot"

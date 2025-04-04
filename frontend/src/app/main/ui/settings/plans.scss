@@ -39,7 +39,6 @@
   color: var(--color-foreground-secondary);
 }
 
-.title-icon,
 .member-icon,
 .user-icon {
   @extend .button-icon;
@@ -64,12 +63,42 @@
   padding: $s-16;
 }
 
-.plan-title {
+.plan-card-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.plan-card-title-container {
+  display: flex;
+  align-items: center;
+  gap: $s-8;
+}
+
+.plan-title-icon {
+  @extend .button-icon;
+  stroke: var(--color-foreground-primary);
+}
+
+.plan-card-title,
+.plan-price-value {
   @include medTitleTipography;
   color: var(--color-foreground-primary);
+}
+
+.plan-price-period {
+  @include bodySmallTypography;
+  color: var(--color-foreground-primary);
+}
+
+.benefits-list {
+  margin-block-start: $s-8;
 }
 
 .benefit {
   @include bodyMediumTypography;
   color: var(--color-foreground-secondary);
+}
+
+.other-subscriptions {
+  margin-block-start: $s-76;
 }

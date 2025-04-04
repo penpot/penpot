@@ -10,15 +10,14 @@
   {::mf/props :obj}
   [{:keys [card-title card-title-icon price-value price-period benefits cta-text cta-link]}]
   [:div {:class (stl/css :plan-card)}
-   [:div {:class (stl/css :plan-header)}
-    [:div {:class (stl/css :plan-title-container)}
-     (when card-title-icon [:span {:class (stl/css :plan-title-icon)}
-                            [:span {:class (stl/css :title-icon)} card-title-icon]])
-     [:h4 {:class (stl/css :plan-title)}  card-title]]
+   [:div {:class (stl/css :plan-card-header)}
+    [:div {:class (stl/css :plan-card-title-container)}
+     (when card-title-icon [:span {:class (stl/css :plan-title-icon)} card-title-icon])
+     [:h4 {:class (stl/css :plan-card-title)}  card-title]]
     (when (and price-value price-period)
       [:div {:class (stl/css :plan-price)}
        [:span {:class (stl/css :plan-price-value)} price-value]
-       [:span {:class (stl/css :plan-price-period)} price-period]])]
+       [:span {:class (stl/css :plan-price-period)} " / " price-period]])]
    [:ul {:class (stl/css :benefits-list)}
     (for [benefit  benefits]
       [:li {:key (str benefit) :class (stl/css :benefit)} "- " benefit])]
@@ -50,12 +49,14 @@
 
        :unlimited
        [:> plan-card* {:card-title (tr "settings.plans.unlimited")
+                       :card-title-icon i/user
                        :benefits [(tr "settings.plans.unlimited.teams"),
                                   (tr "settings.plans.unlimited.bill"),
                                   (tr "settings.plans.unlimited.storage")]}]
 
        :enterprise
        [:> plan-card* {:card-title (tr "settings.plans.enterprise")
+                       :card-title-icon i/user
                        :benefits [(tr "settings.plans.enterprise.support"),
                                   (tr "settings.plans.enterprise.security"),
                                   (tr "settings.plans.enterprise.logs")]}])
@@ -73,6 +74,8 @@
      [:h3 {:class (stl/css :plan-section-title)} (tr "settings.plans.other-plans")]
        (when (not= subscription-type :professional)
          [:> plan-card* {:card-title (tr "settings.plans.professional")
+                         :price-value "$0"
+                         :price-period "editor per month"
                          :benefits [(tr "settings.plans.professional.projects-files"),
                                     (tr "settings.plans.professional.teams-editors"),
                                     (tr "settings.plans.professional.storage")]}])
@@ -80,6 +83,8 @@
        (when (not= subscription-type :unlimited)
          [:> plan-card* {:card-title (tr "settings.plans.unlimited")
                          :card-title-icon i/user
+                         :price-value "$7"
+                         :price-period "editor per month"
                          :benefits [(tr "settings.plans.unlimited.teams"),
                                     (tr "settings.plans.unlimited.bill"),
                                     (tr "settings.plans.unlimited.storage")]}])
@@ -87,6 +92,8 @@
        (when (not= subscription-type :enterprise)
          [:> plan-card* {:card-title (tr "settings.plans.enterprise")
                          :card-title-icon i/user
+                         :price-value "$950"
+                         :price-period "organization per month"
                          :benefits [(tr "settings.plans.enterprise.support"),
                                     (tr "settings.plans.enterprise.security"),
                                     (tr "settings.plans.enterprise.logs")]}])

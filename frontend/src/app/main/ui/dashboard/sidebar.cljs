@@ -991,7 +991,7 @@
 
 
         ;; TODO subscription cases professonal/unlimited/enterprise/trial
-        subscription-type :professional
+        subscription-type :trial
         ;; TODO need to know if it's the owner of the subscription
         subscription-owner? true]
 
@@ -1038,7 +1038,7 @@
           {:top-title (tr "dashboard.power-up.trial.top-title")
            :top-description (tr "dashboard.power-up.trial.top-description")
            :bottom-description (tr "dashboard.power-up.trial.bottom-description")
-           :cta-text (tr "dashboard.upgrade-plan.power-up")
+           :cta-text (tr "dashboard.power-up.subscribe")
            :has-dropdown subscription-owner?}])
 
        [:button {:class (stl/css :upgrade-plan-section)

@@ -476,6 +476,7 @@
   padding-block-start: $s-12;
 }
 .cta-bottom-section .content {
+  @include t.use-typography("body-small");
   @include buttonStyle;
   color: var(--color-foreground-secondary);
   display: inline;
@@ -484,8 +485,15 @@
 
 .cta-text,
 .cta-title {
-  @include t.use-typography("body-medium");
   text-align: left;
+}
+
+.cta-text {
+  @include t.use-typography("body-small");
+}
+
+.cta-title {
+  @include t.use-typography("body-medium");
 }
 
 .cta-bottom-section .content strong,
