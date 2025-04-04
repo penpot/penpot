@@ -50,8 +50,16 @@
     (handler (assoc message :cmd :snaps/update-page-index))))
 
 (defmethod handler :configure
-  [{:keys [key val]}]
-  (log/info :hint "configure worker" :key key :val (dm/str val))
-  (case key
-    :public-uri
-    (set! cf/public-uri val)))
+  [{:keys [config]}]
+  (log/info :hint "configure worker" :keys (keys config))
+
+  (when-let [public-uri (get config :public-uri)]
+    (set! cf/public-uri public-uri))
+
+  (when-let [version (get config :version)]
+    (set! cf/version version))
+
+  (when-let [build-date (get config :build-data)]
+    (set! cf/build-date build-date))
+
+  nil)
