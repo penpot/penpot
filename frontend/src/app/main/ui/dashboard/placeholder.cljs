@@ -7,8 +7,8 @@
 (ns app.main.ui.dashboard.placeholder
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.config :as cf]
    [app.main.data.event :as ev]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.import :as udi]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
@@ -55,9 +55,10 @@
          (mf/deps create-fn)
          (fn [_]
            (create-fn "dashboard:empty-folder-placeholder")))
-        show-text (mf/use-state nil)
+        show-text      (mf/use-state nil)
         on-mouse-enter (mf/use-fn #(reset! show-text true))
-        on-mouse-leave (mf/use-fn #(reset! show-text nil))]
+        on-mouse-leave (mf/use-fn #(reset! show-text nil))
+        files          (mf/deref refs/files)]
     (cond
       (true? dragging?)
       [:ul
@@ -79,18 +80,14 @@
                             :tag-name "span"}])]
 
       :else
-      (if (cf/external-feature-flag "add-file-02" "test")
+      (if (= (count files) 0)
         [:> empty-placeholder-projects* {:on-create on-click :on-finish-import on-finish-import :project-id project-id}]
         [:div {:class (stl/css :grid-empty-placeholder)}
-         (if (cf/external-feature-flag "add-file-01" "test")
-           [:button {:class (stl/css :create-new)
-                     :on-click on-click
-                     :on-mouse-enter on-mouse-enter
-                     :on-mouse-leave on-mouse-leave}
-            (if @show-text (tr "dashboard.empty-project.create") i/add)]
-           [:button {:class (stl/css :create-new)
-                     :on-click on-click}
-            i/add])]))))
+         [:button {:class (stl/css :create-new)
+                   :on-click on-click
+                   :on-mouse-enter on-mouse-enter
+                   :on-mouse-leave on-mouse-leave}
+          (if @show-text (tr "dashboard.empty-project.create") i/add)]]))))
 
 (mf/defc loading-placeholder
   []
