@@ -542,7 +542,9 @@
          :on-blur on-update-value}
         (when color?
           [:> input-token-color-bullet*
-           {:color color :on-click on-display-colorpicker'}])]
+           {:data-testid "token-form-color-bullet"
+            :color color
+            :on-click on-display-colorpicker'}])]
        (when color-ramp-open?
          [:> ramp* {:color (some-> (or token-resolve-result (:value token))
                                    (tinycolor/valid-color))
