@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 _SCRIPT_DIR=$(dirname $0);
-
-export SKIA_BINARIES_URL="https://github.com/rust-skia/skia-binaries/releases/download/0.80.0/skia-binaries-9e7d2684a17084095aef-x86_64-unknown-linux-gnu-egl-gl-svg-textlayout-vulkan-wayland-webpd-webpe-x11.tar.gz"
-
 pushd $_SCRIPT_DIR;
-cargo test --bin render_wasm -- --show-output
+
+. ./_build_env
+
+export SKIA_BINARIES_URL="https://github.com/penpot/skia-binaries/releases/download/0.81.0-2/skia-binaries-24dee32a277b6c7b5357-aarch64-unknown-linux-gnu-gl-svg-textlayout-binary-cache.tar.gz"
+export _CARGO_PARAMS="--target=aarch64-unknown-linux-gnu";
+
+cargo test $_CARGO_PARAMS --bin render_wasm -- --show-output
 popd

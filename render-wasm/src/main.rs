@@ -1,6 +1,7 @@
 use skia_safe as skia;
 
 mod debug;
+#[cfg(target_arch = "wasm32")]
 mod emscripten;
 mod math;
 mod mem;
@@ -840,5 +841,6 @@ pub extern "C" fn set_grid_cells() {
 }
 
 fn main() {
+    #[cfg(target_arch = "wasm32")]
     init_gl!();
 }
