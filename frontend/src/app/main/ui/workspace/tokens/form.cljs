@@ -366,13 +366,9 @@
                                             "rgba"
                                             prev-format)
                                           (if (or (nil? alpha) (= alpha 1)) "hex" "rgba"))
-                                 format' (get {"rgba" "rgb"
-                                               "rgb"  "rgb"
-                                               "hsva" "hsv"
-                                               "hsv"  "hsv"} format "hex")
                                  color-value (-> (tinycolor/valid-color hex-value)
                                                  (tinycolor/set-alpha (or alpha 1))
-                                                 (tinycolor/->string format')
+                                                 (tinycolor/->string format)
                                                  (#(doto % js/console.log)))]
                              (reset! value-ref color-value)
                              (dom/set-value! (mf/ref-val value-input-ref) color-value)
