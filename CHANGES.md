@@ -10,6 +10,8 @@
 
 ### :sparkles: New features
 
+- Optimize profiling for better user experience [Taiga #10028](https://tree.taiga.io/project/penpot/us/10028)
+
 ### :bug: Bugs fixed
 
 - Fix path having a wrong selrect [Taiga #10257](https://tree.taiga.io/project/penpot/issue/10257)
