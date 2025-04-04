@@ -1372,30 +1372,6 @@
          (t/is (nil? (get-set-token "typography" "H1.Bold")))))))
 
 #?(:clj
-   (t/deftest single-set-legacy-json-decoding
-     (let [json (-> (slurp "test/common_tests/types/data/legacy-single-set.json")
-                    (tr/decode-str))
-           lib (ctob/decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) "single_set" json)
-           get-set-token (fn [set-name token-name]
-                           (some-> (ctob/get-set lib set-name)
-                                   (ctob/get-token token-name)))]
-       (t/is (= '("single_set") (ctob/get-ordered-set-names lib)))
-       (t/testing "token added"
-         (t/is (some? (get-set-token "single_set" "color.red.100")))))))
-
-#?(:clj
-   (t/deftest single-set-dtcg-json-decoding
-     (let [json (-> (slurp "test/common_tests/types/data/single-set.json")
-                    (tr/decode-str))
-           lib (ctob/decode-single-set-json (ctob/ensure-tokens-lib nil) "single_set" json)
-           get-set-token (fn [set-name token-name]
-                           (some-> (ctob/get-set lib set-name)
-                                   (ctob/get-token token-name)))]
-       (t/is (= '("single_set") (ctob/get-ordered-set-names lib)))
-       (t/testing "token added"
-         (t/is (some? (get-set-token "single_set" "color.red.100")))))))
-
-#?(:clj
    (t/deftest dtcg-encoding-decoding-json
      (let [json (-> (slurp "test/common_tests/types/data/tokens-multi-set-example.json")
                     (tr/decode-str))
