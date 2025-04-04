@@ -20,7 +20,7 @@
   max-width: $s-500;
   margin-bottom: $s-32;
   width: $s-580;
-  margin: $s-160 auto $s-120 auto;
+  margin: $s-92 auto $s-120 auto;
   justify-content: center;
 }
 
@@ -39,7 +39,8 @@
   color: var(--color-foreground-secondary);
 }
 
-.crown-icon,
+.title-icon,
+.member-icon,
 .user-icon {
   @extend .button-icon;
   stroke: var(--icon-foreground);

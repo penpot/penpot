@@ -8,9 +8,17 @@
 
 (mf/defc plan-card*
   {::mf/props :obj}
-  [{:keys [card-title benefits cta-text cta-link]}]
+  [{:keys [card-title card-title-icon price-value price-period benefits cta-text cta-link]}]
   [:div {:class (stl/css :plan-card)}
-   [:h4 {:class (stl/css :plan-title)}  card-title]
+   [:div {:class (stl/css :plan-header)}
+    [:div {:class (stl/css :plan-title-container)}
+     (when card-title-icon [:span {:class (stl/css :plan-title-icon)}
+                            [:span {:class (stl/css :title-icon)} card-title-icon]])
+     [:h4 {:class (stl/css :plan-title)}  card-title]]
+    (when (and price-value price-period)
+      [:div {:class (stl/css :plan-price)}
+       [:span {:class (stl/css :plan-price-value)} price-value]
+       [:span {:class (stl/css :plan-price-period)} price-period]])]
    [:ul {:class (stl/css :benefits-list)}
     (for [benefit  benefits]
       [:li {:key (str benefit) :class (stl/css :benefit)} "- " benefit])]
@@ -54,7 +62,7 @@
 
 
      (when subscription-member [:div {:class (stl/css :membership)}
-                                [:span {:class (stl/css :crown-icon)} i/add]
+                                [:span {:class (stl/css :member-icon)} i/user]
                                 [:span {:class (stl/css :membership-date)} "You support us since January 17, 2024"]])
 
      (when penpot-member [:div {:class (stl/css :membership)}
@@ -71,12 +79,14 @@
 
        (when (not= subscription-type :unlimited)
          [:> plan-card* {:card-title (tr "settings.plans.unlimited")
+                         :card-title-icon i/user
                          :benefits [(tr "settings.plans.unlimited.teams"),
                                     (tr "settings.plans.unlimited.bill"),
                                     (tr "settings.plans.unlimited.storage")]}])
 
        (when (not= subscription-type :enterprise)
          [:> plan-card* {:card-title (tr "settings.plans.enterprise")
+                         :card-title-icon i/user
                          :benefits [(tr "settings.plans.enterprise.support"),
                                     (tr "settings.plans.enterprise.security"),
                                     (tr "settings.plans.enterprise.logs")]}])
