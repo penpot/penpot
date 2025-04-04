@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-31 11:06+0000\n"
+"PO-Revision-Date: 2025-04-05 14:07+0000\n"
 "Last-Translator: Rick Benetti <rick@boz.solutions>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
@@ -5208,7 +5208,7 @@ msgstr "Permissão"
 #: src/app/main/data/tokens.cljs:246
 msgid "errors.drop-token-set-parent-to-child"
 msgstr ""
-"Não é possível remover a configuração principal dentro de um caminho filho."
+"Não é possível remover a definição principal dentro de um caminho filho."
 
 #: src/app/util/forms.cljs:61
 msgid "errors.field-missing"
@@ -5221,8 +5221,8 @@ msgstr "Data inválida"
 #: src/app/main/data/tokens.cljs:245
 msgid "errors.token-set-exists-on-drop"
 msgstr ""
-"Não é possível concluir a remoção, uma configuração com o mesmo nome já "
-"existe no caminho."
+"Não é possível concluir a remoção, uma definição com o mesmo nome já existe "
+"no caminho."
 
 #: src/app/main/data/tokens.cljs:79
 msgid "errors.token-theme-already-exists"
@@ -5313,7 +5313,7 @@ msgstr "Recurso incompatível '%s' detectado"
 
 #: src/app/main/data/tokens.cljs:150, src/app/main/data/tokens.cljs:180
 msgid "errors.token-set-already-exists"
-msgstr "Já existe uma configuração com o mesmo nome"
+msgstr "Já existe uma definição com o mesmo nome"
 
 #: src/app/main/ui/ds/product/loader.cljs:28
 msgid "loader.tips.05.title"
@@ -5407,3 +5407,8 @@ msgstr "Dados inválidos na área de transferência"
 #: src/app/main/ui/onboarding/questions.cljs:245
 msgid "labels.product-design"
 msgstr "Produto ou UX Design"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+#, unused
+msgid "workspace.token.grouping-set-alert"
+msgstr "O conjunto de tokens ainda não é suportado."
