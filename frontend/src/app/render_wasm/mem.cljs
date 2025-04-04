@@ -38,7 +38,7 @@
   [size]
   (when (= size 0)
     (js/console.trace "Tried to allocate 0 bytes"))
-  (h/call wasm/internal-module "_alloc_bytes" size))
+  (ptr8->ptr32 (h/call wasm/internal-module "_alloc_bytes" size)))
 
 (defn get-heap-u8
   "Returns a Uint8Array view of the heap"
