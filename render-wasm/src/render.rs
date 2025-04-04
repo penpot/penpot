@@ -372,7 +372,7 @@ impl RenderState {
                 }
             }
             Type::Text(text_content) => {
-                self.surfaces.apply_mut(&[SurfaceId::Fills], |s| {
+                self.surfaces.apply_mut(&[SurfaceId::Fills, SurfaceId::Strokes], |s| {
                     s.canvas().concat(&matrix);
                 });
                 text::render(self, &shape, text_content);
