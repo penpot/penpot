@@ -1,6 +1,5 @@
 use skia_safe::{self as skia, Rect};
-
-use super::Color;
+use crate::skia::Color;
 use crate::uuid::Uuid;
 
 #[derive(Debug)]
@@ -193,6 +192,17 @@ impl Fill {
                 p.set_blend_mode(skia::BlendMode::SrcOver);
                 p.set_alpha(image_fill.opacity);
                 p
+            }
+        }
+    }
+
+    pub fn color(&self) -> Color {
+        match self {
+            Self::Solid(color) => {
+                *color
+            }
+            _ => {
+                Color::BLACK
             }
         }
     }

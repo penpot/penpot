@@ -653,7 +653,10 @@
     (.encode encoder text)))
 
 (defn- add-text-leaf [leaf]
-  (let [text (dm/get-prop leaf :text)]
+  (let [
+      text (dm/get-prop leaf :text)
+      fills (dm/get-prop leaf :fills)
+    ]
     (when (and text (not (str/blank? text)))
       (let [font-id (f/serialize-font-id (dm/get-prop leaf :font-id))
             font-style (f/serialize-font-style (dm/get-prop leaf :font-style))
@@ -671,6 +674,7 @@
                 (aget font-id 2)
                 (aget font-id 3)
                 font-weight font-style font-size)))))
+                ;; TODO: parse fills here per leaf
 
 (defn set-shape-text-content [content]
   (h/call wasm/internal-module "_clear_shape_text")

@@ -4,7 +4,7 @@ use crate::{
 };
 use skia_safe::{
     self as skia,
-    textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle},
+    textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle}, Color,
 };
 
 use super::FontFamily;
@@ -62,7 +62,7 @@ impl TextContent {
         Ok(())
     }
 
-    pub fn to_paragraphs(&self, fonts: &FontCollection) -> Vec<skia::textlayout::Paragraph> {
+    pub fn to_paragraphs(&self, fonts: &FontCollection, color: Color) -> Vec<skia::textlayout::Paragraph> {
         let mut paragraph_style = ParagraphStyle::default();
         // TODO: read text direction, align, etc. from the shape
         paragraph_style.set_text_direction(skia::textlayout::TextDirection::LTR);
@@ -73,7 +73,7 @@ impl TextContent {
                 let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
 
                 for leaf in &p.children {
-                    let text_style = leaf.to_style();
+                    let text_style = leaf.to_style(color);
                     builder.push_style(&text_style);
                     builder.add_text(&leaf.text);
                     builder.pop();
@@ -116,6 +116,7 @@ pub struct TextLeaf {
     text: String,
     font_family: FontFamily,
     font_size: f32,
+    // TODO: add fills
 }
 
 impl TextLeaf {
@@ -127,9 +128,9 @@ impl TextLeaf {
         }
     }
 
-    pub fn to_style(&self) -> skia::textlayout::TextStyle {
+    pub fn to_style(&self, color: skia::Color) -> skia::textlayout::TextStyle {
         let mut style = skia::textlayout::TextStyle::default();
-        style.set_color(skia::Color::BLACK);
+        style.set_color(color);
         style.set_font_size(self.font_size);
         style.set_font_families(&[
             self.serialized_font_family(),
