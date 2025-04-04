@@ -166,11 +166,12 @@
 
         content-stream
         (-> (l/derived get-content st/state)
-            (rx/from-atom {:emit-current-value? true}))
+            (rx/from-atom {:emit-current-value? true})
+            (rx/filter some?))
 
         ranges-stream
         (->> content-stream
-             (rx/map path.segm/content->points)
+             (rx/map path.segm/get-points)
              (rx/map snap/create-ranges))]
 
     (->> ms/mouse-position
