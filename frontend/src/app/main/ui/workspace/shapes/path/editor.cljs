@@ -219,10 +219,18 @@
                       :is-preview true
                       :zoom zoom}]]))
 
-(mf/defc path-snap [{:keys [selected points zoom]}]
-  (let [ranges       (mf/use-memo (mf/deps selected points) #(snap/create-ranges points selected))
-        snap-matches (snap/get-snap-delta-match selected ranges (/ 1 zoom))
-        matches      (concat (second (:x snap-matches)) (second (:y snap-matches)))]
+(mf/defc path-snap*
+  {::mf/private true}
+  [{:keys [selected points zoom]}]
+  (let [ranges
+        (mf/with-memo [selected points]
+          (snap/create-ranges points selected))
+
+        snap-matches
+        (snap/get-snap-delta-match selected ranges (/ 1 zoom))
+
+        matches
+        (concat (second (:x snap-matches)) (second (:y snap-matches)))]
 
     [:g.snap-paths
      (for [[idx [from to]] (d/enumerate matches)]
@@ -234,7 +242,7 @@
                :style {:stroke pc/secondary-color
                        :stroke-width (/ path-snap-stroke-width zoom)}}])]))
 
-(defn matching-handler? [content node handlers]
+(defn- matching-handler? [content node handlers]
   (when (= 2 (count handlers))
     (let [[[i1 p1] [i2 p2]] handlers
           p1 (path.segment/handler->point content i1 p1)
@@ -294,17 +302,8 @@
 
         is-path-start (not (some? last-point))
 
-        [snap-selected snap-points]
-        (cond
-          (some? drag-handler) [#{drag-handler} points]
-          (some? preview) [#{(path.segment/get-point preview)} points]
-          (some? moving-handler) [#{moving-handler} points]
-          :else
-          [(->> selected-points (map base->point) (into #{}))
-           (->> points (remove selected-points) (into #{}))])
-
         show-snap?
-        (and snap-toggled
+        (and ^boolean snap-toggled
              (or (some? drag-handler)
                  (some? preview)
                  (some? moving-handler)
@@ -404,9 +403,17 @@
           :handler prev-handler
           :zoom zoom}]])
 
-     (when show-snap?
-       [:g.path-snap {:pointer-events "none"}
-        [:& path-snap {:selected snap-selected
-                       :points snap-points
-                       :zoom zoom}]])]))
+     (when ^boolean show-snap?
+       (let [[snap-selected snap-points]
+             (cond
+               (some? drag-handler) [#{drag-handler} points]
+               (some? preview) [#{(path.segment/get-point preview)} points]
+               (some? moving-handler) [#{moving-handler} points]
+               :else
+               [(->> selected-points (map base->point) (into #{}))
+                (->> points (remove selected-points) (into #{}))])]
+         [:g.path-snap {:pointer-events "none"}
+          [:> path-snap* {:selected snap-selected
+                          :points snap-points
+                          :zoom zoom}]]))]))
 
