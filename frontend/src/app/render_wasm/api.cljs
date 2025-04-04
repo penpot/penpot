@@ -215,11 +215,11 @@
          (rx/map :body)
          (rx/mapcat wapi/read-file-as-array-buffer)
          (rx/map (fn [image]
-                   (let [size (.-byteLength image)
+                   (let [size    (.-byteLength image)
                          offset  (mem/alloc-bytes size)
-                         heap       (mem/get-heap-u8)
-                         mem        (js/Uint8Array. (.-buffer heap) offset size)]
-                     (.set heap mem offset)
+                         heap    (mem/get-heap-u8)
+                         data    (js/Uint8Array. image)]
+                     (.set heap data offset)
                      (h/call wasm/internal-module "_store_image"
                              (aget buffer 0)
                              (aget buffer 1)
