@@ -167,6 +167,8 @@
   frontend client"
   [enabled-features client-features]
   (when (set? client-features)
+    ;; Check if client declares support for features enabled on
+    ;; backend side
     (let [not-supported (-> enabled-features
                             (set/difference client-features)
                             (set/difference frontend-only-features)
@@ -178,15 +180,7 @@
                   :hint (str/ffmt "client declares no support for '%' features"
                                   (str/join "," not-supported)))))
 
-    (let [not-supported (set/difference client-features supported-features)]
-      (when (seq not-supported)
-        (ex/raise :type :restriction
-                  :code :feature-not-supported
-                  :feature (first not-supported)
-                  :hint (str/ffmt "backend does not support '%' features requested by client"
-                                  (str/join "," not-supported))))))
-
-  enabled-features)
+  enabled-features))
 
 (defn check-supported-features!
   "Check if a given set of features are supported by this
@@ -194,57 +188,49 @@
   supported by the current backend"
   [enabled-features]
   (let [not-supported (set/difference enabled-features supported-features)]
-    (when (seq not-supported)
+    (when-let [not-supported (first not-supported)]
       (ex/raise :type :restriction
                 :code :feature-not-supported
-                :feature (first not-supported)
-                :hint (str/ffmt "features '%' not supported"
-                                (str/join "," not-supported)))))
-  enabled-features)
+                :feature not-supported
+                :hint (str/ffmt "feature '%' not supported on this backend" not-supported)))
+    enabled-features))
 
 (defn check-file-features!
   "Function used for check feature compability between currently
   enabled features set on backend with the provided featured set by
   the penpot file"
-  ([enabled-features file-features]
-   (check-file-features! enabled-features file-features #{}))
-  ([enabled-features file-features client-features]
-   (let [file-features   (into #{} xf-remove-ephimeral file-features)
-         ;; We should ignore all features that does not match with the
-         ;; `no-migration-features` set because we can't enable them
-         ;; as-is, because they probably need migrations
-         client-features (set/intersection client-features no-migration-features)]
-     (let [not-supported (-> enabled-features
-                             (set/union client-features)
-                             (set/difference file-features)
-                             ;; NOTE: we don't want to raise a feature-mismatch
-                             ;; exception for features which don't require an
-                             ;; explicit file migration process or has no real
-                             ;; effect on file data structure
-                             (set/difference no-migration-features))]
-       (when (seq not-supported)
-         (ex/raise :type :restriction
-                   :code :file-feature-mismatch
-                   :feature (first not-supported)
-                   :hint (str/ffmt "enabled features '%' not present in file (missing migration)"
-                                   (str/join "," not-supported)))))
+  [enabled-features file-features]
+  (let [file-features (into #{} xf-remove-ephimeral file-features)
+        not-supported (-> enabled-features
+                          (set/difference file-features)
+                          ;; NOTE: we don't want to raise a feature-mismatch
+                          ;; exception for features which don't require an
+                          ;; explicit file migration process or has no real
+                          ;; effect on file data structure
+                          (set/difference no-migration-features))]
 
-     (check-supported-features! file-features)
+    (when-let [not-supported (first not-supported)]
+      (ex/raise :type :restriction
+                :code :file-feature-mismatch
+                :feature not-supported
+                :hint (str/ffmt "enabled feature '%' not present in file (missing migration)"
+                                not-supported)))
 
-     (let [not-supported (-> file-features
-                             (set/difference enabled-features)
-                             (set/difference client-features)
-                             (set/difference backend-only-features)
-                             (set/difference frontend-only-features))]
+    (check-supported-features! file-features)
 
-       (when (seq not-supported)
-         (ex/raise :type :restriction
-                   :code :file-feature-mismatch
-                   :feature (first not-supported)
-                   :hint (str/ffmt "file features '%' not enabled"
-                                   (str/join "," not-supported))))))
+    (let [not-supported (-> file-features
+                            (set/difference enabled-features)
+                            (set/difference backend-only-features)
+                            (set/difference frontend-only-features))]
 
-   enabled-features))
+      ;; Check if file has a feature but that feature is not enabled
+      (when-let [not-supported (first not-supported)]
+        (ex/raise :type :restriction
+                  :code :file-feature-mismatch
+                  :feature not-supported
+                  :hint (str/ffmt "file feature '%' not enabled" not-supported))))
+
+    enabled-features))
 
 (defn check-teams-compatibility!
   [{source-features :features} {destination-features :features}]

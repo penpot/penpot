@@ -212,7 +212,7 @@
 
                    (-> (cfeat/get-team-enabled-features cf/flags team)
                        (cfeat/check-client-features! (:features params))
-                       (cfeat/check-file-features! (:features file) (:features params)))
+                       (cfeat/check-file-features! (:features file)))
 
                    {:file-id file-id
                     :revn (:revn file)

@@ -142,7 +142,7 @@
 
                           features (-> (cfeat/get-team-enabled-features cf/flags team)
                                        (cfeat/check-client-features! (:features params))
-                                       (cfeat/check-file-features! (:features file) (:features params)))
+                                       (cfeat/check-file-features! (:features file)))
 
                           changes  (if changes-with-metadata
                                      (->> changes-with-metadata (mapcat :changes) vec)
