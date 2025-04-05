@@ -182,7 +182,7 @@ npm run build
 
 5. Deploy site.
 
-## 3.5. Surge
+## 3.5. [Surge](https://surge.sh/)
 
 Surge provides a CLI tool for easy deployment.
 
