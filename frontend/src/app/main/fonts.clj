@@ -22,10 +22,12 @@
     {:id "italic" :name "italic" :weight "400" :style "italic" :ttf-url (get files "italic")}
 
     :else
-    (when-let [[a b c] (re-find #"^(\d+)(.*)$" variant)]
-      (if (str/empty? c)
-        {:id a :name b :weight b :style "normal" :ttf-url (get files a)}
-        {:id a :name (str b " (" c ")") :weight b :style c :ttf-url (get files c)}))))
+    (when-let [[id weight style] (re-find #"^(\d+)(.*)$" variant)]
+      {:id id
+       :name variant
+       :weight weight
+       :style (if (str/empty? style) "normal" style)
+       :ttf-url (get files id)})))
 
 (defn- parse-gfont
   [font]

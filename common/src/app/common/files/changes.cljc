@@ -345,7 +345,9 @@
      [:map {:title "DelComponentChange"}
       [:type [:= :del-component]]
       [:id ::sm/uuid]
-      [:main-instance {:optional true} :any]
+      ;; when it is an undo of a cut-paste, we need to undo the movement
+      ;; of the shapes so we need to move them delta
+      [:delta {:optional true} ::gpt/point]
       [:skip-undelete? {:optional true} :boolean]]]
 
     [:restore-component
@@ -960,8 +962,8 @@
   (ctkl/mod-component data params))
 
 (defmethod process-change :del-component
-  [data {:keys [id skip-undelete? main-instance]}]
-  (ctf/delete-component data id skip-undelete? main-instance))
+  [data {:keys [id skip-undelete? delta]}]
+  (ctf/delete-component data id skip-undelete? delta))
 
 (defmethod process-change :restore-component
   [data {:keys [id page-id parent-id]}]

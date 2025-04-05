@@ -10,7 +10,6 @@
    ["react-dom/server" :as rds]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.matrix :as gmt]
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.path :as path]
@@ -20,7 +19,9 @@
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.render-wasm.api.fonts :as f]
+   [app.render-wasm.deserializers :as dr]
    [app.render-wasm.helpers :as h]
+   [app.render-wasm.mem :as mem]
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
@@ -28,17 +29,50 @@
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [goog.object :as gobj]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 ;; (defonce internal-frame-id nil)
-;; (defonce internal-module #js {})
+;; (defonce wasm/internal-module #js {})
 (defonce use-dpr? (contains? cf/flags :render-wasm-dpr))
+
+;;
+;; List of common entry sizes.
+;;
+;; All of these entries are in bytes so we need to adjust
+;; these values to work with TypedArrays of 32 bits.
+;;
+(def CHILD-ENTRY-SIZE 16)
+(def MODIFIER-ENTRY-SIZE 40)
+(def MODIFIER-ENTRY-TRANSFORM-OFFSET 16)
+(def GRID-LAYOUT-ROW-ENTRY-SIZE 5)
+(def GRID-LAYOUT-COLUMN-ENTRY-SIZE 5)
+(def GRID-LAYOUT-CELL-ENTRY-SIZE 37)
+(def GRADIENT-STOP-SIZE 5)
+
+(defn gradient-stop-get-entries-size
+  [stops]
+  (mem/get-list-size stops GRADIENT-STOP-SIZE))
+
+(defn modifier-get-entries-size
+  "Returns the list of a modifier list in bytes"
+  [modifiers]
+  (mem/get-list-size modifiers MODIFIER-ENTRY-SIZE))
+
+(defn grid-layout-get-row-entries-size
+  [rows]
+  (mem/get-list-size rows GRID-LAYOUT-ROW-ENTRY-SIZE))
+
+(defn grid-layout-get-column-entries-size
+  [columns]
+  (mem/get-list-size columns GRID-LAYOUT-COLUMN-ENTRY-SIZE))
+
+(defn grid-layout-get-cell-entries-size
+  [cells]
+  (mem/get-list-size cells GRID-LAYOUT-CELL-ENTRY-SIZE))
 
 (def dpr
   (if use-dpr? js/window.devicePixelRatio 1.0))
-
 
 ;; Based on app.main.render/object-svg
 (mf/defc object-svg
@@ -154,27 +188,21 @@
 
 (defn set-shape-children
   [shape-ids]
-  (let [ENTRY-SIZE 16
-        ptr
-        (h/call wasm/internal-module "_alloc_bytes" (* ENTRY-SIZE (count shape-ids)))
+  (let [num-shapes (count shape-ids)]
+    (when (> num-shapes 0)
+      (let [offset (mem/alloc-bytes (* CHILD-ENTRY-SIZE num-shapes))
+            heap (mem/get-heap-u32)]
 
-        heap
-        (js/Uint8Array.
-         (.-buffer (gobj/get ^js wasm/internal-module "HEAPU8"))
-         ptr
-         (* ENTRY-SIZE (count shape-ids)))]
+        (loop [entries (seq shape-ids)
+               current-offset  offset]
+          (when-not (empty? entries)
+            (let [id (first entries)]
+              (sr/heapu32-set-uuid id heap (mem/ptr8->ptr32 current-offset))
+              (recur (rest entries) (+ current-offset CHILD-ENTRY-SIZE)))))
 
-    (loop [entries (seq shape-ids)
-           offset  0]
-      (when-not (empty? entries)
-        (let [id (first entries)]
-          (.set heap (sr/uuid->u8 id) offset)
-          (recur (rest entries) (+ offset ENTRY-SIZE)))))
-
-    (h/call wasm/internal-module "_set_children")))
+        (h/call wasm/internal-module "_set_children")))))
 
 (defn- get-string-length [string] (+ (count string) 1))
-
 
 (defn- store-image
   [id]
@@ -187,11 +215,11 @@
          (rx/map :body)
          (rx/mapcat wapi/read-file-as-array-buffer)
          (rx/map (fn [image]
-                   (let [image-size (.-byteLength image)
-                         image-ptr  (h/call wasm/internal-module "_alloc_bytes" image-size)
-                         heap       (gobj/get ^js wasm/internal-module "HEAPU8")
-                         mem        (js/Uint8Array. (.-buffer heap) image-ptr image-size)]
-                     (.set mem (js/Uint8Array. image))
+                   (let [size    (.-byteLength image)
+                         offset  (mem/alloc-bytes size)
+                         heap    (mem/get-heap-u8)
+                         data    (js/Uint8Array. image)]
+                     (.set heap data offset)
                      (h/call wasm/internal-module "_store_image"
                              (aget buffer 0)
                              (aget buffer 1)
@@ -214,11 +242,10 @@
 
               (some? gradient)
               (let [stops     (:stops gradient)
-                    n-stops   (count stops)
-                    mem-size  (* 5 n-stops)
-                    stops-ptr (h/call wasm/internal-module "_alloc_bytes" mem-size)
-                    heap      (gobj/get ^js wasm/internal-module "HEAPU8")
-                    mem       (js/Uint8Array. (.-buffer heap) stops-ptr mem-size)]
+                    size  (gradient-stop-get-entries-size stops)
+                    offset (mem/alloc-bytes size)
+                    heap      (mem/get-heap-u8)
+                    mem       (js/Uint8Array. (.-buffer heap) offset size)]
                 (if (= (:type gradient) :linear)
                   (h/call wasm/internal-module "_add_shape_linear_fill"
                           (:start-x gradient)
@@ -277,11 +304,10 @@
             (cond
               (some? gradient)
               (let [stops     (:stops gradient)
-                    n-stops   (count stops)
-                    mem-size  (* 5 n-stops)
-                    stops-ptr (h/call wasm/internal-module "_alloc_bytes" mem-size)
-                    heap      (gobj/get ^js wasm/internal-module "HEAPU8")
-                    mem       (js/Uint8Array. (.-buffer heap) stops-ptr mem-size)]
+                    size  (gradient-stop-get-entries-size stops)
+                    offset (mem/alloc-bytes size)
+                    heap      (mem/get-heap-u8)
+                    mem       (js/Uint8Array. (.-buffer heap) offset size)]
                 (if (= (:type gradient) :linear)
                   (h/call wasm/internal-module "_add_shape_stroke_linear_fill"
                           (:start-x gradient)
@@ -333,24 +359,24 @@
                   (merge style))
         str   (sr/serialize-path-attrs attrs)
         size  (count str)
-        ptr   (h/call wasm/internal-module "_alloc_bytes" size)]
-    (h/call wasm/internal-module "stringToUTF8" str ptr size)
+        offset   (mem/alloc-bytes size)]
+    (h/call wasm/internal-module "stringToUTF8" str offset size)
     (h/call wasm/internal-module "_set_shape_path_attrs" (count attrs))))
 
 (defn set-shape-path-content
   [content]
   (let [pdata  (path/path-data content)
         size   (* (count pdata) path/SEGMENT-BYTE-SIZE)
-        offset (h/call wasm/internal-module "_alloc_bytes" size)
-        heap   (gobj/get ^js wasm/internal-module "HEAPU8")]
+        offset (mem/alloc-bytes size)
+        heap   (mem/get-heap-u8)]
     (path/-write-to pdata (.-buffer heap) offset)
     (h/call wasm/internal-module "_set_shape_path_content")))
 
 (defn set-shape-svg-raw-content
   [content]
   (let [size (get-string-length content)
-        ptr (h/call wasm/internal-module "_alloc_bytes" size)]
-    (h/call wasm/internal-module "stringToUTF8" content ptr size)
+        offset (mem/alloc-bytes size)]
+    (h/call wasm/internal-module "stringToUTF8" content offset size)
     (h/call wasm/internal-module "_set_shape_svg_raw_content")))
 
 
@@ -364,8 +390,6 @@
 (defn set-shape-opacity
   [opacity]
   (h/call wasm/internal-module "_set_shape_opacity" (or opacity 1)))
-
-
 
 (defn set-constraints-h
   [constraint]
@@ -473,93 +497,93 @@
             padding-left))
 
   ;; Send Rows
-  (let [entry-size 5
-        entries (:layout-grid-rows shape)
-        ptr (h/call wasm/internal-module "_alloc_bytes" (* entry-size (count entries)))
+  (let [entries (:layout-grid-rows shape)
+        size (grid-layout-get-row-entries-size entries)
+        offset (mem/alloc-bytes size)
 
         heap
         (js/Uint8Array.
-         (.-buffer (gobj/get ^js wasm/internal-module "HEAPU8"))
-         ptr
-         (* entry-size (count entries)))]
+         (.-buffer (mem/get-heap-u8))
+         offset
+         size)]
     (loop [entries (seq entries)
-           offset  0]
+           current-offset  0]
       (when-not (empty? entries)
         (let [{:keys [type value]} (first entries)]
-          (.set heap (sr/u8 (sr/translate-grid-track-type type)) (+ offset 0))
-          (.set heap (sr/f32->u8 value) (+ offset 1))
-          (recur (rest entries) (+ offset entry-size)))))
+          (.set heap (sr/u8 (sr/translate-grid-track-type type)) (+ current-offset 0))
+          (.set heap (sr/f32->u8 value) (+ current-offset 1))
+          (recur (rest entries) (+ current-offset GRID-LAYOUT-ROW-ENTRY-SIZE)))))
     (h/call wasm/internal-module "_set_grid_rows"))
 
   ;; Send Columns
-  (let [entry-size 5
-        entries (:layout-grid-columns shape)
-        ptr (h/call wasm/internal-module "_alloc_bytes" (* entry-size (count entries)))
+  (let [entries (:layout-grid-columns shape)
+        size (grid-layout-get-column-entries-size entries)
+        offset (mem/alloc-bytes size)
 
         heap
         (js/Uint8Array.
-         (.-buffer (gobj/get ^js wasm/internal-module "HEAPU8"))
-         ptr
-         (* entry-size (count entries)))]
+         (.-buffer (mem/get-heap-u8))
+         offset
+         size)]
     (loop [entries (seq entries)
-           offset  0]
+           current-offset  0]
       (when-not (empty? entries)
         (let [{:keys [type value]} (first entries)]
-          (.set heap (sr/u8 (sr/translate-grid-track-type type)) (+ offset 0))
-          (.set heap (sr/f32->u8 value) (+ offset 1))
-          (recur (rest entries) (+ offset entry-size)))))
+          (.set heap (sr/u8 (sr/translate-grid-track-type type)) (+ current-offset 0))
+          (.set heap (sr/f32->u8 value) (+ current-offset 1))
+          (recur (rest entries) (+ current-offset GRID-LAYOUT-COLUMN-ENTRY-SIZE)))))
     (h/call wasm/internal-module "_set_grid_columns"))
 
   ;; Send cells
-  (let [entry-size 37
-        entries (-> shape :layout-grid-cells vals)
-        ptr (h/call wasm/internal-module "_alloc_bytes" (* entry-size (count entries)))
+  (let [entries (-> shape :layout-grid-cells vals)
+        size (grid-layout-get-cell-entries-size entries)
+        offset (mem/alloc-bytes size)
 
         heap
         (js/Uint8Array.
-         (.-buffer (gobj/get ^js wasm/internal-module "HEAPU8"))
-         ptr
-         (* entry-size (count entries)))]
+         (.-buffer (mem/get-heap-u8))
+         offset
+         size)]
 
     (loop [entries (seq entries)
-           offset  0]
+           current-offset  0]
       (when-not (empty? entries)
         (let [cell (first entries)]
 
           ;; row: [u8; 4],
-          (.set heap (sr/i32->u8 (:row cell)) (+ offset 0))
+          (.set heap (sr/i32->u8 (:row cell)) (+ current-offset 0))
 
           ;; row_span: [u8; 4],
-          (.set heap (sr/i32->u8 (:row-span cell)) (+ offset 4))
+          (.set heap (sr/i32->u8 (:row-span cell)) (+ current-offset 4))
 
           ;; column: [u8; 4],
-          (.set heap (sr/i32->u8 (:column cell)) (+ offset 8))
+          (.set heap (sr/i32->u8 (:column cell)) (+ current-offset 8))
 
           ;; column_span: [u8; 4],
-          (.set heap (sr/i32->u8 (:column-span cell)) (+ offset 12))
+          (.set heap (sr/i32->u8 (:column-span cell)) (+ current-offset 12))
 
           ;; has_align_self: u8,
-          (.set heap (sr/bool->u8 (some? (:align-self cell))) (+ offset 16))
+          (.set heap (sr/bool->u8 (some? (:align-self cell))) (+ current-offset 16))
 
           ;; align_self: u8,
-          (.set heap (sr/u8 (sr/translate-align-self (:align-self cell))) (+ offset 17))
+          (.set heap (sr/u8 (sr/translate-align-self (:align-self cell))) (+ current-offset 17))
 
           ;; has_justify_self: u8,
-          (.set heap (sr/bool->u8 (some? (:justify-self cell))) (+ offset 18))
+          (.set heap (sr/bool->u8 (some? (:justify-self cell))) (+ current-offset 18))
 
           ;; justify_self: u8,
-          (.set heap (sr/u8 (sr/translate-justify-self (:justify-self cell))) (+ offset 19))
+          (.set heap (sr/u8 (sr/translate-justify-self (:justify-self cell))) (+ current-offset 19))
 
           ;; has_shape_id: u8,
-          (.set heap (sr/bool->u8 (d/not-empty? (:shapes cell))) (+ offset 20))
+          (.set heap (sr/bool->u8 (d/not-empty? (:shapes cell))) (+ current-offset 20))
 
           ;; shape_id_a: [u8; 4],
           ;; shape_id_b: [u8; 4],
           ;; shape_id_c: [u8; 4],
           ;; shape_id_d: [u8; 4],
-          (.set heap (sr/uuid->u8 (or (-> cell :shapes first) uuid/zero)) (+ offset 21))
+          (.set heap (sr/uuid->u8 (or (-> cell :shapes first) uuid/zero)) (+ current-offset 21))
 
-          (recur (rest entries) (+ offset entry-size)))))
+          (recur (rest entries) (+ current-offset GRID-LAYOUT-CELL-ENTRY-SIZE)))))
 
     (h/call wasm/internal-module "_set_grid_cells")))
 
@@ -637,9 +661,9 @@
             font-size (js/Number (dm/get-prop leaf :font-size))
             buffer (utf8->buffer text)
             size (.-byteLength buffer)
-            ptr (h/call wasm/internal-module "_alloc_bytes" size)
-            heap (gobj/get ^js wasm/internal-module "HEAPU8")
-            mem (js/Uint8Array. (.-buffer heap) ptr size)]
+            offset (mem/alloc-bytes size)
+            heap (mem/get-heap-u8)
+            mem (js/Uint8Array. (.-buffer heap) offset size)]
         (.set mem buffer)
         (h/call wasm/internal-module "_add_text_leaf"
                 (aget font-id 0)
@@ -756,6 +780,17 @@
               (set-shape-fills fills)
               (set-shape-strokes strokes)))))
 
+(defn process-object
+  [shape]
+  (let [pending (set-object [] shape)]
+    (when-let [pending (seq pending)]
+      (->> (rx/from pending)
+           (rx/mapcat identity)
+           (rx/reduce conj [])
+           (rx/subs! (fn [_]
+                       (clear-drawing-cache)
+                       (request-render "set-objects")))))))
+
 (defn set-objects
   [objects]
   (let [shapes        (into [] (vals objects))
@@ -777,51 +812,27 @@
                        (clear-drawing-cache)
                        (request-render "set-objects")))))))
 
-
-(defn data->entry
-  [data offset]
-  (let [id1 (.getUint32 data (+ offset 0) true)
-        id2 (.getUint32 data (+ offset 4) true)
-        id3 (.getUint32 data (+ offset 8) true)
-        id4 (.getUint32 data (+ offset 12) true)
-
-        a (.getFloat32 data (+ offset 16) true)
-        b (.getFloat32 data (+ offset 20) true)
-        c (.getFloat32 data (+ offset 24) true)
-        d (.getFloat32 data (+ offset 28) true)
-        e (.getFloat32 data (+ offset 32) true)
-        f (.getFloat32 data (+ offset 36) true)
-
-        id (uuid/from-unsigned-parts id1 id2 id3 id4)]
-
-    {:id id
-     :transform (gmt/matrix a b c d e f)}))
-
 (defn propagate-modifiers
   [entries]
-  (let [entry-size 40
-        ptr (h/call wasm/internal-module "_alloc_bytes" (* entry-size (count entries)))
-
-        heap
-        (js/Uint8Array.
-         (.-buffer (gobj/get ^js wasm/internal-module "HEAPU8"))
-         ptr
-         (* entry-size (count entries)))]
+  (let [offset (mem/alloc-bytes-32 (modifier-get-entries-size entries))
+        heapf32 (mem/get-heap-f32)
+        heapu32 (mem/get-heap-u32)]
 
     (loop [entries (seq entries)
-           offset  0]
+           current-offset  offset]
       (when-not (empty? entries)
         (let [{:keys [id transform]} (first entries)]
-          (.set heap (sr/uuid->u8 id) offset)
-          (.set heap (sr/matrix->u8 transform) (+ offset 16))
-          (recur (rest entries) (+ offset entry-size)))))
+          (sr/heapu32-set-uuid id heapu32 current-offset)
+          (sr/heapf32-set-matrix transform heapf32 (+ current-offset (mem/ptr8->ptr32 MODIFIER-ENTRY-TRANSFORM-OFFSET)))
+          (recur (rest entries) (+ current-offset (mem/ptr8->ptr32 MODIFIER-ENTRY-SIZE))))))
 
-    (let [result-ptr (h/call wasm/internal-module "_propagate_modifiers")
-          heap (js/DataView. (.-buffer (gobj/get ^js wasm/internal-module "HEAPU8")))
-          len (.getUint32 heap result-ptr true)
+    (let [result-offset (h/call wasm/internal-module "_propagate_modifiers")
+          heapf32 (mem/get-heap-f32)
+          heapu32 (mem/get-heap-u32)
+          len (aget heapu32 (mem/ptr8->ptr32 result-offset))
           result
           (->> (range 0 len)
-               (mapv #(data->entry heap (+ result-ptr 4 (* % entry-size)))))]
+               (mapv #(dr/heap32->entry heapu32 heapf32 (mem/ptr8->ptr32 (+ result-offset 4 (* % MODIFIER-ENTRY-SIZE))))))]
       (h/call wasm/internal-module "_free_bytes")
 
       result)))
@@ -837,24 +848,17 @@
   (if (empty? modifiers)
     (h/call wasm/internal-module "_clean_modifiers")
 
-    (let [ENTRY-SIZE 40
-
-          ptr
-          (h/call wasm/internal-module "_alloc_bytes" (* ENTRY-SIZE (count modifiers)))
-
-          heap
-          (js/Uint8Array.
-           (.-buffer (gobj/get ^js wasm/internal-module "HEAPU8"))
-           ptr
-           (* ENTRY-SIZE (count modifiers)))]
+    (let [offset (mem/alloc-bytes-32 (* MODIFIER-ENTRY-SIZE (count modifiers)))
+          heapu32 (mem/get-heap-u32)
+          heapf32 (mem/get-heap-f32)]
 
       (loop [entries (seq modifiers)
-             offset  0]
+             current-offset  offset]
         (when-not (empty? entries)
           (let [{:keys [id transform]} (first entries)]
-            (.set heap (sr/uuid->u8 id) offset)
-            (.set heap (sr/matrix->u8 transform) (+ offset 16))
-            (recur (rest entries) (+ offset ENTRY-SIZE)))))
+            (sr/heapu32-set-uuid id heapu32 current-offset)
+            (sr/heapf32-set-matrix transform heapf32 (+ current-offset (mem/ptr8->ptr32 MODIFIER-ENTRY-TRANSFORM-OFFSET)))
+            (recur (rest entries) (+ current-offset (mem/ptr8->ptr32 MODIFIER-ENTRY-SIZE))))))
 
       (h/call wasm/internal-module "_set_modifiers")
 

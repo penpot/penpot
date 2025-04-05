@@ -1,4 +1,8 @@
+use std::alloc::{alloc, Layout};
+use std::ptr;
 use std::sync::Mutex;
+
+const LAYOUT_ALIGN: usize = 4;
 
 static BUFFERU8: Mutex<Option<Box<Vec<u8>>>> = Mutex::new(None);
 
@@ -10,11 +14,17 @@ pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
         panic!("Bytes already allocated");
     }
 
-    let mut new_buffer = Box::new(vec![0u8; len]);
-    let ptr = new_buffer.as_mut_ptr();
-
-    *guard = Some(new_buffer);
-    ptr
+    unsafe {
+        let layout = Layout::from_size_align_unchecked(len, LAYOUT_ALIGN);
+        let ptr = alloc(layout) as *mut u8;
+        if ptr.is_null() {
+            panic!("Allocation failed");
+        }
+        // TODO: Esto quizá se podría eliminar.
+        ptr::write_bytes(ptr, 0, len);
+        *guard = Some(Box::new(Vec::from_raw_parts(ptr, len, len)));
+        ptr
+    }
 }
 
 pub fn write_bytes(bytes: Vec<u8>) -> *mut u8 {

@@ -403,33 +403,34 @@
 
 (defn load-component-objects
   "Add an :objects property to the component, with only the shapes that belong to it"
-  [file-data component]
-  (let [components-v2 (dm/get-in file-data [:options :components-v2])]
-    (if (and components-v2 component (empty? (:objects component))) ;; This operation may be called twice, e.g. in an idempotent change
-      (let [component-page (get-component-page file-data component)
-            page-objects   (:objects component-page)
-            objects        (->> (cons (:main-instance-id component)
-                                      (cfh/get-children-ids page-objects (:main-instance-id component)))
-                                (map #(get page-objects %))
-                                (d/index-by :id))]
-        (assoc component :objects objects))
-      component)))
+  ([file-data component]
+   (load-component-objects file-data component (gpt/point 0 0)))
+  ([file-data component delta]
+   (let [components-v2 (dm/get-in file-data [:options :components-v2])]
+     (if (and components-v2 component (empty? (:objects component))) ;; This operation may be called twice, e.g. in an idempotent change
+       (let [component-page (get-component-page file-data component)
+             page-objects   (:objects component-page)
+             objects        (->> (cons (:main-instance-id component)
+                                       (cfh/get-children-ids page-objects (:main-instance-id component)))
+                                 (map #(get page-objects %))
+                                 ;; when it is an undo of a cut-paste, we need to undo the movement
+                                 ;; of the shapes so we need to move them delta
+                                 (map #(gsh/move % delta))
+                                 (d/index-by :id))]
+         (assoc component :objects objects))
+       component))))
 
 (defn delete-component
   "Mark a component as deleted and store the main instance shapes iside it, to
   be able to be recovered later."
-  [file-data component-id skip-undelete? main-instance]
-  (let [components-v2 (dm/get-in file-data [:options :components-v2])]
+  [file-data component-id skip-undelete? delta]
+  (let [components-v2 (dm/get-in file-data [:options :components-v2])
+        delta         (or delta (gpt/point 0 0))]
     (if (or (not components-v2) skip-undelete?)
       (ctkl/delete-component file-data component-id)
-      (let [set-main-instance ;; If there is a saved main-instance, restore it. This happens on the restore-component action
-            #(if main-instance
-               (assoc-in % [:objects (:main-instance-id %)] main-instance)
-               %)]
-        (-> file-data
-            (ctkl/update-component component-id (partial load-component-objects file-data))
-            (ctkl/update-component component-id set-main-instance)
-            (ctkl/mark-component-deleted component-id))))))
+      (-> file-data
+          (ctkl/update-component component-id #(load-component-objects file-data % delta))
+          (ctkl/mark-component-deleted component-id)))))
 
 (defn restore-component
   "Recover a deleted component and all its shapes and put all this again in place."
