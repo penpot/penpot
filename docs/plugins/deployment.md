@@ -23,7 +23,7 @@ Examples:
 ![Angular dist example](/img/plugins/angular_dist.png)
 
 
-## 3.3. Vercel
+## 3.3. [Vercel](https://vercel.com/)
 
 You need a Vercel account if you don't already have one. You can <a target="_blank" href="https://vercel.com/signup">sign up</a> with Github, GItlab, BItbucket, Passkey or via email and verification code.
 
@@ -45,7 +45,7 @@ You can also use the [Vercel CLI to deploy](https://vercel.com/guides/using-verc
 
 1. Go to <a target="_blank" href="https://vercel.com/new">New</a> and connect with your repository or choose [Import Third-Party Git Repository](https://vercel.com/new/git/third-party).
 
-## 3.3. Netlify
+## 3.3. [Netlify](https://www.netlify.com/)
 
 ### Create an account
 
@@ -108,7 +108,7 @@ npm run build
 
 4. Done!
 
-## 3.4. Cloudflare
+## 3.4. [Cloudflare](https://www.cloudflare.com/)
 
 ### Create an account
 
