@@ -33,10 +33,10 @@
 
 (defn update-shadow-opacity [shape value]
   (let [updated-shadows (mapv
-                          (fn [shadow]
-                            (let [shadow-color (:color shadow)
-                                  updated-color (assoc shadow-color :opacity value)]
-                              (assoc shadow :color updated-color)))
-                          (:shadow shape))]
+                         (fn [shadow]
+                           (let [shadow-color (:color shadow)
+                                 updated-color (assoc shadow-color :opacity value)]
+                             (assoc shadow :color updated-color)))
+                         (:shadow shape))]
     ;; Update all shadows in the shape
     (assoc shape :shadow updated-shadows)))
