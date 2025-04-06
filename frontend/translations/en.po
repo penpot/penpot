@@ -6649,6 +6649,10 @@ msgstr "Back to theme list"
 msgid "workspace.token.color"
 msgstr "Color"
 
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:247
+msgid "workspace.token.opacity"
+msgstr "Opacity"
+
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:54
 msgid "workspace.token.create-new-theme"
 msgstr "Create your first theme now."

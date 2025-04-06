@@ -25,7 +25,6 @@
 ;; Translation dictionaries
 (def ^:private attribute-dictionary
   {:rotation "Rotation"
-   :opacity "Opacity"
    :stroke-width "Stroke Width"
 
    ;; Spacing
@@ -48,7 +47,11 @@
 
    ;; Color
    :fill "Fill"
-   :stroke-color "Stroke Color"})
+   :stroke-color "Stroke Color"
+
+   ;; Opacity
+   :layer-opacity "Layer"
+   :shadow-opacity "Shadows"})
 
 (def ^:private dimensions-dictionary
   {:stroke-width :stroke-width

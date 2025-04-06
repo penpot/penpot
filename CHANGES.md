@@ -8,6 +8,8 @@
 
 ### :heart: Community contributions (Thank you!)
 
+- [DESIGN TOKENS] Types added: Shadows opacity.
+
 ### :sparkles: New features
 
 ### :bug: Bugs fixed

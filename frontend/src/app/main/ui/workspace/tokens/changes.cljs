@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
+   [app.common.types.shape.shadow :as ctss]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.event :as ev]
@@ -137,12 +138,26 @@
 
 (defn update-opacity
   ([value shape-ids attributes] (update-opacity value shape-ids attributes nil))
-  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
-   (when (<= 0 value 1)
-     (dwsh/update-shapes shape-ids
-                         #(assoc % :opacity value)
-                         {:ignore-touched true
-                          :page-id page-id}))))
+  ([value shape-ids attributes page-id] ; Keep attributes for consistency with other update functions
+   (ptk/reify ::update-opacity
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (when (<= 0 value 1)
+         (rx/of
+          (when (:layer-opacity attributes)
+            (dwsh/update-shapes shape-ids
+                                #(assoc % :opacity value)
+                                {:ignore-touched true
+                                 :page-id page-id}))
+          ;; Update the shadow opacity by modifying the alpha component of the color
+          (when (:shadow-opacity attributes)
+            (dwsh/update-shapes shape-ids
+                                (fn [shape]
+                                  (ctss/update-shadow-opacity shape value))
+                                {:ignore-touched true
+                                 :page-id page-id})
+                                 )))))))
+
 
 ;; FIXME: if attributes are not always present, maybe we have an
 ;; options here for pass optional value and preserve the correct and
@@ -382,7 +397,7 @@
 
    :opacity
    {:title "Opacity"
-    :attributes ctt/opacity-keys
+    :attributes #{:layer-opacity, :shadow-opacity}
     :on-update-shape update-opacity
     :modal {:key :tokens/opacity
             :fields [{:label "Opacity"

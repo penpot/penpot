@@ -116,7 +116,8 @@
 (sm/register!
  ^{::sm/type ::opacity}
  [:map
-  [:opacity {:optional true} token-name-ref]])
+  [:layer-opacity {:optional true} token-name-ref]
+  [:shadow-opacity {:optional true} token-name-ref]])
 
 (def opacity-keys (schema-keys ::opacity))
 

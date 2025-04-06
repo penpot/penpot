@@ -243,7 +243,9 @@
      :spacing spacing-attribute-actions
      :sizing sizing-attribute-actions
      :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
-     :opacity (partial generic-attribute-actions #{:opacity} "Opacity")
+     :opacity (fn [context-data]
+          [(generic-attribute-actions #{:layer-opacity} "Layer" (assoc context-data :hint (tr "workspace.token.opacity")))
+           (generic-attribute-actions #{:shadow-opacity} "Shadows" (assoc context-data :on-update-shape wtch/update-opacity))])
      :stroke-width stroke-width
      :dimensions (fn [context-data]
                    (concat
