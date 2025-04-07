@@ -120,7 +120,7 @@
     ;; to lost team features updating
 
     ;; When newly computed features does not match exactly with
-    ;; the features defined on team row, we update it.
+    ;; the features defined on team row, we update it
     (when (not= features (:features team))
       (let [features (db/create-array conn "text" features)]
         (db/update! conn :team

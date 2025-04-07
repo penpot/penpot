@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.common :as dcm]
+   [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dpl]
    [app.main.data.workspace :as dw]
@@ -45,9 +46,10 @@
 (mf/defc workspace-content*
   {::mf/private true}
   [{:keys [file layout page wglobal]}]
+
   (let [palete-size (mf/use-state nil)
         selected    (mf/deref refs/selected-shapes)
-        page-id     (:id page)
+        page-id     (get page :id)
 
         {:keys [vport] :as wlocal} (mf/deref refs/workspace-local)
         {:keys [options-mode]} wglobal
@@ -120,10 +122,46 @@
                 :overlay true
                 :file-loading true}])
 
+(defn- make-team-ref
+  [team-id]
+  (l/derived (fn [state]
+               (let [teams (get state :teams)]
+                 (get teams team-id)))
+             st/state))
+
+(defn- make-file-ref
+  [file-id]
+  (l/derived (fn [state]
+               ;; NOTE: for ensure ordering of execution, we need to
+               ;; wait the file initialization completly success until
+               ;; mark this file availablea and unlock the rendering
+               ;; of the following components
+               (when (= (get state :current-file-id) file-id)
+                 (let [files (get state :files)
+                       file  (get files file-id)]
+                   (-> file
+                       (dissoc :data)
+                       (assoc ::has-data (contains? file :data))))))
+             st/state))
+
+(defn- make-page-ref
+  [file-id page-id]
+  (l/derived (fn [state]
+               (let [current-page-id (get state :current-page-id)]
+                 ;; NOTE: for ensure ordering of execution, we need to
+                 ;; wait the page initialization completly success until
+                 ;; mark this file availablea and unlock the rendering
+                 ;; of the following components
+                 (when (= current-page-id page-id)
+                   (dsh/lookup-page state file-id page-id))))
+             st/state))
+
 (mf/defc workspace-page*
   {::mf/private true}
   [{:keys [page-id file-id file layout wglobal]}]
-  (let [page (mf/deref refs/workspace-page)]
+  (let [page-ref (mf/with-memo [file-id page-id]
+                   (make-page-ref file-id page-id))
+        page     (mf/deref page-ref)]
 
     (mf/with-effect []
       (let [focus-out #(st/emit! (dw/workspace-focus-lost))
@@ -133,8 +171,7 @@
     (mf/with-effect [file-id page-id]
       (st/emit! (dw/initialize-page file-id page-id))
       (fn []
-        (when page-id
-          (st/emit! (dw/finalize-page file-id page-id)))))
+        (st/emit! (dw/finalize-page file-id page-id))))
 
     (if (some? page)
       [:> workspace-content* {:file file
@@ -143,18 +180,9 @@
                               :layout layout}]
       [:> workspace-loader*])))
 
-(def ^:private ref:file-without-data
-  (l/derived (fn [file]
-               (-> file
-                   (dissoc :data)
-                   (assoc ::has-data (contains? file :data))))
-             refs/file
-             =))
-
 (mf/defc workspace*
-  {::mf/props :obj
-   ::mf/wrap [mf/memo]}
-  [{:keys [project-id file-id page-id layout-name]}]
+  {::mf/wrap [mf/memo]}
+  [{:keys [team-id project-id file-id page-id layout-name]}]
 
   (let [file-id          (hooks/use-equal-memo file-id)
         page-id          (hooks/use-equal-memo page-id)
@@ -162,8 +190,15 @@
         layout           (mf/deref refs/workspace-layout)
         wglobal          (mf/deref refs/workspace-global)
 
-        team             (mf/deref refs/team)
-        file             (mf/deref ref:file-without-data)
+        team-ref         (mf/with-memo [team-id]
+                           (make-team-ref team-id))
+        file-ref         (mf/with-memo [file-id]
+                           (make-file-ref file-id))
+
+        team             (mf/deref team-ref)
+        file             (mf/deref file-ref)
+
+        file-loaded?     (get file ::has-data)
 
         file-name        (:name file)
         permissions      (:permissions team)
@@ -187,14 +222,14 @@
       (when file-name
         (dom/set-html-title (tr "title.workspace" file-name))))
 
-    (mf/with-effect [file-id]
-      (st/emit! (dw/initialize-workspace file-id))
+    (mf/with-effect [team-id file-id]
+      (st/emit! (dw/initialize-workspace team-id file-id))
       (fn []
         (st/emit! ::dps/force-persist
-                  (dw/finalize-workspace file-id))))
+                  (dw/finalize-workspace team-id file-id))))
 
-    (mf/with-effect [file page-id]
-      (when-not page-id
+    (mf/with-effect [file-id page-id file-loaded?]
+      (when (and file-loaded? (not page-id))
         (st/emit! (dcm/go-to-workspace :file-id file-id ::rt/replace true))))
 
     [:> (mf/provider ctx/current-project-id) {:value project-id}
@@ -208,8 +243,7 @@
                      :style {:background-color background-color
                              :touch-action "none"}}
            [:> context-menu*]
-
-           (if (::has-data file)
+           (if (and file-loaded? page-id)
              [:> workspace-page*
               {:page-id page-id
                :file-id file-id
