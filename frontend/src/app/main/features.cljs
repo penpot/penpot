@@ -31,7 +31,7 @@
   (let [team (dm/get-in state [:teams team-id])]
     (-> global-enabled-features
         (set/union (get state :features-runtime #{}))
-        (set/difference cfeat/no-migration-features)
+        (set/intersection cfeat/no-migration-features)
         (set/union (get team :features)))))
 
 (defn active-feature?
