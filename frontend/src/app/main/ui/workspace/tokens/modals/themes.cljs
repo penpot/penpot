@@ -248,15 +248,13 @@
     (ctob/activate-theme tlib (:group theme) (:name theme))))
 
 (mf/defc edit-create-theme*
-  [{:keys [state change-view theme on-save is-editing]}]
+  [{:keys [change-view theme on-save is-editing has-prev-view]}]
   (let [ordered-token-sets (mf/deref refs/workspace-ordered-token-sets)
         token-sets (mf/deref refs/workspace-token-sets-tree)
 
         current-theme* (mf/use-state theme)
         current-theme (deref current-theme*)
         lib (make-lib-with-theme current-theme ordered-token-sets)
-
-        has-back-button? (contains? #{:empty-themes :themes-overview} (:prev-type state))
 
         ;; Form / Modal handlers
         on-back (mf/use-fn
@@ -339,7 +337,7 @@
 
      [:form {:on-submit on-save-form :class (stl/css :edit-theme-form)}
       [:div {:class (stl/css :edit-theme-wrapper)}
-       (when has-back-button?
+       (when has-prev-view
          [:button {:on-click on-back
                    :class (stl/css :back-btn)
                    :type "button"}
@@ -374,11 +372,15 @@
                                    :on-save-form on-save-form
                                    :disabled? disabled?}]]]]]]))
 
+(defn has-prev-view [prev-view-type]
+  (contains? #{:empty-themes :themes-overview} prev-view-type))
+
 (mf/defc edit-theme
   [{:keys [state change-view]}]
   (let [{:keys [theme-path]} state
         [_ theme-group theme-name] theme-path
         theme (mf/deref (refs/workspace-token-theme theme-group theme-name))
+        has-prev-view (has-prev-view (:prev-type state))
 
         on-save
         (mf/use-fn
@@ -387,11 +389,11 @@
            (st/emit! (wdt/update-token-theme [(:group theme) (:name theme)] theme'))))]
 
     [:> edit-create-theme*
-     {:state state
-      :change-view change-view
+     {:change-view change-view
       :theme theme
       :on-save on-save
-      :is-editing true}]))
+      :is-editing true
+      :has-prev-view has-prev-view}]))
 
 (mf/defc create-theme
   [{:keys [state change-view]}]
@@ -400,13 +402,14 @@
         (mf/use-fn
          (fn [theme]
            (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens-theme"})
-                     (wdt/create-token-theme theme))))]
+                     (wdt/create-token-theme theme))))
+        has-prev-view (has-prev-view (:prev-type state))]
 
     [:> edit-create-theme*
-     {:state state
-      :change-view change-view
+     {:change-view change-view
       :theme theme
-      :on-save on-save}]))
+      :on-save on-save
+      :has-prev-view has-prev-view}]))
 
 (mf/defc themes-modal-body*
   {::mf/private true}
