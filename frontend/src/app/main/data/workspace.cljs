@@ -80,6 +80,7 @@
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.errors]
+   [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
    [app.main.repo :as rp]
    [app.main.router :as rt]
