@@ -421,12 +421,12 @@
         state       (deref state*)
 
         change-view (mf/use-fn
-                     (fn [type & [state']]
+                     (fn [type & {:keys [theme-path]}]
                        (swap! state* (fn [current-state]
-                                       (merge
-                                        {:type type
-                                         :prev-type (:type current-state)}
-                                        state')))))
+                                       (cond-> current-state
+                                         :always (assoc :type type
+                                                        :prev-type (:type current-state))
+                                         :theme-path (assoc :theme-path theme-path))))))
 
         component (case (:type state)
                     :empty-themes empty-themes
