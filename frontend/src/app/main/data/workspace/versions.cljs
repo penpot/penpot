@@ -203,9 +203,8 @@
   (ptk/reify ::restore-version-from-plugins
     ptk/WatchEvent
     (watch [_ state _]
-      ;; FIXME: revisit this
       (let [file    (dsh/lookup-file state file-id)
-            team-id (:team-id file)]
+            team-id (or (:team-id file) (:current-file-id state))]
         (rx/concat
          (rx/of (ptk/event ::ev/event {::ev/name "restore-version-plugin"})
                 ::dwp/force-persist)

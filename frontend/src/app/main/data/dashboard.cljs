@@ -19,7 +19,6 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.websocket :as dws]
-   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.sse :as sse]
@@ -497,7 +496,7 @@
             base-name (tr "dashboard.new-file-prefix")
             name      (or name
                           (cfh/generate-unique-name base-name unames :immediate-suffix? true))
-            features  (-> (features/get-team-enabled-features state)
+            features  (-> (get state :features)
                           (set/difference cfeat/frontend-only-features))
             params    (-> params
                           (assoc :name name)

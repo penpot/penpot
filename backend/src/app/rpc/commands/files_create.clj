@@ -91,9 +91,6 @@
                                  :project-id project-id)
         team-id  (:id team)
 
-        ;; When we create files, we only need to respect the team
-        ;; features, because some features can be enabled
-        ;; globally, but the team is still not migrated properly.
         features (-> (cfeat/get-team-enabled-features cf/flags team)
                      (cfeat/check-client-features! (:features params)))
 
@@ -107,7 +104,7 @@
 
         params   (-> params
                      (assoc :profile-id profile-id)
-                     (assoc :features (set/difference features cfeat/frontend-only-features)))]
+                     (assoc :features features))]
 
     (quotes/check! cfg {::quotes/id ::quotes/files-per-project
                         ::quotes/team-id team-id
