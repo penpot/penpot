@@ -42,7 +42,6 @@
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.zoom :as dwz]
-   [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
