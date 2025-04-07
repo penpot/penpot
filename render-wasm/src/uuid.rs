@@ -30,6 +30,17 @@ impl Uuid {
     pub fn from_u64_pair(high: u64, low: u64) -> Self {
         Self(ExternalUuid::from_u64_pair(high, low))
     }
+
+    #[cfg(test)]
+    pub fn new_v4() -> Self {
+        Self(ExternalUuid::new_v4())
+    }
+}
+
+impl From<ExternalUuid> for Uuid {
+    fn from(uuid: ExternalUuid) -> Self {
+        Self(uuid)
+    }
 }
 
 impl fmt::Display for Uuid {

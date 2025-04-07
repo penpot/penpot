@@ -4,6 +4,7 @@ use crate::uuid::Uuid;
 use std::collections::HashMap;
 
 use crate::view::Viewbox;
+#[cfg(target_arch = "wasm32")]
 use crate::{run_script, run_script_int};
 
 mod blend;
@@ -33,8 +34,15 @@ const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
 
+#[cfg(target_arch = "wasm32")]
 fn get_time() -> i32 {
     run_script_int!("performance.now()")
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn get_time() -> i32 {
+    let now = std::time::Instant::now();
+    now.elapsed().as_millis() as i32
 }
 
 pub struct NodeRenderState {
@@ -485,13 +493,23 @@ impl RenderState {
         Ok(())
     }
 
+    #[cfg(target_arch = "wasm32")]
     pub fn request_animation_frame(&mut self) -> i32 {
         run_script_int!("requestAnimationFrame(_process_animation_frame)")
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn request_animation_frame(&mut self) -> i32 {
+        0
+    }
+
+    #[cfg(target_arch = "wasm32")]
     pub fn cancel_animation_frame(&mut self, frame_id: i32) {
         run_script!(format!("cancelAnimationFrame({})", frame_id))
     }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn cancel_animation_frame(&mut self, _frame_id: i32) {}
 
     pub fn process_animation_frame(
         &mut self,

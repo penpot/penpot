@@ -101,12 +101,11 @@ impl SerializableResult for TransformEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::uuid::Uuid;
 
     #[test]
     fn test_serialization() {
         let entry = TransformEntry::new(
-            uuid!("550e8400-e29b-41d4-a716-446655440000"),
+            Uuid::new_v4(),
             Matrix::new_all(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.0, 0.0, 1.0),
         );
 
