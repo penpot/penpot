@@ -582,7 +582,6 @@
                                                  component
                                                  fdata
                                                  (gpt/point (:x shape) (:y shape))
-                                                 true
                                                  {:keep-ids? true :force-frame-id (:frame-id shape)})
                     children (into {} (map (fn [shape] [(:id shape) shape]) new-shapes))
                     objs (assoc objs id new-shape)]

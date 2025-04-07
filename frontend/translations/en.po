@@ -1237,6 +1237,18 @@ msgstr ""
 "features of the file you are trying to open. Migrations for '%s' need to be "
 "applied before the file can be opened."
 
+msgid "errors.deprecated"
+msgstr "Sorry! This is an old file that uses a deprecated type of Penpot assets and you can't open it."
+
+msgid "errors.deprecated.contact.before"
+msgstr "Although Penpot no longer support this type of Assets, you can"
+
+msgid "errors.deprecated.contact.text"
+msgstr "contact us"
+
+msgid "errors.deprecated.contact.after"
+msgstr "so we can help you."
+
 #: src/app/main/data/auth.cljs:322, src/app/main/ui/auth/login.cljs:81, src/app/main/ui/auth/login.cljs:122, src/app/main/ui/auth/register.cljs:66, src/app/main/ui/auth/register.cljs:207, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:193, src/app/main/ui/onboarding/team_choice.cljs:112, src/app/main/ui/settings/access_tokens.cljs:80, src/app/main/ui/settings/feedback.cljs:49
 msgid "errors.generic"
 msgstr "Something wrong has happened."

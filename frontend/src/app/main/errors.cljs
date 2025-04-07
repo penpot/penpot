@@ -260,6 +260,14 @@
     (let [message (tr "errors.feature-not-supported" (:feature error))]
       (st/emit! (modal/show {:type :alert :message message})))
 
+    (= :file-in-components-v1 code)
+    (st/emit! (modal/show {:type :alert
+                           :message (tr "errors.deprecated")
+                           :link-message {:before (tr "errors.deprecated.contact.before")
+                                          :text (tr "errors.deprecated.contact.text")
+                                          :after (tr "errors.deprecated.contact.after")
+                                          :on-click #(st/emit! (rt/nav :settings-feedback))}}))
+
     :else
     (print-cause! "Restriction Error" error)))
 
