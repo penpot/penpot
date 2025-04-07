@@ -130,6 +130,32 @@
   [font-weight]
   (js/Number font-weight))
 
+(defn serialize-text-leaf-attr
+  [key value]
+  (case key
+    :font-style (str (serialize-font-style value))
+    :font-id (str (serialize-font-id value))
+    :font-weight (str (serialize-font-weight value))
+    (str value)))
+
+(defn serialize-text-leaves
+  [leaves]
+  (reduce
+   (fn [acc leaf]
+     (let [attrs (dissoc leaf :fills)
+           num-attrs (count attrs)
+           serialized-attrs
+           (reduce
+            (fn [attr-acc [key value]]
+              (let [key-str (str/kebab key)
+                    value-str (serialize-text-leaf-attr key value)
+                    key-value-size (+ (count key-str) (count value-str) 1)]
+                (str attr-acc key-value-size "#" key-str ":" value-str "#")))
+            "" attrs)]
+       (str acc num-attrs "#" serialized-attrs)))
+   (str (count leaves) "#")
+   leaves))
+
 (defn store-fonts
   [fonts]
   (keep (fn [font]

@@ -380,7 +380,6 @@
     (h/call wasm/internal-module "_set_shape_svg_raw_content")))
 
 
-
 (defn set-shape-blend-mode
   [blend-mode]
   ;; These values correspond to skia::BlendMode representation
@@ -653,7 +652,8 @@
     (.encode encoder text)))
 
 (defn- add-text-leaf [leaf]
-  (let [text (dm/get-prop leaf :text)]
+  (let [text (dm/get-prop leaf :text)
+        fills (dm/get-prop leaf :fills)]
     (when (and text (not (str/blank? text)))
       (let [font-id (f/serialize-font-id (dm/get-prop leaf :font-id))
             font-style (f/serialize-font-style (dm/get-prop leaf :font-style))
@@ -690,6 +690,17 @@
                 (recur (inc leaf-index))))))
         (recur (inc index))))
     (f/store-fonts fonts)))
+
+(defn set-shape-text-content-new [content]
+  (h/call wasm/internal-module "_clear_shape_text")
+  (let [paragraph-set (first (dm/get-prop content :children))
+        paragraphs (dm/get-prop paragraph-set :children)
+        leaves (mapcat #(dm/get-prop % :children) paragraphs)
+        serialized-leaves (f/serialize-text-leaves leaves)
+        size (count serialized-leaves)
+        offset (mem/alloc-bytes size)]
+    (h/call wasm/internal-module "stringToUTF8" serialized-leaves offset size)
+    (h/call wasm/internal-module "_set_text")))
 
 (defn set-view-box
   [zoom vbox]
@@ -761,7 +772,8 @@
     (when (some? corners) (set-shape-corners corners))
     (when (some? shadows) (set-shape-shadows shadows))
     (when (and (= type :text) (some? content))
-      (set-shape-text-content content))
+      (set-shape-text-content content)
+      (set-shape-text-content-new content))
 
     (when (or (ctl/any-layout? shape)
               (ctl/any-layout-immediate-child? objects shape))

@@ -98,7 +98,6 @@
     :square 7
     0))
 
-
 (defn serialize-path-attrs
   [svg-attrs]
   (reduce

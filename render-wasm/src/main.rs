@@ -592,6 +592,47 @@ pub extern "C" fn set_shape_path_attrs(num_attrs: u32) {
 }
 
 #[no_mangle]
+pub extern "C" fn set_text() {
+    // TODO: handle errors properly
+    with_current_shape!(state, |shape: &mut Shape| {
+        let bytes = mem::bytes();
+        let utf8_string = String::from_utf8(bytes).expect("Failed to parse UTF-8 string");
+
+        let mut remaining = utf8_string.as_str();
+        let mut leaves = Vec::new();
+        let (num_leaves_str, rest) = remaining.split_once('#').expect("Failed to parse number of leaves");
+        let num_leaves: usize = num_leaves_str.parse().expect("Invalid number of leaves");
+        remaining = rest;
+
+        for _ in 0..num_leaves {
+            let (num_attrs_str, rest) = remaining.split_once('#').expect("Failed to parse number of attributes");
+            let num_attrs: usize = num_attrs_str.parse().expect("Invalid number of attributes");
+            remaining = rest;
+
+            let mut attributes = Vec::new();
+
+            for _ in 0..num_attrs {
+                let (attr_size_str, rest) = remaining.split_once('#').expect("Failed to parse attribute size");
+                let attr_size: usize = attr_size_str.parse().expect("Invalid attribute size");
+                remaining = rest;
+
+                let (attr_pair, rest) = remaining.split_at(attr_size);
+                remaining = &rest[1..];
+
+                let (key, value) = attr_pair.split_once(':').expect("Failed to parse key-value pair");
+                attributes.push((key.to_string(), value.to_string()));
+            }
+
+            leaves.push(attributes);
+        }
+
+        // TODO: Set Text
+        println!("@@@ leaves {:?}", leaves)
+    });
+    mem::free_bytes();
+}
+
+#[no_mangle]
 pub extern "C" fn propagate_modifiers() -> *mut u8 {
     let bytes = mem::bytes();
 
@@ -838,6 +879,7 @@ pub extern "C" fn set_grid_cells() {
 
     mem::free_bytes();
 }
+
 
 fn main() {
     init_gl!();
