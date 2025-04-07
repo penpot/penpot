@@ -25,6 +25,7 @@
 - [DESIGN TOKENS] Import and export tokens from a JSON file.
 - [DESIGN TOKENS] Apply Themes and Sets at document level.
 - Add more descriptive tooltip to boards for first time users [Taiga #9426](https://tree.taiga.io/project/penpot/us/9426)
+- First State of a Project Changes Consolidation [Taia #10605](https://tree.taiga.io/project/penpot/us/10605)
 
 ### :bug: Bugs fixed
 
