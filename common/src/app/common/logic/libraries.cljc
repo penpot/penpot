@@ -15,6 +15,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.variant-properties :as clvp]
    [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.types.color :as ctc]
@@ -125,11 +126,12 @@
         update-new-shape
         (fn [new-shape _]
           (cond-> new-shape
-                ; Link the new main to the new component
+            ; Link the new main to the new component
             (= (:component-id new-shape) (:id component))
             (assoc :component-id new-component-id)
 
-            (some? variant-id)
+            ; If it is the instance root, add it the variant-id
+            (and (ctk/instance-root? new-shape) (some? variant-id))
             (assoc :variant-id variant-id)
 
             :always
@@ -215,8 +217,17 @@
     {:keys [force-frame?]
      :or {force-frame? false}}]
    (let [component     (ctf/get-component libraries file-id component-id)
-         parent        (when parent-id (get objects parent-id))
          library       (get libraries file-id)
+         parent        (when parent-id (get objects parent-id))
+
+         ;; When we are intanciating a variant, it can't be on a variant-container
+         parent        (when parent
+                         (if (and (ctk/is-variant? component)
+                                  (ctk/is-variant-container? parent))
+                           (get objects (:parent-id parent))
+                           parent))
+         parent-id     (d/nilv (:id parent) parent-id)
+         frame-id      (d/nilv (:frame-id parent) frame-id)
 
          [new-shape new-shapes]
          (ctn/make-component-instance page
@@ -351,8 +362,10 @@
      (prepare-restore-component changes library-data component-id page nil nil nil nil)))
 
   ([changes library-data component-id page position old-id parent-id frame-id]
-   (let [component         (ctkl/get-deleted-component library-data component-id)
-         parent            (get-in page [:objects parent-id])
+   (let [library-data      (or (pcb/get-library-data changes) library-data)
+         component         (ctkl/get-deleted-component library-data component-id)
+         objects           (or (pcb/get-objects changes) (:objects page))
+         parent            (get objects parent-id)
          main-inst         (get-in component [:objects (:main-instance-id component)])
          inside-component? (some? (ctn/get-instance-root (:objects page) parent))
          shapes            (cfh/get-children-with-self (:objects component) (:main-instance-id component))
@@ -379,9 +392,7 @@
                              inside-component?
                              (dissoc :component-root)
                              (not inside-component?)
-                             (assoc :component-root true)
-                             (and is-variant? (some? parent-id))
-                             (assoc :variant-id parent-id))
+                             (assoc :component-root true))
 
          changes           (-> changes
                                (pcb/with-page page)
@@ -391,8 +402,15 @@
                              (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id))) ; on copy/paste old id is used later to reorder the paster layers
          changes           (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                                    changes
-                                   (rest moved-shapes))]
-     {:changes (pcb/restore-component changes component-id (:id page) minusdelta parent-id)
+                                   (rest moved-shapes))
+         changes           (cond-> changes
+                             ;; Remove variant info when restoring into a parent that is not a variant-container
+                             (and is-variant? parent (not (ctk/is-variant-container? parent)))
+                             (clvp/generate-make-shapes-no-variant [first-shape])
+                             ;; Add variant info and rename when restoring into a variant-container
+                             (ctk/is-variant-container? parent)
+                             (clvp/generate-make-shapes-variant [first-shape] parent))]
+     {:changes (pcb/restore-component changes component-id (:id page) minusdelta)
       :shape (first moved-shapes)})))
 
 ;; ---- General library synchronization functions ----
@@ -2137,6 +2155,7 @@
         ;; When we duplicate a variant along with its variant-container, we will duplicate it
         in-variant-container? (contains? ids-map (:variant-id main))
 
+
         restore-component
         #(let [{:keys [shape changes]}
                (prepare-restore-component changes
@@ -2312,8 +2331,8 @@
         update-unames! (fn [new-name] (vswap! unames conj new-name))
         all-ids        (reduce #(into %1 (cons %2 (cfh/get-children-ids all-objects %2))) (d/ordered-set) ids)
 
-         ;; We need ids-map for remapping the grid layout. But when duplicating the guides
-         ;; we calculate a new one because the components will have created new shapes.
+        ;; We need ids-map for remapping the grid layout. But when duplicating the guides
+        ;; we calculate a new one because the components will have created new shapes.
         ids-map        (into {} (map #(vector % (uuid/next))) all-ids)
 
         changes (-> changes

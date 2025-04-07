@@ -344,7 +344,8 @@
 
          (rx/of
           (add-new-variant main-instance-id)
-          (dwu/commit-undo-transaction undo-id)))))))
+          (dwu/commit-undo-transaction undo-id)
+          (ptk/data-event :layout/update {:ids [variant-id]})))))))
 
 (defn add-component-or-variant
   "Manage the shared shortcut, and do the pertinent action"

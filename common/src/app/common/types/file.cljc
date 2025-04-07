@@ -428,18 +428,23 @@
 
 (defn restore-component
   "Recover a deleted component and all its shapes and put all this again in place."
-  [file-data component-id page-id parent-id]
-  (let [update-page? (not (nil? page-id))
-        component    (ctkl/get-component file-data component-id true)
-        update-variant? (and (some? parent-id)
-                             (ctk/is-variant? component))]
-    (-> file-data
-        (ctkl/update-component component-id #(dissoc % :objects))
-        (ctkl/mark-component-undeleted component-id)
-        (cond-> update-page?
-          (ctkl/update-component component-id #(assoc % :main-instance-page page-id)))
-        (cond-> update-variant?
-          (ctkl/update-component component-id #(assoc % :variant-id parent-id))))))
+  [file-data component-id page-id]
+  (let [update-page?       (not (nil? page-id))
+        component          (ctkl/get-component file-data component-id true)
+        main-instance-page (or page-id (:main-instance-page component))
+        main-instance      (dm/get-in file-data [:pages-index main-instance-page
+                                                 :objects (:main-instance-id component)])]
+    (cond-> file-data
+      :always
+      (->
+       (ctkl/update-component component-id #(dissoc % :objects))
+       (ctkl/mark-component-undeleted component-id))
+
+      update-page?
+      (ctkl/update-component component-id #(assoc % :main-instance-page page-id))
+
+      (ctk/is-variant? component)
+      (ctkl/update-component component-id #(assoc % :variant-id (:variant-id main-instance))))))
 
 (defn purge-component
   "Remove permanently a component."

@@ -111,7 +111,6 @@
   [file-data component-id f & args]
   (d/update-in-when file-data [:components component-id] #(-> (apply f % args)
                                                               (touch))))
-
 (defn set-component-modified
   [file-data component-id]
   (update-component file-data component-id identity))
