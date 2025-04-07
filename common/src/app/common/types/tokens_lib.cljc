@@ -803,7 +803,7 @@
          (map-indexed (fn [index item]
                         (assoc item :index index))))))
 
-(defn- flatten-nested-tokens-json
+(defn flatten-nested-tokens-json
   "Recursively flatten the dtcg token structure, joining keys with '.'."
   [tokens token-path]
   (reduce-kv
@@ -830,7 +830,7 @@
 
 (declare make-tokens-lib)
 
-(defn- legacy-nodes->dtcg-nodes [sets-data]
+(defn legacy-nodes->dtcg-nodes [sets-data]
   (walk/postwalk
    (fn [node]
      (cond-> node
@@ -866,8 +866,6 @@ Will return a value that matches this schema:
   (get-active-themes-set-tokens [_] "set of set names that are active in the the active themes")
   (encode-dtcg [_] "Encodes library to a dtcg compatible json string")
   (decode-dtcg-json [_ parsed-json] "Decodes parsed json containing tokens and converts to library")
-  (decode-single-set-json [_ set-name tokens] "Decodes parsed json containing single token set and converts to library")
-  (decode-single-set-legacy-json [_ set-name tokens] "Decodes parsed legacy json containing single token set and converts to library")
   (decode-legacy-json [_ parsed-json] "Decodes parsed legacy json containing tokens and converts to library")
   (get-all-tokens [_] "all tokens in the lib")
   (validate [_]))
@@ -1310,17 +1308,6 @@ Will return a value that matches this schema:
           (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names)
           (assoc-in ["$metadata" "activeThemes"] active-themes-clear)
           (assoc-in ["$metadata" "activeSets"] active-sets))))
-
-  (decode-single-set-json [this set-name tokens]
-    (assert (map? tokens) "expected a map data structure for `data`")
-
-    (add-set this (make-token-set :name (normalize-set-name set-name)
-                                  :tokens (flatten-nested-tokens-json tokens ""))))
-
-
-  (decode-single-set-legacy-json [this set-name tokens]
-    (assert (map? tokens) "expected a map data structure for `data`")
-    (decode-single-set-json this set-name (legacy-nodes->dtcg-nodes tokens)))
 
   (decode-dtcg-json [_ data]
     (assert (map? data) "expected a map data structure for `data`")

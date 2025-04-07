@@ -133,3 +133,29 @@ color.value tries to reference missing, which is not defined.")))
               (fn [err]
                 (t/is (= :error.import/style-dictionary-reference-errors (:error/code (ex-data err))))
                 (done))))))))
+
+(t/deftest single-set-legacy-json-decoding
+  (let [decode-single-set-legacy-json #'sd/decode-single-set-legacy-json
+        json {"color" {"red" {"100" {"value" "red"
+                                     "type" "color"
+                                     "description" ""}}}}
+        lib (decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) "single_set" json)
+        get-set-token (fn [set-name token-name]
+                        (some-> (ctob/get-set lib set-name)
+                                (ctob/get-token token-name)))]
+    (t/is (= '("single_set") (ctob/get-ordered-set-names lib)))
+    (t/testing "token added"
+      (t/is (some? (get-set-token "single_set" "color.red.100"))))))
+
+(t/deftest single-set-dtcg-json-decoding
+  (let [decode-single-set-json #'sd/decode-single-set-json
+        json (-> {"color" {"red" {"100" {"$value" "red"
+                                         "$type" "color"
+                                         "$description" ""}}}})
+        lib (decode-single-set-json (ctob/ensure-tokens-lib nil) "single_set" json)
+        get-set-token (fn [set-name token-name]
+                        (some-> (ctob/get-set lib set-name)
+                                (ctob/get-token token-name)))]
+    (t/is (= '("single_set") (ctob/get-ordered-set-names lib)))
+    (t/testing "token added"
+      (t/is (some? (get-set-token "single_set" "color.red.100"))))))
