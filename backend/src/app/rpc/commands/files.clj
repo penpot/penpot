@@ -328,7 +328,7 @@
 
       (-> (cfeat/get-team-enabled-features cf/flags team)
           (cfeat/check-client-features! (:features params))
-          (cfeat/check-file-features! (:features file) (:features params)))
+          (cfeat/check-file-features! (:features file)))
 
       ;; This operation is needed for backward comapatibility with frontends that
       ;; does not support pointer-map resolution mechanism; this just resolves the
@@ -490,7 +490,7 @@
 
         _    (-> (cfeat/get-team-enabled-features cf/flags team)
                  (cfeat/check-client-features! (:features params))
-                 (cfeat/check-file-features! (:features file) (:features params)))
+                 (cfeat/check-file-features! (:features file)))
 
         page (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
                (let [page-id (or page-id (-> file :data :pages first))
@@ -737,7 +737,7 @@
 
     (-> (cfeat/get-team-enabled-features cf/flags team)
         (cfeat/check-client-features! (:features params))
-        (cfeat/check-file-features! (:features file) (:features params)))
+        (cfeat/check-file-features! (:features file)))
 
     (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
       {:name             (:name file)
