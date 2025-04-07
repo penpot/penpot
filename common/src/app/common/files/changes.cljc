@@ -354,8 +354,7 @@
      [:map {:title "RestoreComponentChange"}
       [:type [:= :restore-component]]
       [:id ::sm/uuid]
-      [:page-id ::sm/uuid]
-      [:parent-id {:optional true} [:maybe ::sm/uuid]]]]
+      [:page-id ::sm/uuid]]]
 
     [:purge-component
      [:map {:title "PurgeComponentChange"}
@@ -966,8 +965,8 @@
   (ctf/delete-component data id skip-undelete? delta))
 
 (defmethod process-change :restore-component
-  [data {:keys [id page-id parent-id]}]
-  (ctf/restore-component data id page-id parent-id))
+  [data {:keys [id page-id]}]
+  (ctf/restore-component data id page-id))
 
 (defmethod process-change :purge-component
   [data {:keys [id]}]

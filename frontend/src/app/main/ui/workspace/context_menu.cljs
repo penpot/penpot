@@ -146,7 +146,7 @@
         do-cut            #(st/emit! (dw/copy-selected)
                                      (dw/delete-selected))
         do-paste          #(st/emit! (dw/paste-from-clipboard))
-        do-duplicate      #(st/emit! (dw/duplicate-selected true))
+        do-duplicate      #(st/emit! (dwv/duplicate-or-add-variant))
 
         enabled-paste-props* (mf/use-state false)
 

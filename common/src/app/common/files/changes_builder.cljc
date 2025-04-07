@@ -1039,13 +1039,12 @@
                                   :page-id page-id})))
 
 (defn restore-component
-  [changes id page-id delta parent-id]
+  [changes id page-id delta]
   (assert-library! changes)
   (-> changes
       (update :redo-changes conj {:type :restore-component
                                   :id id
-                                  :page-id page-id
-                                  :parent-id parent-id})
+                                  :page-id page-id})
       (update :undo-changes conj {:type :del-component
                                   :id id
                                   :delta delta})))

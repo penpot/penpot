@@ -2082,12 +2082,8 @@
               libraries    (dsh/lookup-libraries state)
               ldata        (dsh/lookup-file-data state file-id)
 
-              ;; full-libs    (assoc-in libraries [(:id ldata) :data] ldata)
-
-              full-libs    libraries
-
               [parent-id
-               frame-id]   (ctn/find-valid-parent-and-frame-ids candidate-parent-id page-objects (vals objects) true full-libs)
+               frame-id]   (ctn/find-valid-parent-and-frame-ids candidate-parent-id page-objects (vals objects) true libraries)
 
               index        (if (= candidate-parent-id parent-id)
                              index
@@ -2100,7 +2096,6 @@
               objects      (update-vals objects (partial process-shape file-id frame-id parent-id))
 
               all-objects  (merge page-objects objects)
-
 
               drop-cell    (when (ctl/grid-layout? all-objects parent-id)
                              (gslg/get-drop-cell frame-id all-objects position))

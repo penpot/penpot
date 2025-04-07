@@ -78,14 +78,18 @@
 (defn path-to-properties
   "From a list of properties and a name with path, assign each token of the
    path as value of a different property"
-  [path properties]
-  (let [next-prop-num  (next-property-number properties)
-        cpath          (cfh/split-path path)
-        assigned       (mapv #(assoc % :value (nth cpath %2 "")) properties (range))
-        remaining      (drop (count properties) cpath)
-        new-properties (map-indexed (fn [i v] {:name (str property-prefix (+ next-prop-num i))
-                                               :value v}) remaining)]
-    (into assigned new-properties)))
+  ([path properties]
+   (path-to-properties path properties 0))
+  ([path properties min-props]
+   (let [next-prop-num  (next-property-number properties)
+         cpath          (cfh/split-path path)
+         assigned       (mapv #(assoc % :value (nth cpath %2 "")) properties (range))
+         ;; Add empty strings to the end of path to reach the minimum number of properties
+         cpath          (take min-props (concat path (repeat "")))
+         remaining      (drop (count properties) cpath)
+         new-properties (map-indexed (fn [i v] {:name (str property-prefix (+ next-prop-num i))
+                                                :value v}) remaining)]
+     (into assigned new-properties))))
 
 
 (defn properties-map-to-string

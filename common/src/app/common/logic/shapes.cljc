@@ -16,9 +16,7 @@
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.token :as cto]
-   [app.common.types.variant :as ctv]
-   [app.common.uuid :as uuid]
-   [cuerdas.core :as str]))
+   [app.common.uuid :as uuid]))
 
 (defn- generate-unapply-tokens
   "When updating attributes that have a token applied, we must unapply it, because the value
@@ -367,82 +365,11 @@
 
         ;; Remove variant info and rename when moving outside a variant-container
         (cond-> (not (ctk/is-variant-container? parent))
-          ((fn [changes]
-             (reduce
-              (fn [changes shape]
-                (let [new-name (str/replace (:variant-name shape) #", " " / ")
-                      [cpath cname] (cfh/parse-path-name new-name)]
-                  (-> changes
-                      (pcb/update-component (:component-id shape)
-                                            #(-> (dissoc % :variant-id :variant-properties)
-                                                 (assoc :name cname
-                                                        :path cpath))
-                                            {:apply-changes-local-library? true})
-                      (pcb/update-shapes [(:id shape)]
-                                         #(-> (dissoc % :variant-id :variant-name)
-                                              (assoc :name new-name))))))
-              changes
-              variant-shapes))))
+          (clvp/generate-make-shapes-no-variant variant-shapes))
 
         ;; Add variant info and rename when moving into a different variant-container
         (cond-> (ctk/is-variant-container? parent)
-          ((fn [changes]
-             (let [get-base-name      #(if (some? (:variant-name %))
-                                         (str/replace (:variant-name %) #", " " / ")
-                                         (:name %))
-
-                   calc-num-props     #(-> %
-                                           get-base-name
-                                           cfh/split-path
-                                           count)
-
-                   max-path-items     (apply max (map calc-num-props child-heads))
-
-                   first-comp-id      (->> parent
-                                           :shapes
-                                           first
-                                           (get objects)
-                                           :component-id)
-
-                   data               (pcb/get-library-data changes)
-                   variant-properties (get-in data [:components first-comp-id :variant-properties])
-                   num-props          (count variant-properties)
-                   num-new-props      (if (< max-path-items num-props)
-                                        0
-                                        (- max-path-items num-props))
-
-                   changes            (nth
-                                       (iterate #(clvp/generate-add-new-property % (:id parent)) changes)
-                                       num-new-props)]
-               (reduce
-                (fn [changes shape]
-                  (if (= (:id parent) (:variant-id shape))
-                    changes ;; do nothing if we aren't changing the parent
-                    (let [base-name           (get-base-name shape)
-
-                          ;; we need to get the updated library data to have access to the current properties
-                          data                (pcb/get-library-data changes)
-
-                          props               (ctv/path-to-properties
-                                               base-name
-                                               (get-in data [:components first-comp-id :variant-properties]))
-
-                          variant-name        (ctv/properties-to-name props)
-                          [cpath cname]       (cfh/parse-path-name (:name parent))]
-
-                      (-> (pcb/update-component changes
-                                                (:component-id shape)
-                                                #(assoc % :variant-id (:id parent)
-                                                        :variant-properties props
-                                                        :name cname
-                                                        :path cpath)
-                                                {:apply-changes-local-library? true})
-                          (pcb/update-shapes [(:id shape)]
-                                             #(assoc % :variant-id (:id parent)
-                                                     :variant-name variant-name
-                                                     :name (:name parent)))))))
-                changes
-                child-heads)))))
+          (clvp/generate-make-shapes-variant child-heads parent))
 
         ;; Move the shapes
         (pcb/change-parent parent-id
