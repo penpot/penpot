@@ -8,6 +8,7 @@
   "A thin, frontend centric abstraction layer and collection of
   helpers for `app.common.features` namespace."
   (:require
+   [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.logging :as log]
    [app.config :as cf]
@@ -23,6 +24,15 @@
 
 (def global-enabled-features
   (cfeat/get-enabled-features cf/flags))
+
+(defn get-enabled-features
+  "An explicit lookup of enabled features for the current team"
+  [state team-id]
+  (let [team (dm/get-in state [:teams team-id])]
+    (-> global-enabled-features
+        (set/union (get state :features-runtime #{}))
+        (set/difference cfeat/no-migration-features)
+        (set/union (get team :features)))))
 
 (defn active-feature?
   "Given a state and feature, check if feature is enabled."
