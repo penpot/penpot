@@ -33,7 +33,7 @@
 
 (defprotocol ITransformable
   (-transform [_ m] "apply a transform")
-  (-walk [_ f]))
+  (-walk [_ f initial]))
 
 (defn- transform!
   "Apply a transformation to a segment located under specified offset"
@@ -260,9 +260,9 @@
                (recur (inc index)))))
          (PathData. size buffer nil)))
 
-     (-walk [_ f]
+     (-walk [_ f initial]
        (loop [index 0
-              result (transient [])]
+              result (transient initial)]
          (if (< index size)
            (let [offset (* index SEGMENT-BYTE-SIZE)
                  type   (.getShort ^ByteBuffer buffer offset)
@@ -367,11 +367,11 @@
                (recur (inc index)))))
          (PathData. size buffer dview (weak-map/create) nil)))
 
-     (-walk [_ f]
+     (-walk [_ f initial]
        (let [farray (js/Float32Array. buffer)
              iarray (js/Int32Array. buffer)]
          (loop [index 0
-                result (transient [])]
+                result (transient initial)]
            (if (< index size)
              (let [offset (* index SEGMENT-BYTE-SIZE)
                    type   (.getInt16 dview offset)
