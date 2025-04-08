@@ -135,15 +135,15 @@
         ;;content-b-split (->> content-b-split #_(filter #(path.bool/contains-segment? % content-a sr-a content-a-geom)))
         ]
     [:*
-     (for [[i cmd] (d/enumerate content-a-split)]
-       (let [p1 (:prev cmd)
-             p2 (path.helpers/command->point cmd)
+     (for [[i segment] (d/enumerate content-a-split)]
+       (let [p1 (:prev segment)
+             p2 (path.helpers/segment->point segment)
 
-             hp (case (:command cmd)
-                  :line-to  (-> (path.helpers/command->line cmd)
+             hp (case (:command segment)
+                  :line-to  (-> (path.helpers/command->line segment)
                                 (path.helpers/line-values 0.5))
 
-                  :curve-to (-> (path.helpers/command->bezier cmd)
+                  :curve-to (-> (path.helpers/command->bezier segment)
                                 (path.helpers/curve-values 0.5))
                   nil)]
          [:*
@@ -154,15 +154,15 @@
           (when hp
             [:circle {:data-i i :key (dm/str "c13-" i) :cx (:x hp) :cy (:y hp) :r radius :fill "orange"}])]))
 
-     (for [[i cmd] (d/enumerate content-b-split)]
-       (let [p1 (:prev cmd)
-             p2 (path.helpers/command->point cmd)
+     (for [[i segment] (d/enumerate content-b-split)]
+       (let [p1 (:prev segment)
+             p2 (path.helpers/segment->point segment)
 
-             hp (case (:command cmd)
-                  :line-to  (-> (path.helpers/command->line cmd)
+             hp (case (:command segment)
+                  :line-to  (-> (path.helpers/command->line segment)
                                 (path.helpers/line-values 0.5))
 
-                  :curve-to (-> (path.helpers/command->bezier cmd)
+                  :curve-to (-> (path.helpers/command->bezier segment)
                                 (path.helpers/curve-values 0.5))
                   nil)]
          [:*

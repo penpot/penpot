@@ -128,19 +128,19 @@
                   (get params :y))))))
 
 (defn command->line
-  ([cmd]
-   (command->line cmd (:prev cmd)))
-  ([cmd prev]
-   [prev (command->point cmd)]))
+  ([segment]
+   (command->line segment (:prev segment)))
+  ([segment prev]
+   [prev (command->point segment)]))
 
 (defn command->bezier
-  ([cmd]
-   (command->bezier cmd (:prev cmd)))
-  ([cmd prev]
+  ([segment]
+   (command->bezier segment (:prev segment)))
+  ([segment prev]
    [prev
-    (command->point cmd)
-    (gpt/point (-> cmd :params :c1x) (-> cmd :params :c1y))
-    (gpt/point (-> cmd :params :c2x) (-> cmd :params :c2y))]))
+    (command->point segment)
+    (gpt/point (-> segment :params :c1x) (-> segment :params :c1y))
+    (gpt/point (-> segment :params :c2x) (-> segment :params :c2y))]))
 
 (declare curve-extremities)
 (declare curve-values)
@@ -447,16 +447,16 @@
 (defn split-line-to
   "Given a point and a line-to command will create a two new line-to commands
   that will split the original line into two given a value between 0-1"
-  [from-p cmd t-val]
-  (let [to-p (command->point cmd)
+  [from-p segment t-val]
+  (let [to-p (command->point segment)
         sp (gpt/lerp from-p to-p t-val)]
-    [(make-line-to sp) cmd]))
+    [(make-line-to sp) segment]))
 
 (defn split-curve-to
   "Given the point and a curve-to command will split the curve into two new
   curve-to commands given a value between 0-1"
-  [from-p cmd t-val]
-  (let [params (:params cmd)
+  [from-p segment t-val]
+  (let [params (:params segment)
         end (gpt/point (:x params) (:y params))
         h1 (gpt/point (:c1x params) (:c1y params))
         h2 (gpt/point (:c2x params) (:c2y params))
@@ -484,11 +484,11 @@
   "Splits a line into several lines given the points in `values`
   for example (split-line-to-ranges p c [0 0.25 0.5 0.75 1] will split
   the line into 4 lines"
-  [from-p cmd values]
+  [from-p segment values]
   (let [values (->> values (filter #(and (> % 0) (< % 1))))]
     (if (empty? values)
-      [cmd]
-      (let [to-p (command->point cmd)
+      [segment]
+      (let [to-p (command->point segment)
             values-set (->> (conj values 1) (into (sorted-set)))]
         (->> values-set
              (mapv (fn [val]
@@ -500,13 +500,13 @@
   "Splits a curve into several curves given the points in `values`
   for example (split-curve-to-ranges p c [0 0.25 0.5 0.75 1] will split
   the curve into 4 curves that draw the same curve"
-  [from-p cmd values]
+  [from-p segment values]
 
   (let [values (->> values (filter #(and (> % 0) (< % 1))))]
     (if (empty? values)
-      [cmd]
-      (let [to-p (command->point cmd)
-            params (:params cmd)
+      [segment]
+      (let [to-p (command->point segment)
+            params (:params segment)
             h1 (gpt/point (:c1x params) (:c1y params))
             h2 (gpt/point (:c2x params) (:c2y params))
 
@@ -812,10 +812,10 @@
 (defn is-point-in-border?
   [point content]
 
-  (letfn [(inside-border? [cmd]
-            (case (:command cmd)
-              :line-to  (segment-has-point?  point (command->line cmd))
-              :curve-to (curve-has-point? point (command->bezier cmd))
+  (letfn [(inside-border? [segment]
+            (case (:command segment)
+              :line-to  (segment-has-point?  point (command->line segment))
+              :curve-to (curve-has-point? point (command->bezier segment))
               #_:else   false))]
 
     (some inside-border? content)))
