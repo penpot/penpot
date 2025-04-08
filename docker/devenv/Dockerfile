@@ -1,9 +1,9 @@
-FROM debian:bookworm
+FROM ubuntu:24.04
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v22.13.1 \
+ENV NODE_VERSION=v22.14.0 \
     CLOJURE_VERSION=1.12.0.1501 \
     CLJKONDO_VERSION=2025.01.16 \
     BABASHKA_VERSION=1.12.196 \
@@ -45,7 +45,7 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
-    useradd -m -g users -s /bin/bash penpot; \
+    usermod -l penpot -d /home/penpot -G users -s /bin/bash ubuntu; \
     passwd penpot -d; \
     echo "penpot ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
@@ -63,8 +63,6 @@ RUN set -ex; \
         woff-tools \
         woff2 \
         fontforge \
-        gconf-service \
-        libasound2 \
         libatk1.0-0 \
         libatk-bridge2.0-0 \
         libcairo2 \
@@ -73,7 +71,6 @@ RUN set -ex; \
         libexpat1 \
         libfontconfig1 \
         libgcc1 \
-        libgconf-2-4 \
         libgdk-pixbuf2.0-0 \
         libglib2.0-0 \
         libgtk-3-0 \
@@ -95,7 +92,6 @@ RUN set -ex; \
         libxss1 \
         libxtst6 \
         fonts-liberation \
-        libappindicator1 \
         libnss3 \
         libgbm1 \
         xvfb \
@@ -107,12 +103,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='fb43ae1202402842559cb6223886ec1663b90ffbec48479abbcb92c92c9012eb'; \
-         BINARY_URL='https://github.com/adoptium/temurin23-binaries/releases/download/jdk-23.0.2%2B7/OpenJDK23U-jdk_aarch64_linux_hotspot_23.0.2_7.tar.gz'; \
+         ESUM='18071047526ab4b53131f9bb323e8703485ae37fcb2f2c5ef0f1b7bab66d1b94'; \
+         BINARY_URL='https://github.com/adoptium/temurin24-binaries/releases/download/jdk-24%2B36/OpenJDK24U-jdk_aarch64_linux_hotspot_24_36.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='870ac8c05c6fe563e7a3878a47d0234b83c050e83651d2c47e8b822ec74512dd'; \
-         BINARY_URL='https://github.com/adoptium/temurin23-binaries/releases/download/jdk-23.0.2%2B7/OpenJDK23U-jdk_x64_linux_hotspot_23.0.2_7.tar.gz'; \
+         ESUM='c340dee97b6aa215d248bc196dcac5b56e7be9b5c5d45e691344d40d5d0b171d'; \
+         BINARY_URL='https://github.com/adoptium/temurin24-binaries/releases/download/jdk-24%2B36/OpenJDK24U-jdk_x64_linux_hotspot_24_36.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -137,7 +133,7 @@ RUN set -ex; \
 RUN set -ex; \
     install -d /usr/share/postgresql-common/pgdg; \
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc; \
-    echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
+    echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
     apt-get -qq update; \
     apt-get -qqy install postgresql-client-16; \
     rm -rf /var/lib/apt/lists/*;
