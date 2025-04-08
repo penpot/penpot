@@ -48,18 +48,22 @@
   (ptk/reify ::apply-content-modifiers
     ptk/WatchEvent
     (watch [it state _]
-      (let [objects (dsh/lookup-page-objects state)
+      (let [page-id (get state :current-page-id state)
+            objects (dsh/lookup-page-objects state)
 
             id (st/get-path-id state)
-            page-id (:current-page-id state)
-            shape (st/get-path state)
-            content-modifiers (dm/get-in state [:workspace-local :edit-path id :content-modifiers])
 
-            content (:content shape)
-            new-content (path/apply-content-modifiers content content-modifiers)
+            shape
+            (st/get-path state)
 
-            old-points (->> content path.segment/content->points)
-            new-points (->> new-content path.segment/content->points)
+            content-modifiers
+            (dm/get-in state [:workspace-local :edit-path id :content-modifiers])
+
+            content      (get shape :content)
+            new-content  (path/apply-content-modifiers content content-modifiers)
+
+            old-points   (path.segment/get-points content)
+            new-points   (path.segment/get-points new-content)
             point-change (->> (map hash-map old-points new-points) (reduce merge))]
 
         (when (and (some? new-content) (some? shape))
@@ -161,7 +165,7 @@
             start-position (apply min-key #(gpt/distance start-position %) selected-points)
 
             content (st/get-path state :content)
-            points (path.segment/content->points content)]
+            points  (path.segment/get-points content)]
 
         (rx/concat
          ;; This stream checks the consecutive mouse positions to do the dragging
@@ -254,7 +258,7 @@
             start-delta-y (dm/get-in modifiers [index cy] 0)
 
             content (st/get-path state :content)
-            points  (path.segment/content->points content)
+            points  (path.segment/get-points content)
 
             point (-> content (nth (if (= prefix :c1) (dec index) index)) (path.segment/get-point))
             handler (-> content (nth index) (path.segment/get-handler prefix))
