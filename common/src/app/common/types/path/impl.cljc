@@ -100,6 +100,56 @@
 ;; TYPE: PATH-DATA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- to-string-segment*
+  [buffer offset type ^StringBuilder builder]
+  (case (long type)
+    1 (let [x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
+                 :cljs (.getFloat32 buffer (+ offset 20)))
+            y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
+                 :cljs (.getFloat32 buffer (+ offset 24)))]
+        (doto builder
+          (.append "M")
+          (.append x)
+          (.append ",")
+          (.append y)))
+    2 (let [x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
+                 :cljs (.getFloat32 buffer (+ offset 20)))
+            y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
+                 :cljs (.getFloat32 buffer (+ offset 24)))]
+        (doto builder
+          (.append "L")
+          (.append x)
+          (.append ",")
+          (.append y)))
+
+    3 (let [c1x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 4))
+                   :cljs (.getFloat32 buffer (+ offset 4)))
+            c1y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 8))
+                   :cljs (.getFloat32 buffer (+ offset 8)))
+            c2x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 12))
+                   :cljs (.getFloat32 buffer (+ offset 12)))
+            c2y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 16))
+                   :cljs (.getFloat32 buffer (+ offset 16)))
+            x   #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
+                   :cljs (.getFloat32 buffer (+ offset 20)))
+            y   #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
+                   :cljs (.getFloat32 buffer (+ offset 24)))]
+        (doto builder
+          (.append "C")
+          (.append c1x)
+          (.append ",")
+          (.append c1y)
+          (.append ",")
+          (.append c2x)
+          (.append ",")
+          (.append c2y)
+          (.append ",")
+          (.append x)
+          (.append ",")
+          (.append y)))
+    4 (doto builder
+        (.append "Z"))))
+
 (defn- to-string
   "Format the path data structure to string"
   [buffer size]
@@ -110,53 +160,7 @@
         (let [offset (* index SEGMENT-BYTE-SIZE)
               type   #?(:clj  (.getShort ^ByteBuffer buffer offset)
                         :cljs (.getInt16 buffer offset))]
-          (case (long type)
-            1 (let [x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
-                         :cljs (.getFloat32 buffer (+ offset 20)))
-                    y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
-                         :cljs (.getFloat32 buffer (+ offset 24)))]
-                (doto builder
-                  (.append "M")
-                  (.append x)
-                  (.append ",")
-                  (.append y)))
-            2 (let [x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
-                         :cljs (.getFloat32 buffer (+ offset 20)))
-                    y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
-                         :cljs (.getFloat32 buffer (+ offset 24)))]
-                (doto builder
-                  (.append "L")
-                  (.append x)
-                  (.append ",")
-                  (.append y)))
-
-            3 (let [c1x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 4))
-                           :cljs (.getFloat32 buffer (+ offset 4)))
-                    c1y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 8))
-                           :cljs (.getFloat32 buffer (+ offset 8)))
-                    c2x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 12))
-                           :cljs (.getFloat32 buffer (+ offset 12)))
-                    c2y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 16))
-                           :cljs (.getFloat32 buffer (+ offset 16)))
-                    x   #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
-                           :cljs (.getFloat32 buffer (+ offset 20)))
-                    y   #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
-                           :cljs (.getFloat32 buffer (+ offset 24)))]
-                (doto builder
-                  (.append "C")
-                  (.append c1x)
-                  (.append ",")
-                  (.append c1y)
-                  (.append ",")
-                  (.append c2x)
-                  (.append ",")
-                  (.append c2y)
-                  (.append ",")
-                  (.append x)
-                  (.append ",")
-                  (.append y)))
-            4 (doto builder
-                (.append "Z")))
+          (to-string-segment* buffer offset type builder)
           (recur (inc index)))))
 
     (.toString builder)))
