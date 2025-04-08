@@ -174,7 +174,8 @@
     (impl/-walk content
                 (fn [type _ _ _ _ x y]
                   (when (not= type :close-path)
-                    (gpt/point x y))))))
+                    (gpt/point x y)))
+                [])))
 
 (defn segments->content
   ([segments]
