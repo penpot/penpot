@@ -86,3 +86,30 @@
         new-properties (map-indexed (fn [i v] {:name (str property-prefix (+ next-prop-num i))
                                                :value v}) remaining)]
     (into assigned new-properties)))
+
+
+(defn properties-map-to-string
+  "Transforms a map of properties to a string of properties omitting the empty ones"
+  [properties]
+  (->> properties
+       (keep (fn [{:keys [name value]}]
+               (when (not (str/blank? value))
+                 (str name "=" value))))
+       (str/join ", ")))
+
+
+(defn properties-string-to-map
+  "Transforms a string of properties to a map of properties"
+  [s]
+  (->> (str/split s ",")
+       (mapv #(str/split % "="))
+       (mapv (fn [[k v]]
+               {:name (str/trim k)
+                :value (str/trim v)}))))
+
+
+(defn valid-properties-string?
+  "Checks if a string of properties has a processable format or not"
+  [s]
+  (let [pattern #"^(\w+=\w+)(,\s*\w+=\w+)*$"]
+    (not (nil? (re-matches pattern s)))))

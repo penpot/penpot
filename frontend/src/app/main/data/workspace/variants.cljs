@@ -32,6 +32,78 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
+(defn- find-properties-to-remove
+  [prev-props upd-props]
+  (filterv #(not (some (fn [prop] (= (:name %) (:name prop))) upd-props)) prev-props))
+
+(defn- find-properties-to-update
+  [prev-props upd-props]
+  (filterv #(some (fn [prop] (and (= (:name %) (:name prop))
+                                  (not= (:value %) (:value prop)))) prev-props) upd-props))
+
+(defn- find-properties-to-add
+  [prev-props upd-props]
+  (filterv #(not (some (fn [prop] (= (:name %) (:name prop))) prev-props)) upd-props))
+
+(defn- find-property-index [props name]
+  (some (fn [[idx prop]]
+          (when (= (:name prop) name)
+            idx))
+        (keep-indexed vector props)))
+
+(defn update-properties-names-and-values
+  "Compares the previous properties with the updated ones and executes the correspondent action
+   for each one depending on if it needs to be removed, updated or added"
+  [component-id variant-id previous-properties updated-properties]
+  (ptk/reify ::update-properties-names-and-values
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local dissoc :shape-for-rename))
+
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id (:current-page-id state)
+            data    (dsh/lookup-file-data state)
+            objects (-> (dsh/get-page data page-id)
+                        (get :objects))
+
+            properties-to-remove (find-properties-to-remove previous-properties updated-properties)
+            properties-to-add    (find-properties-to-add previous-properties updated-properties)
+            properties-to-update (find-properties-to-update previous-properties updated-properties)
+
+            changes (-> (pcb/empty-changes it page-id)
+                        (pcb/with-objects objects)
+                        (pcb/with-library-data data))
+
+            changes (reduce
+                     (fn [changes [_ {:keys [name]}]]
+                       (-> changes
+                           (clvp/generate-update-property-value component-id (find-property-index previous-properties name) "")))
+                     changes
+                     (map-indexed vector properties-to-remove))
+
+            changes (reduce
+                     (fn [changes [_ {:keys [name value]}]]
+                       (-> changes
+                           (clvp/generate-update-property-value component-id (find-property-index previous-properties name) value)))
+                     changes
+                     (map-indexed vector properties-to-update))
+
+            changes (reduce
+                     (fn [changes [idx {:keys [name value]}]]
+                       (-> changes
+                           (clvp/generate-add-new-property variant-id {:property-name name})
+                           (clvp/generate-update-property-value component-id (+ idx (count previous-properties)) value)))
+                     changes
+                     (map-indexed vector properties-to-add))
+
+            undo-id (js/Symbol)]
+
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dch/commit-changes changes)
+         (dwu/commit-undo-transaction undo-id))))))
+
 (defn update-property-name
   "Update the variant property name on the position pos
    in all the components with this variant-id"
