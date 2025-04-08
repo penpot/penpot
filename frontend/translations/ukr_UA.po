@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-04-07 16:01+0000\n"
+"PO-Revision-Date: 2025-04-09 12:01+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -6443,7 +6443,7 @@ msgstr "Створити свою першу тему зараз."
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:134, src/app/main/ui/workspace/tokens/sidebar.cljs:190
 msgid "workspace.token.create-one"
-msgstr "Створити його."
+msgstr "Створити."
 
 #: src/app/main/ui/workspace/tokens/form.cljs:492
 msgid "workspace.token.create-token"
