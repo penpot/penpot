@@ -1,11 +1,21 @@
 use skia_safe::{self as skia, textlayout, Font, FontMgr};
 
-use crate::shapes::FontFamily;
+use crate::shapes::{FontFamily, FontStyle};
+use crate::uuid::Uuid;
 
-const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../fonts/RobotoMono-Regular.ttf");
 const EMOJI_FONT_BYTES: &[u8] = include_bytes!("../fonts/NotoColorEmoji-Regular.ttf");
-pub static DEFAULT_FONT: &'static str = "robotomono-regular";
 pub static DEFAULT_EMOJI_FONT: &'static str = "noto-color-emoji";
+
+const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../fonts/sourcesanspro-regular.ttf");
+
+pub fn default_font() -> String {
+    let family = FontFamily::new(default_font_uuid(), 400, FontStyle::Normal);
+    format!("{}", family)
+}
+
+fn default_font_uuid() -> Uuid {
+    Uuid::nil()
+}
 
 pub struct FontStore {
     font_mgr: FontMgr,
@@ -18,25 +28,19 @@ impl FontStore {
     pub fn new() -> Self {
         let font_mgr = FontMgr::new();
 
-        let mut font_provider = skia::textlayout::TypefaceFontProvider::new();
+        let mut font_provider = load_default_provider(&font_mgr);
 
-        let default_font = font_mgr
-            .new_from_data(DEFAULT_FONT_BYTES, None)
-            .expect("Failed to load font");
-
-        font_provider.register_typeface(default_font, DEFAULT_FONT);
-
+        // TODO: Load emoji font lazily
         let emoji_font = font_mgr
             .new_from_data(EMOJI_FONT_BYTES, None)
             .expect("Failed to load font");
-
         font_provider.register_typeface(emoji_font, DEFAULT_EMOJI_FONT);
 
         let mut font_collection = skia::textlayout::FontCollection::new();
         font_collection.set_default_font_manager(FontMgr::from(font_provider.clone()), None);
 
         let debug_typeface = font_provider
-            .match_family_style("robotomono-regular", skia::FontStyle::default())
+            .match_family_style(default_font().as_str(), skia::FontStyle::default())
             .unwrap();
 
         let debug_font = skia::Font::new(debug_typeface, 10.0);
@@ -84,4 +88,16 @@ impl FontStore {
         let serialized = format!("{}", family);
         self.font_provider.family_names().any(|x| x == serialized)
     }
+}
+
+fn load_default_provider(font_mgr: &FontMgr) -> skia::textlayout::TypefaceFontProvider {
+    let mut font_provider = skia::textlayout::TypefaceFontProvider::new();
+
+    let family = FontFamily::new(default_font_uuid(), 400, FontStyle::Normal);
+    let font = font_mgr
+        .new_from_data(DEFAULT_FONT_BYTES, None)
+        .expect("Failed to load font");
+    font_provider.register_typeface(font, family.alias().as_str());
+
+    font_provider
 }

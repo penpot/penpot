@@ -1,6 +1,6 @@
 use crate::{
     math::Rect,
-    render::{DEFAULT_EMOJI_FONT, DEFAULT_FONT},
+    render::{default_font, DEFAULT_EMOJI_FONT},
 };
 use skia_safe::{
     self as skia,
@@ -133,7 +133,7 @@ impl TextLeaf {
         style.set_font_size(self.font_size);
         style.set_font_families(&[
             self.serialized_font_family(),
-            DEFAULT_FONT.to_string(),
+            default_font(),
             DEFAULT_EMOJI_FONT.to_string(),
         ]);
         style
