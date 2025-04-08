@@ -18,7 +18,7 @@
 (defn make-subpath
   "Creates a subpath either from a single command or with all the data"
   ([command]
-   (let [p (helpers/command->point command)]
+   (let [p (helpers/segment->point command)]
      (make-subpath p p [command])))
   ([from to data]
    {:from from
@@ -31,7 +31,7 @@
   (let [command (if (= :close-path (:command command))
                   (helpers/make-line-to (:from subpath))
                   command)
-        p (helpers/command->point command)]
+        p (helpers/segment->point command)]
     (-> subpath
         (assoc :to p)
         (update :data conj command))))
@@ -181,10 +181,10 @@
       (if (nil? current)
         (> signed-area 0)
 
-        (let [{x1 :x y1 :y :as p} (helpers/command->point current)
+        (let [{x1 :x y1 :y :as p} (helpers/segment->point current)
               last? (nil? (first subpath))
               first-point (if (nil? first-point) p first-point)
-              {x2 :x y2 :y} (if last? first-point (helpers/command->point (first subpath)))
+              {x2 :x y2 :y} (if last? first-point (helpers/segment->point (first subpath)))
               signed-area (+ signed-area (- (* x1 y2) (* x2 y1)))]
 
           (recur (first subpath)
