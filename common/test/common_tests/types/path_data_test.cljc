@@ -14,6 +14,8 @@
    [app.common.pprint :as pp]
    [app.common.transit :as trans]
    [app.common.types.path :as path]
+   [app.common.types.path.helpers :as path.helpers]
+   [app.common.types.path.impl :as path.impl]
    [app.common.types.path.segment :as path.segment]
    [clojure.test :as t]))
 
@@ -199,3 +201,78 @@
 
     (t/is (= result1 result2))
     (t/is (= result2 result3))))
+
+(defn calculate-extremities
+  "Calculate extremities for the provided content.
+  A legacy implementation used mainly as reference for testing"
+  [content]
+  (loop [points #{}
+         from-p nil
+         move-p nil
+         content (seq content)]
+    (if content
+      (let [last-p (last content)
+            content (if (= :move-to (:command last-p))
+                      (butlast content)
+                      content)
+            command (first content)
+            to-p    (path.helpers/command->point command)
+
+            [from-p move-p command-pts]
+            (case (:command command)
+              :move-to    [to-p   to-p   (when to-p [to-p])]
+              :close-path [move-p move-p (when move-p [move-p])]
+              :line-to    [to-p   move-p (when (and from-p to-p) [from-p to-p])]
+              :curve-to   [to-p   move-p
+                           (let [c1 (path.helpers/command->point command :c1)
+                                 c2 (path.helpers/command->point command :c2)
+                                 curve [from-p to-p c1 c2]]
+                             (when (and from-p to-p c1 c2)
+                               (into [from-p to-p]
+                                     (->> (path.helpers/curve-extremities curve)
+                                          (map #(path.helpers/curve-values curve %))))))]
+              [to-p move-p []])]
+
+        (recur (apply conj points command-pts) from-p move-p (next content)))
+      points)))
+
+(t/deftest extremities-1
+  (let [pdata   (path/content sample-content)
+        result1 (calculate-extremities sample-content)
+        result2 (calculate-extremities pdata)
+        result3 (path.segment/calculate-extremities sample-content)
+        result4 (path.segment/calculate-extremities pdata)
+        expect  #{(gpt/point 480.0 839.0)
+                  (gpt/point 439.0 802.0)
+                  (gpt/point 264.0 634.0)}
+        n-iter  100000]
+
+    (t/is (= result1 result3))
+    (t/is (= result1 expect))
+    (t/is (= result2 expect))
+    (t/is (= result3 expect))
+    (t/is (= result4 expect))))
+
+(def sample-content-2
+  [{:command :move-to, :params {:x 480.0, :y 839.0}}
+   {:command :line-to, :params {:x 439.0, :y 802.0}}
+   {:command :curve-to, :params {:c1x 368.0, :c1y 737.0, :c2x 310.0, :c2y 681.0, :x 4.0, :y 4.0}}
+   {:command :curve-to, :params {:c1x 3.0, :c1y 7.0, :c2x 30.0, :c2y -68.0, :x 20.0, :y 20.0}}
+   {:command :close-path :params {}}])
+
+(t/deftest extremities-2
+  (let [result1 (path.segment/calculate-extremities sample-content-2)
+        result2 (calculate-extremities sample-content-2)]
+    (t/is (= result1 result2))))
+
+(t/deftest extremities-3
+  (let [segments [{:command :move-to, :params {:x -310.5355224609375, :y 452.62115478515625}}]
+        content  (path/content segments)
+        result1  (calculate-extremities segments)
+        result2  (path.segment/calculate-extremities segments)
+        result3  (path.segment/calculate-extremities content)
+        expect   #{}]
+    (t/is (= result1 expect))
+    (t/is (= result1 expect))
+    (t/is (= result2 expect))
+    (t/is (= result3 expect))))

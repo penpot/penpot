@@ -13,6 +13,7 @@
   namespaces without incurrying on circular depedency cycles."
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -114,6 +115,18 @@
      (when (and (some? x) (some? y))
        (gpt/point x y)))))
 
+(defn segment->point
+  ([segment] (segment->point segment :x))
+  ([segment coord]
+   (let [params (get segment :params)]
+     (case coord
+       :c1 (gpt/point (get params :c1x)
+                      (get params :c1y))
+       :c2 (gpt/point (get params :c2x)
+                      (get params :c2y))
+       (gpt/point (get params :x)
+                  (get params :y))))))
+
 (defn command->line
   ([cmd]
    (command->line cmd (:prev cmd)))
@@ -199,73 +212,94 @@
 
      (gpt/point (coord-v :x) (coord-v :y)))))
 
+(defn solve-roots*
+  "Solvers a quadratic or cubic equation given by the parameters a b c d.
+
+  Implemented as reduction algorithm (this helps implemement
+  derivative algorithms that does not require intermediate results
+  thanks to transducers."
+  [result conj a b c d]
+  (let [sqrt-b2-4ac (mth/sqrt (- (* b b) (* 4 a c)))]
+    (cond
+      ;; No solutions
+      (and ^boolean (mth/almost-zero? d)
+           ^boolean (mth/almost-zero? a)
+           ^boolean (mth/almost-zero? b))
+      result
+
+      ;; Linear solution
+      (and ^boolean (mth/almost-zero? d)
+           ^boolean (mth/almost-zero? a))
+      (conj result (/ (- c) b))
+
+      ;; Quadratic
+      ^boolean
+      (mth/almost-zero? d)
+      (-> result
+          (conj (/ (+ (- b) sqrt-b2-4ac)
+                   (* 2 a)))
+          (conj (/ (- (- b) sqrt-b2-4ac)
+                   (* 2 a))))
+
+      ;; Cubic
+      :else
+      (let [a (/ a d)
+            b (/ b d)
+            c (/ c d)
+
+            p (/ (- (* 3 b) (* a a)) 3)
+            q (/ (+ (* 2 a a a) (* -9 a b) (* 27 c)) 27)
+
+            p3 (/ p 3)
+            q2 (/ q 2)
+            discriminant (+ (* q2 q2) (* p3 p3 p3))]
+
+        (cond
+          (< discriminant 0)
+          (let [mp3 (/ (- p) 3)
+                mp33 (* mp3 mp3 mp3)
+                r (mth/sqrt mp33)
+                t (/ (- q) (* 2 r))
+                cosphi (cond (< t -1) -1
+                             (> t 1) 1
+                             :else t)
+                phi (mth/acos cosphi)
+                crtr (mth/cubicroot r)
+                t1 (* 2 crtr)
+                root1 (- (* t1 (mth/cos (/ phi 3))) (/ a 3))
+                root2 (- (* t1 (mth/cos (/ (+ phi (* 2 mth/PI)) 3))) (/ a 3))
+                root3 (- (* t1 (mth/cos (/ (+ phi (* 4 mth/PI)) 3))) (/ a 3))]
+
+            (-> result
+                (conj root1)
+                (conj root2)
+                (conj root3)))
+
+          ^boolean
+          (mth/almost-zero? discriminant)
+          (let [u1 (if (< q2 0) (mth/cubicroot (- q2)) (- (mth/cubicroot q2)))
+                root1 (- (* 2 u1) (/ a 3))
+                root2 (- (- u1) (/ a 3))]
+            (-> result
+                (conj root1)
+                (conj root2)))
+
+          :else
+          (let [sd (mth/sqrt discriminant)
+                u1 (mth/cubicroot (- sd q2))
+                v1 (mth/cubicroot (+ sd q2))
+                root (- u1 v1 (/ a 3))]
+            (conj result root)))))))
+
+
+
+
+
 ;; https://trans4mind.com/personal_development/mathematics/polynomials/cubicAlgebra.htm
 (defn- solve-roots
   "Solvers a quadratic or cubic equation given by the parameters a b c d"
-  ([a b c]
-   (solve-roots a b c 0))
-
-  ([a b c d]
-   (let [sqrt-b2-4ac (mth/sqrt (- (* b b) (* 4 a c)))]
-     (cond
-       ;; No solutions
-       (and (mth/almost-zero? d) (mth/almost-zero? a) (mth/almost-zero? b))
-       []
-
-       ;; Linear solution
-       (and (mth/almost-zero? d) (mth/almost-zero? a))
-       [(/ (- c) b)]
-
-       ;; Quadratic
-       (mth/almost-zero? d)
-       [(/ (+ (- b) sqrt-b2-4ac)
-           (* 2 a))
-        (/ (- (- b) sqrt-b2-4ac)
-           (* 2 a))]
-
-       ;; Cubic
-       :else
-       (let [a (/ a d)
-             b (/ b d)
-             c (/ c d)
-
-             p  (/ (- (* 3 b) (* a a)) 3)
-             q (/ (+ (* 2 a a a) (* -9 a b) (* 27 c)) 27)
-
-             p3 (/ p 3)
-             q2 (/ q 2)
-             discriminant (+ (* q2 q2) (* p3 p3 p3))]
-
-         (cond
-           (< discriminant 0)
-           (let [mp3 (/ (- p) 3)
-                 mp33 (* mp3 mp3 mp3)
-                 r (mth/sqrt mp33)
-                 t (/ (- q) (* 2 r))
-                 cosphi (cond (< t -1) -1
-                              (> t 1) 1
-                              :else t)
-                 phi (mth/acos cosphi)
-                 crtr (mth/cubicroot r)
-                 t1 (* 2 crtr)
-                 root1 (- (* t1 (mth/cos (/ phi 3))) (/ a 3))
-                 root2 (- (* t1 (mth/cos (/ (+ phi (* 2 mth/PI)) 3))) (/ a 3))
-                 root3 (- (* t1 (mth/cos (/ (+ phi (* 4 mth/PI)) 3))) (/ a 3))]
-
-             [root1 root2 root3])
-
-           (mth/almost-zero? discriminant)
-           (let [u1 (if (< q2 0) (mth/cubicroot (- q2)) (- (mth/cubicroot q2)))
-                 root1 (- (* 2 u1) (/ a 3))
-                 root2 (- (- u1) (/ a 3))]
-             [root1 root2])
-
-           :else
-           (let [sd (mth/sqrt discriminant)
-                 u1 (mth/cubicroot (- sd q2))
-                 v1 (mth/cubicroot (+ sd q2))
-                 root (- u1 v1 (/ a 3))]
-             [root])))))))
+  ([a b c] (solve-roots a b c 0))
+  ([a b c d] (solve-roots* [] conj a b c d)))
 
 ;; https://pomax.github.io/bezierinfo/#extremities
 (defn curve-extremities
@@ -291,6 +325,54 @@
 
           ;; Only values in the range [0, 1] are valid
           (filterv #(and (> % 0.01) (< % 0.99)))))))
+
+(defn calculate-curve-extremities
+  "Calculates the extremities by solving the first derivative for a
+  cubic bezier and then solving the quadratic formula"
+  [start end h1 h2]
+  (let [start-x (dm/get-prop start :x)
+        h1-x    (dm/get-prop h1 :x)
+        h2-x    (dm/get-prop h2 :x)
+        end-x   (dm/get-prop end :x)
+        start-y (dm/get-prop start :y)
+        h1-y    (dm/get-prop h1 :y)
+        h2-y    (dm/get-prop h2 :y)
+        end-y   (dm/get-prop end :y)
+
+        xform
+        (comp
+         (filter #(and (> % 0.01) (< % 0.99)))
+         (map (fn [t]
+                (let [t2      (* t t)  ;; t square
+                      t3      (* t2 t) ;; t cube
+                      start-v (+ (- t3) (* 3 t2) (* -3 t) 1)
+                      h1-v    (+ (* 3 t3) (* -6 t2) (* 3 t))
+                      h2-v    (+ (* -3 t3) (* 3 t2))
+                      end-v   t3]
+                  (gpt/point
+                   (+ (* start-x start-v)
+                      (* h1-x    h1-v)
+                      (* h2-x    h2-v)
+                      (* end-x   end-v))
+                   (+ (* start-y start-v)
+                      (* h1-y    h1-v)
+                      (* h2-y    h2-v)
+                      (* end-y   end-v)))))))
+
+        conj*
+        (xform conj!)
+
+        process-curve
+        (fn [result c0 c1 c2 c3]
+          (let [a (+ (* -3 c0) (*   9 c1) (* -9 c2) (* 3 c3))
+                b (+ (*  6 c0) (* -12 c1) (* 6 c2))
+                c (+ (*  3 c1) (*  -3 c0))]
+            (solve-roots* result conj* a b c 0)))]
+
+    (-> (transient [])
+        (process-curve start-x h1-x h2-x end-x)
+        (process-curve start-y h1-y h2-y end-y)
+        (persistent!))))
 
 (defn curve-tangent
   "Retrieve the tangent vector to the curve in the point `t`"

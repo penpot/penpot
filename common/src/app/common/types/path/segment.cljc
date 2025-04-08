@@ -838,40 +838,62 @@
   (let [transform (gmt/translate-matrix move-vec)]
     (transform-content content transform)))
 
-;; FIXME: add optimizations
+(defn calculate-extremities
+  "Calculate extremities for the provided content"
+  [content]
+  (loop [points  (transient #{})
+         content (not-empty (vec content))
+         from-p  nil
+         move-p  nil]
+    (if content
+      (let [last-p  (peek content)
+            content (if (= :move-to (:command last-p))
+                      (pop content)
+                      content)
+            segment (get content 0)
+            to-p    (helpers/segment->point segment)]
+
+        (if segment
+          (case (:command segment)
+            :move-to
+            (recur (conj! points to-p)
+                   (not-empty (subvec content 1))
+                   to-p
+                   to-p)
+
+            :close-path
+            (recur (conj! points move-p)
+                   (not-empty (subvec content 1))
+                   move-p
+                   move-p)
+
+            :line-to
+            (recur (cond-> points
+                     (and from-p to-p)
+                     (-> (conj! move-p)
+                         (conj! to-p)))
+                   (not-empty (subvec content 1))
+                   to-p
+                   move-p)
+
+            :curve-to
+            (let [c1 (helpers/segment->point segment :c1)
+                  c2 (helpers/segment->point segment :c2)]
+              (recur (if (and from-p to-p c1 c2)
+                       (reduce conj!
+                               (-> points (conj! from-p) (conj! to-p))
+                               (helpers/calculate-curve-extremities from-p to-p c1 c2))
+                       points)
+
+                     (not-empty (subvec content 1))
+                     to-p
+                     move-p)))
+          (persistent! points)))
+      (persistent! points))))
+
 (defn content->selrect
   [content]
-  (let [extremities
-        (loop [points #{}
-               from-p nil
-               move-p nil
-               content (seq content)]
-          (if content
-            (let [last-p (last content)
-                  content (if (= :move-to (:command last-p))
-                            (butlast content)
-                            content)
-                  command (first content)
-                  to-p    (helpers/command->point command)
-
-                  [from-p move-p command-pts]
-                  (case (:command command)
-                    :move-to    [to-p   to-p   (when to-p [to-p])]
-                    :close-path [move-p move-p (when move-p [move-p])]
-                    :line-to    [to-p   move-p (when (and from-p to-p) [from-p to-p])]
-                    :curve-to   [to-p   move-p
-                                 (let [c1 (helpers/command->point command :c1)
-                                       c2 (helpers/command->point command :c2)
-                                       curve [from-p to-p c1 c2]]
-                                   (when (and from-p to-p c1 c2)
-                                     (into [from-p to-p]
-                                           (->> (helpers/curve-extremities curve)
-                                                (map #(helpers/curve-values curve %))))))]
-                    [to-p move-p []])]
-
-              (recur (apply conj points command-pts) from-p move-p (next content)))
-            points))
-
+  (let [extremities (calculate-extremities content)
         ;; We haven't found any extremes so we turn the commands to points
         extremities
         (if (empty? extremities)
