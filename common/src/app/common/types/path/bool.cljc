@@ -52,7 +52,7 @@
                   (assoc :prev first)
 
                   (some? prev)
-                  (assoc :prev (helpers/command->point prev))))))))
+                  (assoc :prev (helpers/segment->point prev))))))))
 
 (defn close-paths
   "Removes the :close-path commands and replace them for line-to so we can calculate
@@ -65,7 +65,7 @@
          last-point nil]
     (if-let [segment (first segments)]
       (let [point
-            (helpers/command->point segment)
+            (helpers/segment->point segment)
 
             segment
             (cond
@@ -259,7 +259,7 @@
                      result)]
         (recur (first content)
                (rest content)
-               (helpers/command->point current)
+               (helpers/segment->point current)
                (conj result (dissoc current :prev)))))))
 
 (defn remove-duplicated-segments
