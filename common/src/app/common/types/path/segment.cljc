@@ -295,8 +295,8 @@
 
   (let [point+distance
         (fn [[cur-cmd prev-cmd]]
-          (let [from-p (helpers/command->point prev-cmd)
-                to-p   (helpers/command->point cur-cmd)
+          (let [from-p (helpers/segment->point prev-cmd)
+                to-p   (helpers/segment->point cur-cmd)
                 h1 (gpt/point (get-in cur-cmd [:params :c1x])
                               (get-in cur-cmd [:params :c1y]))
                 h2 (gpt/point (get-in cur-cmd [:params :c2x])
@@ -332,8 +332,8 @@
 
   (let [point+distance
         (fn [[cur-cmd prev-cmd]]
-          (let [from-p (helpers/command->point prev-cmd)
-                to-p   (helpers/command->point cur-cmd)
+          (let [from-p (helpers/segment->point prev-cmd)
+                to-p   (helpers/segment->point cur-cmd)
                 h1 (gpt/point (get-in cur-cmd [:params :c1x])
                               (get-in cur-cmd [:params :c1y]))
                 h2 (gpt/point (get-in cur-cmd [:params :c2x])
@@ -898,7 +898,7 @@
         ;; We haven't found any extremes so we turn the commands to points
         extremities
         (if (empty? extremities)
-          (->> content (keep helpers/command->point))
+          (->> content (keep helpers/segment->point))
           extremities)]
 
     ;; If no points are returned we return an empty rect.

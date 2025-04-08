@@ -95,26 +95,6 @@
       (gpt/angle->point from-point (mth/radians to-angle) distance))
     point))
 
-;; FIXME: looks very similar to get-point
-(defn command->point
-  ([command]
-   (command->point command nil))
-
-  ([command coord]
-   (let [params (:params command)
-         xkey (case coord
-                :c1 :c1x
-                :c2 :c2x
-                :x)
-         ykey (case coord
-                :c1 :c1y
-                :c2 :c2y
-                :y)
-         x (get params xkey)
-         y (get params ykey)]
-     (when (and (some? x) (some? y))
-       (gpt/point x y)))))
-
 (defn segment->point
   ([segment] (segment->point segment :x))
   ([segment coord]
@@ -131,14 +111,14 @@
   ([segment]
    (command->line segment (:prev segment)))
   ([segment prev]
-   [prev (command->point segment)]))
+   [prev (segment->point segment)]))
 
 (defn command->bezier
   ([segment]
    (command->bezier segment (:prev segment)))
   ([segment prev]
    [prev
-    (command->point segment)
+    (segment->point segment)
     (gpt/point (-> segment :params :c1x) (-> segment :params :c1y))
     (gpt/point (-> segment :params :c2x) (-> segment :params :c2y))]))
 
@@ -151,17 +131,17 @@
 
   ([command prev-point]
    (let [points (case (:command command)
-                  :move-to [(command->point command)]
+                  :move-to [(segment->point command)]
 
                   ;; If it's a line we add the beginning point and endpoint
-                  :line-to [prev-point (command->point command)]
+                  :line-to [prev-point (segment->point command)]
 
                   ;; We return the bezier extremities
-                  :curve-to (into [prev-point (command->point command)]
+                  :curve-to (into [prev-point (segment->point command)]
                                   (let [curve [prev-point
-                                               (command->point command)
-                                               (command->point command :c1)
-                                               (command->point command :c2)]]
+                                               (segment->point command)
+                                               (segment->point command :c1)
+                                               (segment->point command :c2)]]
                                     (->> (curve-extremities curve)
                                          (mapv #(curve-values curve %)))))
                   [])]
@@ -448,7 +428,7 @@
   "Given a point and a line-to command will create a two new line-to commands
   that will split the original line into two given a value between 0-1"
   [from-p segment t-val]
-  (let [to-p (command->point segment)
+  (let [to-p (segment->point segment)
         sp (gpt/lerp from-p to-p t-val)]
     [(make-line-to sp) segment]))
 
@@ -488,7 +468,7 @@
   (let [values (->> values (filter #(and (> % 0) (< % 1))))]
     (if (empty? values)
       [segment]
-      (let [to-p (command->point segment)
+      (let [to-p (segment->point segment)
             values-set (->> (conj values 1) (into (sorted-set)))]
         (->> values-set
              (mapv (fn [val]
@@ -505,7 +485,7 @@
   (let [values (->> values (filter #(and (> % 0) (< % 1))))]
     (if (empty? values)
       [segment]
-      (let [to-p (command->point segment)
+      (let [to-p (segment->point segment)
             params (:params segment)
             h1 (gpt/point (:c1x params) (:c1y params))
             h2 (gpt/point (:c2x params) (:c2y params))
