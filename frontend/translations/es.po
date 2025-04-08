@@ -1385,6 +1385,10 @@ msgstr ""
 msgid "errors.token-set-already-exists"
 msgstr "Ya existe un set con el mismo nombre"
 
+#: src/app/main/data/tokens.cljs:
+msgid "errors.token-set-doesnt-exists"
+msgstr "No se puede duplicar un set que no existe."
+
 #: src/app/main/data/tokens.cljs:245
 msgid "errors.token-set-exists-on-drop"
 msgstr ""
@@ -1918,6 +1922,10 @@ msgstr "Panel"
 #: src/app/main/ui/dashboard/file_menu.cljs:326, src/app/main/ui/dashboard/fonts.cljs:261, src/app/main/ui/dashboard/fonts.cljs:337, src/app/main/ui/dashboard/fonts.cljs:351, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:952, src/app/main/ui/settings/access_tokens.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:216, src/app/main/ui/workspace/sidebar/versions.cljs:136, src/app/main/ui/workspace/tokens/form.cljs:565, src/app/main/ui/workspace/tokens/modals/themes.cljs:414, src/app/main/ui/workspace/tokens/sets_context_menu.cljs:56
 msgid "labels.delete"
 msgstr "Borrar"
+
+#: src/app/main/ui/workspace/tokens/sets_context_menu.cljs
+msgid "labels.duplicate"
+msgstr "Duplicar"
 
 #: src/app/main/ui/comments.cljs:976
 msgid "labels.delete-comment"
@@ -6712,6 +6720,10 @@ msgstr "Borrar theme"
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:275
 msgid "workspace.token.duplicate"
 msgstr "Duplicar token"
+
+#: src/app/main/data/tokens.cljs:386
+msgid "workspace.token.duplicate-suffix"
+msgstr "copiar"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:262
 msgid "workspace.token.edit"
