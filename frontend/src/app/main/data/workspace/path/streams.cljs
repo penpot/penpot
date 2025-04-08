@@ -170,7 +170,8 @@
 
         ranges-stream
         (->> content-stream
-             (rx/map path.segm/content->points)
+             (rx/filter some?)
+             (rx/map path.segm/get-points)
              (rx/map snap/create-ranges))]
 
     (->> ms/mouse-position

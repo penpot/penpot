@@ -282,7 +282,7 @@
 
         base-points
         (mf/with-memo [base-content]
-          (path.segment/content->points base-content))
+          (path.segment/get-points base-content))
 
         content
         (mf/with-memo [base-content content-modifiers]
@@ -290,7 +290,7 @@
 
         content-points
         (mf/with-memo [content]
-          (path.segment/content->points content))
+          (path.segment/get-points content))
 
         point->base (->> (map hash-map content-points base-points) (reduce merge))
         base->point (map-invert point->base)
