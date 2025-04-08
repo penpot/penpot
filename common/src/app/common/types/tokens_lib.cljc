@@ -9,6 +9,7 @@
    #?(:clj [app.common.fressian :as fres])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
    [app.common.time :as dt]
    [app.common.transit :as t]
@@ -320,6 +321,7 @@
            (assoc-in (concat [:tokens-tree] path) token)
            (assoc-in [:ids temp-id] token))))
    {:tokens-tree {} :ids {}} tokens))
+
 
 (defprotocol ITokenSet
   (update-name [_ set-name] "change a token set name while keeping the path")
@@ -920,6 +922,7 @@ Will return a value that matches this schema:
         this)))
 
 
+
   (delete-set [_ set-name]
     (let [prefixed-path (set-name->prefixed-full-path set-name)]
       (TokensLib. (d/dissoc-in sets prefixed-path)
@@ -1467,6 +1470,14 @@ Will return a value that matches this schema:
    :type-properties
    {:encode/json encode-dtcg
     :decode/json decode-dtcg}})
+
+(defn duplicate-set [set-name lib & {:keys [suffix]}]
+  (let [sets (get-sets lib)
+        unames (map :name sets)
+        copy-name (cfh/generate-unique-name set-name unames :suffix suffix)]
+    (some-> (get-set lib set-name)
+            (assoc :name copy-name)
+            (assoc :modified-at (dt/now)))))
 
 (sm/register! type:tokens-lib)
 

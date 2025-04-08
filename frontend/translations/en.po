@@ -1367,6 +1367,10 @@ msgstr "Owner can't leave team, you must reassign the owner role."
 msgid "errors.token-set-already-exists"
 msgstr "A set with the same name already exists"
 
+#: src/app/main/data/tokens.cljs:
+msgid "errors.token-set-doesnt-exists"
+msgstr "Can't duplicate an unkown set"
+
 #: src/app/main/data/tokens.cljs:245
 msgid "errors.token-set-exists-on-drop"
 msgstr "Cannot complete drop, a set with same name already exists at path."
@@ -1895,6 +1899,10 @@ msgstr "Dashboard"
 #: src/app/main/ui/dashboard/file_menu.cljs:326, src/app/main/ui/dashboard/fonts.cljs:261, src/app/main/ui/dashboard/fonts.cljs:337, src/app/main/ui/dashboard/fonts.cljs:351, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:952, src/app/main/ui/settings/access_tokens.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:216, src/app/main/ui/workspace/sidebar/versions.cljs:136, src/app/main/ui/workspace/tokens/form.cljs:565, src/app/main/ui/workspace/tokens/modals/themes.cljs:414, src/app/main/ui/workspace/tokens/sets_context_menu.cljs:56
 msgid "labels.delete"
 msgstr "Delete"
+
+#: src/app/main/ui/workspace/tokens/sets_context_menu.cljs
+msgid "labels.duplicate"
+msgstr "Duplicate"
 
 #: src/app/main/ui/comments.cljs:976
 msgid "labels.delete-comment"
