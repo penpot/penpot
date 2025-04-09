@@ -9,6 +9,7 @@
   and plain formats"
   #?(:cljs
      (:require-macros [app.common.types.path.impl]))
+  (:refer-clojure :exclude [-lookup])
   (:require
    #?(:clj [app.common.fressian :as fres])
    #?(:clj [clojure.data.json :as json])
@@ -33,6 +34,7 @@
 
 (defprotocol ITransformable
   (-transform [_ m] "apply a transform")
+  (-lookup [_ index f])
   (-walk [_ f initial]))
 
 (defn- transform!
@@ -288,6 +290,24 @@
                       result)))
            (persistent! result))))
 
+     (-lookup [_ index f]
+       (when (and (<= 0 index)
+                  (< index size))
+         (let [offset (* index SEGMENT-BYTE-SIZE)
+               type   (.getShort ^ByteBuffer buffer offset)
+               c1x    (.getFloat ^ByteBuffer buffer (+ offset 4))
+               c1y    (.getFloat ^ByteBuffer buffer (+ offset 8))
+               c2x    (.getFloat ^ByteBuffer buffer (+ offset 12))
+               c2y    (.getFloat ^ByteBuffer buffer (+ offset 16))
+               x      (.getFloat ^ByteBuffer buffer (+ offset 20))
+               y      (.getFloat ^ByteBuffer buffer (+ offset 24))
+               type   (case type
+                        1 :line-to
+                        2 :move-to
+                        3 :curve-to
+                        4 :close-path)]
+           (f type c1x c1y c2x c2y x y))))
+
      json/JSONWriter
      (-write [this writter options]
        (json/-write (.toString this) writter options))
@@ -396,6 +416,24 @@
                         (conj! result res)
                         result)))
              (persistent! result)))))
+
+     (-lookup [_ index f]
+       (when (and (<= 0 index)
+                  (< index size))
+         (let [offset (* index SEGMENT-BYTE-SIZE)
+               type   (.getInt16 dview offset)
+               c1x    (.getFloat32 dview (+ offset 4))
+               c1y    (.getFloat32 dview (+ offset 8))
+               c2x    (.getFloat32 dview (+ offset 12))
+               c2y    (.getFloat32 dview (+ offset 16))
+               x      (.getFloat32 dview (+ offset 20))
+               y      (.getFloat32 dview (+ offset 24))
+               type   (case type
+                        1 :line-to
+                        2 :move-to
+                        3 :curve-to
+                        4 :close-path)]
+           (f type c1x c1y c2x c2y x y))))
 
      cljs.core/ISequential
      cljs.core/IEquiv
