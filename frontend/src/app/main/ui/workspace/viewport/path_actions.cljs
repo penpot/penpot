@@ -48,7 +48,7 @@
 
 
 (defn check-enabled [content selected-points]
-  (let [segments (path.segm/get-segments content selected-points)
+  (let [segments (path.segm/get-segments-with-points content selected-points)
         num-segments (count segments)
         num-points (count selected-points)
         points-selected? (seq selected-points)
