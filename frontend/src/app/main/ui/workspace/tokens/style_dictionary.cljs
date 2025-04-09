@@ -25,7 +25,7 @@
   "Initiates the StyleDictionary instance.
   Setup transforms from tokens-studio used to parse and resolved token values."
   (do
-    (sd-transforms/registerTransforms sd)
+    (sd-transforms/register sd)
     (.registerFormat sd #js {:name "custom/json"
                              :format (fn [^js res]
                                        (.-tokens (.-dictionary res)))})
@@ -192,9 +192,11 @@
     config)
 
   (build-dictionary [_]
-    (let [config' (clj->js config)]
+    (let [platform "json"
+          config' (clj->js config)]
       (-> (sd. config')
-          (.buildAllPlatforms "json")
+          (.buildAllPlatforms platform)
+          (p/then #(.getPlatformTokens ^js % platform))
           (p/then #(.-allTokens ^js %))))))
 
 (defn resolve-tokens-tree+
