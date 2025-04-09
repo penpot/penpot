@@ -18,6 +18,7 @@
 - Fix design tab has a horizontal scroll [Taiga #10660](https://tree.taiga.io/project/penpot/issue/10660)
 - Fix long file names being clipped when longer than allowed length [Taiga #10662](https://tree.taiga.io/project/penpot/issue/10662)
 - Fix problem with error detail in toast [Taiga #10519](https://tree.taiga.io/project/penpot/issue/10519)
+- Fix view mode error when an external user tries to export something from a prototype using a shared link [Taiga #10251](https://tree.taiga.io/project/penpot/issue/10251)
 
 ## 2.6.1
 
