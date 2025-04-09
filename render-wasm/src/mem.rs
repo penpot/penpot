@@ -56,6 +56,12 @@ pub fn bytes() -> Vec<u8> {
         .map_or_else(|| panic!("Buffer is not initialized"), |buffer| *buffer)
 }
 
+pub fn bytes_or_empty() -> Vec<u8> {
+    let mut guard = BUFFERU8.lock().unwrap();
+
+    guard.take().map_or_else(|| Vec::new(), |buffer| *buffer)
+}
+
 pub trait SerializableResult {
     type BytesType;
     fn from_bytes(bytes: Self::BytesType) -> Self;
