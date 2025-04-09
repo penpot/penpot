@@ -76,7 +76,7 @@
 
              index (or index (count content))
              prefix (or prefix :c1)
-             position (or position (path.segment/get-point (nth content (dec index))))
+             position (or position (path.helpers/segment->point (nth content (dec index))))
 
              old-handler (path.segment/handler->point content index prefix)
 

@@ -11,7 +11,7 @@
   WARNING: Pending to be removed from codebase once completly unused"
   (:require
    [app.common.geom.point :as gpt]
-   [app.common.types.path.segment :as path.segm]
+   [app.common.types.path.helpers :refer [segment->point]]
    [app.util.array :as arr]))
 
 (defn pt=
@@ -122,7 +122,7 @@
   (try
     (let [result (make-array (count content))]
       (reduce (fn [last-move current]
-                (let [point         (path.segm/get-point current)
+                (let [point         (segment->point current)
                       current-move? (= :move-to (:command current))
                       last-move     (if current-move? point last-move)]
 
