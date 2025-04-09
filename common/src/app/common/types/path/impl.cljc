@@ -9,7 +9,7 @@
   and plain formats"
   #?(:cljs
      (:require-macros [app.common.types.path.impl]))
-  (:refer-clojure :exclude [-lookup])
+  (:refer-clojure :exclude [-lookup -reduce])
   (:require
    #?(:clj [app.common.fressian :as fres])
    #?(:clj [clojure.data.json :as json])
@@ -35,7 +35,8 @@
 (defprotocol ITransformable
   (-transform [_ m] "apply a transform")
   (-lookup [_ index f])
-  (-walk [_ f initial]))
+  (-walk [_ f initial])
+  (-reduce [_ f initial]))
 
 (defn- transform!
   "Apply a transformation to a segment located under specified offset"
@@ -290,6 +291,29 @@
                       result)))
            (persistent! result))))
 
+     (-reduce [_ f initial]
+       (loop [index 0
+              result initial]
+         (if (< index size)
+           (let [offset (* index SEGMENT-BYTE-SIZE)
+                 type   (.getShort ^ByteBuffer buffer offset)
+                 c1x    (.getFloat ^ByteBuffer buffer (+ offset 4))
+                 c1y    (.getFloat ^ByteBuffer buffer (+ offset 8))
+                 c2x    (.getFloat ^ByteBuffer buffer (+ offset 12))
+                 c2y    (.getFloat ^ByteBuffer buffer (+ offset 16))
+                 x      (.getFloat ^ByteBuffer buffer (+ offset 20))
+                 y      (.getFloat ^ByteBuffer buffer (+ offset 24))
+                 type   (case type
+                          1 :line-to
+                          2 :move-to
+                          3 :curve-to
+                          4 :close-path)
+                 result (f result index type c1x c1y c2x c2y x y)]
+             (if (reduced? result)
+               result
+               (recur (inc index) result)))
+           result)))
+
      (-lookup [_ index f]
        (when (and (<= 0 index)
                   (< index size))
@@ -392,30 +416,51 @@
          (PathData. size buffer dview (weak-map/create) nil)))
 
      (-walk [_ f initial]
-       (let [farray (js/Float32Array. buffer)
-             iarray (js/Int32Array. buffer)]
-         (loop [index 0
-                result (transient initial)]
-           (if (< index size)
-             (let [offset (* index SEGMENT-BYTE-SIZE)
-                   type   (.getInt16 dview offset)
-                   c1x    (.getFloat32 dview (+ offset 4))
-                   c1y    (.getFloat32 dview (+ offset 8))
-                   c2x    (.getFloat32 dview (+ offset 12))
-                   c2y    (.getFloat32 dview (+ offset 16))
-                   x      (.getFloat32 dview (+ offset 20))
-                   y      (.getFloat32 dview (+ offset 24))
-                   type   (case type
-                            1 :line-to
-                            2 :move-to
-                            3 :curve-to
-                            4 :close-path)
-                   res    (f type c1x c1y c2x c2y x y)]
-               (recur (inc index)
-                      (if (some? res)
-                        (conj! result res)
-                        result)))
-             (persistent! result)))))
+       (loop [index 0
+              result (transient initial)]
+         (if (< index size)
+           (let [offset (* index SEGMENT-BYTE-SIZE)
+                 type   (.getInt16 dview offset)
+                 c1x    (.getFloat32 dview (+ offset 4))
+                 c1y    (.getFloat32 dview (+ offset 8))
+                 c2x    (.getFloat32 dview (+ offset 12))
+                 c2y    (.getFloat32 dview (+ offset 16))
+                 x      (.getFloat32 dview (+ offset 20))
+                 y      (.getFloat32 dview (+ offset 24))
+                 type   (case type
+                          1 :line-to
+                          2 :move-to
+                          3 :curve-to
+                          4 :close-path)
+                 res    (f type c1x c1y c2x c2y x y)]
+             (recur (inc index)
+                    (if (some? res)
+                      (conj! result res)
+                      result)))
+           (persistent! result))))
+
+     (-reduce [_ f initial]
+       (loop [index 0
+              result initial]
+         (if (< index size)
+           (let [offset (* index SEGMENT-BYTE-SIZE)
+                 type   (.getInt16 dview offset)
+                 c1x    (.getFloat32 dview (+ offset 4))
+                 c1y    (.getFloat32 dview (+ offset 8))
+                 c2x    (.getFloat32 dview (+ offset 12))
+                 c2y    (.getFloat32 dview (+ offset 16))
+                 x      (.getFloat32 dview (+ offset 20))
+                 y      (.getFloat32 dview (+ offset 24))
+                 type   (case type
+                          1 :line-to
+                          2 :move-to
+                          3 :curve-to
+                          4 :close-path)
+                 result (f result index type c1x c1y c2x c2y x y)]
+             (if (reduced? result)
+               result
+               (recur (inc index) result)))
+           result)))
 
      (-lookup [_ index f]
        (when (and (<= 0 index)
