@@ -171,6 +171,7 @@
         on-collapse-click
         (mf/use-fn
          (fn [event]
+           (dom/prevent-default event)
            (dom/stop-propagation event)
            (on-toggle-collapse tree-path)))
 
