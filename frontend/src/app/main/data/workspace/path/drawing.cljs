@@ -129,7 +129,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [content  (st/get-path state :content)
-            handlers (-> (path.segment/content->handlers content)
+            handlers (-> (path.segment/get-handlers content)
                          (get position))
 
             [idx prefix] (when (= (count handlers) 1)
