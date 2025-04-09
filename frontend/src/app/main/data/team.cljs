@@ -199,7 +199,7 @@
   (ptk/reify ::webhooks-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:team-id team-id] assoc :webhooks webhooks))))
+      (update-in state [:teams team-id] assoc :webhooks webhooks))))
 
 (defn fetch-webhooks
   []

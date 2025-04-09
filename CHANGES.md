@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.6.1
+
+### :bug: Bugs fixed
+
+- Fix webhooks not shown in list [Taiga #10763](https://tree.taiga.io/project/penpot/issue/10763)
+
 ## 2.6.0
 
 ### :rocket: Epics and highlights

@@ -1045,7 +1045,7 @@
              (tr "dashboard.your-penpot")
              (:name team)))))
 
-    (mf/with-effect [team]
+    (mf/with-effect []
       (st/emit! (dtm/fetch-webhooks)))
 
     [:*
