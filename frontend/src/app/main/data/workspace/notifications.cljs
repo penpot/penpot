@@ -65,7 +65,6 @@
                              (->> (rx/from initmsg)
                                   (rx/map dws/send))
 
-
                              ;; Subscribe to notifications of the subscription
                              (->> stream
                                   (rx/filter (ptk/type? ::dws/message))

@@ -19,7 +19,6 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.websocket :as dws]
-   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.sse :as sse]
@@ -57,8 +56,7 @@
                    (rx/filter (fn [{:keys [topic] :as msg}]
                                 (or (= topic uuid/zero)
                                     (= topic profile-id))))
-                   (rx/map process-message)
-                   (rx/ignore)))
+                   (rx/map process-message)))
 
              (rx/take-until stopper))))))
 
@@ -497,7 +495,7 @@
             base-name (tr "dashboard.new-file-prefix")
             name      (or name
                           (cfh/generate-unique-name base-name unames :immediate-suffix? true))
-            features  (-> (features/get-team-enabled-features state)
+            features  (-> (get state :features)
                           (set/difference cfeat/frontend-only-features))
             params    (-> params
                           (assoc :name name)

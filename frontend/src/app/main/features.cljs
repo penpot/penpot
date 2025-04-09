@@ -8,12 +8,12 @@
   "A thin, frontend centric abstraction layer and collection of
   helpers for `app.common.features` namespace."
   (:require
+   [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.logging :as log]
    [app.config :as cf]
    [app.main.store :as st]
    [app.render-wasm :as wasm]
-   [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -26,38 +26,32 @@
   (cfeat/get-enabled-features cf/flags))
 
 (defn get-enabled-features
-  [state]
-  (-> (get state :features-runtime #{})
-      (set/intersection cfeat/no-migration-features)
-      (set/union global-enabled-features)))
-
-(defn get-team-enabled-features
-  [state]
-  (let [runtime-features (:features-runtime state #{})
-        team-features    (->> (:features-team state #{})
-                              (into #{} cfeat/xf-remove-ephimeral))]
+  "An explicit lookup of enabled features for the current team"
+  [state team-id]
+  (let [team (dm/get-in state [:teams team-id])]
     (-> global-enabled-features
-        (set/union runtime-features)
+        (set/union (get state :features-runtime #{}))
         (set/intersection cfeat/no-migration-features)
-        (set/union team-features))))
-
-(def features-ref
-  (l/derived get-team-enabled-features st/state =))
+        (set/union (get team :features)))))
 
 (defn active-feature?
-  "Given a state and feature, check if feature is enabled"
+  "Given a state and feature, check if feature is enabled."
   [state feature]
-  (assert (contains? cfeat/supported-features feature) "not supported feature")
-  (or (contains? (get state :features-runtime) feature)
-      (if (contains? cfeat/no-migration-features feature)
-        (or (contains? global-enabled-features feature)
-            (contains? (get state :features-team) feature))
-        (contains? (get state :features-team state) feature))))
+  (assert (contains? cfeat/supported-features feature) "feature not supported")
+  (let [runtime-features (get state :features-runtime)
+        enabled-features (get state :features)]
+    (or (contains? runtime-features feature)
+        (if (contains? cfeat/no-migration-features feature)
+          (or (contains? global-enabled-features feature)
+              (contains? enabled-features feature))
+          (contains? enabled-features feature)))))
+
+(def ^:private features-ref
+  (l/derived (l/key :features) st/state))
 
 (defn use-feature
   "A react hook that checks if feature is currently enabled"
   [feature]
-  (assert (contains? cfeat/supported-features feature) "Not supported feature")
   (let [enabled-features (mf/deref features-ref)]
     (contains? enabled-features feature)))
 
@@ -71,14 +65,16 @@
     ptk/UpdateEvent
     (update [_ state]
       (assert (contains? cfeat/supported-features feature) "not supported feature")
-      (update state :features-runtime (fn [features]
-                                        (if (contains? features feature)
-                                          (do
-                                            (log/trc :hint "feature disabled" :feature feature)
-                                            (disj features feature))
-                                          (do
-                                            (log/trc :hint "feature enabled" :feature feature)
-                                            (conj features feature))))))))
+      (-> state
+          (update :features-runtime (fn [features]
+                                      (if (contains? features feature)
+                                        (do
+                                          (log/trc :hint "feature disabled" :feature feature)
+                                          (disj features feature))
+                                        (do
+                                          (log/trc :hint "feature enabled" :feature feature)
+                                          (conj features feature)))))
+          (update :features-runtime set/intersection cfeat/no-migration-features)))))
 
 (defn enable-feature
   [feature]
@@ -90,46 +86,28 @@
         state
         (do
           (log/trc :hint "feature enabled" :feature feature)
-          (update state :features-runtime (fnil conj #{}) feature))))))
+          (-> state
+              (update :features-runtime (fnil conj #{}) feature)
+              (update :features-runtime set/intersection cfeat/no-migration-features)))))))
 
 (defn initialize
-  ([] (initialize #{}))
-  ([team-features]
-   (assert (set? team-features) "expected a set of features")
-   (assert (every? string? team-features) "expected a set of strings")
+  [features]
+  (ptk/reify ::initialize
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [features (-> global-enabled-features
+                         (set/union (get state :features-runtime #{}))
+                         (set/union features))]
+        (assoc state :features features)))
 
-   (ptk/reify ::initialize
-     ptk/UpdateEvent
-     (update [_ state]
-       (let [runtime-features (get state :features/runtime #{})
-             team-features    (into #{}
-                                    cfeat/xf-supported-features
-                                    team-features)]
-         (-> state
-             (assoc :features-runtime runtime-features)
-             (assoc :features-team team-features))))
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [features (get state :features)]
+        (if (contains? features "render-wasm/v1")
+          (wasm/initialize true)
+          (wasm/initialize false))
 
-     ptk/WatchEvent
-     (watch [_ _ _]
-       (when *assert*
-         (->> (rx/from cfeat/no-migration-features)
-              ;; text editor v2 isn't enabled by default even in devenv
-              ;; wasm render v1 isn't enabled by default even in devenv
-              (rx/filter #(not (or (contains? cfeat/backend-only-features %)
-                                   (= "text-editor/v2" %)
-                                   (= "render-wasm/v1" %)
-                                   (= "design-tokens/v1" %))))
-              (rx/observe-on :async)
-              (rx/map enable-feature))))
-
-     ptk/EffectEvent
-     (effect [_ state _]
-       (let [features (get-team-enabled-features state)]
-         (if (contains? features "render-wasm/v1")
-           (wasm/initialize true)
-           (wasm/initialize false))
-
-         (log/inf :hint "initialized"
-                  :enabled (str/join "," features)
-                  :runtime (str/join "," (:features-runtime state))))))))
+        (log/inf :hint "initialized"
+                 :enabled (str/join "," features)
+                 :runtime (str/join "," (:features-runtime state)))))))
 

@@ -14,10 +14,10 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def ref:notification
+(def ^:private ref:notification
   (l/derived :notification st/state))
 
-(mf/defc current-notification
+(mf/defc current-notification*
   []
   (let [notification (mf/deref ref:notification)
         on-close     (mf/use-fn #(st/emit! (ntf/hide)))

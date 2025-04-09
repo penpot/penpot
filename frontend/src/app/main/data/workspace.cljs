@@ -205,30 +205,29 @@
                    (d/index-by :id))))))
 
 (defn- fetch-libraries
-  [file-id]
+  [file-id features]
   (ptk/reify ::fetch-libries
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [features (features/get-team-enabled-features state)]
-        (->> (rp/cmd! :get-file-libraries {:file-id file-id})
-             (rx/mapcat
-              (fn [libraries]
-                (rx/concat
-                 (rx/of (libraries-fetched file-id libraries))
-                 (rx/merge
-                  (->> (rx/from libraries)
-                       (rx/merge-map
-                        (fn [{:keys [id synced-at]}]
-                          (->> (rp/cmd! :get-file {:id id :features features})
-                               (rx/map #(assoc % :synced-at synced-at :library-of file-id)))))
-                       (rx/mapcat resolve-file)
-                       (rx/map library-resolved))
-                  (->> (rx/from libraries)
-                       (rx/map :id)
-                       (rx/mapcat (fn [file-id]
-                                    (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
-                       (rx/map dwl/library-thumbnails-fetched)))
-                 (rx/of (check-libraries-synchronozation file-id libraries))))))))))
+    (watch [_ _ _]
+      (->> (rp/cmd! :get-file-libraries {:file-id file-id})
+           (rx/mapcat
+            (fn [libraries]
+              (rx/concat
+               (rx/of (libraries-fetched file-id libraries))
+               (rx/merge
+                (->> (rx/from libraries)
+                     (rx/merge-map
+                      (fn [{:keys [id synced-at]}]
+                        (->> (rp/cmd! :get-file {:id id :features features})
+                             (rx/map #(assoc % :synced-at synced-at :library-of file-id)))))
+                     (rx/mapcat resolve-file)
+                     (rx/map library-resolved))
+                (->> (rx/from libraries)
+                     (rx/map :id)
+                     (rx/mapcat (fn [file-id]
+                                  (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
+                     (rx/map dwl/library-thumbnails-fetched)))
+               (rx/of (check-libraries-synchronozation file-id libraries)))))))))
 
 (defn- workspace-initialized
   [file-id]
@@ -246,28 +245,16 @@
              (fbs/fix-broken-shapes)))))
 
 (defn- bundle-fetched
-  [{:keys [features file thumbnails]}]
+  [{:keys [file file-id thumbnails] :as bundle}]
   (ptk/reify ::bundle-fetched
     IDeref
-    (-deref [_]
-      {:features features
-       :file file
-       :thumbnails thumbnails})
+    (-deref [_] bundle)
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [file-id (:id file)]
-        (-> state
-            (assoc :thumbnails thumbnails)
-            (update :files assoc file-id file))))
-
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id    (:current-team-id state)
-            file-id    (:id file)]
-        (rx/of (dwn/initialize team-id file-id)
-               (dwsl/initialize-shape-layout)
-               (fetch-libraries file-id))))))
+      (-> state
+          (assoc :thumbnails thumbnails)
+          (update :files assoc file-id file)))))
 
 (defn zoom-to-frame
   []
@@ -296,46 +283,30 @@
 
 (defn- fetch-bundle
   "Multi-stage file bundle fetch coordinator"
-  [file-id]
+  [file-id features]
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
-    (watch [_ state stream]
-      (let [features     (features/get-team-enabled-features state)
-            render-wasm? (contains? features "render-wasm/v1")
-            stopper-s    (rx/filter (ptk/type? ::finalize-workspace) stream)
-            team-id      (:current-team-id state)]
-
-        (->> (rx/concat
-              ;; Firstly load wasm module if it is enabled and fonts
-              (rx/merge
-               (if ^boolean render-wasm?
-                 (->> (rx/from @wasm/module)
-                      (rx/ignore))
-                 (rx/empty))
-
-               (->> stream
-                    (rx/filter (ptk/type? ::df/fonts-loaded))
-                    (rx/take 1)
-                    (rx/ignore))
-               (rx/of (df/fetch-fonts team-id)))
-
-              ;; Then fetch file and thumbnails
-              (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
-                           (get-file-object-thumbnails file-id))
-                   (rx/take 1)
-                   (rx/mapcat
-                    (fn [[file thumbnails]]
-                      (->> (resolve-file file)
-                           (rx/map (fn [file]
-                                     {:file file
-                                      :features features
-                                      :thumbnails thumbnails})))))
-                   (rx/map bundle-fetched)))
+    (watch [_ _ stream]
+      (let [stopper-s (rx/filter (ptk/type? ::finalize-workspace) stream)]
+        (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
+                     (get-file-object-thumbnails file-id))
+             (rx/take 1)
+             (rx/mapcat
+              (fn [[file thumbnails]]
+                (->> (resolve-file file)
+                     (rx/map (fn [file]
+                               {:file file
+                                :file-id file-id
+                                :features features
+                                :thumbnails thumbnails})))))
+             (rx/map bundle-fetched)
              (rx/take-until stopper-s))))))
 
 (defn initialize-workspace
-  [file-id]
+  [team-id file-id]
+  (assert (uuid? team-id) "expected valud uuid for `team-id`")
   (assert (uuid? file-id) "expected valud uuid for `file-id`")
+
   (ptk/reify ::initialize-workspace
     ptk/UpdateEvent
     (update [_ state]
@@ -347,24 +318,51 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (log/debug :hint "initialize-workspace" :file-id (dm/str file-id))
-      (let [stoper-s (rx/filter (ptk/type? ::finalize-workspace) stream)
-            rparams  (rt/get-params state)]
+      (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
+            rparams      (rt/get-params state)
+            features     (features/get-enabled-features state team-id)
+            render-wasm? (contains? features "render-wasm/v1")]
+
+        (log/debug :hint "initialize-workspace"
+                   :team-id (dm/str team-id)
+                   :file-id (dm/str file-id))
 
         (->> (rx/merge
-              (rx/of (ntf/hide)
-                     (dcmt/retrieve-comment-threads file-id)
-                     (dcmt/fetch-profiles)
-                     (fetch-bundle file-id))
+              (rx/concat
+               ;; Fetch all essential data that should be loaded before the file
+               (rx/merge
+                (if ^boolean render-wasm?
+                  (->> (rx/from @wasm/module)
+                       (rx/ignore))
+                  (rx/empty))
+
+                (->> stream
+                     (rx/filter (ptk/type? ::df/fonts-loaded))
+                     (rx/take 1)
+                     (rx/ignore))
+
+                (rx/of (ntf/hide)
+                       (dcmt/retrieve-comment-threads file-id)
+                       (dcmt/fetch-profiles)
+                       (df/fetch-fonts team-id)))
+
+               ;; Once the essential data is fetched, lets proceed to
+               ;; fetch teh file bunldle
+               (rx/of (fetch-bundle file-id features)))
 
               (->> stream
                    (rx/filter (ptk/type? ::bundle-fetched))
                    (rx/take 1)
                    (rx/map deref)
-                   (rx/mapcat (fn [{:keys [file]}]
-                                (rx/of (dpj/initialize-project (:project-id file))
-                                       (-> (workspace-initialized file-id)
-                                           (with-meta {:file-id file-id}))))))
+                   (rx/mapcat
+                    (fn [{:keys [file]}]
+                      (rx/of (dpj/initialize-project (:project-id file))
+                             (dwn/initialize team-id file-id)
+                             (dwsl/initialize-shape-layout)
+                             (fetch-libraries file-id features)
+                             (-> (workspace-initialized file-id)
+                                 (with-meta {:team-id team-id
+                                             :file-id file-id}))))))
 
               (->> stream
                    (rx/filter (ptk/type? ::dps/persistence-notification))
@@ -410,7 +408,7 @@
         (unchecked-set ug/global "name" name)))))
 
 (defn finalize-workspace
-  [file-id]
+  [_team-id file-id]
   (ptk/reify ::finalize-workspace
     ptk/UpdateEvent
     (update [_ state]
@@ -430,7 +428,6 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [project-id (:current-project-id state)]
-
         (rx/of (dwn/finalize file-id)
                (dpj/finalize-project project-id)
                (dwsl/finalize-shape-layout)
@@ -444,13 +441,12 @@
   (ptk/reify ::reload-current-file
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)]
-        (rx/of (initialize-workspace file-id))))))
+      (let [file-id (:current-file-id state)
+            team-id (:current-team-id state)]
+        (rx/of (initialize-workspace team-id file-id))))))
 
 ;; Make this event callable through dynamic resolution
 (defmethod ptk/resolve ::reload-current-file [_ _] (reload-current-file))
-
-
 
 (def ^:private xf:collect-file-media
   "Resolve and collect all file media on page objects"
@@ -488,18 +484,25 @@
 (defn initialize-page
   [file-id page-id]
   (assert (uuid? file-id) "expected valid uuid for `file-id`")
+  (assert (uuid? page-id) "expected valid uuid for `page-id`")
 
   (ptk/reify ::initialize-page
     ptk/WatchEvent
     (watch [_ state _]
       (if-let [page (dsh/lookup-page state file-id page-id)]
-        (rx/concat (rx/of (initialize-page* file-id page-id page)
-                          (dwth/watch-state-changes file-id page-id)
-                          (dwl/watch-component-changes))
-                   (let [profile (:profile state)
-                         props   (get profile :props)]
-                     (when (not (:workspace-visited props))
-                       (rx/of (select-frame-tool file-id page-id)))))
+        (rx/concat
+         (rx/of (initialize-page* file-id page-id page)
+                (dwth/watch-state-changes file-id page-id)
+                (dwl/watch-component-changes))
+         (let [profile (:profile state)
+               props   (get profile :props)]
+           (when (not (:workspace-visited props))
+             (rx/of (select-frame-tool file-id page-id)))))
+
+        ;; NOTE: this redirect is necessary for cases where user
+        ;; explicitly passes an non-existing page-id on the url
+        ;; params, so on check it we can detect that there are no data
+        ;; for the page and redirect user to an existing page
         (rx/of (dcm/go-to-workspace :file-id file-id ::rt/replace true))))))
 
 (defn finalize-page
@@ -1410,7 +1413,7 @@
             (let [objects  (dsh/lookup-page-objects state)
                   selected (->> (dsh/lookup-selected state)
                                 (cfh/clean-loops objects))
-                  features (-> (features/get-team-enabled-features state)
+                  features (-> (get state :features)
                                (set/difference cfeat/frontend-only-features))
 
                   file-id  (:current-file-id state)
@@ -1648,9 +1651,10 @@
                   objects  (dsh/lookup-page-objects state)]
               (when-let [shape (get objects selected)]
                 (let [props (cts/extract-props shape)
-                      features (-> (features/get-team-enabled-features state)
+                      features (-> (get state :features)
                                    (set/difference cfeat/frontend-only-features))
-                      version  (-> (dsh/lookup-file state) :version)
+                      version  (-> (dsh/lookup-file state)
+                                   (get :version))
 
                       copy-data {:type :copied-props
                                  :features features
@@ -1784,8 +1788,8 @@
     (ptk/reify ::paste-transit-shapes
       ptk/WatchEvent
       (watch [_ state _]
-        (let [file-id (:current-file-id state)
-              features (features/get-team-enabled-features state)]
+        (let [file-id  (:current-file-id state)
+              features (get state :features)]
 
           (when-not (paste-data-valid? pdata)
             (ex/raise :type :validation
@@ -1856,7 +1860,7 @@
     (ptk/reify ::paste-transit-props
       ptk/WatchEvent
       (watch [_ state _]
-        (let [features (features/get-team-enabled-features state)
+        (let [features (get state :features)
               selected (dsh/lookup-selected state)]
 
           (when (paste-data-valid? pdata)
