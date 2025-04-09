@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.6.0 (Unreleased)
+## 2.6.0
 
 ### :rocket: Epics and highlights
 
