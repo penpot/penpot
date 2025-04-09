@@ -96,12 +96,6 @@
 
       :else nil)))
 
-(defn get-commands
-  "Returns the commands involving a point with its indices"
-  [content point]
-  (->> (d/enumerate content)
-       (filterv (fn [[_ segment]] (= (helpers/segment->point segment) point)))))
-
 (defn get-handler-point
   "Given a segment index and prefix, get a handler point"
   [content index prefix]
