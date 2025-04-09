@@ -330,9 +330,9 @@
         expect2 (gpt/point 439.0 802.0)
         expect3 (gpt/point 480.0 839.0)
 
-        result4 (path.segment/handler->point content 3 :c1)
-        result5 (path.segment/handler->point content 1 :c1)
-        result6 (path.segment/handler->point content 0 :c1)]
+        result4 (path.segment/get-handler-point content 3 :c1)
+        result5 (path.segment/get-handler-point content 1 :c1)
+        result6 (path.segment/get-handler-point content 0 :c1)]
 
     (t/is (= result1 expect1))
     (t/is (= result2 expect2))

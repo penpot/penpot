@@ -264,7 +264,7 @@
             handler (-> content (nth index) (path.segment/get-handler prefix))
 
             [op-idx op-prefix] (path.segment/opposite-index content index prefix)
-            opposite (path.segment/handler->point content op-idx op-prefix)]
+            opposite (path.segment/get-handler-point content op-idx op-prefix)]
 
         (streams/drag-stream
          (rx/concat

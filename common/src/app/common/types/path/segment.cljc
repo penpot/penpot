@@ -102,7 +102,8 @@
   (->> (d/enumerate content)
        (filterv (fn [[_ segment]] (= (helpers/segment->point segment) point)))))
 
-(defn handler->point
+(defn get-handler-point
+  "Given a segment index and prefix, get a handler point"
   [content index prefix]
   (when (and (some? index)
              (some? prefix))
@@ -397,11 +398,12 @@
                               (assoc :c2x (:x h2))
                               (assoc :c2y (:y h2))))))))
 
+;; FIXME: optimize
 (defn is-curve?
   [content point]
   (let [handlers (-> (content->handlers content)
                      (get point))
-        handler-points (map #(handler->point content (first %) (second %)) handlers)]
+        handler-points (map #(get-handler-point content (first %) (second %)) handlers)]
     (some #(not= point %) handler-points)))
 
 (def ^:private xf:mapcat-points
