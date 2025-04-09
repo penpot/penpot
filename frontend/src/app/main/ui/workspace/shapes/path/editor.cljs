@@ -245,8 +245,8 @@
 (defn- matching-handler? [content node handlers]
   (when (= 2 (count handlers))
     (let [[[i1 p1] [i2 p2]] handlers
-          p1 (path.segment/handler->point content i1 p1)
-          p2 (path.segment/handler->point content i2 p2)
+          p1 (path.segment/get-handler-point content i1 p1)
+          p2 (path.segment/get-handler-point content i2 p2)
 
           v1 (gpt/to-vec node p1)
           v2 (gpt/to-vec node p2)
@@ -360,9 +360,9 @@
 
              show-handler?
              (fn [[index prefix]]
-               ;; FIXME: handler->point is executed twice for each
+               ;; FIXME: get-handler-point is executed twice for each
                ;; render, this can be optimized
-               (let [handler-position (path.segment/handler->point content index prefix)]
+               (let [handler-position (path.segment/get-handler-point content index prefix)]
                  (not= position handler-position)))
 
              position-handlers
@@ -385,7 +385,7 @@
          [:g.path-node {:key (dm/str pos-x "-" pos-y)}
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
            (for [[hindex prefix] position-handlers]
-             (let [handler-position  (path.segment/handler->point content hindex prefix)
+             (let [handler-position  (path.segment/get-handler-point content hindex prefix)
                    handler-hover?    (contains? hover-handlers [hindex prefix])
                    moving-handler?   (= handler-position moving-handler)
                    matching-handler? (matching-handler? content position position-handlers)]
