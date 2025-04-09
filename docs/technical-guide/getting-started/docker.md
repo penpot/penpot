@@ -153,7 +153,8 @@ itself.
 
 ## Configure the proxy and HTTPS
 
-We strongly recommend to use Penpot under HTTPS/SSL. When you configure the proxy, your host configuration needs to make a proxy to http://localhost:9001.
+We strongly recommend to use Penpot under HTTPS/SSL, which will require specific server configurations for DNS and SSL certificates.
+Besides, your host configuration needs to make a proxy to http://localhost:9001.
 
 <p class="advice">
     If you plan to serve Penpot under different domain than `localhost` without HTTPS,
