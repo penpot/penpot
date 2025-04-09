@@ -340,3 +340,31 @@
     (t/is (= result4 expect1))
     (t/is (= result5 expect2))
     (t/is (= result6 expect3))))
+
+
+(defn get-handlers
+  "Retrieve a map where for every point will retrieve a list of
+  the handlers that are associated with that point.
+  point -> [[index, prefix]].
+
+  Legacy impl"
+  [content]
+  (->> (d/with-prev content)
+       (d/enumerate)
+       (mapcat (fn [[index [cur-segment pre-segment]]]
+                 (if (and pre-segment (= :curve-to (:command cur-segment)))
+                   (let [cur-pos (path.helpers/segment->point cur-segment)
+                         pre-pos (path.helpers/segment->point pre-segment)]
+                     (-> [[pre-pos [index :c1]]
+                          [cur-pos [index :c2]]]))
+                   [])))
+
+       (group-by first)
+       (d/mapm #(mapv second %2))))
+
+(t/deftest content-to-handlers
+  (let [content (path/content sample-content-large)
+        result1 (get-handlers content)
+        result2 (path.segment/get-handlers content)]
+
+    (t/is (= result1 result2))))

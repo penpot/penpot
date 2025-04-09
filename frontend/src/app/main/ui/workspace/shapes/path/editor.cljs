@@ -300,11 +300,12 @@
         (mf/with-memo [content-points]
           (into #{} content-points))
 
-        last-p (->> content last path.helpers/segment->point)
+        last-p
+        (->> content last path.helpers/segment->point)
 
         handlers
         (mf/with-memo [content]
-          (path.segment/content->handlers content))
+          (path.segment/get-handlers content))
 
         is-path-start
         (not (some? last-point))
