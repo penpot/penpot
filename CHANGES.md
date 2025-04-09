@@ -18,7 +18,14 @@
 - Fix design tab has a horizontal scroll [Taiga #10660](https://tree.taiga.io/project/penpot/issue/10660)
 - Fix long file names being clipped when longer than allowed length [Taiga #10662](https://tree.taiga.io/project/penpot/issue/10662)
 
-## 2.6.0 (Unreleased)
+## 2.6.1
+
+### :bug: Bugs fixed
+
+- Fix webhooks not shown in list [Taiga #10763](https://tree.taiga.io/project/penpot/issue/10763)
+- Fix colorpicker scroll when dropdown displayed [Taiga #10696](https://tree.taiga.io/project/penpot/issue/10696)
+
+## 2.6.0
 
 ### :rocket: Epics and highlights
 

@@ -124,6 +124,7 @@
      [:div {:class (stl/css :select-wrapper)}
       [:& select
        {:class (stl/css :shadow-type-select)
+        :data-direction "up"
         :default-value (or (d/name selected) "recent")
         :options options
         :on-change on-library-change}]]

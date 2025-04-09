@@ -151,9 +151,20 @@ Postgres database and another one for the assets uploaded by your users (images 
 clips). There may be more volumes if you enable other features, as explained in the file
 itself.
 
-## Configure the proxy
+## Configure the proxy and HTTPS
 
-Your host configuration needs to make a proxy to http://localhost:9001.
+We strongly recommend to use Penpot under HTTPS/SSL, which will require specific server configurations for DNS and SSL certificates.
+Besides, your host configuration needs to make a proxy to http://localhost:9001.
+
+<p class="advice">
+    If you plan to serve Penpot under different domain than `localhost` without HTTPS,
+    you need to disable the `secure` flag on cookies, with the `disable-secure-session-cookies` flag.
+    This is a configuration NOT recommended for production environments; as some browser APIs do
+    not work properly under non-https environments, this unsecure configuration
+    may limit the usage of Penpot; as an example, the clipboard does not work with HTTP.
+</p>
+
+Below, you can see three examples with three different proxys:
 
 ### Example with NGINX
 
