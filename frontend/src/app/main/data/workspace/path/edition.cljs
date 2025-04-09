@@ -260,7 +260,7 @@
             content (st/get-path state :content)
             points  (path.segment/get-points content)
 
-            point (-> content (nth (if (= prefix :c1) (dec index) index)) (path.segment/get-point))
+            point (-> content (nth (if (= prefix :c1) (dec index) index)) (path.helpers/segment->point))
             handler (-> content (nth index) (path.segment/get-handler prefix))
 
             [op-idx op-prefix] (path.segment/opposite-index content index prefix)

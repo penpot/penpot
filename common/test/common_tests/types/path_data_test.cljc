@@ -216,7 +216,7 @@
                       (butlast content)
                       content)
             command (first content)
-            to-p    (path.helpers/command->point command)
+            to-p    (path.helpers/segment->point command)
 
             [from-p move-p command-pts]
             (case (:command command)
@@ -224,8 +224,8 @@
               :close-path [move-p move-p (when move-p [move-p])]
               :line-to    [to-p   move-p (when (and from-p to-p) [from-p to-p])]
               :curve-to   [to-p   move-p
-                           (let [c1 (path.helpers/command->point command :c1)
-                                 c2 (path.helpers/command->point command :c2)
+                           (let [c1 (path.helpers/segment->point command :c1)
+                                 c2 (path.helpers/segment->point command :c2)
                                  curve [from-p to-p c1 c2]]
                              (when (and from-p to-p c1 c2)
                                (into [from-p to-p]

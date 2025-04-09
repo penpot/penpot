@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.types.path :as path]
+   [app.common.types.path.helpers :as path.helpers]
    [app.common.types.path.segment :as path.segment]
    [app.main.data.workspace.path :as drp]
    [app.main.snap :as snap]
@@ -299,7 +300,7 @@
         (mf/with-memo [content-points]
           (into #{} content-points))
 
-        last-p (->> content last path.segment/get-point)
+        last-p (->> content last path.helpers/segment->point)
 
         handlers
         (mf/with-memo [content]
@@ -422,7 +423,7 @@
        (let [[snap-selected snap-points]
              (cond
                (some? drag-handler) [#{drag-handler} points]
-               (some? preview) [#{(path.segment/get-point preview)} points]
+               (some? preview) [#{(path.helpers/segment->point preview)} points]
                (some? moving-handler) [#{moving-handler} points]
                :else
                [(->> selected-points (map base->point) (into #{}))

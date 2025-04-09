@@ -18,19 +18,6 @@
 
 #?(:clj (set! *warn-on-reflection* true))
 
-(defn get-point
-  "Get a point for a segment"
-  ([prev-pos {:keys [relative params] :as segment}]
-   (let [{:keys [x y] :or {x (:x prev-pos) y (:y prev-pos)}} params]
-     (if relative
-       (-> prev-pos (update :x + x) (update :y + y))
-       (get-point segment))))
-
-  ([segment]
-   (when segment
-     (let [{:keys [x y]} (:params segment)]
-       (gpt/point x y)))))
-
 (defn update-handler
   [command prefix point]
   (let [[cox coy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])]
@@ -57,8 +44,8 @@
        (d/enumerate)
        (mapcat (fn [[index [cur-cmd pre-cmd]]]
                  (if (and pre-cmd (= :curve-to (:command cur-cmd)))
-                   (let [cur-pos (get-point cur-cmd)
-                         pre-pos (get-point pre-cmd)]
+                   (let [cur-pos (helpers/segment->point cur-cmd)
+                         pre-pos (helpers/segment->point pre-cmd)]
                      (-> [[pre-pos [index :c1]]
                           [cur-pos [index :c2]]]))
                    [])))
@@ -69,7 +56,7 @@
 (defn point-indices
   [content point]
   (->> (d/enumerate content)
-       (filter (fn [[_ cmd]] (= point (get-point cmd))))
+       (filter (fn [[_ cmd]] (= point (helpers/segment->point cmd))))
        (mapv (fn [[index _]] index))))
 
 (defn handler-indices
@@ -79,8 +66,8 @@
        (d/enumerate)
        (mapcat (fn [[index [cur-cmd pre-cmd]]]
                  (if (and (some? pre-cmd) (= :curve-to (:command cur-cmd)))
-                   (let [cur-pos (get-point cur-cmd)
-                         pre-pos (get-point pre-cmd)]
+                   (let [cur-pos (helpers/segment->point cur-cmd)
+                         pre-pos (helpers/segment->point pre-cmd)]
                      (cond-> []
                        (= pre-pos point) (conj [index :c1])
                        (= cur-pos point) (conj [index :c2])))
@@ -91,8 +78,8 @@
   [content index prefix]
 
   (let [point (if (= prefix :c2)
-                (get-point (nth content index))
-                (get-point (nth content (dec index))))
+                (helpers/segment->point (nth content index))
+                (helpers/segment->point (nth content (dec index))))
 
         point->handlers (content->handlers content)
 
@@ -113,7 +100,7 @@
   "Returns the commands involving a point with its indices"
   [content point]
   (->> (d/enumerate content)
-       (filterv (fn [[_ cmd]] (= (get-point cmd) point)))))
+       (filterv (fn [[_ cmd]] (= (helpers/segment->point cmd) point)))))
 
 ;; FIXME: candidate to be optimized with native data type operation
 (defn handler->point
@@ -135,8 +122,8 @@
 (defn handler->node
   [content index prefix]
   (if (= prefix :c1)
-    (get-point (nth content (dec index)))
-    (get-point (nth content index))))
+    (helpers/segment->point (nth content (dec index)))
+    (helpers/segment->point (nth content index))))
 
 (defn calculate-opposite-handler
   "Given a point and its handler, gives the symmetric handler"
@@ -370,8 +357,8 @@
         process-command
         (fn [content [index [command prev]]]
 
-          (let [cur-point (get-point command)
-                pre-point (get-point prev)
+          (let [cur-point (helpers/segment->point command)
+                pre-point (helpers/segment->point prev)
                 handler-c1 (get-handler command :c1)
                 handler-c2 (get-handler command :c2)]
             (if (and (= :curve-to (:command command))
@@ -403,7 +390,7 @@
 (defn- line->curve
   [from-p segment]
 
-  (let [to-p (get-point segment)
+  (let [to-p (helpers/segment->point segment)
 
         v (gpt/to-vec from-p to-p)
         d (gpt/distance from-p to-p)
@@ -459,10 +446,10 @@
                          {:index index
                           :prev-i (when (some? prev) prev-i)
                           :prev-c prev
-                          :prev-p (get-point prev)
+                          :prev-p (helpers/segment->point prev)
                           :next-i (when (some? next) next-i)
                           :next-c next
-                          :next-p (get-point next)
+                          :next-p (helpers/segment->point next)
                           :segment segment}))
                      indices)
 
@@ -541,7 +528,7 @@
             ;; Close-path makes a segment from the last point to the initial path point
             cur-point (if close-path?
                         start-point
-                        (get-point cur-cmd))
+                        (helpers/segment->point cur-cmd))
 
             ;; If there is a move-to we don't have a segment
             prev-point (if move-to?
@@ -646,10 +633,10 @@
 
                 subpath (peek result)
 
-                point (get-point cur-cmd)
+                point (helpers/segment->point cur-cmd)
 
-                old-prev-point (get-point prev-cmd)
-                new-prev-point (get-point (peek subpath))
+                old-prev-point (helpers/segment->point prev-cmd)
+                new-prev-point (helpers/segment->point (peek subpath))
 
                 remove? (contains? points point)
 
@@ -724,8 +711,8 @@
              (flatten)
              (into []))
 
-        (let [prev-point (get-point prev-cmd)
-              cur-point (get-point cur-cmd)
+        (let [prev-point (helpers/segment->point prev-cmd)
+              cur-point (helpers/segment->point cur-cmd)
 
               cur-cmd (cond-> cur-cmd
                         (and (contains? points prev-point)
@@ -803,7 +790,7 @@
   [content point->merge-point]
   (let [replace-command
         (fn [cmd]
-          (let [point (get-point cmd)]
+          (let [point (helpers/segment->point cmd)]
             (if (contains? point->merge-point point)
               (let [merge-point (get point->merge-point point)]
                 (-> cmd (update :params assoc :x (:x merge-point) :y (:y merge-point))))
