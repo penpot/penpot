@@ -42,10 +42,10 @@
   [content]
   (->> (d/with-prev content)
        (d/enumerate)
-       (mapcat (fn [[index [cur-cmd pre-cmd]]]
-                 (if (and pre-cmd (= :curve-to (:command cur-cmd)))
-                   (let [cur-pos (helpers/segment->point cur-cmd)
-                         pre-pos (helpers/segment->point pre-cmd)]
+       (mapcat (fn [[index [cur-segment pre-segment]]]
+                 (if (and pre-segment (= :curve-to (:command cur-segment)))
+                   (let [cur-pos (helpers/segment->point cur-segment)
+                         pre-pos (helpers/segment->point pre-segment)]
                      (-> [[pre-pos [index :c1]]
                           [cur-pos [index :c2]]]))
                    [])))
@@ -56,7 +56,7 @@
 (defn point-indices
   [content point]
   (->> (d/enumerate content)
-       (filter (fn [[_ cmd]] (= point (helpers/segment->point cmd))))
+       (filter (fn [[_ segment]] (= point (helpers/segment->point segment))))
        (mapv (fn [[index _]] index))))
 
 (defn handler-indices
@@ -64,10 +64,10 @@
   [content point]
   (->> (d/with-prev content)
        (d/enumerate)
-       (mapcat (fn [[index [cur-cmd pre-cmd]]]
-                 (if (and (some? pre-cmd) (= :curve-to (:command cur-cmd)))
-                   (let [cur-pos (helpers/segment->point cur-cmd)
-                         pre-pos (helpers/segment->point pre-cmd)]
+       (mapcat (fn [[index [cur-segment pre-segment]]]
+                 (if (and (some? pre-segment) (= :curve-to (:command cur-segment)))
+                   (let [cur-pos (helpers/segment->point cur-segment)
+                         pre-pos (helpers/segment->point pre-segment)]
                      (cond-> []
                        (= pre-pos point) (conj [index :c1])
                        (= cur-pos point) (conj [index :c2])))
@@ -100,7 +100,7 @@
   "Returns the commands involving a point with its indices"
   [content point]
   (->> (d/enumerate content)
-       (filterv (fn [[_ cmd]] (= (helpers/segment->point cmd) point)))))
+       (filterv (fn [[_ segment]] (= (helpers/segment->point segment) point)))))
 
 ;; FIXME: candidate to be optimized with native data type operation
 (defn handler->point
@@ -281,15 +281,15 @@
   [shape position]
 
   (let [point+distance
-        (fn [[cur-cmd prev-cmd]]
-          (let [from-p (helpers/segment->point prev-cmd)
-                to-p   (helpers/segment->point cur-cmd)
-                h1 (gpt/point (get-in cur-cmd [:params :c1x])
-                              (get-in cur-cmd [:params :c1y]))
-                h2 (gpt/point (get-in cur-cmd [:params :c2x])
-                              (get-in cur-cmd [:params :c2y]))
+        (fn [[cur-segment prev-segment]]
+          (let [from-p (helpers/segment->point prev-segment)
+                to-p   (helpers/segment->point cur-segment)
+                h1 (gpt/point (get-in cur-segment [:params :c1x])
+                              (get-in cur-segment [:params :c1y]))
+                h2 (gpt/point (get-in cur-segment [:params :c2x])
+                              (get-in cur-segment [:params :c2y]))
                 point
-                (case (:command cur-cmd)
+                (case (:command cur-segment)
                   :line-to
                   (line-closest-point position from-p to-p)
 
@@ -318,15 +318,15 @@
   [content position]
 
   (let [point+distance
-        (fn [[cur-cmd prev-cmd]]
-          (let [from-p (helpers/segment->point prev-cmd)
-                to-p   (helpers/segment->point cur-cmd)
-                h1 (gpt/point (get-in cur-cmd [:params :c1x])
-                              (get-in cur-cmd [:params :c1y]))
-                h2 (gpt/point (get-in cur-cmd [:params :c2x])
-                              (get-in cur-cmd [:params :c2y]))
+        (fn [[cur-segment prev-segment]]
+          (let [from-p (helpers/segment->point prev-segment)
+                to-p   (helpers/segment->point cur-segment)
+                h1 (gpt/point (get-in cur-segment [:params :c1x])
+                              (get-in cur-segment [:params :c1y]))
+                h2 (gpt/point (get-in cur-segment [:params :c2x])
+                              (get-in cur-segment [:params :c2y]))
                 point
-                (case (:command cur-cmd)
+                (case (:command cur-segment)
                   :line-to
                   (line-closest-point position from-p to-p)
 
@@ -518,17 +518,17 @@
            prev-point  nil
            start-point nil
            index       0
-           cur-cmd     (first content)
+           cur-segment (first content)
            content     (rest content)]
 
-      (let [command     (:command cur-cmd)
+      (let [command     (:command cur-segment)
             close-path? (= command :close-path)
             move-to?    (= command :move-to)
 
             ;; Close-path makes a segment from the last point to the initial path point
             cur-point (if close-path?
                         start-point
-                        (helpers/segment->point cur-cmd))
+                        (helpers/segment->point cur-segment))
 
             ;; If there is a move-to we don't have a segment
             prev-point (if move-to?
@@ -548,10 +548,10 @@
                        is-segment?
                        (conj {:start prev-point
                               :end cur-point
-                              :cmd cur-cmd
+                              :segment cur-segment
                               :index index}))]
 
-        (if (some? cur-cmd)
+        (if (some? cur-segment)
           (recur segments
                  cur-point
                  start-point
@@ -566,22 +566,22 @@
   [content points value]
 
   (let [split-command
-        (fn [{:keys [start end cmd index]}]
-          (case (:command cmd)
-            :line-to [index (helpers/split-line-to start cmd value)]
-            :curve-to [index (helpers/split-curve-to start cmd value)]
-            :close-path [index [(helpers/make-line-to (gpt/lerp start end value)) cmd]]
+        (fn [{:keys [start end segment index]}]
+          (case (:command segment)
+            :line-to [index (helpers/split-line-to start segment value)]
+            :curve-to [index (helpers/split-curve-to start segment value)]
+            :close-path [index [(helpers/make-line-to (gpt/lerp start end value)) segment]]
             nil))
 
-        cmd-changes
+        segment-changes
         (->> (get-segments content points)
              (into {} (comp (map split-command)
                             (filter (comp not nil?)))))
 
         process-segments
         (fn [[index command]]
-          (if (contains? cmd-changes index)
-            (get cmd-changes index)
+          (if (contains? segment-changes index)
+            (get segment-changes index)
             [command]))]
 
     (into [] (mapcat process-segments) (d/enumerate content))))
@@ -613,10 +613,10 @@
 
       (loop [result []
              last-handler nil
-             [cur-cmd prev-cmd] (first content)
+             [cur-segment prev-segment] (first content)
              content (rest content)]
 
-        (if (nil? cur-cmd)
+        (if (nil? cur-segment)
           ;; The result with be an array of arrays were every entry is a subpath
           (->> result
                ;; remove empty and only 1 node subpaths
@@ -625,17 +625,17 @@
                (flatten)
                (into []))
 
-          (let [move? (= :move-to (:command cur-cmd))
-                curve? (= :curve-to (:command cur-cmd))
+          (let [move? (= :move-to (:command cur-segment))
+                curve? (= :curve-to (:command cur-segment))
 
                 ;; When the old command was a move we start a subpath
                 result (if move? (conj result []) result)
 
                 subpath (peek result)
 
-                point (helpers/segment->point cur-cmd)
+                point (helpers/segment->point cur-segment)
 
-                old-prev-point (helpers/segment->point prev-cmd)
+                old-prev-point (helpers/segment->point prev-segment)
                 new-prev-point (helpers/segment->point (peek subpath))
 
                 remove? (contains? points point)
@@ -645,7 +645,7 @@
                 ;; use it for the first handler of the regenerated path
                 cur-handler (cond
                               (and (not last-handler) remove? curve?)
-                              (select-keys (:params cur-cmd) [:c1x :c1y])
+                              (select-keys (:params cur-segment) [:c1x :c1y])
 
                               (not remove?)
                               nil
@@ -653,22 +653,22 @@
                               :else
                               last-handler)
 
-                cur-cmd (cond-> cur-cmd
-                          ;; If we're starting a subpath and it's not a move make it a move
-                          (and (not move?) (empty? subpath))
-                          (assoc :command :move-to
-                                 :params (select-keys (:params cur-cmd) [:x :y]))
+                cur-segment (cond-> cur-segment
+                              ;; If we're starting a subpath and it's not a move make it a move
+                              (and (not move?) (empty? subpath))
+                              (assoc :command :move-to
+                                     :params (select-keys (:params cur-segment) [:x :y]))
 
-                          ;; If have a curve the first handler will be relative to the previous
-                          ;; point. We change the handler to the new previous point
-                          (and curve? (seq subpath) (not= old-prev-point new-prev-point))
-                          (update :params merge last-handler))
+                              ;; If have a curve the first handler will be relative to the previous
+                              ;; point. We change the handler to the new previous point
+                              (and curve? (seq subpath) (not= old-prev-point new-prev-point))
+                              (update :params merge last-handler))
 
                 head-idx (dec (count result))
 
                 result (cond-> result
                          (not remove?)
-                         (update head-idx conj cur-cmd))]
+                         (update head-idx conj cur-segment))]
             (recur result
                    cur-handler
                    (first content)
@@ -702,32 +702,32 @@
 
   (let [content (d/with-prev content)]
     (loop [result []
-           [cur-cmd prev-cmd] (first content)
+           [cur-segment prev-segment] (first content)
            content (rest content)]
 
-      (if (nil? cur-cmd)
+      (if (nil? cur-segment)
         (->> result
              (filter #(> (count %) 1))
              (flatten)
              (into []))
 
-        (let [prev-point (helpers/segment->point prev-cmd)
-              cur-point (helpers/segment->point cur-cmd)
+        (let [prev-point (helpers/segment->point prev-segment)
+              cur-point (helpers/segment->point cur-segment)
 
-              cur-cmd (cond-> cur-cmd
-                        (and (contains? points prev-point)
-                             (contains? points cur-point))
+              cur-segment (cond-> cur-segment
+                            (and (contains? points prev-point)
+                                 (contains? points cur-point))
 
-                        (assoc :command :move-to
-                               :params (select-keys (:params cur-cmd) [:x :y])))
+                            (assoc :command :move-to
+                                   :params (select-keys (:params cur-segment) [:x :y])))
 
-              move? (= :move-to (:command cur-cmd))
+              move? (= :move-to (:command cur-segment))
 
               result (if move? (conj result []) result)
               head-idx (dec (count result))
 
               result (-> result
-                         (update head-idx conj cur-cmd))]
+                         (update head-idx conj cur-segment))]
           (recur result
                  (first content)
                  (rest content)))))))
@@ -749,6 +749,7 @@
                             (not= % other))))
         (set/union target other)))
 
+;; FIXME: revisit impl of this fn
 (defn- group-segments [segments]
   (loop [result []
          {point-a :start point-b :end :as segment} (first segments)
@@ -789,12 +790,12 @@
   "Replaces the points in a path for its merge-point"
   [content point->merge-point]
   (let [replace-command
-        (fn [cmd]
-          (let [point (helpers/segment->point cmd)]
+        (fn [segment]
+          (let [point (helpers/segment->point segment)]
             (if (contains? point->merge-point point)
               (let [merge-point (get point->merge-point point)]
-                (-> cmd (update :params assoc :x (:x merge-point) :y (:y merge-point))))
-              cmd)))]
+                (-> segment (update :params assoc :x (:x merge-point) :y (:y merge-point))))
+              segment)))]
     (->> content
          (mapv replace-command))))
 
