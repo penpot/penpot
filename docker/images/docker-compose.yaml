@@ -87,7 +87,7 @@ services:
     networks:
       - penpot
 
-    labels:
+    # labels:
       # - "traefik.enable=true"
 
       # ## HTTPS: example of labels for the case where penpot will be exposed to the
