@@ -137,22 +137,6 @@
   (let [phv (gpt/to-vec point handler)]
     (gpt/add point (gpt/negate phv))))
 
-;; FIXME: revisit, this function is executed many times per render on
-;; path editor it is easy to be implemented in function of PathData
-;; type in a more efficient way
-
-(defn content->points
-  "Returns the points in the given content"
-  [content]
-  (letfn [(segment->point [seg]
-            (let [params (get seg :params)
-                  x      (get params :x)
-                  y      (get params :y)]
-              (when (d/num? x y)
-                (gpt/point x y))))]
-    (some->> (seq content)
-             (into [] (keep segment->point)))))
-
 (defn get-points
   "Returns points for the given segment, faster version of
   the `content->points`."
