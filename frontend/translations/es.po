@@ -7248,3 +7248,6 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "workspace.notification-pill.detail"
+msgstr "Detalles"
