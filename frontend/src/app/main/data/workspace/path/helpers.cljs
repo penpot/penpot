@@ -79,8 +79,8 @@
         [op-idx op-prefix] (path.segment/opposite-index content index prefix)
 
         node (path.segment/handler->node content index prefix)
-        handler (path.segment/handler->point content index prefix)
-        opposite (path.segment/handler->point content op-idx op-prefix)
+        handler (path.segment/get-handler-point content index prefix)
+        opposite (path.segment/get-handler-point content op-idx op-prefix)
 
         [ocx ocy] (path.helpers/prefix->coords op-prefix)
         [odx ody] (calculate-opposite-delta node handler opposite match-angle? match-distance? dx dy)

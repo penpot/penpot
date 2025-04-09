@@ -78,7 +78,7 @@
              prefix (or prefix :c1)
              position (or position (path.helpers/segment->point (nth content (dec index))))
 
-             old-handler (path.segment/handler->point content index prefix)
+             old-handler (path.segment/get-handler-point content index prefix)
 
              handler-position (cond-> (gpt/point x y)
                                 shift? (path.helpers/position-fixed-angle position))
