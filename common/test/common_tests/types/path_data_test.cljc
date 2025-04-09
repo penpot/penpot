@@ -303,3 +303,40 @@
                   :index 6}]]
 
     (t/is (= result expect))))
+
+(defn handler->point
+  "A legacy impl of handler point, used as reference for test"
+  [content index prefix]
+  (when (and (some? index)
+             (some? prefix))
+    (when (and (<= 0 index)
+               (< index (count content)))
+      (let [segment (nth content index)
+            params  (get segment :params)]
+        (if (= :curve-to (:command segment))
+          (let [[cx cy] (path.helpers/prefix->coords prefix)]
+            (gpt/point (get params cx)
+                       (get params cy)))
+          (gpt/point (get params :x)
+                     (get params :y)))))))
+
+(t/deftest handler-to-point
+  (let [content (path/content sample-content-2)
+        result1 (handler->point content 3 :c1)
+        result2 (handler->point content 1 :c1)
+        result3 (handler->point content 0 :c1)
+
+        expect1 (gpt/point 3.0 7.0)
+        expect2 (gpt/point 439.0 802.0)
+        expect3 (gpt/point 480.0 839.0)
+
+        result4 (path.segment/handler->point content 3 :c1)
+        result5 (path.segment/handler->point content 1 :c1)
+        result6 (path.segment/handler->point content 0 :c1)]
+
+    (t/is (= result1 expect1))
+    (t/is (= result2 expect2))
+    (t/is (= result3 expect3))
+    (t/is (= result4 expect1))
+    (t/is (= result5 expect2))
+    (t/is (= result6 expect3))))

@@ -102,21 +102,19 @@
   (->> (d/enumerate content)
        (filterv (fn [[_ segment]] (= (helpers/segment->point segment) point)))))
 
-;; FIXME: candidate to be optimized with native data type operation
 (defn handler->point
   [content index prefix]
   (when (and (some? index)
              (some? prefix))
-    (when (and (<= 0 index)
-               (< index (count content)))
-      (let [segment (nth content index)
-            params  (get segment :params)]
-        (if (= :curve-to (:command segment))
-          (let [[cx cy] (helpers/prefix->coords prefix)]
-            (gpt/point (get params cx)
-                       (get params cy)))
-          (gpt/point (get params :x)
-                     (get params :y)))))))
+    (impl/-lookup content index
+                  (fn [command c1x c1y c2x c2y x y]
+                    (let [prefix (if (= :curve-to command)
+                                   prefix
+                                   nil)]
+                      (case prefix
+                        :c1 (gpt/point c1x c1y)
+                        :c2 (gpt/point c2x c2y)
+                        (gpt/point x y)))))))
 
 ;; FIXME: revisit this function
 (defn handler->node
