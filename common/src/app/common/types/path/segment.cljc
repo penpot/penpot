@@ -34,24 +34,24 @@
       (gpt/point (get params cx)
                  (get params cy)))))
 
-;; FIXME: rename segments->handlers
-(defn content->handlers
+(defn get-handlers
   "Retrieve a map where for every point will retrieve a list of
   the handlers that are associated with that point.
   point -> [[index, prefix]]"
   [content]
-  (->> (d/with-prev content)
-       (d/enumerate)
-       (mapcat (fn [[index [cur-segment pre-segment]]]
-                 (if (and pre-segment (= :curve-to (:command cur-segment)))
-                   (let [cur-pos (helpers/segment->point cur-segment)
-                         pre-pos (helpers/segment->point pre-segment)]
-                     (-> [[pre-pos [index :c1]]
-                          [cur-pos [index :c2]]]))
-                   [])))
-
-       (group-by first)
-       (d/mapm #(mapv second %2))))
+  (let [prev-point* (volatile! nil)
+        vec-conj    (fnil conj [])]
+    (impl/-reduce content
+                  (fn [result index type _ _ _ _ x y]
+                    (let [curr-point (gpt/point x y)
+                          prev-point (deref prev-point*)]
+                      (vreset! prev-point* curr-point)
+                      (if (and prev-point (= :curve-to type))
+                        (-> result
+                            (update prev-point vec-conj [index :c1])
+                            (update curr-point vec-conj [index :c2]))
+                        result)))
+                  {})))
 
 (defn point-indices
   [content point]
@@ -81,7 +81,7 @@
                 (helpers/segment->point (nth content index))
                 (helpers/segment->point (nth content (dec index))))
 
-        point->handlers (content->handlers content)
+        point->handlers (get-handlers content)
 
         handlers (->> point
                       (point->handlers)
@@ -350,7 +350,7 @@
 (defn make-corner-point
   "Changes the content to make a point a 'corner'"
   [content point]
-  (let [handlers (-> (content->handlers content)
+  (let [handlers (-> (get-handlers content)
                      (get point))
         change-content
         (fn [content [index prefix]]
@@ -395,7 +395,7 @@
 ;; FIXME: optimize
 (defn is-curve?
   [content point]
-  (let [handlers (-> (content->handlers content)
+  (let [handlers (-> (get-handlers content)
                      (get point))
         handler-points (map #(get-handler-point content (first %) (second %)) handlers)]
     (some #(not= point %) handler-points)))
