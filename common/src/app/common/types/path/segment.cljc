@@ -507,76 +507,66 @@
                 (update next-i #(line->curve point %))))]
         (reduce add-curve content vectors)))))
 
-;; FIXME: revisit the impl of this function
-(defn get-segments
+(defn get-segments-with-points
   "Given a content and a set of points return all the segments in the path
   that uses the points"
   [content points]
   (let [point-set (set points)]
-
-    (loop [segments    []
+    (loop [result      (transient [])
            prev-point  nil
            start-point nil
            index       0
-           cur-segment (first content)
-           content     (rest content)]
+           content     (seq content)]
+      (if-let [{:keys [command] :as segment} (first content)]
+        (let [close-path? (= command :close-path)
+              move-to?    (= command :move-to)
 
-      (let [command     (:command cur-segment)
-            close-path? (= command :close-path)
-            move-to?    (= command :move-to)
+              cur-point   (if close-path?
+                            start-point
+                            (helpers/segment->point segment))
 
-            ;; Close-path makes a segment from the last point to the initial path point
-            cur-point (if close-path?
-                        start-point
-                        (helpers/segment->point cur-segment))
+              ;; If there is a move-to we don't have a segment
+              prev-point  (if move-to?
+                            nil
+                            prev-point)
 
-            ;; If there is a move-to we don't have a segment
-            prev-point (if move-to?
-                         nil
-                         prev-point)
+              ;; We update the start point
+              start-point  (if move-to?
+                             cur-point
+                             start-point)
 
-            ;; We update the start point
-            start-point (if move-to?
-                          cur-point
-                          start-point)
+              result      (cond-> result
+                            (and (some? prev-point)
+                                 (contains? point-set prev-point)
+                                 (contains? point-set cur-point))
 
-            is-segment? (and (some? prev-point)
-                             (contains? point-set prev-point)
-                             (contains? point-set cur-point))
-
-            segments (cond-> segments
-                       is-segment?
-                       (conj {:start prev-point
-                              :end cur-point
-                              :segment cur-segment
-                              :index index}))]
-
-        (if (some? cur-segment)
-          (recur segments
+                            (conj! (-> segment
+                                       (assoc :start prev-point)
+                                       (assoc :end cur-point)
+                                       (assoc :index index))))]
+          (recur result
                  cur-point
                  start-point
                  (inc index)
-                 (first content)
-                 (rest content))
+                 (rest content)))
 
-          segments)))))
+        (persistent! result)))))
 
 (defn split-segments
   "Given a content creates splits commands between points with new segments"
   [content points value]
 
   (let [split-command
-        (fn [{:keys [start end segment index]}]
-          (case (:command segment)
+        (fn [{:keys [command start end index] :as segment}]
+          (case command
             :line-to [index (helpers/split-line-to start segment value)]
             :curve-to [index (helpers/split-curve-to start segment value)]
             :close-path [index [(helpers/make-line-to (gpt/lerp start end value)) segment]]
             nil))
 
         segment-changes
-        (->> (get-segments content points)
-             (into {} (comp (map split-command)
-                            (filter (comp not nil?)))))
+        (->> (get-segments-with-points content points)
+             (into {} (keep split-command)))
 
         process-segments
         (fn [[index command]]
@@ -680,7 +670,7 @@
 
   (let [segments-set (into #{}
                            (map (juxt :start :end))
-                           (get-segments content points))
+                           (get-segments-with-points content points))
 
         create-line-command (fn [point other]
                               [(helpers/make-move-to point)
@@ -802,7 +792,7 @@
 (defn merge-nodes
   "Reduces the contiguous segments in points to a single point"
   [content points]
-  (let [segments (get-segments content points)]
+  (let [segments (get-segments-with-points content points)]
     (if (seq segments)
       (let [point->merge-point (-> segments
                                    (group-segments)

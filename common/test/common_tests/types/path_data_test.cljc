@@ -276,3 +276,30 @@
     (t/is (= result1 expect))
     (t/is (= result2 expect))
     (t/is (= result3 expect))))
+
+(def sample-content-square
+  [{:command :move-to, :params {:x 0, :y 0}}
+   {:command :line-to, :params {:x 10, :y 0}}
+   {:command :line-to, :params {:x 10, :y 10}}
+   {:command :line-to, :params {:x 10, :y 0}}
+   {:command :line-to, :params {:x 0, :y 10}}
+   {:command :line-to, :params {:x 0, :y 0}}
+   {:command :close-path :params {}}])
+
+(t/deftest get-segments
+  (let [content (path/content sample-content-square)
+        points  #{(gpt/point 10.0 0.0)
+                  (gpt/point 0.0 0.0)}
+        result  (path.segment/get-segments-with-points content points)
+        expect  [{:command :line-to,
+                  :params {:x 10.0, :y 0.0},
+                  :start (gpt/point 0.0 0.0)
+                  :end (gpt/point 10.0 0.0)
+                  :index 1}
+                 {:command :close-path,
+                  :params {},
+                  :start (gpt/point 0.0 0.0)
+                  :end (gpt/point 0.0 0.0)
+                  :index 6}]]
+
+    (t/is (= result expect))))
