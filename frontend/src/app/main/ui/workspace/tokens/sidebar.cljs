@@ -16,8 +16,7 @@
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown-menu :refer [dropdown-menu
-                                                 dropdown-menu-item*]]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -378,6 +377,7 @@
                             (fn [err]
                               (js/console.error err)
                               (st/emit! (ntf/show {:content (wte/humanize-errors [(ex-data err)])
+                                                   :detail (wte/detail-errors [(ex-data err)])
                                                    :type :toast
                                                    :level :error})))))
              (-> (mf/ref-val input-ref)

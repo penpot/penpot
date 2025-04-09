@@ -7272,3 +7272,7 @@ msgstr "Autosaved versions will be kept for %s days."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "workspace.notification-pill.detail"
+msgstr "Details"
+
