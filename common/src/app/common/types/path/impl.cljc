@@ -180,14 +180,16 @@
               y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
                    :cljs (.getFloat32 buffer (+ offset 24)))]
           {:command :move-to
-           :params {:x x :y y}})
+           :params {:x (double x)
+                    :y (double y)}})
 
       2 (let [x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
                    :cljs (.getFloat32 buffer (+ offset 20)))
               y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
                    :cljs (.getFloat32 buffer (+ offset 24)))]
           {:command :line-to
-           :params {:x x :y y}})
+           :params {:x (double x)
+                    :y (double y)}})
 
       3 (let [c1x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 4))
                      :cljs (.getFloat32 buffer (+ offset 4)))
@@ -202,7 +204,12 @@
               y   #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
                      :cljs (.getFloat32 buffer (+ offset 24)))]
           {:command :curve-to
-           :params {:x x :y y :c1x c1x :c1y c1y :c2x c2x :c2y c2y}})
+           :params {:x (double x)
+                    :y (double y)
+                    :c1x (double c1x)
+                    :c1y (double c1y)
+                    :c2x (double c2x)
+                    :c2y (double c2y)}})
 
       4 {:command :close-path
          :params {}})))
@@ -273,13 +280,13 @@
          (if (< index size)
            (let [offset (* index SEGMENT-BYTE-SIZE)
                  type   (.getShort ^ByteBuffer buffer offset)
-                 c1x    (.getFloat ^ByteBuffer buffer (+ offset 4))
-                 c1y    (.getFloat ^ByteBuffer buffer (+ offset 8))
-                 c2x    (.getFloat ^ByteBuffer buffer (+ offset 12))
-                 c2y    (.getFloat ^ByteBuffer buffer (+ offset 16))
-                 x      (.getFloat ^ByteBuffer buffer (+ offset 20))
-                 y      (.getFloat ^ByteBuffer buffer (+ offset 24))
-                 type   (case type
+                 c1x    (double (.getFloat ^ByteBuffer buffer (+ offset 4)))
+                 c1y    (double (.getFloat ^ByteBuffer buffer (+ offset 8)))
+                 c2x    (double (.getFloat ^ByteBuffer buffer (+ offset 12)))
+                 c2y    (double (.getFloat ^ByteBuffer buffer (+ offset 16)))
+                 x      (double (.getFloat ^ByteBuffer buffer (+ offset 20)))
+                 y      (double (.getFloat ^ByteBuffer buffer (+ offset 24)))
+                 type   (case (int type)
                           1 :line-to
                           2 :move-to
                           3 :curve-to
@@ -297,13 +304,13 @@
          (if (< index size)
            (let [offset (* index SEGMENT-BYTE-SIZE)
                  type   (.getShort ^ByteBuffer buffer offset)
-                 c1x    (.getFloat ^ByteBuffer buffer (+ offset 4))
-                 c1y    (.getFloat ^ByteBuffer buffer (+ offset 8))
-                 c2x    (.getFloat ^ByteBuffer buffer (+ offset 12))
-                 c2y    (.getFloat ^ByteBuffer buffer (+ offset 16))
-                 x      (.getFloat ^ByteBuffer buffer (+ offset 20))
-                 y      (.getFloat ^ByteBuffer buffer (+ offset 24))
-                 type   (case type
+                 c1x    (double (.getFloat ^ByteBuffer buffer (+ offset 4)))
+                 c1y    (double (.getFloat ^ByteBuffer buffer (+ offset 8)))
+                 c2x    (double (.getFloat ^ByteBuffer buffer (+ offset 12)))
+                 c2y    (double (.getFloat ^ByteBuffer buffer (+ offset 16)))
+                 x      (double (.getFloat ^ByteBuffer buffer (+ offset 20)))
+                 y      (double (.getFloat ^ByteBuffer buffer (+ offset 24)))
+                 type   (case (int type)
                           1 :line-to
                           2 :move-to
                           3 :curve-to
@@ -319,13 +326,13 @@
                   (< index size))
          (let [offset (* index SEGMENT-BYTE-SIZE)
                type   (.getShort ^ByteBuffer buffer offset)
-               c1x    (.getFloat ^ByteBuffer buffer (+ offset 4))
-               c1y    (.getFloat ^ByteBuffer buffer (+ offset 8))
-               c2x    (.getFloat ^ByteBuffer buffer (+ offset 12))
-               c2y    (.getFloat ^ByteBuffer buffer (+ offset 16))
-               x      (.getFloat ^ByteBuffer buffer (+ offset 20))
-               y      (.getFloat ^ByteBuffer buffer (+ offset 24))
-               type   (case type
+               c1x    (double (.getFloat ^ByteBuffer buffer (+ offset 4)))
+               c1y    (double (.getFloat ^ByteBuffer buffer (+ offset 8)))
+               c2x    (double (.getFloat ^ByteBuffer buffer (+ offset 12)))
+               c2y    (double (.getFloat ^ByteBuffer buffer (+ offset 16)))
+               x      (double (.getFloat ^ByteBuffer buffer (+ offset 20)))
+               y      (double (.getFloat ^ByteBuffer buffer (+ offset 24)))
+               type   (case (int type)
                         1 :line-to
                         2 :move-to
                         3 :curve-to
