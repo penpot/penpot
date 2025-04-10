@@ -60,7 +60,7 @@
 
         accept-edit
         (mf/use-fn
-         (mf/deps shape-id on-stop-edit variant-properties)
+         (mf/deps shape-id on-stop-edit component-id variant-id variant-name variant-properties)
          (fn []
            (let [name-input     (mf/ref-val ref)
                  name           (str/trim (dom/get-value name-input))]

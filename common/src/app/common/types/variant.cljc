@@ -111,5 +111,35 @@
 (defn valid-properties-string?
   "Checks if a string of properties has a processable format or not"
   [s]
-  (let [pattern #"^(\w+=\w+)(,\s*\w+=\w+)*$"]
+  (let [pattern #"^([a-zA-Z0-9\s]+=[a-zA-Z0-9\s]+)(,\s*[a-zA-Z0-9\s]+=[a-zA-Z0-9\s]+)*$"]
     (not (nil? (re-matches pattern s)))))
+
+
+(defn find-properties-to-remove
+  "Compares two property maps to find which properties should be removed"
+  [prev-props upd-props]
+  (let [upd-names (set (map :name upd-props))]
+    (filterv #(not (contains? upd-names (:name %))) prev-props)))
+
+
+(defn find-properties-to-update
+  "Compares two property maps to find which properties should be updated"
+  [prev-props upd-props]
+  (filterv #(some (fn [prop] (and (= (:name %) (:name prop))
+                                  (not= (:value %) (:value prop)))) prev-props) upd-props))
+
+
+(defn find-properties-to-add
+  "Compares two property maps to find which properties should be added"
+  [prev-props upd-props]
+  (let [prev-names (set (map :name prev-props))]
+    (filterv #(not (contains? prev-names (:name %))) upd-props)))
+
+
+(defn find-index-for-property-name
+  "Finds the index of a name in a property map"
+  [props name]
+  (some (fn [[idx prop]]
+          (when (= (:name prop) name)
+            idx))
+        (map-indexed vector props)))

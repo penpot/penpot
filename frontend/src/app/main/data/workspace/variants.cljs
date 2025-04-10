@@ -17,6 +17,7 @@
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape.layout :as ctsl]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
@@ -31,25 +32,6 @@
    [app.util.dom :as dom]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
-
-(defn- find-properties-to-remove
-  [prev-props upd-props]
-  (filterv #(not (some (fn [prop] (= (:name %) (:name prop))) upd-props)) prev-props))
-
-(defn- find-properties-to-update
-  [prev-props upd-props]
-  (filterv #(some (fn [prop] (and (= (:name %) (:name prop))
-                                  (not= (:value %) (:value prop)))) prev-props) upd-props))
-
-(defn- find-properties-to-add
-  [prev-props upd-props]
-  (filterv #(not (some (fn [prop] (= (:name %) (:name prop))) prev-props)) upd-props))
-
-(defn- find-property-index [props name]
-  (some (fn [[idx prop]]
-          (when (= (:name prop) name)
-            idx))
-        (keep-indexed vector props)))
 
 (defn update-properties-names-and-values
   "Compares the previous properties with the updated ones and executes the correspondent action
@@ -67,27 +49,27 @@
             objects (-> (dsh/get-page data page-id)
                         (get :objects))
 
-            properties-to-remove (find-properties-to-remove previous-properties updated-properties)
-            properties-to-add    (find-properties-to-add previous-properties updated-properties)
-            properties-to-update (find-properties-to-update previous-properties updated-properties)
+            properties-to-remove (ctv/find-properties-to-remove previous-properties updated-properties)
+            properties-to-add    (ctv/find-properties-to-add previous-properties updated-properties)
+            properties-to-update (ctv/find-properties-to-update previous-properties updated-properties)
 
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-objects objects)
                         (pcb/with-library-data data))
 
             changes (reduce
-                     (fn [changes [_ {:keys [name]}]]
+                     (fn [changes {:keys [name]}]
                        (-> changes
-                           (clvp/generate-update-property-value component-id (find-property-index previous-properties name) "")))
+                           (clvp/generate-update-property-value component-id (ctv/find-index-for-property-name previous-properties name) "")))
                      changes
-                     (map-indexed vector properties-to-remove))
+                     properties-to-remove)
 
             changes (reduce
-                     (fn [changes [_ {:keys [name value]}]]
+                     (fn [changes {:keys [name value]}]
                        (-> changes
-                           (clvp/generate-update-property-value component-id (find-property-index previous-properties name) value)))
+                           (clvp/generate-update-property-value component-id (ctv/find-index-for-property-name previous-properties name) value)))
                      changes
-                     (map-indexed vector properties-to-update))
+                     properties-to-update)
 
             changes (reduce
                      (fn [changes [idx {:keys [name value]}]]

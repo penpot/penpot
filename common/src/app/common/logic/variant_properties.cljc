@@ -66,7 +66,7 @@
 
         props              (-> related-components first :variant-properties)
         next-prop-num      (ctv/next-property-number props)
-        property-name      (d/nilv property-name (str ctv/property-prefix next-prop-num))
+        property-name      (or property-name (str ctv/property-prefix next-prop-num))
 
         [_ changes]
         (reduce (fn [[num changes] component]
