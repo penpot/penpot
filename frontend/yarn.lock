@@ -2443,9 +2443,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tokens-studio/sd-transforms@npm:1.2.11":
-  version: 1.2.11
-  resolution: "@tokens-studio/sd-transforms@npm:1.2.11"
+"@tokens-studio/sd-transforms@npm:1.2.12":
+  version: 1.2.12
+  resolution: "@tokens-studio/sd-transforms@npm:1.2.12"
   dependencies:
     "@bundled-es-modules/deepmerge": "npm:^4.3.1"
     "@bundled-es-modules/postcss-calc-ast-parser": "npm:^0.1.6"
@@ -2454,8 +2454,8 @@ __metadata:
     expr-eval-fork: "npm:^2.0.2"
     is-mergeable-object: "npm:^1.1.1"
   peerDependencies:
-    style-dictionary: ">=4.3.0 < 6"
-  checksum: 10c0/58c278a2d738bb2f84e0e01c84d2a96191495440a9a52087cf9ee0e51ae272392cb93d17a3978e1f814e4a4c885aa349227bc0c7f0998a21cfc308988687c0e9
+    style-dictionary: ^4.3.0 || ^5.0.0-rc.0
+  checksum: 10c0/971a09c7d17e3aca621bc2982be5dddd90294ce82a0780ffc48eec0752126ee02bbcbdd0b92eca948499a40d16a9261beb072356ad72e5f606661ba942d0c57b
   languageName: node
   linkType: hard
 
@@ -5888,7 +5888,7 @@ __metadata:
     "@storybook/react-vite": "npm:^8.5.2"
     "@storybook/test": "npm:^8.5.2"
     "@storybook/test-runner": "npm:^0.21.0"
-    "@tokens-studio/sd-transforms": "npm:1.2.11"
+    "@tokens-studio/sd-transforms": "npm:1.2.12"
     "@types/node": "npm:^22.12.0"
     autoprefixer: "npm:^10.4.20"
     compression: "npm:^1.7.5"

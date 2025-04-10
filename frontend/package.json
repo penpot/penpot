@@ -105,7 +105,7 @@
     "@penpot/mousetrap": "portal:./vendor/mousetrap",
     "@penpot/svgo": "penpot/svgo#v3.1",
     "@penpot/text-editor": "portal:./text-editor",
-    "@tokens-studio/sd-transforms": "1.2.11",
+    "@tokens-studio/sd-transforms": "1.2.12",
     "compression": "^1.7.5",
     "date-fns": "^4.1.0",
     "eventsource-parser": "^3.0.0",
