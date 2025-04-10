@@ -348,8 +348,6 @@
                 (h/call wasm/internal-module "_add_shape_stroke_solid_fill" rgba)))))
         strokes))
 
-
-
 (defn set-shape-path-attrs
   [attrs]
   (let [style (:style attrs)
@@ -753,7 +751,8 @@
     (when (and (some? content)
                (or (= type :path)
                    (= type :bool)))
-      (set-shape-path-attrs svg-attrs)
+      (when (some? svg-attrs)
+        (set-shape-path-attrs svg-attrs))
       (set-shape-path-content content))
     (when (and (some? content) (= type :svg-raw))
       (set-shape-svg-raw-content (get-static-markup shape)))
