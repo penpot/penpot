@@ -36,10 +36,6 @@
   margin-bottom: $s-24;
 }
 
-.modal-hint {
-  @include bodyLargeTypography;
-}
-
 .action-buttons {
   @extend .modal-action-btns;
 }

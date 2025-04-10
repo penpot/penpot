@@ -35,10 +35,6 @@
   margin-bottom: $s-24;
 }
 
-.modal-hint {
-  @extend .modal-hint-base;
-}
-
 .element-list {
   @include bodyLargeTypography;
   color: var(--modal-text-foreground-color);

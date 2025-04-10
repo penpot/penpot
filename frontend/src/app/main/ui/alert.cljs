@@ -10,6 +10,7 @@
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.components.link :as lk]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -72,7 +73,9 @@
          [:h3 {:class (stl/css :modal-scd-msg)} scd-message])
 
        (when (string? hint)
-         [:p {:class (stl/css :modal-hint)} hint])]
+         [:> context-notification* {:level :info
+                                    :appearance :ghost}
+          hint])]
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}

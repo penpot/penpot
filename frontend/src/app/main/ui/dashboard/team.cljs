@@ -881,9 +881,10 @@
      [:div {:class (stl/css :modal-container)}
       [:& fm/form {:form form :on-submit on-submit}
        [:div {:class (stl/css :modal-header)}
-        (if webhook
-          [:h2 {:class (stl/css :modal-title)} (tr "modals.edit-webhook.title")]
-          [:h2 {:class (stl/css :modal-title)} (tr "modals.create-webhook.title")])
+        [:h2 {:class (stl/css :modal-title)}
+         (if webhook
+           (tr "modals.edit-webhook.title")
+           (tr "modals.create-webhook.title"))]
 
         [:button {:class (stl/css :modal-close-btn)
                   :on-click on-modal-close} i/close]]
