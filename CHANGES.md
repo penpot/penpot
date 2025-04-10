@@ -10,7 +10,7 @@
 
 ### :sparkles: New features
 
-- Optimize profiling for better user experience [Taiga #10028](https://tree.taiga.io/project/penpot/us/10028)
+-  Optimize profile setup flow for better user experience [Taiga #10028](https://tree.taiga.io/project/penpot/us/10028)
 
 ### :bug: Bugs fixed
 

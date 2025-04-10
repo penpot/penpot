@@ -25,32 +25,6 @@
 
 ;; --- PAGE: Register
 
-(mf/defc newsletter-options
-  {::mf/props :obj
-   ::mf/private true}
-  []
-  (let [updates-label
-        (mf/html
-         [:> i18n/tr-html*
-          {:tag-name "div"
-           :content (tr "onboarding-v2.newsletter.updates")}])
-        news-label
-        (mf/html
-         [:> i18n/tr-html*
-          {:tag-name "div"
-           :content (tr "onboarding-v2.newsletter.news")}])]
-    [:* [:div {:class (stl/css :fields-row :input-visible :newsletter-option-wrapper)}
-         [:& fm/input {:name :accept-newsletter-updates
-                       :type "checkbox"
-                       :default-checked false
-                       :label updates-label}]]
-
-     [:div {:class (stl/css :fields-row :input-visible :newsletter-option-wrapper)}
-      [:& fm/input {:name :accept-newsletter-news
-                    :type "checkbox"
-                    :default-checked false
-                    :label news-label}]]]))
-
 (mf/defc terms-and-privacy
   {::mf/props :obj
    ::mf/private true}
@@ -77,8 +51,7 @@
    [:email ::sm/email]
    [:accept-terms-and-privacy {:optional (not (contains? cf/flags :terms-and-privacy-checkbox))}
     [:and :boolean [:= true]]]
-   [:accept-newsletter-updates {:optional true :default false} [:and :boolean [:= true]]]
-   [:accept-newsletter-news {:optional true :default false} [:and :boolean [:= true]]]
+   [:accept-newsletter-updates {:optional true} :boolean]
    [:token {:optional true} ::sm/text]])
 
 (mf/defc register-form
@@ -87,6 +60,12 @@
   (let [initial (mf/use-memo (mf/deps params) (constantly params))
         form    (fm/use-form :schema schema:register-form
                              :initial initial)
+
+        updates-label
+        (mf/html
+         [:> i18n/tr-html*
+          {:tag-name "div"
+           :content (tr "onboarding-v2.newsletter.updates")}])
 
         submitted?
         (mf/use-state false)
@@ -146,8 +125,7 @@
                  (cond-> form
                    create-welcome-file? (assoc :create-welcome-file true))]
              (->> (rp/cmd! :register-profile params)
-                  (rx/finalize #(reset! submitted? false))
-                  (rx/subs! on-success on-error)))))
+                  (rx/subs! on-success on-error #(reset! submitted? false))))))
 
         on-submit
         (mf/use-fn
@@ -186,7 +164,11 @@
      (when (contains? cf/flags :terms-and-privacy-checkbox)
        [:& terms-and-privacy])
 
-     [:& newsletter-options]
+     [:div {:class (stl/css :fields-row :input-visible :newsletter-option-wrapper)}
+         [:& fm/input {:name :accept-newsletter-updates
+                       :type "checkbox"
+                       :default-checked false
+                       :label updates-label}]]
 
 
      [:> fm/submit-button*

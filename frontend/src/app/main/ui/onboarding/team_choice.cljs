@@ -230,7 +230,7 @@
 
 (mf/defc onboarding-team-modal
   {::mf/props :obj}
-  [{:keys [go-to-team?]}]
+  [{:keys [go-to-team]}]
 
   [:div {:class (stl/css-case
                  :modal-overlay true)}
@@ -241,5 +241,5 @@
     [:div {:class (stl/css :modal-sections)}
      [:& left-sidebar]
      [:div {:class (stl/css :separator)}]
-     [:& team-form {:go-to-team? go-to-team?}]]]])
+     [:& team-form {:go-to-team go-to-team}]]]])
 
