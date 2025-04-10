@@ -1,9 +1,7 @@
-use crate::get_now;
-
 #[allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
 pub fn get_time() -> i32 {
-    get_now!() as i32
+    crate::get_now!() as i32
 }
 
 #[allow(dead_code)]
