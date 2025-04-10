@@ -602,7 +602,8 @@
            (= edition shape-id))
       nil
 
-      (= edition shape-id)
+      (and (= edition shape-id)
+           (cfh/path-shape? shape))
       [:> path-editor*
        {:zoom zoom
         :shape shape}]
