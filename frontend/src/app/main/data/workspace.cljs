@@ -423,7 +423,8 @@
            :workspace-tokens
            :workspace-undo)
           (update :workspace-global dissoc :read-only?)
-          (assoc-in [:workspace-global :options-mode] :design)))
+          (assoc-in [:workspace-global :options-mode] :design)
+          (update :files d/update-vals #(dissoc % :data))))
 
     ptk/WatchEvent
     (watch [_ state _]

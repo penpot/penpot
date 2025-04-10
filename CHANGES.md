@@ -6,6 +6,7 @@
 
 - Fix webhooks not shown in list [Taiga #10763](https://tree.taiga.io/project/penpot/issue/10763)
 - Fix colorpicker scroll when dropdown displayed [Taiga #10696](https://tree.taiga.io/project/penpot/issue/10696)
+- Clean internal workspace state on exit or url changed [Taiga #10619](https://tree.taiga.io/project/penpot/issue/10619)
 
 ## 2.6.0
 
