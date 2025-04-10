@@ -1932,6 +1932,9 @@ msgstr "Drafts"
 msgid "labels.edit"
 msgstr "Edit"
 
+msgid "labels.error"
+msgstr "Error"
+
 #, unused
 msgid "labels.edit-file"
 msgstr "Edit file"
@@ -7276,3 +7279,11 @@ msgstr "Click to close the path"
 msgid "workspace.notification-pill.detail"
 msgstr "Details"
 
+msgid "dashboard.import.import-error.disclaimer"
+msgstr "Not all files have been imported"
+
+msgid "dashboard.import.import-error.message1"
+msgstr "The following files have errors:"
+
+msgid "dashboard.import.import-error.message2"
+msgstr "Files with errors will not be uploaded."

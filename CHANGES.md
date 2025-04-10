@@ -20,6 +20,7 @@
 - Fix problem with error detail in toast [Taiga #10519](https://tree.taiga.io/project/penpot/issue/10519)
 - Fix view mode error when an external user tries to export something from a prototype using a shared link [Taiga #10251](https://tree.taiga.io/project/penpot/issue/10251)
 - Fix merge path nodes with only one node selected [Taiga #9626](https://tree.taiga.io/project/penpot/issue/9626)
+- Fix problem with import errors [Taiga #10040](https://tree.taiga.io/project/penpot/issue/10040)
 
 ## 2.6.1
 
