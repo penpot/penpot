@@ -130,7 +130,7 @@
   [data _]
   (letfn [(migrate-path [shape]
             (if-not (contains? shape :content)
-              (let [content (path.segment/segments->content (:segments shape) (:close? shape))
+              (let [content (path.segment/points->content (:segments shape) :close (:close? shape))
                     selrect (path.segment/content->selrect content)
                     points  (grc/rect->points selrect)]
                 (-> shape

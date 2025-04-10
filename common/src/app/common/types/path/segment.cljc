@@ -8,6 +8,7 @@
   "A collection of helpers for work with plain segment type"
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -96,11 +97,12 @@
 
       :else nil)))
 
+;; FIXME: rename to get-point
 (defn get-handler-point
   "Given a segment index and prefix, get a handler point"
   [content index prefix]
   (when (and (some? index)
-             (some? prefix))
+             (some? content))
     (impl/-lookup content index
                   (fn [command c1x c1y c2x c2y x y]
                     (let [prefix (if (= :curve-to command)
@@ -140,25 +142,6 @@
                   (when (not= type :close-path)
                     (gpt/point x y)))
                 [])))
-
-(defn segments->content
-  ([segments]
-   (segments->content segments false))
-
-  ([segments closed?]
-   (let [initial (first segments)
-         lines (rest segments)]
-
-     (d/concat-vec
-      [{:command :move-to
-        :params (select-keys initial [:x :y])}]
-
-      (->> lines
-           (map #(hash-map :command :line-to
-                           :params (select-keys % [:x :y]))))
-
-      (when closed?
-        [{:command :close-path}])))))
 
 ;; FIXME: incorrect API, don't need full shape
 (defn path->lines
@@ -880,3 +863,27 @@
                   :else
                   content)]
     (conj content (impl/check-segment segment))))
+
+(defn points->content
+  "Given a vector of points generate a path content.
+
+  Mainly used for generate a path content from user drawing points
+  using curve drawing tool."
+  [points & {:keys [close]}]
+  (let [initial (first points)
+        point->params
+        (fn [point]
+          {:x (dm/get-prop point :x)
+           :y (dm/get-prop point :y)})]
+    (loop [points (rest points)
+           result [{:command :move-to
+                    :params (point->params initial)}]]
+      (if-let [point (first points)]
+        (recur (rest points)
+               (conj result {:command :line-to
+                             :params (point->params point)}))
+
+        (let [result (if close
+                       (conj result {:command :close-path})
+                       result)]
+          (impl/from-plain result))))))
