@@ -449,11 +449,13 @@
 (defn merge-nodes
   "Reduces the contiguous segments in points to a single point"
   [content points]
-  (let [point->merge-point (-> content
-                               (get-segments points)
-                               (group-segments)
-                               (calculate-merge-points points))]
-    (-> content
-        (separate-nodes points)
-        (replace-points point->merge-point))))
+  (let [segments (get-segments content points)]
+    (if (seq segments)
+      (let [point->merge-point (-> segments
+                                   (group-segments)
+                                   (calculate-merge-points points))]
+        (-> content
+            (separate-nodes points)
+            (replace-points point->merge-point)))
+      content)))
 
