@@ -21,7 +21,6 @@
    [app.main.ui.workspace.shapes.path.common :as pc]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
-   [app.util.path.format :as upf]
    [clojure.set :refer [map-invert]]
    [goog.events :as events]
    [rumext.v2 :as mf]))
@@ -331,7 +330,7 @@
          (reset! hover-point (when (< (gpt/distance position point) (/ 10 zoom)) point)))))
 
     [:g.path-editor {:ref editor-ref}
-     [:path {:d (upf/format-path content)
+     [:path {:d (.toString content)
              :style {:fill "none"
                      :stroke pc/accent-color
                      :strokeWidth (/ 1 zoom)}}]

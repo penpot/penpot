@@ -51,7 +51,6 @@
    [app.plugins.text :as text]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
-   [app.util.path.format :as upf]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
@@ -1019,7 +1018,7 @@
                  (u/display-not-valid :makeMask (:type shape))
 
                  :else
-                 (upf/format-path (:content shape)))))
+                 (str (:content shape)))))
 
            ;; Text shapes
            :getRange
@@ -1310,7 +1309,7 @@
          (cond-> (or (cfh/path-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
             {:name "content"
-             :get #(-> % u/proxy->shape :content upf/format-path)
+             :get #(-> % u/proxy->shape :content str)
              :set
              (fn [_ value]
                (let [content (svg.path/parse value)]
