@@ -219,7 +219,8 @@ pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
 
 #[no_mangle]
 pub extern "C" fn set_children() {
-    let bytes = mem::bytes();
+    let bytes = mem::bytes_or_empty();
+
     let entries: IndexSet<Uuid> = bytes
         .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
         .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
@@ -237,13 +238,10 @@ pub extern "C" fn set_children() {
             state.delete_shape(id);
         }
     });
-}
 
-#[no_mangle]
-pub extern "C" fn clear_shape_children() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.clear_children();
-    });
+    if !bytes.is_empty() {
+        mem::free_bytes();
+    }
 }
 
 #[no_mangle]

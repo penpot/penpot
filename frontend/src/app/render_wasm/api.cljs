@@ -198,9 +198,8 @@
           (when-not (empty? entries)
             (let [id (first entries)]
               (sr/heapu32-set-uuid id heap (mem/ptr8->ptr32 current-offset))
-              (recur (rest entries) (+ current-offset CHILD-ENTRY-SIZE)))))
-
-        (h/call wasm/internal-module "_set_children")))))
+              (recur (rest entries) (+ current-offset CHILD-ENTRY-SIZE)))))))
+    (h/call wasm/internal-module "_set_children")))
 
 (defn- get-string-length [string] (+ (count string) 1))
 

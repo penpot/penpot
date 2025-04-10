@@ -444,10 +444,6 @@ impl Shape {
         (added, removed)
     }
 
-    pub fn clear_children(&mut self) {
-        self.children.clear();
-    }
-
     pub fn fills(&self) -> std::slice::Iter<Fill> {
         self.fills.iter()
     }
