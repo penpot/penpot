@@ -5,6 +5,7 @@
 ### :bug: Bugs fixed
 
 - Increase the height of the right sidebar dropdowns [Taiga #10615](https://tree.taiga.io/project/penpot/issue/10615)
+- Fix scroll on token themes modal [Taiga #10745](https://tree.taiga.io/project/penpot/issue/10745)
 
 ## 2.6.1
 
