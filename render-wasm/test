@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -x
+
 _SCRIPT_DIR=$(dirname $0);
 pushd $_SCRIPT_DIR;
 
@@ -8,4 +10,8 @@ export SKIA_BINARIES_URL="https://github.com/penpot/skia-binaries/releases/downl
 export _CARGO_PARAMS="--target=x86_64-unknown-linux-gnu";
 
 cargo test $_CARGO_PARAMS --bin render_wasm -- --show-output
+
+# Exit with the same status code as cargo test
+exit $?
+
 popd
