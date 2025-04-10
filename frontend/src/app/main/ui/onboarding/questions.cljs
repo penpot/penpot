@@ -101,7 +101,7 @@
                         :on-next on-next
                         :class (stl/css :step-1)}
 
-     [:div {:class (stl/css :paginator)} (str/ffmt "1/%" (if @show-step-3 5 4))]
+     [:div {:class (stl/css :paginator)} (str/ffmt "1/%" (if @show-step-3 4 3))]
 
      [:img {:class (stl/css :header-image)
             :src "images/form/use-for-1.png"
@@ -183,7 +183,7 @@
                         :on-prev on-prev
                         :class (stl/css :step-2)}
 
-     [:div {:class (stl/css :paginator)} (str/ffmt "2/%" (if @show-step-3 5 4))]
+     [:div {:class (stl/css :paginator)} (str/ffmt "2/%" (if @show-step-3 4 3))]
 
 
      [:h1 {:class (stl/css :modal-title)}
@@ -264,7 +264,7 @@
                         :on-prev on-prev
                         :class (stl/css :step-3)}
 
-     [:div {:class (stl/css :paginator)} (str/ffmt "3/%" (if @show-step-3 5 4))]
+     [:div {:class (stl/css :paginator)} (str/ffmt "3/%" (if @show-step-3 4 3))]
 
      [:h1 {:class (stl/css :modal-title)}
       (tr "onboarding.questions.step3.title")]
@@ -340,7 +340,7 @@
                         :on-prev on-prev
                         :class (stl/css :step-4)}
 
-     [:div {:class (stl/css :paginator)} (str/ffmt "%/%" (if @show-step-3 4 3) (if @show-step-3 5 4))]
+     [:div {:class (stl/css :paginator)} (str/ffmt "%/%" (if @show-step-3 4 3) (if @show-step-3 4 3))]
 
      [:h1 {:class (stl/css :modal-title)} (tr "onboarding.questions.step4.title")]
      [:div {:class (stl/css :radio-wrapper)}
@@ -357,63 +357,7 @@
                       :show-error false
                       :placeholder (tr "labels.other")}])]]))
 
-(def ^:private schema:questions-form-5
-  [:and
-   [:map {:title "QuestionsFormStep5"}
-    [:referer
-     [:enum "youtube" "event" "search" "social" "article" "other"]]
-    [:referer-other {:optional true} [::sm/text {:max 512}]]]
 
-   [:fn {:error/field :referer-other}
-    (fn [{:keys [referer referer-other]}]
-      (or (not= referer "other")
-          (and (= referer "other")
-               (not (str/blank? referer-other)))))]])
-
-(mf/defc step-5
-  {::mf/props :obj}
-  [{:keys [on-next on-prev form show-step-3]}]
-  (let [referer-options
-        (mf/with-memo []
-          (-> (shuffle [{:label (tr "labels.youtube") :value "youtube"}
-                        {:label (tr "labels.event") :value "event"}
-                        {:label (tr "onboarding.questions.referer.search") :value "search"}
-                        {:label (tr "onboarding.questions.referer.social") :value "social"}
-                        {:label (tr "onboarding.questions.referer.article") :value "article"}])
-              (conj {:label (tr "labels.other-short") :value "other"})))
-
-        current-referer
-        (dm/get-in @form [:data :referer])
-
-        on-referer-change
-        (mf/use-fn
-         (mf/deps current-referer)
-         (fn []
-           (when (not= current-referer "other")
-             (swap! form d/dissoc-in [:data :referer-other])
-             (swap! form d/dissoc-in [:errors :referer-other]))))]
-
-    [:& step-container {:form form
-                        :step 5
-                        :label "questions:referer"
-                        :on-next on-next
-                        :on-prev on-prev
-                        :class (stl/css :step-5)}
-
-     [:div {:class (stl/css :paginator)} (str/ffmt "%/%" (if @show-step-3 5 4) (if @show-step-3 5 4))]
-
-     [:h1 {:class (stl/css :modal-title)} (tr "onboarding.questions.step5.title")]
-     [:div {:class (stl/css :radio-wrapper)}
-      [:& fm/radio-buttons {:options referer-options
-                            :class (stl/css :radio-btns)
-                            :name :referer
-                            :on-change on-referer-change}]
-      (when (= current-referer "other")
-        [:& fm/input {:name :referer-other
-                      :class (stl/css :input-spacing)
-                      :label ""
-                      :show-error false
-                      :placeholder (tr "labels.other")}])]]))
 
 (mf/defc questions-modal
   []
@@ -439,10 +383,6 @@
         step-4-form (fm/use-form
                      :initial {}
                      :schema schema:questions-form-4)
-
-        step-5-form (fm/use-form
-                     :initial {}
-                     :schema schema:questions-form-5)
 
         on-next
         (mf/use-fn
@@ -477,9 +417,6 @@
         2 [:& step-2 {:on-next on-next :on-prev on-prev :form step-2-form :show-step-3 show-step-3}]
         3 (if @show-step-3
             [:& step-3 {:on-next on-next :on-prev on-prev :form step-3-form :show-step-3 show-step-3}]
-            [:& step-4 {:on-next on-next :on-prev on-prev :form step-4-form :show-step-3 show-step-3}])
-        4 (if @show-step-3
-            [:& step-4 {:on-next on-next :on-prev on-prev :form step-4-form :show-step-3 show-step-3}]
-            [:& step-5 {:on-next on-submit :on-prev on-prev :form step-5-form :show-step-3 show-step-3}])
+            [:& step-4 {:on-next on-submit :on-prev on-prev :form step-4-form :show-step-3 show-step-3}])
         (when @show-step-3
-          5 [:& step-5 {:on-next on-submit :on-prev on-prev :form step-5-form :show-step-3 show-step-3}]))]]))
+          4 [:& step-4 {:on-next on-submit :on-prev on-prev :form step-4-form :show-step-3 show-step-3}]))]]))
