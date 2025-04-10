@@ -10,7 +10,6 @@
 
 ### :sparkles: New features
 
-
 - Update board presets with a newer devices [Taiga #10610](https://tree.taiga.io/project/penpot/us/10610)
 - Propagate "sharing a prototype" to editors and viewers [Taiga #8853](https://tree.taiga.io/project/penpot/us/8853)
 - Design improvements to the Invitations page with an empty state [Taiga #4554](https://tree.taiga.io/project/penpot/us/4554)
@@ -18,7 +17,7 @@
 - Add set selection in create Token themes flow [Taiga #10746](https://tree.taiga.io/project/penpot/issue/10746)
 - Display indicator on not active sets [Taiga #10668](https://tree.taiga.io/project/penpot/issue/10668)
 - Create `input*` wrapper component, and `label*`, `input-field*` and `hint-message*` components [Taiga #10713](https://tree.taiga.io/project/penpot/us/10713)
-- Optimize profiling for better user experience [Taiga #10028](https://tree.taiga.io/project/penpot/us/10028)
+- Optimize profile setup flow for better user experience [Taiga #10028](https://tree.taiga.io/project/penpot/us/10028)
 
 ### :bug: Bugs fixed
 

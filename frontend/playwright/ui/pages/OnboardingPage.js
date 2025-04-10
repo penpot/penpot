@@ -23,11 +23,6 @@ export class OnboardingPage extends BaseWebSocketPage {
   async fillOnboardingInputsStep3() {
     await this.page.getByText("Other").click();
     await this.page.getByPlaceholder("Other (specify)").fill("Another");
-    await this.submitButton.click();
-  }
-
-  async fillOnboardingInputsStep4() {
-    await this.page.getByText("Event").click();
   }
 }
 

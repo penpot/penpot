@@ -31,10 +31,6 @@ test("User can complete the onboarding", async ({ page }) => {
   ).toBeVisible();
 
   await onboardingPage.fillOnboardingInputsStep3();
-  await expect(
-    page.getByRole("heading", { name: "How did you hear about Penpot?" }),
-  ).toBeVisible();
 
-  await onboardingPage.fillOnboardingInputsStep4();
   await expect(page.getByRole("button", { name: "Start" })).toBeEnabled();
 });

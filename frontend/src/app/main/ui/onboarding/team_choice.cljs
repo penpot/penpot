@@ -66,7 +66,7 @@
 (mf/defc team-form
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [go-to-team?]}]
+  [{:keys [go-to-team]}]
   (let [initial (mf/with-memo []
                   {:role "editor"})
 
@@ -83,7 +83,8 @@
            (let [team-id (:id response)]
              (st/emit! (du/update-profile-props {:onboarding-team-id team-id
                                                  :onboarding-viewed true})
-                       (when go-to-team?
+                       (println go-to-team)
+                       (when go-to-team
                          (dcm/go-to-dashboard-recent :team-id team-id))))))
 
         on-error
@@ -230,7 +231,7 @@
 
 (mf/defc onboarding-team-modal
   {::mf/props :obj}
-  [{:keys [go-to-team?]}]
+  [{:keys [go-to-team]}]
 
   [:div {:class (stl/css-case
                  :modal-overlay true)}
@@ -241,5 +242,5 @@
     [:div {:class (stl/css :modal-sections)}
      [:& left-sidebar]
      [:div {:class (stl/css :separator)}]
-     [:& team-form {:go-to-team? go-to-team?}]]]])
+     [:& team-form {:go-to-team go-to-team}]]]])
 

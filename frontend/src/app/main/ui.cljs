@@ -23,6 +23,7 @@
    [app.main.ui.exports.files]
    [app.main.ui.frame-preview :as frame-preview]
    [app.main.ui.notifications :as notifications]
+   [app.main.ui.onboarding.newsletter :refer [onboarding-newsletter]]
    [app.main.ui.onboarding.questions :refer [questions-modal]]
    [app.main.ui.onboarding.team-choice :refer [onboarding-team-modal]]
    [app.main.ui.releases :refer [release-notes-modal]]
@@ -156,6 +157,12 @@
              (not (:onboarding-viewed props))
              (not (contains? props :onboarding-questions)))
 
+        show-newsletter-modal?
+        (and (contains? cf/flags :onboarding)
+             (not (:onboarding-viewed props))
+             (not (contains? props :newsletter-updates))
+             (contains? props :onboarding-questions))
+
         show-team-modal?
         (and (contains? cf/flags :onboarding)
              (not (:onboarding-viewed props))
@@ -221,8 +228,11 @@
             show-question-modal?
             [:& questions-modal]
 
+            show-newsletter-modal?
+            [:& onboarding-newsletter]
+
             show-team-modal?
-            [:& onboarding-team-modal {:go-to-team? true}]
+            [:& onboarding-team-modal {:go-to-team true}]
 
             show-release-modal?
             [:& release-notes-modal {:version (:main cf/version)}])
@@ -249,7 +259,7 @@
               [:& questions-modal]
 
               show-team-modal?
-              [:& onboarding-team-modal {:go-to-team? false}]
+              [:& onboarding-team-modal {:go-to-team false}]
 
               show-release-modal?
               [:& release-notes-modal {:version (:main cf/version)}]))

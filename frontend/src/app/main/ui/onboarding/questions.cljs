@@ -50,7 +50,7 @@
          (tr "labels.previous")])
 
       [:> fm/submit-button*
-       {:label (if (< step 5)
+       {:label (if (< step 4)
                  (tr "labels.next")
                  (tr "labels.start"))
         :class (stl/css :next-button)}]]]))
