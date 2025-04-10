@@ -62,8 +62,8 @@
         variant-id            (when is-variant? (:variant-id item))
         variant-name          (when is-variant? (:variant-name item))
 
-        workspace-data        (deref refs/workspace-data)
-        component             (ctkl/get-component workspace-data (:component-id item))
+        data                  (deref refs/workspace-data)
+        component             (ctkl/get-component data (:component-id item))
         variant-properties    (:variant-properties component)]
     [:*
      [:div {:id id
