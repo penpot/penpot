@@ -286,6 +286,17 @@
    {:command :line-to, :params {:x 0, :y 0}}
    {:command :close-path :params {}}])
 
+(t/deftest points-to-content
+  (let [initial  [(gpt/point 0.0 0.0)
+                  (gpt/point 10.0 10.0)
+                  (gpt/point 10.0 5.0)]
+        content  (path.segment/points->content initial)
+        segments (vec content)]
+    (t/is (= 3 (count segments)))
+    (t/is (= {:command :move-to, :params {:x 0.0, :y 0.0}} (nth segments 0)))
+    (t/is (= {:command :line-to, :params {:x 10.0, :y 10.0}} (nth segments 1)))
+    (t/is (= {:command :line-to, :params {:x 10.0, :y 5.0}} (nth segments 2)))))
+
 (t/deftest get-segments
   (let [content (path/content sample-content-square)
         points  #{(gpt/point 10.0 0.0)
