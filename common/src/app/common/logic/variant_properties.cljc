@@ -59,14 +59,14 @@
 
 
 (defn generate-add-new-property
-  [changes variant-id & {:keys [fill-values?]}]
+  [changes variant-id & {:keys [fill-values? property-name]}]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
         related-components (cfv/find-variant-components data objects variant-id)
 
         props              (-> related-components first :variant-properties)
         next-prop-num      (ctv/next-property-number props)
-        property-name      (str ctv/property-prefix next-prop-num)
+        property-name      (or property-name (str ctv/property-prefix next-prop-num))
 
         [_ changes]
         (reduce (fn [[num changes] component]

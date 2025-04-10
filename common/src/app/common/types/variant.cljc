@@ -86,3 +86,60 @@
         new-properties (map-indexed (fn [i v] {:name (str property-prefix (+ next-prop-num i))
                                                :value v}) remaining)]
     (into assigned new-properties)))
+
+
+(defn properties-map-to-string
+  "Transforms a map of properties to a string of properties omitting the empty ones"
+  [properties]
+  (->> properties
+       (keep (fn [{:keys [name value]}]
+               (when (not (str/blank? value))
+                 (str name "=" value))))
+       (str/join ", ")))
+
+
+(defn properties-string-to-map
+  "Transforms a string of properties to a map of properties"
+  [s]
+  (->> (str/split s ",")
+       (mapv #(str/split % "="))
+       (mapv (fn [[k v]]
+               {:name (str/trim k)
+                :value (str/trim v)}))))
+
+
+(defn valid-properties-string?
+  "Checks if a string of properties has a processable format or not"
+  [s]
+  (let [pattern #"^([a-zA-Z0-9\s]+=[a-zA-Z0-9\s]+)(,\s*[a-zA-Z0-9\s]+=[a-zA-Z0-9\s]+)*$"]
+    (not (nil? (re-matches pattern s)))))
+
+
+(defn find-properties-to-remove
+  "Compares two property maps to find which properties should be removed"
+  [prev-props upd-props]
+  (let [upd-names (set (map :name upd-props))]
+    (filterv #(not (contains? upd-names (:name %))) prev-props)))
+
+
+(defn find-properties-to-update
+  "Compares two property maps to find which properties should be updated"
+  [prev-props upd-props]
+  (filterv #(some (fn [prop] (and (= (:name %) (:name prop))
+                                  (not= (:value %) (:value prop)))) prev-props) upd-props))
+
+
+(defn find-properties-to-add
+  "Compares two property maps to find which properties should be added"
+  [prev-props upd-props]
+  (let [prev-names (set (map :name prev-props))]
+    (filterv #(not (contains? prev-names (:name %))) upd-props)))
+
+
+(defn find-index-for-property-name
+  "Finds the index of a name in a property map"
+  [props name]
+  (some (fn [[idx prop]]
+          (when (= (:name prop) name)
+            idx))
+        (map-indexed vector props)))
