@@ -1955,6 +1955,9 @@ msgstr "Borradores"
 msgid "labels.edit"
 msgstr "Editar"
 
+msgid "labels.error"
+msgstr "Error"
+
 #, unused
 msgid "labels.edit-file"
 msgstr "Editar archivo"
@@ -7251,3 +7254,12 @@ msgstr "Pulsar para cerrar la ruta"
 
 msgid "workspace.notification-pill.detail"
 msgstr "Detalles"
+
+msgid "dashboard.import.import-error.disclaimer"
+msgstr "No todos los ficheros han sido importados"
+
+msgid "dashboard.import.import-error.message1"
+msgstr "Estos ficheros tienen errores:"
+
+msgid "dashboard.import.import-error.message2"
+msgstr "Los ficheros con error no serán importados."
