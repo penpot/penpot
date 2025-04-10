@@ -511,9 +511,7 @@ test.describe("Tokens: Sets Tab", () => {
     // Creates nesting by renaming set with double click
     await tokenThemesSetsSidebar
       .getByRole("button", { name: "light-renamed" })
-      .click({ button: "right" });
-    await expect(tokenContextMenuForSet).toBeVisible();
-    await tokenContextMenuForSet.getByText("Rename").click();
+      .dblclick();
     await changeSetInput(tokenThemesSetsSidebar, "nested/light");
 
     await assertSetsList(tokenThemesSetsSidebar, [
@@ -555,6 +553,45 @@ test.describe("Tokens: Sets Tab", () => {
       "dark",
       "sizes",
       "small",
+    ]);
+  });
+
+  test("User can create & edit sets and set groups with an identical name", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokenContextMenuForSet } =
+      await setupEmptyTokensFile(page);
+
+    const tokensTabButton = tokenThemesSetsSidebar
+      .getByRole("button", { name: "Add set" })
+      .click();
+
+    await createSet(tokenThemesSetsSidebar, "core/colors");
+    await createSet(tokenThemesSetsSidebar, "core");
+    await assertSetsList(tokenThemesSetsSidebar, ["core", "colors", "core"]);
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "core" })
+      .nth(0)
+      .dblclick();
+    await changeSetInput(tokenThemesSetsSidebar, "core-group-renamed");
+    await assertSetsList(tokenThemesSetsSidebar, [
+      "core-group-renamed",
+      "colors",
+      "core",
+    ]);
+
+    await page.keyboard.press(`ControlOrMeta+z`);
+    await assertSetsList(tokenThemesSetsSidebar, ["core", "colors", "core"]);
+
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "core" })
+      .nth(1)
+      .dblclick();
+    await changeSetInput(tokenThemesSetsSidebar, "core-set-renamed");
+    await assertSetsList(tokenThemesSetsSidebar, [
+      "core",
+      "colors",
+      "core-set-renamed",
     ]);
   });
 
