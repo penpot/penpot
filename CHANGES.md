@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.6.2
+
+### :bug: Bugs fixed
+
+- Increase the height of the right sidebar dropdowns [Taiga #10615](https://tree.taiga.io/project/penpot/issue/10615)
+
 ## 2.6.1
 
 ### :bug: Bugs fixed
@@ -57,6 +63,7 @@
 - Internal error when install a plugin by penpothub - Try plugin [Taiga #10542](https://tree.taiga.io/project/penpot/issue/10542)
 - Add character limitation to asset inputs [Taiga #10669](https://tree.taiga.io/project/penpot/issue/10669)
 - Fix Storybook link 'list of all available icons' wrong path [Taiga #10705](https://tree.taiga.io/project/penpot/issue/10705)
+
 
 ## 2.5.4
 
