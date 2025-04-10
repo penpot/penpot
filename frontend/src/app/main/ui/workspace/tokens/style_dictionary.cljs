@@ -25,7 +25,11 @@
   "Initiates the StyleDictionary instance.
   Setup transforms from tokens-studio used to parse and resolved token values."
   (do
+    ;; Create a custom transform group based on tokens-studio transforms
+    ;; Excluding the css transforms which dont work well with this runtime implementation
     (sd-transforms/register sd)
+    (.registerTransformGroup sd #js {:name "runtime"
+                                     :transforms (sd-transforms/getTransforms #js {:platform "none"})})
     (.registerFormat sd #js {:name "custom/json"
                              :format (fn [^js res]
                                        (.-tokens (.-dictionary res)))})
@@ -33,7 +37,7 @@
 
 (def default-config
   {:platforms {:json
-               {:transformGroup "tokens-studio"
+               {:transformGroup "runtime"
                 ;; Required: The StyleDictionary API is focused on files even when working in the browser
                 :files [{:format "custom/json" :destination "penpot"}]}}
    :preprocessors ["tokens-studio"]
