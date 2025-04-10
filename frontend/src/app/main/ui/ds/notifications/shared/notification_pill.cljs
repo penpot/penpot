@@ -37,9 +37,9 @@
   {::mf/props :obj
    ::mf/schema schema:notification-pill}
   [{:keys [level type is-html appearance detail children show-detail on-toggle-detail]}]
-  (let [class (stl/css-case :notification-pill true
-                            :appearance-neutral (= appearance :neutral)
+  (let [class (stl/css-case :appearance-neutral (= appearance :neutral)
                             :appearance-ghost (= appearance :ghost)
+                            :with-detail detail
                             :type-toast (= type :toast)
                             :type-context (= type :context)
                             :level-default  (= level :default)

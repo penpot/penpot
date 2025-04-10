@@ -88,6 +88,9 @@
   display: grid;
   max-height: 92vh;
   overflow: hidden;
+}
+
+.with-detail {
   grid-template-rows: auto 1fr;
 }
 
