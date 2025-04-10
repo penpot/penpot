@@ -381,8 +381,6 @@
     (h/call wasm/internal-module "stringToUTF8" content offset size)
     (h/call wasm/internal-module "_set_shape_svg_raw_content")))
 
-
-
 (defn set-shape-blend-mode
   [blend-mode]
   ;; These values correspond to skia::BlendMode representation
@@ -693,6 +691,57 @@
         (recur (inc index))))
     (f/store-fonts fonts)))
 
+(defn set-shape-text-leaves
+  [leaves]
+  (let [num-attrs 14
+        size (* (count leaves) num-attrs 4)
+        offset (mem/alloc-bytes size)
+        heap (mem/get-heap-u8)
+        attrs (flatten
+               (map (fn [leaf]
+                      (concat
+                       (sr/i32->u8 (f/serialize-font-style (:font-style leaf)))
+                       (sr/i32->u8 (f/serialize-text-align (:text-align leaf)))
+                       (sr/i32->u8 (f/serialize-text-transform (:text-transform leaf)))
+                       (sr/i32->u8 (f/serialize-text-decoration (:text-decoration leaf)))
+                       (sr/i32->u8 (f/serialize-text-direction (:text-direction leaf)))
+                       (sr/f32->u8 (:font-size leaf))
+                       (sr/f32->u8 (:line-height leaf))
+                       (sr/f32->u8 (:letter-spacing leaf))
+                       (sr/i32->u8 (:font-weight leaf))
+                       (sr/i32->u8 (hash (:font-id leaf)))
+                       (sr/i32->u8 (hash (:font-family leaf)))
+                       (sr/i32->u8 (hash (:font-variant-id leaf)))
+                       (sr/i32->u8 (hash (:typography-ref-file leaf)))
+                       (sr/i32->u8 (hash (:typography-ref-id leaf)))))
+                    leaves))]
+    (.set heap (js/Uint8Array. attrs) offset)))
+
+(defn set-shape-text-paragraph
+  [paragraph]
+  (let []
+    ;; TODO
+    ;; text-align
+    ;; text-direction
+    ;; strokes
+    ))
+
+(defn set-shape-text-content-new
+  [content]
+  (h/call wasm/internal-module "_clear_shape_text")
+  (let [paragraph-set (first (dm/get-prop content :children))
+        paragraphs (dm/get-prop paragraph-set :children)
+        serialized-leaves (transient [])]
+    (loop [index 0]
+      (when (< index (count paragraphs))
+        (let [paragraph (nth paragraphs index)
+              leaves (dm/get-prop paragraph :children)]
+          (set-shape-text-paragraph paragraph)
+          (when (seq leaves)
+            (set-shape-text-leaves leaves)
+            (h/call wasm/internal-module "_set_shape_text_content")
+            (recur (inc index))))))))
+
 (defn set-view-box
   [zoom vbox]
   (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
@@ -765,7 +814,8 @@
     (when (some? corners) (set-shape-corners corners))
     (when (some? shadows) (set-shape-shadows shadows))
     (when (and (= type :text) (some? content))
-      (set-shape-text-content content))
+      (set-shape-text-content content)
+      (set-shape-text-content-new content))
 
     (when (or (ctl/any-layout? shape)
               (ctl/any-layout-immediate-child? objects shape))

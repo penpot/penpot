@@ -839,6 +839,22 @@ pub extern "C" fn set_grid_cells() {
     mem::free_bytes();
 }
 
+#[no_mangle]
+pub extern "C" fn set_shape_text_content() {
+    with_current_shape!(state, |shape: &mut Shape| {
+        let bytes = mem::bytes();
+
+        let entries: Vec<_> = bytes
+            .chunks(size_of::<shapes::TextLeafData>())
+            .map(|data| shapes::TextLeafData::from_bytes(data.try_into().unwrap()))
+            .collect();
+
+        println!("Parsed entries: {:?}", entries);
+    });
+
+    mem::free_bytes();
+}
+
 fn main() {
     #[cfg(target_arch = "wasm32")]
     init_gl!();

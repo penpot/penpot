@@ -13,6 +13,7 @@
    [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.render-wasm.helpers :as h]
+   [app.render-wasm.mem :as mem]
    [app.render-wasm.wasm :as wasm]
    [app.util.http :as http]
    [app.util.webapi :as wapi]
@@ -151,3 +152,27 @@
                            :style style
                            :weight weight}]
             (store-font-id font-data asset-id))) fonts))
+
+(defn- serialize-enum
+  [value enum-map]
+  (get enum-map value 0))
+
+(defn- serialize-font-style-new
+  [font-style]
+  (serialize-enum font-style {"normal" 0 "regular" 0 "italic" 1}))
+
+(defn- serialize-text-align
+  [text-align]
+  (serialize-enum text-align {"left" 0 "center" 1 "right" 2 "justify" 3}))
+
+(defn- serialize-text-transform
+  [text-transform]
+  (serialize-enum text-transform {"none" 0 "uppercase" 1 "lowercase" 2 "capitalize" 3}))
+
+(defn- serialize-text-decoration
+  [text-decoration]
+  (serialize-enum text-decoration {"none" 0 "underline" 1 "line-through" 2 "overline" 3}))
+
+(defn- serialize-text-direction
+  [text-direction]
+  (serialize-enum text-direction {"ltr" 0 "rtl" 1}))
