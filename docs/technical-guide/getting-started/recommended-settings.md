@@ -1,13 +1,11 @@
 ---
-title: 1.1 Recommended Settings
+title: 1.1 Recommended storage
 ---
 
-# Recommended settings
+# Recommended storage
 
-To self-host Penpot, you’ll need a server with the following specifications:
+Disk requirements depend on your usage, with the primary factors being database storage and user-uploaded files.
 
-* **CPU:** 1-2 CPUs
-* **RAM:** 4 GiB of RAM
-* **Disk Space:** Disk requirements depend on your usage. Disk usage primarily involves the database and any files uploaded by users.
+As a rule of thumb, start with a **minimum** database size of **50GB** to **100GB** with elastic sizing capability — this configuration should adequately support up to 10 editors. For environments with **more than 10 users**, we recommend adding approximately **5GB** of capacity per additional editor.
 
-This setup should be sufficient for a smooth experience with typical usage (your mileage may vary).
+Keep in mind that database size doesn't grow strictly proportionally with user count, as it depends heavily on how Penpot is used and the complexity of files created. Most organizations begin with this baseline and elastic sizing approach, then monitor usage patterns monthly until resource requirements stabilize.
