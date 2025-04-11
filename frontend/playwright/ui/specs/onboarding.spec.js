@@ -27,19 +27,14 @@ test("User can complete the onboarding", async ({ page }) => {
 
   await onboardingPage.fillOnboardingInputsStep2();
   await expect(
-    page.getByRole("heading", { name: "Tell us about your job" }),
+    page.getByRole("heading", { name: "Where would you like to get" }),
   ).toBeVisible();
 
   await onboardingPage.fillOnboardingInputsStep3();
   await expect(
-    page.getByRole("heading", { name: "Where would you like to get" }),
-  ).toBeVisible();
-
-  await onboardingPage.fillOnboardingInputsStep4();
-  await expect(
     page.getByRole("heading", { name: "How did you hear about Penpot?" }),
   ).toBeVisible();
 
-  await onboardingPage.fillOnboardingInputsStep5();
+  await onboardingPage.fillOnboardingInputsStep4();
   await expect(page.getByRole("button", { name: "Start" })).toBeEnabled();
 });
