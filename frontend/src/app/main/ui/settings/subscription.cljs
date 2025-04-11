@@ -41,92 +41,92 @@
         go-to-payments         "https://penpot.app/pricing"]
 
     (mf/with-effect []
-      (dom/set-html-title (tr "labels.subscription")))
+      (dom/set-html-title (tr "subscription.labels")))
     [:section {:class (stl/css :dashboard-section)}
      [:div {:class (stl/css :dashboard-content)}
-      [:h2 {:class (stl/css :title-section)} (tr "labels.subscription")]
+      [:h2 {:class (stl/css :title-section)} (tr "subscription.labels")]
 
 
       [:div {:class (stl/css :your-subscription)}
-       [:h3 {:class (stl/css :plan-section-title)} (tr "settings.subscription.section-plan")]
+       [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.section-plan")]
        (case subscription-name
          :professional
-         [:> plan-card* {:card-title (tr "settings.subscription.professional")
-                         :benefits [(tr "settings.subscription.professional.projects-files"),
-                                    (tr "settings.subscription.professional.teams-editors"),
-                                    (tr "settings.subscription.professional.storage")]}]
+         [:> plan-card* {:card-title (tr "subscription.settings.professional")
+                         :benefits [(tr "subscription.settings.professional.projects-files"),
+                                    (tr "subscription.settings.professional.teams-editors"),
+                                    (tr "subscription.settings.professional.storage")]}]
 
          :unlimited
          (if subscription-is-trial
-           [:> plan-card* {:card-title (tr "settings.subscription.unlimited-trial")
+           [:> plan-card* {:card-title (tr "subscription.settings.unlimited-trial")
                            :card-title-icon i/character-u
-                           :benefits-title (tr "settings.subscription.benefits.all-professional-benefits")
-                           :benefits [(tr "settings.subscription.unlimited.teams"),
-                                      (tr "settings.subscription.unlimited.bill"),
-                                      (tr "settings.subscription.unlimited.storage")]
-                           :cta-text (tr "settings.subscription.manage-your-subscription")
+                           :benefits-title (tr "subscription.settings.benefits.all-professional-benefits")
+                           :benefits [(tr "subscription.settings.unlimited.teams"),
+                                      (tr "subscription.settings.unlimited.bill"),
+                                      (tr "subscription.settings.unlimited.storage")]
+                           :cta-text (tr "subscription.settings.manage-your-subscription")
                            :cta-link go-to-payments}]
 
-           [:> plan-card* {:card-title (tr "settings.subscription.unlimited")
+           [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
                            :card-title-icon i/character-u
-                           :benefits-title (tr "settings.subscription.benefits.all-unlimited-benefits")
-                           :benefits [(tr "settings.subscription.unlimited.teams"),
-                                      (tr "settings.subscription.unlimited.bill"),
-                                      (tr "settings.subscription.unlimited.storage")]
-                           :cta-text (tr "settings.subscription.manage-your-subscription")
+                           :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")
+                           :benefits [(tr "subscription.settings.unlimited.teams"),
+                                      (tr "subscription.settings.unlimited.bill"),
+                                      (tr "subscription.settings.unlimited.storage")]
+                           :cta-text (tr "subscription.settings.manage-your-subscription")
                            :cta-link go-to-payments}])
 
          :enterprise
-         [:> plan-card* {:card-title (tr "settings.subscription.enterprise")
+         [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                          :card-title-icon i/character-e
-                         :benefits-title (tr "settings.subscription.benefits.all-professiona-benefits")
-                         :benefits [(tr "settings.subscription.enterprise.support"),
-                                    (tr "settings.subscription.enterprise.security"),
-                                    (tr "settings.subscription.enterprise.logs")]
-                         :cta-text (tr "settings.subscription.manage-your-subscription")
+                         :benefits-title (tr "subscription.settings.benefits.all-professiona-benefits")
+                         :benefits [(tr "subscription.settings.enterprise.support"),
+                                    (tr "subscription.settings.enterprise.security"),
+                                    (tr "subscription.settings.enterprise.logs")]
+                         :cta-text (tr "subscription.settings.manage-your-subscription")
                          :cta-link go-to-payments}])
 
        [:div {:class (stl/css :membership-container)}
         (when subscription-member [:div {:class (stl/css :membership)}
                                    [:span {:class (stl/css :subscription-member)} i/crown]
-                                   [:span {:class (stl/css :membership-date)} (tr "settings.subscription.support-us-since" subscription-member)]])
+                                   [:span {:class (stl/css :membership-date)} (tr "subscription.settings.support-us-since" subscription-member)]])
 
         [:div {:class (stl/css :membership)}
          [:span {:class (stl/css :penpot-member)} i/user]
-         [:span {:class (stl/css :membership-date)} (tr "settings.subscription.member-since" penpot-member)]]]]
+         [:span {:class (stl/css :membership-date)} (tr "subscription.settings.member-since" penpot-member)]]]]
 
       [:div {:class (stl/css :other-subscriptions)}
-       [:h3 {:class (stl/css :plan-section-title)} (tr "settings.subscription.other-plans")]
+       [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.other-plans")]
        (when (not= subscription-name :professional)
-         [:> plan-card* {:card-title (tr "settings.subscription.professional")
+         [:> plan-card* {:card-title (tr "subscription.settings.professional")
                          :price-value "$0"
-                         :price-period (tr "settings.subscription.price-editor-month")
-                         :benefits [(tr "settings.subscription.professional.projects-files"),
-                                    (tr "settings.subscription.professional.teams-editors"),
-                                    (tr "settings.subscription.professional.storage")]
-                         :cta-text (tr "dashboard.power-up.subscribe")
+                         :price-period (tr "subscription.settings.price-editor-month")
+                         :benefits [(tr "subscription.settings.professional.projects-files"),
+                                    (tr "subscription.settings.professional.teams-editors"),
+                                    (tr "subscription.settings.professional.storage")]
+                         :cta-text (tr "subscription.dashboard.power-up.subscribe")
                          :cta-link go-to-payments}])
 
        (when (not= subscription-name :unlimited)
-         [:> plan-card* {:card-title (tr "settings.subscription.unlimited")
+         [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
                          :card-title-icon i/character-u
                          :price-value "$7"
-                         :price-period (tr "settings.subscription.price-editor-month")
-                         :benefits-title (tr "settings.subscription.benefits.all-professiona-benefits")
-                         :benefits [(tr "settings.subscription.unlimited.teams"),
-                                    (tr "settings.subscription.unlimited.bill"),
-                                    (tr "settings.subscription.unlimited.storage")]
-                         :cta-text (tr "settings.subscription.ulimited.try-it-free")
+                         :price-period (tr "subscription.settings.price-editor-month")
+                         :benefits-title (tr "subscription.settings.benefits.all-professiona-benefits")
+                         :benefits [(tr "subscription.settings.unlimited.teams"),
+                                    (tr "subscription.settings.unlimited.bill"),
+                                    (tr "subscription.settings.unlimited.storage")]
+                         :cta-text (tr "subscription.settings.ulimited.try-it-free")
                          :cta-link go-to-payments}])
 
        (when (not= subscription-name :enterprise)
-         [:> plan-card* {:card-title (tr "settings.subscription.enterprise")
+         [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                          :card-title-icon i/character-e
                          :price-value "$950"
-                         :price-period (tr "settings.subscription.price-organization-month")
-                         :benefits-title (tr "settings.subscription.benefits.all-professiona-benefits")
-                         :benefits [(tr "settings.subscription.enterprise.support"),
-                                    (tr "settings.subscription.enterprise.security"),
-                                    (tr "settings.subscription.enterprise.logs")]
-                         :cta-text (tr "dashboard.power-up.subscribe")
+                         :price-period (tr "subscription.settings.price-organization-month")
+                         :benefits-title (tr "subscription.settings.benefits.all-professiona-benefits")
+                         :benefits [(tr "subscription.settings.enterprise.support"),
+                                    (tr "subscription.settings.enterprise.security"),
+                                    (tr "subscription.settings.enterprise.logs")]
+                         :cta-text (tr "subscription.dashboard.power-up.subscribe")
                          :cta-link go-to-payments}])]]]))

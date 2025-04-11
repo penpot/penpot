@@ -113,7 +113,7 @@
                                     :settings-item true)
                :on-click go-settings-subscription
                :data-testid "settings-subscription"}
-          [:span {:class (stl/css :element-title)} (tr "labels.subscription")]])
+          [:span {:class (stl/css :element-title)} (tr "subscription.labels")]])
 
        (when (contains? cf/flags :access-tokens)
          [:li {:class (stl/css-case :current access-tokens?

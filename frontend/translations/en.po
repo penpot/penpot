@@ -1055,42 +1055,42 @@ msgstr "Penpot Free"
 msgid "dashboard.upgrade-plan.power-up"
 msgstr "Power up"
 
-msgid "dashboard.power-up.professional.top-title"
+msgid "subscription.dashboard.power-up.professional.top-title"
 msgstr "Professional plan"
 
 #, markdown
-msgid "dashboard.power-up.professional.bottom-description"
+msgid "subscription.dashboard.power-up.professional.bottom-description"
 msgstr "Get extra editors and storage, file backup and more with the **Unlimited plan**"
 
-msgid "dashboard.power-up.unlimited-plan"
+msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Unlimited plan"
 
-msgid "dashboard.power-up.unlimited.top-description"
+msgid "subscription.dashboard.power-up.unlimited.top-description"
 msgstr "Extra editors, storage and autosaved version, file backup and more."
 
 #, markdown
-msgid "dashboard.power-up.unlimited.bottom-description"
+msgid "subscription.dashboard.power-up.unlimited.bottom-description"
 msgstr "Get advanced security, activity logs, dedicated support and more with **Enterprise plan**"
 
-msgid "dashboard.power-up.enterprise-plan"
+msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "Enterprise plan"
 
-msgid "dashboard.power-up.unlimited.cta"
+msgid "subscription.dashboard.power-up.unlimited.cta"
 msgstr "Take a look"
 
-msgid "dashboard.power-up.enterprise.description"
+msgid "subscription.dashboard.power-up.enterprise.description"
 msgstr "Advanced security, activity logs, dedicated support and more."
 
-msgid "dashboard.power-up.trial.top-title"
+msgid "subscription.dashboard.power-up.trial.top-title"
 msgstr "Unlimited plan (trial)"
 
-msgid "dashboard.power-up.trial.top-description"
+msgid "subscription.dashboard.power-up.trial.top-description"
 msgstr "Extra editors, storage and autosaved version, file backup and more."
 
-msgid "dashboard.power-up.trial.bottom-description"
+msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr "Enjoying your trial? Unlock full access forever."
 
-msgid "dashboard.power-up.subscribe"
+msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Subscribe"
 
 #: src/app/main/ui/dashboard/team.cljs:909
@@ -2358,7 +2358,7 @@ msgstr "Sets"
 msgid "labels.settings"
 msgstr "Settings"
 
-msgid "labels.subscription"
+msgid "subscription.labels"
 msgstr "Subscription"
 
 #: src/app/main/ui/viewer/header.cljs:206
@@ -4298,73 +4298,73 @@ msgstr "Password - Penpot"
 msgid "title.settings.profile"
 msgstr "Profile - Penpot"
 
-msgid "settings.subscription.section-plan"
+msgid "subscription.settings.section-plan"
 msgstr "Your subscription"
 
-msgid "settings.subscription.other-plans"
+msgid "subscription.settings.other-plans"
 msgstr "Other penpot plans"
 
-msgid "settings.subscription.professional"
+msgid "subscription.settings.professional"
 msgstr "Professional"
 
-msgid "settings.subscription.unlimited"
+msgid "subscription.settings.unlimited"
 msgstr "Unlimited"
 
-msgid "settings.subscription.unlimited-trial"
+msgid "subscription.settings.unlimited-trial"
 msgstr "Unlimited (trial)"
 
-msgid "settings.subscription.enterprise"
+msgid "subscription.settings.enterprise"
 msgstr "Enterprise"
 
-msgid "settings.subscription.support-us-since"
+msgid "subscription.settings.support-us-since"
 msgstr "You support us since %s"
 
-msgid "settings.subscription.member-since"
+msgid "subscription.settings.member-since"
 msgstr "Penpot member since %s"
 
-msgid "settings.subscription.price-editor-month"
+msgid "subscription.settings.price-editor-month"
 msgstr "editor per month"
 
-msgid "settings.subscription.price-organization-month"
+msgid "subscription.settings.price-organization-month"
 msgstr "organization per month"
 
-msgid "settings.subscription.professional.projects-files"
+msgid "subscription.settings.professional.projects-files"
 msgstr "Unlimited projects, files and drafts"
 
-msgid "settings.subscription.professional.teams-editors"
+msgid "subscription.settings.professional.teams-editors"
 msgstr "Unlimited teams of up to 8 editors"
 
-msgid "settings.subscription.professional.storage"
+msgid "subscription.settings.professional.storage"
 msgstr "10GB of storage and 7-day autosave versions"
 
-msgid "settings.subscription.benefits.all-professional-benefits"
+msgid "subscription.settings.benefits.all-professional-benefits"
 msgstr "All Professional plan benefits and:"
 
-msgid "settings.subscription.benefits.all-unlimited-benefits"
+msgid "subscription.settings.benefits.all-unlimited-benefits"
 msgstr "All Unlimited plan benefits and:"
 
-msgid "settings.subscription.unlimited.teams"
+msgid "subscription.settings.unlimited.teams"
 msgstr "Unlimited teams, no matter your team size"
 
-msgid "settings.subscription.unlimited.bill"
+msgid "subscription.settings.unlimited.bill"
 msgstr "Capped monthly bill"
 
-msgid "settings.subscription.unlimited.storage"
+msgid "subscription.settings.unlimited.storage"
 msgstr "25GB of storage and 30-day autosave versions and file backup"
 
-msgid "settings.subscription.ulimited.try-it-free"
+msgid "subscription.settings.ulimited.try-it-free"
 msgstr "Try it free for 14 days"
 
-msgid "settings.subscription.manage-your-subscription"
+msgid "subscription.settings.manage-your-subscription"
 msgstr "Manage your subscription"
 
-msgid "settings.subscription.enterprise.support"
+msgid "subscription.settings.enterprise.support"
 msgstr "Dedicated support"
 
-msgid "settings.subscription.enterprise.security"
+msgid "subscription.settings.enterprise.security"
 msgstr "Advanced security"
 
-msgid "settings.subscription.enterprise.logs"
+msgid "subscription.settings.enterprise.logs"
 msgstr "Activity logs"
 
 #: src/app/main/ui/dashboard/team.cljs:779
