@@ -17,7 +17,7 @@
            java.util.UUID
            java.nio.ByteBuffer)))
 
-(def ^:private uuid-regex
+(def regex
   #"^[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]$")
 
 (defn uuid
@@ -32,7 +32,7 @@
 (defn parse
   "Parse string uuid representation into proper UUID instance, validates input"
   [s]
-  (if (and (string? s) ^boolean (re-matches uuid-regex s))
+  (if (and (string? s) ^boolean (re-matches regex s))
     #?(:clj (UUID/fromString s)
        :cljs (uuid s))
 
