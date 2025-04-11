@@ -1,3 +1,4 @@
+use crate::utils::uuid_from_u32_quartet;
 use crate::{
     math::Rect,
     render::{DEFAULT_EMOJI_FONT, DEFAULT_FONT},
@@ -7,7 +8,6 @@ use skia_safe::{
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle},
 };
 use uuid::Uuid;
-use crate::utils::uuid_from_u32_quartet;
 
 use super::FontFamily;
 
@@ -192,37 +192,46 @@ impl TextLeafData {
         }
     }
 
-    pub fn parse_leaves(buffer: &[u8]) -> Vec<Paragraph> {
-        let mut leaves: Vec<Paragraph> = Vec::new();
-        let mut offset = 0;
+    pub fn parse_leaves(buffer: &[u8], num_leaves: usize) -> Vec<Paragraph> {
+        let mut paragraphs: Vec<Paragraph> = Vec::new();
         let leaf_attr_size = 48;
+        let metadata_size = num_leaves * leaf_attr_size;
 
-        println!("@@@ Buffer: {}", buffer);
-
-        while offset < buffer.len() {
-            let metadata_end = offset + leaf_attr_size;
+        // Parse leaf data attrs
+        let mut leaves_metadata = Vec::new();
+        for i in 0..num_leaves {
+            let start = i * leaf_attr_size;
+            let end = start + leaf_attr_size;
             let leaf_data = TextLeafData::from_bytes(
-                buffer[offset..metadata_end].try_into().expect("Invalid metadata size"),
+                buffer[start..end]
+                    .try_into()
+                    .expect("Invalid metadata size"),
             );
-            offset = metadata_end;
+            leaves_metadata.push(leaf_data);
+        }
 
+        // Parse text
+        let text_start = metadata_size;
+        let mut offset = text_start;
+
+        for leaf_data in leaves_metadata {
             let text_length = leaf_data.text_length as usize;
             let text_end = offset + text_length;
             let text_utf8 = buffer[offset..text_end].to_vec();
-            let text = String::from_utf8(text_utf8)
-                .expect("Invalid UTF-8 text");
+            let text = String::from_utf8(text_utf8).expect("Invalid UTF-8 text");
             offset = text_end;
+
+            println!("leaf data: {:?}", leaf_data);
+            println!("text: {:?}", text);
 
             let font_id = uuid_from_u32_quartet(
                 leaf_data.font_id[0].into(),
                 leaf_data.font_id[1].into(),
                 leaf_data.font_id[2].into(),
-                leaf_data.font_id[3].into()
+                leaf_data.font_id[3].into(),
             );
 
-            println!("Text Data: {:?}", leaf_data);
-            println!("Text: {:?}", text);
-
+            // TODO review
             let mut paragraph = Paragraph::default();
             paragraph.add_leaf(TextLeaf {
                 text,
@@ -234,9 +243,9 @@ impl TextLeafData {
                 font_size: leaf_data.font_size,
             });
 
-            leaves.push(paragraph);
+            paragraphs.push(paragraph);
         }
 
-        leaves
+        paragraphs
     }
 }

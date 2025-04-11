@@ -1,5 +1,5 @@
-use skia_safe::textlayout::paragraph;
 use skia_safe as skia;
+use skia_safe::textlayout::paragraph;
 
 mod debug;
 #[cfg(target_arch = "wasm32")]
@@ -841,11 +841,11 @@ pub extern "C" fn set_grid_cells() {
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_text_content() {
+pub extern "C" fn set_shape_text_content(num_leaves: usize) {
     let bytes = mem::bytes();
 
     with_current_shape!(state, |shape: &mut Shape| {
-        let paragraphs = shapes::TextLeafData::parse_leaves(&bytes);
+        let paragraphs = shapes::TextLeafData::parse_leaves(&bytes, num_leaves);
         // for paragraph in paragraphs {
         //     shape.push_paragraph(paragraph);
         // }

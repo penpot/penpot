@@ -745,10 +745,7 @@ impl Shape {
         }
     }
 
-    pub fn push_paragraph(
-        &mut self,
-        paragraph: Paragraph
-    ) -> Result<(), String> {
+    pub fn push_paragraph(&mut self, paragraph: Paragraph) -> Result<(), String> {
         match self.shape_type {
             Type::Text(ref mut text) => {
                 text.push_paragraph(paragraph)?;

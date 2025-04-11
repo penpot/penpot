@@ -693,56 +693,52 @@
 
 (defn set-shape-text-leaves
   [leaves]
-  (let [num-attrs 14
-        size (* (count leaves) 44)
-        offset (mem/alloc-bytes size)
-        heap (mem/get-heap-u8)
-        attrs (flatten
-               (map (fn [leaf]
-                      (concat
-                       (sr/u8 (f/serialize-font-style (:font-style leaf)))
-                       (sr/u8 (f/serialize-text-align (:text-align leaf)))
-                       (sr/u8 (f/serialize-text-transform (:text-transform leaf)))
-                       (sr/u8 (f/serialize-text-decoration (:text-decoration leaf)))
-                       (sr/u8 (f/serialize-text-direction (:text-direction leaf)))
-                       (sr/f32->u8 (:font-size leaf))
-                       (sr/f32->u8 (:line-height leaf))
-                       (sr/f32->u8 (:letter-spacing leaf))
-                       (sr/i32->u8 (:font-weight leaf))
-                       (sr/i32->u8 (hash (:font-id leaf)))
-                       (sr/i32->u8 (hash (:font-family leaf)))
-                       (sr/i32->u8 (hash (:font-variant-id leaf)))
-                       (sr/i32->u8 (hash (:typography-ref-file leaf)))
-                       (sr/i32->u8 (hash (:typography-ref-id leaf)))
-                       ;;(sr/i32->u8 (count (dm/get-prop leaf :text)))
-                      ))
-                    leaves))]
-    (.set heap (js/Uint8Array. attrs) offset)))
 
-(defn set-shape-text-paragraph
-  [paragraph]
-  (let []
-    ;; TODO
-    ;; text-align
-    ;; text-direction
-    ;; strokes
-    ))
+  (let [metadata-size (* (count leaves) 48)
+        text (apply str (map :text leaves))
+        text-buffer (utf8->buffer text)
+        text-size (.-byteLength text-buffer)
+        metadata-offset (mem/alloc-bytes (+ metadata-size text-size))
+        heap (mem/get-heap-u8)]
+
+    (let [attrs (flatten
+                 (map (fn [leaf]
+                        (concat
+                         (sr/u8 (f/serialize-font-style (:font-style leaf)))
+                         (sr/u8 (f/serialize-text-align (:text-align leaf)))
+                         (sr/u8 (f/serialize-text-transform (:text-transform leaf)))
+                         (sr/u8 (f/serialize-text-decoration (:text-decoration leaf)))
+                         (sr/u8 (f/serialize-text-direction (:text-direction leaf)))
+                         (sr/f32->u8 (:font-size leaf))
+                         (sr/f32->u8 (:line-height leaf))
+                         (sr/f32->u8 (:letter-spacing leaf))
+                         (sr/i32->u8 (:font-weight leaf))
+                         (sr/i32->u8 (hash (:font-id leaf)))
+                         (sr/i32->u8 (hash (:font-family leaf)))
+                         (sr/i32->u8 (hash (:font-variant-id leaf)))
+                         (sr/i32->u8 (hash (:typography-ref-file leaf)))
+                         (sr/i32->u8 (hash (:typography-ref-id leaf)))
+                         (sr/i32->u8 (count (dm/get-prop leaf :text)))))
+                      leaves))]
+      (.set heap (js/Uint8Array. attrs) metadata-offset)
+      (.set heap (js/Uint8Array. text-buffer) (+ metadata-offset metadata-size)))))
 
 (defn set-shape-text-content-new
   [content]
   (h/call wasm/internal-module "_clear_shape_text")
   (let [paragraph-set (first (dm/get-prop content :children))
         paragraphs (dm/get-prop paragraph-set :children)
+        fonts (fonts/get-content-fonts content)
         serialized-leaves (transient [])]
     (loop [index 0]
       (when (< index (count paragraphs))
         (let [paragraph (nth paragraphs index)
               leaves (dm/get-prop paragraph :children)]
-          (set-shape-text-paragraph paragraph)
           (when (seq leaves)
             (set-shape-text-leaves leaves)
-            (h/call wasm/internal-module "_set_shape_text_content")
-            (recur (inc index))))))))
+            (h/call wasm/internal-module "_set_shape_text_content" (count leaves))
+            (recur (inc index))))))
+    (f/store-fonts fonts)))
 
 (defn set-view-box
   [zoom vbox]
