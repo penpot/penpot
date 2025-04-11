@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.media :as cm]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.fonts :as df]
    [app.main.data.modal :as modal]
@@ -121,7 +122,7 @@
          (fn [event]
            (let [id   (-> (dom/get-current-target event)
                           (dom/get-data "id")
-                          (parse-uuid))
+                          (uuid/parse))
                  item (get fonts id)]
              (on-upload* item))))
 
@@ -132,7 +133,7 @@
            (let [target (dom/get-current-target event)
                  id     (-> target
                             (dom/get-data "id")
-                            (parse-uuid))
+                            (uuid/parse))
                  name   (dom/get-value target)]
              (when-not (str/blank? name)
                (swap! fonts* df/rename-and-regroup id name installed-fonts)))))
@@ -143,7 +144,7 @@
            (let [target (dom/get-current-target event)
                  id     (-> target
                             (dom/get-data "id")
-                            (parse-uuid))
+                            (uuid/parse))
                  name   (dom/get-value target)]
              (swap! fonts* update id assoc :font-family-tmp name))))
 
@@ -153,7 +154,7 @@
          (fn [event]
            (let [id (-> (dom/get-current-target event)
                         (dom/get-data "id")
-                        (parse-uuid))]
+                        (uuid/parse))]
              (swap! fonts* dissoc id))))
 
         on-upload-all
@@ -344,7 +345,7 @@
          (fn [event]
            (let [id      (-> (dom/get-current-target event)
                              (dom/get-data "id")
-                             (parse-uuid))
+                             (uuid/parse))
                  options {:type :confirm
                           :title (tr "modals.delete-font-variant.title")
                           :message (tr "modals.delete-font-variant.message")

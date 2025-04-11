@@ -251,14 +251,14 @@
          (mf/deps index update-interaction)
          (fn [event]
            (let [value event
-                 value (when (not= value "") (uuid/uuid value))]
+                 value (when (not= value "") (uuid/parse value))]
              (update-interaction index #(ctsi/set-destination % value)))))
 
         change-position-relative-to
         (mf/use-fn
          (mf/deps index update-interaction)
          (fn [event]
-           (let [value (uuid/uuid event)]
+           (let [value (uuid/parse event)]
              (update-interaction index #(ctsi/set-position-relative-to % value)))))
 
         change-preserve-scroll

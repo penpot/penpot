@@ -469,7 +469,7 @@
      (dom/prevent-default event)
      (let [point (gpt/point (.-clientX event) (.-clientY event))
            viewport-coord (uwvv/point->viewport point)
-           asset-id     (-> (dnd/get-data event "text/asset-id") uuid/uuid)
+           asset-id     (-> (dnd/get-data event "text/asset-id") uuid/parse)
            asset-name   (dnd/get-data event "text/asset-name")
            asset-type   (dnd/get-data event "text/asset-type")]
        (cond
