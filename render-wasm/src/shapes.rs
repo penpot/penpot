@@ -745,6 +745,19 @@ impl Shape {
         }
     }
 
+    pub fn push_paragraph(
+        &mut self,
+        paragraph: Paragraph
+    ) -> Result<(), String> {
+        match self.shape_type {
+            Type::Text(ref mut text) => {
+                text.push_paragraph(paragraph)?;
+                Ok(())
+            }
+            _ => Err("Shape is not a text".to_string()),
+        }
+    }
+
     pub fn add_text_paragraph(&mut self) -> Result<(), String> {
         match self.shape_type {
             Type::Text(ref mut text) => {

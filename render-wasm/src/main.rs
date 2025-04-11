@@ -1,3 +1,4 @@
+use skia_safe::textlayout::paragraph;
 use skia_safe as skia;
 
 mod debug;
@@ -841,15 +842,13 @@ pub extern "C" fn set_grid_cells() {
 
 #[no_mangle]
 pub extern "C" fn set_shape_text_content() {
+    let bytes = mem::bytes();
+
     with_current_shape!(state, |shape: &mut Shape| {
-        let bytes = mem::bytes();
-
-        let entries: Vec<_> = bytes
-            .chunks(size_of::<shapes::TextLeafData>())
-            .map(|data| shapes::TextLeafData::from_bytes(data.try_into().unwrap()))
-            .collect();
-
-        println!("Parsed entries: {:?}", entries);
+        let paragraphs = shapes::TextLeafData::parse_leaves(&bytes);
+        // for paragraph in paragraphs {
+        //     shape.push_paragraph(paragraph);
+        // }
     });
 
     mem::free_bytes();

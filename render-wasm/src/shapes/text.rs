@@ -6,6 +6,8 @@ use skia_safe::{
     self as skia,
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle},
 };
+use uuid::Uuid;
+use crate::utils::uuid_from_u32_quartet;
 
 use super::FontFamily;
 
@@ -59,6 +61,11 @@ impl TextContent {
 
         paragraph.add_leaf(TextLeaf::new(text, font_family, font_size));
 
+        Ok(())
+    }
+
+    pub fn push_paragraph(&mut self, paragraph: Paragraph) -> Result<(), String> {
+        self.paragraphs.push(paragraph);
         Ok(())
     }
 
@@ -145,7 +152,7 @@ impl TextLeaf {
 }
 
 #[repr(C)]
-#[derive(Debug)] // Add this to derive the Debug trait
+#[derive(Debug)]
 pub struct TextLeafData {
     font_style: u8,
     text_align: u8,
@@ -161,12 +168,11 @@ pub struct TextLeafData {
     font_variant_id: [u8; 4],
     typography_ref_file: [u8; 4],
     typography_ref_id: [u8; 4],
-    //text_length: u32,
+    text_length: u32,
 }
 
 impl TextLeafData {
-    pub fn from_bytes(bytes: &[u8; 44]) -> Self {
-        println!("TextLeafData::from_bytes: {:?}", bytes);
+    pub fn from_bytes(bytes: &[u8; 48]) -> Self {
         Self {
             font_style: bytes[0],
             text_align: bytes[1],
@@ -182,7 +188,55 @@ impl TextLeafData {
             font_variant_id: [bytes[29], bytes[30], bytes[31], bytes[32]],
             typography_ref_file: [bytes[33], bytes[34], bytes[35], bytes[36]],
             typography_ref_id: [bytes[37], bytes[38], bytes[39], bytes[40]],
-            //text_length: u32::from_le_bytes([bytes[41], bytes[42], bytes[43], bytes[44]]),
+            text_length: u32::from_le_bytes([bytes[41], bytes[42], bytes[43], bytes[44]]),
         }
+    }
+
+    pub fn parse_leaves(buffer: &[u8]) -> Vec<Paragraph> {
+        let mut leaves: Vec<Paragraph> = Vec::new();
+        let mut offset = 0;
+        let leaf_attr_size = 48;
+
+        println!("@@@ Buffer: {}", buffer);
+
+        while offset < buffer.len() {
+            let metadata_end = offset + leaf_attr_size;
+            let leaf_data = TextLeafData::from_bytes(
+                buffer[offset..metadata_end].try_into().expect("Invalid metadata size"),
+            );
+            offset = metadata_end;
+
+            let text_length = leaf_data.text_length as usize;
+            let text_end = offset + text_length;
+            let text_utf8 = buffer[offset..text_end].to_vec();
+            let text = String::from_utf8(text_utf8)
+                .expect("Invalid UTF-8 text");
+            offset = text_end;
+
+            let font_id = uuid_from_u32_quartet(
+                leaf_data.font_id[0].into(),
+                leaf_data.font_id[1].into(),
+                leaf_data.font_id[2].into(),
+                leaf_data.font_id[3].into()
+            );
+
+            println!("Text Data: {:?}", leaf_data);
+            println!("Text: {:?}", text);
+
+            let mut paragraph = Paragraph::default();
+            paragraph.add_leaf(TextLeaf {
+                text,
+                font_family: FontFamily::new(
+                    font_id,
+                    leaf_data.font_weight as u32,
+                    leaf_data.font_style.into(),
+                ),
+                font_size: leaf_data.font_size,
+            });
+
+            leaves.push(paragraph);
+        }
+
+        leaves
     }
 }
