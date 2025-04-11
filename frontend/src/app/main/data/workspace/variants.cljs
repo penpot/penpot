@@ -403,6 +403,7 @@
 
 
 (defn rename-variant
+  "Rename the variant container and all components belonging to this variant"
   [variant-id name]
   (ptk/reify ::rename-variant
 
@@ -426,6 +427,8 @@
 
 
 (defn rename-comp-or-variant-and-main
+  "If the component is in a variant, rename the variant.
+   If it is not, rename the component and its main"
   [component-id name]
   (ptk/reify ::rename-comp-or-variant-and-main
 
