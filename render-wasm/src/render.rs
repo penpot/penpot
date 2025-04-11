@@ -4,9 +4,10 @@ use crate::uuid::Uuid;
 use std::collections::HashMap;
 
 use crate::performance;
-use crate::view::Viewbox;
 #[cfg(target_arch = "wasm32")]
-use crate::{run_script, run_script_int};
+use crate::run_script;
+use crate::view::Viewbox;
+use crate::wapi;
 
 mod blend;
 mod debug;
@@ -433,7 +434,7 @@ impl RenderState {
     ) -> Result<(), String> {
         if self.render_in_progress {
             if let Some(frame_id) = self.render_request_id {
-                self.cancel_animation_frame(frame_id);
+                wapi::cancel_animation_frame!(frame_id);
             }
         }
         performance::begin_measure!("render");
@@ -491,28 +492,6 @@ impl RenderState {
         Ok(())
     }
 
-    #[cfg(target_arch = "wasm32")]
-    pub fn request_animation_frame(&mut self) -> i32 {
-        #[cfg(feature = "profile-raf")]
-        performance::mark!("request_animation_frame");
-        run_script_int!("requestAnimationFrame(_process_animation_frame)")
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn request_animation_frame(&mut self) -> i32 {
-        0
-    }
-
-    #[cfg(target_arch = "wasm32")]
-    pub fn cancel_animation_frame(&mut self, frame_id: i32) {
-        #[cfg(feature = "profile-raf")]
-        performance::mark!("cancel_animation_frame");
-        run_script!(format!("cancelAnimationFrame({})", frame_id))
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn cancel_animation_frame(&mut self, _frame_id: i32) {}
-
     pub fn process_animation_frame(
         &mut self,
         tree: &mut HashMap<Uuid, Shape>,
@@ -526,9 +505,9 @@ impl RenderState {
 
             if self.render_in_progress {
                 if let Some(frame_id) = self.render_request_id {
-                    self.cancel_animation_frame(frame_id);
+                    wapi::cancel_animation_frame!(frame_id);
                 }
-                self.render_request_id = Some(self.request_animation_frame());
+                self.render_request_id = Some(wapi::request_animation_frame!());
             } else {
                 performance::end_measure!("render");
             }

@@ -12,6 +12,7 @@ mod state;
 mod utils;
 mod uuid;
 mod view;
+mod wapi;
 mod wasm;
 
 use crate::mem::SerializableResult;

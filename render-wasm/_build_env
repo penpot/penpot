@@ -7,6 +7,7 @@ else
 fi
 
 EMCC_CFLAGS="--no-entry \
+    --js-library src/js/wapi.js \
     -sASSERTIONS=1 \
     -sALLOW_TABLE_GROWTH=1 \
     -sALLOW_MEMORY_GROWTH=1 \
@@ -33,7 +34,7 @@ else
     #        -gseparate-dwarf
     #        -gsplit-dwarf
     #        -gsource-map
-    EMCC_CFLAGS="-g $EMCC_CFLAGS -sMALLOC=emmalloc-debug"
+    EMCC_CFLAGS="-g $EMCC_CFLAGS -sVERBOSE=1 -sMALLOC=emmalloc-debug"
 fi
 
 export EMCC_CFLAGS;
