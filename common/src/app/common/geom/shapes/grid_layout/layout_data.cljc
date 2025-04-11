@@ -357,7 +357,8 @@
                       to-idx (+ (dec (get cell prop)) (get cell prop-span))
                       indexed-tracks (subvec (d/enumerate track-list) from-idx to-idx)
 
-                      to-allocate (size-to-allocate type parent (get children-map shape-id) cell bounds objects)
+                      to-allocate
+                      (size-to-allocate type parent (get children-map shape-id) cell bounds objects)
 
                       ;; Remove the size and the tracks that are not allocated
                       [to-allocate total-frs indexed-tracks]

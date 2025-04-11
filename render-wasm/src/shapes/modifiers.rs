@@ -255,8 +255,13 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
             }
 
             if let Some(Layout::GridLayout(layout_data, grid_data)) = &frame_data.layout {
-                let mut children =
-                    grid_layout::reflow_grid_layout(shape, layout_data, grid_data, shapes, &bounds);
+                let mut children = grid_layout::reflow_grid_layout(
+                    shape,
+                    layout_data,
+                    grid_data,
+                    shapes,
+                    &mut bounds,
+                );
                 entries.append(&mut children);
             }
             reflown.insert(*id);
