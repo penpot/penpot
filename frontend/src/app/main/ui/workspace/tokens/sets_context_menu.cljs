@@ -34,7 +34,7 @@
 
 (mf/defc menu*
   {::mf/private true}
-  [{:keys [is-group id path]}]
+  [{:keys [is-group id edition-id path]}]
   (let [create-set-at-path
         (mf/use-fn (mf/deps path) #(st/emit! (dt/start-token-set-creation path)))
 
@@ -42,7 +42,7 @@
         (mf/use-fn
          (mf/deps id)
          (fn []
-           (st/emit! (dt/start-token-set-edition id))))
+           (st/emit! (dt/start-token-set-edition edition-id))))
 
         on-delete
         (mf/use-fn
@@ -57,7 +57,7 @@
 
 (mf/defc token-set-context-menu*
   []
-  (let [{:keys [position is-group id path]}
+  (let [{:keys [position is-group id edition-id path]}
         (mf/deref ref:token-sets-context-menu)
 
         position-top
@@ -78,4 +78,5 @@
             :on-context-menu prevent-default}
       [:> menu* {:is-group is-group
                  :id id
+                 :edition-id edition-id
                  :path path}]]]))

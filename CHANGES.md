@@ -23,6 +23,14 @@
 - Fix problem with import errors [Taiga #10040](https://tree.taiga.io/project/penpot/issue/10040)
 - Fix color gradient on texts [Taiga Issue #7488](https://tree.taiga.io/project/penpot/issue/7488)
 
+## 2.6.2 (Unreleased)
+
+### :bug: Bugs fixed
+
+- Increase the height of the right sidebar dropdowns [Taiga #10615](https://tree.taiga.io/project/penpot/issue/10615)
+- Fix scroll on token themes modal [Taiga #10745](https://tree.taiga.io/project/penpot/issue/10745)
+- Fix unexpected exception on path editor on merge segments when undo stack is empty
+
 ## 2.6.1
 
 ### :bug: Bugs fixed
@@ -80,6 +88,7 @@
 - Internal error when install a plugin by penpothub - Try plugin [Taiga #10542](https://tree.taiga.io/project/penpot/issue/10542)
 - Add character limitation to asset inputs [Taiga #10669](https://tree.taiga.io/project/penpot/issue/10669)
 - Fix Storybook link 'list of all available icons' wrong path [Taiga #10705](https://tree.taiga.io/project/penpot/issue/10705)
+
 
 ## 2.5.4
 
