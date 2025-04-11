@@ -145,7 +145,8 @@
 
                         :content
                         (cond
-                          (= (:type self) :path)
+                          (or (= (:type self) :path)
+                              (= (:type self) :bool))
                           (api/set-shape-path-content v)
 
                           (= (:type self) :svg-raw)
