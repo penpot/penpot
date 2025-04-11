@@ -34,20 +34,46 @@
   [font-id]
   (uuid/uuid (subs font-id (inc (str/index-of font-id "-")))))
 
-(defn- font-id->uuid [font-id]
-  (if (str/starts-with? font-id "gfont-")
-    (google-font-id->uuid font-id)
-    (custom-font-id->uuid font-id)))
+(defn- font-backend
+  [font-id]
+  (cond
+    (str/starts-with? font-id "gfont-")
+    :google
+    (str/starts-with? font-id "custom-")
+    :custom
+    :else
+    :builtin))
 
-(defn ^:private font-id->ttf-id [font-id font-variant-id]
-  (if (str/starts-with? font-id "gfont-")    font-id
-      (let [font-uuid (custom-font-id->uuid font-id)
-            matching-font (d/seek (fn [[_ font]]
-                                    (and (= (:font-id font) font-uuid)
-                                         (= (:font-variant-id font) font-variant-id)))
-                                  (seq @fonts))]
-        (when matching-font
-          (:ttf-file-id (second matching-font))))))
+(defn- font-db-data
+  [font-id font-variant-id]
+  (let [font (fonts/get-font-data font-id)
+        variant (fonts/get-variant font font-variant-id)]
+    variant))
+
+(defn- font-id->uuid [font-id]
+  (case (font-backend font-id)
+    :google
+    (google-font-id->uuid font-id)
+    :custom
+    (custom-font-id->uuid font-id)
+    :builtin
+    uuid/zero))
+
+(defn ^:private font-id->asset-id [font-id font-variant-id]
+  (case (font-backend font-id)
+    :google
+    font-id
+    :custom
+    (let [font-uuid (custom-font-id->uuid font-id)
+          matching-font (d/seek (fn [[_ font]]
+                                  (and (= (:font-id font) font-uuid)
+                                       (= (:font-variant-id font) font-variant-id)))
+                                (seq @fonts))]
+      (when matching-font
+        (:ttf-file-id (second matching-font))))
+    :builtin
+    (let [variant (font-db-data font-id font-variant-id)]
+      (:ttf-url variant))))
 
 ;; IMPORTANT: It should be noted that only TTF fonts can be stored.
 (defn- store-font-buffer
@@ -78,26 +104,25 @@
 
 (defn- google-font-ttf-url
   [font-id font-variant-id]
-  (let [font (fonts/get-font-data font-id)
-        variant (fonts/get-variant font font-variant-id)]
+  (let [variant (font-db-data font-id font-variant-id)]
     (if-let [ttf-url (:ttf-url variant)]
       (str/replace ttf-url "http://fonts.gstatic.com/s/" (u/join cf/public-uri "/internal/gfonts/font/"))
-      (do
-        (println "Variant TTF URL not found for" font-id font-variant-id)
-        nil))))
+      nil)))
 
 (defn- font-id->ttf-url
-  [font-id font-variant-id]
-  (if (str/starts-with? font-id "gfont-")
-    ;; if font-id is a google font (starts with gfont-), we need to get the ttf url from Google Fonts API.
+  [font-id asset-id font-variant-id]
+  (case (font-backend font-id)
+    :google
     (google-font-ttf-url font-id font-variant-id)
-    ;; otherwise, we return the font from our public-uri
-    (str (u/join cf/public-uri "assets/by-id/" font-id))))
+    :custom
+    (dm/str (u/join cf/public-uri "assets/by-id/" font-id))
+    :builtin
+    (dm/str (u/join cf/public-uri "fonts/" asset-id))))
 
 (defn- store-font-id
   [font-data asset-id]
   (when asset-id
-    (let [uri (font-id->ttf-url asset-id (:font-variant-id font-data))
+    (let [uri (font-id->ttf-url (:font-id font-data) asset-id (:font-variant-id font-data))
           id-buffer (uuid/get-u32 (:wasm-id font-data))
           font-data (assoc font-data :family-id-buffer id-buffer)
           font-stored? (not= 0 (h/call wasm/internal-module "_is_font_uploaded"
@@ -136,17 +161,16 @@
           (let [font-id (dm/get-prop font :font-id)
                 font-variant-id (dm/get-prop font :font-variant-id)
                 wasm-id (font-id->uuid font-id)
+                raw-weight (or (:weight (font-db-data font-id font-variant-id)) 400)
 
-                weight (serialize-font-weight
-                        (if-let [weight-match (re-find #"\d+" font-variant-id)]
-                          (js/parseInt weight-match)
-                          400))
+                weight (serialize-font-weight raw-weight)
 
                 style (serialize-font-style (cond
                                               (str/includes? font-variant-id "italic") "italic"
                                               :else "normal"))
-                asset-id (font-id->ttf-id font-id font-variant-id)
+                asset-id (font-id->asset-id font-id font-variant-id)
                 font-data {:wasm-id wasm-id
+                           :font-id font-id
                            :font-variant-id font-variant-id
                            :style style
                            :weight weight}]
