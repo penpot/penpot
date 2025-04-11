@@ -22,6 +22,7 @@
    [app.main.ui.settings.password :refer [password-page]]
    [app.main.ui.settings.profile :refer [profile-page]]
    [app.main.ui.settings.sidebar :refer [sidebar]]
+   [app.main.ui.settings.subscription :refer [subscription-page*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -66,6 +67,9 @@
 
           :settings-options
           [:& options-page]
+
+          :settings-subscription
+          [:> subscription-page*]
 
           :settings-access-tokens
           [:& access-tokens-page]

@@ -26,6 +26,7 @@
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
+   [app.main.ui.dashboard.subscription-sidebar :refer [subscription-sidebar*]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i :refer [icon-xref]]
    [app.util.dom :as dom]
@@ -960,16 +961,27 @@
         (mf/use-fn
          (fn []
            (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
-           (dom/open-new-window "https://penpot.app/pricing")))]
+           (dom/open-new-window "https://penpot.app/pricing")))
+
+        go-to-subscription
+        (mf/use-fn
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (st/emit! (rt/nav :settings-subscription))))]
 
     [:*
-     [:button {:class (stl/css :upgrade-plan-section)
-               :on-click on-power-up-click}
-      [:div {:class (stl/css :penpot-free)}
-       [:span (tr "dashboard.upgrade-plan.penpot-free")]
-       [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
-      [:div {:class (stl/css :power-up)}
-       (tr "dashboard.upgrade-plan.power-up")]]
+     (if (contains? cf/flags :subscriptions)
+       [:> subscription-sidebar* {:go-to-subscription go-to-subscription}]
+
+       [:button {:class (stl/css :upgrade-plan-section)
+                 :on-click on-power-up-click}
+        [:div {:class (stl/css :penpot-free)}
+         [:span (tr "dashboard.upgrade-plan.penpot-free")]
+         [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
+        [:div {:class (stl/css :power-up)}
+         (tr "dashboard.upgrade-plan.power-up")]])
+
      (when (and team profile)
        [:& comments-section
         {:profile profile
