@@ -40,6 +40,14 @@
       (throw #?(:clj  (IllegalArgumentException. message)
                 :cljs (js/Error. message))))))
 
+(defn parse*
+  "Exception safe version of `parse`."
+  [s]
+  (try
+    (parse s)
+    (catch #?(:clj Exception :cljs :default) _cause
+      nil)))
+
 (defn next
   []
   #?(:clj (UUIDv8/create)

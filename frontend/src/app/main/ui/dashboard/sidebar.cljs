@@ -283,7 +283,7 @@
          (fn [event]
            (let [team-id (-> (dom/get-current-target event)
                              (dom/get-data "value")
-                             (uuid/uuid))]
+                             (uuid/parse))]
              (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))))
 
         handle-select-default
