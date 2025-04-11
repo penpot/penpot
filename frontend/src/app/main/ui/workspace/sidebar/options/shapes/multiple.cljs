@@ -12,6 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.text :as txt]
    [app.common.types.component :as ctk]
+   [app.common.types.path :as path]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
@@ -294,7 +295,7 @@
         file-id (unchecked-get props "file-id")
         shared-libs (unchecked-get props "libraries")
 
-        show-caps (some #(and (= :path (:type %)) (gsh/open-path? %)) shapes)
+        show-caps (some #(and (= :path (:type %)) (path/shape-with-open-path? %)) shapes)
 
         ;; Selrect/points only used for measures and it's the one that changes the most. We separate it
         ;; so we can memoize it

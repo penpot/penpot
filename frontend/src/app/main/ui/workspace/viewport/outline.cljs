@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.types.component :as ctk]
@@ -17,7 +16,6 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.attrs :as attrs]
    [app.util.object :as obj]
-   [app.util.path.format :as upf]
    [clojure.set :as set]
    [rumext.v2 :as mf]))
 
@@ -51,7 +49,7 @@
         path-data
         (mf/with-memo [path? content]
           (when (and ^boolean path? (some? content))
-            (d/nilv (ex/ignoring (upf/format-path content)) "")))
+            (.toString content)))
 
         border-attrs
         (attrs/get-border-props shape)

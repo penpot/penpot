@@ -12,14 +12,22 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as upg]
    [app.common.math :as mth]
    [app.common.svg :as csvg]
-   [app.common.svg.path.command :as upc]
+   [app.common.types.path.helpers :as path.helpers]
+   [app.common.types.path.segment :as path.segment]
    [cuerdas.core :as str]))
 
 (def commands-regex #"(?i)[mzlhvcsqta][^mzlhvcsqta]*")
 (def regex #"[+-]?(\d+(\.\d+)?|\.\d+)(e[+-]?\d+)?")
+
+(defn- get-point
+  "Get a point for a segment"
+  [prev-pos {:keys [relative params] :as segment}]
+  (let [{:keys [x y] :or {x (:x prev-pos) y (:y prev-pos)}} params]
+    (if relative
+      (-> prev-pos (update :x + x) (update :y + y))
+      (path.helpers/segment->point segment))))
 
 (defn extract-params
   [data pattern]
@@ -185,7 +193,7 @@
 
 (defn smooth->curve
   [{:keys [params]} pos handler]
-  (let [{c1x :x c1y :y} (upg/calculate-opposite-handler pos handler)]
+  (let [{c1x :x c1y :y} (path.segment/calculate-opposite-handler pos handler)]
     {:c1x c1x
      :c1y c1y
      :c2x (:cx params)
@@ -413,7 +421,7 @@
 
                   (= :smooth-quadratic-bezier-curve-to (:command command))
                   (-> (assoc :command :curve-to)
-                      (update :params merge (quadratic->curve prev-pos (gpt/point params) (upg/calculate-opposite-handler prev-pos prev-qc)))))
+                      (update :params merge (quadratic->curve prev-pos (gpt/point params) (path.segment/calculate-opposite-handler prev-pos prev-qc)))))
 
                 result (if (= :elliptical-arc (:command command))
                          (into result (arc->beziers prev-pos command))
@@ -436,13 +444,13 @@
                           (gpt/point (get-in orig-command [:params :cx]) (get-in orig-command [:params :cy]))
 
                           :smooth-quadratic-bezier-curve-to
-                          (upg/calculate-opposite-handler prev-pos prev-qc)
+                          (path.segment/calculate-opposite-handler prev-pos prev-qc)
 
                           (gpt/point (get-in orig-command [:params :x]) (get-in orig-command [:params :y])))
 
                 next-pos (if (= :close-path (:command command))
                            prev-start
-                           (upc/command->point prev-pos command))
+                           (get-point prev-pos command))
 
                 next-start (if (= :move-to (:command command)) next-pos prev-start)]
 

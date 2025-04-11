@@ -127,11 +127,11 @@
                 (ctp/make-empty-page {:id page-id :name "Page 1"}))]
 
      (cond-> (assoc empty-file-data :id file-id)
-       (some? page-id)
+       (some? page)
        (ctpl/add-page page)
 
        :always
-       (assoc-in [:options :components-v2] true)))))
+       (update :options assoc :components-v2 true)))))
 
 (defn make-file
   [{:keys [id project-id name revn is-shared features

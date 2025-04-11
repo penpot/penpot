@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.geom.point
-  (:refer-clojure :exclude [divide min max abs])
+  (:refer-clojure :exclude [divide min max abs zero?])
   (:require
    #?(:clj [app.common.fressian :as fres])
    #?(:cljs [cljs.core :as c]
@@ -469,6 +469,11 @@
   (assert (point? p) "point instance expected")
   (and ^boolean (mth/almost-zero? (dm/get-prop p :x))
        ^boolean (mth/almost-zero? (dm/get-prop p :y))))
+
+(defn zero?
+  [p]
+  (and ^boolean (= 0 (dm/get-prop p :x))
+       ^boolean (= 0 (dm/get-prop p :y))))
 
 (defn lerp
   "Calculates a linear interpolation between two points given a tvalue"
