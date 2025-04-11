@@ -44,6 +44,12 @@
          (fn []
            (st/emit! (dt/start-token-set-edition edition-id))))
 
+        on-duplicate
+        (mf/use-fn
+         (mf/deps is-group id)
+         (fn []
+           (st/emit! (dt/duplicate-token-set is-group id))))
+
         on-delete
         (mf/use-fn
          (mf/deps is-group path)
@@ -53,6 +59,7 @@
      (when is-group
        [:> menu-entry* {:title (tr "workspace.token.add-set-to-group") :on-click create-set-at-path}])
      [:> menu-entry* {:title (tr "labels.rename") :on-click on-edit}]
+     [:> menu-entry* {:title (tr "labels.duplicate") :on-click on-duplicate}]
      [:> menu-entry* {:title (tr "labels.delete")  :on-click on-delete}]]))
 
 (mf/defc token-set-context-menu*
