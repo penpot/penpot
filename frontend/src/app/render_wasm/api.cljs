@@ -694,17 +694,17 @@
 (defn set-shape-text-leaves
   [leaves]
   (let [num-attrs 14
-        size (* (count leaves) num-attrs 4)
+        size (* (count leaves) 44)
         offset (mem/alloc-bytes size)
         heap (mem/get-heap-u8)
         attrs (flatten
                (map (fn [leaf]
                       (concat
-                       (sr/i32->u8 (f/serialize-font-style (:font-style leaf)))
-                       (sr/i32->u8 (f/serialize-text-align (:text-align leaf)))
-                       (sr/i32->u8 (f/serialize-text-transform (:text-transform leaf)))
-                       (sr/i32->u8 (f/serialize-text-decoration (:text-decoration leaf)))
-                       (sr/i32->u8 (f/serialize-text-direction (:text-direction leaf)))
+                       (sr/u8 (f/serialize-font-style (:font-style leaf)))
+                       (sr/u8 (f/serialize-text-align (:text-align leaf)))
+                       (sr/u8 (f/serialize-text-transform (:text-transform leaf)))
+                       (sr/u8 (f/serialize-text-decoration (:text-decoration leaf)))
+                       (sr/u8 (f/serialize-text-direction (:text-direction leaf)))
                        (sr/f32->u8 (:font-size leaf))
                        (sr/f32->u8 (:line-height leaf))
                        (sr/f32->u8 (:letter-spacing leaf))
@@ -713,7 +713,9 @@
                        (sr/i32->u8 (hash (:font-family leaf)))
                        (sr/i32->u8 (hash (:font-variant-id leaf)))
                        (sr/i32->u8 (hash (:typography-ref-file leaf)))
-                       (sr/i32->u8 (hash (:typography-ref-id leaf)))))
+                       (sr/i32->u8 (hash (:typography-ref-id leaf)))
+                       ;;(sr/i32->u8 (count (dm/get-prop leaf :text)))
+                      ))
                     leaves))]
     (.set heap (js/Uint8Array. attrs) offset)))
 

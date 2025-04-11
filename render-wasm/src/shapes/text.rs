@@ -147,11 +147,11 @@ impl TextLeaf {
 #[repr(C)]
 #[derive(Debug)] // Add this to derive the Debug trait
 pub struct TextLeafData {
-    font_style: [u8; 4],
-    text_align: [u8; 4],
-    text_transform: [u8; 4],
-    text_decoration: [u8; 4],
-    text_direction: [u8; 4],
+    font_style: u8,
+    text_align: u8,
+    text_transform: u8,
+    text_decoration: u8,
+    text_direction: u8,
     font_size: f32,
     line_height: f32,
     letter_spacing: f32,
@@ -161,27 +161,28 @@ pub struct TextLeafData {
     font_variant_id: [u8; 4],
     typography_ref_file: [u8; 4],
     typography_ref_id: [u8; 4],
+    //text_length: u32,
 }
 
 impl TextLeafData {
-    pub fn from_bytes(bytes: &[u8; 56]) -> Self {
-        println!("TextLeafData::from_bytes: length = {}", bytes.len());
+    pub fn from_bytes(bytes: &[u8; 44]) -> Self {
         println!("TextLeafData::from_bytes: {:?}", bytes);
         Self {
-            font_style: [bytes[0], bytes[1], bytes[2], bytes[3]],
-            text_align: [bytes[4], bytes[5], bytes[6], bytes[7]],
-            text_transform: [bytes[8], bytes[9], bytes[10], bytes[11]],
-            text_decoration: [bytes[12], bytes[13], bytes[14], bytes[15]],
-            text_direction: [bytes[16], bytes[17], bytes[18], bytes[19]],
-            font_size: f32::from_le_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]),
-            line_height: f32::from_le_bytes([bytes[24], bytes[25], bytes[26], bytes[27]]),
-            letter_spacing: f32::from_le_bytes([bytes[28], bytes[29], bytes[30], bytes[31]]),
-            font_weight: i32::from_le_bytes([bytes[32], bytes[33], bytes[34], bytes[35]]),
-            font_id: [bytes[36], bytes[37], bytes[38], bytes[39]],
-            font_family: [bytes[40], bytes[41], bytes[42], bytes[43]],
-            font_variant_id: [bytes[44], bytes[45], bytes[46], bytes[47]],
-            typography_ref_file: [bytes[48], bytes[49], bytes[50], bytes[51]],
-            typography_ref_id: [bytes[52], bytes[53], bytes[54], bytes[55]],
+            font_style: bytes[0],
+            text_align: bytes[1],
+            text_transform: bytes[2],
+            text_decoration: bytes[3],
+            text_direction: bytes[4],
+            font_size: f32::from_le_bytes([bytes[5], bytes[6], bytes[7], bytes[8]]),
+            line_height: f32::from_le_bytes([bytes[9], bytes[10], bytes[11], bytes[12]]),
+            letter_spacing: f32::from_le_bytes([bytes[13], bytes[14], bytes[15], bytes[16]]),
+            font_weight: i32::from_le_bytes([bytes[17], bytes[18], bytes[19], bytes[20]]),
+            font_id: [bytes[21], bytes[22], bytes[23], bytes[24]],
+            font_family: [bytes[25], bytes[26], bytes[27], bytes[28]],
+            font_variant_id: [bytes[29], bytes[30], bytes[31], bytes[32]],
+            typography_ref_file: [bytes[33], bytes[34], bytes[35], bytes[36]],
+            typography_ref_id: [bytes[37], bytes[38], bytes[39], bytes[40]],
+            //text_length: u32::from_le_bytes([bytes[41], bytes[42], bytes[43], bytes[44]]),
         }
     }
 }
