@@ -6952,7 +6952,7 @@ msgstr "Inactive"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:340
 msgid "workspace.token.inactive-set-description"
-msgstr "This set is not active. Change theme or activate the set / theme to see changes in the canvas"
+msgstr "This set is not active. Change theme or activate this set to see changes in the viewport"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
 msgid "workspace.token.tools"
