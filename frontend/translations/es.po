@@ -6930,7 +6930,7 @@ msgstr "Inactivo"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:340
 msgid "workspace.token.inactive-set-description"
-msgstr "Set inactivo. Cambia el tema o activa el set para ver los cambios en el canvas."
+msgstr "Este set no está activo. Cambia el tema o activa este set para ver los cambios en el viewport"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
 msgid "workspace.token.tools"
