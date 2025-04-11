@@ -395,9 +395,10 @@
 
 (defn parse-uuid
   [s]
-  (if (string? s)
-    (some->> (re-matches uuid-rx s) uuid/uuid)
-    s))
+  (try
+    (uuid/parse s)
+    (catch #?(:clj Exception :cljs :default) _cause
+      s)))
 
 (register!
  {:type ::uuid
