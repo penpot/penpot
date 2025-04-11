@@ -436,7 +436,7 @@
                           child file page))
           (when (not= prop-names (cfv/extract-properties-names child (:data file)))
             (report-error :invalid-variant-properties
-                          (str/ffmt "Variant % has invalid properties" (:id child))
+                          (str/ffmt "Variant % has invalid properties %" (:id child) (vec prop-names))
                           child file page)))))))
 
 (defn- check-variant
