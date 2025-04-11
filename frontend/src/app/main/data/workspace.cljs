@@ -369,7 +369,7 @@
                    (rx/take 1)
                    (rx/map dwc/set-workspace-visited))
 
-              (when-let [component-id (some-> rparams :component-id parse-uuid)]
+              (when-let [component-id (some-> rparams :component-id uuid/parse)]
                 (->> stream
                      (rx/filter (ptk/type? ::workspace-initialized))
                      (rx/observe-on :async)
@@ -382,7 +382,7 @@
                      (rx/take 1)
                      (rx/map zoom-to-frame)))
 
-              (when-let [comment-id (some-> rparams :comment-id parse-uuid)]
+              (when-let [comment-id (some-> rparams :comment-id uuid/parse)]
                 (->> stream
                      (rx/filter (ptk/type? ::workspace-initialized))
                      (rx/observe-on :async)
@@ -2444,13 +2444,6 @@
                            copies)]
         (js/console.log "Copies no ref" (count copies-no-ref) (clj->js copies-no-ref))
         (js/console.log "Childs no ref" (count childs-no-ref) (clj->js childs-no-ref))))))
-
-(defn set-shape-ref
-  [id shape-ref]
-  (ptk/reify ::set-shape-ref
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (update-shape (uuid/uuid id) {:shape-ref (uuid/uuid shape-ref)})))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports

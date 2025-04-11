@@ -43,14 +43,14 @@
 
 (defn read-json-key
   [m]
-  (or (sm/parse-uuid m)
+  (or (uuid/parse m)
       (json/read-kebab-key m)))
 
 (defn read-json-val
   [m]
   (cond
     (and (string? m)
-         (re-matches sm/uuid-rx m))
+         (re-matches uuid/regex m))
     (uuid/uuid m)
 
     (and (string? m)
@@ -521,8 +521,8 @@
         id                 (resolve old-id)
         path               (get-in node [:attrs :penpot:path] "")
         type               (parser/get-type content)
-        main-instance-id   (resolve (uuid (get-in node [:attrs :penpot:main-instance-id] "")))
-        main-instance-page (resolve (uuid (get-in node [:attrs :penpot:main-instance-page] "")))
+        main-instance-id   (resolve (uuid/parse (get-in node [:attrs :penpot:main-instance-id] "")))
+        main-instance-page (resolve (uuid/parse (get-in node [:attrs :penpot:main-instance-page] "")))
         data               (-> (parser/parse-data type content)
                                (assoc :path path)
                                (assoc :id id)
@@ -547,12 +547,12 @@
         old-id               (parser/get-id node)
         id                   (resolve old-id)
         path                 (get-in node [:attrs :penpot:path] "")
-        main-instance-id     (resolve (uuid (get-in node [:attrs :penpot:main-instance-id] "")))
-        main-instance-page   (resolve (uuid (get-in node [:attrs :penpot:main-instance-page] "")))
+        main-instance-id     (resolve (uuid/parse (get-in node [:attrs :penpot:main-instance-id] "")))
+        main-instance-page   (resolve (uuid/parse (get-in node [:attrs :penpot:main-instance-page] "")))
         main-instance-x      (-> (get-in node [:attrs :penpot:main-instance-x] "") (d/parse-double))
         main-instance-y      (-> (get-in node [:attrs :penpot:main-instance-y] "") (d/parse-double))
-        main-instance-parent (resolve (uuid (get-in node [:attrs :penpot:main-instance-parent] "")))
-        main-instance-frame  (resolve (uuid (get-in node [:attrs :penpot:main-instance-frame] "")))
+        main-instance-parent (resolve (uuid/parse (get-in node [:attrs :penpot:main-instance-parent] "")))
+        main-instance-frame  (resolve (uuid/parse (get-in node [:attrs :penpot:main-instance-frame] "")))
         type                 (parser/get-type content)
 
         data (-> (parser/parse-data type content)

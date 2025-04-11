@@ -239,15 +239,15 @@
     (str (:last-id file)))
 
   (lookupShape [_ shape-id]
-    (clj->js (fb/lookup-shape file (uuid/uuid shape-id))))
+    (clj->js (fb/lookup-shape file (uuid/parse shape-id))))
 
   (updateObject [_ id new-obj]
-    (let [old-obj (fb/lookup-shape file (uuid/uuid id))
+    (let [old-obj (fb/lookup-shape file (uuid/parse id))
           new-obj (d/deep-merge old-obj (parse-data new-obj))]
       (set! file (fb/update-object file old-obj new-obj))))
 
   (deleteObject [_ id]
-    (set! file (fb/delete-object file (uuid/uuid id))))
+    (set! file (fb/delete-object file (uuid/parse id))))
 
   (getId [_]
     (:id file))

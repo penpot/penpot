@@ -969,7 +969,7 @@
 
              :else
              (let [file-id (:current-file-id @st/state)
-                   library-id (uuid/uuid library-id)]
+                   library-id (uuid/parse library-id)]
                (->> st/stream
                     (rx/filter (ptk/type? ::dwl/attach-library-finished))
                     (rx/take 1)

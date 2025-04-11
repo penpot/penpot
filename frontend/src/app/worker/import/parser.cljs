@@ -20,9 +20,6 @@
 (def url-regex
   #"url\(#([^\)]*)\)")
 
-(def uuid-regex
-  #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}")
-
 (def uuid-regex-prefix
   #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}-")
 
@@ -84,7 +81,7 @@
 (defn get-id
   [node]
   (let [attr-id (get-in node [:attrs :id])
-        id (when (string? attr-id) (re-find uuid-regex attr-id))]
+        id (when (string? attr-id) (re-find uuid/regex attr-id))]
     (when (some? id)
       (uuid/uuid id))))
 
@@ -189,10 +186,10 @@
   [m]
   (letfn [(convert [value]
             (cond
-              (and (string? value) (re-matches uuid-regex value))
+              (and (string? value) (re-matches uuid/regex value))
               (uuid/uuid value)
 
-              (and (keyword? value) (re-matches uuid-regex (d/name value)))
+              (and (keyword? value) (re-matches uuid/regex (d/name value)))
               (uuid/uuid (d/name value))
 
               (vector? value)
@@ -429,11 +426,11 @@
 (defn add-library-refs
   [props node]
 
-  (let [stroke-color-ref-id   (get-meta node :stroke-color-ref-id uuid/uuid)
-        stroke-color-ref-file (get-meta node :stroke-color-ref-file uuid/uuid)
-        component-id          (get-meta node :component-id uuid/uuid)
-        component-file        (get-meta node :component-file uuid/uuid)
-        shape-ref             (get-meta node :shape-ref uuid/uuid)
+  (let [stroke-color-ref-id   (get-meta node :stroke-color-ref-id uuid/parse)
+        stroke-color-ref-file (get-meta node :stroke-color-ref-file uuid/parse)
+        component-id          (get-meta node :component-id uuid/parse)
+        component-file        (get-meta node :component-file uuid/parse)
+        shape-ref             (get-meta node :shape-ref uuid/parse)
         component-root?       (get-meta node :component-root str->bool)
         main-instance?        (get-meta node :main-instance str->bool)
         touched               (get-meta node :touched parse-touched)]
@@ -463,8 +460,8 @@
   [props node svg-data]
 
   (let [fill (:fill svg-data)
-        fill-color-ref-id        (get-meta node :fill-color-ref-id uuid/uuid)
-        fill-color-ref-file      (get-meta node :fill-color-ref-file uuid/uuid)
+        fill-color-ref-id        (get-meta node :fill-color-ref-id uuid/parse)
+        fill-color-ref-file      (get-meta node :fill-color-ref-file uuid/parse)
         meta-fill-color          (get-meta node :fill-color)
         meta-fill-opacity        (get-meta node :fill-opacity)
         meta-fill-color-gradient (if (str/starts-with? meta-fill-color "url#fill-color-gradient")
@@ -627,7 +624,7 @@
   (let [attrs (-> node :attrs remove-penpot-prefix)]
     {:id             (uuid/next)
      :name           (-> attrs :name)
-     :starting-frame (-> attrs :starting-frame uuid)}))
+     :starting-frame (-> attrs :starting-frame uuid/parse)}))
 
 (defn parse-flows [node]
   (let [flows-node (get-data node :penpot:flows)]
@@ -638,7 +635,7 @@
         id (uuid/next)]
     [id
      {:id       id
-      :frame-id (when (:frame-id attrs) (-> attrs :frame-id uuid))
+      :frame-id (when (:frame-id attrs) (-> attrs :frame-id uuid/parse))
       :axis     (-> attrs :axis keyword)
       :position (-> attrs :position d/parse-double)}]))
 
@@ -775,8 +772,8 @@
                                                      (parse-gradient node (get-meta fill-node :fill-color)))
                               :fill-image (when fill-image-id
                                             (get images fill-image-id))
-                              :fill-color-ref-file (get-meta fill-node :fill-color-ref-file uuid/uuid)
-                              :fill-color-ref-id (get-meta fill-node :fill-color-ref-id uuid/uuid)
+                              :fill-color-ref-file (get-meta fill-node :fill-color-ref-file uuid/parse)
+                              :fill-color-ref-id (get-meta fill-node :fill-color-ref-id uuid/parse)
                               :fill-opacity (get-meta fill-node :fill-opacity d/parse-double)})))
                    (mapv d/without-nils)
                    (filterv #(not= (:fill-color %) "none")))]
@@ -800,8 +797,8 @@
                                                          (parse-gradient node (get-meta stroke-node :stroke-color)))
                                 :stroke-image (when stroke-image-id
                                                 (get images stroke-image-id))
-                                :stroke-color-ref-file (get-meta stroke-node :stroke-color-ref-file uuid/uuid)
-                                :stroke-color-ref-id (get-meta stroke-node :stroke-color-ref-id uuid/uuid)
+                                :stroke-color-ref-file (get-meta stroke-node :stroke-color-ref-file uuid/parse)
+                                :stroke-color-ref-id (get-meta stroke-node :stroke-color-ref-id uuid/parse)
                                 :stroke-opacity (get-meta stroke-node :stroke-opacity d/parse-double)
                                 :stroke-style (get-meta stroke-node :stroke-style keyword)
                                 :stroke-width (get-meta stroke-node :stroke-width d/parse-double)
@@ -993,7 +990,7 @@
                           align-self
                           justify-self
                           shapes]} (-> cell-node :attrs remove-penpot-prefix)
-                  id (uuid/uuid id)]
+                  id (uuid/parse id)]
               [id (d/without-nils
                    {:id id
                     :area-name area-name
@@ -1006,7 +1003,7 @@
                     :justify-self (keyword justify-self)
                     :shapes (if (and (some? shapes) (d/not-empty? shapes))
                               (->> (str/split shapes " ")
-                                   (mapv uuid/uuid))
+                                   (mapv uuid/parse))
                               [])})])))
          (into {}))))
 
@@ -1154,7 +1151,7 @@
                      (assoc :delay (get-meta node :delay d/parse-double))
 
                      (ctsi/has-destination interaction)
-                     (assoc :destination     (get-meta node :destination uuid/uuid)
+                     (assoc :destination     (get-meta node :destination uuid/parse)
                             :preserve-scroll (get-meta node :preserve-scroll str->bool))
 
                      (ctsi/has-url interaction)

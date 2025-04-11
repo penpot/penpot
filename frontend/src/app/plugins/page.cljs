@@ -160,7 +160,7 @@
         (u/display-not-valid :getShapeById shape-id)
 
         :else
-        (let [shape-id (uuid/uuid shape-id)
+        (let [shape-id (uuid/parse shape-id)
               shape (u/locate-shape file-id id shape-id)]
           (when (some? shape)
             (shape/shape-proxy plugin-id file-id id shape-id)))))

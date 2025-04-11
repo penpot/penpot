@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dc]
    [app.main.data.event :as ev]
@@ -104,7 +105,7 @@
         (fn [event]
           (let [target         (dom/get-target event)
                 checked?       (dom/checked? target)
-                page-id        (parse-uuid (dom/get-data target "page-id"))
+                page-id        (uuid/parse (dom/get-data target "page-id"))
                 dif-pages?     (not= page-id (first (:pages options)))
                 no-one-page    (< 1 (count (:pages options)))
                 should-change? (or ^boolean no-one-page

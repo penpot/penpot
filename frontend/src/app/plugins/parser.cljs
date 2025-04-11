@@ -13,7 +13,7 @@
 
 (defn parse-id
   [id]
-  (when id (uuid/uuid id)))
+  (when id (uuid/parse id)))
 
 (defn parse-keyword
   [kw]
