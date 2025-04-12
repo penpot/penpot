@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-04-11 21:01+0000\n"
+"PO-Revision-Date: 2025-04-13 18:18+0000\n"
 "Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
@@ -6767,3 +6767,11 @@ msgstr "Nenhuma"
 #: src/app/main/ui/dashboard.cljs:208
 msgid "dashboard.plugins.bad-url"
 msgstr "O URL do plugin está incorreto"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:200, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:235
+msgid "workspace.options.export.remove-export"
+msgstr "Eliminar exportação"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:241
+msgid "workspace.token.color"
+msgstr "Cor"
