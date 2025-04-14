@@ -16,7 +16,10 @@ mod wapi;
 mod wasm;
 
 use crate::mem::SerializableResult;
-use crate::shapes::{BoolType, ConstraintH, ConstraintV, StructureEntry, TransformEntry, Type};
+use crate::shapes::{
+    BoolType, ConstraintH, ConstraintV, StructureEntry, TransformEntry, Type,
+    RAW_LINEAR_FILL_DATA_SIZE, RAW_STOP_DATA_SIZE,
+};
 use crate::utils::uuid_from_u32_quartet;
 use crate::uuid::Uuid;
 use indexmap::IndexSet;
@@ -255,18 +258,26 @@ pub extern "C" fn add_shape_solid_fill(raw_color: u32) {
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_linear_fill(
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
-    opacity: f32,
-) {
+pub extern "C" fn add_shape_linear_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
-        shape.add_fill(shapes::Fill::new_linear_gradient(
-            (start_x, start_y),
-            (end_x, end_y),
-            opacity,
+        let stops_offset = RAW_LINEAR_FILL_DATA_SIZE;
+        let bytes = mem::bytes();
+        let raw_fill_data: [u8; RAW_LINEAR_FILL_DATA_SIZE] =
+            bytes[0..stops_offset].try_into().unwrap();
+        let raw_fill = shapes::RawLinearFillData::from(raw_fill_data);
+        let stops: Vec<shapes::RawStopData> = bytes[stops_offset..]
+            .chunks(RAW_STOP_DATA_SIZE)
+            .map(|chunk| {
+                let data: [u8; RAW_STOP_DATA_SIZE] = chunk.try_into().unwrap();
+                shapes::RawStopData::from(data)
+            })
+            .collect();
+
+        shape.add_fill(shapes::Fill::new_linear_gradient_with_stops(
+            raw_fill.start(),
+            raw_fill.end(),
+            raw_fill.opacity(),
+            stops,
         ));
     });
 }

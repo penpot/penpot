@@ -3,16 +3,58 @@ use skia_safe::{self as skia, Rect};
 use super::Color;
 use crate::uuid::Uuid;
 
+pub const RAW_LINEAR_FILL_DATA_SIZE: usize = 21;
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct RawLinearFillData {
+    start_x: f32,
+    start_y: f32,
+    end_x: f32,
+    end_y: f32,
+    opacity: f32,
+    stop_count: u8,
+}
+
+impl From<[u8; 21]> for RawLinearFillData {
+    fn from(bytes: [u8; 21]) -> Self {
+        Self {
+            start_x: f32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+            start_y: f32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
+            end_x: f32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+            end_y: f32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
+            opacity: f32::from_le_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]),
+            stop_count: bytes[20],
+        }
+    }
+}
+
+impl RawLinearFillData {
+    pub fn start(&self) -> (f32, f32) {
+        (self.start_x, self.start_y)
+    }
+
+    pub fn end(&self) -> (f32, f32) {
+        (self.end_x, self.end_y)
+    }
+
+    pub fn opacity(&self) -> f32 {
+        self.opacity
+    }
+}
+
+pub const RAW_STOP_DATA_SIZE: usize = 5;
+
 #[derive(Debug)]
 #[repr(C)]
 pub struct RawStopData {
-    color: [u8; 4],
+    color: u32,
     offset: u8,
 }
 
 impl RawStopData {
     pub fn color(&self) -> skia::Color {
-        skia::Color::from_argb(self.color[3], self.color[0], self.color[1], self.color[2])
+        skia::Color::from(self.color)
     }
 
     pub fn offset(&self) -> f32 {
@@ -20,10 +62,18 @@ impl RawStopData {
     }
 
     pub fn from_bytes(bytes: [u8; 5]) -> Self {
+        let color_bytes: [u8; 4] = bytes[0..4].try_into().unwrap();
         Self {
-            color: [bytes[0], bytes[1], bytes[2], bytes[3]],
+            color: u32::from_le_bytes(color_bytes),
             offset: bytes[4],
         }
+    }
+}
+
+impl From<[u8; 5]> for RawStopData {
+    // TODO: remove from_bytes and copy its implementation here
+    fn from(bytes: [u8; 5]) -> Self {
+        Self::from_bytes(bytes)
     }
 }
 
@@ -124,15 +174,31 @@ pub enum Fill {
 
 impl Fill {
     pub fn new_linear_gradient(start: (f32, f32), end: (f32, f32), opacity: f32) -> Self {
-        Self::LinearGradient(Gradient {
+        Self::new_linear_gradient_with_stops(start, end, opacity, vec![])
+    }
+
+    pub fn new_linear_gradient_with_stops(
+        start: (f32, f32),
+        end: (f32, f32),
+        opacity: f32,
+        stops: Vec<RawStopData>,
+    ) -> Self {
+        let mut gradient = Gradient {
             start,
             end,
             opacity,
             colors: vec![],
             offsets: vec![],
             width: 0.,
-        })
+        };
+
+        for stop in stops {
+            gradient.add_stop(stop.color(), stop.offset());
+        }
+
+        Self::LinearGradient(gradient)
     }
+
     pub fn new_radial_gradient(
         start: (f32, f32),
         end: (f32, f32),
