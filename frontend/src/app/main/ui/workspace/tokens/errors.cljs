@@ -80,4 +80,6 @@
   (->> errors
        (map (fn [err]
               (when (:error/detail err)
-                ((:error/detail err) (:error/value err)))))))
+                ((:error/detail err) (:error/value err)))))
+       (filter some?)
+       (seq)))
