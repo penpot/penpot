@@ -319,8 +319,7 @@
                                                            :tokens {"test-token"
                                                                     (ctob/make-token :name "test-token"
                                                                                      :type :boolean
-                                                                                     :value true)}))
-                        (ctob/add-theme (ctob/make-token-theme :name "test-token-theme" :sets #{"test-token-set"})))
+                                                                                     :value true)})))
         token-set-copy' (ctob/duplicate-set "test-token-set" tokens-lib {:suffix "copy"})
         token' (get-in token-set-copy' [:tokens "test-token"])]
 
@@ -335,8 +334,7 @@
                                                            :tokens {"test-token"
                                                                     (ctob/make-token :name "test-token"
                                                                                      :type :boolean
-                                                                                     :value true)}))
-                        (ctob/add-theme (ctob/make-token-theme :name "test-token-theme" :sets #{"test-token-set"})))
+                                                                                     :value true)})))
 
         tokens-lib (ctob/add-set tokens-lib (ctob/duplicate-set "test-token-set" tokens-lib {:suffix "copy"}))
 
