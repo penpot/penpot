@@ -59,7 +59,8 @@
      (when is-group
        [:> menu-entry* {:title (tr "workspace.token.add-set-to-group") :on-click create-set-at-path}])
      [:> menu-entry* {:title (tr "labels.rename") :on-click on-edit}]
-     [:> menu-entry* {:title (tr "labels.duplicate") :on-click on-duplicate}]
+     (when-not is-group
+       [:> menu-entry* {:title (tr "labels.duplicate") :on-click on-duplicate}])
      [:> menu-entry* {:title (tr "labels.delete")  :on-click on-delete}]]))
 
 (mf/defc token-set-context-menu*
