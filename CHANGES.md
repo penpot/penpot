@@ -9,6 +9,7 @@
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features
+- Update board presets with a newer devices [Taiga #10610](https://tree.taiga.io/project/penpot/us/10610)
 
 ### :bug: Bugs fixed
 

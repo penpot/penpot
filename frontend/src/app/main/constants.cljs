@@ -25,6 +25,36 @@
 
 (def size-presets
   [{:name "APPLE"}
+   {:name "iPhone 16"
+    :width 393
+    :height 852}
+   {:name "iPhone 16 Pro"
+    :width 402
+    :height 874}
+   {:name "iPhone 16 Pro Max"
+    :width 440
+    :height 956}
+   {:name "iPhone 16 Plus"
+    :width 430
+    :height 932}
+   {:name "14/15 Pro Max"
+    :width 430
+    :height 932}
+   {:name "iPhone 15/15 Pro"
+    :width 393
+    :height 852}
+   {:name "iPhone 13/14 "
+    :width 390
+    :height 844}
+   {:name "iPhone 14 Plus"
+    :width 428
+    :height 926}
+   {:name "iPhone 13 Mini"
+    :width 375
+    :height 812}
+   {:name "iPhone SE"
+    :width 320
+    :height 568}
    {:name "iPhone 12/12 Pro"
     :width 390
     :height 844}
@@ -40,47 +70,86 @@
    {:name "iPhone XS Max/XR/11"
     :width 414
     :height 896}
-   {:name "iPhone 6/7/8 Plus"
-    :width 414
-    :height 736}
-   {:name "iPhone 6/7/8/SE2"
-    :width 375
-    :height 667}
-   {:name "iPhone 5/SE"
-    :width 320
-    :height 568}
    {:name "iPad"
     :width 768
     :height 1024}
+   {:name "iPad Mini 8.3in"
+    :width 744
+    :height 1133}
    {:name "iPad Pro 10.5in"
     :width 834
     :height 1112}
+   {:name "iPad Pro 11in"
+    :width 834
+    :height 1194}
    {:name "iPad Pro 12.9in"
-    :width 1024
+    :width 1027
     :height 1366}
+   {:name "Watch Series 10"
+    :width 416
+    :height 496}
+   {:name "Watch 45mm"
+    :width 396
+    :height 484}
    {:name "Watch 44mm"
     :width 368
     :height 448}
    {:name "Watch 42mm"
     :width 312
     :height 390}
+   {:name "Watch 41mm"
+    :width 352
+    :height 430}
    {:name "Watch 40mm"
     :width 324
     :height 394}
    {:name "Watch 38mm"
     :width 272
     :height 340}
+   {:name "MacBook Air"
+    :width 1280
+    :height 832}
+   {:name "MacBook Pro 14in"
+    :width 1512
+    :height 982}
+   {:name "MacBook Pro 16in"
+    :width 1728
+    :height 1117}
 
    {:name "ANDROID"}
+   {:name "Expanded"
+    :width 1280
+    :height 800}
+   {:name "Compact"
+    :width 412
+    :height 917}
+   {:name "Large"
+    :width 360
+    :height 800}
+   {:name "Medium"
+    :width 700
+    :height 840}
+   {:name "Small"
+    :width 360
+    :height 640}
    {:name "Mobile"
     :width 360
     :height 640}
    {:name "Tablet"
     :width 768
     :height 1024}
+   {:name "Google Pixel 7 Pro"
+    :width 1440
+    :height 3120}
+   {:name "Google Pixel 6a/6"
+    :width 1080
+    :height 2400}
    {:name "Google Pixel 4a/5"
     :width 393
     :height 851}
+   {:name "Samsung Galaxy S22"
+    :width 1080
+    :height 2340}
    {:name "Samsung Galaxy S20+"
     :width 384
     :height 854}
@@ -95,11 +164,17 @@
    {:name "Surface Pro 4/5/6/7"
     :width 1368
     :height 912}
+   {:name "Surface Pro 8"
+    :width 140
+    :height 960}
 
    {:name "ReMarkable"}
    {:name "Remarkable 2"
-    :width 840
-    :height 1120}
+    :width 1404
+    :height 1872}
+   {:name "Remarkable Pro"
+    :width 1620
+    :height 2160}
 
    {:name "WEB"}
    {:name "Web 1280"
@@ -114,6 +189,20 @@
    {:name "Web 1920"
     :width 1920
     :height 1080}
+
+   {:name "MIXED"}
+   {:name "Desktop/Wireframe"
+    :width 1440
+    :height 1024}
+   {:name "TV"
+    :width 1280
+    :height 720}
+   {:name "Slide 16:9"
+    :width 1920
+    :height 1080}
+   {:name "Slide 4:3"
+    :width 1027
+    :height 768}
 
    {:name "PRINT (96dpi)"}
    {:name "A0"
@@ -150,7 +239,7 @@
     :height 320}
    {:name "Instagram post"
     :width 1080
-    :height 1080}
+    :height 1350}
    {:name "Instagram story"
     :width 1080
     :height 1920}
@@ -170,15 +259,24 @@
     :width 1584
     :height 396}
    {:name "LinkedIn post"
-    :width 1200
-    :height 627}
-   {:name "Twitter profile"
+    :width 520
+    :height 320}
+   {:name "Bluesky profile"
     :width 400
     :height 400}
-   {:name "Twitter header"
+   {:name "Bluesky cover"
+    :width 3000
+    :height 1000}
+   {:name "Bluesky post"
+    :width 1080
+    :height 1350}
+   {:name "X profile"
+    :width 400
+    :height 400}
+   {:name "X header"
     :width 1500
     :height 500}
-   {:name "Twitter post"
+   {:name "X post"
     :width 1024
     :height 512}
    {:name "YouTube profile"
@@ -187,6 +285,9 @@
    {:name "YouTube banner"
     :width 2560
     :height 1440}
+   {:name "YouTube cover"
+    :width 2048
+    :height 1152}
    {:name "YouTube thumb"
     :width 1280
     :height 720}])
