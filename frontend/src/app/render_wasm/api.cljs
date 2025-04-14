@@ -23,6 +23,8 @@
    [app.render-wasm.mem :as mem]
    [app.render-wasm.performance :as perf]
    [app.render-wasm.serializers :as sr]
+   [app.render-wasm.serializers.color :as sr-clr]
+   [app.render-wasm.serializers.fills :as sr-fills]
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.http :as http]
@@ -224,7 +226,7 @@
                 image    (:fill-image fill)]
             (cond
               (some? color)
-              (let [rgba (sr/hex->u32argb color opacity)]
+              (let [rgba (sr-clr/hex->u32argb color opacity)]
                 (h/call wasm/internal-module "_add_shape_solid_fill" rgba))
 
               (some? gradient)
@@ -234,7 +236,7 @@
                       size   (+ LINEAR-FILL-BASE-SIZE (* (count stops) GRADIENT-STOP-SIZE))
                       offset (mem/alloc-bytes size)
                       heap   (mem/get-heap-u8)]
-                  (sr/serialize-linear-fill gradient opacity heap offset)
+                  (sr-fills/serialize-linear-fill gradient opacity heap offset)
                   (h/call wasm/internal-module "_add_shape_linear_fill"))
                 :radial
                 (let [stops (:stops gradient)
@@ -250,7 +252,7 @@
                           opacity
                           (:width gradient))
                   (.set mem (js/Uint8Array. (clj->js (flatten (map (fn [stop]
-                                                                     (let [[r g b a] (sr/rgba-bytes-from-hex (:color stop) (:opacity stop))
+                                                                     (let [[r g b a] (sr-clr/rgba-bytes-from-hex (:color stop) (:opacity stop))
                                                                            offset (:offset stop)]
                                                                        [r g b a (* 100 offset)]))
                                                                    stops)))))
@@ -312,7 +314,7 @@
                           opacity
                           (:width gradient)))
                 (.set mem (js/Uint8Array. (clj->js (flatten (map (fn [stop]
-                                                                   (let [[r g b a] (sr/rgba-bytes-from-hex (:color stop) (:opacity stop))
+                                                                   (let [[r g b a] (sr-clr/rgba-bytes-from-hex (:color stop) (:opacity stop))
                                                                          offset (:offset stop)]
                                                                      [r g b a (* 100 offset)]))
                                                                  stops)))))
@@ -334,7 +336,7 @@
                   (store-image id)))
 
               (some? color)
-              (let [rgba (sr/hex->u32argb color opacity)]
+              (let [rgba (sr-clr/hex->u32argb color opacity)]
                 (h/call wasm/internal-module "_add_shape_stroke_solid_fill" rgba)))))
         strokes))
 
@@ -626,7 +628,7 @@
         (let [shadow (nth shadows index)
               color (dm/get-prop shadow :color)
               blur (dm/get-prop shadow :blur)
-              rgba (sr/hex->u32argb (dm/get-prop color :color) (dm/get-prop color :opacity))
+              rgba (sr-clr/hex->u32argb (dm/get-prop color :color) (dm/get-prop color :opacity))
               hidden (dm/get-prop shadow :hidden)
               x (dm/get-prop shadow :offset-x)
               y (dm/get-prop shadow :offset-y)
@@ -849,7 +851,7 @@
 
 (defn set-canvas-background
   [background]
-  (let [rgba (sr/hex->u32argb background 1)]
+  (let [rgba (sr-clr/hex->u32argb background 1)]
     (h/call wasm/internal-module "_set_canvas_background" rgba)
     (request-render "set-canvas-background")))
 
@@ -878,7 +880,7 @@
 
 (defn initialize
   [base-objects zoom vbox background]
-  (let [rgba (sr/hex->u32argb background 1)]
+  (let [rgba (sr-clr/hex->u32argb background 1)]
     (h/call wasm/internal-module "_set_canvas_background" rgba)
     (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
     (set-objects base-objects)))
