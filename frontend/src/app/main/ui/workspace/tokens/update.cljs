@@ -9,13 +9,13 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
    [app.common.types.token :as ctt]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
-   [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [clojure.data :as data]
@@ -182,12 +182,14 @@
   (ptk/reify ::update-workspace-tokens
     ptk/WatchEvent
     (watch [_ state _]
-      (let [tokens (-> (wtts/get-active-theme-sets-tokens-names-map state)
-                       (wtsd/resolve-tokens+))]
-        (->> (rx/from tokens)
-             (rx/mapcat (fn [sd-tokens]
-                          (let [undo-id (js/Symbol)]
-                            (rx/concat
-                             (rx/of (dwu/start-undo-transaction undo-id :timeout false))
-                             (update-tokens state sd-tokens)
-                             (rx/of (dwu/commit-undo-transaction undo-id)))))))))))
+      (when-let [tokens-lib (-> (dsh/lookup-file-data state)
+                                (get :tokens-lib))]
+        (let [tokens (-> (ctob/get-active-themes-set-tokens tokens-lib)
+                         (wtsd/resolve-tokens+))]
+          (->> (rx/from tokens)
+               (rx/mapcat (fn [sd-tokens]
+                            (let [undo-id (js/Symbol)]
+                              (rx/concat
+                               (rx/of (dwu/start-undo-transaction undo-id :timeout false))
+                               (update-tokens state sd-tokens)
+                               (rx/of (dwu/commit-undo-transaction undo-id))))))))))))
