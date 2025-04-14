@@ -192,7 +192,7 @@
                    (dch/commit-changes changes))))))))
 
 (defn duplicate-token-set
-  [is-group id]
+  [id is-group]
   (ptk/reify ::duplicate-token-set
     ptk/WatchEvent
     (watch [it state _]

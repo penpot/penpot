@@ -48,7 +48,7 @@
         (mf/use-fn
          (mf/deps is-group id)
          (fn []
-           (st/emit! (dt/duplicate-token-set is-group id))))
+           (st/emit! (dt/duplicate-token-set id is-group))))
 
         on-delete
         (mf/use-fn
