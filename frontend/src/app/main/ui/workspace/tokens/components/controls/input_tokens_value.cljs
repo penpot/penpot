@@ -4,52 +4,43 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.components.controls.input-tokens
+(ns app.main.ui.workspace.tokens.components.controls.input-tokens-value
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.constants :refer [max-input-length]]
    [app.main.ui.ds.controls.input :refer [input*]]
-   [cuerdas.core :as str]
-   [rumext.v2 :as mf]
-   ))
+   [rumext.v2 :as mf]))
 
-(def ^:private schema::input-tokens
+(def ^:private schema::input-tokens-value
   [:map
    [:id :string]
    [:label :string]
-   [:is-optional {:optional true} :boolean]
    [:placeholder {:optional true} :string]
+   [:default-value {:optional true} [:maybe :string]]
    [:class {:optional true} :string]
    [:max-length {:optional true} :int]
-   [:error {:optional true} :string]
+   [:error {:optional true} :boolean]
    [:value {:optional true} :string]])
 
-(mf/defc input-tokens*
+(mf/defc input-tokens-value*
   {::mf/props :obj
    ::mf/forward-ref true
-   ::mf/schema schema::input-tokens}
-  [{:keys [class label is-optional id max-length error value children] :rest props}]
-  (let [errorId (str/concat id "-error")
-        is-optional (or is-optional false)
+   ::mf/schema schema::input-tokens-value}
+  [{:keys [class label id max-length error value children] :rest props} ref]
+  (let [ref   (or ref (mf/use-ref))
         props (mf/spread-props props {:id id
                                       :type "text"
                                       :class (stl/css :input)
                                       :aria-invalid error
-                                      :aria-describedby errorId
                                       :max-length (d/nilv max-length max-input-length)
-                                      :value value})]
+                                      :value value
+                                      :ref ref})]
     [:div {:class (dm/str class " " (stl/css-case :wrapper true
                                                   :input-error error))}
-     [:label {:for id :class (stl/css :label)} label 
-      (when is-optional
-        [:span {:class (stl/css :label-optional)} "(Optional)"])]
+     [:label {:for id :class (stl/css :label)} label]
      [:div {:class (stl/css :input-wrapper)}
-      [:> input* props] 
       (when (some? children)
-        [:div {:class (stl/css :input-actions)} children])
-      (when error
-        [:div {:id errorId :class (stl/css :input-error-message)}
-         error])
-      ]]))
+        [:div {:class (stl/css :input-swatch)} children])
+      [:> input* props]]]))

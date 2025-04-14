@@ -25,6 +25,7 @@
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.components.controls.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
+   [app.main.ui.workspace.tokens.components.controls.input-tokens-value :refer [input-tokens-value*]]
    [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
@@ -527,7 +528,7 @@
            {:level :warning :appearance :ghost} (tr "workspace.token.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
-       [:> input-tokens*
+       [:> input-tokens-value*
         {:id "token-value"
          :placeholder (tr "workspace.token.token-value-enter")
          :label (tr "workspace.token.token-value")

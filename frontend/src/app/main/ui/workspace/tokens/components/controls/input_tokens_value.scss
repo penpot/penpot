@@ -7,7 +7,6 @@
 @use "../../../../ds/typography.scss" as *;
 @use "../../../../ds/_borders.scss" as *;
 @use "../../../../ds/_sizes.scss" as *;
-@use "../../../../ds/z-index.scss" as *;
 
 @import "refactor/common-refactor.scss";
 
@@ -31,19 +30,13 @@
   @include use-typography("body-small");
   @include textEllipsis;
   color: var(--label-color);
-  display: flex;
-  gap: var(--sp-xs);
-}
-
-.label-optional {
-  color: var(--color-foreground-secondary);
 }
 
 .input-wrapper {
   display: flex;
   align-items: center;
 
-  &:has(.input-actions) {
+  &:has(.input-swatch) {
     position: relative;
 
     & .input {
@@ -55,6 +48,6 @@
 .input-swatch {
   position: absolute;
   display: flex;
-  inset-inline-end: var(--sp-s);
-  z-index: var(--z-index-set);
+  inset-inline-start: var(--sp-s);
+  z-index: 2;
 }
