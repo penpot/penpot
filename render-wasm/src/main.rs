@@ -17,8 +17,8 @@ mod wasm;
 
 use crate::mem::SerializableResult;
 use crate::shapes::{
-    BoolType, ConstraintH, ConstraintV, StructureEntry, TransformEntry, Type,
-    RAW_LINEAR_FILL_DATA_SIZE, RAW_STOP_DATA_SIZE,
+    BoolType, ConstraintH, ConstraintV, StructureEntry, TransformEntry, Type, RAW_FILL_DATA_SIZE,
+    RAW_STOP_DATA_SIZE,
 };
 use crate::utils::uuid_from_u32_quartet;
 use crate::uuid::Uuid;
@@ -260,12 +260,11 @@ pub extern "C" fn add_shape_solid_fill(raw_color: u32) {
 #[no_mangle]
 pub extern "C" fn add_shape_linear_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
-        let stops_offset = RAW_LINEAR_FILL_DATA_SIZE;
         let bytes = mem::bytes();
-        let raw_fill_data: [u8; RAW_LINEAR_FILL_DATA_SIZE] =
-            bytes[0..stops_offset].try_into().unwrap();
-        let raw_fill = shapes::RawLinearFillData::from(raw_fill_data);
-        let stops: Vec<shapes::RawStopData> = bytes[stops_offset..]
+        let raw_gradient_bytes: [u8; RAW_FILL_DATA_SIZE] =
+            bytes[0..RAW_FILL_DATA_SIZE].try_into().unwrap();
+        let raw_gradient = shapes::RawGradientData::from(raw_gradient_bytes);
+        let stops: Vec<shapes::RawStopData> = bytes[RAW_FILL_DATA_SIZE..]
             .chunks(RAW_STOP_DATA_SIZE)
             .map(|chunk| {
                 let data: [u8; RAW_STOP_DATA_SIZE] = chunk.try_into().unwrap();
@@ -274,9 +273,9 @@ pub extern "C" fn add_shape_linear_fill() {
             .collect();
 
         shape.add_fill(shapes::Fill::new_linear_gradient_with_stops(
-            raw_fill.start(),
-            raw_fill.end(),
-            raw_fill.opacity(),
+            raw_gradient.start(),
+            raw_gradient.end(),
+            raw_gradient.opacity(),
             stops,
         ));
     });

@@ -50,12 +50,16 @@
 (def GRID-LAYOUT-ROW-ENTRY-SIZE 5)
 (def GRID-LAYOUT-COLUMN-ENTRY-SIZE 5)
 (def GRID-LAYOUT-CELL-ENTRY-SIZE 37)
-(def GRADIENT-STOP-SIZE 5)
-(def LINEAR-FILL-BASE-SIZE 21)
+
 
 (defn gradient-stop-get-entries-size
   [stops]
-  (mem/get-list-size stops GRADIENT-STOP-SIZE))
+  (mem/get-list-size stops sr-fills/GRADIENT-STOP-SIZE))
+
+(defn gradient-byte-size
+  [gradient]
+  (let [stops (:stops gradient)]
+    (+ sr-fills/GRADIENT-BASE-SIZE (* (count stops) sr-fills/GRADIENT-STOP-SIZE))))
 
 (defn modifier-get-entries-size
   "Returns the list of a modifier list in bytes"
@@ -232,8 +236,7 @@
               (some? gradient)
               (case (:type gradient)
                 :linear
-                (let [stops  (:stops gradient)
-                      size   (+ LINEAR-FILL-BASE-SIZE (* (count stops) GRADIENT-STOP-SIZE))
+                (let [size   (gradient-byte-size gradient)
                       offset (mem/alloc-bytes size)
                       heap   (mem/get-heap-u8)]
                   (sr-fills/serialize-linear-fill gradient opacity heap offset)

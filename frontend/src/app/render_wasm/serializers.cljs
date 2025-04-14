@@ -10,8 +10,6 @@
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
-
-
 (defn u8
   [value]
   (let [u8-arr (js/Uint8Array. 1)]

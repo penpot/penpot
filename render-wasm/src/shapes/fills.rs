@@ -3,33 +3,33 @@ use skia_safe::{self as skia, Rect};
 use super::Color;
 use crate::uuid::Uuid;
 
-pub const RAW_LINEAR_FILL_DATA_SIZE: usize = 21;
+pub const RAW_FILL_DATA_SIZE: usize = 24;
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct RawLinearFillData {
+pub struct RawGradientData {
     start_x: f32,
     start_y: f32,
     end_x: f32,
     end_y: f32,
     opacity: f32,
-    stop_count: u8,
+    width: f32,
 }
 
-impl From<[u8; 21]> for RawLinearFillData {
-    fn from(bytes: [u8; 21]) -> Self {
+impl From<[u8; RAW_FILL_DATA_SIZE]> for RawGradientData {
+    fn from(bytes: [u8; RAW_FILL_DATA_SIZE]) -> Self {
         Self {
             start_x: f32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
             start_y: f32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
             end_x: f32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
             end_y: f32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
             opacity: f32::from_le_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]),
-            stop_count: bytes[20],
+            width: f32::from_le_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]),
         }
     }
 }
 
-impl RawLinearFillData {
+impl RawGradientData {
     pub fn start(&self) -> (f32, f32) {
         (self.start_x, self.start_y)
     }
