@@ -427,11 +427,6 @@
         (map #(str/concat base-name (suffix-fn %))
              (iterate inc 1))))
 
-(defn ^:private get-suffix
-  "Default suffix impelemtation"
-  [copy-count]
-  (str/concat " " copy-count))
-
 (defn generate-unique-name
   "Generates a unique name by selecting the first available name from a generated sequence.
    The sequence consists of `base-name` and its variants, avoiding conflicts with `existing-names`.
@@ -445,8 +440,7 @@
 
    Returns:
    - A unique name not present in `existing-names`."
-  [base-name existing-names & {:keys [suffix-fn immediate-suffix?]
-                               :or {suffix-fn get-suffix}}]
+  [base-name existing-names & {:keys [suffix-fn immediate-suffix? suffix]}]
   (dm/assert!
    "expected a set of strings"
    (coll? existing-names))
@@ -454,9 +448,21 @@
   (dm/assert!
    "expected a string for `basename`."
    (string? base-name))
-  (let [existing-name-set (cond-> (set existing-names)
+  (let [suffix-fn (if suffix-fn
+                    suffix-fn
+                    (if suffix
+                      (fn [copy-count]
+                        (str/concat "-"
+                                    suffix
+                                    (when (> copy-count 1)
+                                      (str "-" copy-count))))
+                      (fn [copy-count]
+                        (str/concat " " copy-count))))
+
+        existing-name-set (cond-> (set existing-names)
                             immediate-suffix? (conj base-name))
         names (name-seq base-name suffix-fn)]
+
     (->> names
          (remove #(contains? existing-name-set %))
          first)))

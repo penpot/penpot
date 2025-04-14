@@ -20,3 +20,6 @@
                      :objects shape-id
                      :applied-tokens]
                merge applied-attributes)))
+
+(defn get-tokens-lib [file]
+  (get-in file [:data :tokens-lib]))

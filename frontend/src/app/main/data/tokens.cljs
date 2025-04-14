@@ -21,7 +21,6 @@
    [app.main.ui.workspace.tokens.update :as wtu]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (declare set-selected-token-set-name)
@@ -189,6 +188,23 @@
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
                             (pcb/rename-token-set (:name token-set) name))]
+            (rx/of (set-selected-token-set-name name)
+                   (dch/commit-changes changes))))))))
+
+(defn duplicate-token-set
+  [id is-group]
+  (ptk/reify ::duplicate-token-set
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data       (dsh/lookup-file-data state)
+            name       (ctob/normalize-set-name id)
+            tokens-lib (get data :tokens-lib)
+            suffix     (tr "workspace.token.duplicate-suffix")]
+
+        (when-let [set (ctob/duplicate-set name tokens-lib {:suffix suffix})]
+          (let [changes (-> (pcb/empty-changes it)
+                            (pcb/with-library-data data)
+                            (pcb/set-token-set (:name set) is-group set))]
             (rx/of (set-selected-token-set-name name)
                    (dch/commit-changes changes))))))))
 
@@ -385,17 +401,8 @@
         (when-let [token (ctob/get-token token-set token-name)]
           (let [tokens (ctob/get-tokens token-set)
                 unames (map :name tokens)
-
-                suffix-fn
-                (fn [copy-count]
-                  (let [suffix (tr "workspace.token.duplicate-suffix")]
-                    (str/concat "-"
-                                suffix
-                                (when (> copy-count 1)
-                                  (str "-" copy-count)))))
-
-                copy-name
-                (cfh/generate-unique-name token-name unames :suffix-fn suffix-fn)]
+                suffix (tr "workspace.token.duplicate-suffix")
+                copy-name (cfh/generate-unique-name token-name unames :suffix suffix)]
 
             (rx/of (create-token (assoc token :name copy-name)))))))))
 
