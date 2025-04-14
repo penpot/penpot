@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "common/refactor/common-refactor.scss" as *;
+@use "../ds/typography.scss" as t;
 
 .dashboard-section {
   display: flex;
@@ -39,7 +40,7 @@
 }
 
 .membership-date {
-  @include bodySmallTypography;
+  @include t.use-typography("body-small");
   color: var(--color-foreground-secondary);
   margin-inline-start: $s-8;
 }
@@ -58,13 +59,13 @@
 }
 
 .title-section {
-  @include bigTitleTipography;
+  @include t.use-typography("title-large");
   color: var(--color-foreground-primary);
   margin-block-end: $s-16;
 }
 
 .plan-section-title {
-  @include headlineSmallTypography;
+  @include t.use-typography("headline-small");
   color: var(--color-foreground-primary);
 }
 
@@ -96,12 +97,12 @@
 
 .plan-card-title,
 .plan-price-value {
-  @include medTitleTipography;
+  @include t.use-typography("title-medium");
   color: var(--color-foreground-primary);
 }
 
 .plan-price-period {
-  @include bodySmallTypography;
+  @include t.use-typography("body-small");
   color: var(--color-foreground-primary);
 }
 
@@ -111,7 +112,7 @@
 
 .benefits-title,
 .benefit {
-  @include bodyMediumTypography;
+  @include t.use-typography("body-medium");
   color: var(--color-foreground-secondary);
 }
 
@@ -120,6 +121,6 @@
 }
 
 .cta-button {
-  @include bodySmallTypography;
+  @include t.use-typography("body-small");
   color: var(--color-accent-tertiary);
 }

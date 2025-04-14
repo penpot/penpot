@@ -65,7 +65,7 @@
         password?      (= section :settings-password)
         options?       (= section :settings-options)
         feedback?      (= section :settings-feedback)
-        plan?          (= section :settings-subscription)
+        subscription?  (= section :settings-subscription)
         access-tokens? (= section :settings-access-tokens)
         notifications? (= section :settings-notifications)
         team-id        (or (dtm/get-last-team-id)
@@ -109,7 +109,7 @@
         [:span {:class (stl/css :element-title)} (tr "labels.settings")]]
 
        (when (contains? cf/flags :subscriptions)
-         [:li {:class (stl/css-case :current plan?
+         [:li {:class (stl/css-case :current subscription?
                                     :settings-item true)
                :on-click go-settings-subscription
                :data-testid "settings-subscription"}

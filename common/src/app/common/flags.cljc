@@ -125,7 +125,8 @@
     :export-file-v3
     :render-wasm-dpr
     :hide-release-modal
-    :subscriptions})
+    :subscriptions
+    :subscriptions-old})
 
 (def all-flags
   (set/union email login varia))
@@ -147,7 +148,8 @@
    :enable-dashboard-templates-section
    :enable-google-fonts-provider
    :enable-component-thumbnails
-   :disable-subscriptions])
+   :disable-subscriptions
+   :disable-subscriptions-old])
 
 (defn parse
   [& flags]

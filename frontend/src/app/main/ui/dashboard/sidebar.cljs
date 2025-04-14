@@ -970,9 +970,11 @@
            (st/emit! (rt/nav :settings-subscription))))]
 
     [:*
-     (if (contains? cf/flags :subscriptions)
-       [:> subscription-sidebar* {:go-to-subscription go-to-subscription}]
+     (when (contains? cf/flags :subscriptions)
+       [:> subscription-sidebar* {:go-to-subscription go-to-subscription}])
 
+     ;; TODO remove this block when subscriptions is full implemented
+     (when (contains? cf/flags :subscriptions-old)
        [:button {:class (stl/css :upgrade-plan-section)
                  :on-click on-power-up-click}
         [:div {:class (stl/css :penpot-free)}

@@ -1,6 +1,7 @@
 @use "common/refactor/common-refactor.scss" as *;
 @use "common/refactor/common-dashboard";
 @use "../ds/typography.scss" as t;
+@use "../ds/_borders.scss" as *;
 
 .cta-power-up {
   display: flex;
