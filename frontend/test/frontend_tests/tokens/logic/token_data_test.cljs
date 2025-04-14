@@ -20,8 +20,6 @@
   (-> (setup-file)
       (assoc-in [:data :tokens-lib]
                 (-> (ctob/make-tokens-lib)
-                    (ctob/add-theme (ctob/make-token-theme :name "Theme A" :sets #{"Set A"}))
-                    (ctob/set-active-themes #{"/Theme A"})
                     (ctob/add-set (ctob/make-token-set :name "Set A"))))))
 
 (t/deftest duplicate-set

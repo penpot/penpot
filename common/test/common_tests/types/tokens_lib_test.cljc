@@ -340,18 +340,17 @@
 
         tokens-lib (ctob/add-set tokens-lib (ctob/duplicate-set "test-token-set" tokens-lib {:suffix "copy"}))
 
-        token-set-copy' (ctob/duplicate-set "test-token-set" tokens-lib {:suffix "copy"})
-        token' (get-in token-set-copy' [:tokens "test-token"])]
+        token-set-copy (ctob/duplicate-set "test-token-set" tokens-lib {:suffix "copy"})
+        token (get-in token-set-copy [:tokens "test-token"])]
 
-    (t/is (some? token-set-copy'))
-    (t/is (= (:name token-set-copy') "test-token-set-copy-2"))
-    (t/is (= (count (:tokens token-set-copy')) 1))
-    (t/is (= (:name token') "test-token"))))
+    (t/is (some? token-set-copy))
+    (t/is (= (:name token-set-copy) "test-token-set-copy-2"))
+    (t/is (= (count (:tokens token-set-copy)) 1))
+    (t/is (= (:name token) "test-token"))))
 
 (t/deftest duplicate-empty-token-set
   (let [tokens-lib      (-> (ctob/make-tokens-lib)
-                            (ctob/add-set (ctob/make-token-set :name "test-token-set"))
-                            (ctob/add-theme (ctob/make-token-theme :name "test-token-theme" :sets #{"test-token-set"})))
+                            (ctob/add-set (ctob/make-token-set :name "test-token-set")))
 
         token-set-copy' (ctob/duplicate-set "test-token-set" tokens-lib {:suffix "copy"})
         tokens'         (get token-set-copy' :tokens)]
@@ -362,8 +361,7 @@
     (t/is (= (count tokens') 0))))
 
 (t/deftest duplicate-not-existing-token-set
-  (let [tokens-lib      (-> (ctob/make-tokens-lib)
-                            (ctob/add-theme (ctob/make-token-theme :name "test-token-theme" :sets #{"test-token-set"})))
+  (let [tokens-lib      (ctob/make-tokens-lib)
 
         token-set-copy' (ctob/duplicate-set "test-token-set" tokens-lib {:suffix "copy"})]
 
