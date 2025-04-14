@@ -311,17 +311,6 @@
                          (catch js/Error e
                            (p/rejected (wte/error-ex-info :error.import/style-dictionary-unknown-error "" e))))))))))
 
-;; === Errors
-
-(defn humanize-errors [{:keys [errors] :as token}]
-  (->> (map (fn [err]
-              (case (:error/code err)
-                ;; TODO: This needs translations
-                :error.style-dictionary/missing-reference (tr "workspace.token.token-not-resolved" (:error/value err))
-                nil))
-            errors)
-       (str/join "\n")))
-
 ;; === Hooks
 
 (defonce !tokens-cache (atom nil))
