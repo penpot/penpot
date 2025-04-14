@@ -12,6 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.constants :refer [max-input-length]]
    [app.main.data.modal :as modal]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tinycolor :as tinycolor]
@@ -23,6 +24,8 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
@@ -30,7 +33,13 @@
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.tokens.components.controls.input-token-color-bullet :refer [input-token-color-bullet*]]
-   [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
+   [app.main.ui.workspace.tokens.components.controls.input-tokens-value :refer [input-tokens-value*]]
+   [app.main.ui.workspace.tokens.errors :as wte]
+   [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
+   [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.update :as wtu]
+   [app.main.ui.workspace.tokens.warnings :as wtw]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
@@ -277,6 +286,7 @@
         token-name-ref (mf/use-var (:name token))
         name-ref (mf/use-ref nil)
         name-errors (mf/use-state nil)
+
         validate-name
         (mf/use-fn
          (mf/deps selected-set-tokens-tree)
@@ -405,20 +415,22 @@
 
         ;; Description
         description-ref (mf/use-var (:description token))
-        description-errors (mf/use-state nil)
+        description-errors* (mf/use-state nil)
+        description-errors (deref description-errors*)
+
         validate-descripion (mf/use-fn #(m/explain token-description-schema %))
         on-update-description-debounced (mf/use-fn
                                          (uf/debounce (fn [e]
                                                         (let [value (dom/get-target-val e)
                                                               errors (validate-descripion value)]
-                                                          (reset! description-errors errors)))))
+                                                          (reset! description-errors* errors)))))
         on-update-description
         (mf/use-fn
          (mf/deps on-update-description-debounced)
          (fn [e]
            (reset! description-ref (dom/get-target-val e))
            (on-update-description-debounced e)))
-        valid-description-field? (not @description-errors)
+        valid-description-field? (not description-errors)
 
         ;; Form
         disabled? (or (not valid-name-field?)
@@ -523,26 +535,26 @@
 
       [:div {:class (stl/css :input-row)}
        (let [token-title (str/lower (:title token-properties))]
-         [:> input-tokens*
-          {:id "token-name"
-           :placeholder (tr "workspace.token.enter-token-name", token-title)
-           :error (boolean @name-errors)
-           :auto-focus true
-           :label (tr "workspace.token.token-name")
-           :default-value @token-name-ref
-           :ref name-ref
-           :max-length 256
-           :on-blur on-blur-name
-           :on-change on-update-name}])
+         [:> input* {:id "token-name"
+                     :label (tr "workspace.token.token-name")
+                     :placeholder (tr "workspace.token.enter-token-name", token-title)
+                     :max-length max-input-length
+                     :variant "comfortable"
+                     :auto-focus true
+                     :default-value @token-name-ref
+                     :ref name-ref
+                     :on-blur on-blur-name
+                     :on-change on-update-name}])
 
        (for [error (->> (:errors @name-errors)
                         (map #(-> (assoc @name-errors :errors [%])
-                                  (me/humanize))))]
-         [:> text* {:as "p"
-                    :key error
-                    :typography "body-small"
-                    :class (stl/css :error)}
-          error])
+                                  (me/humanize)))
+                        (map first))]
+
+         [:> hint-message* {:key error
+                            :message error
+                            :type "error"
+                            :id "token-name-hint"}])
 
        (when (and warning-name-change? (= action "edit"))
          [:div {:class (stl/css :warning-name-change-notification-wrapper)}
@@ -550,7 +562,7 @@
            {:level :warning :appearance :ghost} (tr "workspace.token.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
-       [:> input-tokens*
+       [:> input-tokens-value*
         {:id "token-value"
          :placeholder (tr "workspace.token.token-value-enter")
          :label (tr "workspace.token.token-value")
@@ -567,21 +579,14 @@
          [:> ramp* {:color (some-> color (tinycolor/valid-color))
                     :on-change on-update-color}])
        [:& token-value-or-errors {:result-or-errors token-resolve-result}]]
-
       [:div {:class (stl/css :input-row)}
-       [:> input-tokens*
-        {:id "token-description"
-         :placeholder (tr "workspace.token.enter-token-description")
-         :label (tr "workspace.token.token-description")
-         :max-length 256
-         :default-value @description-ref
-         :on-blur on-update-description
-         :on-change on-update-description}]
-       (when @description-errors
-         [:> text* {:as "p"
-                    :typography "body-small"
-                    :class (stl/css :error)}
-          (me/humanize @description-errors)])]
+       [:> input* {:label (tr "workspace.token.token-description")
+                   :placeholder (tr "workspace.token.enter-token-description")
+                   :max-length max-input-length
+                   :variant "comfortable"
+                   :default-value @description-ref
+                   :on-blur on-update-description
+                   :on-change on-update-description}]]
 
       [:div {:class (stl/css-case :button-row true
                                   :with-delete (= action "edit"))}

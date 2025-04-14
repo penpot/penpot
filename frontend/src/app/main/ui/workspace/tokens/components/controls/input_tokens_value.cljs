@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.components.controls.input-tokens
+(ns app.main.ui.workspace.tokens.components.controls.input-tokens-value
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
@@ -13,9 +13,8 @@
    [app.main.ui.ds.controls.input :refer [input*]]
    [rumext.v2 :as mf]))
 
-(def ^:private schema::input-tokens
+(def ^:private schema::input-tokens-value
   [:map
-   [:id :string]
    [:label :string]
    [:placeholder {:optional true} :string]
    [:default-value {:optional true} [:maybe :string]]
@@ -24,12 +23,13 @@
    [:error {:optional true} :boolean]
    [:value {:optional true} :string]])
 
-(mf/defc input-tokens*
+(mf/defc input-tokens-value*
   {::mf/props :obj
    ::mf/forward-ref true
-   ::mf/schema schema::input-tokens}
-  [{:keys [class label id max-length error value children] :rest props} ref]
-  (let [ref   (or ref (mf/use-ref))
+   ::mf/schema schema::input-tokens-value}
+  [{:keys [class label max-length error value children] :rest props} ref]
+  (let [id (mf/use-id)
+        ref   (or ref (mf/use-ref))
         props (mf/spread-props props {:id id
                                       :type "text"
                                       :class (stl/css :input)
