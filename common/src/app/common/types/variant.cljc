@@ -84,9 +84,10 @@
   "Adds new properties with generated names and provided values to the existing props list."
   [props values]
   (let [next-prop-num (next-property-number props)
-        new-props (map-indexed (fn [i v] {:name (str property-prefix (+ next-prop-num i))
-                                          :value v}) values)]
-    (into props new-props)))
+        xf (map-indexed (fn [i v]
+                          {:name (str property-prefix (+ next-prop-num i))
+                           :value v}))]
+    (into props xf values)))
 
 (defn path-to-properties
   "From a list of properties and a name with path, assign each token of the
@@ -173,15 +174,18 @@
       :else
       name)))
 
+(def ^:private xf:map-name
+  (map :name))
+
 (defn- matching-indices
-  "Returns a set of indices in props1 where the property name exists in props2."
   [props1 props2]
-  (let [names-in-p2 (set (map :name props2))]
-    (->> props1
-         (map-indexed vector)
-         (filter #(contains? names-in-p2 (:name (second %))))
-         (map first)
-         set)))
+  (let [names-in-p2 (into #{} xf:map-name props2)
+        xform (comp
+               (map-indexed (fn [index {:keys [name]}]
+                              (when (contains? names-in-p2 name)
+                                index)))
+               (filter some?))]
+    (into #{} xform props1)))
 
 (defn- find-index-by-name
   "Returns the index of the first item in props with the given name, or nil if not found."
@@ -227,4 +231,3 @@
          {:props (vec props1) :used-pos (matching-indices props1 props2)}
          props2)
         :props)))
-

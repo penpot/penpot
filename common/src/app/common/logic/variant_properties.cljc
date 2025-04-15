@@ -167,8 +167,10 @@
             (generate-new-properties-from-variant shape min-props data container-name base-props)
             (generate-new-properties-from-non-variant shape min-props container-name base-props)))
 
-        total-props    (apply max (map #(-> (generate-new-properties % num-base-props) count)
-                                       shapes))
+        total-props    (reduce (fn [m shape]
+                                 (max m (count (generate-new-properties shape num-base-props))))
+                               0
+                               shapes)
 
         num-new-props  (if (or (zero? num-base-props)
                                (< total-props num-base-props))
@@ -200,4 +202,3 @@
                                   #(assoc % :variant-name variant-name))))))
      changes
      shapes)))
-
