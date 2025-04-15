@@ -6754,6 +6754,17 @@ msgstr "Invalid color value: %s"
 msgid "workspace.token.invalid-json"
 msgstr "Import Error: Invalid token data in JSON."
 
+#: src/app/main/ui/workspace/tokens/errors.cljs:16
+msgid "workspace.token.invalid-json-token-name"
+msgstr "Import Error: Invalid token name in in JSON."
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:18
+msgid "workspace.token.invalid-json-token-name-detail"
+msgstr ""
+"\"%s\" is not a valid token name.\n"
+"Token names should only contain letters and digits separated by . "
+"characters and must not start with a $ sign."
+
 #: src/app/main/ui/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/errors.cljs:45
 msgid "workspace.token.invalid-value"
 msgstr "Invalid token value: %s"
