@@ -6,6 +6,11 @@
 (def GRADIENT-STOP-SIZE 8)
 (def GRADIENT-BASE-SIZE 24)
 
+(defn gradient-byte-size
+  [gradient]
+  (let [stops (:stops gradient)]
+    (+ GRADIENT-BASE-SIZE (* (count stops) GRADIENT-STOP-SIZE))))
+
 (defn serialize-gradient-fill
   [gradient opacity heap offset]
   (let [dview (js/DataView. (.-buffer heap))

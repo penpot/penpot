@@ -51,16 +51,6 @@
 (def GRID-LAYOUT-COLUMN-ENTRY-SIZE 5)
 (def GRID-LAYOUT-CELL-ENTRY-SIZE 37)
 
-;; FIXME: use `gradient-byte-size` instead
-(defn gradient-stop-get-entries-size
-  [stops]
-  (mem/get-list-size stops sr-fills/GRADIENT-STOP-SIZE))
-
-(defn gradient-byte-size
-  [gradient]
-  (let [stops (:stops gradient)]
-    (+ sr-fills/GRADIENT-BASE-SIZE (* (count stops) sr-fills/GRADIENT-STOP-SIZE))))
-
 (defn modifier-get-entries-size
   "Returns the list of a modifier list in bytes"
   [modifiers]
@@ -234,7 +224,7 @@
                 (h/call wasm/internal-module "_add_shape_solid_fill" rgba))
 
               (some? gradient)
-              (let [size   (gradient-byte-size gradient)
+              (let [size   (sr-fills/gradient-byte-size gradient)
                     offset (mem/alloc-bytes size)
                     heap   (mem/get-heap-u32)]
                 (sr-fills/serialize-gradient-fill gradient opacity heap offset)
@@ -280,7 +270,7 @@
 
             (cond
               (some? gradient)
-              (let [size   (gradient-byte-size gradient)
+              (let [size   (sr-fills/gradient-byte-size gradient)
                     offset (mem/alloc-bytes size)
                     heap   (mem/get-heap-u32)]
                 (sr-fills/serialize-gradient-fill gradient opacity heap offset)
