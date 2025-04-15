@@ -171,10 +171,6 @@ pub enum Fill {
 }
 
 impl Fill {
-    pub fn new_linear_gradient(start: (f32, f32), end: (f32, f32), opacity: f32) -> Self {
-        Self::new_linear_gradient_with_stops(start, end, opacity, vec![])
-    }
-
     pub fn new_linear_gradient_with_stops(
         start: (f32, f32),
         end: (f32, f32),
@@ -195,15 +191,6 @@ impl Fill {
         }
 
         Self::LinearGradient(gradient)
-    }
-
-    pub fn new_radial_gradient(
-        start: (f32, f32),
-        end: (f32, f32),
-        opacity: f32,
-        width: f32,
-    ) -> Self {
-        Self::new_radial_gradient_with_stops(start, end, opacity, width, vec![])
     }
 
     pub fn new_radial_gradient_with_stops(

@@ -487,42 +487,55 @@ pub extern "C" fn add_shape_stroke_solid_fill(raw_color: u32) {
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_stroke_linear_fill(
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
-    opacity: f32,
-) {
+pub extern "C" fn add_shape_stroke_linear_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
+        let bytes = mem::bytes();
+        let raw_gradient_bytes: [u8; RAW_FILL_DATA_SIZE] =
+            bytes[0..RAW_FILL_DATA_SIZE].try_into().unwrap();
+        let raw_gradient = shapes::RawGradientData::from(raw_gradient_bytes);
+        let stops: Vec<shapes::RawStopData> = bytes[RAW_FILL_DATA_SIZE..]
+            .chunks(RAW_STOP_DATA_SIZE)
+            .map(|chunk| {
+                let data: [u8; RAW_STOP_DATA_SIZE] = chunk.try_into().unwrap();
+                shapes::RawStopData::from(data)
+            })
+            .collect();
+
         shape
-            .set_stroke_fill(shapes::Fill::new_linear_gradient(
-                (start_x, start_y),
-                (end_x, end_y),
-                opacity,
+            .set_stroke_fill(shapes::Fill::new_linear_gradient_with_stops(
+                raw_gradient.start(),
+                raw_gradient.end(),
+                raw_gradient.opacity(),
+                stops,
             ))
-            .expect("could not add stroke linear fill");
+            .expect("could not add stroke linear gradient fill");
     });
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_stroke_radial_fill(
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
-    opacity: f32,
-    width: f32,
-) {
+pub extern "C" fn add_shape_stroke_radial_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
+        let bytes = mem::bytes();
+        let raw_gradient_bytes: [u8; RAW_FILL_DATA_SIZE] =
+            bytes[0..RAW_FILL_DATA_SIZE].try_into().unwrap();
+        let raw_gradient = shapes::RawGradientData::from(raw_gradient_bytes);
+        let stops: Vec<shapes::RawStopData> = bytes[RAW_FILL_DATA_SIZE..]
+            .chunks(RAW_STOP_DATA_SIZE)
+            .map(|chunk| {
+                let data: [u8; RAW_STOP_DATA_SIZE] = chunk.try_into().unwrap();
+                shapes::RawStopData::from(data)
+            })
+            .collect();
+
         shape
-            .set_stroke_fill(shapes::Fill::new_radial_gradient(
-                (start_x, start_y),
-                (end_x, end_y),
-                opacity,
-                width,
+            .set_stroke_fill(shapes::Fill::new_radial_gradient_with_stops(
+                raw_gradient.start(),
+                raw_gradient.end(),
+                raw_gradient.opacity(),
+                raw_gradient.width(),
+                stops,
             ))
-            .expect("could not add stroke radial fill");
+            .expect("could not add stroke radial gradient fill");
     });
 }
 
