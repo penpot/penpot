@@ -337,14 +337,23 @@
     (db/tx-run! main/system fsnap/create-file-snapshot! {:file-id file-id :label label})))
 
 (defn restore-file-snapshot!
-  [file-id label]
-  (let [file-id (h/parse-uuid file-id)]
+  [file-id & {:keys [label id]}]
+  (let [file-id     (h/parse-uuid file-id)
+        snapshot-id (some-> id h/parse-uuid)]
     (db/tx-run! main/system
                 (fn [{:keys [::db/conn] :as system}]
-                  (when-let [snapshot (->> (h/search-file-snapshots conn #{file-id} label)
-                                           (map :id)
-                                           (first))]
-                    (fsnap/restore-file-snapshot! system file-id (:id snapshot)))))))
+                  (cond
+                    (uuid? snapshot-id)
+                    (fsnap/restore-file-snapshot! system file-id snapshot-id)
+
+                    (string? label)
+                    (->> (h/search-file-snapshots conn #{file-id} label)
+                         (map :id)
+                         (first)
+                         (fsnap/restore-file-snapshot! system file-id))
+
+                    :else
+                    (throw (ex-info "snapshot id or label should be provided" {})))))))
 
 (defn list-file-snapshots!
   [file-id & {:as _}]
