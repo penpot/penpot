@@ -2152,9 +2152,8 @@ msgid "labels.no-invitations"
 msgstr "No pending invitations."
 
 #: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "Click the **Invite people** button to invite people to this team."
+msgid "labels.no-invitations-gather-people"
+msgstr "Gather your people and build great things together."
 
 #: src/app/main/ui/static.cljs
 #, unused

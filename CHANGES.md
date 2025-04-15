@@ -12,6 +12,7 @@
 
 - Update board presets with a newer devices [Taiga #10610](https://tree.taiga.io/project/penpot/us/10610)
 - Propagate "sharing a prototype" to editors and viewers [Taiga #8853](https://tree.taiga.io/project/penpot/us/8853)
+- Design improvements to the Invitations page with an empty state [Taiga #4554](https://tree.taiga.io/project/penpot/us/4554)
 
 ### :bug: Bugs fixed
 
