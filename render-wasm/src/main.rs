@@ -16,10 +16,7 @@ mod wapi;
 mod wasm;
 
 use crate::mem::SerializableResult;
-use crate::shapes::{
-    BoolType, ConstraintH, ConstraintV, StructureEntry, TransformEntry, Type, RAW_FILL_DATA_SIZE,
-    RAW_STOP_DATA_SIZE,
-};
+use crate::shapes::{BoolType, ConstraintH, ConstraintV, StructureEntry, TransformEntry, Type};
 use crate::utils::uuid_from_u32_quartet;
 use crate::uuid::Uuid;
 use indexmap::IndexSet;
@@ -261,23 +258,8 @@ pub extern "C" fn add_shape_solid_fill(raw_color: u32) {
 pub extern "C" fn add_shape_linear_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
         let bytes = mem::bytes();
-        let raw_gradient_bytes: [u8; RAW_FILL_DATA_SIZE] =
-            bytes[0..RAW_FILL_DATA_SIZE].try_into().unwrap();
-        let raw_gradient = shapes::RawGradientData::from(raw_gradient_bytes);
-        let stops: Vec<shapes::RawStopData> = bytes[RAW_FILL_DATA_SIZE..]
-            .chunks(RAW_STOP_DATA_SIZE)
-            .map(|chunk| {
-                let data: [u8; RAW_STOP_DATA_SIZE] = chunk.try_into().unwrap();
-                shapes::RawStopData::from(data)
-            })
-            .collect();
-
-        shape.add_fill(shapes::Fill::new_linear_gradient_with_stops(
-            raw_gradient.start(),
-            raw_gradient.end(),
-            raw_gradient.opacity(),
-            stops,
-        ));
+        let gradient = shapes::Gradient::try_from(&bytes[..]).expect("Invalid gradient data");
+        shape.add_fill(shapes::Fill::LinearGradient(gradient));
     });
 }
 
@@ -285,46 +267,9 @@ pub extern "C" fn add_shape_linear_fill() {
 pub extern "C" fn add_shape_radial_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
         let bytes = mem::bytes();
-        let raw_gradient_bytes: [u8; RAW_FILL_DATA_SIZE] =
-            bytes[0..RAW_FILL_DATA_SIZE].try_into().unwrap();
-        let raw_gradient = shapes::RawGradientData::from(raw_gradient_bytes);
-        let stops: Vec<shapes::RawStopData> = bytes[RAW_FILL_DATA_SIZE..]
-            .chunks(RAW_STOP_DATA_SIZE)
-            .map(|chunk| {
-                let data: [u8; RAW_STOP_DATA_SIZE] = chunk.try_into().unwrap();
-                shapes::RawStopData::from(data)
-            })
-            .collect();
-
-        shape.add_fill(shapes::Fill::new_radial_gradient_with_stops(
-            raw_gradient.start(),
-            raw_gradient.end(),
-            raw_gradient.opacity(),
-            raw_gradient.width(),
-            stops,
-        ));
+        let gradient = shapes::Gradient::try_from(&bytes[..]).expect("Invalid gradient data");
+        shape.add_fill(shapes::Fill::RadialGradient(gradient));
     });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_fill_stops() {
-    let bytes = mem::bytes();
-
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<shapes::RawStopData>())
-        .map(|data| {
-            let raw_stop_bytes: [u8; RAW_STOP_DATA_SIZE] = data.try_into().unwrap();
-            shapes::RawStopData::from(raw_stop_bytes)
-        })
-        .collect();
-
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape
-            .add_fill_gradient_stops(entries)
-            .expect("could not add gradient stops");
-    });
-
-    mem::free_bytes();
 }
 
 #[no_mangle]
@@ -490,24 +435,10 @@ pub extern "C" fn add_shape_stroke_solid_fill(raw_color: u32) {
 pub extern "C" fn add_shape_stroke_linear_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
         let bytes = mem::bytes();
-        let raw_gradient_bytes: [u8; RAW_FILL_DATA_SIZE] =
-            bytes[0..RAW_FILL_DATA_SIZE].try_into().unwrap();
-        let raw_gradient = shapes::RawGradientData::from(raw_gradient_bytes);
-        let stops: Vec<shapes::RawStopData> = bytes[RAW_FILL_DATA_SIZE..]
-            .chunks(RAW_STOP_DATA_SIZE)
-            .map(|chunk| {
-                let data: [u8; RAW_STOP_DATA_SIZE] = chunk.try_into().unwrap();
-                shapes::RawStopData::from(data)
-            })
-            .collect();
+        let gradient = shapes::Gradient::try_from(&bytes[..]).expect("Invalid gradient data");
 
         shape
-            .set_stroke_fill(shapes::Fill::new_linear_gradient_with_stops(
-                raw_gradient.start(),
-                raw_gradient.end(),
-                raw_gradient.opacity(),
-                stops,
-            ))
+            .set_stroke_fill(shapes::Fill::LinearGradient(gradient))
             .expect("could not add stroke linear gradient fill");
     });
 }
@@ -516,48 +447,12 @@ pub extern "C" fn add_shape_stroke_linear_fill() {
 pub extern "C" fn add_shape_stroke_radial_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
         let bytes = mem::bytes();
-        let raw_gradient_bytes: [u8; RAW_FILL_DATA_SIZE] =
-            bytes[0..RAW_FILL_DATA_SIZE].try_into().unwrap();
-        let raw_gradient = shapes::RawGradientData::from(raw_gradient_bytes);
-        let stops: Vec<shapes::RawStopData> = bytes[RAW_FILL_DATA_SIZE..]
-            .chunks(RAW_STOP_DATA_SIZE)
-            .map(|chunk| {
-                let data: [u8; RAW_STOP_DATA_SIZE] = chunk.try_into().unwrap();
-                shapes::RawStopData::from(data)
-            })
-            .collect();
+        let gradient = shapes::Gradient::try_from(&bytes[..]).expect("Invalid gradient data");
 
         shape
-            .set_stroke_fill(shapes::Fill::new_radial_gradient_with_stops(
-                raw_gradient.start(),
-                raw_gradient.end(),
-                raw_gradient.opacity(),
-                raw_gradient.width(),
-                stops,
-            ))
+            .set_stroke_fill(shapes::Fill::RadialGradient(gradient))
             .expect("could not add stroke radial gradient fill");
     });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_stroke_stops() {
-    let bytes = mem::bytes();
-
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<shapes::RawStopData>())
-        .map(|data| {
-            let raw_stop_bytes: [u8; RAW_STOP_DATA_SIZE] = data.try_into().unwrap();
-            shapes::RawStopData::from(raw_stop_bytes)
-        })
-        .collect();
-
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape
-            .add_stroke_gradient_stops(entries)
-            .expect("could not add gradient stops");
-    });
-
-    mem::free_bytes();
 }
 
 // Extracts a string from the bytes slice until the next null byte (0) and returns the result as a `String`.

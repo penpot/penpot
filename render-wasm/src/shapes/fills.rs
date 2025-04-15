@@ -144,6 +144,42 @@ impl Gradient {
     }
 }
 
+impl TryFrom<&[u8]> for Gradient {
+    type Error = String;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let raw_gradient_bytes: [u8; RAW_FILL_DATA_SIZE] = bytes[0..RAW_FILL_DATA_SIZE]
+            .try_into()
+            .map_err(|_| "Invalid gradient data".to_string())?;
+
+        let raw_gradient = RawGradientData::from(raw_gradient_bytes);
+        let stops: Vec<RawStopData> = bytes[RAW_FILL_DATA_SIZE..]
+            .chunks(RAW_STOP_DATA_SIZE)
+            .map(|chunk| {
+                let data: [u8; RAW_STOP_DATA_SIZE] = chunk
+                    .try_into()
+                    .map_err(|_| "Invalid stop data".to_string())?;
+                Ok(RawStopData::from(data))
+            })
+            .collect::<Result<Vec<_>, Self::Error>>()?;
+
+        let mut gradient = Gradient {
+            start: raw_gradient.start(),
+            end: raw_gradient.end(),
+            opacity: raw_gradient.opacity(),
+            colors: vec![],
+            offsets: vec![],
+            width: raw_gradient.width(),
+        };
+
+        for stop in stops {
+            gradient.add_stop(stop.color(), stop.offset());
+        }
+
+        Ok(gradient)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct ImageFill {
     id: Uuid,
@@ -171,51 +207,6 @@ pub enum Fill {
 }
 
 impl Fill {
-    pub fn new_linear_gradient_with_stops(
-        start: (f32, f32),
-        end: (f32, f32),
-        opacity: f32,
-        stops: Vec<RawStopData>,
-    ) -> Self {
-        let mut gradient = Gradient {
-            start,
-            end,
-            opacity,
-            colors: vec![],
-            offsets: vec![],
-            width: 0.,
-        };
-
-        for stop in stops {
-            gradient.add_stop(stop.color(), stop.offset());
-        }
-
-        Self::LinearGradient(gradient)
-    }
-
-    pub fn new_radial_gradient_with_stops(
-        start: (f32, f32),
-        end: (f32, f32),
-        opacity: f32,
-        width: f32,
-        stops: Vec<RawStopData>,
-    ) -> Self {
-        let mut gradient = Gradient {
-            start,
-            end,
-            opacity,
-            colors: vec![],
-            offsets: vec![],
-            width,
-        };
-
-        for stop in stops {
-            gradient.add_stop(stop.color(), stop.offset());
-        }
-
-        Self::RadialGradient(gradient)
-    }
-
     pub fn new_image_fill(id: Uuid, opacity: u8, (width, height): (i32, i32)) -> Self {
         Self::Image(ImageFill {
             id,
