@@ -1,13 +1,16 @@
-(ns app.main.ui.dashboard.subscription-sidebar
+;; Copyright (c) KALEIDOS INC
+
+(ns app.main.ui.dashboard.subscription
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.router :as rt]
+   [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (mf/defc cta-power-up*
-  {::mf/props :obj}
   [{:keys [top-title top-description bottom-description cta-text cta-link has-dropdown]}]
   (let [show-data* (mf/use-state false)
         show-data (deref show-data*)
@@ -33,12 +36,15 @@
         [:button {:class (stl/css :cta-highlight :cta-link) :on-click cta-link}
          cta-text]])]))
 
-(mf/defc subscription-sidebar*
-  {::mf/props :obj}
-  [{:keys [go-to-subscription]}]
+(mf/defc sidebar*
+  []
   (let [;; TODO subscription cases professional/unlimited/enterprise
         subscription-name :unlimited
-        subscription-is-trial false]
+        subscription-is-trial false
+
+        go-to-subscription
+        (mf/use-fn #(st/emit! (rt/nav :settings-subscription)))]
+
     (case subscription-name
       :professional
       [:> cta-power-up*

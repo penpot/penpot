@@ -26,7 +26,7 @@
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
-   [app.main.ui.dashboard.subscription-sidebar :refer [subscription-sidebar*]]
+   [app.main.ui.dashboard.subscription :as subscription]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i :refer [icon-xref]]
    [app.util.dom :as dom]
@@ -960,18 +960,11 @@
         (mf/use-fn
          (fn []
            (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
-           (dom/open-new-window "https://penpot.app/pricing")))
-
-        go-to-subscription
-        (mf/use-fn
-         (fn [event]
-           (dom/prevent-default event)
-           (dom/stop-propagation event)
-           (st/emit! (rt/nav :settings-subscription))))]
+           (dom/open-new-window "https://penpot.app/pricing")))]
 
     [:*
      (when (contains? cf/flags :subscriptions)
-       [:> subscription-sidebar* {:go-to-subscription go-to-subscription}])
+       [:> subscription/sidebar*])
 
      ;; TODO remove this block when subscriptions is full implemented
      (when (contains? cf/flags :subscriptions-old)

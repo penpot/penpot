@@ -147,9 +147,7 @@
    :enable-onboarding
    :enable-dashboard-templates-section
    :enable-google-fonts-provider
-   :enable-component-thumbnails
-   :disable-subscriptions
-   :disable-subscriptions-old])
+   :enable-component-thumbnails])
 
 (defn parse
   [& flags]
