@@ -248,7 +248,7 @@
 
 (defn fetch-comments
   [{:keys [thread-id]}]
-  (dm/assert! (uuid thread-id))
+  (assert (uuid? thread-id))
   (letfn [(fetched [comments state]
             (update state :comments assoc thread-id (d/index-by :id comments)))]
     (ptk/reify ::retrieve-comments
@@ -413,7 +413,7 @@
     (watch [_ state _]
       (let [params  (rt/get-params state)
             index   (some-> params :index parse-long)
-            page-id (some-> params :page-id parse-uuid)
+            page-id (some-> params :page-id uuid/parse)
 
             total   (count (get-in state [:viewer :pages page-id :frames]))]
 

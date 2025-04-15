@@ -7,6 +7,7 @@
 (ns app.main.ui
   (:require
    [app.common.data :as d]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.team :as dtm]
@@ -212,8 +213,8 @@
         :dashboard-webhooks
         :dashboard-settings)
        (let [params        (get params :query)
-             team-id       (some-> params :team-id uuid)
-             project-id    (some-> params :project-id uuid)
+             team-id       (some-> params :team-id uuid/parse*)
+             project-id    (some-> params :project-id uuid/parse*)
              search-term   (some-> params :search-term)
              plugin-url    (some-> params :plugin)
              template-url  (some-> params :template)]
@@ -247,9 +248,9 @@
 
        :workspace
        (let [params     (get params :query)
-             team-id    (some-> params :team-id uuid)
-             file-id    (some-> params :file-id uuid)
-             page-id    (some-> params :page-id uuid)
+             team-id    (some-> params :team-id uuid/parse*)
+             file-id    (some-> params :file-id uuid/parse*)
+             page-id    (some-> params :page-id uuid/parse*)
              layout     (some-> params :layout keyword)]
          [:? {}
           (when (cf/external-feature-flag "onboarding-03" "test")
@@ -276,15 +277,15 @@
        :viewer
        (let [params   (get params :query)
              index    (some-> (:index params) parse-long)
-             share-id (some-> (:share-id params) parse-uuid)
+             share-id (some-> (:share-id params) uuid/parse*)
              section  (or (some-> (:section params) keyword)
                           :interactions)
 
-             file-id  (some-> (:file-id params) parse-uuid)
-             page-id  (some-> (:page-id params) parse-uuid)
+             file-id  (some-> (:file-id params) uuid/parse*)
+             page-id  (some-> (:page-id params) uuid/parse*)
              imode    (or (some-> (:interactions-mode params) keyword)
                           :show-on-click)
-             frame-id (some-> (:frame-id params) parse-uuid)
+             frame-id (some-> (:frame-id params) uuid/parse*)
              share    (:share params)]
 
          [:? {}
@@ -300,9 +301,9 @@
 
 
        :workspace-legacy
-       (let [project-id (some-> params :path :project-id uuid)
-             file-id    (some-> params :path :file-id uuid)
-             page-id    (some-> params :query :page-id uuid)
+       (let [project-id (some-> params :path :project-id uuid/parse*)
+             file-id    (some-> params :path :file-id uuid/parse*)
+             page-id    (some-> params :query :page-id uuid/parse*)
              layout     (some-> params :query :layout keyword)]
 
          [:> workspace-legacy-redirect*
@@ -321,8 +322,8 @@
         :dashboard-legacy-team-invitations
         :dashboard-legacy-team-webhooks
         :dashboard-legacy-team-settings)
-       (let [team-id     (some-> params :path :team-id uuid)
-             project-id  (some-> params :path :project-id uuid)
+       (let [team-id     (some-> params :path :team-id uuid/parse*)
+             project-id  (some-> params :path :project-id uuid/parse*)
              search-term (some-> params :query :search-term)
              plugin-url  (some-> params :query :plugin)
              template-url  (some-> params :template)]

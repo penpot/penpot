@@ -15,7 +15,7 @@
   [file ^string page-id]
 
   ;; Better to expose the api as a promise to be consumed from JS
-  (let [page-id (uuid/uuid page-id)
+  (let [page-id (uuid/parse page-id)
         file-data (.-file file)
         data (get-in file-data [:data :pages-index page-id])]
     (p/create

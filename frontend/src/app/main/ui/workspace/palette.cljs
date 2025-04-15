@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
@@ -87,7 +88,7 @@
                  value (dom/get-attribute node "data-palette")]
              (on-select (if (or (= "file" value) (= "recent" value))
                           (keyword value)
-                          (parse-uuid value))))))
+                          (uuid/parse value))))))
 
         on-select-text-palette-menu
         (mf/use-fn

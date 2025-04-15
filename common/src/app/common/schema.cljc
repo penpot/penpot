@@ -395,9 +395,15 @@
 
 (defn parse-uuid
   [s]
-  (if (string? s)
-    (some->> (re-matches uuid-rx s) uuid/uuid)
-    s))
+  (try
+    (uuid/parse s)
+    (catch #?(:clj Exception :cljs :default) _cause
+      s)))
+
+(defn encode-uuid
+  [v]
+  (when (uuid? v)
+    (str v)))
 
 (register!
  {:type ::uuid
@@ -409,8 +415,8 @@
    :gen/gen (sg/uuid)
    :decode/string parse-uuid
    :decode/json parse-uuid
-   :encode/string str
-   :encode/json str
+   :encode/string encode-uuid
+   :encode/json encode-uuid
    ::oapi/type "string"
    ::oapi/format "uuid"}})
 
