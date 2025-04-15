@@ -70,7 +70,7 @@
 (mf/defc dashboard-legacy-redirect*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [section team-id project-id search-term plugin-url template-url]}]
+  [{:keys [section team-id project-id search-term plugin-url template]}]
   (let [section (case section
                   :dashboard-legacy-search
                   :dashboard-search
@@ -98,7 +98,7 @@
                     :project-id project-id
                     :search-term search-term
                     :plugin plugin-url
-                    :template-url template-url}]
+                    :template template}]
         (st/emit! (rt/nav section (d/without-nils params)))))
 
     [:> loader*
@@ -217,7 +217,7 @@
              project-id    (some-> params :project-id uuid/parse*)
              search-term   (some-> params :search-term)
              plugin-url    (some-> params :plugin)
-             template-url  (some-> params :template)]
+             template      (some-> params :template)]
          [:?
           #_[:& app.main.ui.releases/release-notes-modal {:version "2.5"}]
           #_[:& app.main.ui.onboarding/onboarding-templates-modal]
@@ -244,7 +244,7 @@
                                :search-term search-term
                                :plugin-url plugin-url
                                :project-id project-id
-                               :template-url template-url}]]])
+                               :template template}]]])
 
        :workspace
        (let [params     (get params :query)
@@ -326,14 +326,14 @@
              project-id  (some-> params :path :project-id uuid/parse*)
              search-term (some-> params :query :search-term)
              plugin-url  (some-> params :query :plugin)
-             template-url  (some-> params :template)]
+             template    (some-> params :template)]
          [:> dashboard-legacy-redirect*
           {:team-id team-id
            :section section
            :project-id project-id
            :search-term search-term
            :plugin-url plugin-url
-           :template-url template-url}])
+           :template template}])
 
        :viewer-legacy
        (let [{:keys [query-params path-params]} route
