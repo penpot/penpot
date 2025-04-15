@@ -69,6 +69,7 @@
 
 (def text-node-attrs
   (d/concat-vec
+   text-align-attrs
    text-typography-attrs
    text-font-attrs
    text-spacing-attrs
