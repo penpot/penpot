@@ -74,6 +74,20 @@
                   0)]
     (inc (max max-num (count properties)))))
 
+(defn add-new-prop
+  "Adds a new property with generated name and provided value to the existing props list."
+  [props value]
+  (conj props {:name (str property-prefix (next-property-number props))
+               :value value}))
+
+(defn add-new-props
+  "Adds new properties with generated names and provided values to the existing props list."
+  [props values]
+  (let [next-prop-num (next-property-number props)
+        xf (map-indexed (fn [i v]
+                          {:name (str property-prefix (+ next-prop-num i))
+                           :value v}))]
+    (into props xf values)))
 
 (defn path-to-properties
   "From a list of properties and a name with path, assign each token of the
@@ -81,15 +95,13 @@
   ([path properties]
    (path-to-properties path properties 0))
   ([path properties min-props]
-   (let [next-prop-num  (next-property-number properties)
-         cpath          (cfh/split-path path)
+   (let [cpath          (cfh/split-path path)
+         total-props    (max (count cpath) min-props)
          assigned       (mapv #(assoc % :value (nth cpath %2 "")) properties (range))
-         ;; Add empty strings to the end of path to reach the minimum number of properties
-         cpath          (take min-props (concat path (repeat "")))
-         remaining      (drop (count properties) cpath)
-         new-properties (map-indexed (fn [i v] {:name (str property-prefix (+ next-prop-num i))
-                                                :value v}) remaining)]
-     (into assigned new-properties))))
+         ;; Add empty strings to the end of cpath to reach the minimum number of properties
+         cpath          (take total-props (concat cpath (repeat "")))
+         remaining      (drop (count properties) cpath)]
+     (add-new-props assigned remaining))))
 
 
 (defn properties-map-to-string
@@ -147,3 +159,75 @@
           (when (= (:name prop) name)
             idx))
         (map-indexed vector props)))
+
+(defn remove-prefix
+  "Removes the given prefix (with or without a trailing ' / ') from the beginning of the name"
+  [name prefix]
+  (let [long-name (str prefix " / ")]
+    (cond
+      (str/starts-with? name long-name)
+      (subs name (count long-name))
+
+      (str/starts-with? name prefix)
+      (subs name (count prefix))
+
+      :else
+      name)))
+
+(def ^:private xf:map-name
+  (map :name))
+
+(defn- matching-indices
+  [props1 props2]
+  (let [names-in-p2 (into #{} xf:map-name props2)
+        xform (comp
+               (map-indexed (fn [index {:keys [name]}]
+                              (when (contains? names-in-p2 name)
+                                index)))
+               (filter some?))]
+    (into #{} xform props1)))
+
+(defn- find-index-by-name
+  "Returns the index of the first item in props with the given name, or nil if not found."
+  [name props]
+  (some (fn [[idx item]]
+          (when (= (:name item) name)
+            idx))
+        (map-indexed vector props)))
+
+(defn- next-valid-position
+  "Returns the first non-negative integer not present in the used-pos set."
+  [used-pos]
+  (loop [p 0]
+    (if (contains? used-pos p)
+      (recur (inc p))
+      p)))
+
+(defn- find-position
+  "Returns the index of the property with the given name in `props`,
+  or the next available index not in `used-pos` if not found."
+  [name props used-pos]
+  (or (find-index-by-name name props)
+      (next-valid-position used-pos)))
+
+(defn merge-properties
+  "Merges props2 into props1 with the following rules:
+    - For each property p2 in props2:
+      - Skip it if its value is empty.
+      - If props1 contains a property with the same name, update its value with that of p2.
+      - Otherwise, assign p2's value to the first unused property in props1. A property is considered used if:
+        - Its name exists in both props1 and props2, or
+        - Its value has already been updated during the merge.
+      - If no unused properties are available in props1, append a new property with a default name and p2's value."
+  [props1 props2]
+  (let [props2 (remove #(str/empty? (:value %)) props2)]
+    (-> (reduce
+         (fn [{:keys [props used-pos]} prop]
+           (let [pos (find-position (:name prop) props used-pos)
+                 used-pos (conj used-pos pos)]
+             (if (< pos (count props))
+               {:props (assoc-in (vec props) [pos :value] (:value prop)) :used-pos used-pos}
+               {:props (add-new-prop props (:value prop)) :used-pos used-pos})))
+         {:props (vec props1) :used-pos (matching-indices props1 props2)}
+         props2)
+        :props)))

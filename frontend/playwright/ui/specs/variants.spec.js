@@ -419,7 +419,7 @@ test("User cut paste a variant into another container", async ({ page }) => {
 
   const variant3 = await workspacePage.layers
     .getByTestId("layer-row")
-    .filter({ has: workspacePage.page.getByText("rectangle, Value 1") })
+    .filter({ has: workspacePage.page.getByText("Value 1, rectangle") })
     .filter({ has: workspacePage.page.locator(".icon-variant") })
     .first();
 
