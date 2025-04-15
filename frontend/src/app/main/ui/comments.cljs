@@ -487,7 +487,7 @@
            (dom/stop-propagation event)
            (let [id (-> (dom/get-current-target event)
                         (dom/get-data "user-id")
-                        (uuid/uuid))
+                        (uuid/parse))
 
                  user   (d/seek #(= (:id %) id) members)]
 

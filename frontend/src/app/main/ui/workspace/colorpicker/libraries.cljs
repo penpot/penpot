@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.color :as ctc]
+   [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
@@ -62,7 +63,7 @@
                    (if (or (= event "recent")
                            (= event "file"))
                      (keyword event)
-                     (parse-uuid event)))))
+                     (uuid/parse event)))))
 
         valid-color?
         (mf/use-fn

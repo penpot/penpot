@@ -69,7 +69,7 @@
   "Retrieves the mentions in the content as an array of uuids"
   [content]
   (->> (re-seq r-mentions content)
-       (mapv (fn [[_ _ id]] (uuid/uuid id)))))
+       (mapv (fn [[_ _ id]] (uuid/parse id)))))
 
 (defn update-mentions
   "Updates the params object with the mentiosn"
