@@ -408,7 +408,7 @@
       [:type [:= :set-token-theme]]
       [:theme-name :string]
       [:group :string]
-      [:theme [:maybe ::ctot/token-theme]]]]
+      [:theme [:maybe ctob/schema:token-theme-attrs]]]]
 
     [:set-tokens-lib
      [:map {:title "SetTokensLib"}
@@ -420,7 +420,7 @@
       [:type [:= :set-token-set]]
       [:set-name :string]
       [:group? :boolean]
-      [:token-set [:maybe ::ctot/token-set]]]]
+      [:token-set [:maybe ctob/schema:token-set-attrs]]]]
 
     [:set-token
      [:map {:title "SetTokenChange"}

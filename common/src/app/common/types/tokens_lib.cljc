@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
    [app.common.time :as dt]
    [app.common.transit :as t]
    [app.common.types.token :as cto]
@@ -122,7 +123,8 @@
    [:modified-at ::sm/inst]])
 
 (def schema:token
-  [:and
+  [:and {:gen/gen (->> (sg/generator schema:token-attrs)
+                       (sg/fmap map->Token))}
    schema:token-attrs
    [:fn token?]])
 
@@ -381,16 +383,19 @@
 
 (def schema:token-set-attrs
   [:map {:title "TokenSet"}
-   [:name :string]
-   [:description [:maybe :string]]
-   [:modified-at ::sm/inst]
-   [:tokens [:and
-             [:map-of {:gen/max 5} :string schema:token]
-             [:fn d/ordered-map?]]]])
+   [:name ::sm/text]
+   [:description {:optional true} :string]
+   [:modified-at {:optional true} ::sm/inst]
+   [:tokens {:gen/gen (->> (sg/generator [:map-of ::sm/text schema:token])
+                           (sg/fmap #(into (d/ordered-map) %)))}
+    [:and
+     [:map-of {:gen/max 5} :string schema:token]
+     [:fn d/ordered-map?]]]])
 
 (def schema:token-set
-  [:and
-   schema:token-set-attrs
+  [:and {:gen/gen (->> (sg/generator schema:token-set-attrs)
+                       (sg/fmap map->TokenSet))}
+   (sm/required-keys schema:token-set-attrs)
    [:fn token-set?]])
 
 (sm/register! ::token-set schema:token-set)
@@ -554,16 +559,16 @@
 (def schema:token-theme-attrs
   [:map {:title "TokenTheme"}
    [:name :string]
-   [:group :string]
-   [:description [:maybe :string]]
-   [:is-source [:maybe :boolean]]
-   [:id :string]
-   [:modified-at ::sm/inst]
-   [:sets [:set {:gen/max 5} :string]]])
+   [:group {:optional true} :string]
+   [:description {:optional true} :string]
+   [:is-source {:optional true} :boolean]
+   [:id {:optional true} :string]
+   [:modified-at {:optional true} ::sm/inst]
+   [:sets {:optional true} [:set {:gen/max 5} :string]]])
 
 (def schema:token-theme
   [:and
-   schema:token-theme-attrs
+   (sm/required-keys schema:token-theme-attrs)
    [:fn token-theme?]])
 
 (sm/register! ::token-theme schema:token-theme)

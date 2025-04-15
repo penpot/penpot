@@ -113,6 +113,10 @@
   [schema]
   (mu/optional-keys schema default-options))
 
+(defn required-keys
+  [schema]
+  (mu/required-keys schema default-options))
+
 (defn transformer
   [& transformers]
   (apply mt/transformer transformers))
