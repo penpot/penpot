@@ -13,6 +13,8 @@
    [app.db :as db]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.profile :as cmd.profile]
+   [app.setup :as-alias setup]
+   [app.tokens :as tokens]
    [app.util.time :as dt]
    [cuerdas.core :as str]))
 
@@ -108,6 +110,12 @@
 (defmethod exec-command "derive-password"
   [{:keys [password]}]
   (auth/derive-password password))
+
+(defmethod exec-command "authenticate"
+  [{:keys [token]}]
+  (when-let [system (get-current-system)]
+    (let [props  (get system ::setup/props)]
+      (tokens/verify props {:token token :iss "authentication"}))))
 
 (defmethod exec-command :default
   [{:keys [::cmd]}]
