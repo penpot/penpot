@@ -310,6 +310,12 @@
   color: var(--dashboard-list-text-foreground-color);
 }
 
+.btn-empty-invitations {
+  @extend .button-primary;
+  margin-block-start: $s-16;
+  padding-inline: $s-12;
+}
+
 .title-field-status {
   position: relative;
   cursor: default;

@@ -74,6 +74,7 @@
         invitations-section? (= section :dashboard-team-invitations)
         webhooks-section?    (= section :dashboard-team-webhooks)
         permissions          (:permissions team)
+        invitations          (:invitations team)
 
         on-invite-member
         (mf/use-fn
@@ -108,7 +109,7 @@
        [:li {:class (when settings-section? (stl/css :active))}
         [:a {:on-click on-nav-settings} (tr "labels.settings")]]]]
      [:div {:class (stl/css :dashboard-buttons)}
-      (if (and (or invitations-section? members-section?) (:is-admin permissions))
+      (if (and (or invitations-section? members-section?) (:is-admin permissions) (not-empty invitations))
         [:a
          {:class (stl/css :btn-secondary :btn-small)
           :on-click on-invite-member
@@ -735,12 +736,27 @@
 (mf/defc empty-invitation-table*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [can-invite]}]
-  [:div {:class (stl/css :empty-invitations)}
-   [:span (tr "labels.no-invitations")]
-   (when ^boolean can-invite
-     [:> i18n/tr-html* {:content (tr "labels.no-invitations-hint")
-                        :tag-name "span"}])])
+  [{:keys [can-invite team]}]
+  (let
+   [route                (mf/deref refs/route)
+    invite-email         (-> route :query-params :invite-email)
+    on-invite-member     (mf/use-fn
+                          (mf/deps team invite-email)
+                          (fn []
+                            (st/emit! (modal/show {:type :invite-members
+                                                   :team team
+                                                   :origin :team
+                                                   :invite-email invite-email}))))]
+    [:div {:class (stl/css :empty-invitations)}
+     [:span (tr "labels.no-invitations")]
+     (when ^boolean can-invite
+       [[:span (tr "labels.no-invitations-gather-people")]
+        [:a
+         {:class (stl/css :btn-empty-invitations)
+          :on-click on-invite-member
+          :data-testid "invite-member"}
+         (tr "dashboard.invite-profile")]
+        [:div {:class (stl/css :blank-space)}]])]))
 
 (mf/defc invitation-section*
   {::mf/props :obj
@@ -761,7 +777,7 @@
       [:div {:class (stl/css :title-field-role)} (tr "labels.role")]
       [:div {:class (stl/css :title-field-status)} (tr "labels.status")]]
      (if (empty? invitations)
-       [:> empty-invitation-table* {:can-invite can-invite?}]
+       [:> empty-invitation-table* {:can-invite can-invite? :team team}]
        [:div {:class (stl/css :table-rows)}
         (for [invitation invitations]
           [:> invitation-row*
