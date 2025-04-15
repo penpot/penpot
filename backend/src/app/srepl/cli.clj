@@ -9,6 +9,7 @@
   (:require
    [app.auth :as auth]
    [app.common.exceptions :as ex]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc.commands.auth :as cmd.auth]
@@ -18,12 +19,25 @@
    [app.util.time :as dt]
    [cuerdas.core :as str]))
 
+(defn coercer
+  [schema & {:as opts}]
+  (let [decode-fn (sm/decoder schema sm/json-transformer)
+        check-fn (sm/check-fn schema opts)]
+    (fn [data]
+      (-> data decode-fn check-fn))))
+
 (defn- get-current-system
   []
   (or (deref (requiring-resolve 'app.main/system))
       (deref (requiring-resolve 'user/system))))
 
 (defmulti ^:private exec-command ::cmd)
+
+(defmethod exec-command :default
+  [{:keys [::cmd]}]
+  (ex/raise :type :internal
+            :code :not-implemented
+            :hint (str/ffmt "command '%' not implemented" cmd)))
 
 (defn exec
   "Entry point with external tools integrations that uses PREPL
@@ -117,8 +131,20 @@
     (let [props  (get system ::setup/props)]
       (tokens/verify props {:token token :iss "authentication"}))))
 
-(defmethod exec-command :default
-  [{:keys [::cmd]}]
-  (ex/raise :type :internal
-            :code :not-implemented
-            :hint (str/ffmt "command '%' not implemented" cmd)))
+(def ^:private schema:get-customer
+  [:map [:id ::sm/uuid]])
+
+(def coerce-get-customer-params
+  (coercer schema:get-customer
+           :type :validation
+           :hint "invalid data provided for `get-customer` rpc call"))
+
+(defmethod exec-command "get-customer"
+  [params]
+  (when-let [system (get-current-system)]
+    (let [{:keys [id] :as params} (coerce-get-customer-params params)
+          {:keys [props] :as profile} (cmd.profile/get-profile system id)]
+      {:id (get profile :id)
+       :name (get profile :fullname)
+       :email (get profile :email)
+       :subscription (get props :subscription)})))
