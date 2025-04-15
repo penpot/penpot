@@ -13,7 +13,6 @@
    [app.db :as db]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.profile :as cmd.profile]
-   [app.util.json :as json]
    [app.util.time :as dt]
    [cuerdas.core :as str]))
 
@@ -28,12 +27,11 @@
   "Entry point with external tools integrations that uses PREPL
   interface for interacting with running penpot backend."
   [data]
-  (let [data (json/decode data)]
-    (-> {::cmd (keyword (:cmd data "default"))}
-        (merge (:params data))
-        (exec-command))))
+  (-> {::cmd (get data :cmd)}
+      (merge (:params data))
+      (exec-command)))
 
-(defmethod exec-command :create-profile
+(defmethod exec-command "create-profile"
   [{:keys [fullname email password is-active]
     :or {is-active true}}]
   (some-> (get-current-system)
@@ -49,7 +47,7 @@
                (->> (cmd.auth/create-profile! conn params)
                     (cmd.auth/create-profile-rels! conn)))))))
 
-(defmethod exec-command :update-profile
+(defmethod exec-command "update-profile"
   [{:keys [fullname email password is-active]}]
   (some-> (get-current-system)
           (db/tx-run!
@@ -70,7 +68,12 @@
                                         :deleted-at nil})]
                    (pos? (db/get-update-count res)))))))))
 
-(defmethod exec-command :delete-profile
+(defmethod exec-command "echo"
+  [params]
+  params)
+
+
+(defmethod exec-command "delete-profile"
   [{:keys [email soft]}]
   (when-not email
     (ex/raise :type :assertion
@@ -88,7 +91,7 @@
                                      {:email email}))]
                (pos? (db/get-update-count res)))))))
 
-(defmethod exec-command :search-profile
+(defmethod exec-command "search-profile"
   [{:keys [email]}]
   (when-not email
     (ex/raise :type :assertion
@@ -102,7 +105,7 @@
                             " where email similar to ? order by created_at desc limit 100")]
                (db/exec! conn [sql email]))))))
 
-(defmethod exec-command :derive-password
+(defmethod exec-command "derive-password"
   [{:keys [password]}]
   (auth/derive-password password))
 
@@ -110,4 +113,4 @@
   [{:keys [::cmd]}]
   (ex/raise :type :internal
             :code :not-implemented
-            :hint (str/ffmt "command '%' not implemented" (name cmd))))
+            :hint (str/ffmt "command '%' not implemented" cmd)))

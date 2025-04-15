@@ -35,40 +35,35 @@ def get_prepl_conninfo():
 
     return host, port
 
-def send_eval(expr):
+def send(data):
     host, port = get_prepl_conninfo()
+    with socket.create_connection((host, port)) as s:
+        f = s.makefile(mode="rw")
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((host, port))
-        s.send(expr.encode("utf-8"))
-        s.send(b":repl/quit\n\n")
+        json.dump(data, f)
+        f.write("\n")
+        f.flush()
 
-        with s.makefile() as f:
-            while True:
-                line = f.readline()
-                result = json.loads(line)
-                tag = result.get("tag", None)
-                if tag == "ret":
-                    return result.get("val", None), result.get("exception", None)
-                elif tag == "out":
-                    print(result.get("val"), end="")
-                else:
-                    raise RuntimeError("unexpected response from PREPL")
+        while True:
+            line = f.readline()
+            result = json.loads(line)
+            tag = result.get("tag", None)
 
-def encode(val):
-    return json.dumps(json.dumps(val))
+            if tag == "ret":
+                return result.get("val", None), result.get("err", None)
+            elif tag == "out":
+                print(result.get("val"), end="")
+            else:
+                raise RuntimeError("unexpected response from PREPL")
 
-def print_error(res):
-    for error in res["via"]:
-        print("ERR:", error["message"])
-        break
+def print_error(error):
+    print("ERR:", error["hint"])
 
 def run_cmd(params):
     try:
-        expr = "(app.srepl.cli/exec {})".format(encode(params))
-        res, failed = send_eval(expr)
-        if failed:
-            print_error(res)
+        res, err = send(params)
+        if err:
+            print_error(err)
             sys.exit(-1)
 
         return res
@@ -96,7 +91,7 @@ def update_profile(email, fullname, password, is_active):
             "email": email,
             "fullname": fullname,
             "password": password,
-            "is_active": is_active
+            "isActive": is_active
         }
     }
 
@@ -138,7 +133,7 @@ def derive_password(password):
     params = {
         "cmd": "derive-password",
         "params": {
-            "password": password,
+            "password": password
         }
     }
 
