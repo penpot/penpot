@@ -23,7 +23,8 @@ export PENPOT_FLAGS="\
        enable-access-tokens \
        enable-tiered-file-data-storage \
        enable-file-validation \
-       enable-file-schema-validation";
+       enable-file-schema-validation \
+       enable-subscriptions-old";
 
 export OPTIONS="
        -A:jmx-remote -A:dev \

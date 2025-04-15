@@ -7,6 +7,7 @@
 - Increase the height of the right sidebar dropdowns [Taiga #10615](https://tree.taiga.io/project/penpot/issue/10615)
 - Fix scroll on token themes modal [Taiga #10745](https://tree.taiga.io/project/penpot/issue/10745)
 - Fix unexpected exception on path editor on merge segments when undo stack is empty
+- Fix pricing CTA to be under a config flag [Taiga #10808](https://tree.taiga.io/project/penpot/issue/10808)
 
 ## 2.6.1
 
