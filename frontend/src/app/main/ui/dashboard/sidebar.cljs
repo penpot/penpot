@@ -26,6 +26,7 @@
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
+   [app.main.ui.dashboard.subscription :as subscription]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i :refer [icon-xref]]
    [app.util.dom :as dom]
@@ -962,13 +963,19 @@
            (dom/open-new-window "https://penpot.app/pricing")))]
 
     [:*
-     [:button {:class (stl/css :upgrade-plan-section)
-               :on-click on-power-up-click}
-      [:div {:class (stl/css :penpot-free)}
-       [:span (tr "dashboard.upgrade-plan.penpot-free")]
-       [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
-      [:div {:class (stl/css :power-up)}
-       (tr "dashboard.upgrade-plan.power-up")]]
+     (when (contains? cf/flags :subscriptions)
+       [:> subscription/sidebar*])
+
+     ;; TODO remove this block when subscriptions is full implemented
+     (when (contains? cf/flags :subscriptions-old)
+       [:button {:class (stl/css :upgrade-plan-section)
+                 :on-click on-power-up-click}
+        [:div {:class (stl/css :penpot-free)}
+         [:span (tr "dashboard.upgrade-plan.penpot-free")]
+         [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
+        [:div {:class (stl/css :power-up)}
+         (tr "dashboard.upgrade-plan.power-up")]])
+
      (when (and team profile)
        [:& comments-section
         {:profile profile

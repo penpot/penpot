@@ -113,6 +113,7 @@
 (def ^:icon-id corner-top "corner-top")
 (def ^:icon-id corner-top-left "corner-top-left")
 (def ^:icon-id corner-top-right "corner-top-right")
+(def ^:icon-id crown "crown")
 (def ^:icon-id curve "curve")
 (def ^:icon-id delete "delete")
 (def ^:icon-id delete-text "delete-text")

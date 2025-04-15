@@ -277,6 +277,14 @@
        (->> #js {:locale locale}
             (dfn-format v f))))))
 
+(defn format-date-locale-short
+  ([v] (format-date-locale-short v nil))
+  ([v {:keys [locale] :or {locale "en"}}]
+   (when v
+     (let [locale-obj (obj/get locales locale)
+           format-str "MMMM do, yyyy"]
+       (dfn-format (js/Date. v) format-str #js {:locale locale-obj})))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Measurement Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

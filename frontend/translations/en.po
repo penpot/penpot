@@ -1055,6 +1055,44 @@ msgstr "Penpot Free"
 msgid "dashboard.upgrade-plan.power-up"
 msgstr "Power up"
 
+msgid "subscription.dashboard.power-up.professional.top-title"
+msgstr "Professional plan"
+
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr "Get extra editors and storage, file backup and more with the **Unlimited plan**"
+
+msgid "subscription.dashboard.power-up.unlimited-plan"
+msgstr "Unlimited plan"
+
+msgid "subscription.dashboard.power-up.unlimited.top-description"
+msgstr "Extra editors, storage and autosaved version, file backup and more."
+
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-description"
+msgstr "Get advanced security, activity logs, dedicated support and more with **Enterprise plan**"
+
+msgid "subscription.dashboard.power-up.enterprise-plan"
+msgstr "Enterprise plan"
+
+msgid "subscription.dashboard.power-up.unlimited.cta"
+msgstr "Take a look"
+
+msgid "subscription.dashboard.power-up.enterprise.description"
+msgstr "Advanced security, activity logs, dedicated support and more."
+
+msgid "subscription.dashboard.power-up.trial.top-title"
+msgstr "Unlimited plan (trial)"
+
+msgid "subscription.dashboard.power-up.trial.top-description"
+msgstr "Extra editors, storage and autosaved version, file backup and more."
+
+msgid "subscription.dashboard.power-up.trial.bottom-description"
+msgstr "Enjoying your trial? Unlock full access forever."
+
+msgid "subscription.dashboard.power-up.subscribe"
+msgstr "Subscribe"
+
 #: src/app/main/ui/dashboard/team.cljs:909
 msgid "dashboard.webhooks.active"
 msgstr "Is active"
@@ -2319,6 +2357,9 @@ msgstr "Sets"
 #: src/app/main/ui/dashboard/sidebar.cljs:539, src/app/main/ui/dashboard/team.cljs:95, src/app/main/ui/dashboard/team.cljs:109, src/app/main/ui/settings/options.cljs:80, src/app/main/ui/settings/sidebar.cljs:105
 msgid "labels.settings"
 msgstr "Settings"
+
+msgid "subscription.labels"
+msgstr "Subscription"
 
 #: src/app/main/ui/viewer/header.cljs:206
 msgid "labels.share"
@@ -4256,6 +4297,75 @@ msgstr "Password - Penpot"
 #: src/app/main/ui/settings/profile.cljs:124
 msgid "title.settings.profile"
 msgstr "Profile - Penpot"
+
+msgid "subscription.settings.section-plan"
+msgstr "Your subscription"
+
+msgid "subscription.settings.other-plans"
+msgstr "Other penpot plans"
+
+msgid "subscription.settings.professional"
+msgstr "Professional"
+
+msgid "subscription.settings.unlimited"
+msgstr "Unlimited"
+
+msgid "subscription.settings.unlimited-trial"
+msgstr "Unlimited (trial)"
+
+msgid "subscription.settings.enterprise"
+msgstr "Enterprise"
+
+msgid "subscription.settings.support-us-since"
+msgstr "You support us since %s"
+
+msgid "subscription.settings.member-since"
+msgstr "Penpot member since %s"
+
+msgid "subscription.settings.price-editor-month"
+msgstr "editor per month"
+
+msgid "subscription.settings.price-organization-month"
+msgstr "organization per month"
+
+msgid "subscription.settings.professional.projects-files"
+msgstr "Unlimited projects, files and drafts"
+
+msgid "subscription.settings.professional.teams-editors"
+msgstr "Unlimited teams of up to 8 editors"
+
+msgid "subscription.settings.professional.storage"
+msgstr "10GB of storage and 7-day autosave versions"
+
+msgid "subscription.settings.benefits.all-professional-benefits"
+msgstr "All Professional plan benefits and:"
+
+msgid "subscription.settings.benefits.all-unlimited-benefits"
+msgstr "All Unlimited plan benefits and:"
+
+msgid "subscription.settings.unlimited.teams"
+msgstr "Unlimited teams, no matter your team size"
+
+msgid "subscription.settings.unlimited.bill"
+msgstr "Capped monthly bill"
+
+msgid "subscription.settings.unlimited.storage"
+msgstr "25GB of storage and 30-day autosave versions and file backup"
+
+msgid "subscription.settings.ulimited.try-it-free"
+msgstr "Try it free for 14 days"
+
+msgid "subscription.settings.manage-your-subscription"
+msgstr "Manage your subscription"
+
+msgid "subscription.settings.enterprise.support"
+msgstr "Dedicated support"
+
+msgid "subscription.settings.enterprise.security"
+msgstr "Advanced security"
+
+msgid "subscription.settings.enterprise.logs"
+msgstr "Activity logs"
 
 #: src/app/main/ui/dashboard/team.cljs:779
 msgid "title.team-invitations"

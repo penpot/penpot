@@ -40,6 +40,9 @@
 (def ^:private go-settings-options
   #(st/emit! (rt/nav :settings-options)))
 
+(def ^:private go-settings-subscription
+  #(st/emit! (rt/nav :settings-subscription)))
+
 (def ^:private go-settings-access-tokens
   #(st/emit! (rt/nav :settings-access-tokens)))
 
@@ -62,6 +65,7 @@
         password?      (= section :settings-password)
         options?       (= section :settings-options)
         feedback?      (= section :settings-feedback)
+        subscription?  (= section :settings-subscription)
         access-tokens? (= section :settings-access-tokens)
         notifications? (= section :settings-notifications)
         team-id        (or (dtm/get-last-team-id)
@@ -103,6 +107,13 @@
              :on-click go-settings-options
              :data-testid "settings-profile"}
         [:span {:class (stl/css :element-title)} (tr "labels.settings")]]
+
+       (when (contains? cf/flags :subscriptions)
+         [:li {:class (stl/css-case :current subscription?
+                                    :settings-item true)
+               :on-click go-settings-subscription
+               :data-testid "settings-subscription"}
+          [:span {:class (stl/css :element-title)} (tr "subscription.labels")]])
 
        (when (contains? cf/flags :access-tokens)
          [:li {:class (stl/css-case :current access-tokens?
