@@ -51,7 +51,7 @@
 (def GRID-LAYOUT-COLUMN-ENTRY-SIZE 5)
 (def GRID-LAYOUT-CELL-ENTRY-SIZE 37)
 
-
+;; FIXME: use `gradient-byte-size` instead
 (defn gradient-stop-get-entries-size
   [stops]
   (mem/get-list-size stops sr-fills/GRADIENT-STOP-SIZE))
@@ -238,7 +238,7 @@
                 :linear
                 (let [size   (gradient-byte-size gradient)
                       offset (mem/alloc-bytes size)
-                      heap   (mem/get-heap-u8)]
+                      heap   (mem/get-heap-u32)]
                   (sr-fills/serialize-linear-fill gradient opacity heap offset)
                   (h/call wasm/internal-module "_add_shape_linear_fill"))
                 :radial
@@ -297,11 +297,10 @@
 
             (cond
               (some? gradient)
-              (let [stops     (:stops gradient)
-                    size  (gradient-stop-get-entries-size stops)
+              (let [stops  (:stops gradient)
+                    size   (gradient-stop-get-entries-size stops)
                     offset (mem/alloc-bytes size)
-                    heap      (mem/get-heap-u8)
-                    mem       (js/Uint8Array. (.-buffer heap) offset size)]
+                    heap   (mem/get-heap-u8)]
                 (if (= (:type gradient) :linear)
                   (h/call wasm/internal-module "_add_shape_stroke_linear_fill"
                           (:start-x gradient)
@@ -316,11 +315,7 @@
                           (:end-y gradient)
                           opacity
                           (:width gradient)))
-                (.set mem (js/Uint8Array. (clj->js (flatten (map (fn [stop]
-                                                                   (let [[r g b a] (sr-clr/rgba-bytes-from-hex (:color stop) (:opacity stop))
-                                                                         offset (:offset stop)]
-                                                                     [r g b a (* 100 offset)]))
-                                                                 stops)))))
+                (sr-fills/serialize-gradient-stops stops heap offset)
                 (h/call wasm/internal-module "_add_shape_stroke_stops"))
 
               (some? image)

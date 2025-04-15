@@ -43,13 +43,13 @@ impl RawGradientData {
     }
 }
 
-pub const RAW_STOP_DATA_SIZE: usize = 5;
+pub const RAW_STOP_DATA_SIZE: usize = 8;
 
 #[derive(Debug)]
 #[repr(C)]
 pub struct RawStopData {
     color: u32,
-    offset: u8,
+    offset: f32,
 }
 
 impl RawStopData {
@@ -58,22 +58,16 @@ impl RawStopData {
     }
 
     pub fn offset(&self) -> f32 {
-        self.offset as f32 / 100.0
-    }
-
-    pub fn from_bytes(bytes: [u8; 5]) -> Self {
-        let color_bytes: [u8; 4] = bytes[0..4].try_into().unwrap();
-        Self {
-            color: u32::from_le_bytes(color_bytes),
-            offset: bytes[4],
-        }
+        self.offset
     }
 }
 
-impl From<[u8; 5]> for RawStopData {
-    // TODO: remove from_bytes and copy its implementation here
-    fn from(bytes: [u8; 5]) -> Self {
-        Self::from_bytes(bytes)
+impl From<[u8; RAW_STOP_DATA_SIZE]> for RawStopData {
+    fn from(bytes: [u8; RAW_STOP_DATA_SIZE]) -> Self {
+        Self {
+            color: u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+            offset: f32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
+        }
     }
 }
 

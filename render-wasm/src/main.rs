@@ -306,7 +306,10 @@ pub extern "C" fn add_shape_fill_stops() {
 
     let entries: Vec<_> = bytes
         .chunks(size_of::<shapes::RawStopData>())
-        .map(|data| shapes::RawStopData::from_bytes(data.try_into().unwrap()))
+        .map(|data| {
+            let raw_stop_bytes: [u8; RAW_STOP_DATA_SIZE] = data.try_into().unwrap();
+            shapes::RawStopData::from(raw_stop_bytes)
+        })
         .collect();
 
     with_current_shape!(state, |shape: &mut Shape| {
@@ -523,7 +526,10 @@ pub extern "C" fn add_shape_stroke_stops() {
 
     let entries: Vec<_> = bytes
         .chunks(size_of::<shapes::RawStopData>())
-        .map(|data| shapes::RawStopData::from_bytes(data.try_into().unwrap()))
+        .map(|data| {
+            let raw_stop_bytes: [u8; RAW_STOP_DATA_SIZE] = data.try_into().unwrap();
+            shapes::RawStopData::from(raw_stop_bytes)
+        })
         .collect();
 
     with_current_shape!(state, |shape: &mut Shape| {
