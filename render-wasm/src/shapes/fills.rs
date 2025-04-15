@@ -41,6 +41,10 @@ impl RawGradientData {
     pub fn opacity(&self) -> f32 {
         self.opacity
     }
+
+    pub fn width(&self) -> f32 {
+        self.width
+    }
 }
 
 pub const RAW_STOP_DATA_SIZE: usize = 8;
@@ -199,14 +203,30 @@ impl Fill {
         opacity: f32,
         width: f32,
     ) -> Self {
-        Self::RadialGradient(Gradient {
+        Self::new_radial_gradient_with_stops(start, end, opacity, width, vec![])
+    }
+
+    pub fn new_radial_gradient_with_stops(
+        start: (f32, f32),
+        end: (f32, f32),
+        opacity: f32,
+        width: f32,
+        stops: Vec<RawStopData>,
+    ) -> Self {
+        let mut gradient = Gradient {
             start,
             end,
             opacity,
             colors: vec![],
             offsets: vec![],
             width,
-        })
+        };
+
+        for stop in stops {
+            gradient.add_stop(stop.color(), stop.offset());
+        }
+
+        Self::RadialGradient(gradient)
     }
 
     pub fn new_image_fill(id: Uuid, opacity: u8, (width, height): (i32, i32)) -> Self {

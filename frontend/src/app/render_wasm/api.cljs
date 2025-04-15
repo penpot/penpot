@@ -242,24 +242,11 @@
                   (sr-fills/serialize-linear-fill gradient opacity heap offset)
                   (h/call wasm/internal-module "_add_shape_linear_fill"))
                 :radial
-                (let [stops (:stops gradient)
-                      size  (gradient-stop-get-entries-size stops)
+                (let [size   (gradient-byte-size gradient)
                       offset (mem/alloc-bytes size)
-                      heap      (mem/get-heap-u8)
-                      mem       (js/Uint8Array. (.-buffer heap) offset size)]
-                  (h/call wasm/internal-module "_add_shape_radial_fill"
-                          (:start-x gradient)
-                          (:start-y gradient)
-                          (:end-x gradient)
-                          (:end-y gradient)
-                          opacity
-                          (:width gradient))
-                  (.set mem (js/Uint8Array. (clj->js (flatten (map (fn [stop]
-                                                                     (let [[r g b a] (sr-clr/rgba-bytes-from-hex (:color stop) (:opacity stop))
-                                                                           offset (:offset stop)]
-                                                                       [r g b a (* 100 offset)]))
-                                                                   stops)))))
-                  (h/call wasm/internal-module "_add_shape_fill_stops")))
+                      heap   (mem/get-heap-u32)]
+                  (sr-fills/serialize-radial-fill gradient opacity heap offset)
+                  (h/call wasm/internal-module "_add_shape_radial_fill")))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
@@ -301,13 +288,15 @@
                     size   (gradient-stop-get-entries-size stops)
                     offset (mem/alloc-bytes size)
                     heap   (mem/get-heap-u8)]
-                (if (= (:type gradient) :linear)
+                (case (:type gradient)
+                  :linear
                   (h/call wasm/internal-module "_add_shape_stroke_linear_fill"
                           (:start-x gradient)
                           (:start-y gradient)
                           (:end-x gradient)
                           (:end-y gradient)
                           opacity)
+                  :radial
                   (h/call wasm/internal-module "_add_shape_stroke_radial_fill"
                           (:start-x gradient)
                           (:start-y gradient)

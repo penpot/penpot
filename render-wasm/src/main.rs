@@ -282,20 +282,26 @@ pub extern "C" fn add_shape_linear_fill() {
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_radial_fill(
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
-    opacity: f32,
-    width: f32,
-) {
+pub extern "C" fn add_shape_radial_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
-        shape.add_fill(shapes::Fill::new_radial_gradient(
-            (start_x, start_y),
-            (end_x, end_y),
-            opacity,
-            width,
+        let bytes = mem::bytes();
+        let raw_gradient_bytes: [u8; RAW_FILL_DATA_SIZE] =
+            bytes[0..RAW_FILL_DATA_SIZE].try_into().unwrap();
+        let raw_gradient = shapes::RawGradientData::from(raw_gradient_bytes);
+        let stops: Vec<shapes::RawStopData> = bytes[RAW_FILL_DATA_SIZE..]
+            .chunks(RAW_STOP_DATA_SIZE)
+            .map(|chunk| {
+                let data: [u8; RAW_STOP_DATA_SIZE] = chunk.try_into().unwrap();
+                shapes::RawStopData::from(data)
+            })
+            .collect();
+
+        shape.add_fill(shapes::Fill::new_radial_gradient_with_stops(
+            raw_gradient.start(),
+            raw_gradient.end(),
+            raw_gradient.opacity(),
+            raw_gradient.width(),
+            stops,
         ));
     });
 }

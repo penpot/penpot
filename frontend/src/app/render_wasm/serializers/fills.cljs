@@ -36,3 +36,20 @@
     (.setFloat32 dview (+ offset 16) opacity true)
     (.setFloat32 dview (+ offset 20) width true)
     (serialize-gradient-stops stops heap (+ offset GRADIENT-BASE-SIZE))))
+
+(defn serialize-radial-fill
+  [gradient opacity heap offset]
+  (let [dview (js/DataView. (.-buffer heap))
+        start-x (dm/get-prop gradient :start-x)
+        start-y (dm/get-prop gradient :start-y)
+        end-x (dm/get-prop gradient :end-x)
+        end-y (dm/get-prop gradient :end-y)
+        stops (dm/get-prop gradient :stops)
+        width (dm/get-prop gradient :width)]
+    (.setFloat32 dview offset        start-x true)
+    (.setFloat32 dview (+ offset 4)  start-y true)
+    (.setFloat32 dview (+ offset 8)  end-x true)
+    (.setFloat32 dview (+ offset 12) end-y true)
+    (.setFloat32 dview (+ offset 16) opacity true)
+    (.setFloat32 dview (+ offset 20) width true)
+    (serialize-gradient-stops stops heap (+ offset GRADIENT-BASE-SIZE))))
