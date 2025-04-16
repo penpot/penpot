@@ -226,11 +226,13 @@
   display: flex;
   flex-direction: column;
   height: calc(100vh - var(--calculated-height));
-  width: 100%;
-  overflow-x: hidden;
+  width: calc(var(--width) + var(--depth) * var(--layer-indentation-size));
+  overflow-x: scroll;
   overflow-y: overlay;
   scrollbar-gutter: stable;
+
   .element-list {
-    width: 100%;
+    width: var(--width);
+    display: grid;
   }
 }

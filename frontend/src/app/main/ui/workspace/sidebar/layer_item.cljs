@@ -355,18 +355,14 @@
             first-child-node (dom/get-first-child parent-node)
 
             subid
-            (when (and single? selected?)
-              (let [scroll-to @scroll-to-middle?]
-                (ts/schedule
-                 100
-                 #(when (and node scroll-node)
-                    (let [scroll-distance-ratio (dom/get-scroll-distance-ratio node scroll-node)
-                          scroll-behavior (if (> scroll-distance-ratio 1) "instant" "smooth")]
-                      (if scroll-to
-                        (dom/scroll-into-view! first-child-node #js {:block "center" :behavior scroll-behavior  :inline "start"})
-                        (do
-                          (dom/scroll-into-view-if-needed! first-child-node #js {:block "center" :behavior scroll-behavior :inline "start"})
-                          (reset! scroll-to-middle? true))))))))]
+            (when (and single? selected? @scroll-to-middle?)
+              (ts/schedule
+               100
+               #(when (and node scroll-node)
+                  (let [scroll-distance-ratio (dom/get-scroll-distance-ratio node scroll-node)
+                        scroll-behavior (if (> scroll-distance-ratio 1) "instant" "smooth")]
+                    (dom/scroll-into-view-if-needed! first-child-node #js {:block "center" :behavior scroll-behavior :inline "start"})
+                    (reset! scroll-to-middle? true)))))]
 
         #(when (some? subid)
            (rx/dispose! subid))))
