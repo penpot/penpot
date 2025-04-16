@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-04-11 21:01+0000\n"
+"PO-Revision-Date: 2025-04-17 13:01+0000\n"
 "Last-Translator: Corentin Noël <tintou@noel.tf>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.11-dev\n"
+"X-Generator: Weblate 5.11.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -2004,7 +2004,7 @@ msgstr "Dépublier %s fichiers"
 
 #: src/app/main/ui/settings/profile.cljs:111
 msgid "labels.update"
-msgstr "Actualiser"
+msgstr "Mettre à jour"
 
 #: src/app/main/ui/dashboard/team_form.cljs:122
 msgid "labels.update-team"
@@ -2567,7 +2567,7 @@ msgstr "Une nouvelle version est disponible, merci de rafraîchir la page"
 
 #: src/app/main/ui/dashboard/team.cljs:164, src/app/main/ui/dashboard/team.cljs:636
 msgid "notifications.invitation-email-sent"
-msgstr "E‑mail d'invitation envoyé avec succès"
+msgstr "L'e‑mail d'invitation a bien été envoyé"
 
 #: src/app/main/ui/dashboard/team.cljs:657
 msgid "notifications.invitation-link-copied"
@@ -5942,7 +5942,7 @@ msgstr "Il y a des mises à jour dans les Bibliothèques Partagées"
 
 #: src/app/main/data/workspace/libraries.cljs:1226
 msgid "workspace.updates.update"
-msgstr "Actualiser"
+msgstr "Mettre à jour"
 
 #, unused
 msgid "workspace.viewport.click-to-close-path"
@@ -7238,3 +7238,105 @@ msgstr "Partager"
 #: src/app/main/ui/workspace/sidebar.cljs:282
 msgid "workspace.versions.tab.history"
 msgstr "Historique"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:278
+msgid "workspace.token.delete"
+msgstr "Supprimer l'unité de style"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+#, unused
+msgid "workspace.token-set.not-active"
+msgstr "La collection de l'unité de style n'est pas active"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:491
+msgid "workspace.token.edit-token"
+msgstr "Modifier l'unité de style"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:197
+msgid "workspace.token.gaps"
+msgstr "Intervalles"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+#, unused
+msgid "workspace.token.grouping-set-alert"
+msgstr ""
+"Le groupement des collections d'unité de style n'est pas encore supporté."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
+msgid "workspace.token.import-tooltip"
+msgstr ""
+"Importer un fichier JSON remplacera toutes vos unités de style, collections "
+"et thèmes"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:13
+msgid "workspace.token.invalid-json"
+msgstr ""
+"Erreur d'importation : Données de l'unité de style invalides dans le JSON."
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/errors.cljs:45
+msgid "workspace.token.invalid-value"
+msgstr "Valeur de l'unité de style invalide : %s"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:37
+msgid "workspace.token.missing-references"
+msgstr "Références de l'unité de style manquantes : "
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:33
+msgid "workspace.token.number-too-large"
+msgstr "Valeur de l'unité de style invalide. La valeur est trop grande : %s"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:25
+msgid "workspace.token.self-reference"
+msgstr "L'unité de style s'auto-référence"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:98
+msgid "workspace.token.set-edit-placeholder"
+msgstr "Entrez le nom (utilisez « / » pour les groupes)"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
+msgid "workspace.token.token-not-resolved"
+msgstr ""
+"Impossible de trouver une référence d'unité de style ayant comme nom : %s"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:492
+msgid "workspace.token.create-token"
+msgstr "Créer une nouvelle unité de style %s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:396
+msgid "workspace.token.set-selection-theme"
+msgstr ""
+"Définissez comment la collection d'unité de style doit être utilisée pour ce "
+"paramètre du thème :"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:59
+msgid "workspace.token.token-name-validation-error"
+msgstr ""
+" n'est pas un nom d'unité de style valide.\n"
+"Les noms des unités de style doivent contenir uniquement des lettres et "
+"chiffres séparés par des caractères . et ne doivent pas commencer par $."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:322
+msgid "workspace.token.tokens-section-title"
+msgstr "UNITÉS DE STYLE -  %s"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:520
+msgid "workspace.token.warning-name-change"
+msgstr ""
+"Renommer cette unité de style rendra invalide toute référence à son ancien "
+"nom."
+
+#: src/app/main/ui/workspace/tokens/form.cljs:217, src/app/main/ui/workspace/tokens/form.cljs:221, src/app/main/ui/workspace/tokens/token_pill.cljs:123
+msgid "workspace.token.resolved-value"
+msgstr "Valeur déduite : %s"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:498
+msgid "workspace.token.enter-token-name"
+msgstr "Entrez le nom de l'unité de style %s"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:275
+msgid "workspace.token.duplicate"
+msgstr "Dupliquer l'unité de style"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:262
+msgid "workspace.token.edit"
+msgstr "Modifier l'unité de style"
