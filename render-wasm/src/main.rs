@@ -16,7 +16,7 @@ mod wapi;
 mod wasm;
 
 use crate::mem::SerializableResult;
-use crate::shapes::{BoolType, ConstraintH, ConstraintV, TransformEntry, Type};
+use crate::shapes::{BoolType, ConstraintH, ConstraintV, StructureEntry, TransformEntry, Type};
 use crate::utils::uuid_from_u32_quartet;
 use crate::uuid::Uuid;
 use indexmap::IndexSet;
@@ -608,8 +608,30 @@ pub extern "C" fn propagate_modifiers() -> *mut u8 {
 }
 
 #[no_mangle]
+pub extern "C" fn set_structure_modifiers() {
+    let bytes = mem::bytes();
+
+    let entries: Vec<_> = bytes
+        .chunks(40)
+        .map(|data| StructureEntry::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    with_state!(state, {
+        for entry in entries {
+            if !state.structure.contains_key(&entry.parent) {
+                state.structure.insert(entry.parent, Vec::new());
+            }
+            state.structure.get_mut(&entry.parent).unwrap().push(entry);
+        }
+    });
+
+    mem::free_bytes();
+}
+
+#[no_mangle]
 pub extern "C" fn clean_modifiers() {
     with_state!(state, {
+        state.structure.clear();
         state.modifiers.clear();
     });
 }

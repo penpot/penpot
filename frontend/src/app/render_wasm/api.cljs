@@ -821,6 +821,22 @@
                        (clear-drawing-cache)
                        (request-render "set-objects")))))))
 
+(defn set-structure-modifiers
+  [entries]
+  (when-not (empty? entries)
+    (let [offset (mem/alloc-bytes-32 (mem/get-list-size entries 40))
+          heapu32 (mem/get-heap-u32)]
+      (loop [entries (seq entries)
+             current-offset  offset]
+        (when-not (empty? entries)
+          (let [{:keys [type parent id index] :as entry} (first entries)]
+            (sr/heapu32-set-u32 (sr/translate-structure-modifier-type type) heapu32 (+ current-offset 0))
+            (sr/heapu32-set-u32 (or index 0) heapu32 (+ current-offset 1))
+            (sr/heapu32-set-uuid parent heapu32 (+ current-offset 2))
+            (sr/heapu32-set-uuid id heapu32 (+ current-offset 6))
+            (recur (rest entries) (+ current-offset 10)))))
+      (h/call wasm/internal-module "_set_structure_modifiers"))))
+
 (defn propagate-modifiers
   [entries]
   (let [offset (mem/alloc-bytes-32 (modifier-get-entries-size entries))
@@ -852,11 +868,13 @@
     (h/call wasm/internal-module "_set_canvas_background" rgba)
     (request-render "set-canvas-background")))
 
+(defn clean-modifiers
+  []
+  (h/call wasm/internal-module "_clean_modifiers"))
+
 (defn set-modifiers
   [modifiers]
-  (if (empty? modifiers)
-    (h/call wasm/internal-module "_clean_modifiers")
-
+  (when-not (empty? modifiers)
     (let [offset (mem/alloc-bytes-32 (* MODIFIER-ENTRY-SIZE (count modifiers)))
           heapu32 (mem/get-heap-u32)
           heapf32 (mem/get-heap-f32)]
