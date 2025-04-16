@@ -6889,6 +6889,17 @@ msgstr "Valor de color no válido: %s"
 msgid "workspace.token.invalid-json"
 msgstr "Error al importar: Datos de token no válidos en JSON."
 
+#: src/app/main/ui/workspace/tokens/errors.cljs:16
+msgid "workspace.token.invalid-json-token-name"
+msgstr "Error al importar: Nombre de token no válido en JSON."
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:18
+msgid "workspace.token.invalid-json-token-name-detail"
+msgstr ""
+"\"%s\" no es un nombre de token válido.\n"
+"Los nombres de token solo pueden contener letras y dígitos separados por "
+"caracteres . y no pueden empezar con un signo $."
+
 #: src/app/main/ui/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/errors.cljs:45
 msgid "workspace.token.invalid-value"
 msgstr "Valor de token no válido: %s"

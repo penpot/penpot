@@ -12,6 +12,11 @@
    {:error/code :error.import/invalid-json-data
     :error/fn #(tr "workspace.token.invalid-json")}
 
+   :error.import/invalid-token-name
+   {:error/code :error.import/invalid-json-data
+    :error/fn #(tr "workspace.token.invalid-json-token-name")
+    :error/detail #(tr "workspace.token.invalid-json-token-name-detail" %)}
+
    :error.import/style-dictionary-reference-errors
    {:error/code :error.import/style-dictionary-reference-errors
     :error/fn #(str (tr "workspace.token.import-error") "\n\n" (first %))
@@ -80,4 +85,6 @@
   (->> errors
        (map (fn [err]
               (when (:error/detail err)
-                ((:error/detail err) (:error/value err)))))))
+                ((:error/detail err) (:error/value err)))))
+       (filter some?)
+       (seq)))

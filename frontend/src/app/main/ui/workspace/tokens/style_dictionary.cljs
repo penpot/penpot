@@ -10,7 +10,6 @@
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.warnings :as wtw]
-   [app.util.i18n :refer [tr]]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -265,6 +264,16 @@
            (= header-2 "Reference Errors:"))
       errors)))
 
+(defn name-error
+  "Extracts name error out of malli schema error during import."
+  [err]
+  (let [schema-error (some-> (ex-data err)
+                             (get-in [:app.common.schema/explain :errors])
+                             (first))
+        name-error? (= (:in schema-error) [:name])]
+    (when name-error?
+      (wte/error-ex-info :error.import/invalid-token-name (:value schema-error) err))))
+
 (defn process-json-stream
   ([data-stream]
    (process-json-stream nil data-stream))
@@ -296,7 +305,9 @@
                           (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data))
 
                         (catch js/Error e
-                          (throw (wte/error-ex-info :error.import/invalid-json-data json-data e)))))))
+                          (let [err (or (name-error e)
+                                        (wte/error-ex-info :error.import/invalid-json-data json-data e))]
+                            (throw err)))))))
           (rx/mapcat (fn [tokens-lib]
                        (try
                          (-> (ctob/get-all-tokens tokens-lib)
@@ -310,17 +321,6 @@
                                           (throw err)))))
                          (catch js/Error e
                            (p/rejected (wte/error-ex-info :error.import/style-dictionary-unknown-error "" e))))))))))
-
-;; === Errors
-
-(defn humanize-errors [{:keys [errors] :as token}]
-  (->> (map (fn [err]
-              (case (:error/code err)
-                ;; TODO: This needs translations
-                :error.style-dictionary/missing-reference (tr "workspace.token.token-not-resolved" (:error/value err))
-                nil))
-            errors)
-       (str/join "\n")))
 
 ;; === Hooks
 
