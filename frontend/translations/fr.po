@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-04-17 13:01+0000\n"
-"Last-Translator: Corentin Noël <tintou@noel.tf>\n"
+"Last-Translator: Unreal Vision <unrealvisionyt@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -488,7 +488,7 @@ msgstr "Exporter"
 #: src/app/main/ui/exports/assets.cljs:177
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
-"Vous pouvez ajouter des paramètres d'exportation aux formes depuis les "
+"Vous pouvez ajouter des paramètres d'exportation aux éléments depuis les "
 "propriétés de design (en bas de la barre latérale de droite)."
 
 #: src/app/main/ui/exports/assets.cljs:181
@@ -2778,7 +2778,7 @@ msgstr "Tester avant d'auto-héberger"
 
 #: src/app/main/ui/onboarding/questions.cljs:349
 msgid "onboarding.questions.start-with.code"
-msgstr "Générer du vrai code pour les designs"
+msgstr "Générer du vrai code à partir des designs"
 
 #: src/app/main/ui/onboarding/questions.cljs:347
 msgid "onboarding.questions.start-with.ds"
