@@ -28,7 +28,7 @@
    [app.main.ui.dashboard.file-menu :refer [file-menu*]]
    [app.main.ui.dashboard.import :refer [use-import-file]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
-   [app.main.ui.dashboard.placeholder :refer [empty-placeholder loading-placeholder]]
+   [app.main.ui.dashboard.placeholder :refer [empty-grid-placeholder* loading-placeholder*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
@@ -511,7 +511,7 @@
            :ref node-ref}
      (cond
        (nil? files)
-       [:& loading-placeholder]
+       [:> loading-placeholder*]
 
        (seq files)
        (for [[index slice] (d/enumerate (partition-all limit files))]
@@ -528,7 +528,7 @@
               :can-edit can-edit}])])
 
        :else
-       [:& empty-placeholder
+       [:> empty-grid-placeholder*
         {:limit limit
          :can-edit can-edit
          :create-fn create-fn
@@ -646,7 +646,7 @@
            :on-drop on-drop}
      (cond
        (nil? files)
-       [:& loading-placeholder]
+       [:> loading-placeholder*]
 
        (seq files)
        [:& line-grid-row {:files files
@@ -657,8 +657,8 @@
                           :limit limit}]
 
        :else
-       [:& empty-placeholder
-        {:dragging? @dragging?
+       [:> empty-grid-placeholder*
+        {:is-dragging @dragging?
          :limit limit
          :can-edit can-edit
          :create-fn create-fn
