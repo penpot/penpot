@@ -534,6 +534,7 @@
          :create-fn create-fn
          :origin origin
          :project-id project-id
+         :team-id team-id
          :on-finish-import on-finish-import}])]))
 
 (mf/defc line-grid-row
@@ -662,4 +663,5 @@
          :can-edit can-edit
          :create-fn create-fn
          :project-id project-id
+         :team-id team-id
          :on-finish-import on-finish-import}])]))

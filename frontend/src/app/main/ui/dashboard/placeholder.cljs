@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.event :as ev]
-   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.import :as udi]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
@@ -16,12 +15,13 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc empty-placeholder-projects*
   {::mf/wrap-props false}
-  [{:keys [on-create on-finish-import project-id] :as props}]
+  [{:keys [on-create on-finish-import project-id]}]
   (let [file-input       (mf/use-ref nil)
         on-add-library   (mf/use-fn
                           (fn [_]
@@ -48,17 +48,38 @@
                           :project-id project-id
                           :on-finish-import on-finish-import}]]))
 
+(defn- make-has-other-files-or-projects-ref
+  "Return a ref that resolves to true or false if there are at least some
+  file or some project (a part of the default) exists; this determines
+  if we need to show a complete placeholder or the small one."
+  [team-id]
+  (l/derived (fn [state]
+               (or (let [projects (get state :projects)]
+                     (some (fn [[_ project]]
+                             (and (= (:team-id project) team-id)
+                                  (not (:is-default project))))
+                           projects))
+                   (let [files (get state :files)]
+                     (some (fn [[_ file]]
+                             (= (:team-id file) team-id))
+                           files))))
+             st/state))
+
 (mf/defc empty-placeholder
-  [{:keys [dragging? limit origin create-fn can-edit project-id on-finish-import]}]
+  [{:keys [dragging? limit origin create-fn can-edit team-id project-id on-finish-import]}]
   (let [on-click
         (mf/use-fn
          (mf/deps create-fn)
          (fn [_]
            (create-fn "dashboard:empty-folder-placeholder")))
+
         show-text      (mf/use-state nil)
         on-mouse-enter (mf/use-fn #(reset! show-text true))
         on-mouse-leave (mf/use-fn #(reset! show-text nil))
-        files          (mf/deref refs/files)]
+
+        has-other*     (mf/with-memo [team-id]
+                         (make-has-other-files-or-projects-ref team-id))
+        has-other?     (mf/deref has-other*)]
     (cond
       (true? dragging?)
       [:ul
@@ -80,7 +101,7 @@
                             :tag-name "span"}])]
 
       :else
-      (if (= (count files) 0)
+      (if-not has-other?
         [:> empty-placeholder-projects* {:on-create on-click :on-finish-import on-finish-import :project-id project-id}]
         [:div {:class (stl/css :grid-empty-placeholder)}
          [:button {:class (stl/css :create-new)
