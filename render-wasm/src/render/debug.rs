@@ -173,15 +173,6 @@ pub fn render(render_state: &mut RenderState) {
 
 #[cfg(target_arch = "wasm32")]
 #[allow(dead_code)]
-pub fn console_debug_tile_surface(render_state: &mut RenderState, tile: tiles::Tile) {
-    let base64_image = render_state.surfaces.base64_snapshot_tile(tile);
-
-    #[cfg(target_arch = "wasm32")]
-    run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
-}
-
-#[cfg(target_arch = "wasm32")]
-#[allow(dead_code)]
 pub fn console_debug_surface(render_state: &mut RenderState, id: SurfaceId) {
     let base64_image = render_state.surfaces.base64_snapshot(id);
 
