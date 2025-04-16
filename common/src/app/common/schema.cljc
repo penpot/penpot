@@ -392,17 +392,20 @@
 
 (defn- parse-uuid
   [s]
-  (if (str/empty? s)
-    nil
-    (try
-      (uuid/parse s)
-      (catch #?(:clj Exception :cljs :default) _cause
-        s))))
+  (if (uuid? s)
+    s
+    (if (str/empty? s)
+      nil
+      (try
+        (uuid/parse s)
+        (catch #?(:clj Exception :cljs :default) _cause
+          s)))))
 
 (defn- encode-uuid
   [v]
-  (when (uuid? v)
-    (str v)))
+  (if (uuid? v)
+    (str v)
+    v))
 
 (register!
  {:type ::uuid
