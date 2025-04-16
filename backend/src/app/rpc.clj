@@ -188,7 +188,9 @@
           decode   (sm/decoder schema sm/json-transformer)
           encode   (sm/encoder schema sm/json-transformer)]
       (fn [cfg params]
+        ;; (prn "antes" params)
         (let [params (decode params)]
+          ;; (prn "después" params)
           (if (validate params)
             (let [result (f cfg params)]
               (if (instance? clojure.lang.IObj result)

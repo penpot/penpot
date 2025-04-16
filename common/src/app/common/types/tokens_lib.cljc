@@ -119,13 +119,13 @@
    [:name cto/token-name-ref]
    [:type [::sm/one-of cto/token-types]]
    [:value :any]
-   [:description [:maybe :string]]
-   [:modified-at ::sm/inst]])
+   [:description {:optional true} :string]
+   [:modified-at {:optional true} ::sm/inst]])
 
 (def schema:token
   [:and {:gen/gen (->> (sg/generator schema:token-attrs)
                        (sg/fmap map->Token))}
-   schema:token-attrs
+   (sm/required-keys schema:token-attrs)
    [:fn token?]])
 
 (def check-token
@@ -383,10 +383,11 @@
 
 (def schema:token-set-attrs
   [:map {:title "TokenSet"}
-   [:name ::sm/text]
+   [:name :string]
    [:description {:optional true} :string]
    [:modified-at {:optional true} ::sm/inst]
-   [:tokens {:gen/gen (->> (sg/generator [:map-of ::sm/text schema:token])
+   [:tokens {:optional true
+             :gen/gen (->> (sg/generator [:map-of ::sm/text schema:token])
                            (sg/fmap #(into (d/ordered-map) %)))}
     [:and
      [:map-of {:gen/max 5} :string schema:token]

@@ -131,6 +131,9 @@
    ::doc/added "1.17"}
   [{:keys [::mtx/metrics] :as cfg}
    {:keys [::rpc/profile-id id changes changes-with-metadata] :as params}]
+  (prn params)
+  (prn "---")
+  (prn changes)
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                     (files/check-edition-permissions! conn profile-id id)
                     (db/xact-lock! conn id)
