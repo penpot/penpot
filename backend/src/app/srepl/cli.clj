@@ -148,3 +148,79 @@
        :name (get profile :fullname)
        :email (get profile :email)
        :subscription (get props :subscription)})))
+
+(def ^:private schema:customer-subscription
+  [:map {:title "CustomerSubscription"}
+   [:id ::sm/uuid]
+   [:customer-id ::sm/uuid]
+   [:type [:enum
+           "unlimited"
+           "professional"
+           "enterprise"]]
+   [:status [:enum
+             "active"
+             "canceled"
+             "incomplete"
+             "incomplete_expired"
+             "pass_due"
+             "paused"
+             "trialing"
+             "unpaid"]]
+
+   [:billing-period [:enum
+                     "month"
+                     "day"
+                     "week"
+                     "year"]]
+   [:quantity :int]
+   [:description [:maybe ::sm/text]]
+   [:created-at ::sm/timestamp]
+   [:start-date [:maybe ::sm/timestamp]]
+   [:ended-at [:maybe ::sm/timestamp]]
+   [:trial-end [:maybe ::sm/timestamp]]
+   [:trial-start [:maybe ::sm/timestamp]]
+   [:cancel-at [:maybe ::sm/timestamp]]
+   [:canceled-at [:maybe ::sm/timestamp]]
+
+   [:current-period-end ::sm/timestamp]
+   [:current-period-start ::sm/timestamp]
+   [:cancel-at-period-end :boolean]
+
+   [:cancellation-details
+    [:map {:title "CancellationDetails"}
+     [:comment [:maybe ::sm/text]]
+     [:reason [:maybe ::sm/text]]
+     [:feedback [:maybe
+                 [:enum
+                  "customer_service"
+                  "low_quality"
+                  "missing_feature"
+                  "other"
+                  "switched_service"
+                  "too_complex"
+                  "too_expensive"
+                  "unused"]]]]]])
+
+(def ^:private schema:update-customer-subscription
+  [:map
+   [:id ::sm/uuid]
+   [:subscription schema:customer-subscription]])
+
+(def coerce-update-customer-subscription-params
+  (coercer schema:update-customer-subscription
+           :type :validation
+           :hint "invalid data provided for `update-customer-subscription` rpc call"))
+
+(defmethod exec-command "update-customer-subscription"
+  [params]
+  (when-let [system (get-current-system)]
+    (let [{:keys [id subscription]} (coerce-update-customer-subscription-params params)
+          ;; FIXME: locking
+          {:keys [props] :as profile} (cmd.profile/get-profile system id)
+          props (assoc props :subscription subscription)]
+
+      (db/update! system :profile
+                  {:props (db/tjson props)}
+                  {:id id}
+                  {::db/return-keys false})
+      true)))
