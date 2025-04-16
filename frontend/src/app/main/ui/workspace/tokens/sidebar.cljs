@@ -332,7 +332,11 @@
      [:div {:class (stl/css :sets-header-container)}
       [:span {:class (stl/css :sets-header)} (tr "workspace.token.tokens-section-title" selected-token-set-name)]
       [:div {:class (stl/css :sets-header-status) :title (tr "workspace.token.inactive-set-description")}
-       (when (not (token-set-active? selected-token-set-name))
+       ;; NOTE: when no set in tokens-lib, the selected-token-set-name
+       ;; will be `nil`, so for properly hide the inactive message we
+       ;; check that at least `selected-token-set-name` has a value
+       (when (and (some? selected-token-set-name)
+                  (not (token-set-active? selected-token-set-name)))
          [:*
           [:> i/icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
           [:span {:class (stl/css :sets-header-status-text)}
