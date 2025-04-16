@@ -227,7 +227,7 @@
               (let [size   (sr-fills/gradient-byte-size gradient)
                     offset (mem/alloc-bytes size)
                     heap   (mem/get-heap-u32)]
-                (sr-fills/serialize-gradient-fill gradient opacity heap offset)
+                (sr-fills/write-gradient-fill! offset heap gradient opacity)
                 (case (:type gradient)
                   :linear
                   (h/call wasm/internal-module "_add_shape_linear_fill")
@@ -273,7 +273,7 @@
               (let [size   (sr-fills/gradient-byte-size gradient)
                     offset (mem/alloc-bytes size)
                     heap   (mem/get-heap-u32)]
-                (sr-fills/serialize-gradient-fill gradient opacity heap offset)
+                (sr-fills/write-gradient-fill! offset heap gradient opacity)
                 (case (:type gradient)
                   :linear
                   (h/call wasm/internal-module "_add_shape_stroke_linear_fill")

@@ -10,8 +10,8 @@
   (let [stops (:stops gradient)]
     (+ GRADIENT-BASE-SIZE (* (count stops) GRADIENT-STOP-SIZE))))
 
-(defn serialize-gradient-fill
-  [gradient opacity heap offset]
+(defn write-gradient-fill!
+  [offset heap gradient opacity]
   (let [dview   (js/DataView. (.-buffer heap))
         start-x (:start-x gradient)
         start-y (:start-y gradient)
@@ -26,7 +26,8 @@
     (.setFloat32 dview (+ offset 16) opacity true)
     (.setFloat32 dview (+ offset 20) width true)
     (loop [stops (seq stops) offset (+ offset GRADIENT-BASE-SIZE)]
-      (when-not (empty? stops)
+      (if (empty? stops)
+        offset
         (let [stop (first stops)
               hex-color (:color stop)
               opacity (:opacity stop)
