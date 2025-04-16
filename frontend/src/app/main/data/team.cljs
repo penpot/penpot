@@ -133,6 +133,8 @@
       (let [team-id' (get state :current-team-id)]
         (if (= team-id' team-id)
           (-> state
+              (dissoc :files)
+              (dissoc :recent-files)
               (dissoc :current-team-id)
               (dissoc :shared-files)
               (dissoc :fonts))
