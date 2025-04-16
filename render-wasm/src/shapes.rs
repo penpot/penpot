@@ -2,7 +2,7 @@ use skia_safe::{self as skia};
 
 use crate::render::BlendMode;
 use crate::uuid::Uuid;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 mod blurs;
 mod bools;
@@ -659,9 +659,9 @@ impl Shape {
         self.children.first()
     }
 
-    pub fn children_ids(&self) -> Vec<Uuid> {
+    pub fn children_ids(&self) -> IndexSet<Uuid> {
         if let Type::Bool(_) = self.shape_type {
-            vec![]
+            IndexSet::<Uuid>::new()
         } else if let Type::Group(group) = self.shape_type {
             if group.masked {
                 self.children.iter().skip(1).cloned().collect()
@@ -855,6 +855,40 @@ impl Shape {
 
     pub fn has_fills(&self) -> bool {
         !self.fills.is_empty()
+    }
+}
+
+/*
+  Returns the list of children taking into account the structure modifiers
+*/
+pub fn modified_children_ids(
+    element: &Shape,
+    structure: Option<&Vec<StructureEntry>>,
+) -> IndexSet<Uuid> {
+    if let Some(structure) = structure {
+        let mut result: Vec<Uuid> = Vec::from_iter(element.children_ids().iter().map(|id| *id));
+        let mut to_remove = HashSet::<&Uuid>::new();
+
+        for st in structure {
+            match st.entry_type {
+                StructureEntryType::AddChild => {
+                    result.insert(st.index as usize, st.id);
+                }
+                StructureEntryType::RemoveChild => {
+                    to_remove.insert(&st.id);
+                }
+            }
+        }
+
+        let ret: IndexSet<Uuid> = result
+            .iter()
+            .filter(|id| !to_remove.contains(id))
+            .map(|id| *id)
+            .collect();
+
+        ret
+    } else {
+        element.children_ids()
     }
 }
 

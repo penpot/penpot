@@ -44,6 +44,10 @@
     (aset u32-arr 3 (aget buffer 3))
     (js/Uint8Array. (.-buffer u32-arr))))
 
+(defn heapu32-set-u32
+  [value heap offset]
+  (aset heap offset value))
+
 (defn heapu32-set-uuid
   [id heap offset]
   (let [buffer (uuid/get-u32 id)]
@@ -262,3 +266,9 @@
     :inner-shadow 1
     0))
 
+
+(defn translate-structure-modifier-type
+  [type]
+  (case type
+    :remove-children 1
+    :add-children    2))
