@@ -8,6 +8,7 @@
 - Fix scroll on token themes modal [Taiga #10745](https://tree.taiga.io/project/penpot/issue/10745)
 - Fix unexpected exception on path editor on merge segments when undo stack is empty
 - Fix pricing CTA to be under a config flag [Taiga #10808](https://tree.taiga.io/project/penpot/issue/10808)
+- Fix allow moving a main component into another [Taiga #10818](https://tree.taiga.io/project/penpot/issue/10818)
 
 ## 2.6.1
 

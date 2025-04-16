@@ -543,14 +543,23 @@
            ;; We can always move the children to the parent they already have.
            ;; But if we are pasting, those are new items, so it is considered a change
            no-changes?
-           (and (->> children (every? #(= parent-id (:parent-id %))))
+           (and (every? #(= parent-id (:parent-id %)) children)
                 (not pasting?))
            all-main?
-           (->> children (every? #(ctk/main-instance? %)))]
+           (every? ctk/main-instance? children)
+
+           any-main-descendant
+           (some
+            (fn [shape]
+              (some ctk/main-instance? (cfh/get-children-with-self objects (:id shape))))
+            children)]
+
        (if (or no-changes?
                (and (not (invalid-structure-for-component? objects parent children pasting? libraries))
                     ;; If we are moving into a variant-container, all the items should be main
-                    (or all-main? (not (ctk/is-variant-container? parent)))))
+                    (or all-main? (not (ctk/is-variant-container? parent)))
+                    ;; If we are moving into a main component, no descendant can be main
+                    (or (nil? any-main-descendant) (not (ctk/main-instance? parent)))))
          [parent-id (get-frame parent-id)]
          (recur (:parent-id parent) objects children pasting? libraries))))))
 
