@@ -1374,15 +1374,31 @@
                                (assoc obj ::images images))))
                 (rx/of obj))))
 
+          (collect-variants [state shape]
+            (let [page-id (:current-page-id state)
+                  data    (dsh/lookup-file-data state)
+                  objects (-> (dsh/get-page data page-id)
+                              (get :objects))
+
+                  components (cfv/find-variant-components data objects (:id shape))]
+              (into {} (map (juxt :id :variant-properties) components))))
+
+
           ;; Collects all the items together and split images into a
           ;; separated data structure for a more easy paste process.
-          (collect-data [result {:keys [id ::images] :as item}]
+          ;; Also collects the variant properties of the copied variants
+          (collect-data [state result {:keys [id ::images] :as item}]
             (cond-> result
               :always
               (update :objects assoc id (dissoc item ::images))
 
               (some? images)
-              (update :images into images)))
+              (update :images into images)
+
+              (ctc/is-variant-container? item)
+              (update :variant-properties merge (collect-variants state item))))
+
+
 
           (maybe-translate [shape objects parent-frame-id]
             (if (= parent-frame-id uuid/zero)
@@ -1467,7 +1483,7 @@
                        (fn [resolve reject]
                          (->> (rx/from shapes)
                               (rx/merge-map (partial prepare-object objects frame-id))
-                              (rx/reduce collect-data initial)
+                              (rx/reduce (partial collect-data state) initial)
                               (rx/map (partial sort-selected state))
                               (rx/map (partial advance-copies state selected))
                               (rx/map #(t/encode-str % {:type :json-verbose}))
@@ -1482,7 +1498,7 @@
                 ;; https://caniuse.com/?search=ClipboardItem
                 (->> (rx/from shapes)
                      (rx/merge-map (partial prepare-object objects frame-id))
-                     (rx/reduce collect-data initial)
+                     (rx/reduce (partial collect-data state) initial)
                      (rx/map (partial sort-selected state))
                      (rx/map (partial advance-copies state selected))
                      (rx/map #(t/encode-str % {:type :json-verbose}))
@@ -2070,6 +2086,9 @@
 
               objects      (:objects pdata)
 
+              variant-props (:variant-properties pdata)
+
+
               position     (deref ms/mouse-position)
 
               ;; Calculate position for the pasted elements
@@ -2101,7 +2120,8 @@
                              (gslg/get-drop-cell frame-id all-objects position))
 
               changes      (-> (pcb/empty-changes it)
-                               (cll/generate-duplicate-changes all-objects page selected delta libraries ldata file-id)
+                               (cll/generate-duplicate-changes all-objects page selected delta
+                                                               libraries ldata file-id {:variant-props variant-props})
                                (pcb/amend-changes (partial process-rchange media-idx))
                                (pcb/amend-changes (partial change-add-obj-index objects selected index)))
 

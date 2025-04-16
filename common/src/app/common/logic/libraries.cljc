@@ -1859,20 +1859,26 @@
     (assoc change :component-id (:id container))))
 
 (defn generate-add-component-changes
-  [changes root objects file-id page-id]
+  [changes root objects file-id page-id variant-props]
   (let [name (:name root)
+        variant-id  (when (ctk/is-variant? root) (:parent-id root))
+        props       (when (ctk/is-variant? root) (get variant-props (:component-id root)))
+
         [path name] (cfh/parse-path-name name)
 
         [root-shape updated-shapes]
         (ctn/convert-shape-in-component root objects file-id)
 
-        changes (-> changes
-                    (pcb/add-component (:id root-shape)
-                                       path
-                                       name
-                                       updated-shapes
-                                       (:id root)
-                                       page-id))]
+        changes     (-> changes
+                        (pcb/add-component (:id root-shape)
+                                           path
+                                           name
+                                           updated-shapes
+                                           (:id root)
+                                           page-id
+                                           nil
+                                           variant-id
+                                           props))]
     [root-shape changes]))
 
 (defn generate-add-component
@@ -1927,7 +1933,7 @@
 
         objects' (assoc objects (:id root) root)
 
-        [root-shape changes] (generate-add-component-changes changes root objects' file-id page-id)
+        [root-shape changes] (generate-add-component-changes changes root objects' file-id page-id nil)
 
         changes  (pcb/update-shapes changes
                                     old-root-ids
@@ -2193,9 +2199,11 @@
 
 (defn generate-duplicate-shape-change
   ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id]
-   (generate-duplicate-shape-change changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true))
+   (generate-duplicate-shape-change changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true nil))
+  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id variant-props]
+   (generate-duplicate-shape-change changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true variant-props))
 
-  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id frame-id parent-id duplicating-component? child? remove-swap-slot?]
+  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id frame-id parent-id duplicating-component? child? remove-swap-slot? variant-props]
    (cond
      (nil? obj)
      changes
@@ -2231,7 +2239,7 @@
 
            regenerate-component
            (fn [changes shape]
-             (let [[_ changes] (generate-add-component-changes changes shape objects file-id (:id page))]
+             (let [[_ changes] (generate-add-component-changes changes shape objects file-id (:id page) variant-props)]
                changes))
 
            new-obj
@@ -2270,7 +2278,13 @@
                (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects))
 
                (cond-> (ctl/grid-layout? obj)
-                 (ctl/remap-grid-cells ids-map)))
+                 (ctl/remap-grid-cells ids-map))
+
+               (cond-> (ctk/is-variant-container? parent)
+                 (assoc :variant-id parent-id))
+
+               (cond-> (not (ctk/is-variant-container? parent))
+                 (dissoc :variant-id)))
 
            new-obj (cond-> new-obj
                      (not duplicating-component?)
@@ -2318,14 +2332,15 @@
                                                                ;; only remove swap slot of children when the current shape
                                                                ;; is not a subinstance head nor a instance root
                                                        (not subinstance-head?)
-                                                       (not instance-root?))))
+                                                       (not instance-root?))
+                                                  variant-props))
                changes
                (map (d/getf objects) (:shapes obj)))))))
 
 (defn generate-duplicate-changes
   "Prepare objects to duplicate: generate new id, give them unique names,
   move to the desired position, and recalculate parents and frames as needed."
-  [changes all-objects page ids delta libraries library-data file-id]
+  [changes all-objects page ids delta libraries library-data file-id & {:keys [variant-props]}]
   (let [shapes         (map (d/getf all-objects) ids)
         unames         (volatile! (cfh/get-used-names (:objects page)))
         update-unames! (fn [new-name] (vswap! unames conj new-name))
@@ -2352,7 +2367,8 @@
                                                        nil
                                                        libraries
                                                        library-data
-                                                       file-id)
+                                                       file-id
+                                                       variant-props)
                      changes))
 
          ;; We need to check the changes to get the ids-map
