@@ -190,8 +190,8 @@
 (defn set-shape-children
   [shape-ids]
   (let [num-shapes (count shape-ids)]
+    (perf/begin-measure "set-shape-children")
     (when (> num-shapes 0)
-      (perf/begin-measure "set-shape-children")
       (let [offset (mem/alloc-bytes (* CHILD-ENTRY-SIZE num-shapes))
             heap (mem/get-heap-u32)]
 
@@ -200,11 +200,11 @@
           (when-not (empty? entries)
             (let [id (first entries)]
               (sr/heapu32-set-uuid id heap (mem/ptr8->ptr32 current-offset))
-              (recur (rest entries) (+ current-offset CHILD-ENTRY-SIZE)))))
+              (recur (rest entries) (+ current-offset CHILD-ENTRY-SIZE)))))))
 
-        (let [result (h/call wasm/internal-module "_set_children")]
-          (perf/end-measure "set-shape-children")
-          result)))))
+    (let [result (h/call wasm/internal-module "_set_children")]
+      (perf/end-measure "set-shape-children")
+      result)))
 
 (defn- get-string-length [string] (+ (count string) 1))
 
