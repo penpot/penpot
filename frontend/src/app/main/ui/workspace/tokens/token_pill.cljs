@@ -240,11 +240,9 @@
            (dom/stop-propagation event)
            (when (and can-edit? (not (seq errors)) on-click)
              (on-click event))))
-
-        ;; FIXME: missing deps
         on-hover
         (mf/use-fn
-         (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set)
+         (mf/deps  selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set)
          (fn [event]
            (let [node  (dom/get-current-target event)
                  theme-token (get active-theme-tokens (:name token))
@@ -266,8 +264,11 @@
                       :token-pill-invalid-applied-viewer (and is-viewer?
                                                               (and full-applied? errors?)))
               :type "button"
+              :on-focus on-hover
+
               :on-click on-click
               :on-mouse-enter on-hover
+
               :on-context-menu on-context-menu}
      (cond
        errors?

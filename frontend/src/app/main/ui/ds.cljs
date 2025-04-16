@@ -32,6 +32,7 @@
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.ds.product.user-milestone :refer [user-milestone*]]
    [app.main.ui.ds.storybook :as sb]
+   [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.ds.utilities.date :refer [date*]]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.util.i18n :as i18n]
@@ -57,6 +58,7 @@
     :Text text*
     :TabSwitcher tab-switcher*
     :Toast toast*
+    :Tooltip tooltip*
     :ContextNotification context-notification*
     :NotificationPill notification-pill*
     :Actionable actionable*

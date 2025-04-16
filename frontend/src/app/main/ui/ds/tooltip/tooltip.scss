@@ -1,0 +1,147 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../_sizes.scss" as *;
+@use "../_borders.scss" as *;
+@use "../typography.scss" as *;
+
+.tooltip {
+  position: absolute;
+  max-width: $sz-352;
+  background-color: transparent;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.tooltip-arrow {
+  background-color: var(--color-background-primary);
+  border-radius: var(--sp-xs);
+  width: 11px;
+  height: 11px;
+  grid-area: arrow;
+  background-color: red;
+}
+
+.tooltip-top {
+  grid-template-areas:
+    "content"
+    "arrow";
+}
+
+.tooltip-top .tooltip-arrow {
+  justify-self: center;
+  border-radius: 0 0 var(--sp-xs) 0;
+  transform: rotate(45deg) translateX(-8px);
+  border-bottom: 1px solid var(--color-accent-primary-muted);
+  border-right: 1px solid var(--color-accent-primary-muted);
+}
+
+.tooltip-bottom {
+  grid-template-areas:
+    "arrow"
+    "content";
+}
+.tooltip-bottom .tooltip-arrow {
+  justify-self: center;
+  border-radius: var(--sp-xs) 0;
+  transform: rotate(45deg) translateX(8px);
+  border-top: 1px solid var(--color-accent-primary-muted);
+  border-left: 1px solid var(--color-accent-primary-muted);
+}
+
+.tooltip-left {
+  grid-template-areas: "content arrow ";
+}
+
+.tooltip-left .tooltip-arrow {
+  align-self: center;
+  border-radius: 0 var(--sp-xs);
+  transform: rotate(45deg) translateX(-4px) translateY(4px);
+  border-top: 1px solid var(--color-accent-primary-muted);
+  border-right: 1px solid var(--color-accent-primary-muted);
+}
+
+.tooltip-right {
+  grid-template-areas: " arrow content";
+}
+
+.tooltip-right .tooltip-arrow {
+  align-self: center;
+  border-radius: 0 var(--sp-xs);
+  transform: rotate(45deg) translateX(4px) translateY(-4px);
+  border-bottom: 1px solid var(--color-accent-primary-muted);
+  border-left: 1px solid var(--color-accent-primary-muted);
+}
+
+.tooltip-top-right {
+  grid-template-areas:
+    "content"
+    "arrow";
+}
+
+.tooltip-top-right .tooltip-arrow {
+  margin: 0 16px;
+  border-radius: var(--sp-xs) 0;
+  transform: rotate(45deg) translateX(-8px);
+  border-bottom: 1px solid var(--color-accent-primary-muted);
+  border-right: 1px solid var(--color-accent-primary-muted);
+}
+
+.tooltip-bottom-right {
+  grid-template-areas:
+    "arrow"
+    "content";
+}
+
+.tooltip-bottom-right .tooltip-arrow {
+  margin: 0px 8px;
+  transform: rotate(45deg) translateX(8px);
+  border-radius: var(--sp-xs) 0;
+  border-top: 1px solid var(--color-accent-primary-muted);
+  border-left: 1px solid var(--color-accent-primary-muted);
+}
+
+.tooltip-bottom-left {
+  grid-template-areas:
+    "arrow"
+    "content";
+}
+.tooltip-bottom-left .tooltip-arrow {
+  justify-self: end;
+  margin: 0 8px;
+  transform: rotate(45deg) translateY(8px);
+  border-radius: var(--sp-xs) 0;
+  border-top: 1px solid var(--color-accent-primary-muted);
+  border-left: 1px solid var(--color-accent-primary-muted);
+}
+
+.tooltip-top-left {
+  grid-template-areas:
+    "content"
+    "arrow";
+}
+.tooltip-top-left .tooltip-arrow {
+  margin: 0 8px;
+  justify-self: end;
+  border-radius: var(--sp-xs) 0;
+  transform: rotate(45deg) translateX(-8px);
+  border-bottom: 1px solid var(--color-accent-primary-muted);
+  border-right: 1px solid var(--color-accent-primary-muted);
+}
+
+.tooltip-content {
+  background-color: var(--color-background-primary);
+  color: var(--color-foreground-secondary);
+  border-radius: var(--sp-xs);
+  border: $b-1 solid var(--color-accent-primary-muted);
+  padding: var(--sp-s) var(--sp-m);
+  grid-area: content;
+}
+
+.tooltip-trigger {
+  width: fit-content;
+  height: fit-content;
+}
