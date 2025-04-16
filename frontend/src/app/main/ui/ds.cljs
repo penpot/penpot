@@ -18,7 +18,8 @@
    [app.main.ui.ds.foundations.typography :refer [typography-list]]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
-   [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon* token-status-list]]
+   [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*
+                                                                    token-status-list]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.notifications.actionable :refer [actionable*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
@@ -33,6 +34,7 @@
    [app.main.ui.ds.storybook :as sb]
    [app.main.ui.ds.utilities.date :refer [date*]]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
+   [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
    [app.util.i18n :as i18n]
    [rumext.v2 :as mf]))
 
@@ -62,6 +64,7 @@
     :TokenStatusIcon token-status-icon*
     :Swatch swatch*
     :Cta cta*
+    :InputTokens input-tokens*
     :Avatar avatar*
     :AutosavedMilestone autosaved-milestone*
     :UserMilestone user-milestone*
