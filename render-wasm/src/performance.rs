@@ -1,3 +1,7 @@
+#[allow(unused_imports)]
+#[cfg(target_arch = "wasm32")]
+use crate::get_now;
+
 #[allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
 pub fn get_time() -> i32 {
