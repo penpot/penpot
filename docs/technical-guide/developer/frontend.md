@@ -1,5 +1,5 @@
 ---
-title: 3.5. Frontend Guide
+title: 3.05. Frontend Guide
 ---
 
 # Frontend Guide
