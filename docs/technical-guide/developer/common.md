@@ -1,5 +1,5 @@
 ---
-title: 3.4. Common Guide
+title: 3.04. Common Guide
 desc: "View Penpot's technical guide: self-hosting, configuration, developer insights, architecture, data model, integration, and troubleshooting."
 ---
 
