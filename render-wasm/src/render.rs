@@ -103,7 +103,10 @@ impl RenderState {
         // This needs to be done once per WebGL context.
         let mut gpu_state = GpuState::new();
         let sampling_options =
-            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
+            // original
+            // skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
+            // fast 
+            skia::SamplingOptions::new(skia::FilterMode::Nearest, skia::MipmapMode::None);
 
         let fonts = FontStore::new();
         let surfaces = Surfaces::new(
@@ -146,7 +149,7 @@ impl RenderState {
     }
 
     pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
-        self.images.add(id, image_data)
+        self.images.add(id, image_data, &mut self.gpu_state.context)
     }
 
     pub fn has_image(&mut self, id: &Uuid) -> bool {
