@@ -1095,3 +1095,11 @@
 (defn get-objects
   [changes]
   (dm/get-in (::file-data (meta changes)) [:pages-index uuid/zero :objects]))
+
+(defn get-page
+  [changes]
+  (::page (meta changes)))
+
+(defn get-page-id
+  [changes]
+  (::page-id (meta changes)))
