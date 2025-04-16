@@ -81,6 +81,10 @@ impl TileHashMap {
         if let Some(shapes) = self.grid.get_mut(&tile) {
             shapes.shift_remove(&id);
         }
+
+        if let Some(tiles) = self.index.get_mut(&id) {
+            tiles.remove(&tile);
+        }
     }
 
     pub fn get_tiles_of(&mut self, shape_id: Uuid) -> Option<&HashSet<Tile>> {

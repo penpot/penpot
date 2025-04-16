@@ -1,7 +1,7 @@
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 
 use crate::uuid::Uuid;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::performance;
 #[cfg(target_arch = "wasm32")]
@@ -816,21 +816,26 @@ impl RenderState {
 
     pub fn update_tile_for(&mut self, shape: &Shape) {
         let (rsx, rsy, rex, rey) = self.get_tiles_for_rect(shape);
+        let new_tiles: HashSet<(i32, i32)> = (rsx..=rex)
+            .flat_map(|x| (rsy..=rey).map(move |y| (x, y)))
+            .collect();
 
         // Update tiles where the shape was
         if let Some(tiles) = self.tiles.get_tiles_of(shape.id) {
             for tile in tiles.iter() {
                 self.surfaces.remove_cached_tile_surface(*tile);
             }
+            // Remove shape from tiles not used
+            let diff: HashSet<_> = tiles.difference(&new_tiles).cloned().collect();
+            for tile in diff.iter() {
+                self.tiles.remove_shape_at(*tile, shape.id);
+            }
         }
 
         // Update tiles matching the actual selrect
-        for x in rsx..=rex {
-            for y in rsy..=rey {
-                let tile = (x, y);
-                self.tiles.add_shape_at(tile, shape.id);
-                self.surfaces.remove_cached_tile_surface(tile);
-            }
+        for tile in new_tiles {
+            self.tiles.add_shape_at(tile, shape.id);
+            self.surfaces.remove_cached_tile_surface(tile);
         }
     }
 
