@@ -1,5 +1,5 @@
 ---
-title: 3.9. UI Guide
+title: 3.10. UI Guide
 desc: Learn UI development with React & Rumext, design system implementation, and performance considerations. See Penpot's technical guide. Free to use!
 ---
 
