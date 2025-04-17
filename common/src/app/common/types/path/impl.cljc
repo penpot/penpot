@@ -8,7 +8,7 @@
   "Contains schemas and data type implementation for PathData binary
   and plain formats"
   #?(:cljs
-     (:require-macros [app.common.types.path.impl]))
+     (:require-macros [app.common.types.path.impl :refer [read-float read-short write-float write-short]]))
   (:refer-clojure :exclude [-lookup -reduce])
   (:require
    #?(:clj [app.common.fressian :as fres])
@@ -38,44 +38,79 @@
   (-walk [_ f initial])
   (-reduce [_ f initial]))
 
-(defn- transform!
-  "Apply a transformation to a segment located under specified offset"
-  [buffer offset m]
-  (let [a (dm/get-prop m :a)
-        b (dm/get-prop m :b)
-        c (dm/get-prop m :c)
-        d (dm/get-prop m :d)
-        e (dm/get-prop m :e)
-        f (dm/get-prop m :f)
-        t #?(:clj  (.getShort ^ByteBuffer buffer offset)
-             :cljs (.getInt16 buffer offset))]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; IMPL HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defmacro read-short
+  [target offset]
+  (if (:ns &env)
+    `(.getInt16 ~target ~offset)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})
+          offset (with-meta target {:tag 'int})]
+      `(.getShort ~target ~offset))))
+
+(defmacro read-float
+  [target offset]
+  (if (:ns &env)
+    `(.getFloat32 ~target ~offset)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})
+          offset (with-meta target {:tag 'int})]
+      `(.getFloat ~target ~offset))))
+
+(defmacro write-float
+  [target offset value]
+  (if (:ns &env)
+    `(.setFloat32 ~target ~offset ~value)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})
+          offset (with-meta target {:tag 'int})]
+      `(.putFloat ~target ~offset ~value))))
+
+(defmacro write-short
+  [target offset value]
+  (if (:ns &env)
+    `(.setInt16 ~target ~offset ~value)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})
+          offset (with-meta target {:tag 'int})]
+      `(.putShort ~target ~offset ~value))))
+
+(defmacro with-cache
+  "A helper macro that facilitates cache handling for content
+  instance, only relevant on CLJS"
+  [target key & expr]
+  (if (:ns &env)
+    (let [cache (gensym "cache-")
+          target (with-meta target {:tag 'js})]
+      `(let [~cache (.-cache ~target)
+             ~'result (.get ~cache ~key)]
+         (if ~'result
+           (do
+             ~'result)
+           (let [~'result (do ~@expr)]
+             (.set ~cache ~key ~'result)
+             ~'result))))
+    `(do ~@expr)))
+
+(defn- impl-transform-segment
+  "Apply a transformation to a segment located under specified offset"
+  [buffer offset a b c d e f]
+  (let [t (read-short buffer offset)]
     (case t
       (1 2)
-      (let [x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
-                 :cljs (.getFloat32 buffer (+ offset 20)))
-            y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
-                 :cljs (.getFloat32 buffer (+ offset 24)))
+      (let [x (read-float buffer (+ offset 20))
+            y (read-float buffer (+ offset 24))
             x (+ (* x a) (* y c) e)
             y (+ (* x b) (* y d) f)]
-        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 20) x)
-           :cljs (.setFloat32 buffer (+ offset 20) x))
-        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 24) y)
-           :cljs (.setFloat32 buffer (+ offset 24) y)))
+        (write-float buffer (+ offset 20) x)
+        (write-float buffer (+ offset 24) y))
 
       3
-      (let [c1x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 4))
-                   :cljs (.getFloat32 buffer (+ offset 4)))
-            c1y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 8))
-                   :cljs (.getFloat32 buffer (+ offset 8)))
-            c2x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 12))
-                   :cljs (.getFloat32 buffer (+ offset 12)))
-            c2y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 16))
-                   :cljs (.getFloat32 buffer (+ offset 16)))
-            x   #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
-                   :cljs (.getFloat32 buffer (+ offset 20)))
-            y   #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
-                   :cljs (.getFloat32 buffer (+ offset 24)))
+      (let [c1x (read-float buffer (+ offset 4))
+            c1y (read-float buffer (+ offset 8))
+            c2x (read-float buffer (+ offset 12))
+            c2y (read-float buffer (+ offset 16))
+            x   (read-float buffer (+ offset 20))
+            y   (read-float buffer (+ offset 24))
 
             c1x (+ (* c1x a) (* c1y c) e)
             c1y (+ (* c1x b) (* c1y d) f)
@@ -84,59 +119,120 @@
             x   (+ (* x a) (* y c) e)
             y   (+ (* x b) (* y d) f)]
 
-        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 4) c1x)
-           :cljs (.setFloat32 buffer (+ offset 4) c1x))
-        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 8) c1y)
-           :cljs (.setFloat32 buffer (+ offset 8) c1y))
-        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 12) c2x)
-           :cljs (.setFloat32 buffer (+ offset 12) c2x))
-        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 16) c2y)
-           :cljs (.setFloat32 buffer (+ offset 16) c2y))
-        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 20) x)
-           :cljs (.setFloat32 buffer (+ offset 20) x))
-        #?(:clj  (.putFloat ^ByteBuffer buffer (+ offset 24) y)
-           :cljs (.setFloat32 buffer (+ offset 24) y)))
+        (write-float buffer (+ offset 4) c1x)
+        (write-float buffer (+ offset 8) c1y)
+        (write-float buffer (+ offset 12) c2x)
+        (write-float buffer (+ offset 16) c2y)
+        (write-float buffer (+ offset 20) x)
+        (write-float buffer (+ offset 24) y))
 
       nil)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; TYPE: PATH-DATA
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn- impl-transform
+  [buffer m size]
+  (let [a (dm/get-prop m :a)
+        b (dm/get-prop m :b)
+        c (dm/get-prop m :c)
+        d (dm/get-prop m :d)
+        e (dm/get-prop m :e)
+        f (dm/get-prop m :f)]
+    (loop [index 0]
+      (when (< index size)
+        (let [offset (* index SEGMENT-BYTE-SIZE)]
+          (impl-transform-segment buffer offset a b c d e f)
+          (recur (inc index)))))))
+
+(defn- impl-walk
+  [buffer f initial size]
+  (loop [index 0
+         result (transient initial)]
+    (if (< index size)
+      (let [offset (* index SEGMENT-BYTE-SIZE)
+            type   (read-short buffer offset)
+            c1x    (read-float buffer (+ offset 4))
+            c1y    (read-float buffer (+ offset 8))
+            c2x    (read-float buffer (+ offset 12))
+            c2y    (read-float buffer (+ offset 16))
+            x      (read-float buffer (+ offset 20))
+            y      (read-float buffer (+ offset 24))
+            type   (case type
+                     1 :line-to
+                     2 :move-to
+                     3 :curve-to
+                     4 :close-path)
+            res    (f type c1x c1y c2x c2y x y)]
+        (recur (inc index)
+               (if (some? res)
+                 (conj! result res)
+                 result)))
+      (persistent! result))))
+
+(defn impl-reduce
+  [buffer f initial size]
+  (loop [index 0
+         result initial]
+    (if (< index size)
+      (let [offset (* index SEGMENT-BYTE-SIZE)
+            type   (read-short buffer offset)
+            c1x    (read-float buffer (+ offset 4))
+            c1y    (read-float buffer (+ offset 8))
+            c2x    (read-float buffer (+ offset 12))
+            c2y    (read-float buffer (+ offset 16))
+            x      (read-float buffer (+ offset 20))
+            y      (read-float buffer (+ offset 24))
+            type   (case type
+                     1 :line-to
+                     2 :move-to
+                     3 :curve-to
+                     4 :close-path)
+            result (f result index type c1x c1y c2x c2y x y)]
+        (if (reduced? result)
+          result
+          (recur (inc index) result)))
+      result)))
+
+(defn impl-lookup
+  [buffer index f]
+  (let [offset (* index SEGMENT-BYTE-SIZE)
+        type   (read-short buffer offset)
+        c1x    (read-float buffer (+ offset 4))
+        c1y    (read-float buffer (+ offset 8))
+        c2x    (read-float buffer (+ offset 12))
+        c2y    (read-float buffer (+ offset 16))
+        x      (read-float buffer (+ offset 20))
+        y      (read-float buffer (+ offset 24))
+        type   (case type
+                 1 :line-to
+                 2 :move-to
+                 3 :curve-to
+                 4 :close-path)]
+    #?(:clj (f type c1x c1y c2x c2y x y)
+       :cljs (^function f type c1x c1y c2x c2y x y))))
 
 (defn- to-string-segment*
   [buffer offset type ^StringBuilder builder]
   (case (long type)
-    1 (let [x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
-                 :cljs (.getFloat32 buffer (+ offset 20)))
-            y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
-                 :cljs (.getFloat32 buffer (+ offset 24)))]
+    1 (let [x (read-float buffer (+ offset 20))
+            y (read-float buffer (+ offset 24))]
         (doto builder
           (.append "M")
           (.append x)
           (.append ",")
           (.append y)))
-    2 (let [x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
-                 :cljs (.getFloat32 buffer (+ offset 20)))
-            y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
-                 :cljs (.getFloat32 buffer (+ offset 24)))]
+    2 (let [x (read-float buffer (+ offset 20))
+            y (read-float buffer (+ offset 24))]
         (doto builder
           (.append "L")
           (.append x)
           (.append ",")
           (.append y)))
 
-    3 (let [c1x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 4))
-                   :cljs (.getFloat32 buffer (+ offset 4)))
-            c1y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 8))
-                   :cljs (.getFloat32 buffer (+ offset 8)))
-            c2x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 12))
-                   :cljs (.getFloat32 buffer (+ offset 12)))
-            c2y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 16))
-                   :cljs (.getFloat32 buffer (+ offset 16)))
-            x   #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
-                   :cljs (.getFloat32 buffer (+ offset 20)))
-            y   #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
-                   :cljs (.getFloat32 buffer (+ offset 24)))]
+    3 (let [c1x (read-float buffer (+ offset 4))
+            c1y (read-float buffer (+ offset 8))
+            c2x (read-float buffer (+ offset 12))
+            c2y (read-float buffer (+ offset 16))
+            x   (read-float buffer (+ offset 20))
+            y   (read-float buffer (+ offset 24))]
         (doto builder
           (.append "C")
           (.append c1x)
@@ -161,8 +257,7 @@
     (loop [index 0]
       (when (< index size)
         (let [offset (* index SEGMENT-BYTE-SIZE)
-              type   #?(:clj  (.getShort ^ByteBuffer buffer offset)
-                        :cljs (.getInt16 buffer offset))]
+              type   (read-short buffer offset)]
           (to-string-segment* buffer offset type builder)
           (recur (inc index)))))
 
@@ -172,37 +267,26 @@
   "Read segment from binary buffer at specified index"
   [buffer index]
   (let [offset (* index SEGMENT-BYTE-SIZE)
-        type   #?(:clj  (.getShort ^ByteBuffer buffer offset)
-                  :cljs (.getInt16 buffer offset))]
+        type   (read-short buffer offset)]
     (case (long type)
-      1 (let [x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
-                   :cljs (.getFloat32 buffer (+ offset 20)))
-              y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
-                   :cljs (.getFloat32 buffer (+ offset 24)))]
+      1 (let [x (read-float buffer (+ offset 20))
+              y (read-float buffer (+ offset 24))]
           {:command :move-to
            :params {:x (double x)
                     :y (double y)}})
 
-      2 (let [x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
-                   :cljs (.getFloat32 buffer (+ offset 20)))
-              y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
-                   :cljs (.getFloat32 buffer (+ offset 24)))]
+      2 (let [x (read-float buffer (+ offset 20))
+              y (read-float buffer (+ offset 24))]
           {:command :line-to
            :params {:x (double x)
                     :y (double y)}})
 
-      3 (let [c1x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 4))
-                     :cljs (.getFloat32 buffer (+ offset 4)))
-              c1y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 8))
-                     :cljs (.getFloat32 buffer (+ offset 8)))
-              c2x #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 12))
-                     :cljs (.getFloat32 buffer (+ offset 12)))
-              c2y #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 16))
-                     :cljs (.getFloat32 buffer (+ offset 16)))
-              x   #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 20))
-                     :cljs (.getFloat32 buffer (+ offset 20)))
-              y   #?(:clj  (.getFloat ^ByteBuffer buffer (+ offset 24))
-                     :cljs (.getFloat32 buffer (+ offset 24)))]
+      3 (let [c1x (read-float buffer (+ offset 4))
+              c1y (read-float buffer (+ offset 8))
+              c2x (read-float buffer (+ offset 12))
+              c2y (read-float buffer (+ offset 16))
+              x   (read-float buffer (+ offset 20))
+              y   (read-float buffer (+ offset 24))]
           {:command :curve-to
            :params {:x (double x)
                     :y (double y)
@@ -233,23 +317,9 @@
        (.set dst-view src-view)
        dst-buff)))
 
-(defmacro with-cache
-  "A helper macro that facilitates cache handling for content
-  instance"
-  [target key & expr]
-  (if (:ns &env)
-    (let [cache (gensym "cache-")
-          target (with-meta target {:tag 'js})]
-      `(let [~cache (.-cache ~target)
-             ~'result (.get ~cache ~key)]
-         (if ~'result
-           (do
-             ~'result)
-           (let [~'result (do ~@expr)]
-             (.set ~cache ~key ~'result)
-             ~'result))))
-    `(do ~@expr)))
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TYPE: PATH-DATA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #?(:clj
    (deftype PathData [size
@@ -267,77 +337,19 @@
      ITransformable
      (-transform [_ m]
        (let [buffer (clone-buffer buffer)]
-         (loop [index 0]
-           (when (< index size)
-             (let [offset (* index SEGMENT-BYTE-SIZE)]
-               (transform! buffer offset m)
-               (recur (inc index)))))
+         (impl-transform buffer m size)
          (PathData. size buffer nil)))
 
      (-walk [_ f initial]
-       (loop [index 0
-              result (transient initial)]
-         (if (< index size)
-           (let [offset (* index SEGMENT-BYTE-SIZE)
-                 type   (.getShort ^ByteBuffer buffer offset)
-                 c1x    (double (.getFloat ^ByteBuffer buffer (+ offset 4)))
-                 c1y    (double (.getFloat ^ByteBuffer buffer (+ offset 8)))
-                 c2x    (double (.getFloat ^ByteBuffer buffer (+ offset 12)))
-                 c2y    (double (.getFloat ^ByteBuffer buffer (+ offset 16)))
-                 x      (double (.getFloat ^ByteBuffer buffer (+ offset 20)))
-                 y      (double (.getFloat ^ByteBuffer buffer (+ offset 24)))
-                 type   (case (int type)
-                          1 :line-to
-                          2 :move-to
-                          3 :curve-to
-                          4 :close-path)
-                 res    (f type c1x c1y c2x c2y x y)]
-             (recur (inc index)
-                    (if (some? res)
-                      (conj! result res)
-                      result)))
-           (persistent! result))))
+       (impl-walk buffer f initial size))
 
      (-reduce [_ f initial]
-       (loop [index 0
-              result initial]
-         (if (< index size)
-           (let [offset (* index SEGMENT-BYTE-SIZE)
-                 type   (.getShort ^ByteBuffer buffer offset)
-                 c1x    (double (.getFloat ^ByteBuffer buffer (+ offset 4)))
-                 c1y    (double (.getFloat ^ByteBuffer buffer (+ offset 8)))
-                 c2x    (double (.getFloat ^ByteBuffer buffer (+ offset 12)))
-                 c2y    (double (.getFloat ^ByteBuffer buffer (+ offset 16)))
-                 x      (double (.getFloat ^ByteBuffer buffer (+ offset 20)))
-                 y      (double (.getFloat ^ByteBuffer buffer (+ offset 24)))
-                 type   (case (int type)
-                          1 :line-to
-                          2 :move-to
-                          3 :curve-to
-                          4 :close-path)
-                 result (f result index type c1x c1y c2x c2y x y)]
-             (if (reduced? result)
-               result
-               (recur (inc index) result)))
-           result)))
+       (impl-reduce buffer f initial size))
 
      (-lookup [_ index f]
        (when (and (<= 0 index)
                   (< index size))
-         (let [offset (* index SEGMENT-BYTE-SIZE)
-               type   (.getShort ^ByteBuffer buffer offset)
-               c1x    (double (.getFloat ^ByteBuffer buffer (+ offset 4)))
-               c1y    (double (.getFloat ^ByteBuffer buffer (+ offset 8)))
-               c2x    (double (.getFloat ^ByteBuffer buffer (+ offset 12)))
-               c2y    (double (.getFloat ^ByteBuffer buffer (+ offset 16)))
-               x      (double (.getFloat ^ByteBuffer buffer (+ offset 20)))
-               y      (double (.getFloat ^ByteBuffer buffer (+ offset 24)))
-               type   (case (int type)
-                        1 :line-to
-                        2 :move-to
-                        3 :curve-to
-                        4 :close-path)]
-           (f type c1x c1y c2x c2y x y))))
+         (impl-lookup buffer index f)))
 
      json/JSONWriter
      (-write [this writter options]
@@ -414,78 +426,19 @@
      (-transform [this m]
        (let [buffer (clone-buffer buffer)
              dview  (js/DataView. buffer)]
-         (loop [index 0]
-
-           (when (< index size)
-             (let [offset (* index SEGMENT-BYTE-SIZE)]
-               (transform! dview offset m)
-               (recur (inc index)))))
+         (impl-transform dview m size)
          (PathData. size buffer dview (weak-map/create) nil)))
 
      (-walk [_ f initial]
-       (loop [index 0
-              result (transient initial)]
-         (if (< index size)
-           (let [offset (* index SEGMENT-BYTE-SIZE)
-                 type   (.getInt16 dview offset)
-                 c1x    (.getFloat32 dview (+ offset 4))
-                 c1y    (.getFloat32 dview (+ offset 8))
-                 c2x    (.getFloat32 dview (+ offset 12))
-                 c2y    (.getFloat32 dview (+ offset 16))
-                 x      (.getFloat32 dview (+ offset 20))
-                 y      (.getFloat32 dview (+ offset 24))
-                 type   (case type
-                          1 :line-to
-                          2 :move-to
-                          3 :curve-to
-                          4 :close-path)
-                 res    (f type c1x c1y c2x c2y x y)]
-             (recur (inc index)
-                    (if (some? res)
-                      (conj! result res)
-                      result)))
-           (persistent! result))))
+       (impl-walk dview f initial size))
 
      (-reduce [_ f initial]
-       (loop [index 0
-              result initial]
-         (if (< index size)
-           (let [offset (* index SEGMENT-BYTE-SIZE)
-                 type   (.getInt16 dview offset)
-                 c1x    (.getFloat32 dview (+ offset 4))
-                 c1y    (.getFloat32 dview (+ offset 8))
-                 c2x    (.getFloat32 dview (+ offset 12))
-                 c2y    (.getFloat32 dview (+ offset 16))
-                 x      (.getFloat32 dview (+ offset 20))
-                 y      (.getFloat32 dview (+ offset 24))
-                 type   (case type
-                          1 :line-to
-                          2 :move-to
-                          3 :curve-to
-                          4 :close-path)
-                 result (f result index type c1x c1y c2x c2y x y)]
-             (if (reduced? result)
-               result
-               (recur (inc index) result)))
-           result)))
+       (impl-reduce dview f initial size))
 
      (-lookup [_ index f]
        (when (and (<= 0 index)
                   (< index size))
-         (let [offset (* index SEGMENT-BYTE-SIZE)
-               type   (.getInt16 dview offset)
-               c1x    (.getFloat32 dview (+ offset 4))
-               c1y    (.getFloat32 dview (+ offset 8))
-               c2x    (.getFloat32 dview (+ offset 12))
-               c2y    (.getFloat32 dview (+ offset 16))
-               x      (.getFloat32 dview (+ offset 20))
-               y      (.getFloat32 dview (+ offset 24))
-               type   (case type
-                        1 :line-to
-                        2 :move-to
-                        3 :curve-to
-                        4 :close-path)]
-           (f type c1x c1y c2x c2y x y))))
+         (impl-lookup dview index f)))
 
      cljs.core/ISequential
      cljs.core/IEquiv
@@ -725,8 +678,8 @@
   (assert (check-segments segments))
 
   (let [total    (count segments)
-        #?@(:cljs [buffer (new js/ArrayBuffer (* total SEGMENT-BYTE-SIZE))
-                   dview  (new js/DataView buffer)]
+        #?@(:cljs [buffer' (new js/ArrayBuffer (* total SEGMENT-BYTE-SIZE))
+                   buffer  (new js/DataView buffer')]
             :clj  [buffer (ByteBuffer/allocate (* total SEGMENT-BYTE-SIZE))])]
     (loop [index 0]
       (when (< index total)
@@ -737,23 +690,18 @@
             (let [params (get segment :params)
                   x      (float (get params :x))
                   y      (float (get params :y))]
-              #?(:clj  (.putShort buffer (int offset) (short 1))
-                 :cljs (.setInt16 dview offset 1))
-              #?(:clj  (.putFloat buffer (+ offset 20) x)
-                 :cljs (.setFloat32 dview (+ offset 20) x))
-              #?(:clj  (.putFloat buffer (+ offset 24) y)
-                 :cljs (.setFloat32 dview (+ offset 24) y)))
+              (write-short buffer offset 1)
+              (write-float buffer (+ offset 20) x)
+              (write-float buffer (+ offset 24) y))
 
             :line-to
             (let [params (get segment :params)
                   x      (float (get params :x))
                   y      (float (get params :y))]
-              #?(:clj  (.putShort buffer (int offset) (short 2))
-                 :cljs (.setInt16 dview offset 2))
-              #?(:clj  (.putFloat buffer (+ offset 20) x)
-                 :cljs (.setFloat32 dview (+ offset 20) x))
-              #?(:clj  (.putFloat buffer (+ offset 24) y)
-                 :cljs (.setFloat32 dview (+ offset 24) y)))
+
+              (write-short buffer offset 2)
+              (write-float buffer (+ offset 20) x)
+              (write-float buffer (+ offset 24) y))
 
             :curve-to
             (let [params (get segment :params)
@@ -764,28 +712,19 @@
                   c2x    (float (get params :c2x x))
                   c2y    (float (get params :c2y y))]
 
-              #?(:clj  (.putShort buffer (int offset) (short 3))
-                 :cljs (.setInt16 dview offset 3))
-              #?(:clj  (.putFloat buffer (+ offset 4) c1x)
-                 :cljs (.setFloat32 dview (+ offset 4) c1x))
-              #?(:clj  (.putFloat buffer (+ offset 8) c1y)
-                 :cljs (.setFloat32 dview (+ offset 8) c1y))
-              #?(:clj  (.putFloat buffer (+ offset 12) c2x)
-                 :cljs (.setFloat32 dview (+ offset 12) c2x))
-              #?(:clj  (.putFloat buffer (+ offset 16) c2y)
-                 :cljs (.setFloat32 dview (+ offset 16) c2y))
-              #?(:clj  (.putFloat buffer (+ offset 20) x)
-                 :cljs (.setFloat32 dview (+ offset 20) x))
-              #?(:clj  (.putFloat buffer (+ offset 24) y)
-                 :cljs (.setFloat32 dview (+ offset 24) y)))
+              (write-short buffer offset 3)
+              (write-float buffer (+ offset 4)  c1x)
+              (write-float buffer (+ offset 8)  c1y)
+              (write-float buffer (+ offset 12) c2x)
+              (write-float buffer (+ offset 16) c2y)
+              (write-float buffer (+ offset 20) x)
+              (write-float buffer (+ offset 24) y))
 
             :close-path
-            #?(:clj  (.putShort buffer (int offset) (short 4))
-               :cljs (.setInt16 dview offset 4)))
+            (write-short buffer offset 4))
           (recur (inc index)))))
 
-    #?(:cljs (from-bytes dview)
-       :clj  (from-bytes buffer))))
+    (from-bytes buffer)))
 
 (defn path-data
   "Create an instance of PathData, returns itself if it is already
@@ -828,5 +767,5 @@
               (fres/write-bytes! w bytes)))
      :rfn (fn [r]
             (let [^bytes bytes (fres/read-object! r)]
-              (from-bytes (ByteBuffer/wrap bytes))))}))
+              (from-bytes bytes)))}))
 
