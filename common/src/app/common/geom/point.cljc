@@ -472,8 +472,10 @@
 
 (defn zero?
   [p]
-  (and ^boolean (= 0 (dm/get-prop p :x))
-       ^boolean (= 0 (dm/get-prop p :y))))
+  (let [x (dm/get-prop p :x)
+        y (dm/get-prop p :y)]
+    (and ^boolean (== 0 x)
+         ^boolean (== 0 y))))
 
 (defn lerp
   "Calculates a linear interpolation between two points given a tvalue"
