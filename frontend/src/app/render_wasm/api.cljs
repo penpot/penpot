@@ -10,7 +10,6 @@
    ["react-dom/server" :as rds]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.path :as path]
    [app.common.uuid :as uuid]
@@ -24,6 +23,8 @@
    [app.render-wasm.mem :as mem]
    [app.render-wasm.performance :as perf]
    [app.render-wasm.serializers :as sr]
+   [app.render-wasm.serializers.color :as sr-clr]
+   [app.render-wasm.serializers.fills :as sr-fills]
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.http :as http]
@@ -49,11 +50,6 @@
 (def GRID-LAYOUT-ROW-ENTRY-SIZE 5)
 (def GRID-LAYOUT-COLUMN-ENTRY-SIZE 5)
 (def GRID-LAYOUT-CELL-ENTRY-SIZE 37)
-(def GRADIENT-STOP-SIZE 5)
-
-(defn gradient-stop-get-entries-size
-  [stops]
-  (mem/get-list-size stops GRADIENT-STOP-SIZE))
 
 (defn modifier-get-entries-size
   "Returns the list of a modifier list in bytes"
@@ -104,24 +100,7 @@
   (h/call wasm/internal-module "_render")
   (set! wasm/internal-frame-id nil))
 
-(defn- rgba-from-hex
-  "Takes a hex color in #rrggbb format, and an opacity value from 0 to 1 and returns its 32-bit rgba representation"
-  [hex opacity]
-  (let [rgb (js/parseInt (subs hex 1) 16)
-        a (mth/floor (* (or opacity 1) 0xff))]
-        ;; rgba >>> 0 so we have an unsigned representation
-    (unsigned-bit-shift-right (bit-or (bit-shift-left a 24) rgb) 0)))
 
-(defn- rgba-bytes-from-hex
-  "Takes a hex color in #rrggbb format, and an opacity value from 0 to 1 and returns an array with its r g b a values"
-  [hex opacity]
-  (let [rgb (js/parseInt (subs hex 1) 16)
-        a (mth/floor (* (or opacity 1) 0xff))
-        ;; rgba >>> 0 so we have an unsigned representation
-        r (bit-shift-right rgb 16)
-        g (bit-and (bit-shift-right rgb 8) 255)
-        b (bit-and rgb 255)]
-    [r g b a]))
 
 (defn cancel-render
   [_]
@@ -241,35 +220,19 @@
                 image    (:fill-image fill)]
             (cond
               (some? color)
-              (let [rgba (rgba-from-hex color opacity)]
+              (let [rgba (sr-clr/hex->u32argb color opacity)]
                 (h/call wasm/internal-module "_add_shape_solid_fill" rgba))
 
               (some? gradient)
-              (let [stops     (:stops gradient)
-                    size  (gradient-stop-get-entries-size stops)
+              (let [size   (sr-fills/gradient-byte-size gradient)
                     offset (mem/alloc-bytes size)
-                    heap      (mem/get-heap-u8)
-                    mem       (js/Uint8Array. (.-buffer heap) offset size)]
-                (if (= (:type gradient) :linear)
-                  (h/call wasm/internal-module "_add_shape_linear_fill"
-                          (:start-x gradient)
-                          (:start-y gradient)
-                          (:end-x gradient)
-                          (:end-y gradient)
-                          opacity)
-                  (h/call wasm/internal-module "_add_shape_radial_fill"
-                          (:start-x gradient)
-                          (:start-y gradient)
-                          (:end-x gradient)
-                          (:end-y gradient)
-                          opacity
-                          (:width gradient)))
-                (.set mem (js/Uint8Array. (clj->js (flatten (map (fn [stop]
-                                                                   (let [[r g b a] (rgba-bytes-from-hex (:color stop) (:opacity stop))
-                                                                         offset (:offset stop)]
-                                                                     [r g b a (* 100 offset)]))
-                                                                 stops)))))
-                (h/call wasm/internal-module "_add_shape_fill_stops"))
+                    heap   (mem/get-heap-u32)]
+                (sr-fills/write-gradient-fill! offset heap gradient opacity)
+                (case (:type gradient)
+                  :linear
+                  (h/call wasm/internal-module "_add_shape_linear_fill")
+                  :radial
+                  (h/call wasm/internal-module "_add_shape_radial_fill")))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
@@ -307,31 +270,15 @@
 
             (cond
               (some? gradient)
-              (let [stops     (:stops gradient)
-                    size  (gradient-stop-get-entries-size stops)
+              (let [size   (sr-fills/gradient-byte-size gradient)
                     offset (mem/alloc-bytes size)
-                    heap      (mem/get-heap-u8)
-                    mem       (js/Uint8Array. (.-buffer heap) offset size)]
-                (if (= (:type gradient) :linear)
-                  (h/call wasm/internal-module "_add_shape_stroke_linear_fill"
-                          (:start-x gradient)
-                          (:start-y gradient)
-                          (:end-x gradient)
-                          (:end-y gradient)
-                          opacity)
-                  (h/call wasm/internal-module "_add_shape_stroke_radial_fill"
-                          (:start-x gradient)
-                          (:start-y gradient)
-                          (:end-x gradient)
-                          (:end-y gradient)
-                          opacity
-                          (:width gradient)))
-                (.set mem (js/Uint8Array. (clj->js (flatten (map (fn [stop]
-                                                                   (let [[r g b a] (rgba-bytes-from-hex (:color stop) (:opacity stop))
-                                                                         offset (:offset stop)]
-                                                                     [r g b a (* 100 offset)]))
-                                                                 stops)))))
-                (h/call wasm/internal-module "_add_shape_stroke_stops"))
+                    heap   (mem/get-heap-u32)]
+                (sr-fills/write-gradient-fill! offset heap gradient opacity)
+                (case (:type gradient)
+                  :linear
+                  (h/call wasm/internal-module "_add_shape_stroke_linear_fill")
+                  :radial
+                  (h/call wasm/internal-module "_add_shape_stroke_radial_fill")))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
@@ -349,7 +296,7 @@
                   (store-image id)))
 
               (some? color)
-              (let [rgba (rgba-from-hex color opacity)]
+              (let [rgba (sr-clr/hex->u32argb color opacity)]
                 (h/call wasm/internal-module "_add_shape_stroke_solid_fill" rgba)))))
         strokes))
 
@@ -641,7 +588,7 @@
         (let [shadow (nth shadows index)
               color (dm/get-prop shadow :color)
               blur (dm/get-prop shadow :blur)
-              rgba (rgba-from-hex (dm/get-prop color :color) (dm/get-prop color :opacity))
+              rgba (sr-clr/hex->u32argb (dm/get-prop color :color) (dm/get-prop color :opacity))
               hidden (dm/get-prop shadow :hidden)
               x (dm/get-prop shadow :offset-x)
               y (dm/get-prop shadow :offset-y)
@@ -864,7 +811,7 @@
 
 (defn set-canvas-background
   [background]
-  (let [rgba (rgba-from-hex background 1)]
+  (let [rgba (sr-clr/hex->u32argb background 1)]
     (h/call wasm/internal-module "_set_canvas_background" rgba)
     (request-render "set-canvas-background")))
 
@@ -893,7 +840,7 @@
 
 (defn initialize
   [base-objects zoom vbox background]
-  (let [rgba (rgba-from-hex background 1)]
+  (let [rgba (sr-clr/hex->u32argb background 1)]
     (h/call wasm/internal-module "_set_canvas_background" rgba)
     (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
     (set-objects base-objects)))
@@ -953,4 +900,3 @@
                        (js/console.error cause)
                        (p/resolved false)))))
       (p/resolved false))))
-

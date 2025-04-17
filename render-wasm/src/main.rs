@@ -247,68 +247,6 @@ pub extern "C" fn set_children() {
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_solid_fill(raw_color: u32) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let color = skia::Color::new(raw_color);
-        shape.add_fill(shapes::Fill::Solid(color));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_linear_fill(
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
-    opacity: f32,
-) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.add_fill(shapes::Fill::new_linear_gradient(
-            (start_x, start_y),
-            (end_x, end_y),
-            opacity,
-        ));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_radial_fill(
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
-    opacity: f32,
-    width: f32,
-) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.add_fill(shapes::Fill::new_radial_gradient(
-            (start_x, start_y),
-            (end_x, end_y),
-            opacity,
-            width,
-        ));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_fill_stops() {
-    let bytes = mem::bytes();
-
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<shapes::RawStopData>())
-        .map(|data| shapes::RawStopData::from_bytes(data.try_into().unwrap()))
-        .collect();
-
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape
-            .add_fill_gradient_stops(entries)
-            .expect("could not add gradient stops");
-    });
-
-    mem::free_bytes();
-}
-
-#[no_mangle]
 pub extern "C" fn store_image(a: u32, b: u32, c: u32, d: u32) {
     with_state!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
@@ -330,33 +268,6 @@ pub extern "C" fn is_image_cached(a: u32, b: u32, c: u32, d: u32) -> bool {
     with_state!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
         return state.render_state().has_image(&id);
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_image_fill(
-    a: u32,
-    b: u32,
-    c: u32,
-    d: u32,
-    alpha: f32,
-    width: i32,
-    height: i32,
-) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let id = uuid_from_u32_quartet(a, b, c, d);
-        shape.add_fill(shapes::Fill::new_image_fill(
-            id,
-            (alpha * 0xff as f32).floor() as u8,
-            (width, height),
-        ));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn clear_shape_fills() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.clear_fills();
     });
 }
 
@@ -430,101 +341,6 @@ pub extern "C" fn set_shape_path_content() {
     });
 }
 
-#[no_mangle]
-pub extern "C" fn add_shape_center_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.add_stroke(shapes::Stroke::new_center_stroke(
-            width, style, cap_start, cap_end,
-        ));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_inner_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.add_stroke(shapes::Stroke::new_inner_stroke(
-            width, style, cap_start, cap_end,
-        ));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_outer_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.add_stroke(shapes::Stroke::new_outer_stroke(
-            width, style, cap_start, cap_end,
-        ));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_stroke_solid_fill(raw_color: u32) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let color = skia::Color::new(raw_color);
-        shape
-            .set_stroke_fill(shapes::Fill::Solid(color))
-            .expect("could not add stroke solid fill");
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_stroke_linear_fill(
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
-    opacity: f32,
-) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape
-            .set_stroke_fill(shapes::Fill::new_linear_gradient(
-                (start_x, start_y),
-                (end_x, end_y),
-                opacity,
-            ))
-            .expect("could not add stroke linear fill");
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_stroke_radial_fill(
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
-    opacity: f32,
-    width: f32,
-) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape
-            .set_stroke_fill(shapes::Fill::new_radial_gradient(
-                (start_x, start_y),
-                (end_x, end_y),
-                opacity,
-                width,
-            ))
-            .expect("could not add stroke radial fill");
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_stroke_stops() {
-    let bytes = mem::bytes();
-
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<shapes::RawStopData>())
-        .map(|data| shapes::RawStopData::from_bytes(data.try_into().unwrap()))
-        .collect();
-
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape
-            .add_stroke_gradient_stops(entries)
-            .expect("could not add gradient stops");
-    });
-
-    mem::free_bytes();
-}
-
 // Extracts a string from the bytes slice until the next null byte (0) and returns the result as a `String`.
 // Updates the `start` index to the end of the extracted string.
 fn extract_string(start: &mut usize, bytes: &[u8]) -> String {
@@ -541,35 +357,6 @@ fn extract_string(start: &mut usize, bytes: &[u8]) -> String {
             String::new()
         }
     }
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_image_stroke(
-    a: u32,
-    b: u32,
-    c: u32,
-    d: u32,
-    alpha: f32,
-    width: i32,
-    height: i32,
-) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let id = uuid_from_u32_quartet(a, b, c, d);
-        shape
-            .set_stroke_fill(shapes::Fill::new_image_fill(
-                id,
-                (alpha * 0xff as f32).floor() as u8,
-                (width, height),
-            ))
-            .expect("could not add stroke image fill");
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn clear_shape_strokes() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.clear_strokes();
-    });
 }
 
 #[no_mangle]

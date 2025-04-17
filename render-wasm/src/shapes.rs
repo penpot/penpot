@@ -456,21 +456,6 @@ impl Shape {
         self.fills.clear();
     }
 
-    pub fn add_fill_gradient_stops(&mut self, buffer: Vec<RawStopData>) -> Result<(), String> {
-        let fill = self.fills.last_mut().ok_or("Shape has no fills")?;
-        let gradient = match fill {
-            Fill::LinearGradient(g) => Ok(g),
-            Fill::RadialGradient(g) => Ok(g),
-            _ => Err("Active fill is not a gradient"),
-        }?;
-
-        for stop in buffer.into_iter() {
-            gradient.add_stop(stop.color(), stop.offset());
-        }
-
-        Ok(())
-    }
-
     pub fn strokes(&self) -> std::slice::Iter<Stroke> {
         self.strokes.iter()
     }
@@ -482,22 +467,6 @@ impl Shape {
     pub fn set_stroke_fill(&mut self, f: Fill) -> Result<(), String> {
         let stroke = self.strokes.last_mut().ok_or("Shape has no strokes")?;
         stroke.fill = f;
-        Ok(())
-    }
-
-    pub fn add_stroke_gradient_stops(&mut self, buffer: Vec<RawStopData>) -> Result<(), String> {
-        let stroke = self.strokes.last_mut().ok_or("Shape has no strokes")?;
-        let fill = &mut stroke.fill;
-        let gradient = match fill {
-            Fill::LinearGradient(g) => Ok(g),
-            Fill::RadialGradient(g) => Ok(g),
-            _ => Err("Active stroke is not a gradient"),
-        }?;
-
-        for stop in buffer.into_iter() {
-            gradient.add_stop(stop.color(), stop.offset());
-        }
-
         Ok(())
     }
 
