@@ -8,7 +8,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.bool :as dwb]
+   [app.main.data.workspace.path.shapes-to-path :as dwps]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -43,19 +44,21 @@
          (mf/deps  selected is-group?  is-bool?)
          (fn [bool-type]
            (let [bool-type (keyword bool-type)]
+
              (cond
                (> (count selected) 1)
-               (st/emit! (dw/create-bool bool-type))
+               (st/emit! (dwb/create-bool bool-type))
 
                (and (= (count selected) 1) is-group?)
-               (st/emit! (dw/group-to-bool (:id head) bool-type))
+               (st/emit! (dwb/group-to-bool (:id head) bool-type))
 
                (and (= (count selected) 1) is-bool?)
                (if (= head-bool-type bool-type)
-                 (st/emit! (dw/bool-to-group (:id head)))
-                 (st/emit! (dw/change-bool-type (:id head) bool-type)))))))
+                 (st/emit! (dwb/bool-to-group (:id head)))
+                 (st/emit! (dwb/change-bool-type (:id head) bool-type)))))))
 
-        flatten-objects (mf/use-fn  #(st/emit! (dw/convert-selected-to-path)))]
+        flatten-objects
+        (mf/use-fn  #(st/emit! (dwps/convert-selected-to-path)))]
 
     (when (not (and disabled-bool-btns disabled-flatten))
       [:div {:class (stl/css :boolean-options)}

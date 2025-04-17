@@ -7,28 +7,35 @@
 (ns app.main.ui.shapes.path
   (:require
    [app.common.logging :as log]
+   [app.common.types.path :as path]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
-   [app.util.object :as obj]
-   [app.util.path.format :as upf]
    [rumext.v2 :as mf]))
 
+(defn- content->string
+  [content]
+  (cond
+    (nil? content)
+    ""
+
+    (path/content? content)
+    (.toString content)
+
+    :else
+    (let [content (path/content content)]
+      (.toString content))))
+
 (mf/defc path-shape
-  {::mf/wrap-props false}
-  [props]
-  (let [shape   (unchecked-get props "shape")
-        content (:content shape)
+  {::mf/props :obj}
+  [{:keys [shape]}]
+  (let [content (get shape :content)
         pdata   (mf/with-memo [content]
                   (try
-                    (upf/format-path content)
-                    (catch :default e
+                    (content->string content)
+                    (catch :default cause
                       (log/error :hint "unexpected error on formatting path"
                                  :shape-name (:name shape)
                                  :shape-id (:id shape)
-                                 :cause e)
-                      "")))
-
-        props   (-> #js {}
-                    (obj/set! "d" pdata))]
-
+                                 :cause cause)
+                      "")))]
     [:& shape-custom-strokes {:shape shape}
-     [:> :path props]]))
+     [:path {:d pdata}]]))

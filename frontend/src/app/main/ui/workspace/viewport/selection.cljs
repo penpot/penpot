@@ -20,7 +20,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.css-cursors :as cur]
-   [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
+   [app.main.ui.workspace.shapes.path.editor :refer [path-editor*]]
    [app.util.array :as array]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -602,8 +602,9 @@
            (= edition shape-id))
       nil
 
-      (= edition shape-id)
-      [:& path-editor
+      (and (= edition shape-id)
+           (cfh/path-shape? shape))
+      [:> path-editor*
        {:zoom zoom
         :shape shape}]
 
