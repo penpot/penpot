@@ -1,5 +1,6 @@
 use crate::shapes::Shape;
 use crate::view::Viewbox;
+use crate::math::Rect as MathRect;
 use skia_safe::{self as skia, Paint, RRect};
 
 use super::{gpu_state::GpuState, tiles::Tile};
@@ -40,6 +41,7 @@ pub struct Surfaces {
     tiles: TileSurfaceCache,
     sampling_options: skia::SamplingOptions,
     margins: skia::ISize,
+    images: HashMap<Tile, skia::Image>,
 }
 
 #[allow(dead_code)]
@@ -85,6 +87,7 @@ impl Surfaces {
             sampling_options,
             tiles,
             margins,
+            images: HashMap::new(),
         }
     }
 
@@ -258,6 +261,8 @@ impl Surfaces {
             sampling_options,
             Some(&skia::Paint::default()),
         );
+        let snapshot = tile_surface.image_snapshot();
+        self.images.insert(tile, snapshot);
     }
 
     pub fn has_cached_tile_surface(&mut self, tile: Tile) -> bool {
@@ -269,14 +274,23 @@ impl Surfaces {
     }
 
     pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect) {
-        let sampling_options = self.sampling_options;
-        let tile_surface = self.tiles.get(tile).unwrap();
-        tile_surface.draw(
-            self.target.canvas(),
-            (rect.x(), rect.y()),
-            sampling_options,
-            Some(&skia::Paint::default()),
+        // let sampling_options = self.sampling_options;
+        // let tile_surface = self.tiles.get(tile).unwrap();
+        // tile_surface.draw(
+        //     self.target.canvas(),
+        //     (rect.x(), rect.y()),
+        //     sampling_options,
+        //     Some(&skia::Paint::default()),
+        // );
+        let image = self.images.get(&tile).unwrap();
+        let dest_rect = MathRect::from_xywh(0.0, 0.0, image.width() as f32, image.height() as f32);
+        self.target.canvas().draw_image_rect(
+            &image,
+            None,
+            rect,
+            &skia::Paint::default(),
         );
+
     }
 
     pub fn remove_cached_tiles(&mut self) {
