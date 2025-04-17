@@ -198,6 +198,13 @@
              (when-not (and dragging? hex)
                (reset! internal-color* selector-color)
                (on-change hex alpha)))))]
+    (mf/use-effect
+     (mf/deps color)
+     (fn []
+       ;; Update internal color when user changes input value
+       (when-let [color (tinycolor/valid-color color)]
+         (when-not (= (tinycolor/->hex-string color) (:hex internal-color))
+           (reset! internal-color* (hex->value color))))))
 
     (colorpicker/use-color-picker-css-variables! wrapper-node-ref internal-color)
     [:div {:ref wrapper-node-ref}
@@ -315,7 +322,8 @@
                            (valid-name? @token-name-ref))
 
         ;; Value
-        color (mf/use-state (when color? (:value token)))
+        color* (mf/use-state (when color? (:value token)))
+        color (deref color*)
         color-ramp-open* (mf/use-state false)
         color-ramp-open? (deref color-ramp-open*)
         value-input-ref (mf/use-ref nil)
@@ -338,7 +346,7 @@
 
                      :else
                      (:resolved-value token-or-err))]
-             (when color? (reset! color (if error? nil v)))
+             (when color? (reset! color* (if error? nil v)))
              (reset! token-resolve-result* v))))
 
         on-update-value-debounced (use-debonced-resolve-callback token-name-ref token active-theme-tokens set-resolve-value)
@@ -355,13 +363,28 @@
                              (reset! value-ref value')
                              (on-update-value-debounced value'))))
         on-update-color (mf/use-fn
-                         (mf/deps on-update-value-debounced)
+                         (mf/deps color on-update-value-debounced)
                          (fn [hex-value alpha]
-                           (let [color-value (if (= 1 alpha)
-                                               hex-value
-                                               (-> (tinycolor/valid-color hex-value)
-                                                   (tinycolor/set-alpha alpha)
-                                                   (tinycolor/->rgba-string)))]
+                           (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
+                                 prev-input-color (some-> (dom/get-value (mf/ref-val value-input-ref))
+                                                          (tinycolor/valid-color))
+                                 ;; If the input is a reference we will take the format from the computed value
+                                 prev-computed-color (when-not prev-input-color
+                                                       (some-> color (tinycolor/valid-color)))
+                                 prev-format (some-> (or prev-input-color prev-computed-color)
+                                                     (tinycolor/color-format))
+                                 to-rgba? (and
+                                           (< alpha 1)
+                                           (or (= prev-format "hex") (not prev-format)))
+                                 to-hex? (and (not prev-format) (= alpha 1))
+                                 format (cond
+                                          to-rgba? "rgba"
+                                          to-hex? "hex"
+                                          prev-format prev-format
+                                          :else "hex")
+                                 color-value (-> (tinycolor/valid-color hex-value)
+                                                 (tinycolor/set-alpha (or alpha 1))
+                                                 (tinycolor/->string format))]
                              (reset! value-ref color-value)
                              (dom/set-value! (mf/ref-val value-input-ref) color-value)
                              (on-update-value-debounced color-value))))
@@ -538,10 +561,10 @@
          :on-blur on-update-value}
         (when color?
           [:> input-token-color-bullet*
-           {:color @color :on-click on-display-colorpicker'}])]
+           {:color color
+            :on-click on-display-colorpicker'}])]
        (when color-ramp-open?
-         [:> ramp* {:color (some-> (or token-resolve-result (:value token))
-                                   (tinycolor/valid-color))
+         [:> ramp* {:color (some-> color (tinycolor/valid-color))
                     :on-change on-update-color}])
        [:& token-value-or-errors {:result-or-errors token-resolve-result}]]
 
