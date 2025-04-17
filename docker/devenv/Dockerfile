@@ -10,6 +10,7 @@ ENV NODE_VERSION=v22.14.0 \
     CLJFMT_VERSION=0.13.0 \
     RUSTUP_VERSION=1.27.1 \
     RUST_VERSION=1.85.0 \
+    EMSCRIPTEN_VERSION=4.0.6 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -269,8 +270,8 @@ WORKDIR /usr/local
 RUN set -eux; \
   git clone https://github.com/emscripten-core/emsdk.git; \
   cd emsdk; \
-  ./emsdk install latest; \
-  ./emsdk activate latest; \
+  ./emsdk install $EMSCRIPTEN_VERSION; \
+  ./emsdk activate $EMSCRIPTEN_VERSION; \
   rustup target add wasm32-unknown-emscripten;
 
 WORKDIR /home
