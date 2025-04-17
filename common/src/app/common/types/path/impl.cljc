@@ -22,7 +22,7 @@
    [app.common.types.path :as-alias path])
   (:import
    #?(:cljs [goog.string StringBuffer]
-      :clj  [java.nio ByteBuffer])))
+      :clj  [java.nio ByteBuffer ByteOrder])))
 
 #?(:clj (set! *warn-on-reflection* true))
 
@@ -45,33 +45,29 @@
 (defmacro read-short
   [target offset]
   (if (:ns &env)
-    `(.getInt16 ~target ~offset)
-    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})
-          offset (with-meta target {:tag 'int})]
+    `(.getInt16 ~target ~offset true)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(.getShort ~target ~offset))))
 
 (defmacro read-float
   [target offset]
   (if (:ns &env)
-    `(.getFloat32 ~target ~offset)
-    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})
-          offset (with-meta target {:tag 'int})]
-      `(.getFloat ~target ~offset))))
+    `(.getFloat32 ~target ~offset true)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
+      `(double (.getFloat ~target ~offset)))))
 
 (defmacro write-float
   [target offset value]
   (if (:ns &env)
-    `(.setFloat32 ~target ~offset ~value)
-    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})
-          offset (with-meta target {:tag 'int})]
+    `(.setFloat32 ~target ~offset ~value true)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(.putFloat ~target ~offset ~value))))
 
 (defmacro write-short
   [target offset value]
   (if (:ns &env)
-    `(.setInt16 ~target ~offset ~value)
-    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})
-          offset (with-meta target {:tag 'int})]
+    `(.setInt16 ~target ~offset ~value true)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(.putShort ~target ~offset ~value))))
 
 (defmacro with-cache
@@ -90,6 +86,28 @@
              (.set ~cache ~key ~'result)
              ~'result))))
     `(do ~@expr)))
+
+(defn- allocate
+  [n-segments]
+  #?(:clj (let [buffer (ByteBuffer/allocate (* n-segments SEGMENT-BYTE-SIZE))]
+            (.order buffer ByteOrder/LITTLE_ENDIAN))
+     :cljs (new js/ArrayBuffer (* n-segments SEGMENT-BYTE-SIZE))))
+
+(defn- clone-buffer
+  [buffer]
+  #?(:clj
+     (let [src (.array ^ByteBuffer buffer)
+           len (alength ^bytes src)
+           dst (byte-array len)]
+       (System/arraycopy src 0 dst 0 len)
+       (let [buffer (ByteBuffer/wrap dst)]
+         (.order buffer ByteOrder/LITTLE_ENDIAN)))
+     :cljs
+     (let [src-view (js/Uint32Array. buffer)
+           dst-buff (js/ArrayBuffer. (.-byteLength buffer))
+           dst-view (js/Uint32Array. dst-buff)]
+       (.set dst-view src-view)
+       dst-buff)))
 
 (defn- impl-transform-segment
   "Apply a transformation to a segment located under specified offset"
@@ -301,21 +319,6 @@
 (defn- in-range?
   [size i]
   (and (< i size) (>= i 0)))
-
-(defn- clone-buffer
-  [buffer]
-  #?(:clj
-     (let [src (.array ^ByteBuffer buffer)
-           len (alength ^bytes src)
-           dst (byte-array len)]
-       (System/arraycopy src 0 dst 0 len)
-       (ByteBuffer/wrap dst))
-     :cljs
-     (let [src-view (js/Uint32Array. buffer)
-           dst-buff (js/ArrayBuffer. (.-byteLength buffer))
-           dst-view (js/Uint32Array. dst-buff)]
-       (.set dst-view src-view)
-       dst-buff)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TYPE: PATH-DATA
@@ -628,17 +631,18 @@
   #?(:clj
      (cond
        (instance? ByteBuffer buffer)
-       (let [size  (.capacity ^ByteBuffer buffer)
-             count (long (/ size SEGMENT-BYTE-SIZE))]
+       (let [size   (.capacity ^ByteBuffer buffer)
+             count  (long (/ size SEGMENT-BYTE-SIZE))
+             buffer (.order ^ByteBuffer buffer ByteOrder/LITTLE_ENDIAN)]
          (PathData. count buffer nil))
 
        (bytes? buffer)
-       (let [size  (alength ^bytes buffer)
-             count (long (/ size SEGMENT-BYTE-SIZE))]
+       (let [size   (alength ^bytes buffer)
+             count  (long (/ size SEGMENT-BYTE-SIZE))
+             buffer (ByteBuffer/wrap buffer)]
          (PathData. count
-                    (ByteBuffer/wrap buffer)
+                    (.order buffer ByteOrder/LITTLE_ENDIAN)
                     nil))
-
        :else
        (throw (java.lang.IllegalArgumentException. "invalid data provided")))
 
@@ -678,9 +682,9 @@
   (assert (check-segments segments))
 
   (let [total    (count segments)
-        #?@(:cljs [buffer' (new js/ArrayBuffer (* total SEGMENT-BYTE-SIZE))
+        #?@(:cljs [buffer' (allocate total)
                    buffer  (new js/DataView buffer')]
-            :clj  [buffer (ByteBuffer/allocate (* total SEGMENT-BYTE-SIZE))])]
+            :clj  [buffer  (allocate total)])]
     (loop [index 0]
       (when (< index total)
         (let [segment (nth segments index)
