@@ -60,6 +60,7 @@
   (let [smallest (-> params :shrunk :smallest vec)]
     (println)
     (println "Condition failed with the following params:")
+    (println "Seed:" (:seed params))
     (println)
     (pp/pprint smallest)))
 
