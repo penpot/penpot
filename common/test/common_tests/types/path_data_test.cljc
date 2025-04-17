@@ -69,10 +69,10 @@
    {:command :close-path :params {}}])
 
 (def sample-bytes
-  [0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 67 -16 0 0 68 81 -64 0
-   0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 67 -37 -128 0 68 72 -128 0
-   0 3 0 0 67 -72 0 0 68 56 64 0 67 -101 0 0 68 42 64 0 67 -124 0 0 68 30 -128 0
-   0 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0])
+  [1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -16 67 0 -64 81 68
+   2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -128 -37 67 0 -128 72 68
+   3 0 0 0 0 0 -72 67 0 64 56 68 0 0 -101 67 0 64 42 68 0 0 -124 67 0 -128 30 68
+   4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0])
 
 ;; This means it implements IReduceInit/IReduce protocols
 (t/deftest path-data-to-vector
@@ -116,10 +116,11 @@
 (t/deftest path-data-transit-roundtrip
   (let [pdata    (path/content sample-content)
         result1  (trans/encode-str pdata)
-        expected (str "[\"~#penpot/path-data\",\"~bAAEAAAAAAAAAAAAAAAAAAAAAAA"
-                      "BD8AAARFHAAAACAAAAAAAAAAAAAAAAAAAAAAAAQ9uAAERIgAAAAwAA"
-                      "Q7gAAEQ4QABDmwAARCpAAEOEAABEHoAAAAQAAAAAAAAAAAAAAAAAAA"
-                      "AAAAAAAAAAAAAAAA==\"]")
+        expected (str "[\"~#penpot/path-data\",\"~bAQAAAAAAAAAAAAA"
+                      "AAAAAAAAAAAAAAPBDAMBRRAIAAAAAAAAAAAAAAAAAAA"
+                      "AAAAAAAIDbQwCASEQDAAAAAAC4QwBAOEQAAJtDAEAqR"
+                      "AAAhEMAgB5EBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                      "AAAAAA==\"]")
         result2  (trans/decode-str result1)]
     (t/is (= expected result1))
     (t/is (= pdata result2))))
@@ -352,7 +353,6 @@
     (t/is (= result5 expect2))
     (t/is (= result6 expect3))))
 
-
 (defn get-handlers
   "Retrieve a map where for every point will retrieve a list of
   the handlers that are associated with that point.
@@ -375,7 +375,6 @@
 
 (t/deftest content-to-handlers
   (let [content (path/content sample-content-large)
-        result1 (get-handlers content)
+        result1 (get-handlers sample-content-large)
         result2 (path.segment/get-handlers content)]
-
     (t/is (= result1 result2))))

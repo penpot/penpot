@@ -14,26 +14,26 @@ pub struct RawPathData {
 
 impl RawPathData {
     fn command(&self) -> Result<u16, String> {
-        let cmd = u16::from_be_bytes(self.data[0..2].try_into().map_err(stringify_slice_err)?);
+        let cmd = u16::from_le_bytes(self.data[0..2].try_into().map_err(stringify_slice_err)?);
         Ok(cmd)
     }
 
     fn xy(&self) -> Result<Point, String> {
-        let x = f32::from_be_bytes(self.data[20..24].try_into().map_err(stringify_slice_err)?);
-        let y = f32::from_be_bytes(self.data[24..].try_into().map_err(stringify_slice_err)?);
+        let x = f32::from_le_bytes(self.data[20..24].try_into().map_err(stringify_slice_err)?);
+        let y = f32::from_le_bytes(self.data[24..].try_into().map_err(stringify_slice_err)?);
         Ok((x, y))
     }
 
     fn c1(&self) -> Result<Point, String> {
-        let c1_x = f32::from_be_bytes(self.data[4..8].try_into().map_err(stringify_slice_err)?);
-        let c1_y = f32::from_be_bytes(self.data[8..12].try_into().map_err(stringify_slice_err)?);
+        let c1_x = f32::from_le_bytes(self.data[4..8].try_into().map_err(stringify_slice_err)?);
+        let c1_y = f32::from_le_bytes(self.data[8..12].try_into().map_err(stringify_slice_err)?);
 
         Ok((c1_x, c1_y))
     }
 
     fn c2(&self) -> Result<Point, String> {
-        let c2_x = f32::from_be_bytes(self.data[12..16].try_into().map_err(stringify_slice_err)?);
-        let c2_y = f32::from_be_bytes(self.data[16..20].try_into().map_err(stringify_slice_err)?);
+        let c2_x = f32::from_le_bytes(self.data[12..16].try_into().map_err(stringify_slice_err)?);
+        let c2_y = f32::from_le_bytes(self.data[16..20].try_into().map_err(stringify_slice_err)?);
 
         Ok((c2_x, c2_y))
     }
