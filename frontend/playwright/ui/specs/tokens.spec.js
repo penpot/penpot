@@ -371,6 +371,59 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(tokensTabPanel.getByLabel("color.dark.primary")).toBeEnabled();
   });
 
+  test("User changes color token color while keeping custom color space", async ({
+    page,
+  }) => {
+    const { workspacePage, tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+      await setupEmptyTokensFile(page);
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+    await tokensTabPanel.getByTitle("Add token: Color").click();
+
+    await expect(tokensUpdateCreateModal).toBeVisible();
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    const valueField = tokensUpdateCreateModal.getByLabel("Value");
+
+    await valueField.click();
+    await valueField.fill("hsv(1,1,1)");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: #ff0400"),
+    ).toBeVisible();
+
+    const colorBullet = tokensUpdateCreateModal.getByTestId(
+      "token-form-color-bullet",
+    );
+    await colorBullet.click();
+
+    const valueSaturationSelector = tokensUpdateCreateModal.getByTestId(
+      "value-saturation-selector",
+    );
+    await expect(valueSaturationSelector).toBeVisible();
+
+    // Check if color space doesnt get overwritten when changing color via the picker
+    // Not testing for exact value to avoid flakiness of px click
+    await valueSaturationSelector.click({ position: { x: 100, y: 100 } });
+    await expect(valueField).not.toHaveValue("hsv(1,1,1)");
+    await expect(valueField).toHaveValue(/^hsv.*$/);
+
+    // Clearing the input field should pick hex
+    await valueField.fill("");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: -"),
+    ).toBeVisible();
+    await valueSaturationSelector.click({ position: { x: 50, y: 50 } });
+    await expect(valueField).toHaveValue(/^#[A-Fa-f\d]+$/);
+
+    // Changing opacity for hex values converts to rgba
+    const sliderOpacity = tokensUpdateCreateModal.getByTestId("slider-opacity");
+    await sliderOpacity.click({ position: { x: 50, y: 0 } });
+    await expect(valueField).toHaveValue(/^rgba(.*)$/);
+
+    // Changing color now will stay in rgba
+    await valueSaturationSelector.click({ position: { x: 0, y: 0 } });
+    await expect(valueField).toHaveValue(/^rgba(.*)$/);
+  });
+
   test("User duplicate color token", async ({ page }) => {
     const { tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFile(page);
@@ -511,7 +564,9 @@ test.describe("Tokens: Sets Tab", () => {
     // Creates nesting by renaming set with double click
     await tokenThemesSetsSidebar
       .getByRole("button", { name: "light-renamed" })
-      .dblclick();
+      .click({ button: "right" });
+    await expect(tokenContextMenuForSet).toBeVisible();
+    await tokenContextMenuForSet.getByText("Rename").click();
     await changeSetInput(tokenThemesSetsSidebar, "nested/light");
 
     await assertSetsList(tokenThemesSetsSidebar, [
