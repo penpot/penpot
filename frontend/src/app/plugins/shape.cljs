@@ -1018,7 +1018,7 @@
                  (u/display-not-valid :makeMask (:type shape))
 
                  :else
-                 (str (:content shape)))))
+                 (.toString (:content shape)))))
 
            ;; Text shapes
            :getRange
@@ -1309,7 +1309,7 @@
          (cond-> (or (cfh/path-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
             {:name "content"
-             :get #(-> % u/proxy->shape :content str)
+             :get #(-> % u/proxy->shape :content .toString)
              :set
              (fn [_ value]
                (let [content (svg.path/parse value)]
