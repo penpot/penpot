@@ -97,11 +97,8 @@
   [changes shape]
   (let [data      (pcb/get-library-data changes)
         component (ctcl/get-component data (:component-id shape) true)
-        new-name (str (:name component)
-                      " / "
-                      (if (ctk/is-variant? shape)
-                        (str/replace (:variant-name shape) #", " " / ")
-                        (:name shape)))
+        full-name (cfh/merge-path-item (:path component) (:name component))
+        new-name  (cfh/merge-path-item full-name (str/replace (:variant-name shape) #", " " / "))
         [cpath cname] (cfh/parse-path-name new-name)]
     (-> changes
         (pcb/update-component (:component-id shape)
