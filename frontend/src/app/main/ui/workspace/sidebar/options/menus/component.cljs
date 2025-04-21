@@ -12,6 +12,7 @@
    [app.common.files.variant :as cfv]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
+   [app.common.types.variant :as ctv]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -233,14 +234,19 @@
           [:div {:class (stl/css  :counter)} (str size "/300")])]])))
 
 (mf/defc component-variant-main-instance*
-  [{:keys [component data]}]
-  (let [component-id (:id component)
-        properties   (:variant-properties component)
+  [{:keys [components data]}]
+  (let [component    (first components)
         variant-id   (:variant-id component)
         objects      (-> (dsh/get-page data (:main-instance-page component))
                          (get :objects))
 
         variant-components (cfv/find-variant-components data objects variant-id)
+
+        properties-map (mapv :variant-properties components)
+        component-ids  (mapv :id components)
+        properties     (if (> (count component-ids) 1)
+                         (ctv/compare-properties properties-map false)
+                         (first properties-map))
 
         get-options
         (mf/use-fn
@@ -256,9 +262,10 @@
 
         change-property-value
         (mf/use-fn
-         (mf/deps component-id)
+         (mf/deps component-ids)
          (fn [pos value]
-           (st/emit! (dwv/update-property-value component-id pos value))))
+           (doseq [id component-ids]
+             (st/emit! (dwv/update-property-value id pos value)))))
 
         update-property-name
         (mf/use-fn
@@ -278,10 +285,17 @@
           [:> input-with-values* {:name (:name prop)
                                   :data-position pos
                                   :on-blur update-property-name}]]
-         [:> combobox* {:id (str "variant-prop-" variant-id "-" pos)
-                        :default-selected (if (str/empty? (:value prop)) "--" (:value prop))
-                        :options (clj->js (get-options (:name prop)))
-                        :on-change (partial change-property-value pos)}]]])]))
+
+         (let [mixed-value? (= (:value prop) false)
+               empty-value? (str/empty? (:value prop))]
+           [:> combobox* {:id (str "variant-prop-" variant-id "-" pos)
+                          :placeholder (if mixed-value? (tr "settings.multiple") "")
+                          :default-selected (cond
+                                              mixed-value? ""
+                                              empty-value? "--"
+                                              :else (:value prop))
+                          :options (clj->js (get-options (:name prop)))
+                          :on-change (partial change-property-value pos)}])]])]))
 
 (mf/defc component-variant*
   [{:keys [component shape data]}]
@@ -651,6 +665,12 @@
         is-variant?     (when variants? (ctk/is-variant? component))
         main-instance?  (ctk/main-instance? shape)
 
+        components      (mapv #(ctf/resolve-component %
+                                                      current-file
+                                                      libraries
+                                                      {:include-deleted? true}) shapes)
+        same-variant?   (= 1 (count (distinct (map :variant-id components))))
+
         toggle-content
         (mf/use-fn #(swap! state* update :show-content not))
 
@@ -732,7 +752,7 @@
             [:div {:class (stl/css :name-wrapper)}
              [:div {:class (stl/css :component-name)}
               [:span {:class (stl/css :component-name-inside)}
-               (if multi
+               (if (and multi (not same-variant?))
                  (tr "settings.multiple")
                  (cfh/last-path shape-name))]]
 
@@ -758,13 +778,14 @@
           (when (and (not swap-opened?) (not multi))
             [:& component-annotation {:id id :shape shape :component component :rerender-fn rerender-fn}])
 
-          (when (and is-variant? (not swap-opened?) (not multi))
-            (if main-instance?
-              [:> component-variant-main-instance* {:component component
-                                                    :data data}]
-              [:> component-variant* {:component component
-                                      :shape shape
-                                      :data data}]))
+          (when (and is-variant? (not main-instance?) (not swap-opened?) (not multi))
+            [:> component-variant* {:component component
+                                    :shape shape
+                                    :data data}])
+
+          (when (and is-variant? main-instance? same-variant? (not swap-opened?))
+            [:> component-variant-main-instance* {:components components
+                                                  :data data}])
 
           (when (dbg/enabled? :display-touched)
             [:div ":touched " (str (:touched shape))])])])))

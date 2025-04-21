@@ -37,7 +37,7 @@
       (t/is (= (ctv/valid-properties-string? string-invalid) false)))))
 
 
-(t/deftest compare-property-maps
+(t/deftest find-properties
   (let [prev-props  [{:name "border" :value "yes"} {:name "color" :value "gray"}]
         upd-props-1 [{:name "border" :value "yes"}]
         upd-props-2 [{:name "border" :value "yes"} {:name "color" :value "blue"}]
@@ -79,3 +79,17 @@
     (t/testing "find property index"
       (t/is (= (ctv/find-index-for-property-name prev-props "border") 0))
       (t/is (= (ctv/find-index-for-property-name prev-props "color") 1)))))
+
+
+(t/deftest compare-properties
+  (let [props-1  [{:name "border" :value "yes"} {:name "color" :value "gray"}]
+        props-2  [{:name "border" :value "yes"} {:name "color" :value "red"}]
+        props-3  [{:name "border" :value "no"} {:name "color" :value "gray"}]]
+
+    (t/testing "compare properties"
+      (t/is (= (ctv/compare-properties [props-1 props-2])
+               [{:name "border" :value "yes"} {:name "color" :value nil}]))
+      (t/is (= (ctv/compare-properties [props-1 props-2 props-3])
+               [{:name "border" :value nil} {:name "color" :value nil}]))
+      (t/is (= (ctv/compare-properties [props-1 props-2 props-3] "&")
+               [{:name "border" :value "&"} {:name "color" :value "&"}])))))

@@ -231,3 +231,19 @@
          {:props (vec props1) :used-pos (matching-indices props1 props2)}
          props2)
         :props)))
+
+(defn compare-properties
+  "Compares vectors of properties keeping the value if it is the same for all
+   or setting a custom value where their values do not coincide"
+  ([props-list]
+   (compare-properties props-list nil))
+
+  ([props-list distinct-mark]
+   (let [grouped (group-by :name (apply concat props-list))
+         check-values (fn [values]
+                        (if (apply = (map :value values))
+                          (first (map :value values))
+                          distinct-mark))]
+     (mapv (fn [[name values]]
+             {:name name :value (check-values values)})
+           grouped))))
