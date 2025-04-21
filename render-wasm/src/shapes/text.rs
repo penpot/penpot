@@ -65,6 +65,15 @@ impl TextContent {
             })
             .collect()
     }
+
+    pub fn to_skia_paragraphs(&self, fonts: &FontCollection) -> Vec<skia::textlayout::Paragraph> {
+        let mut paragraphs = Vec::new();
+        for mut skia_paragraph in self.to_paragraphs(fonts) {
+            skia_paragraph.layout(self.width());
+            paragraphs.push(skia_paragraph);
+        }
+        paragraphs
+    }
 }
 
 impl Default for TextContent {

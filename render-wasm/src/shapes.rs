@@ -549,6 +549,7 @@ impl Shape {
         self.hidden
     }
 
+    #[allow(dead_code)]
     pub fn width(&self) -> f32 {
         self.selrect.width()
     }

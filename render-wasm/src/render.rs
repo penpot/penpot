@@ -375,7 +375,12 @@ impl RenderState {
                 self.surfaces.apply_mut(&[SurfaceId::Fills], |s| {
                     s.canvas().concat(&matrix);
                 });
-                text::render(self, &shape, text_content);
+
+                let paragraphs = text_content.to_skia_paragraphs(&self.fonts.font_collection());
+
+                shadows::render_text_drop_shadows(self, &shape, &paragraphs, antialias);
+                text::render(self, &shape, &paragraphs, None, None);
+                shadows::render_text_inner_shadows(self, &shape, &paragraphs, antialias);
             }
             _ => {
                 self.surfaces.apply_mut(
