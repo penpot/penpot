@@ -232,10 +232,60 @@
         (when (or editing? creating?)
           [:div {:class (stl/css  :counter)} (str size "/300")])]])))
 
+(mf/defc component-variant-main-instance*
+  [{:keys [component data]}]
+  (let [component-id (:id component)
+        properties   (:variant-properties component)
+        variant-id   (:variant-id component)
+        objects      (-> (dsh/get-page data (:main-instance-page component))
+                         (get :objects))
+
+        variant-components (cfv/find-variant-components data objects variant-id)
+
+        get-options
+        (mf/use-fn
+         (mf/deps variant-components)
+         (fn [prop-name]
+           (->> variant-components
+                (mapcat (fn [component]
+                          (map :value (filter #(= (:name %) prop-name)
+                                              (:variant-properties component)))))
+                distinct
+                (map #(if (str/empty? %) "--" %))
+                (map (fn [val] {:label val :id val})))))
+
+        change-property-value
+        (mf/use-fn
+         (mf/deps component-id)
+         (fn [pos value]
+           (st/emit! (dwv/update-property-value component-id pos value))))
+
+        update-property-name
+        (mf/use-fn
+         (mf/deps variant-id)
+         (fn [event]
+           (let [value (dom/get-target-val event)
+                 pos   (-> (dom/get-current-target event)
+                           (dom/get-data "position")
+                           int)]
+             (st/emit! (dwv/update-property-name variant-id pos value)))))]
+
+    [:*
+     (for [[pos prop] (map vector (range) properties)]
+       [:div {:key (str variant-id "-" pos) :class (stl/css :variant-property-container)}
+        [:*
+         [:div {:class (stl/css :variant-property-name-wrapper)}
+          [:> input-with-values* {:name (:name prop)
+                                  :data-position pos
+                                  :on-blur update-property-name}]]
+         [:> combobox* {:id (str "variant-prop-" variant-id "-" pos)
+                        :default-selected (if (str/empty? (:value prop)) "--" (:value prop))
+                        :options (clj->js (get-options (:name prop)))
+                        :on-change (partial change-property-value pos)}]]])]))
 
 (mf/defc component-variant*
   [{:keys [component shape data]}]
-  (let [id-component (:id component)
+  (let [component-id (:id component)
         properties   (:variant-properties component)
         variant-id   (:variant-id component)
         objects      (-> (dsh/get-page data (:main-instance-page component))
@@ -250,18 +300,6 @@
                           variant-properties)))
              variant-components)
 
-        get-options
-        (mf/use-fn
-         (mf/deps variant-components)
-         (fn [prop-name]
-           (->> variant-components
-                (mapcat (fn [component]
-                          (map :value (filter #(= (:name %) prop-name)
-                                              (:variant-properties component)))))
-                distinct
-                (map #(if (str/empty? %) "--" %))
-                (map (fn [val] {:label val :id val})))))
-
         filter-matching
         (mf/use-fn
          (mf/deps flat-comps)
@@ -275,22 +313,6 @@
                   (map (fn [item] {:label (get item exclude-key) :value (:id item)}))))))
 
 
-        change-property-value
-        (mf/use-fn
-         (mf/deps id-component)
-         (fn [pos value]
-           (st/emit! (dwv/update-property-value id-component pos value))))
-
-        update-property-name
-        (mf/use-fn
-         (mf/deps variant-id)
-         (fn [event]
-           (let [value (dom/get-target-val event)
-                 pos   (-> (dom/get-current-target event)
-                           (dom/get-data "position")
-                           int)]
-             (st/emit! (dwv/update-property-name variant-id pos value)))))
-
         switch-component
         (mf/use-fn
          (mf/deps shape)
@@ -299,25 +321,13 @@
 
     [:*
      (for [[pos prop] (map vector (range) properties)]
-
        [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-container)}
-        (if (ctk/main-instance? shape)
-          [:*
-           [:div {:class (stl/css :variant-property-name-wrapper)}
-            [:> input-with-values* {:name (:name prop)
-                                    :data-position pos
-                                    :on-blur update-property-name}]]
-           [:> combobox* {:id (str "variant-prop-" (:id shape) pos)
-                          :default-selected (if (str/empty? (:value prop)) "--" (:value prop))
-                          :options (clj->js (get-options (:name prop)))
-                          :on-change (partial change-property-value pos)}]]
-
-          [:*
-           [:span {:class (stl/css :variant-property-name)}
-            (:name prop)]
-           [:& select {:default-value id-component
-                       :options (filter-matching id-component (keyword (:name prop)))
-                       :on-change switch-component}]])])]))
+        [:*
+         [:span {:class (stl/css :variant-property-name)}
+          (:name prop)]
+         [:& select {:default-value component-id
+                     :options (filter-matching component-id (keyword (:name prop)))
+                     :on-change switch-component}]]])]))
 
 (mf/defc component-swap-item
   {::mf/props :obj}
@@ -749,7 +759,12 @@
             [:& component-annotation {:id id :shape shape :component component :rerender-fn rerender-fn}])
 
           (when (and is-variant? (not swap-opened?) (not multi))
-            [:> component-variant* {:component component :shape shape :data data}])
+            (if main-instance?
+              [:> component-variant-main-instance* {:component component
+                                                    :data data}]
+              [:> component-variant* {:component component
+                                      :shape shape
+                                      :data data}]))
 
           (when (dbg/enabled? :display-touched)
             [:div ":touched " (str (:touched shape))])])])))
