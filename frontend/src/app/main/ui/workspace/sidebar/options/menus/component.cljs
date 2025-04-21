@@ -234,27 +234,27 @@
 
 
 (mf/defc component-variant*
-  [{:keys [component shape data page-id]}]
+  [{:keys [component shape data]}]
   (let [id-component (:id component)
         properties   (:variant-properties component)
         variant-id   (:variant-id component)
-        objects      (-> (dsh/get-page data page-id)
+        objects      (-> (dsh/get-page data (:main-instance-page component))
                          (get :objects))
 
-        related-components (cfv/find-variant-components data objects variant-id)
+        variant-components (cfv/find-variant-components data objects variant-id)
 
         flat-comps ;; Get a list like [{:id 0 :prop1 "v1" :prop2 "v2"} {:id 1, :prop1 "v3" :prop2 "v4"}]
         (map (fn [{:keys [id variant-properties]}]
                (into {:id id}
                      (map (fn [{:keys [name value]}] [(keyword name) value])
                           variant-properties)))
-             related-components)
+             variant-components)
 
         get-options
         (mf/use-fn
-         (mf/deps related-components)
+         (mf/deps variant-components)
          (fn [prop-name]
-           (->> related-components
+           (->> variant-components
                 (mapcat (fn [component]
                           (map :value (filter #(= (:name %) prop-name)
                                               (:variant-properties component)))))
@@ -610,11 +610,10 @@
   {::mf/props :obj}
   [{:keys [shapes swap-opened?]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
-        current-page-id (mf/use-ctx ctx/current-page-id)
 
         libraries       (deref refs/files)
         current-file    (get libraries current-file-id)
-        data            (get current-file :data)
+
 
         state*          (mf/use-state
                          #(do {:show-content true
@@ -637,7 +636,7 @@
                                                current-file
                                                libraries
                                                {:include-deleted? true})
-
+        data            (dm/get-in libraries [(:component-file shape) :data])
         variants?       (features/use-feature "variants/v1")
         is-variant?     (when variants? (ctk/is-variant? component))
         main-instance?  (ctk/main-instance? shape)
@@ -750,7 +749,7 @@
             [:& component-annotation {:id id :shape shape :component component :rerender-fn rerender-fn}])
 
           (when (and is-variant? (not swap-opened?) (not multi))
-            [:> component-variant* {:component component :shape shape :data data :page-id current-page-id}])
+            [:> component-variant* {:component component :shape shape :data data}])
 
           (when (dbg/enabled? :display-touched)
             [:div ":touched " (str (:touched shape))])])])))
