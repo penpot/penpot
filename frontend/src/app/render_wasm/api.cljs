@@ -18,6 +18,7 @@
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.render-wasm.api.fonts :as f]
+   [app.render-wasm.api.texts :as t]
    [app.render-wasm.deserializers :as dr]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
@@ -30,7 +31,6 @@
    [app.util.http :as http]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -328,8 +328,6 @@
     (h/call wasm/internal-module "stringToUTF8" content offset size)
     (h/call wasm/internal-module "_set_shape_svg_raw_content")))
 
-
-
 (defn set-shape-blend-mode
   [blend-mode]
   ;; These values correspond to skia::BlendMode representation
@@ -597,47 +595,19 @@
           (h/call wasm/internal-module "_add_shape_shadow" rgba blur spread x y (sr/translate-shadow-style style) hidden)
           (recur (inc index)))))))
 
-(defn utf8->buffer [text]
-  (let [encoder (js/TextEncoder.)]
-    (.encode encoder text)))
-
-(defn- add-text-leaf [leaf]
-  (let [text (dm/get-prop leaf :text)]
-    (when (and text (not (str/blank? text)))
-      (let [font-id (f/serialize-font-id (dm/get-prop leaf :font-id))
-            font-style (f/serialize-font-style (dm/get-prop leaf :font-style))
-            font-weight (f/serialize-font-weight (dm/get-prop leaf :font-weight))
-            font-size (js/Number (dm/get-prop leaf :font-size))
-            buffer (utf8->buffer text)
-            size (.-byteLength buffer)
-            offset (mem/alloc-bytes size)
-            heap (mem/get-heap-u8)
-            mem (js/Uint8Array. (.-buffer heap) offset size)]
-        (.set mem buffer)
-        (h/call wasm/internal-module "_add_text_leaf"
-                (aget font-id 0)
-                (aget font-id 1)
-                (aget font-id 2)
-                (aget font-id 3)
-                font-weight font-style font-size)))))
-
-(defn set-shape-text-content [content]
+(defn set-shape-text-content
+  [content]
   (h/call wasm/internal-module "_clear_shape_text")
   (let [paragraph-set (first (dm/get-prop content :children))
         paragraphs (dm/get-prop paragraph-set :children)
-        fonts (fonts/get-content-fonts content)
-        total-paragraphs (count paragraphs)]
+        fonts (fonts/get-content-fonts content)]
     (loop [index 0]
-      (when (< index total-paragraphs)
+      (when (< index (count paragraphs))
         (let [paragraph (nth paragraphs index)
               leaves (dm/get-prop paragraph :children)]
           (when (seq leaves)
-            (h/call wasm/internal-module "_add_text_paragraph")
-            (loop [leaf-index 0]
-              (when (< leaf-index (count leaves))
-                (add-text-leaf (nth leaves leaf-index))
-                (recur (inc leaf-index))))))
-        (recur (inc index))))
+            (t/write-shape-text leaves paragraph)
+            (recur (inc index))))))
     (f/store-fonts fonts)))
 
 (defn set-view-box

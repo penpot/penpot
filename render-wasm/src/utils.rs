@@ -14,3 +14,7 @@ pub fn uuid_to_u32_quartet(id: &Uuid) -> (u32, u32, u32, u32) {
     let lolo32 = lo as u32;
     (hihi32, hilo32, lohi32, lolo32)
 }
+
+pub fn uuid_from_u32(id: [u32; 4]) -> Uuid {
+    uuid_from_u32_quartet(id[0], id[1], id[2], id[3])
+}

@@ -699,25 +699,10 @@ impl Shape {
         }
     }
 
-    pub fn add_text_leaf(
-        &mut self,
-        text_str: String,
-        font_family: FontFamily,
-        font_size: f32,
-    ) -> Result<(), String> {
+    pub fn add_paragraph(&mut self, paragraph: Paragraph) -> Result<(), String> {
         match self.shape_type {
             Type::Text(ref mut text) => {
-                text.add_leaf(text_str, font_family, font_size)?;
-                Ok(())
-            }
-            _ => Err("Shape is not a text".to_string()),
-        }
-    }
-
-    pub fn add_text_paragraph(&mut self) -> Result<(), String> {
-        match self.shape_type {
-            Type::Text(ref mut text) => {
-                text.add_paragraph();
+                text.add_paragraph(paragraph);
                 Ok(())
             }
             _ => Err("Shape is not a text".to_string()),
