@@ -20,7 +20,7 @@ pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
         if ptr.is_null() {
             panic!("Allocation failed");
         }
-        // TODO: Esto quizá se podría eliminar.
+        // TODO: Maybe this could be removed.
         ptr::write_bytes(ptr, 0, len);
         *guard = Some(Box::new(Vec::from_raw_parts(ptr, len, len)));
         ptr
