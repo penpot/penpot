@@ -89,14 +89,16 @@
 
     (mf/with-effect [file-id revn visible? thumbnail-id]
       (when (and visible? (not thumbnail-id))
-        (->> (ask-for-thumbnail file-id revn)
-             (rx/subs! (fn [thumbnail-id]
-                         (st/emit! (dd/set-file-thumbnail file-id thumbnail-id)))
-                       (fn [cause]
-                         (log/error :hint "unable to render thumbnail"
-                                    :file-if file-id
-                                    :revn revn
-                                    :message (ex-message cause)))))))
+        (let [subscription
+              (->> (ask-for-thumbnail file-id revn)
+                   (rx/subs! (fn [thumbnail-id]
+                               (st/emit! (dd/set-file-thumbnail file-id thumbnail-id)))
+                             (fn [cause]
+                               (log/error :hint "unable to render thumbnail"
+                                          :file-if file-id
+                                          :revn revn
+                                          :message (ex-message cause)))))]
+          (partial rx/dispose! subscription))))
 
     [:div {:class (stl/css :grid-item-th)
            :style {:background-color bg-color}
