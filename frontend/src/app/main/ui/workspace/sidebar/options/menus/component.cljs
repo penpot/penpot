@@ -240,24 +240,21 @@
         objects      (-> (dsh/get-page data (:main-instance-page component))
                          (get :objects))
 
-        variant-components (cfv/find-variant-components data objects variant-id)
-
         properties-map (mapv :variant-properties components)
         component-ids  (mapv :id components)
         properties     (if (> (count component-ids) 1)
                          (ctv/compare-properties properties-map false)
                          (first properties-map))
 
+        prop-vals       (mf/with-memo [data objects variant-id]
+                          (cfv/extract-properties-values data objects variant-id))
         get-options
         (mf/use-fn
-         (mf/deps variant-components)
+         (mf/deps prop-vals)
          (fn [prop-name]
-           (->> variant-components
-                (mapcat (fn [component]
-                          (map :value (filter #(= (:name %) prop-name)
-                                              (:variant-properties component)))))
-                distinct
-                (map #(if (str/empty? %) "--" %))
+           (->> (filter #(= (:name %) prop-name) prop-vals)
+                first
+                :value
                 (map (fn [val] {:label val :id val})))))
 
         change-property-value
@@ -307,31 +304,26 @@
 
         variant-components (cfv/find-variant-components data objects variant-id)
 
-        flat-comps ;; Get a list like [{:id 0 :prop1 "v1" :prop2 "v2"} {:id 1, :prop1 "v3" :prop2 "v4"}]
-        (map (fn [{:keys [id variant-properties]}]
-               (into {:id id}
-                     (map (fn [{:keys [name value]}] [(keyword name) value])
-                          variant-properties)))
-             variant-components)
+        prop-vals          (mf/with-memo [data objects variant-id]
+                             (cfv/extract-properties-values data objects variant-id))
 
-        filter-matching
+        get-options-vals
         (mf/use-fn
-         (mf/deps flat-comps)
-         (fn [id exclude-key]
-           (let [reference-item (first (filter #(= (:id %) id) flat-comps))
-                 reference-values (dissoc reference-item :id exclude-key)]
-
-             (->> flat-comps
-                  (filter (fn [item]
-                            (= (dissoc item :id exclude-key) reference-values)))
-                  (map (fn [item] {:label (get item exclude-key) :value (:id item)}))))))
-
+         (mf/deps prop-vals)
+         (fn [prop-name]
+           (->> (filter #(= (:name %) prop-name) prop-vals)
+                first
+                :value)))
 
         switch-component
         (mf/use-fn
          (mf/deps shape)
-         (fn [id]
-           (st/emit! (dwl/component-swap shape (:component-file shape) id))))]
+         (fn [pos val]
+           (let [valid-comps (->> variant-components
+                                  (remove #(= (:id %) component-id))
+                                  (filter #(= (dm/get-in % [:variant-properties pos :value]) val)))
+                 comp      (apply min-key  #(ctv/distance (:variant-properties component) (:variant-properties %)) valid-comps)]
+             (st/emit! (dwl/component-swap shape (:component-file shape) (:id comp))))))]
 
     [:*
      (for [[pos prop] (map vector (range) properties)]
@@ -339,9 +331,9 @@
         [:*
          [:span {:class (stl/css :variant-property-name)}
           (:name prop)]
-         [:& select {:default-value component-id
-                     :options (filter-matching component-id (keyword (:name prop)))
-                     :on-change switch-component}]]])]))
+         [:& select {:default-value (if (str/empty? (:value prop)) "--" (:value prop))
+                     :options (clj->js (get-options-vals (:name prop)))
+                     :on-change #(switch-component pos %)}]]])]))
 
 (mf/defc component-swap-item
   {::mf/props :obj}
