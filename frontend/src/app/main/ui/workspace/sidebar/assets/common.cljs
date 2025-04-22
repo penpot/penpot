@@ -14,6 +14,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.variant :as ctv]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
@@ -381,7 +382,7 @@
 
         variants? (features/use-feature "variants/v1")
 
-        same-variant? (= 1 (count (distinct (map :variant-id shapes))))
+        same-variant? (ctv/same-variant? shapes)
 
         do-detach-component
         #(st/emit! (dwl/detach-components (map :id copies)))

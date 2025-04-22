@@ -669,7 +669,7 @@
                                                       current-file
                                                       libraries
                                                       {:include-deleted? true}) shapes)
-        same-variant?   (= 1 (count (distinct (map :variant-id components))))
+        same-variant?   (ctv/same-variant? components)
 
         toggle-content
         (mf/use-fn #(swap! state* update :show-content not))

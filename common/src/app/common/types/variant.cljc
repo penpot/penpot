@@ -241,9 +241,19 @@
   ([props-list distinct-mark]
    (let [grouped (group-by :name (apply concat props-list))
          check-values (fn [values]
-                        (if (apply = (map :value values))
-                          (first (map :value values))
-                          distinct-mark))]
+                        (let [vals (map :value values)]
+                          (if (apply = vals)
+                            (first vals)
+                            distinct-mark)))]
      (mapv (fn [[name values]]
              {:name name :value (check-values values)})
            grouped))))
+
+(defn same-variant?
+  "Determines if all elements belong to the same variant"
+  [components]
+  (let [variant-ids (distinct (map :variant-id components))
+        not-blank?  (complement str/blank?)]
+    (and
+     (= 1 (count variant-ids))
+     (not-blank? (first variant-ids)))))
