@@ -14,6 +14,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.variant :as ctv]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
@@ -381,6 +382,7 @@
 
         variants? (features/use-feature "variants/v1")
 
+        same-variant? (ctv/same-variant? shapes)
 
         do-detach-component
         #(st/emit! (dwl/detach-components (map :id copies)))
@@ -446,7 +448,7 @@
            (when (= 1 (count comps-to-restore))
              (ts/schedule 1000 do-show-component)))
 
-        menu-entries [(when (and (not multi) main-instance?)
+        menu-entries [(when (and (or (not multi) same-variant?) main-instance?)
                         {:title (tr "workspace.shape.menu.show-in-assets")
                          :action do-show-in-assets})
                       (when (and (not multi) main-instance? local-component? lacks-annotation?)
@@ -470,7 +472,7 @@
                       (when can-update-main?
                         {:title (tr "workspace.shape.menu.update-main")
                          :action do-update-component})
-                      (when (and variants? (not multi) main-instance?)
+                      (when (and variants? (or (not multi) same-variant?) main-instance?)
                         {:title (tr "workspace.shape.menu.add-variant")
                          :shortcut :create-component
                          :action do-add-variant})]]
