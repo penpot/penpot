@@ -586,8 +586,13 @@
             ldata   (dsh/lookup-file-data state library-id)
 
             changes (-> (pcb/empty-changes it)
-                        (cll/generate-restore-component ldata component-id library-id page objects))]
-        (rx/of (dch/commit-changes changes))))))
+                        (cll/generate-restore-component ldata component-id library-id page objects))
+
+            frames
+            (->> changes :redo-changes (keep :frame-id))]
+
+        (rx/of (dch/commit-changes changes)
+               (ptk/data-event :layout/update {:ids frames}))))))
 
 
 (defn restore-components
