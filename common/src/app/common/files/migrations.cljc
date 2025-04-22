@@ -848,9 +848,6 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(def ^:private valid-shadow?
-  (sm/lazy-validator ::ctss/shadow))
-
 (defmethod migrate-data "legacy-44"
   [data _]
   (letfn [(fix-shadow [shadow]
@@ -862,7 +859,7 @@
 
           (update-object [object]
             (let [xform (comp (map fix-shadow)
-                              (filter valid-shadow?))]
+                              (filter ctss/valid-shadow?))]
               (d/update-when object :shadow #(into [] xform %))))
 
           (update-container [container]
@@ -1037,7 +1034,7 @@
 
           (update-shape [shape]
             (let [xform (comp (map fix-shadow)
-                              (filter valid-shadow?))]
+                              (filter ctss/valid-shadow?))]
               (d/update-when shape :shadow #(into [] xform %))))
 
           (update-container [container]

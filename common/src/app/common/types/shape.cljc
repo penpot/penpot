@@ -211,7 +211,7 @@
    [:interactions {:optional true}
     [:vector {:gen/max 2} ::ctsi/interaction]]
    [:shadow {:optional true}
-    [:vector {:gen/max 1} ::ctss/shadow]]
+    [:vector {:gen/max 1} ctss/schema:shadow]]
    [:blur {:optional true} ::ctsb/blur]
    [:grow-type {:optional true}
     [::sm/one-of grow-types]]
