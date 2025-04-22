@@ -319,11 +319,15 @@
         (mf/use-fn
          (mf/deps shape)
          (fn [pos val]
-           (let [valid-comps (->> variant-components
-                                  (remove #(= (:id %) component-id))
-                                  (filter #(= (dm/get-in % [:variant-properties pos :value]) val)))
-                 comp      (apply min-key  #(ctv/distance (:variant-properties component) (:variant-properties %)) valid-comps)]
-             (st/emit! (dwl/component-swap shape (:component-file shape) (:id comp))))))]
+           (when (not= val (dm/get-in component [:variant-properties pos :value]))
+             (let [target-props (-> (:variant-properties component)
+                                    (update pos assoc :value val))
+                   valid-comps  (->> variant-components
+                                     (remove #(= (:id %) component-id))
+                                     (filter #(= (dm/get-in % [:variant-properties pos :value]) val)))
+                   nearest-comp (apply min-key  #(ctv/distance target-props (:variant-properties %)) valid-comps)]
+               (when nearest-comp
+                 (st/emit! (dwl/component-swap shape (:component-file shape) (:id nearest-comp))))))))]
 
     [:*
      (for [[pos prop] (map vector (range) properties)]
