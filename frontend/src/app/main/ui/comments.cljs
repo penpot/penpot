@@ -450,7 +450,6 @@
 (mf/defc mentions-panel*
   []
   (let [mentions-s (mf/use-ctx mentions-context)
-        profile    (mf/deref refs/profile)
 
         team       (mf/deref refs/team)
         members    (:members team)
@@ -467,13 +466,11 @@
         mentions-users
         (mf/with-memo [mention-filter members]
           (->> members
-               (filter (fn [{:keys [id fullname email]}]
-                         (and
-                          (not= id (:id profile))
-                          (or (not mention-filter)
-                              (empty? mention-filter)
-                              (str/includes? (str/lower fullname) (str/lower mention-filter))
-                              (str/includes? (str/lower email) (str/lower mention-filter))))))
+               (filter (fn [{:keys [fullname email]}]
+                         (or (not mention-filter)
+                             (empty? mention-filter)
+                             (str/includes? (str/lower fullname) (str/lower mention-filter))
+                             (str/includes? (str/lower email) (str/lower mention-filter)))))
                (take 4)
                (into [])))
 
