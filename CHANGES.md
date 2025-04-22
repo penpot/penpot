@@ -13,6 +13,7 @@
 - Fix unexpected exception on template import from libraries
 - Fix incorrect uuid parsing from different parts of code
 - Fix update layout on component restore [Taiga #10637](https://tree.taiga.io/project/penpot/issue/10637)
+- Fix horizontal scroll in viewer [Github #6290](https://github.com/penpot/penpot/issues/6290)
 
 ## 2.6.1
 
