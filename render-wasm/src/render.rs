@@ -4,8 +4,6 @@ use crate::uuid::Uuid;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::performance;
-#[cfg(target_arch = "wasm32")]
-use crate::run_script;
 use crate::view::Viewbox;
 use crate::wapi;
 
@@ -154,7 +152,7 @@ impl RenderState {
     }
 
     pub fn set_debug_flags(&mut self, debug: u32) {
-        self.options.debug_flags = debug;
+        self.options.flags = debug;
     }
 
     pub fn set_dpr(&mut self, dpr: f32) {
@@ -640,6 +638,12 @@ impl RenderState {
                                 .to_string(),
                         )?;
 
+                        // If the shape is not in the tile set, then we update
+                        // it.
+                        if let None = self.tiles.get_tiles_of(node_id) {
+                            self.update_tile_for(element);
+                        }
+
                         if visited_children {
                             if !visited_mask {
                                 match element.shape_type {
@@ -810,13 +814,13 @@ impl RenderState {
         Ok(())
     }
 
-    pub fn get_tiles_for_rect(&mut self, shape: &Shape) -> (i32, i32, i32, i32) {
+    pub fn get_tiles_for_shape(&mut self, shape: &Shape) -> (i32, i32, i32, i32) {
         let tile_size = tiles::get_tile_size(self.viewbox);
         tiles::get_tiles_for_rect(shape.extrect(), tile_size)
     }
 
     pub fn update_tile_for(&mut self, shape: &Shape) {
-        let (rsx, rsy, rex, rey) = self.get_tiles_for_rect(shape);
+        let (rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape);
         let new_tiles: HashSet<(i32, i32)> = (rsx..=rex)
             .flat_map(|x| (rsy..=rey).map(move |y| (x, y)))
             .collect();
@@ -838,6 +842,36 @@ impl RenderState {
             self.tiles.add_shape_at(tile, shape.id);
             self.surfaces.remove_cached_tile_surface(tile);
         }
+    }
+
+    pub fn rebuild_tiles_shallow(
+        &mut self,
+        tree: &mut HashMap<Uuid, Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
+    ) {
+        performance::begin_measure!("rebuild_tiles_shallow");
+        self.tiles.invalidate();
+        self.surfaces.remove_cached_tiles();
+        let mut nodes = vec![Uuid::nil()];
+        while let Some(shape_id) = nodes.pop() {
+            if let Some(shape) = tree.get(&shape_id) {
+                let mut shape = shape.clone();
+                if shape_id != Uuid::nil() {
+                    if let Some(modifier) = modifiers.get(&shape_id) {
+                        shape.apply_transform(modifier);
+                    }
+                    self.update_tile_for(&shape);
+                } else {
+                    // We only need to rebuild tiles from the first level.
+                    let children = modified_children_ids(&shape, structure.get(&shape.id));
+                    for child_id in children.iter() {
+                        nodes.push(*child_id);
+                    }
+                }
+            }
+        }
+        performance::end_measure!("rebuild_tiles_shallow");
     }
 
     pub fn rebuild_tiles(
