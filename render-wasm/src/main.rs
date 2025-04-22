@@ -26,14 +26,14 @@ pub(crate) static mut STATE: Option<Box<State>> = None;
 
 #[macro_export]
 macro_rules! with_state {
-    ($state:ident, $block:block) => {
+    ($state:ident, $block:block) => {{
         let $state = unsafe {
             #[allow(static_mut_refs)]
             STATE.as_mut()
         }
         .expect("Got an invalid state pointer");
         $block
-    };
+    }};
 }
 
 #[macro_export]
@@ -159,7 +159,7 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_parent(a: u32, b: u32, c: u32, d: u32) {
+pub extern "C" fn set_parent(a: u32, b: u32, c: u32, d: u32) {
     with_current_shape!(state, |shape: &mut Shape| {
         let id = uuid_from_u32_quartet(a, b, c, d);
         shape.set_parent(id);
@@ -181,7 +181,7 @@ pub extern "C" fn set_shape_bool_type(raw_bool_type: u8) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_type(shape_type: u8) {
+pub extern "C" fn set_shape_type(shape_type: u8) {
     with_current_shape!(state, |shape: &mut Shape| {
         shape.set_shape_type(Type::from(shape_type));
     });
@@ -256,11 +256,8 @@ pub extern "C" fn store_image(a: u32, b: u32, c: u32, d: u32) {
         let id = uuid_from_u32_quartet(a, b, c, d);
         let image_bytes = mem::bytes();
 
-        match state.render_state().add_image(id, &image_bytes) {
-            Err(msg) => {
-                eprintln!("{}", msg);
-            }
-            _ => {}
+        if let Err(msg) = state.render_state().add_image(id, &image_bytes) {
+            eprintln!("{}", msg);
         }
 
         mem::free_bytes();
@@ -271,8 +268,8 @@ pub extern "C" fn store_image(a: u32, b: u32, c: u32, d: u32) {
 pub extern "C" fn is_image_cached(a: u32, b: u32, c: u32, d: u32) -> bool {
     with_state!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
-        return state.render_state().has_image(&id);
-    });
+        state.render_state().has_image(&id)
+    })
 }
 
 #[no_mangle]
@@ -394,8 +391,8 @@ pub extern "C" fn propagate_modifiers() -> *mut u8 {
 
     with_state!(state, {
         let result = shapes::propagate_modifiers(state, entries);
-        return mem::write_vec(result);
-    });
+        mem::write_vec(result)
+    })
 }
 
 #[no_mangle]
@@ -409,10 +406,12 @@ pub extern "C" fn set_structure_modifiers() {
 
     with_state!(state, {
         for entry in entries {
-            if !state.structure.contains_key(&entry.parent) {
-                state.structure.insert(entry.parent, Vec::new());
-            }
-            state.structure.get_mut(&entry.parent).unwrap().push(entry);
+            state.structure.entry(entry.parent).or_insert_with(Vec::new);
+            state
+                .structure
+                .get_mut(&entry.parent)
+                .expect("Parent not found for entry")
+                .push(entry);
         }
     });
 
