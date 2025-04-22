@@ -28,6 +28,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.shadow :as ctss]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
@@ -1241,6 +1242,29 @@
 
     (update data :pages-index d/update-vals update-page)))
 
+(defmethod migrate-data "0002-clean-shape-interactions"
+  [data _]
+  (let [decode-fn   (sm/decoder ctsi/schema:interaction sm/json-transformer)
+        validate-fn (sm/validator ctsi/schema:interaction)
+
+        xform
+        (comp
+         (map decode-fn)
+         (filter validate-fn))
+
+        update-object
+        (fn [object]
+          (d/update-when object :interactions
+                         (fn [interactions]
+                           (into [] xform interactions))))
+
+        update-container
+        (fn [container]
+          (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (update :components d/update-vals update-container))))
 
 (def available-migrations
   (into (d/ordered-set)
@@ -1296,4 +1320,5 @@
          "legacy-65"
          "legacy-66"
          "legacy-67"
-         "0001-remove-tokens-from-groups"]))
+         "0001-remove-tokens-from-groups"
+         "0002-clean-shape-interactions"]))
