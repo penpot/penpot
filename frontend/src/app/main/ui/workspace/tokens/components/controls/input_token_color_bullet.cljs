@@ -20,7 +20,8 @@
   {::mf/props :obj
    ::mf/schema schema::input-token-color-bullet}
   [{:keys [color on-click]}]
-  [:div {:class (stl/css :input-token-color-bullet)
+  [:div {:data-testid "token-form-color-bullet"
+         :class (stl/css :input-token-color-bullet)
          :on-click on-click}
    (if-let [color' (wtt/color-bullet-color color)]
      [:> color-bullet {:color color' :mini true}]
