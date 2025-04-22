@@ -223,7 +223,7 @@
                 (h/call wasm/internal-module "_add_shape_solid_fill" rgba))
 
               (some? gradient)
-              (let [size   (sr-fills/gradient-byte-size gradient)
+              (let [size   sr-fills/GRADIENT-BYTE-SIZE
                     offset (mem/alloc-bytes size)
                     heap   (mem/get-heap-u32)]
                 (sr-fills/write-gradient-fill! offset heap gradient opacity)
@@ -269,7 +269,7 @@
 
             (cond
               (some? gradient)
-              (let [size   (sr-fills/gradient-byte-size gradient)
+              (let [size   sr-fills/GRADIENT-BYTE-SIZE
                     offset (mem/alloc-bytes size)
                     heap   (mem/get-heap-u32)]
                 (sr-fills/write-gradient-fill! offset heap gradient opacity)

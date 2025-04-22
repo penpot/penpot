@@ -3,7 +3,10 @@ use skia_safe::{self as skia, Rect};
 use super::Color;
 use crate::uuid::Uuid;
 
-pub const RAW_FILL_DATA_SIZE: usize = 24;
+const MAX_GRADIENT_STOPS: usize = 8;
+const BASE_GRADIENT_DATA_SIZE: usize = 28;
+const RAW_GRADIENT_DATA_SIZE: usize =
+    BASE_GRADIENT_DATA_SIZE + RAW_STOP_DATA_SIZE * MAX_GRADIENT_STOPS;
 
 #[derive(Debug)]
 #[repr(C)]
@@ -14,10 +17,12 @@ pub struct RawGradientData {
     end_y: f32,
     opacity: f32,
     width: f32,
+    stop_count: u32,
+    stops: [RawStopData; MAX_GRADIENT_STOPS],
 }
 
-impl From<[u8; RAW_FILL_DATA_SIZE]> for RawGradientData {
-    fn from(bytes: [u8; RAW_FILL_DATA_SIZE]) -> Self {
+impl From<[u8; RAW_GRADIENT_DATA_SIZE]> for RawGradientData {
+    fn from(bytes: [u8; RAW_GRADIENT_DATA_SIZE]) -> Self {
         Self {
             start_x: f32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
             start_y: f32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
@@ -25,6 +30,16 @@ impl From<[u8; RAW_FILL_DATA_SIZE]> for RawGradientData {
             end_y: f32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
             opacity: f32::from_le_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]),
             width: f32::from_le_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]),
+            stop_count: u32::from_le_bytes([bytes[24], bytes[25], bytes[26], bytes[27]]),
+            // FIXME: 2025-04-22: use `array_chunks` once the next release is out
+            //        and we update our devenv.
+            // See https://github.com/rust-lang/rust/issues/74985
+            stops: bytes[28..]
+                .chunks_exact(RAW_STOP_DATA_SIZE)
+                .map(|chunk| RawStopData::try_from(chunk).unwrap())
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap(),
         }
     }
 }
@@ -75,6 +90,18 @@ impl From<[u8; RAW_STOP_DATA_SIZE]> for RawStopData {
     }
 }
 
+// FIXME: We won't need this once we use `array_chunks`. See comment above.
+impl TryFrom<&[u8]> for RawStopData {
+    type Error = String;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let data: [u8; RAW_STOP_DATA_SIZE] = bytes
+            .try_into()
+            .map_err(|_| "Invalid stop data".to_string())?;
+        Ok(RawStopData::from(data))
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Gradient {
     colors: Vec<Color>,
@@ -86,9 +113,11 @@ pub struct Gradient {
 }
 
 impl Gradient {
-    pub fn add_stop(&mut self, color: Color, offset: f32) {
-        self.colors.push(color);
-        self.offsets.push(offset);
+    fn add_stops(&mut self, stops: &[(Color, f32)]) {
+        let colors = stops.iter().map(|(color, _)| *color);
+        let offsets = stops.iter().map(|(_, offset)| *offset);
+        self.colors.extend(colors);
+        self.offsets.extend(offsets);
     }
 
     fn to_linear_shader(&self, rect: &Rect) -> Option<skia::Shader> {
@@ -144,24 +173,14 @@ impl Gradient {
     }
 }
 
-impl TryFrom<&[u8]> for Gradient {
-    type Error = String;
-
-    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        let raw_gradient_bytes: [u8; RAW_FILL_DATA_SIZE] = bytes[0..RAW_FILL_DATA_SIZE]
-            .try_into()
-            .map_err(|_| "Invalid gradient data".to_string())?;
-
-        let raw_gradient = RawGradientData::from(raw_gradient_bytes);
-        let stops: Vec<RawStopData> = bytes[RAW_FILL_DATA_SIZE..]
-            .chunks(RAW_STOP_DATA_SIZE)
-            .map(|chunk| {
-                let data: [u8; RAW_STOP_DATA_SIZE] = chunk
-                    .try_into()
-                    .map_err(|_| "Invalid stop data".to_string())?;
-                Ok(RawStopData::from(data))
-            })
-            .collect::<Result<Vec<_>, Self::Error>>()?;
+impl From<RawGradientData> for Gradient {
+    fn from(raw_gradient: RawGradientData) -> Self {
+        let stops = raw_gradient
+            .stops
+            .iter()
+            .take(raw_gradient.stop_count as usize)
+            .map(|stop| (stop.color(), stop.offset()))
+            .collect::<Vec<_>>();
 
         let mut gradient = Gradient {
             start: raw_gradient.start(),
@@ -172,9 +191,20 @@ impl TryFrom<&[u8]> for Gradient {
             width: raw_gradient.width(),
         };
 
-        for stop in stops {
-            gradient.add_stop(stop.color(), stop.offset());
-        }
+        gradient.add_stops(&stops);
+
+        gradient
+    }
+}
+
+impl TryFrom<&[u8]> for Gradient {
+    type Error = String;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let raw_gradient_bytes: [u8; RAW_GRADIENT_DATA_SIZE] = bytes[0..RAW_GRADIENT_DATA_SIZE]
+            .try_into()
+            .map_err(|_| "Invalid gradient data".to_string())?;
+        let gradient = RawGradientData::from(raw_gradient_bytes).into();
 
         Ok(gradient)
     }
@@ -228,7 +258,7 @@ impl Fill {
             }
             Self::LinearGradient(gradient) => {
                 let mut p = skia::Paint::default();
-                p.set_shader(gradient.to_linear_shader(&rect));
+                p.set_shader(gradient.to_linear_shader(rect));
                 p.set_alpha((gradient.opacity * 255.) as u8);
                 p.set_style(skia::PaintStyle::Fill);
                 p.set_anti_alias(anti_alias);
@@ -237,7 +267,7 @@ impl Fill {
             }
             Self::RadialGradient(gradient) => {
                 let mut p = skia::Paint::default();
-                p.set_shader(gradient.to_radial_shader(&rect));
+                p.set_shader(gradient.to_radial_shader(rect));
                 p.set_alpha((gradient.opacity * 255.) as u8);
                 p.set_style(skia::PaintStyle::Fill);
                 p.set_anti_alias(anti_alias);

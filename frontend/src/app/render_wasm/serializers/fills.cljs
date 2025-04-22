@@ -2,13 +2,13 @@
   (:require
    [app.render-wasm.serializers.color :as clr]))
 
-(def GRADIENT-STOP-SIZE 8)
-(def GRADIENT-BASE-SIZE 24)
+(def ^:private GRADIENT-STOP-SIZE 8)
+(def ^:private GRADIENT-BASE-SIZE 28)
+;; TODO: Define in shape model
+(def ^:private MAX-GRADIENT-STOPS 8)
 
-(defn gradient-byte-size
-  [gradient]
-  (let [stops (:stops gradient)]
-    (+ GRADIENT-BASE-SIZE (* (count stops) GRADIENT-STOP-SIZE))))
+(def GRADIENT-BYTE-SIZE
+  (+ GRADIENT-BASE-SIZE (* MAX-GRADIENT-STOPS GRADIENT-STOP-SIZE)))
 
 (defn write-gradient-fill!
   [offset heap gradient opacity]
@@ -18,13 +18,14 @@
         end-x   (:end-x gradient)
         end-y   (:end-y  gradient)
         width   (or (:width gradient) 0)
-        stops   (:stops gradient)]
+        stops   (take MAX-GRADIENT-STOPS (:stops gradient))]
     (.setFloat32 dview offset        start-x true)
     (.setFloat32 dview (+ offset 4)  start-y true)
     (.setFloat32 dview (+ offset 8)  end-x true)
     (.setFloat32 dview (+ offset 12) end-y true)
     (.setFloat32 dview (+ offset 16) opacity true)
     (.setFloat32 dview (+ offset 20) width true)
+    (.setUint32  dview (+ offset 24) (count stops) true)
     (loop [stops (seq stops) offset (+ offset GRADIENT-BASE-SIZE)]
       (if (empty? stops)
         offset
