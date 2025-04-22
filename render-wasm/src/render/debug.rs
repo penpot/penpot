@@ -96,7 +96,7 @@ pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
     paint.set_color(skia::Color::from_rgb(255, 0, 127));
     paint.set_stroke_width(1.);
 
-    let tile_size = tiles::get_tile_size(render_state.viewbox);
+    let tile_size = tiles::get_tile_size(render_state.viewbox.zoom);
     let (sx, sy, ex, ey) = tiles::get_tiles_for_rect(render_state.viewbox.area, tile_size);
     let str_rect = format!("{} {} {} {}", sx, sy, ex, ey);
 
@@ -133,7 +133,7 @@ pub fn render_debug_tiles(render_state: &mut RenderState) {
     paint.set_color(skia::Color::from_rgb(127, 0, 255));
     paint.set_stroke_width(1.);
 
-    let tile_size = tiles::get_tile_size(render_state.viewbox);
+    let tile_size = tiles::get_tile_size(render_state.viewbox.zoom);
     let (sx, sy, ex, ey) = tiles::get_tiles_for_rect(render_state.viewbox.area, tile_size);
     for y in sy..=ey {
         for x in sx..=ex {

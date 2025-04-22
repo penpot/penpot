@@ -29,7 +29,7 @@ pub fn get_tiles_for_rect(rect: skia::Rect, tile_size: f32) -> (i32, i32, i32, i
 }
 
 pub fn get_tiles_for_viewbox(viewbox: Viewbox) -> (i32, i32, i32, i32) {
-    let tile_size = get_tile_size(viewbox);
+    let tile_size = get_tile_size(viewbox.zoom);
     get_tiles_for_rect(viewbox.area, tile_size)
 }
 
@@ -43,19 +43,19 @@ pub fn get_tiles_for_viewbox_with_interest(
 
 pub fn get_tile_pos(viewbox: Viewbox, (x, y): Tile) -> (f32, f32) {
     (
-        x as f32 * get_tile_size(viewbox),
-        y as f32 * get_tile_size(viewbox),
+        x as f32 * get_tile_size(viewbox.zoom),
+        y as f32 * get_tile_size(viewbox.zoom),
     )
 }
 
-pub fn get_tile_size(viewbox: Viewbox) -> f32 {
+pub fn get_tile_size(zoom: f32) -> f32 {
     // TODO:  * self.options.dpr() too?
-    1. / viewbox.zoom * TILE_SIZE
+    1. / zoom * TILE_SIZE
 }
 
 pub fn get_tile_rect(viewbox: Viewbox, tile: Tile) -> skia::Rect {
     let (tx, ty) = get_tile_pos(viewbox, tile);
-    let ts = get_tile_size(viewbox);
+    let ts = get_tile_size(viewbox.zoom);
     skia::Rect::from_xywh(tx, ty, ts, ts)
 }
 

@@ -191,7 +191,8 @@ impl RenderState {
         let x = self.current_tile.unwrap().0;
         let y = self.current_tile.unwrap().1;
 
-        self.surfaces.cache_current_tile_texture((x, y));
+        self.surfaces
+            .cache_current_tile_texture((x, y), self.viewbox.zoom);
 
         self.surfaces
             .draw_cached_tile_surface(self.current_tile.unwrap(), rect);
@@ -422,6 +423,76 @@ impl RenderState {
             .update_render_context(self.render_area, self.viewbox);
     }
 
+    pub fn render_fast(&mut self, mut prev_viewbox: Viewbox) {
+        self.surfaces
+            .canvas(SurfaceId::Target)
+            .clear(self.background_color);
+
+        // let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox);
+        let scale = self.get_scale();
+        // for y in sy..=ey {
+        //     for x in sx..=ex {
+                for (tile, zoom) in self.surfaces.find_tiles_covering_rect(self.viewbox.area, self.viewbox.zoom) {
+                    let diff_scale = self.viewbox.zoom() / zoom;
+                    let offset_x = self.viewbox.area.left * scale;
+                    let offset_y = self.viewbox.area.top * scale;
+                    let scaled_rect = Rect::from_xywh(
+                        (tile.0 as f32 * tiles::TILE_SIZE * diff_scale) - offset_x,
+                        (tile.1 as f32 * tiles::TILE_SIZE * diff_scale) - offset_y,
+                        tiles::TILE_SIZE * diff_scale,
+                        tiles::TILE_SIZE * diff_scale,
+                    );
+                    // println!("xxxx {:?} {:?} {:?}", tile, zoom, scaled_rect);
+                    self.surfaces.draw_cached_tile_surface(tile, scaled_rect);
+                }
+
+        //     }
+        // }
+
+        // prev_viewbox.zoom = self.surfaces.tiles_zoom();
+        // let diff_scale = self.viewbox.zoom() / prev_viewbox.zoom();
+
+        // // TODO
+        // // This is affected by ZOOM so I'm setting manually the old zoom
+        // let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(prev_viewbox);
+        // for y in sy..=ey {
+        //     for x in sx..=ex {
+        //       let tile = (x, y);
+        //       if self.surfaces.has_cached_tile_surface(tile) {
+        //           let scale = self.get_scale();
+        //           let offset_x = self.viewbox.area.left * scale;
+        //           let offset_y = self.viewbox.area.top * scale;
+        //           let scaled_rect = Rect::from_xywh(
+        //               (x as f32 * tiles::TILE_SIZE * diff_scale) - offset_x,
+        //               (y as f32 * tiles::TILE_SIZE * diff_scale) - offset_y,
+        //               tiles::TILE_SIZE * diff_scale,
+        //               tiles::TILE_SIZE * diff_scale,
+        //           );
+
+        //           self.surfaces
+        //               .draw_cached_tile_surface(tile, scaled_rect);
+        //       }
+        //       else {
+        //         println!("cache error {:?}", tile);
+        //       }
+        //     }
+        // }
+
+        // pub fn get_tile_bounds(&mut self, tile: tiles::Tile, viewbox: Viewbox) -> Rect {
+        //     let (tile_x, tile_y) = tile;
+        //     let scale = self.get_scale();
+        //     let offset_x = viewbox.area.left * scale;
+        //     let offset_y = viewbox.area.top * scale;
+        //     Rect::from_xywh(
+        //         (tile_x as f32 * tiles::TILE_SIZE) - offset_x,
+        //         (tile_y as f32 * tiles::TILE_SIZE) - offset_y,
+        //         tiles::TILE_SIZE,
+        //         tiles::TILE_SIZE,
+        //     )
+        // }
+        self.flush();
+    }
+
     pub fn start_render_loop(
         &mut self,
         tree: &mut HashMap<Uuid, Shape>,
@@ -575,11 +646,11 @@ impl RenderState {
         self.surfaces.canvas(SurfaceId::Current).restore();
     }
 
-    pub fn get_current_tile_bounds(&mut self) -> Rect {
-        let (tile_x, tile_y) = self.current_tile.unwrap();
+    pub fn get_tile_bounds(&mut self, tile: tiles::Tile, viewbox: Viewbox) -> Rect {
+        let (tile_x, tile_y) = tile;
         let scale = self.get_scale();
-        let offset_x = self.viewbox.area.left * scale;
-        let offset_y = self.viewbox.area.top * scale;
+        let offset_x = viewbox.area.left * scale;
+        let offset_y = viewbox.area.top * scale;
         Rect::from_xywh(
             (tile_x as f32 * tiles::TILE_SIZE) - offset_x,
             (tile_y as f32 * tiles::TILE_SIZE) - offset_y,
@@ -604,9 +675,9 @@ impl RenderState {
 
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
-                if self.surfaces.has_cached_tile_surface(current_tile) {
+                if self.surfaces.has_cached_tile_surface(current_tile, self.viewbox.zoom) {
                     performance::begin_measure!("render_shape_tree::cached");
-                    let tile_rect = self.get_current_tile_bounds();
+                    let tile_rect = self.get_tile_bounds(self.current_tile.unwrap(), self.viewbox);
                     self.surfaces
                         .draw_cached_tile_surface(current_tile, tile_rect);
                     performance::end_measure!("render_shape_tree::cached");
@@ -748,7 +819,7 @@ impl RenderState {
                         i += 1;
                     }
                     performance::end_measure!("render_shape_tree::uncached");
-                    let tile_rect = self.get_current_tile_bounds();
+                    let tile_rect = self.get_tile_bounds(self.current_tile.unwrap(), self.viewbox);
                     if !is_empty {
                         self.apply_render_to_final_canvas(tile_rect);
                     } else {
@@ -777,7 +848,7 @@ impl RenderState {
                 let next_tile = (x, y);
                 self.update_render_context(next_tile);
 
-                if !self.surfaces.has_cached_tile_surface(next_tile) {
+                if !self.surfaces.has_cached_tile_surface(next_tile, self.viewbox.zoom) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
                         // We only need first level shapes
                         let mut valid_ids: Vec<Uuid> = ids
@@ -815,7 +886,7 @@ impl RenderState {
     }
 
     pub fn get_tiles_for_shape(&mut self, shape: &Shape) -> (i32, i32, i32, i32) {
-        let tile_size = tiles::get_tile_size(self.viewbox);
+        let tile_size = tiles::get_tile_size(self.viewbox.zoom);
         tiles::get_tiles_for_rect(shape.extrect(), tile_size)
     }
 
@@ -852,7 +923,8 @@ impl RenderState {
     ) {
         performance::begin_measure!("rebuild_tiles_shallow");
         self.tiles.invalidate();
-        self.surfaces.remove_cached_tiles();
+        // TODO: clean some tiles from time to time
+        // self.surfaces.remove_cached_tiles();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
@@ -882,7 +954,8 @@ impl RenderState {
     ) {
         performance::begin_measure!("rebuild_tiles");
         self.tiles.invalidate();
-        self.surfaces.remove_cached_tiles();
+        // TODO: clean some tiles from time to time
+        // self.surfaces.remove_cached_tiles();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {

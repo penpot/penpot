@@ -137,8 +137,10 @@ pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     with_state!(state, {
         let render_state = state.render_state();
         let zoom_changed = zoom != render_state.viewbox.zoom;
+        let prev_viewbox = render_state.viewbox.clone();
         render_state.viewbox.set_all(zoom, x, y);
         if zoom_changed {
+            render_state.render_fast(prev_viewbox);
             with_state!(state, {
                 if state.render_state.options.is_profile_rebuild_tiles() {
                     state.rebuild_tiles();

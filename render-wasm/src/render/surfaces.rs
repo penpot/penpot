@@ -26,7 +26,8 @@ pub enum SurfaceId {
 
 pub struct Surfaces {
     // is the final destination surface, the one that it is represented in the canvas element.
-    target: skia::Surface,
+    // TODO
+    pub target: skia::Surface,
     // keeps the current render
     current: skia::Surface,
     // keeps the current shape's fills
@@ -222,7 +223,7 @@ impl Surfaces {
         self.tiles.visit(tile);
     }
 
-    pub fn cache_current_tile_texture(&mut self, tile: Tile) {
+    pub fn cache_current_tile_texture(&mut self, tile: Tile, zoom: f32) {
         let snapshot = self.current.image_snapshot();
         let rect = IRect::from_xywh(
             self.margins.width,
@@ -233,12 +234,12 @@ impl Surfaces {
 
         let mut context = self.current.direct_context();
         if let Some(snapshot) = snapshot.make_subset(&mut context, &rect) {
-            self.tiles.add(tile, snapshot);
+            self.tiles.add(tile, snapshot, zoom);
         }
     }
 
-    pub fn has_cached_tile_surface(&mut self, tile: Tile) -> bool {
-        self.tiles.has(tile)
+    pub fn has_cached_tile_surface(&mut self, tile: Tile, zoom: f32) -> bool {
+        self.tiles.has(tile) && self.tiles.get(tile).unwrap().zoom == zoom
     }
 
     pub fn remove_cached_tile_surface(&mut self, tile: Tile) -> bool {
@@ -246,19 +247,32 @@ impl Surfaces {
     }
 
     pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect) {
-        let image = self.tiles.get(tile).unwrap();
+        let texture = self.tiles.get(tile).unwrap();
         self.target
             .canvas()
-            .draw_image_rect(&image, None, rect, &skia::Paint::default());
+            .draw_image_rect(&texture.image, None, rect, &skia::Paint::default());
     }
 
     pub fn remove_cached_tiles(&mut self) {
         self.tiles.clear();
     }
+
+    pub fn find_tiles_covering_rect(
+      &mut self,
+      target_rect: skia::Rect,
+      zoom_actual: f32
+  ) -> Vec<(Tile, f32)> {
+        self.tiles.find_tiles_covering_rect(target_rect, zoom_actual)
+    }
+}
+
+pub struct Texture {
+    pub image: skia::Image,
+    pub zoom: f32,
 }
 
 pub struct TileTextureCache {
-    grid: HashMap<Tile, skia::Image>,
+    grid: HashMap<Tile, Texture>,
     visited: HashMap<Tile, bool>,
 }
 
@@ -280,7 +294,7 @@ impl TileTextureCache {
         }
     }
 
-    pub fn add(&mut self, tile: Tile, image: skia::Image) {
+    pub fn add(&mut self, tile: Tile, image: skia::Image, zoom: f32) {
         if self.grid.len() > TEXTURES_CACHE_CAPACITY {
             let marked: Vec<_> = self
                 .grid
@@ -296,10 +310,11 @@ impl TileTextureCache {
                 .collect();
             self.remove_list(marked);
         }
-        self.grid.insert(tile, image);
+        let texture = Texture { image, zoom };
+        self.grid.insert(tile, texture);
     }
 
-    pub fn get(&mut self, tile: Tile) -> Result<&mut skia::Image, String> {
+    pub fn get(&mut self, tile: Tile) -> Result<&mut Texture, String> {
         let image = self.grid.get_mut(&tile).unwrap();
         Ok(image)
     }
@@ -323,4 +338,32 @@ impl TileTextureCache {
     pub fn visit(&mut self, tile: Tile) {
         self.visited.insert(tile, true);
     }
+
+    pub fn find_tiles_covering_rect(
+      &mut self,
+      target_rect: skia::Rect,
+      zoom: f32,
+  ) -> Vec<(Tile, f32)> {
+      let mut matches = Vec::new();
+  
+      for (&(tx, ty), tex) in &self.grid {
+          // let size = get_tile_size(zoom);              
+          // let tile_rect = skia::Rect::from_xywh(tx as f32 * size, ty as f32 * size, size, size);
+  
+// TODO
+          // if tile_rect.intersects(&target_rect) {
+              matches.push(((tx, ty), tex.zoom));
+          // }
+      }
+  
+      // // Opcional: priorizar los más cercanos en zoom
+      // matches.sort_by(|a, b| {
+      //     (a.1 - zoom)
+      //         .abs()
+      //         .partial_cmp(&(b.1 - zoom).abs())
+      //         .unwrap()
+      // });
+  
+      matches
+  }
 }

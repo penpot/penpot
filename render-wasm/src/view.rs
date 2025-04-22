@@ -55,4 +55,12 @@ impl Viewbox {
     pub fn zoom(&self) -> f32 {
         self.zoom
     }
+
+    pub fn pan_x(&self) -> f32 {
+        self.pan_x
+    }
+
+    pub fn pan_y(&self) -> f32 {
+        self.pan_y
+    }
 }
