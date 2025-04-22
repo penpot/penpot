@@ -12,6 +12,7 @@
 - Fix several issues with internal srepl helpers
 - Fix unexpected exception on template import from libraries
 - Fix incorrect uuid parsing from different parts of code
+- Fix update layout on component restore [Taiga #10637](https://tree.taiga.io/project/penpot/issue/10637)
 
 ## 2.6.1
 
