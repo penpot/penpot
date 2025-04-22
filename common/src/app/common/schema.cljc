@@ -390,20 +390,22 @@
 (register! :merge (mu/-merge))
 (register! :union (mu/-union))
 
-(def uuid-rx
-  #"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-
-(defn parse-uuid
+(defn- parse-uuid
   [s]
-  (try
-    (uuid/parse s)
-    (catch #?(:clj Exception :cljs :default) _cause
-      s)))
+  (if (uuid? s)
+    s
+    (if (str/empty? s)
+      nil
+      (try
+        (uuid/parse s)
+        (catch #?(:clj Exception :cljs :default) _cause
+          s)))))
 
-(defn encode-uuid
+(defn- encode-uuid
   [v]
-  (when (uuid? v)
-    (str v)))
+  (if (uuid? v)
+    (str v)
+    v))
 
 (register!
  {:type ::uuid

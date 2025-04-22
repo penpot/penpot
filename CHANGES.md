@@ -9,6 +9,9 @@
 - Fix unexpected exception on path editor on merge segments when undo stack is empty
 - Fix pricing CTA to be under a config flag [Taiga #10808](https://tree.taiga.io/project/penpot/issue/10808)
 - Fix allow moving a main component into another [Taiga #10818](https://tree.taiga.io/project/penpot/issue/10818)
+- Fix several issues with internal srepl helpers
+- Fix unexpected exception on template import from libraries
+- Fix incorrect uuid parsing from different parts of code
 
 ## 2.6.1
 
