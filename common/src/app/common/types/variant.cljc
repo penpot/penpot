@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
+   [app.common.math :as math]
    [app.common.schema :as sm]
    [cuerdas.core :as str]))
 
@@ -257,3 +258,18 @@
     (and
      (= 1 (count variant-ids))
      (not-blank? (first variant-ids)))))
+
+(defn distance
+  "Computes a weighted distance between two property lists `props1` and `props2`.
+   Latter properties weight less that previous ones"
+  [props1 props2]
+  (let [total-num-props (count props1)
+        xform           (map-indexed
+                         (fn [idx [p1 p2]]
+                           (if (not= p1 p2)
+                             (math/pow 2 (- total-num-props idx))
+                             0)))]
+    (transduce
+     xform
+     +
+     (map vector props1 props2))))
