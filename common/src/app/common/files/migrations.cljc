@@ -1207,11 +1207,11 @@
               object))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (update :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-67"
   [data _]
@@ -1222,8 +1222,8 @@
             (d/update-when container :objects update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (update :components d/update-vals update-container))))
 
 (defmethod migrate-data "0001-remove-tokens-from-groups"
   [data _]
@@ -1237,8 +1237,10 @@
               (dissoc :applied-tokens)))
 
           (update-page [page]
-            (d/update-when page :objects update-vals update-object))]
-    (update data :pages-index update-vals update-page)))
+            (d/update-when page :objects d/update-vals update-object))]
+
+    (update data :pages-index d/update-vals update-page)))
+
 
 (def available-migrations
   (into (d/ordered-set)
