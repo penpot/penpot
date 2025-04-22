@@ -29,6 +29,7 @@
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.http :as http]
+   [app.util.perf :as uperf]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
@@ -93,11 +94,9 @@
    (rds/renderToStaticMarkup)))
 
 ;; This should never be called from the outside.
-;; This function receives a "time" parameter that we're not using but maybe in the future could be useful (it is the time since
-;; the window started rendering elements so it could be useful to measure time between frames).
 (defn- render
-  [_]
-  (h/call wasm/internal-module "_render")
+  [timestamp]
+  (h/call wasm/internal-module "_render" timestamp)
   (set! wasm/internal-frame-id nil))
 
 
@@ -613,7 +612,7 @@
 (defn set-view-box
   [zoom vbox]
   (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-  (render nil))
+  (render (uperf/now)))
 
 (defn clear-drawing-cache []
   (h/call wasm/internal-module "_clear_drawing_cache"))

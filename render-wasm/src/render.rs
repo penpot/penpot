@@ -146,7 +146,7 @@ impl RenderState {
     }
 
     pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
-        self.images.add(id, image_data)
+        self.images.add(id, image_data, &mut self.gpu_state.context)
     }
 
     pub fn has_image(&mut self, id: &Uuid) -> bool {
@@ -193,9 +193,7 @@ impl RenderState {
         let x = self.current_tile.unwrap().0;
         let y = self.current_tile.unwrap().1;
 
-        // This caches the current surface into the corresponding tile.
-        self.surfaces
-            .cache_tile_surface((x, y), SurfaceId::Current, self.background_color);
+        self.surfaces.cache_current_tile_texture((x, y));
 
         self.surfaces
             .draw_cached_tile_surface(self.current_tile.unwrap(), rect);
