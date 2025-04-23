@@ -90,13 +90,18 @@
       (fix-root-shape)
       (fix-legacy-flex-dir)))
 
+(defn- fix-container
+  [container]
+  (-> container
+      ;; Remove possible `nil` keys on objects
+      (d/update-when :objects dissoc nil)
+      (d/update-when :objects d/update-vals clean-shape-post-decode)))
+
 (defn clean-file
   [file & {:as _opts}]
-  (let [update-container
-        (fn [container]
-          (d/update-when container :objects d/update-vals clean-shape-post-decode))]
-    (update file :data
-            (fn [data]
-              (-> data
-                  (update :pages-index d/update-vals update-container)
-                  (update :components d/update-vals update-container))))))
+  (update file :data
+          (fn [data]
+            (-> data
+                (d/update-when :pages-index d/update-vals fix-container)
+                (d/update-when :components d/update-vals fix-container)
+                (d/without-nils)))))
