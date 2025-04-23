@@ -22,6 +22,7 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.change-owner]
+   [app.main.ui.dashboard.subscription :refer [team* members-cta*]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.icons :as i]
@@ -537,10 +538,17 @@
 
   [:*
    [:& header {:section :dashboard-team-members :team team}]
-   [:section {:class (stl/css :dashboard-container :dashboard-team-members)}
+   [:section {:class (stl/css-case
+                      :dashboard-container true
+                      :dashboard-team-members true
+                      :dashboard-top-cta (>= (count (:members team)) 8))}
+    (when (and (contains? cfg/flags :subscriptions) (>= (count (:members team)) 8))
+      [:> members-cta* {:banner-is-expanded true}])
     [:> team-members*
      {:profile profile
-      :team team}]]])
+      :team team}]
+    (when (and (contains? cfg/flags :subscriptions) (< (count (:members team)) 8))
+      [:> members-cta* {:banner-is-expanded false}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INVITATIONS SECTION
@@ -803,8 +811,16 @@
   [:*
    [:& header {:section :dashboard-team-invitations
                :team team}]
-   [:section {:class (stl/css :dashboard-team-invitations)}
-    [:> invitation-section* {:team team}]]])
+   [:section {:class (stl/css-case
+                      :dashboard-team-invitations true
+                      :dashboard-top-cta (>= (count (:members team)) 8))}
+    ;; TODO change the condition to when trial expired
+    (when (and (contains? cfg/flags :subscriptions) (>= (count (:members team)) 8))
+      [:> members-cta* {:banner-is-expanded true}])
+    [:> invitation-section* {:team team}]
+    ;; TODO change the condition to when trial activated
+    (when (and (contains? cfg/flags :subscriptions) (< (count (:members team)) 8))
+      [:> members-cta* {:banner-is-expanded false}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WEBHOOKS SECTION
@@ -1161,5 +1177,8 @@
        [:div {:class (stl/css :block-content)}
         document-icon
         [:span {:class (stl/css :block-text)}
-         (tr "labels.num-of-files" (i18n/c (:files stats)))]]]]]))
+         (tr "labels.num-of-files" (i18n/c (:files stats)))]]]
+
+      (when (contains? cfg/flags :subscriptions)
+        [:> team* {:is-owner (:is-owner permissions)}])]]))
 

@@ -1052,8 +1052,15 @@ msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Free"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:972
-msgid "dashboard.upgrade-plan.power-up"
+msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Power up"
+
+#: src/app/main/ui/workspace/main_menu.cljs:910
+msgid "subscription.workspace.header.menu.option.power-up"
+msgstr "Power up your plan"
+
+msgid "subscription.dashboard.team-plan"
+msgstr "Team plan"
 
 msgid "subscription.dashboard.power-up.professional.top-title"
 msgstr "Professional plan"
@@ -1092,6 +1099,36 @@ msgstr "Enjoying your trial? Unlock full access forever."
 
 msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Subscribe"
+
+msgid "subscription.dashboard.cta.professional-plan-designed"
+msgstr "The Professional plan is designed for teams of up to 8 editors (owner, admin, and editor)."
+
+msgid "subscription.dashboard.cta.trial-plan-designed"
+msgstr "The Unlimited (trial) plan is designed for teams of more than 8 editors (owner, admin, and editor)."
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
+msgstr ""
+"Get more editors, more storage, and more autosaved versions with the Unlimited or Enterprise plan. "
+"[Subscribe now.](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
+msgstr ""
+"Get more editors, more storage, and more autosaved versions with the Unlimited or Enterprise plan. Contact with the team owner: "
+"%s"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
+msgstr ""
+"Unlock full access forever. "
+"[Subscribe now.](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-full-access-member"
+msgstr ""
+"Unlock full access forever. Contact with the team owner: "
+"%s"
 
 #: src/app/main/ui/dashboard/team.cljs:909
 msgid "dashboard.webhooks.active"
@@ -4826,10 +4863,6 @@ msgstr "File"
 #: src/app/main/ui/workspace/main_menu.cljs:901
 msgid "workspace.header.menu.option.help-info"
 msgstr "Help & info"
-
-#: src/app/main/ui/workspace/main_menu.cljs:910
-msgid "workspace.header.menu.option.power-up"
-msgstr "Power up your plan"
 
 #: src/app/main/ui/workspace/main_menu.cljs:877
 msgid "workspace.header.menu.option.preferences"

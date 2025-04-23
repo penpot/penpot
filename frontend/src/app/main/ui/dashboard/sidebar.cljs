@@ -21,12 +21,13 @@
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu
+                                                 dropdown-menu-item*]]
    [app.main.ui.components.link :refer [link]]
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
-   [app.main.ui.dashboard.subscription :as subscription]
+   [app.main.ui.dashboard.subscription :refer [subscription-sidebar* menu-team-icon*]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i :refer [icon-xref]]
    [app.util.dom :as dom]
@@ -306,7 +307,10 @@
          (mf/deps on-create-clicked)
          (fn [event]
            (when (kbd/enter? event)
-             (on-create-clicked event))))]
+             (on-create-clicked event))))
+
+        ;; TODO subscription cases professional/unlimited/enterprise
+        subscription-name :unlimited]
 
     [:*
      [:> dropdown-menu-item* {:on-click    team-selected
@@ -330,8 +334,15 @@
         [:img {:src (cf/resolve-team-photo-url team-item)
                :class (stl/css :team-picture)
                :alt (:name team-item)}]
-        [:span {:class (stl/css :team-text)
-                :title (:name team-item)} (:name team-item)]
+        ;; TODO complete this condition with the case that a user belongs to a team with a subscription
+        (if (and (contains? cf/flags :subscriptions)
+                 (or (= :unlimited subscription-name) (= :enterprise subscription-name))
+                 (:is-owner (:permissions team-item)))
+          [:div  {:class (stl/css :team-text-with-icon)}
+           [:span {:class (stl/css :team-text) :title (:name team-item)} (:name team-item)]
+           [:> menu-team-icon* {:subscription-name subscription-name}]]
+          [:span {:class (stl/css :team-text)
+                  :title (:name team-item)} (:name team-item)])
         (when (= (:id team-item) (:id team))
           tick-icon)])
 
@@ -964,7 +975,7 @@
 
     [:*
      (when (contains? cf/flags :subscriptions)
-       [:> subscription/sidebar*])
+       [:> subscription-sidebar*])
 
      ;; TODO remove this block when subscriptions is full implemented
      (when (contains? cf/flags :subscriptions-old)
@@ -974,7 +985,7 @@
          [:span (tr "dashboard.upgrade-plan.penpot-free")]
          [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
         [:div {:class (stl/css :power-up)}
-         (tr "dashboard.upgrade-plan.power-up")]])
+         (tr "subscription.dashboard.upgrade-plan.power-up")]])
 
      (when (and team profile)
        [:& comments-section

@@ -1064,8 +1064,15 @@ msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Gratis"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:972
-msgid "dashboard.upgrade-plan.power-up"
+msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Mejora"
+
+#: src/app/main/ui/workspace/main_menu.cljs:910
+msgid "subscription.workspace.header.menu.option.power-up"
+msgstr "Mejora tu plan"
+
+msgid "subscription.dashboard.team-plan"
+msgstr "Plan de equipo"
 
 msgid "subscription.dashboard.power-up.professional.top-title"
 msgstr "Plan Professional"
@@ -1104,6 +1111,36 @@ msgstr "¿Disfrutas de la prueba? Desbloquea el acceso completo para siempre."
 
 msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Suscríbete"
+
+msgid "subscription.dashboard.cta.professional-plan-designed"
+msgstr "El plan Professional está diseñado para equipos de hasta 8 editores (propietario, administrador y editor)."
+
+msgid "subscription.dashboard.cta.trial-plan-designed"
+msgstr "El plan Unlimited (de prueba) está diseñado para equipos de más de 8 editores (propietario, administrador y editor)."
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
+msgstr ""
+"Consigue más editores, más almacenamiento y más versiones guardadas automáticamente con el plan Unlimited o Enterprise. "
+"[Subscribe now.](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
+msgstr ""
+"Consigue más editores, más almacenamiento y más versiones guardadas automáticamente con el plan Unlimited o Enterprise. Contacta con el propietario del equipo: "
+"%s"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
+msgstr ""
+"Desbloquea el acceso completo para siempre. "
+"[Subscribe now.](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-full-access-member"
+msgstr ""
+"Desbloquea el acceso completo para siempre. Contacta con el propietario del equipo: "
+"%s"
 
 #: src/app/main/ui/dashboard/team.cljs:909
 msgid "dashboard.webhooks.active"
@@ -4852,10 +4889,6 @@ msgstr "Archivo"
 #: src/app/main/ui/workspace/main_menu.cljs:901
 msgid "workspace.header.menu.option.help-info"
 msgstr "Ayuda e información"
-
-#: src/app/main/ui/workspace/main_menu.cljs:910
-msgid "workspace.header.menu.option.power-up"
-msgstr "Mejora tu plan"
 
 #: src/app/main/ui/workspace/main_menu.cljs:877
 msgid "workspace.header.menu.option.preferences"
