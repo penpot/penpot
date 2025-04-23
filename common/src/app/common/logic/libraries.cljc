@@ -30,6 +30,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.token :as cto]
    [app.common.types.typography :as cty]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [clojure.spec.alpha :as s]))
@@ -144,7 +145,6 @@
                           :update-new-shape update-new-shape
                           :update-original-shape update-original-shape
                           :force-id force-id)
-
         remap-frame
         (fn [shape]
               ; Remap all frame-ids internal to the component to the new shapes
@@ -174,18 +174,20 @@
 
 (defn generate-duplicate-component
   "Create a new component copied from the one with the given id."
-  [changes library component-id new-component-id & {:keys [new-shape-id apply-changes-local-library? delta new-variant-id]}]
+  [changes library component-id new-component-id & {:keys [new-shape-id apply-changes-local-library? delta new-variant-id page-id]}]
   (let [component          (ctkl/get-component (:data library) component-id)
         new-name           (:name component)
 
         main-instance-page (ctf/get-component-page (:data library) component)
+        ;; Since variants, we can duplicate a component into another page
+        target-page-id     (or page-id (:id main-instance-page))
 
         [new-main-instance-shape new-main-instance-shapes]
         (duplicate-component component new-component-id (:data library) new-shape-id delta new-variant-id)]
 
     [new-main-instance-shape
      (-> changes
-         (pcb/with-page main-instance-page)
+         (pcb/with-page-id target-page-id)
          (pcb/with-objects (:objects main-instance-page))
          (pcb/add-objects new-main-instance-shapes {:ignore-touched true})
          (pcb/add-component new-component-id
@@ -193,7 +195,7 @@
                             new-name
                             []
                             (:id new-main-instance-shape)
-                            (:id main-instance-page)
+                            target-page-id
                             (:annotation component)
                             (or new-variant-id (:variant-id component))
                             (:variant-properties component)
@@ -2130,7 +2132,7 @@
             frames)))
 
 (defn- duplicate-variant
-  [changes library component base-pos parent-id]
+  [changes library component base-pos parent-id page-id]
   (let [component-page   (ctpl/get-page (:data library) (:main-instance-page component))
         component-shape  (dm/get-in component-page [:objects (:main-instance-id component)])
         orig-pos         (gpt/point (:x component-shape) (:y component-shape))
@@ -2138,11 +2140,12 @@
         new-component-id (uuid/next)
         [shape changes]  (generate-duplicate-component changes
                                                        library
-                                                       (:component-id component-shape)
+                                                       (:id component)
                                                        new-component-id
                                                        {:apply-changes-local-library? true
                                                         :delta delta
-                                                        :new-variant-id parent-id})]
+                                                        :new-variant-id parent-id
+                                                        :page-id page-id})]
     [shape
      (-> changes
          (pcb/change-parent parent-id [shape]))]))
@@ -2182,7 +2185,8 @@
                                (get libraries file-id)
                                component
                                pos
-                               parent-id)
+                               parent-id
+                               (:id page))
 
             (generate-instantiate-component changes
                                             objects
@@ -2283,8 +2287,9 @@
                (cond-> (ctk/is-variant-container? parent)
                  (assoc :variant-id parent-id))
 
-               (cond-> (not (ctk/is-variant-container? parent))
-                 (dissoc :variant-id)))
+               (cond-> (and (ctk/is-variant? obj) (not (ctk/is-variant-container? parent)))
+                 (-> (assoc :name (ctv/variant-name-to-name obj))
+                     (dissoc :variant-id))))
 
            new-obj (cond-> new-obj
                      (not duplicating-component?)
