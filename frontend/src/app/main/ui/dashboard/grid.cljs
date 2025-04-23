@@ -58,8 +58,7 @@
   [file-id revn]
   (->> (wrk/ask! {:cmd :thumbnails/generate-for-file
                   :revn revn
-                  :file-id file-id
-                  :features (get @st/state :features)})
+                  :file-id file-id})
        (rx/mapcat (fn [{:keys [fonts] :as result}]
                     (->> (fonts/render-font-styles fonts)
                          (rx/map (fn [styles]
