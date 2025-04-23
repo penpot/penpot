@@ -238,6 +238,7 @@
       (db/update! conn :file
                   {:data (blob/encode (:data file))
                    :version (:version file)
+                   :modified-at (dt/now)
                    :features (db/create-array conn "text" (:features file))}
                   {:id id})
 
