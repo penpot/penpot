@@ -273,3 +273,9 @@
      xform
      +
      (map vector props1 props2))))
+
+(defn variant-name-to-name
+  "Transforms a variant-name (its properties values) into a standard name:
+   the real name of the shape joined by the properties values separated by '/'"
+  [variant]
+  (cfh/merge-path-item (:name variant) (str/replace (:variant-name variant) #", " " / ")))
