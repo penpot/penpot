@@ -15,6 +15,7 @@
    [app.common.geom.shapes.corners :as gso]
    [app.common.types.path.bool :as bool]
    [app.common.types.path.helpers :as helpers]
+   [app.common.types.path.impl :as path.impl]
    [app.common.types.path.segment :as segm]
    [app.common.types.shape.radius :as ctsr]))
 
@@ -212,6 +213,9 @@
             (if (= type :circle)
               (circle->path shape)
               (rect->path shape))
+
+            content
+            (path.impl/from-plain content)
 
             ;; Apply the transforms that had the shape
             transform
