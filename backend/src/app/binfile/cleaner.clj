@@ -70,13 +70,25 @@
         (cts/setup-shape))
     shape))
 
+(defn- fix-legacy-flex-dir
+  "This operation is only relevant to old data and it is fixed just
+  for convenience."
+  [shape]
+  (d/update-when shape :layout-flex-dir
+                 (fn [dir]
+                   (case dir
+                     :reverse-row :row-reverse
+                     :reverse-column :column-reverse
+                     dir))))
+
 (defn clean-shape-post-decode
   "A shape procesor that expected to be executed after schema decoding
   process but before validation."
   [shape]
   (-> shape
       (fix-shape-shadow-color)
-      (fix-root-shape)))
+      (fix-root-shape)
+      (fix-legacy-flex-dir)))
 
 (defn clean-file
   [file & {:as _opts}]
