@@ -180,8 +180,7 @@
 (def ^:private
   schema:get-file-data-for-thumbnail
   [:map {:title "get-file-data-for-thumbnail"}
-   [:file-id ::sm/uuid]
-   [:features {:optional true} ::cfeat/features]])
+   [:file-id ::sm/uuid]])
 
 (def ^:private
   schema:partial-file
@@ -211,7 +210,6 @@
                                       (fmg/migrate-file)))]
 
                    (-> (cfeat/get-team-enabled-features cf/flags team)
-                       (cfeat/check-client-features! (:features params))
                        (cfeat/check-file-features! (:features file)))
 
                    {:file-id file-id

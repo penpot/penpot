@@ -28,6 +28,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.shadow :as ctss]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
@@ -847,9 +848,6 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(def ^:private valid-shadow?
-  (sm/lazy-validator ::ctss/shadow))
-
 (defmethod migrate-data "legacy-44"
   [data _]
   (letfn [(fix-shadow [shadow]
@@ -861,7 +859,7 @@
 
           (update-object [object]
             (let [xform (comp (map fix-shadow)
-                              (filter valid-shadow?))]
+                              (filter ctss/valid-shadow?))]
               (d/update-when object :shadow #(into [] xform %))))
 
           (update-container [container]
@@ -1036,7 +1034,7 @@
 
           (update-shape [shape]
             (let [xform (comp (map fix-shadow)
-                              (filter valid-shadow?))]
+                              (filter ctss/valid-shadow?))]
               (d/update-when shape :shadow #(into [] xform %))))
 
           (update-container [container]
@@ -1207,11 +1205,11 @@
               object))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (update :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-67"
   [data _]
@@ -1222,8 +1220,8 @@
             (d/update-when container :objects update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (update :components d/update-vals update-container))))
 
 (defmethod migrate-data "0001-remove-tokens-from-groups"
   [data _]
@@ -1237,8 +1235,33 @@
               (dissoc :applied-tokens)))
 
           (update-page [page]
-            (d/update-when page :objects update-vals update-object))]
-    (update data :pages-index update-vals update-page)))
+            (d/update-when page :objects d/update-vals update-object))]
+
+    (update data :pages-index d/update-vals update-page)))
+
+(defmethod migrate-data "0002-clean-shape-interactions"
+  [data _]
+  (let [decode-fn   (sm/decoder ctsi/schema:interaction sm/json-transformer)
+        validate-fn (sm/validator ctsi/schema:interaction)
+
+        xform
+        (comp
+         (map decode-fn)
+         (filter validate-fn))
+
+        update-object
+        (fn [object]
+          (d/update-when object :interactions
+                         (fn [interactions]
+                           (into [] xform interactions))))
+
+        update-container
+        (fn [container]
+          (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (update :components d/update-vals update-container))))
 
 (def available-migrations
   (into (d/ordered-set)
@@ -1294,4 +1317,5 @@
          "legacy-65"
          "legacy-66"
          "legacy-67"
-         "0001-remove-tokens-from-groups"]))
+         "0001-remove-tokens-from-groups"
+         "0002-clean-shape-interactions"]))

@@ -8,6 +8,7 @@
   "A ZIP based binary file exportation"
   (:refer-clojure :exclude [read])
   (:require
+   [app.binfile.cleaner :as bfl]
    [app.binfile.common :as bfc]
    [app.binfile.migrations :as bfm]
    [app.common.data :as d]
@@ -594,16 +595,25 @@
 
 (defn- read-file-components
   [{:keys [::bfc/input ::file-id ::entries]}]
-  (->> (keep (match-component-entry-fn file-id) entries)
-       (reduce (fn [result {:keys [id entry]}]
-                 (let [object (->> (read-entry input entry)
-                                   (decode-component)
-                                   (validate-component))]
-                   (if (= id (:id object))
-                     (assoc result id object)
-                     result)))
-               {})
-       (not-empty)))
+  (let [clean-component-post-decode
+        (fn [component]
+          (d/update-when component :objects
+                         (fn [objects]
+                           (reduce-kv (fn [objects id shape]
+                                        (assoc objects id (bfl/clean-shape-post-decode shape)))
+                                      objects
+                                      objects))))]
+    (->> (keep (match-component-entry-fn file-id) entries)
+         (reduce (fn [result {:keys [id entry]}]
+                   (let [object (->> (read-entry input entry)
+                                     (decode-component)
+                                     (clean-component-post-decode)
+                                     (validate-component))]
+                     (if (= id (:id object))
+                       (assoc result id object)
+                       result)))
+                 {})
+         (not-empty))))
 
 (defn- read-file-typographies
   [{:keys [::bfc/input ::file-id ::entries]}]
@@ -631,7 +641,9 @@
        (reduce (fn [result {:keys [id entry]}]
                  (let [object (->> (read-entry input entry)
                                    (decode-shape)
+                                   (bfl/clean-shape-post-decode)
                                    (validate-shape))]
+
                    (if (= id (:id object))
                      (assoc result id object)
                      result)))
