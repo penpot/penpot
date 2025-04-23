@@ -26,8 +26,6 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
-   [app.common.types.token :as cto]
-   [app.common.types.token-theme :as ctot]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as ctt]
@@ -408,7 +406,7 @@
       [:type [:= :set-token-theme]]
       [:theme-name :string]
       [:group :string]
-      [:theme [:maybe ::ctot/token-theme]]]]
+      [:theme [:maybe ctob/schema:token-theme-attrs]]]]
 
     [:set-tokens-lib
      [:map {:title "SetTokensLib"}
@@ -420,14 +418,14 @@
       [:type [:= :set-token-set]]
       [:set-name :string]
       [:group? :boolean]
-      [:token-set [:maybe ::ctot/token-set]]]]
+      [:token-set [:maybe ctob/schema:token-set-attrs]]]]
 
     [:set-token
      [:map {:title "SetTokenChange"}
       [:type [:= :set-token]]
       [:set-name :string]
       [:token-name :string]
-      [:token [:maybe ::cto/token]]]]]])
+      [:token [:maybe ctob/schema:token-attrs]]]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])

@@ -53,7 +53,7 @@
               {
                 "~#penpot/token-set": {
                   "~:name": "core",
-                  "~:description": null,
+                  "~:description": "",
                   "~:modified-at": "~m1737542498283",
                   "~:tokens": {
                     "~#ordered-map": [
@@ -64,7 +64,7 @@
                             "~:name": "colors.red.600",
                             "~:type": "~:color",
                             "~:value": "#e53e3e",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -76,7 +76,7 @@
                             "~:name": "colors.white",
                             "~:type": "~:color",
                             "~:value": "#ffffff",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -88,7 +88,7 @@
                             "~:name": "colors.pink.400",
                             "~:type": "~:color",
                             "~:value": "#f687b3",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -100,7 +100,7 @@
                             "~:name": "colors.blue.300",
                             "~:type": "~:color",
                             "~:value": "#90cdf4",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -112,7 +112,7 @@
                             "~:name": "colors.red.700",
                             "~:type": "~:color",
                             "~:value": "#c53030",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -124,7 +124,7 @@
                             "~:name": "colors.pink.800",
                             "~:type": "~:color",
                             "~:value": "#97266d",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -136,7 +136,7 @@
                             "~:name": "colors.green.100",
                             "~:type": "~:color",
                             "~:value": "#f0fff4",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -148,7 +148,7 @@
                             "~:name": "colors.blue.100",
                             "~:type": "~:color",
                             "~:value": "#ebf8ff",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -160,7 +160,7 @@
                             "~:name": "colors.green.800",
                             "~:type": "~:color",
                             "~:value": "#276749",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498280"
                           }
                         }
@@ -172,7 +172,7 @@
                             "~:name": "colors.indigo.500",
                             "~:type": "~:color",
                             "~:value": "#667eea",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -184,7 +184,7 @@
                             "~:name": "dimension.sm",
                             "~:type": "~:dimensions",
                             "~:value": "{dimension.xs} * {dimension.scale}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498276"
                           }
                         }
@@ -196,7 +196,7 @@
                             "~:name": "colors.purple.900",
                             "~:type": "~:color",
                             "~:value": "#44337a",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -208,7 +208,7 @@
                             "~:name": "colors.orange.200",
                             "~:type": "~:color",
                             "~:value": "#feebc8",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -220,7 +220,7 @@
                             "~:name": "colors.teal.700",
                             "~:type": "~:color",
                             "~:value": "#2c7a7b",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -232,7 +232,7 @@
                             "~:name": "colors.green.300",
                             "~:type": "~:color",
                             "~:value": "#9ae6b4",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -244,7 +244,7 @@
                             "~:name": "colors.pink.600",
                             "~:type": "~:color",
                             "~:value": "#d53f8c",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -256,7 +256,7 @@
                             "~:name": "colors.yellow.200",
                             "~:type": "~:color",
                             "~:value": "#fefcbf",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -268,7 +268,7 @@
                             "~:name": "colors.yellow.800",
                             "~:type": "~:color",
                             "~:value": "#975a16",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -280,7 +280,7 @@
                             "~:name": "colors.teal.200",
                             "~:type": "~:color",
                             "~:value": "#b2f5ea",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -292,7 +292,7 @@
                             "~:name": "colors.teal.500",
                             "~:type": "~:color",
                             "~:value": "#38b2ac",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -304,7 +304,7 @@
                             "~:name": "colors.blue.200",
                             "~:type": "~:color",
                             "~:value": "#bee3f8",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -316,7 +316,7 @@
                             "~:name": "colors.green.600",
                             "~:type": "~:color",
                             "~:value": "#38a169",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -328,7 +328,7 @@
                             "~:name": "colors.indigo.400",
                             "~:type": "~:color",
                             "~:value": "#7f9cf5",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -340,7 +340,7 @@
                             "~:name": "colors.purple.600",
                             "~:type": "~:color",
                             "~:value": "#805ad5",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -352,7 +352,7 @@
                             "~:name": "colors.purple.400",
                             "~:type": "~:color",
                             "~:value": "#b794f4",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -364,7 +364,7 @@
                             "~:name": "colors.indigo.900",
                             "~:type": "~:color",
                             "~:value": "#3c366b",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -376,7 +376,7 @@
                             "~:name": "spacing.lg",
                             "~:type": "~:spacing",
                             "~:value": "{dimension.lg}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -388,7 +388,7 @@
                             "~:name": "colors.purple.300",
                             "~:type": "~:color",
                             "~:value": "#d6bcfa",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -400,7 +400,7 @@
                             "~:name": "colors.yellow.500",
                             "~:type": "~:color",
                             "~:value": "#ecc94b",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -412,7 +412,7 @@
                             "~:name": "opacity.md",
                             "~:type": "~:opacity",
                             "~:value": "50%",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498283"
                           }
                         }
@@ -424,7 +424,7 @@
                             "~:name": "colors.purple.800",
                             "~:type": "~:color",
                             "~:value": "#553c9a",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -436,7 +436,7 @@
                             "~:name": "colors.yellow.900",
                             "~:type": "~:color",
                             "~:value": "#744210",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -448,7 +448,7 @@
                             "~:name": "dimension.xl",
                             "~:type": "~:dimensions",
                             "~:value": "{dimension.lg} * {dimension.scale}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498276"
                           }
                         }
@@ -460,7 +460,7 @@
                             "~:name": "colors.yellow.700",
                             "~:type": "~:color",
                             "~:value": "#b7791f",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -472,7 +472,7 @@
                             "~:name": "colors.green.900",
                             "~:type": "~:color",
                             "~:value": "#22543d",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498280"
                           }
                         }
@@ -484,7 +484,7 @@
                             "~:name": "spacing.md",
                             "~:type": "~:spacing",
                             "~:value": "{dimension.md}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -496,7 +496,7 @@
                             "~:name": "colors.red.200",
                             "~:type": "~:color",
                             "~:value": "#fed7d7",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -508,7 +508,7 @@
                             "~:name": "colors.orange.600",
                             "~:type": "~:color",
                             "~:value": "#dd6b20",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -520,7 +520,7 @@
                             "~:name": "dimension.scale",
                             "~:type": "~:dimensions",
                             "~:value": "2",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498276"
                           }
                         }
@@ -532,7 +532,7 @@
                             "~:name": "colors.red.800",
                             "~:type": "~:color",
                             "~:value": "#9b2c2c",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -544,7 +544,7 @@
                             "~:name": "colors.red.300",
                             "~:type": "~:color",
                             "~:value": "#feb2b2",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -556,7 +556,7 @@
                             "~:name": "dimension.md",
                             "~:type": "~:dimensions",
                             "~:value": "{dimension.sm} * {dimension.scale}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498276"
                           }
                         }
@@ -568,7 +568,7 @@
                             "~:name": "colors.gray.600",
                             "~:type": "~:color",
                             "~:value": "#718096",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -580,7 +580,7 @@
                             "~:name": "colors.pink.100",
                             "~:type": "~:color",
                             "~:value": "#fff5f7",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -592,7 +592,7 @@
                             "~:name": "colors.yellow.300",
                             "~:type": "~:color",
                             "~:value": "#faf089",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -604,7 +604,7 @@
                             "~:name": "colors.orange.800",
                             "~:type": "~:color",
                             "~:value": "#9c4221",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -616,7 +616,7 @@
                             "~:name": "colors.indigo.700",
                             "~:type": "~:color",
                             "~:value": "#4c51bf",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -628,7 +628,7 @@
                             "~:name": "colors.yellow.400",
                             "~:type": "~:color",
                             "~:value": "#f6e05e",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -640,7 +640,7 @@
                             "~:name": "opacity.low",
                             "~:type": "~:opacity",
                             "~:value": "10%",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498283"
                           }
                         }
@@ -652,7 +652,7 @@
                             "~:name": "colors.indigo.200",
                             "~:type": "~:color",
                             "~:value": "#c3dafe",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -664,7 +664,7 @@
                             "~:name": "colors.blue.900",
                             "~:type": "~:color",
                             "~:value": "#2a4365",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -676,7 +676,7 @@
                             "~:name": "colors.gray.500",
                             "~:type": "~:color",
                             "~:value": "#a0aec0",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -688,7 +688,7 @@
                             "~:name": "colors.red.400",
                             "~:type": "~:color",
                             "~:value": "#fc8181",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -700,7 +700,7 @@
                             "~:name": "colors.teal.800",
                             "~:type": "~:color",
                             "~:value": "#285e61",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -712,7 +712,7 @@
                             "~:name": "colors.gray.300",
                             "~:type": "~:color",
                             "~:value": "#e2e8f0",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -724,7 +724,7 @@
                             "~:name": "colors.teal.600",
                             "~:type": "~:color",
                             "~:value": "#319795",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -736,7 +736,7 @@
                             "~:name": "colors.red.500",
                             "~:type": "~:color",
                             "~:value": "#f56565",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -748,7 +748,7 @@
                             "~:name": "colors.teal.400",
                             "~:type": "~:color",
                             "~:value": "#4fd1c5",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -760,7 +760,7 @@
                             "~:name": "borderRadius.lg",
                             "~:type": "~:border-radius",
                             "~:value": "8",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -772,7 +772,7 @@
                             "~:name": "colors.gray.200",
                             "~:type": "~:color",
                             "~:value": "#edf2f7",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -784,7 +784,7 @@
                             "~:name": "colors.red.900",
                             "~:type": "~:color",
                             "~:value": "#742a2a",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -796,7 +796,7 @@
                             "~:name": "colors.gray.900",
                             "~:type": "~:color",
                             "~:value": "#1a202c",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -808,7 +808,7 @@
                             "~:name": "colors.pink.700",
                             "~:type": "~:color",
                             "~:value": "#b83280",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -820,7 +820,7 @@
                             "~:name": "colors.green.200",
                             "~:type": "~:color",
                             "~:value": "#c6f6d5",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -832,7 +832,7 @@
                             "~:name": "colors.pink.500",
                             "~:type": "~:color",
                             "~:value": "#ed64a6",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -844,7 +844,7 @@
                             "~:name": "colors.yellow.600",
                             "~:type": "~:color",
                             "~:value": "#d69e2e",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -856,7 +856,7 @@
                             "~:name": "colors.orange.700",
                             "~:type": "~:color",
                             "~:value": "#c05621",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -868,7 +868,7 @@
                             "~:name": "colors.teal.100",
                             "~:type": "~:color",
                             "~:value": "#e6fffa",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498280"
                           }
                         }
@@ -880,7 +880,7 @@
                             "~:name": "colors.gray.800",
                             "~:type": "~:color",
                             "~:value": "#2d3748",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -892,7 +892,7 @@
                             "~:name": "colors.orange.300",
                             "~:type": "~:color",
                             "~:value": "#fbd38d",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -904,7 +904,7 @@
                             "~:name": "colors.orange.100",
                             "~:type": "~:color",
                             "~:value": "#fffaf0",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -916,7 +916,7 @@
                             "~:name": "colors.purple.700",
                             "~:type": "~:color",
                             "~:value": "#6b46c1",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -928,7 +928,7 @@
                             "~:name": "dimension.lg",
                             "~:type": "~:dimensions",
                             "~:value": "{dimension.md} * {dimension.scale}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498276"
                           }
                         }
@@ -940,7 +940,7 @@
                             "~:name": "colors.gray.400",
                             "~:type": "~:color",
                             "~:value": "#cbd5e0",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -952,7 +952,7 @@
                             "~:name": "colors.indigo.100",
                             "~:type": "~:color",
                             "~:value": "#ebf4ff",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -964,7 +964,7 @@
                             "~:name": "colors.green.500",
                             "~:type": "~:color",
                             "~:value": "#48bb78",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -976,7 +976,7 @@
                             "~:name": "colors.pink.300",
                             "~:type": "~:color",
                             "~:value": "#fbb6ce",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -988,7 +988,7 @@
                             "~:name": "colors.pink.900",
                             "~:type": "~:color",
                             "~:value": "#702459",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -1000,7 +1000,7 @@
                             "~:name": "colors.purple.200",
                             "~:type": "~:color",
                             "~:value": "#e9d8fd",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -1012,7 +1012,7 @@
                             "~:name": "colors.purple.500",
                             "~:type": "~:color",
                             "~:value": "#9f7aea",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -1024,7 +1024,7 @@
                             "~:name": "colors.green.700",
                             "~:type": "~:color",
                             "~:value": "#2f855a",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -1036,7 +1036,7 @@
                             "~:name": "colors.indigo.800",
                             "~:type": "~:color",
                             "~:value": "#434190",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -1048,7 +1048,7 @@
                             "~:name": "colors.blue.700",
                             "~:type": "~:color",
                             "~:value": "#2b6cb0",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -1060,7 +1060,7 @@
                             "~:name": "borderRadius.sm",
                             "~:type": "~:border-radius",
                             "~:value": "4",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -1072,7 +1072,7 @@
                             "~:name": "colors.black",
                             "~:type": "~:color",
                             "~:value": "#000000",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -1084,7 +1084,7 @@
                             "~:name": "opacity.high",
                             "~:type": "~:opacity",
                             "~:value": "90%",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498283"
                           }
                         }
@@ -1096,7 +1096,7 @@
                             "~:name": "colors.blue.800",
                             "~:type": "~:color",
                             "~:value": "#2c5282",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -1108,7 +1108,7 @@
                             "~:name": "colors.orange.400",
                             "~:type": "~:color",
                             "~:value": "#f6ad55",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -1120,7 +1120,7 @@
                             "~:name": "colors.pink.200",
                             "~:type": "~:color",
                             "~:value": "#fed7e2",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -1132,7 +1132,7 @@
                             "~:name": "colors.gray.100",
                             "~:type": "~:color",
                             "~:value": "#f7fafc",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -1144,7 +1144,7 @@
                             "~:name": "spacing.xl",
                             "~:type": "~:spacing",
                             "~:value": "{dimension.xl}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -1156,7 +1156,7 @@
                             "~:name": "dimension.xs",
                             "~:type": "~:dimensions",
                             "~:value": "4",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498276"
                           }
                         }
@@ -1168,7 +1168,7 @@
                             "~:name": "colors.teal.900",
                             "~:type": "~:color",
                             "~:value": "#234e52",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -1180,7 +1180,7 @@
                             "~:name": "colors.teal.300",
                             "~:type": "~:color",
                             "~:value": "#81e6d9",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -1192,7 +1192,7 @@
                             "~:name": "colors.blue.500",
                             "~:type": "~:color",
                             "~:value": "#4299e1",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -1204,7 +1204,7 @@
                             "~:name": "borderRadius.xl",
                             "~:type": "~:border-radius",
                             "~:value": "16",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -1216,7 +1216,7 @@
                             "~:name": "colors.green.400",
                             "~:type": "~:color",
                             "~:value": "#68d391",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -1228,7 +1228,7 @@
                             "~:name": "colors.indigo.300",
                             "~:type": "~:color",
                             "~:value": "#a3bffa",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -1240,7 +1240,7 @@
                             "~:name": "colors.red.100",
                             "~:type": "~:color",
                             "~:value": "#fff5f5",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -1252,7 +1252,7 @@
                             "~:name": "colors.orange.900",
                             "~:type": "~:color",
                             "~:value": "#7b341e",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -1264,7 +1264,7 @@
                             "~:name": "colors.purple.100",
                             "~:type": "~:color",
                             "~:value": "#faf5ff",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -1276,7 +1276,7 @@
                             "~:name": "spacing.xs",
                             "~:type": "~:spacing",
                             "~:value": "{dimension.xs}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498276"
                           }
                         }
@@ -1288,7 +1288,7 @@
                             "~:name": "colors.indigo.600",
                             "~:type": "~:color",
                             "~:value": "#5a67d8",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498282"
                           }
                         }
@@ -1300,7 +1300,7 @@
                             "~:name": "colors.gray.700",
                             "~:type": "~:color",
                             "~:value": "#4a5568",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -1312,7 +1312,7 @@
                             "~:name": "colors.blue.400",
                             "~:type": "~:color",
                             "~:value": "#63b3ed",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -1324,7 +1324,7 @@
                             "~:name": "spacing.sm",
                             "~:type": "~:spacing",
                             "~:value": "{dimension.sm}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498277"
                           }
                         }
@@ -1336,7 +1336,7 @@
                             "~:name": "colors.orange.500",
                             "~:type": "~:color",
                             "~:value": "#ed8936",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498278"
                           }
                         }
@@ -1348,7 +1348,7 @@
                             "~:name": "colors.yellow.100",
                             "~:type": "~:color",
                             "~:value": "#fffff0",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498279"
                           }
                         }
@@ -1360,7 +1360,7 @@
                             "~:name": "colors.blue.600",
                             "~:type": "~:color",
                             "~:value": "#3182ce",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498281"
                           }
                         }
@@ -1379,7 +1379,7 @@
                     {
                       "~#penpot/token-set": {
                         "~:name": "LightDark/light",
-                        "~:description": null,
+                        "~:description": "",
                         "~:modified-at": "~m1737542498290",
                         "~:tokens": {
                           "~#ordered-map": [
@@ -1390,7 +1390,7 @@
                                   "~:name": "accent.default",
                                   "~:type": "~:color",
                                   "~:value": "{colors.indigo.400}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498290"
                                 }
                               }
@@ -1402,7 +1402,7 @@
                                   "~:name": "bg.muted",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.100}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498290"
                                 }
                               }
@@ -1414,7 +1414,7 @@
                                   "~:name": "bg.subtle",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.200}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498290"
                                 }
                               }
@@ -1426,7 +1426,7 @@
                                   "~:name": "accent.bg",
                                   "~:type": "~:color",
                                   "~:value": "{colors.indigo.200}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498290"
                                 }
                               }
@@ -1438,7 +1438,7 @@
                                   "~:name": "accent.onAccent",
                                   "~:type": "~:color",
                                   "~:value": "{colors.white}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498290"
                                 }
                               }
@@ -1450,7 +1450,7 @@
                                   "~:name": "shadows.default",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.900}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498290"
                                 }
                               }
@@ -1462,7 +1462,7 @@
                                   "~:name": "fg.muted",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.700}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498289"
                                 }
                               }
@@ -1474,7 +1474,7 @@
                                   "~:name": "fg.default",
                                   "~:type": "~:color",
                                   "~:value": "{colors.black}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498289"
                                 }
                               }
@@ -1486,7 +1486,7 @@
                                   "~:name": "fg.subtle",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.500}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498290"
                                 }
                               }
@@ -1498,7 +1498,7 @@
                                   "~:name": "bg.default",
                                   "~:type": "~:color",
                                   "~:value": "{colors.white}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498290"
                                 }
                               }
@@ -1514,7 +1514,7 @@
                     {
                       "~#penpot/token-set": {
                         "~:name": "LightDark/dark",
-                        "~:description": null,
+                        "~:description": "",
                         "~:modified-at": "~m1737542498291",
                         "~:tokens": {
                           "~#ordered-map": [
@@ -1525,7 +1525,7 @@
                                   "~:name": "accent.default",
                                   "~:type": "~:color",
                                   "~:value": "{colors.indigo.600}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498291"
                                 }
                               }
@@ -1537,7 +1537,7 @@
                                   "~:name": "bg.muted",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.700}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498291"
                                 }
                               }
@@ -1549,7 +1549,7 @@
                                   "~:name": "bg.subtle",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.600}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498291"
                                 }
                               }
@@ -1561,7 +1561,7 @@
                                   "~:name": "accent.bg",
                                   "~:type": "~:color",
                                   "~:value": "{colors.indigo.800}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498291"
                                 }
                               }
@@ -1573,7 +1573,7 @@
                                   "~:name": "accent.onAccent",
                                   "~:type": "~:color",
                                   "~:value": "{colors.white}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498291"
                                 }
                               }
@@ -1585,7 +1585,7 @@
                                   "~:name": "shadows.default",
                                   "~:type": "~:color",
                                   "~:value": "rgba({colors.black}, 0.3)",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498291"
                                 }
                               }
@@ -1597,7 +1597,7 @@
                                   "~:name": "fg.muted",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.300}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498291"
                                 }
                               }
@@ -1609,7 +1609,7 @@
                                   "~:name": "fg.default",
                                   "~:type": "~:color",
                                   "~:value": "{colors.white}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498291"
                                 }
                               }
@@ -1621,7 +1621,7 @@
                                   "~:name": "fg.subtle",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.500}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498291"
                                 }
                               }
@@ -1633,7 +1633,7 @@
                                   "~:name": "bg.default",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.900}",
-                                  "~:description": null,
+                                  "~:description": "",
                                   "~:modified-at": "~m1737542498291"
                                 }
                               }
@@ -1651,7 +1651,7 @@
               {
                 "~#penpot/token-set": {
                   "~:name": "theme",
-                  "~:description": null,
+                  "~:description": "",
                   "~:modified-at": "~m1737542498292",
                   "~:tokens": {
                     "~#ordered-map": [
@@ -1662,7 +1662,7 @@
                             "~:name": "button.primary.background",
                             "~:type": "~:color",
                             "~:value": "{accent.default}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498292"
                           }
                         }
@@ -1674,7 +1674,7 @@
                             "~:name": "button.primary.text",
                             "~:type": "~:color",
                             "~:value": "{accent.onAccent}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498292"
                           }
                         }
@@ -1686,7 +1686,7 @@
                             "~:name": "button.borderRadius",
                             "~:type": "~:border-radius",
                             "~:value": "{borderRadius.lg}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498292"
                           }
                         }
@@ -1698,7 +1698,7 @@
                             "~:name": "card.borderRadius",
                             "~:type": "~:border-radius",
                             "~:value": "{borderRadius.lg}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498292"
                           }
                         }
@@ -1710,7 +1710,7 @@
                             "~:name": "card.background",
                             "~:type": "~:color",
                             "~:value": "{bg.default}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498292"
                           }
                         }
@@ -1722,7 +1722,7 @@
                             "~:name": "card.padding",
                             "~:type": "~:dimensions",
                             "~:value": "{dimension.md}",
-                            "~:description": null,
+                            "~:description": "",
                             "~:modified-at": "~m1737542498292"
                           }
                         }
@@ -1746,7 +1746,7 @@
                       "~#penpot/token-theme": {
                         "~:name": "Light",
                         "~:group": "Core",
-                        "~:description": null,
+                        "~:description": "",
                         "~:is-source": false,
                         "~:id": "core-light",
                         "~:modified-at": "~m1737542746842",
@@ -1762,7 +1762,7 @@
                       "~#penpot/token-theme": {
                         "~:name": "Dark",
                         "~:group": "Core",
-                        "~:description": null,
+                        "~:description": "",
                         "~:is-source": false,
                         "~:id": "core-dark",
                         "~:modified-at": "~m1737542746842",
@@ -1785,7 +1785,7 @@
                       "~#penpot/token-theme": {
                         "~:name": "__PENPOT__HIDDEN__TOKEN__THEME__",
                         "~:group": "",
-                        "~:description": null,
+                        "~:description": "",
                         "~:is-source": false,
                         "~:id": "hidden-theme",
                         "~:modified-at": "~m1737542683555",

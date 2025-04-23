@@ -113,6 +113,10 @@
   [schema]
   (mu/optional-keys schema default-options))
 
+(defn required-keys
+  [schema]
+  (mu/required-keys schema default-options))
+
 (defn transformer
   [& transformers]
   (apply mt/transformer transformers))
@@ -145,11 +149,30 @@
 ;;     :else
 ;;     o))
 
+(defn -transform-map-keys
+  ([f]
+   (let [xform (map (fn [[k v]] [(f k) v]))]
+     #(cond->> % (map? %) (into (empty %) xform))))
+  ([ks f]
+   (let [xform (map (fn [[k v]] [(cond-> k (contains? ks k) f) v]))]
+     #(cond->> % (map? %) (into (empty %) xform)))))
+
 (defn json-transformer
   []
-  (mt/transformer
-   (mt/json-transformer)
-   (mt/collection-transformer)))
+  (let [map-of-key-decoders (mt/-string-decoders)]
+    (mt/transformer
+     {:name :json
+      :decoders (-> (mt/-json-decoders)
+                    (assoc :map-of {:compile (fn [schema _]
+                                               (let [key-schema (some-> schema (m/children) (first))]
+                                                 (or (some-> key-schema (m/type) map-of-key-decoders
+                                                             (mt/-interceptor schema {}) (m/-intercepting)
+                                                             (m/-comp m/-keyword->string)
+                                                             (mt/-transform-if-valid key-schema)
+                                                             (-transform-map-keys))
+                                                     (-transform-map-keys m/-keyword->string))))}))
+      :encoders (mt/-json-encoders)}
+     (mt/collection-transformer))))
 
 (defn string-transformer
   []
@@ -874,7 +897,7 @@
   {:title "inst"
    :description "Satisfies Inst protocol"
    :error/message "should be an instant"
-   :gen/gen (->> (sg/small-int)
+   :gen/gen (->> (sg/small-int :min 0 :max 100000)
                  (sg/fmap (fn [v] (tm/parse-instant v))))
 
    :decode/string tm/parse-instant

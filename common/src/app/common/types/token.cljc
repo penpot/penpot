@@ -66,16 +66,6 @@
   [n]
   (string? n))
 
-;; TODO Move this to tokens-lib
-(sm/register!
- ^{::sm/type ::token}
- [:map {:title "Token"}
-  [:name token-name-ref]
-  [:type [::sm/one-of token-types]]
-  [:value :any]
-  [:description {:optional true} [:maybe :string]]
-  [:modified-at {:optional true} ::sm/inst]])
-
 (sm/register!
  ^{::sm/type ::color}
  [:map
