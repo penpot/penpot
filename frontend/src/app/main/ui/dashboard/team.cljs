@@ -1117,10 +1117,6 @@
      [:& header {:section :dashboard-team-settings :team team}]
      [:section {:class (stl/css :dashboard-team-settings)}
       [:div {:class (stl/css :block :info-block)}
-       [:div {:class (stl/css :block-label)}
-        (tr "dashboard.team-info")]
-       [:div {:class (stl/css :block-text)}
-        (:name team)]
        [:div {:class (stl/css :team-icon)}
         (when can-edit
           [:button {:class (stl/css :update-overlay)
@@ -1132,7 +1128,11 @@
           [:& file-uploader {:accept "image/jpeg,image/png"
                              :multi false
                              :ref finput
-                             :on-selected on-file-selected}])]]
+                             :on-selected on-file-selected}])]
+       [:div {:class (stl/css :block-label)}
+        (tr "dashboard.team-info")]
+       [:div {:class (stl/css :block-text)}
+        (:name team)]]
 
       [:div {:class (stl/css :block)}
        [:div {:class (stl/css :block-label)}
