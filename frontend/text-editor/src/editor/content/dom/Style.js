@@ -21,7 +21,7 @@ const DEFAULT_LINE_HEIGHT = "1.2";
 export function mergeStyleDeclarations(target, source) {
   // This is better but it doesn't work in JSDOM
   // for (const styleName of source) {
-  for (let index = 0; index < source.length; index++) {
+  for (let index = 0; index < source.length; ++index) {
     const styleName = source.item(index);
     const styleValue = source.getPropertyValue(styleName);
     target.setProperty(styleName, styleValue);
@@ -36,7 +36,7 @@ export function mergeStyleDeclarations(target, source) {
  * @returns {CSSStyleDeclaration}
  */
 function resetStyleDeclaration(styleDeclaration) {
-  for (let index = 0; index < styleDeclaration.length; index++) {
+  for (let index = 0; index < styleDeclaration.length; ++index) {
     const styleName = styleDeclaration.item(index);
     styleDeclaration.removeProperty(styleName);
   }
@@ -122,6 +122,19 @@ export function getComputedStyle(element) {
 }
 
 /**
+ * Returns a property value
+ *
+ * @param {CSSStyleDeclaration} styleDeclaration
+ * @param {string} propertyName
+ * @returns {string|undefined}
+ */
+function getPropertyValue(styleDeclaration, propertyName) {
+  if (Array.from(styleDeclaration).includes(propertyName)) {
+    return styleDeclaration.getPropertyValue(propertyName)
+  }
+}
+
+/**
  * Normalizes style declaration.
  *
  * TODO: I think that this also needs to remove some "conflicting"
@@ -140,34 +153,39 @@ export function normalizeStyles(node, styleDefaults = getStyleDefaultsDeclaratio
 
   // If there's a color property, we should convert it to
   // a --fills CSS variable property.
-  const fills = styleDeclaration.getPropertyValue("--fills");
-  const color = styleDeclaration.getPropertyValue("color");
+  const fills = getPropertyValue(styleDeclaration, "--fills");
+  const color = getPropertyValue(styleDeclaration, "color");
   if (color && !fills) {
     styleDeclaration.removeProperty("color");
     styleDeclaration.setProperty("--fills", getFills(color));
-  } else {
+  } else if (fills) {
     styleDeclaration.setProperty("--fills", fills);
+  } else {
+    styleDeclaration.setProperty(
+      "--fills",
+      JSON.stringify([["^ ","~:fill-color","#000000","~:fill-opacity",1]]),
+    );
   }
 
   // If there's a font-family property and not a --font-id, then
   // we remove the font-family because it will not work.
-  const fontFamily = styleDeclaration.getPropertyValue("font-family");
-  const fontId = styleDeclaration.getPropertyValue("--font-id");
+  const fontFamily = getPropertyValue(styleDeclaration, "font-family");
+  const fontId = getPropertyValue(styleDeclaration, "--font-id");
   if (fontFamily && !fontId) {
     styleDeclaration.removeProperty("font-family");
   }
 
-  const fontSize = styleDeclaration.getPropertyValue("font-size");
+  const fontSize = getPropertyValue(styleDeclaration, "font-size");
   if (!fontSize || fontSize === "0px") {
     styleDeclaration.setProperty("font-size", DEFAULT_FONT_SIZE);
   }
 
-  const lineHeight = styleDeclaration.getPropertyValue("line-height");
+  const lineHeight = getPropertyValue(styleDeclaration, "line-height");
   if (!lineHeight || lineHeight === "" || !lineHeight.endsWith("px")) {
     // TODO: Podríamos convertir unidades en decimales.
     styleDeclaration.setProperty("line-height", DEFAULT_LINE_HEIGHT);
   } else if (lineHeight.endsWith("px")) {
-    const fontSize = styleDeclaration.getPropertyValue("font-size");
+    const fontSize = getPropertyValue(styleDeclaration, "font-size");
     styleDeclaration.setProperty(
       "line-height",
       parseFloat(lineHeight) / parseFloat(fontSize),

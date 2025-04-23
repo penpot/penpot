@@ -46,6 +46,7 @@ import CommandMutations from "../commands/CommandMutations.js";
 import { isRoot, setRootStyles } from "../content/dom/Root.js";
 import { SelectionDirection } from "./SelectionDirection.js";
 import SafeGuard from "./SafeGuard.js";
+import { mergeStyleDeclarations } from '../content/dom/Style.js';
 
 /**
  * Supported options for the SelectionController.
@@ -56,39 +57,7 @@ import SafeGuard from "./SafeGuard.js";
 
 /**
  * SelectionController uses the same concepts used by the Selection API but extending it to support
- * our own internal model based on paragraphs (in drafconst textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
-      createParagraph([createInline(new Text("Hello, "))]),
-      createEmptyParagraph(),
-      createParagraph([createInline(new Text("World!"))]),
-    ]);
-    const root = textEditorMock.root;
-    const selection = document.getSelection();
-    const selectionController = new SelectionController(
-      textEditorMock,
-      selection
-    );
-    focus(
-      selection,
-      textEditorMock,
-      root.childNodes.item(2).firstChild.firstChild,
-      0
-    );
-    selectionController.mergeBackwardParagraph();
-    expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
-    expect(textEditorMock.root.children.length).toBe(2);
-    expect(textEditorMock.root.dataset.itype).toBe("root");
-    expect(textEditorMock.root.firstChild).toBeInstanceOf(HTMLDivElement);
-    expect(textEditorMock.root.firstChild.dataset.itype).toBe("paragraph");
-    expect(textEditorMock.root.firstChild.firstChild).toBeInstanceOf(
-      HTMLSpanElement
-    );
-    expect(textEditorMock.root.firstChild.firstChild.dataset.itype).toBe(
-      "inline"
-    );
-    expect(textEditorMock.root.textContent).toBe("Hello, World!");
-    expect(textEditorMock.root.firstChild.textContent).toBe("Hello, ");
-    expect(textEditorMock.root.lastChild.textContent).toBe("World!");
-  t.js they were called blocks) and inlines.
+ * our own internal model based on paragraphs (in draft.js they were called blocks) and inlines.
  */
 export class SelectionController extends EventTarget {
   /**
@@ -253,11 +222,7 @@ export class SelectionController extends EventTarget {
    * @param {HTMLElement} element
    */
   #applyStylesToCurrentStyle(element) {
-    for (let index = 0; index < element.style.length; index++) {
-      const styleName = element.style.item(index);
-      const styleValue = element.style.getPropertyValue(styleName);
-      this.#currentStyle.setProperty(styleName, styleValue);
-    }
+    mergeStyleDeclarations(this.#currentStyle, element.style);
   }
 
   /**
