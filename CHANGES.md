@@ -27,6 +27,7 @@
 - Fix problem with import errors [Taiga #10040](https://tree.taiga.io/project/penpot/issue/10040)
 - Fix color gradient on texts [Taiga Issue #7488](https://tree.taiga.io/project/penpot/issue/7488)
 - Add support for self mentions [Taiga #10809](https://tree.taiga.io/project/penpot/issue/10809)
+- Fix team info settings alignment [Taiga #10869](https://tree.taiga.io/project/penpot/issue/10869)
 
 ## 2.6.2 (Unreleased)
 
