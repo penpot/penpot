@@ -9,6 +9,7 @@
   for recently imported shapes."
   (:require
    [app.common.data :as d]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -55,9 +56,35 @@
                    (fn [shadows]
                      (into [] xform shadows)))))
 
+(defn- fix-root-shape
+  "Ensure all root objects are well formed shapes"
+  [shape]
+  (if (= (:id shape) uuid/zero)
+    (-> shape
+        (assoc :parent-id uuid/zero)
+        (assoc :frame-id uuid/zero)
+        ;; We explicitly dissoc them and let the shape-setup
+        ;; to regenerate it with valid values.
+        (dissoc :selrect)
+        (dissoc :points)
+        (cts/setup-shape))
+    shape))
+
 (defn clean-shape-post-decode
   "A shape procesor that expected to be executed after schema decoding
   process but before validation."
   [shape]
   (-> shape
-      (fix-shape-shadow-color)))
+      (fix-shape-shadow-color)
+      (fix-root-shape)))
+
+(defn clean-file
+  [file & {:as _opts}]
+  (let [update-container
+        (fn [container]
+          (d/update-when container :objects d/update-vals clean-shape-post-decode))]
+    (update file :data
+            (fn [data]
+              (-> data
+                  (update :pages-index d/update-vals update-container)
+                  (update :components d/update-vals update-container))))))
