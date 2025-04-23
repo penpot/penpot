@@ -586,9 +586,6 @@
 (def ^:private check-segments
   (sm/check-fn schema:segments))
 
-(sm/register! ::path/segment schema:segment)
-(sm/register! ::path/segments schema:segments)
-
 (defn path-data?
   [o]
   (instance? PathData o))
@@ -596,24 +593,34 @@
 (declare from-string)
 (declare from-plain)
 
+;; Mainly used on backend: features/components_v2.clj
+(sm/register! ::path/segment schema:segment)
+(sm/register! ::path/segments schema:segments)
+
 (sm/register!
  {:type ::path/content
-  :pred path-data?
-  :type-properties
-  {:gen/gen (->> (sg/generator schema:segments)
-                 (sg/filter not-empty)
-                 (sg/fmap #(from-plain %)))
-   :encode/json identity
-   :decode/json (fn [s]
-                  (cond
-                    (string? s)
-                    (from-string s)
+  :compile
+  (fn [_ _ _]
+    (let [decoder   (delay (sm/decoder schema:segments sm/json-transformer))
+          generator (->> (sg/generator schema:segments)
+                         (sg/filter not-empty)
+                         (sg/fmap from-plain))]
+      {:pred path-data?
+       :type-properties
+       {:gen/gen generator
+        :encode/json identity
+        :decode/json (fn [s]
+                       (cond
+                         (string? s)
+                         (from-string s)
 
-                    (vector? s)
-                    (from-plain s)
+                         (vector? s)
+                         (let [decode-fn (deref decoder)]
+                           (-> (decode-fn s)
+                               (from-plain)))
 
-                    :else
-                    s))}})
+                         :else
+                         s))}}))})
 
 (def check-path-content
   (sm/check-fn ::path/content))
