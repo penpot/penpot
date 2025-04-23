@@ -432,7 +432,7 @@
               (let [id (obj/get self "$id")
                     value (mapv #(shadow-defaults (parser/parse-shadow %)) value)]
                 (cond
-                  (not (sm/validate [:vector ::ctss/shadow] value))
+                  (not (sm/validate [:vector ctss/schema:shadow] value))
                   (u/display-not-valid :shadows value)
 
                   (not (r/check-permission plugin-id "content:write"))

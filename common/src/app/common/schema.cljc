@@ -864,7 +864,7 @@
                                     choices))]
                {:pred pred
                 :type-properties
-                {:title "contains"
+                {:title "contains any"
                  :description "contains predicate"}}))})
 
 (register!
