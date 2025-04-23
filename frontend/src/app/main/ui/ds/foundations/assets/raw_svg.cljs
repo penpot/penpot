@@ -19,6 +19,7 @@
 (def ^:svg-id loader "loader")
 (def ^:svg-id logo-error-screen "logo-error-screen")
 (def ^:svg-id login-illustration "login-illustration")
+(def ^:svg-id logo-subscription "logo-subscription")
 (def ^:svg-id marketing-arrows "marketing-arrows")
 (def ^:svg-id marketing-exchange "marketing-exchange")
 (def ^:svg-id marketing-file "marketing-file")

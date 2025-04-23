@@ -6,6 +6,8 @@
 
 @use "common/refactor/common-refactor.scss" as *;
 @use "../ds/typography.scss" as t;
+@use "../ds/_borders.scss" as *;
+@use "../ds/spacing.scss" as *;
 
 .dashboard-section {
   display: flex;
@@ -19,30 +21,30 @@
   justify-content: center;
   flex-direction: column;
   max-width: $s-500;
-  margin-bottom: $s-32;
+  margin-block-end: var(--sp-xxxl);
   width: $s-580;
   margin: $s-92 auto $s-120 auto;
   justify-content: center;
 }
 
 .membership-container {
-  margin-block-start: $s-16;
+  margin-block-start: var(--sp-l);
 }
 
 .membership {
   align-items: center;
   display: flex;
-  margin-block-start: $s-8;
+  margin-block-start: var(--sp-s);
 }
 
 .membership.first {
-  margin-block-start: $s-16;
+  margin-block-start: var(--sp-l);
 }
 
 .membership-date {
   @include t.use-typography("body-small");
   color: var(--color-foreground-secondary);
-  margin-inline-start: $s-8;
+  margin-inline-start: var(--sp-s);
 }
 
 .subscription-member,
@@ -61,7 +63,7 @@
 .title-section {
   @include t.use-typography("title-large");
   color: var(--color-foreground-primary);
-  margin-block-end: $s-16;
+  margin-block-end: var(--sp-l);
 }
 
 .plan-section-title {
@@ -70,29 +72,32 @@
 }
 
 .plan-card {
-  border: $s-1 solid var(--color-foreground-secondary);
-  border-radius: $s-8;
-  margin-block-start: $s-16;
-  padding: $s-16;
+  border: $b-1 solid var(--color-foreground-secondary);
+  border-radius: var(--sp-s);
+  margin-block-start: var(--sp-l);
+  padding: var(--sp-l);
 }
 
 .plan-card-header {
   display: flex;
   justify-content: space-between;
-  margin-block-end: $s-8;
+  margin-block-end: var(--sp-s);
 }
 
 .plan-card-title-container {
   display: flex;
   align-items: center;
-  gap: $s-8;
+  gap: var(--sp-s);
 }
 
 .plan-title-icon {
   @extend .button-icon;
   stroke: var(--color-foreground-primary);
-  border-radius: $s-4;
-  border: $s-1 solid var(--color-foreground-primary);
+  height: var(--sp-xl);
+  width: var(--sp-xl);
+  border-radius: var(--sp-xs);
+  border: $b-1 solid var(--color-foreground-primary);
+  padding: $s-1;
 }
 
 .plan-card-title,
@@ -122,5 +127,134 @@
 
 .cta-button {
   @include t.use-typography("body-small");
+  @include buttonStyle;
   color: var(--color-accent-tertiary);
+  display: flex;
+  margin-block-start: var(--sp-m);
+}
+
+.cta-button svg {
+  @extend .button-icon;
+  height: var(--sp-l);
+  width: var(--sp-l);
+  stroke: var(--color-accent-tertiary);
+  margin-inline-start: var(--sp-xs);
+}
+
+.bottom-link {
+  margin-block-start: var(--sp-xs);
+}
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  max-height: initial;
+  min-width: $s-520;
+}
+
+.modal-dialog.subscription-success {
+  min-width: $s-612;
+}
+
+.close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.modal-title {
+  @include t.use-typography("title-large");
+  margin-block-end: var(--sp-xxxl);
+  color: var(--modal-title-foreground-color);
+  display: flex;
+  gap: var(--sp-m);
+}
+
+.subscription-title {
+  margin-block-end: var(--sp-l);
+}
+
+.modal-text-lage {
+  @include t.use-typography("body-large");
+}
+
+.modal-text-small {
+  @include t.use-typography("body-small");
+}
+
+.modal-content,
+.modal-end {
+  color: var(--color-foreground-secondary);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-success-content {
+  display: flex;
+  gap: $s-40;
+}
+
+.modal-footer {
+  margin-block-start: $s-40;
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+}
+
+.success-action-buttons {
+  margin-block-start: var(--sp-l);
+}
+
+.primary-button {
+  @extend .modal-accept-btn;
+}
+
+.cancel-button {
+  @extend .modal-cancel-btn;
+}
+
+.modal-start {
+  display: flex;
+  justify-content: center;
+  max-width: $s-220;
+
+  svg {
+    width: 100%;
+    height: auto;
+  }
+
+  @media (max-width: 992px) {
+    display: none;
+  }
+}
+
+.teams-list {
+  list-style-position: inside;
+  list-style-type: disc;
+  margin-inline-start: var(--sp-xl);
+  margin-block: var(--sp-xxl);
+}
+
+.input-wrapper {
+  @extend .input-element;
+  width: $s-80;
+}
+
+.editors-label {
+  margin-block-start: var(--sp-xxl);
+}
+
+.editors-wrapper {
+  display: flex;
+  gap: var(--sp-xl);
+  margin-block-start: var(--sp-l);
+}
+
+.editors-cost {
+  display: flex;
+  flex-direction: column;
 }

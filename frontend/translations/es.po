@@ -1079,11 +1079,86 @@ msgstr "Sin límites a la creatividad"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Gratis"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:977, src/app/main/ui/dashboard/subscription.cljs:54
-msgid "dashboard.upgrade-plan.power-up"
+#: src/app/main/ui/dashboard/sidebar.cljs:972
+msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Mejora"
 
-#: src/app/main/ui/dashboard/team.cljs:924
+#: src/app/main/ui/workspace/main_menu.cljs:910
+msgid "subscription.workspace.header.menu.option.power-up"
+msgstr "Mejora tu plan"
+
+msgid "subscription.dashboard.team-plan"
+msgstr "Plan de equipo"
+
+msgid "subscription.dashboard.power-up.professional.top-title"
+msgstr "Plan Professional"
+
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr "Consigue editores y almacenamiento adicionales, copias de seguridad de archivos y mucho más con el Plan Unlimited"
+"[Mejóralo](%s)"
+
+msgid "subscription.dashboard.power-up.unlimited-plan"
+msgstr "Plan ilimitado"
+
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-description"
+msgstr ""
+"Obtenga seguridad avanzada, registros de actividad, asistencia dedicada y mucho más. Echa un ojo al"
+"[Plan Enterprise](%s)"
+
+msgid "subscription.dashboard.power-up.enterprise-plan"
+msgstr "Plan Enterprise"
+
+msgid "subscription.dashboard.power-up.trial.top-title"
+msgstr "Plan Unlimited (Prueba)"
+
+#, markdown
+msgid "subscription.dashboard.power-up.trial.bottom-description"
+msgstr ""
+"¿Disfrutas de la prueba? Desbloquea el acceso completo para siempre."
+"[Suscríbete](%s)"
+
+msgid "subscription.dashboard.cta.unlimited-many-editors"
+msgstr "¡Parece que tu equipo ha crecido! Tu plan incluye %s asientos, pero ahora estás usando más que eso."
+
+msgid "subscription.dashboard.cta.professional-plan-designed"
+msgstr "El plan Professional está diseñado para equipos de hasta 8 editores (propietario, administrador y editor)."
+
+msgid "subscription.dashboard.cta.trial-plan-designed"
+msgstr "El plan Unlimited (de prueba) está diseñado para equipos de más de 8 editores (propietario, administrador y editor)."
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
+msgstr ""
+"Consigue más editores, más almacenamiento y más versiones guardadas automáticamente con el plan Unlimited o Enterprise. "
+"[Suscríbete ahora.](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner-more-seats"
+msgstr ""
+"Por favor, mejóralo para adaptarlo a tu uso. "
+"[Suscríbete ahora.](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
+msgstr ""
+"Consigue más editores, más almacenamiento y más versiones guardadas automáticamente con el plan Unlimited o Enterprise. Contacta con el propietario del equipo: "
+"%s"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
+msgstr ""
+"Desbloquea el acceso completo para siempre. "
+"[Suscríbete ahora.](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-full-access-member"
+msgstr ""
+"Desbloquea el acceso completo para siempre. Contacta con el propietario del equipo: "
+"%s"
+
+#: src/app/main/ui/dashboard/team.cljs:909
 msgid "dashboard.webhooks.active"
 msgstr "Activo"
 
@@ -4489,7 +4564,121 @@ msgstr "Contraseña - Penpot"
 msgid "title.settings.profile"
 msgstr "Perfil - Penpot"
 
-#: src/app/main/ui/dashboard/team.cljs:795
+msgid "subscription.settings.section-plan"
+msgstr "Tu suscripción"
+
+msgid "subscription.settings.other-plans"
+msgstr "Otros planes de penpot"
+
+msgid "subscription.settings.professional"
+msgstr "Professional"
+
+msgid "subscription.settings.unlimited"
+msgstr "Unlimited"
+
+msgid "subscription.settings.unlimited-trial"
+msgstr "Unlimited (prueba)"
+
+msgid "subscription.settings.unlimited-trial-modal"
+msgstr "Unlimited de prueba"
+
+msgid "subscription.settings.enterprise"
+msgstr "Enterprise"
+
+msgid "subscription.settings.enterprise-trial"
+msgstr "Enterprise (prueba)"
+
+msgid "subscription.settings.enterprise-trial-modal"
+msgstr "Enterprise de prueba"
+
+msgid "subscription.settings.support-us-since"
+msgstr "Nos has estado apoyando con este plan desde %s"
+
+msgid "subscription.settings.member-since"
+msgstr "Miembro de penpot desde %s"
+
+msgid "subscription.settings.price-editor-month"
+msgstr "editor por mes"
+
+msgid "subscription.settings.price-organization-month"
+msgstr "organización por mes"
+
+msgid "subscription.settings.try-it-free"
+msgstr "Pruébalo gratis durante 14 días"
+
+msgid "subscription.settings.professional.projects-files"
+msgstr "Proyectos, archivos y borradores ilimitados"
+
+msgid "subscription.settings.professional.teams-editors"
+msgstr "Equipos ilimitados de hasta 8 redactores"
+
+msgid "subscription.settings.professional.storage"
+msgstr "10 GB de almacenamiento y versiones de autoguardado de 7 días"
+
+msgid "subscription.settings.benefits.all-professional-benefits"
+msgstr "Todas las prestaciones del plan Professional y:"
+
+msgid "subscription.settings.benefits.all-unlimited-benefits"
+msgstr "Todas las prestaciones del plan Unlimited y:"
+
+msgid "subscription.settings.unlimited.teams"
+msgstr "Equipos ilimitados, independientemente de su tamaño"
+
+msgid "subscription.settings.unlimited.bill"
+msgstr "Factura mensual limitada"
+
+msgid "subscription.settings.unlimited.storage"
+msgstr "25 GB de almacenamiento y 30 días de autoguardado de versiones y copias de seguridad de archivos"
+
+msgid "subscription.settings.manage-your-subscription"
+msgstr "Gestionar tu suscripción"
+
+msgid "subscription.settings.add-payment-to-continue"
+msgstr "Añade un método de pago para continuar después del periodo de prueba"
+
+msgid "subscription.settings.enterprise.support"
+msgstr "Apoyo específico"
+
+msgid "subscription.settings.enterprise.security"
+msgstr "Seguridad avanzada"
+
+msgid "subscription.settings.enterprise.logs"
+msgstr "Registros de actividad"
+
+msgid "subscription.settings.sucess.dialog.title"
+msgstr "Eres %s!"
+
+msgid "subscription.settings.success.dialog.description"
+msgstr "Puedes modificar tu suscripción en cualquier momento desde la página 'Suscripción' en los datos de tu cuenta."
+
+msgid "subscription.settings.sucess.dialog.footer"
+msgstr "¡Disfruta de tu plan!"
+
+msgid "subscription.settings.management.dialog.title"
+msgstr "Aplica %s a tus equipos"
+
+msgid "subscription.settings.management.dialog.choose-this-plan"
+msgstr "Estás eligiendo este plan para:"
+
+msgid "subscription.settings.management.dialog.members"
+msgstr " (%s editores)"
+
+msgid "subscription.settings.management.dialog.no-teams"
+msgstr "Este plan se aplicará a todos los futuros equipos que crees o poseas."
+
+msgid "subscription.settings.management.dialog.select-editors"
+msgstr "Seleccione el número de editores (puestos) que necesitas:"
+
+msgid "subscription.settings.management.dialog.price-month"
+msgstr "$7 por editor/mes x %s"
+
+msgid "subscription.settings.management.dialog.payment-explanation"
+msgstr "(Ahora no se efectuará ningún pago)"
+
+msgid "subscription.settings.management.dialog.downgrade"
+msgstr "Ten en cuenta: cambiar a un plan inferior significa menos almacenamiento y copias de seguridad e historial de versiones más cortos."
+
+#: src/app/main/ui/dashboard/team.cljs:779
 msgid "title.team-invitations"
 msgstr "Invitaciones - %s - Penpot"
 
@@ -4953,10 +5142,6 @@ msgstr "Archivo"
 #: src/app/main/ui/workspace/main_menu.cljs:905
 msgid "workspace.header.menu.option.help-info"
 msgstr "Ayuda e información"
-
-#: src/app/main/ui/workspace/main_menu.cljs:916
-msgid "workspace.header.menu.option.power-up"
-msgstr "Mejora tu plan"
 
 #: src/app/main/ui/workspace/main_menu.cljs:881
 msgid "workspace.header.menu.option.preferences"
