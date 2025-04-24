@@ -218,7 +218,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 ;; Remove interactions pointing to deleted frames
 (defmethod migrate-data "legacy-7"
@@ -272,7 +272,7 @@
 
     (-> data
         (update :pages-index update-vals clean-container)
-        (update :components update-vals clean-container))))
+        (d/update-when :components update-vals clean-container))))
 
 (defmethod migrate-data "legacy-9"
   [data _]
@@ -383,7 +383,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-16"
   [data _]
@@ -429,7 +429,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-17"
   [data _]
@@ -458,7 +458,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 ;; Remove position-data to solve a bug with the text positioning
 (defmethod migrate-data "legacy-18"
@@ -473,7 +473,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-19"
   [data _]
@@ -489,7 +489,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-25"
   [data _]
@@ -504,7 +504,7 @@
             (d/update-when container :objects update-vals update-object))]
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-26"
   [data _]
@@ -521,7 +521,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-27"
   [data _]
@@ -552,7 +552,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-28"
   [data _]
@@ -578,7 +578,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-29"
   [data _]
@@ -613,7 +613,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-31"
   [data _]
@@ -627,7 +627,7 @@
             (d/update-when container :objects update-vals update-object))]
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-32"
   [data _]
@@ -646,7 +646,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-33"
   [data _]
@@ -679,7 +679,7 @@
             (d/update-when container :objects update-vals update-object))]
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-36"
   [data _]
@@ -690,7 +690,7 @@
                                                   objects))))]
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-37"
   [data _]
@@ -722,7 +722,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-39"
   [data _]
@@ -744,7 +744,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-40"
   [data _]
@@ -768,7 +768,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-41"
   [data _]
@@ -801,7 +801,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-42"
   [data _]
@@ -818,7 +818,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (def ^:private valid-fill?
   (sm/lazy-validator ::cts/fill))
@@ -847,7 +847,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-44"
   [data _]
@@ -867,7 +867,7 @@
             (d/update-when container :objects update-vals update-object))]
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-45"
   [data _]
@@ -893,7 +893,7 @@
             (d/update-when container :objects update-vals update-object))]
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-47"
   [data _]
@@ -997,7 +997,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (def ^:private valid-color?
   (sm/lazy-validator ::ctc/color))
@@ -1043,7 +1043,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 ;; This migration moves page options to the page level
 (defmethod migrate-data "legacy-55"
@@ -1099,7 +1099,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 
 (defmethod migrate-data "legacy-57"
@@ -1141,7 +1141,7 @@
 
     (-> data
         (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (d/update-when :components update-vals update-container))))
 
 (defmethod migrate-data "legacy-62"
   [data _]
@@ -1174,7 +1174,7 @@
           ;; so the relevant objects are inside the component
           (d/update-when component :objects remove-cycles))]
 
-    (update data :components update-vals update-component)))
+    (d/update-when data :components update-vals update-component)))
 
 (defmethod migrate-data "legacy-65"
   [data _]
@@ -1189,7 +1189,7 @@
 
     (-> data
         (update-object)
-        (d/update-when :pages-index update-vals update-page)
+        (update :pages-index update-vals update-page)
         (d/update-when :colors update-vals update-object)
         (d/update-when :typographies update-vals update-object)
         (d/update-when :components update-vals update-object))))
@@ -1210,7 +1210,7 @@
 
     (-> data
         (update :pages-index d/update-vals update-container)
-        (update :components d/update-vals update-container))))
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-67"
   [data _]
@@ -1222,7 +1222,7 @@
 
     (-> data
         (update :pages-index d/update-vals update-container)
-        (update :components d/update-vals update-container))))
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "0001-remove-tokens-from-groups"
   [data _]
@@ -1262,7 +1262,7 @@
 
     (-> data
         (update :pages-index d/update-vals update-container)
-        (update :components d/update-vals update-container))))
+        (d/update-when :components d/update-vals update-container))))
 
 (def available-migrations
   (into (d/ordered-set)
