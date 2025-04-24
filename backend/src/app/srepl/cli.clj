@@ -151,8 +151,8 @@
 
 (def ^:private schema:customer-subscription
   [:map {:title "CustomerSubscription"}
-   [:id ::sm/uuid]
-   [:customer-id ::sm/uuid]
+   [:id ::sm/text]
+   [:customer-id ::sm/text]
    [:type [:enum
            "unlimited"
            "professional"
