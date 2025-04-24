@@ -76,9 +76,10 @@
   (perms/make-check-fn has-read-permissions?))
 
 (defn decode-row
-  [{:keys [features] :as row}]
+  [{:keys [features subscription] :as row}]
   (cond-> row
-    (some? features) (assoc :features (db/decode-pgarray features #{}))))
+    (some? features) (assoc :features (db/decode-pgarray features #{}))
+    (some? subscription) (assoc :subscription (db/decode-transit-pgobject subscription))))
 
 ;; FIXME: move
 
@@ -143,12 +144,14 @@
           tp.is_admin,
           tp.can_edit,
           (t.id = ?) AS is_default,
-          CASE COALESCE(p.props->'~:subscription'->>'~:status', 'unknown')
-            WHEN 'unknown' THEN false
-            WHEN 'canceled' THEN false
-            WHEN 'unpaid' THEN false
-            ELSE true
-          END AS is_subscription_active
+
+          jsonb_build_object(
+            '~:type', COALESCE(p.props->'~:subscription'->>'~:type', 'professional'),
+            '~:status', CASE COALESCE(p.props->'~:subscription'->>'~:type', 'professional')
+                          WHEN 'professional' THEN 'active'
+                          ELSE COALESCE(p.props->'~:subscription'->>'~:status', 'incomplete')
+                       END
+          ) AS subscription
      FROM team_profile_rel AS tp
      JOIN team AS t ON (t.id = tp.team_id)
      JOIN team_profile_rel AS tpr
