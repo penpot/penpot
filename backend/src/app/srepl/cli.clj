@@ -139,6 +139,10 @@
            :type :validation
            :hint "invalid data provided for `get-customer` rpc call"))
 
+(defn- get-customer-slots
+  [system]
+  1)
+
 (defmethod exec-command "get-customer"
   [params]
   (when-let [system (get-current-system)]
@@ -147,6 +151,7 @@
       {:id (get profile :id)
        :name (get profile :fullname)
        :email (get profile :email)
+       :used-slots (get-customer-slots system)
        :subscription (get props :subscription)})))
 
 (def ^:private schema:customer-subscription
