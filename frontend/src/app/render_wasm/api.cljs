@@ -409,9 +409,8 @@
             padding-bottom
             padding-left)))
 
-(defn set-grid-layout
+(defn set-grid-layout-data
   [shape]
-
   (let [dir (-> (or (dm/get-prop shape :layout-grid-dir) :row) sr/translate-layout-grid-dir)
         gap (dm/get-prop shape :layout-gap)
         row-gap (or (dm/get-prop gap :row-gap) 0)
@@ -440,11 +439,11 @@
             padding-top
             padding-right
             padding-bottom
-            padding-left))
+            padding-left)))
 
-  ;; Send Rows
-  (let [entries (:layout-grid-rows shape)
-        size (grid-layout-get-row-entries-size entries)
+(defn set-grid-layout-rows
+  [entries]
+  (let [size (grid-layout-get-row-entries-size entries)
         offset (mem/alloc-bytes size)
 
         heap
@@ -459,11 +458,11 @@
           (.set heap (sr/u8 (sr/translate-grid-track-type type)) (+ current-offset 0))
           (.set heap (sr/f32->u8 value) (+ current-offset 1))
           (recur (rest entries) (+ current-offset GRID-LAYOUT-ROW-ENTRY-SIZE)))))
-    (h/call wasm/internal-module "_set_grid_rows"))
+    (h/call wasm/internal-module "_set_grid_rows")))
 
-  ;; Send Columns
-  (let [entries (:layout-grid-columns shape)
-        size (grid-layout-get-column-entries-size entries)
+(defn set-grid-layout-columns
+  [entries]
+  (let [size (grid-layout-get-column-entries-size entries)
         offset (mem/alloc-bytes size)
 
         heap
@@ -478,10 +477,11 @@
           (.set heap (sr/u8 (sr/translate-grid-track-type type)) (+ current-offset 0))
           (.set heap (sr/f32->u8 value) (+ current-offset 1))
           (recur (rest entries) (+ current-offset GRID-LAYOUT-COLUMN-ENTRY-SIZE)))))
-    (h/call wasm/internal-module "_set_grid_columns"))
+    (h/call wasm/internal-module "_set_grid_columns")))
 
-  ;; Send cells
-  (let [entries (-> shape :layout-grid-cells vals)
+(defn set-grid-layout-cells
+  [cells]
+  (let [entries (vals cells)
         size (grid-layout-get-cell-entries-size entries)
         offset (mem/alloc-bytes size)
 
@@ -532,6 +532,13 @@
           (recur (rest entries) (+ current-offset GRID-LAYOUT-CELL-ENTRY-SIZE)))))
 
     (h/call wasm/internal-module "_set_grid_cells")))
+
+(defn set-grid-layout
+  [shape]
+  (set-grid-layout-data shape)
+  (set-grid-layout-rows (:layout-grid-rows shape))
+  (set-grid-layout-columns (:layout-grid-columns shape))
+  (set-grid-layout-cells (:layout-grid-cells shape)))
 
 (defn set-layout-child
   [shape]

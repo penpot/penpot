@@ -279,6 +279,7 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                     grid_data,
                     shapes,
                     &mut bounds,
+                    &state.structure,
                 );
                 entries.append(&mut children);
             }

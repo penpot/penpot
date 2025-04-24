@@ -1,9 +1,11 @@
 use crate::math::{self as math, intersect_rays, Bounds, Matrix, Point, Ray, Vector, VectorExt};
 use crate::shapes::{
-    AlignContent, AlignItems, AlignSelf, GridCell, GridData, GridTrack, GridTrackType,
-    JustifyContent, JustifyItems, JustifySelf, LayoutData, LayoutItem, Modifier, Shape,
+    modified_children_ids, AlignContent, AlignItems, AlignSelf, GridCell, GridData, GridTrack,
+    GridTrackType, JustifyContent, JustifyItems, JustifySelf, LayoutData, LayoutItem, Modifier,
+    Shape, StructureEntry,
 };
 use crate::uuid::Uuid;
+use indexmap::IndexSet;
 use std::collections::{HashMap, VecDeque};
 
 use super::common::GetBounds;
@@ -113,7 +115,7 @@ fn set_auto_base_size(
             (cell.row, cell.row_span)
         };
 
-        if prop_span != 1 {
+        if prop_span != 1 || (prop as usize) >= tracks.len() {
             continue;
         }
 
@@ -506,6 +508,7 @@ fn cell_bounds(
 
 fn create_cell_data<'a>(
     layout_bounds: &Bounds,
+    children: &IndexSet<Uuid>,
     shapes: &'a HashMap<Uuid, Shape>,
     cells: &Vec<GridCell>,
     column_tracks: &Vec<TrackData>,
@@ -517,6 +520,11 @@ fn create_cell_data<'a>(
         let Some(shape_id) = cell.shape else {
             continue;
         };
+
+        if !children.contains(&shape_id) {
+            continue;
+        }
+
         let Some(shape) = shapes.get(&shape_id) else {
             continue;
         };
@@ -525,6 +533,15 @@ fn create_cell_data<'a>(
         let column_end = (cell.column + cell.column_span - 2) as usize;
         let row_start = (cell.row - 1) as usize;
         let row_end = (cell.row + cell.row_span - 2) as usize;
+
+        if column_start >= column_tracks.len()
+            || column_end >= column_tracks.len()
+            || row_start >= row_tracks.len()
+            || row_end >= row_tracks.len()
+        {
+            continue;
+        }
+
         let Some(cell_bounds) = cell_bounds(
             layout_bounds,
             column_tracks[column_start].anchor_start,
@@ -603,9 +620,11 @@ pub fn reflow_grid_layout<'a>(
     grid_data: &GridData,
     shapes: &'a HashMap<Uuid, Shape>,
     bounds: &mut HashMap<Uuid, Bounds>,
+    structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> VecDeque<Modifier> {
     let mut result = VecDeque::new();
     let layout_bounds = bounds.find(shape);
+    let children = modified_children_ids(shape, structure.get(&shape.id));
 
     let column_tracks = calculate_tracks(
         true,
@@ -631,6 +650,7 @@ pub fn reflow_grid_layout<'a>(
 
     let cells = create_cell_data(
         &layout_bounds,
+        &children,
         shapes,
         &grid_data.cells,
         &column_tracks,
