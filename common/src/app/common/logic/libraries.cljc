@@ -295,6 +295,7 @@
 
 (declare generate-detach-recursive)
 (declare generate-advance-nesting-level)
+(declare generate-detach-immediate)
 
 (defn generate-detach-instance
   "Generate changes to remove the links between a shape and all its children
@@ -338,41 +339,53 @@
 (defn- generate-advance-nesting-level
   [changes file container libraries shape-id]
   (log/trace :msg "  -> advance-nesting-level")
-  (let [children  (cfh/get-children-with-self (:objects container) shape-id)
-        skip-near (fn [changes shape]
-                    (shape-log :trace (:id shape) container
-                               :msg "     * advancing" :shape-id (:id shape))
-                    (let [ref-shape (ctf/find-ref-shape file container libraries shape {:include-deleted? true})]
-                      (cond-> changes
-                        (some? (:shape-ref ref-shape))
-                        (pcb/update-shapes [(:id shape)] #(do (log/trace :msg "       (advanced)")
-                                                              (assoc % :shape-ref (:shape-ref ref-shape))))
+  (let [detached-ids (atom #{})
+        children  (cfh/get-children-with-self (:objects container) shape-id)  ;; TODO: this function should be refactored to be a recursive tree traversal.
+        skip-near (fn [changes shape]                                         ;;       this way we could shake the tree more easily when detaching shapes
+                    (shape-log :trace (:id shape) container                   ;;       and perhaps even allow to recover nested instances that have been
+                               :msg "     * advancing" :shape-id (:id shape)) ;;       swapped and so we can access the main instance again.
+                    (if (contains? @detached-ids (:id shape))
+                      (do (log/trace :msg "       (detached)")
+                          changes)
+                      (let [ref-shape (ctf/find-ref-shape file container libraries shape {:include-deleted? true})]
+                        (cond-> changes
+                          (some? (:shape-ref ref-shape))
+                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg "       (advanced)")
+                                                                (assoc % :shape-ref (:shape-ref ref-shape))))
 
                           ;; When advancing level, the normal touched groups (not swap slots) of the
                           ;; ref-shape must be merged into the current shape, because they refer to
                           ;; the new referenced shape.
-                        (some? ref-shape)
-                        (pcb/update-shapes
-                         [(:id shape)]
-                         #(do (log/trace :msg "       (merge touched)")
-                              (assoc % :touched
-                                     (clojure.set/union (:touched shape)
-                                                        (ctk/normal-touched-groups ref-shape)))))
+                          (some? ref-shape)
+                          (pcb/update-shapes
+                           [(:id shape)]
+                           #(do (log/trace :msg "       (merge touched)")
+                                (assoc % :touched
+                                       (clojure.set/union (:touched shape)
+                                                          (ctk/normal-touched-groups ref-shape)))))
 
                           ;; Swap slot must also be copied if the current shape has not any,
                           ;; except if this is the first level subcopy.
-                        (and (some? (ctk/get-swap-slot ref-shape))
-                             (nil? (ctk/get-swap-slot shape))
-                             (not= (:id shape) shape-id))
-                        (pcb/update-shapes [(:id shape)] #((do (log/trace :msg "       (got swap-slot)")
-                                                               (ctk/set-swap-slot % (ctk/get-swap-slot ref-shape)))))
+                          (and (some? (ctk/get-swap-slot ref-shape))
+                               (nil? (ctk/get-swap-slot shape))
+                               (not= (:id shape) shape-id))
+                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg "       (got swap-slot)")
+                                                                (ctk/set-swap-slot % (ctk/get-swap-slot ref-shape))))
 
                           ;; If we can't get the ref-shape (e.g. it's in an external library not linked),
-                          ;: we can't do a suitable advance. So it's better to detach the shape
-                        (nil? ref-shape)
-                        (pcb/update-shapes [(:id shape)] ctk/detach-shape))))]
+                          ;: we can't do a suitable advance. So it's better to detach the shape and all its
+                          ;; children (and add to detached-ids so they are not processed again).
+                          (nil? ref-shape)
+                          (generate-detach-immediate container (:id shape) detached-ids)))))]
 
     (reduce skip-near changes children)))
+
+(defn- generate-detach-immediate
+  [changes container shape-id detached-ids]
+  (let [shape-and-children (cfh/get-children-ids-with-self (:objects container) shape-id)]
+    (log/trace :msg "       (cannot advance; detach shape and children)")
+    (swap! detached-ids #(into % shape-and-children))
+    (pcb/update-shapes changes shape-and-children ctk/detach-shape)))
 
 (defn prepare-restore-component
   ([changes library-data component-id current-page]
