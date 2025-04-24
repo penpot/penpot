@@ -1,10 +1,10 @@
 use skia_safe as skia;
 
-mod debug;
 #[cfg(target_arch = "wasm32")]
 mod emscripten;
 mod math;
 mod mem;
+mod options;
 mod performance;
 mod render;
 mod shapes;
@@ -140,7 +140,11 @@ pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
         render_state.viewbox.set_all(zoom, x, y);
         if zoom_changed {
             with_state!(state, {
-                state.rebuild_tiles();
+                if state.render_state.options.is_profile_rebuild_tiles() {
+                    state.rebuild_tiles();
+                } else {
+                    state.rebuild_tiles_shallow();
+                }
             });
         }
     });

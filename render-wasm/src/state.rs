@@ -73,7 +73,7 @@ impl<'a> State<'a> {
     pub fn delete_shape(&mut self, id: Uuid) {
         // We don't really do a self.shapes.remove so that redo/undo keep working
         if let Some(shape) = self.shapes.get(&id) {
-            let (rsx, rsy, rex, rey) = self.render_state.get_tiles_for_rect(&shape);
+            let (rsx, rsy, rex, rey) = self.render_state.get_tiles_for_shape(&shape);
             for x in rsx..=rex {
                 for y in rsy..=rey {
                     let tile = (x, y);
@@ -116,6 +116,11 @@ impl<'a> State<'a> {
             }
             None => panic!("Invalid current shape"),
         }
+    }
+
+    pub fn rebuild_tiles_shallow(&mut self) {
+        self.render_state
+            .rebuild_tiles_shallow(&mut self.shapes, &self.modifiers, &self.structure);
     }
 
     pub fn rebuild_tiles(&mut self) {
