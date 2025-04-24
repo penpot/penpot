@@ -346,7 +346,9 @@
         (mf/use-fn
          (mf/deps shapes file-id item)
          #(when-not loop
-            (st/emit! (dwl/component-multi-swap shapes file-id (:id item)))))
+            (st/emit!
+             (dwl/component-multi-swap shapes file-id (:id item))
+             (dwsp/clear-specialized-panel))))
 
         item-ref       (mf/use-ref)
         visible?       (h/use-visible item-ref :once? true)]
