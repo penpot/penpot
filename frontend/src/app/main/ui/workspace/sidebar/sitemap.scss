@@ -38,11 +38,14 @@
   display: flex;
   flex-direction: column;
   height: calc(-38px + var(--height, $s-200));
-  width: 100%;
-  overflow-x: hidden;
+  width: var(--width);
+  overflow-x: scroll;
   overflow-y: overlay;
   scrollbar-gutter: stable;
-  max-width: var(--width);
+
+  .element-list {
+    display: grid;
+  }
 }
 
 .pages-list {

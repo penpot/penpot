@@ -102,7 +102,8 @@
     (if ^boolean edition?
       [:input
        {:class (stl/css :element-name
-                        :element-name-input)
+                        :element-name-input
+                        :selected is-selected)
         :style {"--depth" depth "--parent-size" parent-size}
         :type "text"
         :ref ref

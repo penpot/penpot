@@ -29,6 +29,7 @@
 - Fix color gradient on texts [Taiga Issue #7488](https://tree.taiga.io/project/penpot/issue/7488)
 - Add support for self mentions [Taiga #10809](https://tree.taiga.io/project/penpot/issue/10809)
 - Fix team info settings alignment [Taiga #10869](https://tree.taiga.io/project/penpot/issue/10869)
+- Fix left sidebar horizontal scroll on nested layers [Taiga #10791](https://tree.taiga.io/project/penpot/issue/10791)
 
 ## 2.6.2 (Unreleased)
 
