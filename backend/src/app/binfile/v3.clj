@@ -15,6 +15,7 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
+   [app.common.files.migrations :as-alias fmg]
    [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -755,7 +756,14 @@
                    (assoc :name file-name)
                    (assoc :project-id project-id)
                    (dissoc :options)
-                   (bfc/process-file))]
+                   (bfc/process-file)
+
+                   ;; NOTE: this is necessary because when we just
+                   ;; creating a new file from imported artifact,
+                   ;; there are no migrations registered on the
+                   ;; database, so we need to persist all of them, not
+                   ;; only the applied
+                   (vary-meta dissoc ::fmg/migrated))]
 
       (bfm/register-pending-migrations! cfg file)
       (bfc/save-file! cfg file ::db/return-keys false)
