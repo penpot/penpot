@@ -1264,6 +1264,28 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0003-fix-root-shape"
+  [data _]
+  (letfn [(update-object [shape]
+            (if (= (:id shape) uuid/zero)
+              (-> shape
+                  (assoc :parent-id uuid/zero)
+                  (assoc :frame-id uuid/zero)
+                  ;; We explicitly dissoc them and let the shape-setup
+                  ;; to regenerate it with valid values.
+                  (dissoc :selrect)
+                  (dissoc :points)
+                  (cts/setup-shape))
+              shape))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container)
+        (d/without-nils))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1319,4 +1341,5 @@
          "legacy-66"
          "legacy-67"
          "0001-remove-tokens-from-groups"
-         "0002-clean-shape-interactions"]))
+         "0002-clean-shape-interactions"
+         "0003-fix-root-shape"]))
