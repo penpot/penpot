@@ -139,9 +139,28 @@
            :type :validation
            :hint "invalid data provided for `get-customer` rpc call"))
 
+(def sql:get-customer-slots
+  "WITH teams AS (
+    SELECT tpr.team_id AS id,
+           tpr.profile_id AS profile_id
+      FROM team_profile_rel AS tpr
+     WHERE tpr.is_owner IS true
+       AND tpr.profile_id = ?
+  ), teams_with_slots AS (
+    SELECT tpr.team_id AS id,
+           count(*) AS total
+      FROM team_profile_rel AS tpr
+     WHERE tpr.team_id IN (SELECT id FROM teams)
+       AND tpr.can_edit IS true
+     GROUP BY 1
+     ORDER BY 2
+  )
+  SELECT max(total) AS total FROM teams_with_slots;")
+
 (defn- get-customer-slots
-  [system]
-  1)
+  [system profile-id]
+  (let [result (db/exec-one! system [sql:get-customer-slots profile-id])]
+    (:total result)))
 
 (defmethod exec-command "get-customer"
   [params]
@@ -151,7 +170,7 @@
       {:id (get profile :id)
        :name (get profile :fullname)
        :email (get profile :email)
-       :used-slots (get-customer-slots system)
+       :num-editors (get-customer-slots system id)
        :subscription (get props :subscription)})))
 
 (def ^:private schema:customer-subscription
