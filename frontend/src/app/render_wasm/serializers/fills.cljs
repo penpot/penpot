@@ -5,7 +5,7 @@
 (def ^:private GRADIENT-STOP-SIZE 8)
 (def ^:private GRADIENT-BASE-SIZE 28)
 ;; TODO: Define in shape model
-(def ^:private MAX-GRADIENT-STOPS 8)
+(def ^:private MAX-GRADIENT-STOPS 16)
 
 (def GRADIENT-BYTE-SIZE
   (+ GRADIENT-BASE-SIZE (* MAX-GRADIENT-STOPS GRADIENT-STOP-SIZE)))

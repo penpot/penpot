@@ -3,7 +3,7 @@ use skia_safe::{self as skia, Rect};
 use super::Color;
 use crate::uuid::Uuid;
 
-const MAX_GRADIENT_STOPS: usize = 8;
+const MAX_GRADIENT_STOPS: usize = 16;
 const BASE_GRADIENT_DATA_SIZE: usize = 28;
 const RAW_GRADIENT_DATA_SIZE: usize =
     BASE_GRADIENT_DATA_SIZE + RAW_STOP_DATA_SIZE * MAX_GRADIENT_STOPS;
