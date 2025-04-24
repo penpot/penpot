@@ -10,7 +10,8 @@
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
    [app.render-wasm.serializers :as sr]
-   [app.render-wasm.wasm :as wasm]))
+   [app.render-wasm.wasm :as wasm]
+   [clojure.string :as str]))
 
 (defn utf8->buffer [text]
   (let [encoder (js/TextEncoder.)]
@@ -20,7 +21,8 @@
   ;; buffer has the following format:
   ;; [<num-leaves> <paragraph_attributes> <leaves_attributes> <text>]
   [leaves paragraph]
-  (let [num-leaves (count leaves)
+  (let [leaves (filter #(not (str/blank? (:text %))) leaves)
+        num-leaves (count leaves)
         paragraph-attr-size 48
         leaf-attr-size 52
         metadata-size (+ 1 paragraph-attr-size (* num-leaves leaf-attr-size))
