@@ -72,7 +72,8 @@
               font-id (f/serialize-font-id (:font-id leaf))
               font-family (hash (:font-family leaf))
               font-variant-id (sr/serialize-uuid (:font-variant-id leaf))
-              text-length (count (:text leaf))]
+              text-buffer (utf8->buffer (:text leaf))
+              text-length (.-byteLength text-buffer)]
 
           (.setUint8 dview offset font-style)
           (.setFloat32 dview (+ offset 4) font-size)
