@@ -204,7 +204,7 @@
 (def ^:private schema:update-customer-subscription
   [:map
    [:id ::sm/uuid]
-   [:subscription schema:customer-subscription]])
+   [:subscription [:maybe schema:customer-subscription]]])
 
 (def coerce-update-customer-subscription-params
   (coercer schema:update-customer-subscription
