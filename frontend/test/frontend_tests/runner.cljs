@@ -13,7 +13,6 @@
    [frontend-tests.tokens.logic.token-data-test]
    [frontend-tests.tokens.style-dictionary-test]
    [frontend-tests.tokens.token-form-test]
-   [frontend-tests.tokens.token-test]
    [frontend-tests.util-range-tree-test]
    [frontend-tests.util-simple-math-test]
    [frontend-tests.util-snap-data-test]))
@@ -42,5 +41,4 @@
    'frontend-tests.tokens.logic.token-actions-test
    'frontend-tests.tokens.logic.token-data-test
    'frontend-tests.tokens.style-dictionary-test
-   'frontend-tests.tokens.token-test
    'frontend-tests.tokens.token-form-test))
