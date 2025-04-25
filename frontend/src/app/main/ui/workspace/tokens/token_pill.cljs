@@ -11,12 +11,13 @@
   (:require
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cft]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.color :as dwtc]
    [app.main.refs :as refs]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*]]
-   [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -80,6 +81,7 @@
    :y "Y"})
 
 ;; Helper functions
+
 (defn partially-applied-attr
   "Translates partially applied attributes based on the dictionary."
   [app-token-keys is-applied {:keys [attributes all-attributes]}]
@@ -156,9 +158,9 @@
 
 (defn- applied-all-attributes?
   [token selected-shapes attributes]
-  (let [ids-by-attributes (wtt/shapes-ids-by-applied-attributes token selected-shapes attributes)
+  (let [ids-by-attributes (cft/shapes-ids-by-applied-attributes token selected-shapes attributes)
         shape-ids         (into #{} xf:map-id selected-shapes)]
-    (wtt/shapes-applied-all? ids-by-attributes shape-ids attributes)))
+    (cft/shapes-applied-all? ids-by-attributes shape-ids attributes)))
 
 (mf/defc token-pill*
   {::mf/wrap [mf/memo]}
@@ -166,7 +168,7 @@
   (let [{:keys [name value errors]} token
 
         has-selected?  (pos? (count selected-shapes))
-        is-reference?  (wtt/is-reference? token)
+        is-reference?  (cft/is-reference? token)
         contains-path? (str/includes? name ".")
 
         {:keys [attributes all-attributes]}
@@ -179,7 +181,7 @@
 
         applied?
         (if has-selected?
-          (wtt/shapes-token-applied? token selected-shapes (d/nilv all-attributes attributes))
+          (cft/shapes-token-applied? token selected-shapes (d/nilv all-attributes attributes))
           false)
 
         half-applied?
@@ -201,10 +203,10 @@
             no-valid-value)
 
         color
-        (when (wtt/color-token? token)
+        (when (cft/color-token? token)
           (let [theme-token (get active-theme-tokens (:name token))]
-            (or (wtt/resolved-token-bullet-color theme-token)
-                (wtt/resolved-token-bullet-color token))))
+            (or (dwtc/resolved-token-bullet-color theme-token)
+                (dwtc/resolved-token-bullet-color token))))
 
         on-click
         (mf/use-fn

@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cft]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.shape-layout :as dwsl]
@@ -18,7 +19,6 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
-   [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as timers]
@@ -30,9 +30,9 @@
 ;; Actions ---------------------------------------------------------------------
 
 (defn attribute-actions [token selected-shapes attributes]
-  (let [ids-by-attributes (wtt/shapes-ids-by-applied-attributes token selected-shapes attributes)
+  (let [ids-by-attributes (cft/shapes-ids-by-applied-attributes token selected-shapes attributes)
         shape-ids (into #{} (map :id selected-shapes))]
-    {:all-selected? (wtt/shapes-applied-all? ids-by-attributes shape-ids attributes)
+    {:all-selected? (cft/shapes-applied-all? ids-by-attributes shape-ids attributes)
      :shape-ids shape-ids
      :selected-pred #(seq (% ids-by-attributes))}))
 
