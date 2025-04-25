@@ -14,6 +14,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.tokens :as dt]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
@@ -26,7 +27,6 @@
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
-   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.sets :as tsets]
@@ -70,7 +70,7 @@
   {::mf/private true}
   [{:keys [type tokens selected-shapes active-theme-tokens is-open]}]
   (let [{:keys [modal title]}
-        (get wtch/token-properties type)
+        (get dwta/token-properties type)
 
         can-edit?
         (mf/use-ctx ctx/can-edit?)
@@ -116,7 +116,7 @@
          (fn [event token]
            (dom/stop-propagation event)
            (when (seq selected-shapes)
-             (st/emit! (wtch/toggle-token {:token token
+             (st/emit! (dwta/toggle-token {:token token
                                            :shapes selected-shapes})))))]
 
     [:div {:on-click on-toggle-open-click :class (stl/css :token-section-wrapper)}
@@ -151,7 +151,7 @@
   [tokens-by-type]
   (loop [empty  #js []
          filled #js []
-         types  (-> wtch/token-properties keys seq)]
+         types  (-> dwta/token-properties keys seq)]
     (if-let [type (first types)]
       (if (not-empty (get tokens-by-type type))
         (recur empty

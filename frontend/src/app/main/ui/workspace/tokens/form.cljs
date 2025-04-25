@@ -13,6 +13,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -22,7 +23,6 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
-   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.components.controls.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
    [app.main.ui.workspace.tokens.errors :as wte]
@@ -239,7 +239,7 @@
   [{:keys [token token-type action selected-token-set-name on-display-colorpicker]}]
   (let [create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
-        token-properties (wtch/get-token-properties token)
+        token-properties (dwta/get-token-properties token)
         color? (wtt/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
 
