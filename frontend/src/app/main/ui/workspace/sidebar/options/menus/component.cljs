@@ -754,7 +754,9 @@
 
              (when (and can-swap? (not multi))
                [:div {:class (stl/css :component-parent-name)}
-                (cfh/merge-path-item-with-dot path (:name component))])]]
+                (if (:deleted component)
+                  (tr "workspace.options.component.unlinked")
+                  (cfh/merge-path-item-with-dot path (:name component)))])]]
 
            (when show-menu?
              [:div {:class (stl/css :component-actions)}
@@ -774,7 +776,11 @@
           (when (and (not swap-opened?) (not multi))
             [:& component-annotation {:id id :shape shape :component component :rerender-fn rerender-fn}])
 
-          (when (and is-variant? (not main-instance?) (not swap-opened?) (not multi))
+          (when (and is-variant?
+                     (not main-instance?)
+                     (not (:deleted component))
+                     (not swap-opened?)
+                     (not multi))
             [:> component-variant* {:component component
                                     :shape shape
                                     :data data}])
