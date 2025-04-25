@@ -12,8 +12,8 @@
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
-   [app.main.data.tokens :as dt]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -452,15 +452,15 @@
                               (when (and (seq result) (not err))
                                 (st/emit!
                                  (if (ctob/token? token)
-                                   (dt/update-token (:name token)
-                                                    {:name final-name
-                                                     :value final-value
-                                                     :description final-description})
+                                   (dwtl/update-token (:name token)
+                                                      {:name final-name
+                                                       :value final-value
+                                                       :description final-description})
 
-                                   (dt/create-token {:name final-name
-                                                     :type token-type
-                                                     :value final-value
-                                                     :description final-description}))
+                                   (dwtl/create-token {:name final-name
+                                                       :type token-type
+                                                       :value final-value
+                                                       :description final-description}))
                                  (wtu/update-workspace-tokens)
                                  (modal/hide)))))))))
 
@@ -470,7 +470,7 @@
          (fn [e]
            (dom/prevent-default e)
            (modal/hide!)
-           (st/emit! (dt/delete-token (ctob/prefixed-set-path-string->set-name-string selected-token-set-name) (:name token)))))
+           (st/emit! (dwtl/delete-token (ctob/prefixed-set-path-string->set-name-string selected-token-set-name) (:name token)))))
 
         on-cancel
         (mf/use-fn

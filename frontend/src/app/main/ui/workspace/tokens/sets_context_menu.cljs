@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.main.data.tokens :as dt]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -36,24 +36,24 @@
   {::mf/private true}
   [{:keys [is-group id edition-id path]}]
   (let [create-set-at-path
-        (mf/use-fn (mf/deps path) #(st/emit! (dt/start-token-set-creation path)))
+        (mf/use-fn (mf/deps path) #(st/emit! (dwtl/start-token-set-creation path)))
 
         on-edit
         (mf/use-fn
          (mf/deps id)
          (fn []
-           (st/emit! (dt/start-token-set-edition edition-id))))
+           (st/emit! (dwtl/start-token-set-edition edition-id))))
 
         on-duplicate
         (mf/use-fn
          (mf/deps is-group id)
          (fn []
-           (st/emit! (dt/duplicate-token-set id is-group))))
+           (st/emit! (dwtl/duplicate-token-set id is-group))))
 
         on-delete
         (mf/use-fn
          (mf/deps is-group path)
-         #(st/emit! (dt/delete-token-set-path is-group path)))]
+         #(st/emit! (dwtl/delete-token-set-path is-group path)))]
 
     [:ul {:class (stl/css :context-list)}
      (when is-group
@@ -75,7 +75,7 @@
         (+ (dm/get-prop position :x) 5)
 
         on-close
-        (mf/use-fn #(st/emit! (dt/assign-token-set-context-menu nil)))]
+        (mf/use-fn #(st/emit! (dwtl/assign-token-set-context-menu nil)))]
 
     [:& dropdown {:show (some? position)
                   :on-close on-close}

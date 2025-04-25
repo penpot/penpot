@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.data.tokens
+(ns app.main.data.workspace.tokens.library-edit
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
