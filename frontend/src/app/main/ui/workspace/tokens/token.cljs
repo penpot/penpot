@@ -2,7 +2,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
+   [app.main.data.tinycolor :as tinycolor]
    [clojure.set :as set]
    [cuerdas.core :as str]))
 

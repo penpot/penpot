@@ -2,7 +2,7 @@
   (:require
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
-   [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.data.style-dictionary :as sd]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
