@@ -706,11 +706,11 @@
       (set-grid-layout shape))
 
     (let [pending (into [] (concat
+                            (set-shape-strokes strokes)
                             (if (and (= type :text) (some? content))
                               (set-shape-text-content content)
                               [])
-                            (set-shape-fills fills)
-                            (set-shape-strokes strokes)))]
+                            (set-shape-fills fills)))]
       (perf/end-measure "set-object")
       pending)))
 
