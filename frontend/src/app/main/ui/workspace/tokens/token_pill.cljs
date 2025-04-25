@@ -11,11 +11,11 @@
   (:require
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.refs :as refs]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*]]
-   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -106,7 +106,7 @@
   (let [{:keys [name value type resolved-value]} token
         resolved-value-theme (:resolved-value theme-token)
         resolved-value (or resolved-value-theme resolved-value)
-        {:keys [title] :as token-props} (wtch/get-token-properties theme-token)
+        {:keys [title] :as token-props} (dwta/get-token-properties theme-token)
         applied-tokens (:applied-tokens shape)
         app-token-vals (set (vals applied-tokens))
         app-token-keys (keys applied-tokens)
@@ -170,7 +170,7 @@
         contains-path? (str/includes? name ".")
 
         {:keys [attributes all-attributes]}
-        (get wtch/token-properties (:type token))
+        (get dwta/token-properties (:type token))
 
         full-applied?
         (if has-selected?

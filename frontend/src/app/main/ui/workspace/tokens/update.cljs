@@ -13,8 +13,8 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwt]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
@@ -27,18 +27,18 @@
 (def filter-existing-values? false)
 
 (def attributes->shape-update
-  {ctt/border-radius-keys wtch/update-shape-radius-for-corners
-   ctt/color-keys wtch/update-fill-stroke
-   ctt/stroke-width-keys wtch/update-stroke-width
-   ctt/sizing-keys wtch/update-shape-dimensions
-   ctt/opacity-keys wtch/update-opacity
-   #{:x :y} wtch/update-shape-position
-   #{:p1 :p2 :p3 :p4} wtch/update-layout-padding
-   #{:m1 :m2 :m3 :m4} wtch/update-layout-item-margin
-   #{:column-gap :row-gap} wtch/update-layout-spacing
-   #{:width :height} wtch/update-shape-dimensions
-   #{:layout-item-min-w :layout-item-min-h :layout-item-max-w :layout-item-max-h} wtch/update-layout-sizing-limits
-   ctt/rotation-keys wtch/update-rotation})
+  {ctt/border-radius-keys dwta/update-shape-radius-for-corners
+   ctt/color-keys dwta/update-fill-stroke
+   ctt/stroke-width-keys dwta/update-stroke-width
+   ctt/sizing-keys dwta/update-shape-dimensions
+   ctt/opacity-keys dwta/update-opacity
+   #{:x :y} dwta/update-shape-position
+   #{:p1 :p2 :p3 :p4} dwta/update-layout-padding
+   #{:m1 :m2 :m3 :m4} dwta/update-layout-item-margin
+   #{:column-gap :row-gap} dwta/update-layout-spacing
+   #{:width :height} dwta/update-shape-dimensions
+   #{:layout-item-min-w :layout-item-min-h :layout-item-max-w :layout-item-max-h} dwta/update-layout-sizing-limits
+   ctt/rotation-keys dwta/update-rotation})
 
 (def attribute-actions-map
   (reduce

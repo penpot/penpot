@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.changes
+(ns app.main.data.workspace.tokens.application
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -30,7 +30,7 @@
 
 (declare token-properties)
 
-;; Token Updates ---------------------------------------------------------------
+;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
 
 (defn apply-token
   "Apply `attributes` that match `token` for `shape-ids`.
@@ -109,7 +109,9 @@
                          :shape-ids shape-ids
                          :on-update-shape on-update-shape})))))))
 
-;; Shape Updates ---------------------------------------------------------------
+;; Events to update the value of attributes with applied tokens ---------------------------------------------------------
+
+;; (note that dwsh/update-shapes function returns an event)
 
 (defn update-shape-radius-all
   ([value shape-ids attributes] (update-shape-radius-all value shape-ids attributes nil))
@@ -326,7 +328,7 @@
             (dwsl/update-layout-child shape-ids props {:ignore-touched true
                                                        :page-id page-id}))))))))
 
-;; Token Types -----------------------------------------------------------------
+;; Map token types to different properties used along the cokde ---------------------------------------------------------
 
 ;; FIXME: the values should be lazy evaluated, probably a function,
 ;; becasue on future we will need to translate that labels and that
