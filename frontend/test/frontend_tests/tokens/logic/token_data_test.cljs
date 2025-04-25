@@ -2,7 +2,7 @@
   (:require
    [app.common.test-helpers.files :as cthf]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.data.tokens :as dt]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
@@ -27,7 +27,7 @@
     done
     (let [file   (setup-file-with-token-lib)
           store  (ths/setup-store file)
-          events [(dt/duplicate-token-set "Set A" false)]]
+          events [(dwtl/duplicate-token-set "Set A" false)]]
 
       (tohs/run-store-async
        store done events
@@ -46,7 +46,7 @@
     done
     (let [file   (setup-file-with-token-lib)
           store  (ths/setup-store file)
-          events [(dt/duplicate-token-set "Set B" false)]]
+          events [(dwtl/duplicate-token-set "Set B" false)]]
 
       (tohs/run-store-async
        store done events

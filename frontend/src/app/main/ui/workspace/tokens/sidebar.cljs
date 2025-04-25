@@ -13,8 +13,8 @@
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.data.tokens :as dt]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
@@ -83,7 +83,7 @@
         (mf/use-fn
          (fn [event token]
            (dom/prevent-default event)
-           (st/emit! (dt/assign-token-context-menu
+           (st/emit! (dwtl/assign-token-context-menu
                       {:type :token
                        :position (dom/get-client-position event)
                        :errors (:errors token)
@@ -92,14 +92,14 @@
         on-toggle-open-click
         (mf/use-fn
          (mf/deps is-open type)
-         #(st/emit! (dt/set-token-type-section-open type (not is-open))))
+         #(st/emit! (dwtl/set-token-type-section-open type (not is-open))))
 
         on-popover-open-click
         (mf/use-fn
          (mf/deps type title modal)
          (fn [event]
            (dom/stop-propagation event)
-           (st/emit! (dt/set-token-type-section-open type true)
+           (st/emit! (dwtl/set-token-type-section-open type true)
                      ;; FIXME: use dom/get-client-position
                      (modal/show (:key modal)
                                  {:x (.-clientX ^js event)
@@ -325,7 +325,7 @@
         (let [match (->> (ctob/get-sets tokens-lib)
                          (first)
                          (:name))]
-          (st/emit! (dt/set-selected-token-set-name match)))))
+          (st/emit! (dwtl/set-selected-token-set-name match)))))
 
     [:*
      [:& token-context-menu]
@@ -394,7 +394,7 @@
                   (sd/process-json-stream {:file-name file-name})
                   (rx/subs! (fn [lib]
                               (st/emit! (ptk/data-event ::ev/event {::ev/name "import-tokens"})
-                                        (dt/import-tokens-lib lib)))
+                                        (dwtl/import-tokens-lib lib)))
                             (fn [err]
                               (js/console.error err)
                               (st/emit! (ntf/show {:content (wte/humanize-errors [(ex-data err)])
