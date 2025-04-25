@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cft]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
@@ -23,7 +24,6 @@
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
-   [app.main.ui.workspace.tokens.token :as wtt]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
@@ -56,8 +56,8 @@
                                          (keys))
                                     [])
 
-                      resolved-value (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value])
-                      tokenized-attributes (wtt/attributes-map attributes token)]
+                      resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
+                      tokenized-attributes (cft/attributes-map attributes token)]
                   (rx/of
                    (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
                    (dwu/start-undo-transaction undo-id)
@@ -80,7 +80,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
-       (let [remove-token #(when % (wtt/remove-attributes-for-token attributes token %))]
+       (let [remove-token #(when % (cft/remove-attributes-for-token attributes token %))]
          (dwsh/update-shapes
           shape-ids
           (fn [shape]
@@ -95,7 +95,7 @@
             (get token-properties (:type token))
 
             unapply-tokens?
-            (wtt/shapes-token-applied? token shapes (or all-attributes attributes))
+            (cft/shapes-token-applied? token shapes (or all-attributes attributes))
 
             shape-ids (map :id shapes)]
         (if unapply-tokens?

@@ -10,6 +10,7 @@
    [app.common.colors :as c]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cft]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.style-dictionary :as sd]
@@ -28,7 +29,6 @@
    [app.main.ui.workspace.tokens.components.controls.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
    [app.main.ui.workspace.tokens.errors :as wte]
-   [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.update :as wtu]
    [app.main.ui.workspace.tokens.warnings :as wtw]
    [app.util.dom :as dom]
@@ -64,7 +64,7 @@
   (let [path-exists-schema
         (m/-simple-schema
          {:type :token/name-exists
-          :pred #(not (wtt/token-name-path-exists? % tokens-tree))
+          :pred #(not (cft/token-name-path-exists? % tokens-tree))
           :type-properties {:error/fn #(str "A token already exists at the path: " (:value %))}})]
     (m/schema
      [:and
@@ -240,7 +240,7 @@
   (let [create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
         token-properties (dwta/get-token-properties token)
-        color? (wtt/color-token? token)
+        color? (cft/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
 
         active-theme-tokens (cond-> (mf/deref refs/workspace-active-theme-sets-tokens)
@@ -254,7 +254,7 @@
                                                                      :interactive? true})
         token-path (mf/use-memo
                     (mf/deps (:name token))
-                    #(wtt/token-name->path (:name token)))
+                    #(cft/token-name->path (:name token)))
 
         selected-set-tokens-tree (mf/use-memo
                                   (mf/deps token-path selected-set-tokens)
@@ -329,7 +329,7 @@
         value-input-ref (mf/use-ref nil)
         value-ref (mf/use-var (:value token))
 
-        token-resolve-result* (mf/use-state (get resolved-tokens (wtt/token-identifier token)))
+        token-resolve-result* (mf/use-state (get resolved-tokens (cft/token-identifier token)))
         token-resolve-result (deref token-resolve-result*)
 
         set-resolve-value
