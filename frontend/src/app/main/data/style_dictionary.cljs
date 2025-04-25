@@ -1,4 +1,4 @@
-(ns app.main.ui.workspace.tokens.style-dictionary
+(ns app.main.data.style-dictionary
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
@@ -6,8 +6,8 @@
    [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.data.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.errors :as wte]
-   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.warnings :as wtw]
    [app.util.time :as dt]
