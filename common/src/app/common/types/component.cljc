@@ -287,7 +287,7 @@
 
 (defn get-component-root
   [component]
-  (if (true? (:main-instance-id component))
+  (if (some? (:main-instance-id component))
     (get-in component [:objects (:main-instance-id component)])
     (get-in component [:objects (:id component)])))
 

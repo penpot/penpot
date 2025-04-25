@@ -5177,6 +5177,9 @@ msgstr "Annotation"
 msgid "workspace.options.component.copy"
 msgstr "Copy"
 
+msgid "workspace.options.component.unlinked"
+msgstr "Unlinked"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:180
 msgid "workspace.options.component.create-annotation"
 msgstr "Create an annotation"
@@ -6625,6 +6628,9 @@ msgstr "Reset overrides"
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:466
 msgid "workspace.shape.menu.restore-main"
 msgstr "Restore main component"
+
+msgid "workspace.shape.menu.restore-variant"
+msgstr "Restore variant"
 
 #: src/app/main/ui/workspace/context_menu.cljs:247
 msgid "workspace.shape.menu.select-layer"

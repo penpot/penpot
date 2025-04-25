@@ -5203,6 +5203,9 @@ msgstr "Nota"
 msgid "workspace.options.component.copy"
 msgstr "Copia"
 
+msgid "workspace.options.component.unlinked"
+msgstr "Desvinculado"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:180
 msgid "workspace.options.component.create-annotation"
 msgstr "Crear una nota"
@@ -6655,6 +6658,9 @@ msgstr "Deshacer modificaciones"
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:466
 msgid "workspace.shape.menu.restore-main"
 msgstr "Restaurar componente principal"
+
+msgid "workspace.shape.menu.restore-variant"
+msgstr "Restaurar variante"
 
 #: src/app/main/ui/workspace/context_menu.cljs:247
 msgid "workspace.shape.menu.select-layer"
