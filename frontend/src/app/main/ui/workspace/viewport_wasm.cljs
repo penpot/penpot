@@ -105,6 +105,7 @@
         workspace-editor-state (mf/deref refs/workspace-editor-state)
         workspace-v2-editor-state (mf/deref refs/workspace-v2-editor-state)
 
+        file-id           (get file :id)
         objects           (get page :objects)
         page-id           (get page :id)
         background        (get page :background clr/canvas)
@@ -341,6 +342,7 @@
       (when show-comments?
         [:> comments/comments-layer* {:vbox vbox
                                       :page-id page-id
+                                      :file-id file-id
                                       :vport vport
                                       :zoom zoom}])
 
