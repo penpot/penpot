@@ -2,7 +2,7 @@ use crate::shapes::Shape;
 use crate::view::Viewbox;
 use skia_safe::{self as skia, IRect, Paint, RRect};
 
-use super::{gpu_state::GpuState, tiles::Tile};
+use super::{gpu_state::GpuState, tiles::Tile, tiles::TILE_SIZE};
 
 use base64::{engine::general_purpose, Engine as _};
 use std::collections::HashMap;
@@ -16,6 +16,7 @@ const TILE_SIZE_MULTIPLIER: i32 = 2;
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {
     Target,
+    Cache,
     Current,
     Fills,
     Strokes,
@@ -27,6 +28,7 @@ pub enum SurfaceId {
 pub struct Surfaces {
     // is the final destination surface, the one that it is represented in the canvas element.
     target: skia::Surface,
+    cache: skia::Surface,
     // keeps the current render
     current: skia::Surface,
     // keeps the current shape's fills
@@ -60,7 +62,7 @@ impl Surfaces {
         let margins = skia::ISize::new(extra_tile_dims.width / 4, extra_tile_dims.height / 4);
 
         let target = gpu_state.create_target_surface(width, height);
-
+        let cache = gpu_state.create_surface_with_dimensions("cache".to_string(), width, height);
         let current = gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims);
         let drop_shadows =
             gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims);
@@ -75,6 +77,7 @@ impl Surfaces {
         let tiles = TileTextureCache::new();
         Surfaces {
             target,
+            cache,
             current,
             drop_shadows,
             inner_shadows,
@@ -89,6 +92,11 @@ impl Surfaces {
 
     pub fn resize(&mut self, gpu_state: &mut GpuState, new_width: i32, new_height: i32) {
         self.reset_from_target(gpu_state.create_target_surface(new_width, new_height));
+    }
+
+    pub fn snapshot(&mut self, id: SurfaceId) -> skia::Image {
+        let surface = self.get_mut(id);
+        surface.image_snapshot()
     }
 
     pub fn base64_snapshot(&mut self, id: SurfaceId) -> String {
@@ -160,6 +168,7 @@ impl Surfaces {
     fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
         match id {
             SurfaceId::Target => &mut self.target,
+            SurfaceId::Cache => &mut self.cache,
             SurfaceId::Current => &mut self.current,
             SurfaceId::DropShadows => &mut self.drop_shadows,
             SurfaceId::InnerShadows => &mut self.inner_shadows,
@@ -174,6 +183,15 @@ impl Surfaces {
         self.target = target;
         self.debug = self.target.new_surface_with_dimensions(dim).unwrap();
         // The rest are tile size surfaces
+    }
+
+    pub fn resize_cache(&mut self, gpu_state: &mut GpuState, cache_dims: skia::ISize, interest_area_threshold: i32) {
+        self.cache = gpu_state.create_surface_with_isize("cache".to_string(), cache_dims);
+        self.cache.canvas().reset_matrix();
+        self.cache.canvas().translate((
+            (interest_area_threshold as f32 * TILE_SIZE),
+            (interest_area_threshold as f32 * TILE_SIZE),
+        ));        
     }
 
     pub fn draw_rect_to(&mut self, id: SurfaceId, shape: &Shape, paint: &Paint) {
@@ -227,18 +245,22 @@ impl Surfaces {
         self.tiles.visit(tile);
     }
 
-    pub fn cache_current_tile_texture(&mut self, tile: Tile) {
-        let snapshot = self.current.image_snapshot();
+    pub fn cache_current_tile_texture(&mut self, tile: Tile, tile_rect: skia::Rect) {
         let rect = IRect::from_xywh(
             self.margins.width,
             self.margins.height,
-            snapshot.width() - TILE_SIZE_MULTIPLIER * self.margins.width,
-            snapshot.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
+            self.current.width() - TILE_SIZE_MULTIPLIER * self.margins.width,
+            self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
         );
 
-        let mut context = self.current.direct_context();
-        if let Some(snapshot) = snapshot.make_subset(&mut context, &rect) {
-            self.tiles.add(tile, snapshot);
+        if let Some(snapshot) = self.current.image_snapshot_with_bounds(&rect) {
+            self.tiles.add(tile, snapshot.clone());
+            self.cache.canvas().draw_image_rect(
+                &snapshot.clone(),
+                None,
+                tile_rect,
+                &skia::Paint::default(),
+            );
         }
     }
 

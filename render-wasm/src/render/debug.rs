@@ -30,6 +30,14 @@ fn render_debug_view(render_state: &mut RenderState) {
         .draw_rect(rect, &paint);
 }
 
+pub fn render_debug_cache_surface(render_state: &mut RenderState) {
+    let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
+    canvas.save();
+    canvas.scale((0.1, 0.1));
+    render_state.surfaces.draw_into(SurfaceId::Cache, SurfaceId::Debug, None);
+    render_state.surfaces.canvas(SurfaceId::Debug).restore();
+}
+
 pub fn render_wasm_label(render_state: &mut RenderState) {
     let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
     let skia::ISize { width, height } = canvas.base_layer_size();
@@ -164,6 +172,7 @@ pub fn render(render_state: &mut RenderState) {
     render_debug_view(render_state);
     render_debug_viewbox_tiles(render_state);
     render_debug_tiles(render_state);
+    render_debug_cache_surface(render_state);
     render_state.surfaces.draw_into(
         SurfaceId::Debug,
         SurfaceId::Target,
