@@ -15,10 +15,10 @@
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
-   [app.main.data.tokens :as dt]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.ui.workspace.tokens.update :as wtu]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
@@ -203,11 +203,11 @@
           store    (ths/setup-store file)
 
          ;; ==== Action
-          events [(dt/set-selected-token-set-name "test-token-set")
-                  (dt/update-token "test-token-1"
-                                   {:name "test-token-1"
-                                    :type :border-radius
-                                    :value 66})]
+          events [(dwtl/set-selected-token-set-name "test-token-set")
+                  (dwtl/update-token "test-token-1"
+                                     {:name "test-token-1"
+                                      :type :border-radius
+                                      :value 66})]
 
           step2 (fn [_]
                   (let [events2 [(wtu/update-workspace-tokens)
@@ -359,25 +359,25 @@
           store (ths/setup-store file)
 
          ;; ==== Action
-          events [(dt/set-selected-token-set-name "test-token-set")
-                  (dt/update-token "token-radius"
-                                   {:name "token-radius"
-                                    :value 30})
-                  (dt/update-token "token-rotation"
-                                   {:name "token-rotation"
-                                    :value 45})
-                  (dt/update-token "token-opacity"
-                                   {:name "token-opacity"
-                                    :value 0.9})
-                  (dt/update-token "token-stroke-width"
-                                   {:name "token-stroke-width"
-                                    :value 8})
-                  (dt/update-token "token-color"
-                                   {:name "token-color"
-                                    :value "#ff0000"})
-                  (dt/update-token "token-dimensions"
-                                   {:name "token-dimensions"
-                                    :value 200})]
+          events [(dwtl/set-selected-token-set-name "test-token-set")
+                  (dwtl/update-token "token-radius"
+                                     {:name "token-radius"
+                                      :value 30})
+                  (dwtl/update-token "token-rotation"
+                                     {:name "token-rotation"
+                                      :value 45})
+                  (dwtl/update-token "token-opacity"
+                                     {:name "token-opacity"
+                                      :value 0.9})
+                  (dwtl/update-token "token-stroke-width"
+                                     {:name "token-stroke-width"
+                                      :value 8})
+                  (dwtl/update-token "token-color"
+                                     {:name "token-color"
+                                      :value "#ff0000"})
+                  (dwtl/update-token "token-dimensions"
+                                     {:name "token-dimensions"
+                                      :value 200})]
 
           step2 (fn [_]
                   (let [events2 [(wtu/update-workspace-tokens)

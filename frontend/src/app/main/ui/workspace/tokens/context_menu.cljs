@@ -11,9 +11,9 @@
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
-   [app.main.data.tokens :as dt]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -264,7 +264,7 @@
       :action (fn [event]
                 (let [{:keys [key fields]} modal]
                   (dom/stop-propagation event)
-                  (st/emit! (dt/assign-token-context-menu nil)
+                  (st/emit! (dwtl/assign-token-context-menu nil)
                             (modal/show key {:x (.-clientX ^js event)
                                              :y (.-clientY ^js event)
                                              :position :right
@@ -274,10 +274,10 @@
                                              :token token}))))}
      {:title (tr "workspace.token.duplicate")
       :no-selectable true
-      :action #(st/emit! (dt/duplicate-token (:name token)))}
+      :action #(st/emit! (dwtl/duplicate-token (:name token)))}
      {:title (tr "workspace.token.delete")
       :no-selectable true
-      :action #(st/emit! (dt/delete-token
+      :action #(st/emit! (dwtl/delete-token
                           (ctob/prefixed-set-path-string->set-name-string selected-token-set-name)
                           (:name token)))}]))
 
@@ -446,7 +446,7 @@
       (mf/portal
        (mf/html
         [:& dropdown {:show is-open?
-                      :on-close #(st/emit! (dt/assign-token-context-menu nil))}
+                      :on-close #(st/emit! (dwtl/assign-token-context-menu nil))}
          [:div {:class (stl/css :token-context-menu)
                 :data-testid "tokens-context-menu-for-token"
                 :ref dropdown-ref

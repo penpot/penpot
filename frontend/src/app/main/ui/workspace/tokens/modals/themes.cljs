@@ -12,7 +12,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
-   [app.main.data.tokens :as wdt]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
@@ -117,7 +117,7 @@
                       (fn [e]
                         (dom/prevent-default e)
                         (dom/stop-propagation e)
-                        (st/emit! (wdt/delete-token-theme group name)))
+                        (st/emit! (dwtl/delete-token-theme group name)))
                       on-edit-theme
                       (fn [e]
                         (dom/prevent-default e)
@@ -131,7 +131,7 @@
               [:div {:on-click (fn [e]
                                  (dom/prevent-default e)
                                  (dom/stop-propagation e)
-                                 (st/emit! (wdt/toggle-token-theme-active? group name)))}
+                                 (st/emit! (dwtl/toggle-token-theme-active? group name)))}
                [:& switch {:name (tr "workspace.token.theme-name" name)
                            :on-change (constantly nil)
                            :selected? selected?}]]]
@@ -292,7 +292,7 @@
         (mf/use-fn
          (mf/deps current-theme on-back)
          (fn []
-           (st/emit! (wdt/delete-token-theme (:group current-theme) (:name current-theme)))
+           (st/emit! (dwtl/delete-token-theme (:group current-theme) (:name current-theme)))
            (on-back)))
 
         ;; Sets tree handlers
@@ -386,7 +386,7 @@
         (mf/use-fn
          (mf/deps theme)
          (fn [theme']
-           (st/emit! (wdt/update-token-theme [(:group theme) (:name theme)] theme'))))]
+           (st/emit! (dwtl/update-token-theme [(:group theme) (:name theme)] theme'))))]
 
     [:> edit-create-theme*
      {:change-view change-view
@@ -402,7 +402,7 @@
         (mf/use-fn
          (fn [theme]
            (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens-theme"})
-                     (wdt/create-token-theme theme))))
+                     (dwtl/create-token-theme theme))))
         has-prev-view (has-prev-view (:prev-type state))]
 
     [:> edit-create-theme*
