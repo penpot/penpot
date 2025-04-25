@@ -19,7 +19,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
-   [app.main.ui.workspace.tokens.update :as wtu]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
@@ -210,7 +210,7 @@
                                       :value 66})]
 
           step2 (fn [_]
-                  (let [events2 [(wtu/update-workspace-tokens)
+                  (let [events2 [(dwtp/propagate-workspace-tokens)
                                  (dwl/sync-file (:id file) (:id file))]]
                     (tohs/run-store-async
                      store done events2
@@ -380,7 +380,7 @@
                                       :value 200})]
 
           step2 (fn [_]
-                  (let [events2 [(wtu/update-workspace-tokens)
+                  (let [events2 [(dwtp/propagate-workspace-tokens)
                                  (dwl/sync-file (:id file) (:id file))]]
                     (tohs/run-store-async
                      store done events2
