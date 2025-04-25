@@ -99,8 +99,6 @@
   (h/call wasm/internal-module "_render" timestamp)
   (set! wasm/internal-frame-id nil))
 
-
-
 (defn cancel-render
   [_]
   (when wasm/internal-frame-id
@@ -606,15 +604,22 @@
   (h/call wasm/internal-module "_clear_shape_text")
   (let [paragraph-set (first (dm/get-prop content :children))
         paragraphs (dm/get-prop paragraph-set :children)
-        fonts (fonts/get-content-fonts content)]
+        fonts (fonts/get-content-fonts content)
+        emoji? (atom false)]
     (loop [index 0]
       (when (< index (count paragraphs))
         (let [paragraph (nth paragraphs index)
               leaves (dm/get-prop paragraph :children)]
           (when (seq leaves)
-            (t/write-shape-text leaves paragraph)
+            (let [text (apply str (map :text leaves))]
+              (when (and (not @emoji?) (t/contains-emoji? text))
+                (reset! emoji? true))
+              (t/write-shape-text leaves paragraph text))
             (recur (inc index))))))
-    (f/store-fonts fonts)))
+    (let [fonts (if @emoji?
+                  (f/add-emoji-font fonts)
+                  fonts)]
+      (f/store-fonts fonts))))
 
 (defn set-view-box
   [zoom vbox]
