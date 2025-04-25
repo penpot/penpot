@@ -2,7 +2,7 @@
   (:require
    [app.common.transit :as tr]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.data.style-dictionary :as sd]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [promesa.core :as p]))

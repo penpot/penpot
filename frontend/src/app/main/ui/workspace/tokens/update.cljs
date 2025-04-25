@@ -11,11 +11,11 @@
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
+   [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [clojure.data :as data]
@@ -185,7 +185,7 @@
       (when-let [tokens-lib (-> (dsh/lookup-file-data state)
                                 (get :tokens-lib))]
         (let [tokens (-> (ctob/get-active-themes-set-tokens tokens-lib)
-                         (wtsd/resolve-tokens+))]
+                         (sd/resolve-tokens+))]
           (->> (rx/from tokens)
                (rx/mapcat (fn [sd-tokens]
                             (let [undo-id (js/Symbol)]
