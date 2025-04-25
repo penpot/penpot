@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.update
+(ns app.main.data.workspace.tokens.propagation
   (:require
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
@@ -24,9 +24,9 @@
 
 ;; Constants -------------------------------------------------------------------
 
-(def filter-existing-values? false)
+(def ^:private filter-existing-values? false)
 
-(def attributes->shape-update
+(def ^:private attributes->shape-update
   {ctt/border-radius-keys dwta/update-shape-radius-for-corners
    ctt/color-keys dwta/update-fill-stroke
    ctt/stroke-width-keys dwta/update-stroke-width
@@ -48,6 +48,7 @@
 
 ;; Helpers ---------------------------------------------------------------------
 
+;; TODO: see if this can be replaced by more standard functions
 (defn deep-merge
   "Like d/deep-merge but unions set values."
   ([a b]
@@ -60,7 +61,7 @@
 
 ;; Data flows ------------------------------------------------------------------
 
-(defn invert-collect-key-vals
+(defn- invert-collect-key-vals
   [xs resolved-tokens shape]
   (-> (reduce
        (fn [acc [k v]]
@@ -74,7 +75,7 @@
              (update acc resolved-value (fnil conj #{}) k))))
        {} xs)))
 
-(defn split-attribute-groups [attrs-values-map]
+(defn- split-attribute-groups [attrs-values-map]
   (reduce
    (fn [acc [attrs v]]
      (cond
@@ -91,7 +92,7 @@
        attrs (assoc acc attrs v)))
    {} attrs-values-map))
 
-(defn shape-ids-by-values
+(defn- shape-ids-by-values
   [attrs-values-map object-id]
   (->> (map (fn [[value attrs]] [attrs {value #{object-id}}]) attrs-values-map)
        (into {})))
@@ -121,7 +122,6 @@
 
       [tokens frame-ids text-ids])))
 
-;; FIXME: revisit this
 (defn- actionize-shapes-update-info [page-id shapes-update-info]
   (mapcat (fn [[attrs update-infos]]
             (let [action (some attribute-actions-map attrs)]
@@ -131,14 +131,15 @@
                update-infos)))
           shapes-update-info))
 
-(defn update-tokens
+(defn propagate-tokens
+  "Propagate tokens values to all shapes where they are applied"
   [state resolved-tokens]
   (let [file-id         (get state :current-file-id)
         current-page-id (get state :current-page-id)
         fdata           (dsh/lookup-file-data state file-id)
         tpoint          (dt/tpoint-ms)]
 
-    (l/inf :status "START" :hint "update-tokens")
+    (l/inf :status "START" :hint "propagate-tokens")
     (->> (rx/concat
           (rx/of current-page-id)
           (->> (rx/from (:pages fdata))
@@ -155,7 +156,7 @@
                   (actionize-shapes-update-info page-id attrs)]
 
               (l/inf :status "PROGRESS"
-                     :hint "update-tokens"
+                     :hint "propagate-tokens"
                      :page-id (str page-id)
                      :elapsed (tpoint)
                      ::l/sync? true)
@@ -175,11 +176,11 @@
          (rx/finalize
           (fn [_]
             (let [elapsed (tpoint)]
-              (l/inf :status "END" :hint "update-tokens" :elapsed elapsed)))))))
+              (l/inf :status "END" :hint "propagate-tokens" :elapsed elapsed)))))))
 
-(defn update-workspace-tokens
+(defn propagate-workspace-tokens
   []
-  (ptk/reify ::update-workspace-tokens
+  (ptk/reify ::propagate-workspace-tokens
     ptk/WatchEvent
     (watch [_ state _]
       (when-let [tokens-lib (-> (dsh/lookup-file-data state)
@@ -191,5 +192,5 @@
                             (let [undo-id (js/Symbol)]
                               (rx/concat
                                (rx/of (dwu/start-undo-transaction undo-id :timeout false))
-                               (update-tokens state sd-tokens)
+                               (propagate-tokens state sd-tokens)
                                (rx/of (dwu/commit-undo-transaction undo-id))))))))))))

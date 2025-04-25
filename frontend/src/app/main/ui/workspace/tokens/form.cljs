@@ -17,6 +17,7 @@
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -29,7 +30,6 @@
    [app.main.ui.workspace.tokens.components.controls.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
    [app.main.ui.workspace.tokens.errors :as wte]
-   [app.main.ui.workspace.tokens.update :as wtu]
    [app.main.ui.workspace.tokens.warnings :as wtw]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
@@ -461,7 +461,7 @@
                                                        :type token-type
                                                        :value final-value
                                                        :description final-description}))
-                                 (wtu/update-workspace-tokens)
+                                 (dwtp/propagate-workspace-tokens)
                                  (modal/hide)))))))))
 
         on-delete-token
