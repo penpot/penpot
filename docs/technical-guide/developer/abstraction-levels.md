@@ -63,20 +63,19 @@ Each structure in this module has:
 * A **schema spec** that defines the structure of the type and its values:
 
      ```clojure
-     (def ::fill
+     (def schema:fill
        [:map {:title "Fill"}
         [:fill-color {:optional true} ::ctc/rgb-color]
         [:fill-opacity {:optional true} ::sm/safe-number]
         ...)
 
-     (def ::shape-attrs
-       [:map {:title "ShapeAttrs"}
-        [:name {:optional true} :string]
-        [:selrect {:optional true} ::grc/rect]
-        [:points {:optional true} ::points]
-        [:blocked {:optional true} :boolean]
-        [:fills {:optional true}
-         [:vector {:gen/max 2} ::fill]]
+     (def schema:shape-base-attrs
+       [:map {:title "ShapeMinimalRecord"}
+        [:id ::sm/uuid]
+        [:name :string]
+        [:type [::sm/one-of shape-types]]
+        [:selrect ::grc/rect]
+        [:points schema:points]
         ...)
 
       (def schema:token-set-attrs
@@ -93,7 +92,8 @@ Each structure in this module has:
 
 * A **protocol** that define the external interface to be used for this entity.
 
-    (NOTE: this is currently only implemented in Design Tokens subsystem).
+    (NOTE: this is currently only implemented in some subsystems like Design Tokens
+     and new path handling).
 
     ```clojure
     (defprotocol ITokenSet
@@ -199,20 +199,15 @@ domain entities inside a file.**
                       :include-deleted? include-deleted?)))
 
 (defn delete-component
-"Mark a component as deleted and store the main instance shapes inside it, to
-be able to be recovered later."
-[file-data component-id skip-undelete? Main-instance]
-(let [components-v2 (dm/get-in file-data [:options :components-v2])]
-  (if (or (not components-v2) skip-undelete?)
-        (ctkl/delete-component file-data component-id)
-        (let [set-main-instance ;; If there is a saved main-instance, restore it.
-               #(if main-instance
-                  (assoc-in % [:objects (:main-instance-id %)] main-instance)
-                  %)]
-        (-> file-data
-           (ctkl/update-component component-id load-component-objects)
-           (ctkl/update-component component-id set-main-instance)
-           (ctkl/mark-component-deleted component-id))))))
+  "Mark a component as deleted and store the main instance shapes iside it, to
+  be able to be recovered later."
+  [file-data component-id skip-undelete? delta]
+  (let [delta (or delta (gpt/point 0 0))]
+    (if skip-undelete?
+      (ctkl/delete-component file-data component-id)
+      (-> file-data
+          (ctkl/update-component component-id #(load-component-objects file-data % delta))
+          (ctkl/mark-component-deleted component-id)))))
 ```
 
 > This module is still needing an important refactor. Mainly to take functions
@@ -251,21 +246,6 @@ There exists a <code class="language-clojure">changes-builder</code> module
 with helper functions to conveniently build changes objects, and to
 automatically calculate the reverse undo change.
 
-```clojure
-(sm/define! ::changes
-  [:map {:title "changes"}
-   [:redo-changes vector?]
-   [:undo-changes seq?]
-   [:origin {:optional true} any?]
-   [:save-undo? {:optional true} boolean?]
-   [:stack-undo? {:optional true} boolean?]
-   [:undo-group {:optional true} any?]])
-
-(defmethod process-change :add-component
-  [file-data params]
-  (ctkl/add-component file-data params))
-```
-
 > IMPORTANT RULES
 >
 > All changes must satisfy two properties:
@@ -303,27 +283,35 @@ has an applied token.
 
 ```clojure
 (defn generate-instantiate-component
-"Generate changes to create a new instance from a component."
-[changes objects file-id component-id position page libraries old-id parent-id
-  frame-id {:keys [force-frame?] :or {force-frame? False}}]
- (let [component        (ctf/get-component libraries file-id component-id)
-        parent          (when parent-id (get objects parent-id))
-        library         (get libraries file-id)
-        components-v2 (dm/get-in library [:data :options :components-v2])
-        [new-shape new-shapes]º
-        (ctn/make-component-instance page
-                                        Component
-                                        (:data library)
-                                        Position
-                                        Components-v2
-                                        (cond-> {}
-                                   force-frame? (assoc :force-frame-id frame-id)))
-        changes (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
-                 (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id)))
-        changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
-                       changes
-                       (rest new-shapes))]
-[new-shape changes]))
+  "Generate changes to create a new instance from a component."
+  ([changes objects file-id component-id position page libraries]
+   (generate-instantiate-component changes objects file-id component-id position page libraries nil nil nil {}))
+  ([changes objects file-id component-id position page libraries old-id parent-id frame-id
+    {:keys [force-frame?]
+     :or {force-frame? false}}]
+   (let [component     (ctf/get-component libraries file-id component-id)
+         library       (get libraries file-id)
+         parent        (when parent-id (get objects parent-id))
+
+         [...]
+
+         [new-shape new-shapes]
+         (ctn/make-component-instance page
+                                      component
+                                      (:data library)
+                                      position
+                                      (cond-> {}
+                                        force-frame?
+                                        (assoc :force-frame-id frame-id)))
+
+         [...]
+
+         changes
+         (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
+                 changes
+                 (rest new-shapes))]
+
+     [new-shape changes])))
 ```
 
 ## Data events
