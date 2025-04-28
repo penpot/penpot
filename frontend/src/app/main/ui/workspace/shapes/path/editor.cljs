@@ -272,7 +272,8 @@
                 hover-handlers
                 hover-points
                 snap-toggled]
-         :as edit-path} (mf/deref edit-path-ref)
+         :as edit-path}
+        (mf/deref edit-path-ref)
 
         selected-points (or selected-points #{})
         shape (hooks/use-equal-memo shape)
@@ -282,7 +283,7 @@
 
         base-points
         (mf/with-memo [base-content]
-          (path.segment/get-points base-content))
+          (path/get-points base-content))
 
         content
         (mf/with-memo [base-content content-modifiers]
@@ -290,7 +291,7 @@
 
         content-points
         (mf/with-memo [content]
-          (path.segment/get-points content))
+          (path/get-points content))
 
         point->base (->> (map hash-map content-points base-points) (reduce merge))
         base->point (map-invert point->base)

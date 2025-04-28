@@ -164,6 +164,12 @@
 ;; PATH SHAPE HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn get-points
+  "Returns points for the given segment, faster version of
+  the `content->points`."
+  [content]
+  (some-> content segment/get-points))
+
 (defn- calc-bool-content*
   "Calculate the boolean content from shape and objects. Returns plain
   vector of segments"
