@@ -314,11 +314,11 @@
                              (resolve-tokens-with-errors+)
                              (p/then (fn [_] tokens-lib))
                              (p/catch (fn [sd-error]
-                                        (let [reference-errors (reference-errors sd-error)
-                                              err (if reference-errors
-                                                    (wte/error-ex-info :error.import/style-dictionary-reference-errors reference-errors sd-error)
-                                                    (wte/error-ex-info :error.import/style-dictionary-unknown-error sd-error sd-error))]
-                                          (throw err)))))
+                                        (let [reference-errors (reference-errors sd-error)]
+                                          ;; We allow reference errors for the users to resolve in the ui and throw on any other errors
+                                          (if reference-errors
+                                            (p/resolved tokens-lib)
+                                            (throw (wte/error-ex-info :error.import/style-dictionary-unknown-error sd-error sd-error)))))))
                          (catch js/Error e
                            (p/rejected (wte/error-ex-info :error.import/style-dictionary-unknown-error "" e))))))))))
 

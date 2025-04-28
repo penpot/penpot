@@ -117,23 +117,6 @@ color.value tries to reference missing, which is not defined.")))
               (t/is (= :error.import/invalid-json-data (:error/code (ex-data err))))
               (done)))))))
 
-(t/deftest process-missing-references-json-test
-  (t/async
-    done
-    (t/testing "fails on missing references in tokens"
-      (let [json (-> {"core" {"color" {"$value" "{missing}"
-                                       "$type" "color"}}
-                      "$metadata" {"tokenSetOrder" ["core"]}}
-                     (tr/encode-str {:type :json-verbose}))]
-        (->> (rx/of json)
-             (sd/process-json-stream)
-             (rx/subs!
-              (fn []
-                (throw (js/Error. "Should be an error")))
-              (fn [err]
-                (t/is (= :error.import/style-dictionary-reference-errors (:error/code (ex-data err))))
-                (done))))))))
-
 (t/deftest single-set-legacy-json-decoding
   (let [decode-single-set-legacy-json #'sd/decode-single-set-legacy-json
         json {"color" {"red" {"100" {"value" "red"
