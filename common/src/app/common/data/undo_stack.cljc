@@ -47,7 +47,7 @@
 
 (defn undo
   [stack]
-  (update stack :index dec))
+  (update stack :index #(max 0 (dec %))))
 
 (defn redo
   [{index :index items :items :as stack}]

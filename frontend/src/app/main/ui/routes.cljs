@@ -82,7 +82,7 @@
   (binding [storage/*sync* true]
     (when (some? template)
       (swap! storage/session assoc
-             :template-url template))
+             :template template))
     (when (some? plugin)
       (swap! storage/session assoc
              :plugin-url plugin))))

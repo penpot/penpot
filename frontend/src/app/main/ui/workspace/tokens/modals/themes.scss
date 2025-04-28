@@ -190,6 +190,7 @@
   border: $s-1 solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
   border-radius: $s-8;
   overflow-y: auto;
+  max-height: $s-452;
 }
 
 .sets-count-empty-button {

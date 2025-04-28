@@ -284,7 +284,6 @@
            (let [team-id (-> (dom/get-current-target event)
                              (dom/get-data "value")
                              (uuid/parse))]
-
              (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))))
 
         handle-select-default
@@ -963,13 +962,14 @@
            (dom/open-new-window "https://penpot.app/pricing")))]
 
     [:*
-     [:button {:class (stl/css :upgrade-plan-section)
-               :on-click on-power-up-click}
-      [:div {:class (stl/css :penpot-free)}
-       [:span (tr "dashboard.upgrade-plan.penpot-free")]
-       [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
-      [:div {:class (stl/css :power-up)}
-       (tr "dashboard.upgrade-plan.power-up")]]
+     (when (contains? cf/flags :subscriptions-old)
+       [:button {:class (stl/css :upgrade-plan-section)
+                 :on-click on-power-up-click}
+        [:div {:class (stl/css :penpot-free)}
+         [:span (tr "dashboard.upgrade-plan.penpot-free")]
+         [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
+        [:div {:class (stl/css :power-up)}
+         (tr "dashboard.upgrade-plan.power-up")]])
      (when (and team profile)
        [:& comments-section
         {:profile profile

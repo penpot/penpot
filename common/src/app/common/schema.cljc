@@ -390,14 +390,22 @@
 (register! :merge (mu/-merge))
 (register! :union (mu/-union))
 
-(def uuid-rx
-  #"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-
-(defn parse-uuid
+(defn- parse-uuid
   [s]
-  (if (string? s)
-    (some->> (re-matches uuid-rx s) uuid/uuid)
-    s))
+  (if (uuid? s)
+    s
+    (if (str/empty? s)
+      nil
+      (try
+        (uuid/parse s)
+        (catch #?(:clj Exception :cljs :default) _cause
+          s)))))
+
+(defn- encode-uuid
+  [v]
+  (if (uuid? v)
+    (str v)
+    v))
 
 (register!
  {:type ::uuid
@@ -409,8 +417,8 @@
    :gen/gen (sg/uuid)
    :decode/string parse-uuid
    :decode/json parse-uuid
-   :encode/string str
-   :encode/json str
+   :encode/string encode-uuid
+   :encode/json encode-uuid
    ::oapi/type "string"
    ::oapi/format "uuid"}})
 
@@ -856,7 +864,7 @@
                                     choices))]
                {:pred pred
                 :type-properties
-                {:title "contains"
+                {:title "contains any"
                  :description "contains predicate"}}))})
 
 (register!

@@ -28,7 +28,7 @@
    [app.main.ui.dashboard.file-menu :refer [file-menu*]]
    [app.main.ui.dashboard.import :refer [use-import-file]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
-   [app.main.ui.dashboard.placeholder :refer [empty-placeholder loading-placeholder]]
+   [app.main.ui.dashboard.placeholder :refer [empty-grid-placeholder* loading-placeholder*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
@@ -89,14 +89,16 @@
 
     (mf/with-effect [file-id revn visible? thumbnail-id]
       (when (and visible? (not thumbnail-id))
-        (->> (ask-for-thumbnail file-id revn)
-             (rx/subs! (fn [thumbnail-id]
-                         (st/emit! (dd/set-file-thumbnail file-id thumbnail-id)))
-                       (fn [cause]
-                         (log/error :hint "unable to render thumbnail"
-                                    :file-if file-id
-                                    :revn revn
-                                    :message (ex-message cause)))))))
+        (let [subscription
+              (->> (ask-for-thumbnail file-id revn)
+                   (rx/subs! (fn [thumbnail-id]
+                               (st/emit! (dd/set-file-thumbnail file-id thumbnail-id)))
+                             (fn [cause]
+                               (log/error :hint "unable to render thumbnail"
+                                          :file-if file-id
+                                          :revn revn
+                                          :message (ex-message cause)))))]
+          (partial rx/dispose! subscription))))
 
     [:div {:class (stl/css :grid-item-th)
            :style {:background-color bg-color}
@@ -511,7 +513,7 @@
            :ref node-ref}
      (cond
        (nil? files)
-       [:& loading-placeholder]
+       [:> loading-placeholder*]
 
        (seq files)
        (for [[index slice] (d/enumerate (partition-all limit files))]
@@ -528,12 +530,13 @@
               :can-edit can-edit}])])
 
        :else
-       [:& empty-placeholder
+       [:> empty-grid-placeholder*
         {:limit limit
          :can-edit can-edit
          :create-fn create-fn
          :origin origin
          :project-id project-id
+         :team-id team-id
          :on-finish-import on-finish-import}])]))
 
 (mf/defc line-grid-row
@@ -645,7 +648,7 @@
            :on-drop on-drop}
      (cond
        (nil? files)
-       [:& loading-placeholder]
+       [:> loading-placeholder*]
 
        (seq files)
        [:& line-grid-row {:files files
@@ -656,10 +659,11 @@
                           :limit limit}]
 
        :else
-       [:& empty-placeholder
-        {:dragging? @dragging?
+       [:> empty-grid-placeholder*
+        {:is-dragging @dragging?
          :limit limit
          :can-edit can-edit
          :create-fn create-fn
          :project-id project-id
+         :team-id team-id
          :on-finish-import on-finish-import}])]))

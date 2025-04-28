@@ -292,7 +292,7 @@
 
 (defn get-file-etag
   [{:keys [::rpc/profile-id]} {:keys [modified-at revn vern permissions]}]
-  (str profile-id "/" revn "/" vern "/"
+  (str profile-id "/" revn "/" vern "/" (hash fmg/available-migrations) "/"
        (dt/format-instant modified-at :iso)
        "/"
        (uri/map->query-string permissions)))

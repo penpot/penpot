@@ -124,7 +124,8 @@
     ;; TODO: deprecate this flag and consolidate the code
     :export-file-v3
     :render-wasm-dpr
-    :hide-release-modal})
+    :hide-release-modal
+    :subscriptions-old})
 
 (def all-flags
   (set/union email login varia))

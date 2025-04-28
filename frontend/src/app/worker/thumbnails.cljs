@@ -42,12 +42,11 @@
                :http-body body})))
 
 (defn- request-data-for-thumbnail
-  [file-id revn features]
+  [file-id revn]
   (let [path    "api/rpc/command/get-file-data-for-thumbnail"
         params   {:file-id file-id
                   :revn revn
-                  :strip-frames-with-thumbnails true
-                  :features features}
+                  :strip-frames-with-thumbnails true}
         request  {:method :get
                   :uri (u/join cf/public-uri path)
                   :credentials "include"
@@ -86,6 +85,6 @@
       nil)))
 
 (defmethod impl/handler :thumbnails/generate-for-file
-  [{:keys [file-id revn features] :as message} _]
-  (->> (request-data-for-thumbnail file-id revn features)
+  [{:keys [file-id revn] :as message} _]
+  (->> (request-data-for-thumbnail file-id revn)
        (rx/map render-thumbnail)))
