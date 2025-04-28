@@ -908,6 +908,22 @@
    ::oapi/format "iso"}})
 
 (register!
+ {:type ::timestamp
+  :pred inst?
+  :type-properties
+  {:title "inst"
+   :description "Satisfies Inst protocol"
+   :error/message "should be an instant"
+   :gen/gen (->> (sg/small-int)
+                 (sg/fmap (fn [v] (tm/parse-instant v))))
+   :decode/string tm/parse-instant
+   :encode/string inst-ms
+   :decode/json tm/parse-instant
+   :encode/json inst-ms
+   ::oapi/type "string"
+   ::oapi/format "number"}})
+
+(register!
  {:type ::fn
   :pred fn?})
 
