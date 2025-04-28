@@ -975,9 +975,29 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [selected (dsh/lookup-selected state)
-            objects (dsh/lookup-page-objects state)]
+            objects  (dsh/lookup-page-objects state)]
 
-        (if (> (count selected) 1)
+        (condp = (count selected)
+          0 (rx/empty)
+          1 (let [{:keys [id type] :as shape} (get objects (first selected))]
+              (case type
+                :text
+                (rx/of (dwe/start-edition-mode id))
+
+                (:group :bool :frame)
+                (let [shapes-ids (into (d/ordered-set) (get shape :shapes))]
+                  (rx/of (dws/select-shapes shapes-ids)))
+
+                :svg-raw
+                nil
+
+                (rx/of (dwe/start-edition-mode id)
+                       (dwdp/start-path-edit id))))
+
+          ;; When we have multiple shapes selected, instead of enter
+          ;; on the edition mode, we proceed to select all children of
+          ;; the selected shapes. Because we can't enter on edition
+          ;; mode on multiple shapes and this is a fallback operation.
           (let [shapes-to-select
                 (->> selected
                      (reduce
@@ -987,23 +1007,7 @@
                             (conj result shape-id)
                             (into result children))))
                       (d/ordered-set)))]
-            (rx/of (dws/select-shapes shapes-to-select)))
-
-          (when (d/not-empty? selected)
-            (let [{:keys [id type shapes]} (get objects (first selected))]
-              (case type
-                :text
-                (rx/of (dwe/start-edition-mode id))
-
-                (:group :bool :frame)
-                (let [shapes-ids (into (d/ordered-set) shapes)]
-                  (rx/of (dws/select-shapes shapes-ids)))
-
-                :svg-raw
-                nil
-
-                (rx/of (dwe/start-edition-mode id)
-                       (dwdp/start-path-edit id))))))))))
+            (rx/of (dws/select-shapes shapes-to-select))))))))
 
 (defn select-parent-layer
   []
