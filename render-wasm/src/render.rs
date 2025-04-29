@@ -734,7 +734,7 @@ impl RenderState {
                             }
 
                             for child_id in children_ids.iter().rev() {
-                                self.pending_nodes.push_back(NodeRenderState {
+                                self.pending_nodes.push_front(NodeRenderState {
                                     id: *child_id,
                                     visited_children: false,
                                     clip_bounds: children_clip_bounds,
