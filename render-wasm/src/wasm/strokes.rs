@@ -1,5 +1,3 @@
-use skia_safe as skia;
-
 use crate::mem;
 use crate::shapes;
 use crate::utils::uuid_from_u32_quartet;
