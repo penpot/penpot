@@ -32,14 +32,14 @@
    ::mf/forward-ref true
    ::mf/schema schema:input-field}
   [{:keys [id icon has-hint hint-type class type max-length variant children] :rest props} ref]
-  (let [ref   (or ref (mf/use-ref))
+  (let [input-ref (mf/use-ref)
         type  (d/nilv type "text")
         variant (d/nilv variant "dense")
         props (mf/spread-props props
                                {:class (stl/css-case
                                         :input true
                                         :input-with-icon (some? icon))
-                                :ref ref
+                                :ref (or ref input-ref)
                                 :aria-invalid (when (and has-hint
                                                          (= hint-type "error"))
                                                 "true")
@@ -47,7 +47,7 @@
                                                     (str id "-hint"))
                                 :type (d/nilv type "text")
                                 :id id
-                                :maxLength (d/nilv max-length (str max-input-length))})
+                                :max-length (d/nilv max-length max-input-length)})
 
         on-icon-click
         (mf/use-fn
@@ -58,13 +58,13 @@
              (dom/focus! input-node))))]
 
     [:div {:class (dm/str class " " (stl/css-case :input-wrapper true
-                                                  :variant-seamless (= variant "seamless")
-                                                  :variant-dense (= variant "dense")
-                                                  :variant-comfortable (= variant "comfortable")
                                                   :has-hint has-hint
                                                   :hint-type-hint (= hint-type "hint")
                                                   :hint-type-warning (= hint-type "warning")
-                                                  :hint-type-error (= hint-type "error")))}
+                                                  :hint-type-error (= hint-type "error")
+                                                  :variant-seamless (= variant "seamless")
+                                                  :variant-dense (= variant "dense")
+                                                  :variant-comfortable (= variant "comfortable")))}
      (when (some? icon)
        [:> icon* {:icon-id icon :class (stl/css :icon) :on-click on-icon-click}])
      [:> "input" props]

@@ -29,14 +29,14 @@
    ::mf/schema schema::input-tokens-value}
   [{:keys [class label max-length error value children] :rest props} ref]
   (let [id (mf/use-id)
-        ref   (or ref (mf/use-ref))
+        input-ref (mf/use-ref)
         props (mf/spread-props props {:id id
                                       :type "text"
                                       :class (stl/css :input)
                                       :aria-invalid error
                                       :max-length (d/nilv max-length max-input-length)
                                       :value value
-                                      :ref ref})]
+                                      :ref (or ref input-ref)})]
     [:div {:class (dm/str class " " (stl/css-case :wrapper true
                                                   :input-error error))}
      [:label {:for id :class (stl/css :label)} label]

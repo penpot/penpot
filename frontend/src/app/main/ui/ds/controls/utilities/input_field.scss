@@ -45,15 +45,11 @@
 }
 
 .variant-dense {
-  .input {
-    @include use-typography("body-small");
-  }
+  @include use-typography("body-small");
 }
 
 .variant-comfortable {
-  .input {
-    @include use-typography("body-medium");
-  }
+  @include use-typography("body-medium");
 }
 
 .variant-seamless {
@@ -84,6 +80,11 @@
   border: none;
   background: none;
   inline-size: 100%;
+
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
 
   color: var(--input-fg-color);
 
