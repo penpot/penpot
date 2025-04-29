@@ -25,7 +25,7 @@
     (.setFloat32 dview (+ offset 12) end-y true)
     (.setFloat32 dview (+ offset 16) opacity true)
     (.setFloat32 dview (+ offset 20) width true)
-    (.setUint32  dview (+ offset 24) (count stops) true)
+    (.setUint8   dview (+ offset 24) (count stops) true)
     (loop [stops (seq stops) offset (+ offset GRADIENT-BASE-SIZE)]
       (if (empty? stops)
         offset

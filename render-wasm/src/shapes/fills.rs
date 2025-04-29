@@ -17,7 +17,8 @@ pub struct RawGradientData {
     end_y: f32,
     opacity: f32,
     width: f32,
-    stop_count: u32,
+    stop_count: u8,
+    _padding: [u8; 3],
     stops: [RawStopData; MAX_GRADIENT_STOPS],
 }
 
@@ -30,7 +31,8 @@ impl From<[u8; RAW_GRADIENT_DATA_SIZE]> for RawGradientData {
             end_y: f32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
             opacity: f32::from_le_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]),
             width: f32::from_le_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]),
-            stop_count: u32::from_le_bytes([bytes[24], bytes[25], bytes[26], bytes[27]]),
+            stop_count: bytes[24],
+            _padding: [0; 3],
             // FIXME: 2025-04-22: use `array_chunks` once the next release is out
             //        and we update our devenv.
             // See https://github.com/rust-lang/rust/issues/74985
