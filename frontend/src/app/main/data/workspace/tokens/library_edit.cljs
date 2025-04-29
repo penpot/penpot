@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.data.tokens
+(ns app.main.data.workspace.tokens.library-edit
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
@@ -18,7 +18,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.ui.workspace.tokens.update :as wtu]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -123,7 +123,7 @@
                         (pcb/update-active-token-themes active-token-themes' prev-active-token-themes))]
         (rx/of
          (dch/commit-changes changes)
-         (wtu/update-workspace-tokens))))))
+         (dwtp/propagate-workspace-tokens))))))
 
 (defn delete-token-theme [group theme-name]
   (ptk/reify ::delete-token-theme
@@ -135,7 +135,7 @@
                         (pcb/set-token-theme group theme-name nil))]
         (rx/of
          (dch/commit-changes changes)
-         (wtu/update-workspace-tokens))))))
+         (dwtp/propagate-workspace-tokens))))))
 
 (defn create-token-set
   [set-name]
@@ -221,7 +221,7 @@
                         (clt/generate-toggle-token-set tlib name))]
 
         (rx/of (dch/commit-changes changes)
-               (wtu/update-workspace-tokens))))))
+               (dwtp/propagate-workspace-tokens))))))
 
 (defn toggle-token-set-group [group-path]
   (ptk/reify ::toggle-token-set-group
@@ -233,7 +233,7 @@
                         (clt/generate-toggle-token-set-group (get-tokens-lib state) group-path))]
         (rx/of
          (dch/commit-changes changes)
-         (wtu/update-workspace-tokens))))))
+         (dwtp/propagate-workspace-tokens))))))
 
 (defn import-tokens-lib [lib]
   (ptk/reify ::import-tokens-lib
@@ -244,7 +244,7 @@
                         (pcb/with-library-data data)
                         (pcb/set-tokens-lib lib))]
         (rx/of (dch/commit-changes changes)
-               (wtu/update-workspace-tokens))))))
+               (dwtp/propagate-workspace-tokens))))))
 
 (defn delete-token-set-path
   [group? path]
@@ -256,7 +256,7 @@
                         (pcb/with-library-data data)
                         (pcb/set-token-set (ctob/join-set-path path) group? nil))]
         (rx/of (dch/commit-changes changes)
-               (wtu/update-workspace-tokens))))))
+               (dwtp/propagate-workspace-tokens))))))
 
 (defn drop-error [{:keys [error to-path]}]
   (ptk/reify ::drop-error
@@ -283,7 +283,7 @@
         (when-let [changes (clt/generate-move-token-set-group (pcb/empty-changes it) (get-tokens-lib state) drop-opts)]
           (rx/of
            (dch/commit-changes changes)
-           (wtu/update-workspace-tokens)))
+           (dwtp/propagate-workspace-tokens)))
         (catch :default e
           (rx/of
            (drop-error (ex-data e))))))))
@@ -300,7 +300,7 @@
               changes    (-> (pcb/empty-changes it)
                              (clt/generate-move-token-set tokens-lib params))]
           (rx/of (dch/commit-changes changes)
-                 (wtu/update-workspace-tokens)))
+                 (dwtp/propagate-workspace-tokens)))
         (catch :default cause
           (rx/of (drop-error (ex-data cause))))))))
 

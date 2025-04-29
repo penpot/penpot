@@ -1,8 +1,7 @@
-(ns app.main.ui.workspace.tokens.token
+(ns app.common.files.tokens
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [clojure.set :as set]
    [cuerdas.core :as str]))
 
@@ -128,18 +127,6 @@
 (defn color-token? [token]
   (= (:type token) :color))
 
-
 ;; FIXME: this should be precalculated ?
 (defn is-reference? [token]
   (str/includes? (:value token) "{"))
-
-(defn color-bullet-color [token-color-value]
-  (when-let [tc (tinycolor/valid-color token-color-value)]
-    (if (tinycolor/alpha tc)
-      {:color (tinycolor/->hex-string tc)
-       :opacity (tinycolor/alpha tc)}
-      (tinycolor/->hex-string tc))))
-
-(defn resolved-token-bullet-color [{:keys [resolved-value] :as token}]
-  (when (and resolved-value (color-token? token))
-    (color-bullet-color resolved-value)))

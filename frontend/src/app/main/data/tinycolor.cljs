@@ -1,4 +1,4 @@
-(ns app.main.ui.workspace.tokens.tinycolor
+(ns app.main.data.tinycolor
   "Bindings for tinycolor2 which supports a wide range of css compatible colors.
 
   This library was chosen as it is already used by StyleDictionary,

@@ -1,15 +1,15 @@
-(ns app.main.ui.workspace.tokens.style-dictionary
+(ns app.main.data.style-dictionary
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
+   [app.common.files.tokens :as cft]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.ui.workspace.tokens.errors :as wte]
-   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
-   [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.warnings :as wtw]
+   [app.main.data.tinycolor :as tinycolor]
+   [app.main.data.workspace.tokens.errors :as wte]
+   [app.main.data.workspace.tokens.warnings :as wtw]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -54,7 +54,7 @@
   "Parses `value` of a numeric `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (let [parsed-value  (wtt/parse-token-value value)
+  (let [parsed-value  (cft/parse-token-value value)
         out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
                           (<= (:value parsed-value) sm/min-safe-int))]
     (if (and parsed-value (not out-of-bounds))
@@ -72,7 +72,7 @@
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value has-references?]
 
-  (let [parsed-value (wtt/parse-token-value value)
+  (let [parsed-value (cft/parse-token-value value)
         out-of-scope (not (<= 0 (:value parsed-value) 1))
         references (seq (ctob/find-token-value-references value))]
     (cond
@@ -98,7 +98,7 @@
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value has-references?]
 
-  (let [parsed-value (wtt/parse-token-value value)
+  (let [parsed-value (cft/parse-token-value value)
         out-of-scope (< (:value parsed-value) 0)
         references (seq (ctob/find-token-value-references value))]
     (cond

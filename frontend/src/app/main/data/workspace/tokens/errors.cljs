@@ -1,4 +1,4 @@
-(ns app.main.ui.workspace.tokens.errors
+(ns app.main.data.workspace.tokens.errors
   (:require
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]))

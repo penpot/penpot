@@ -10,9 +10,16 @@
    [app.common.colors :as c]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cft]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
-   [app.main.data.tokens :as dt]
+   [app.main.data.style-dictionary :as sd]
+   [app.main.data.tinycolor :as tinycolor]
+   [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.errors :as wte]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
+   [app.main.data.workspace.tokens.warnings :as wtw]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -22,15 +29,8 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
-   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.components.controls.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
-   [app.main.ui.workspace.tokens.errors :as wte]
-   [app.main.ui.workspace.tokens.style-dictionary :as sd]
-   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
-   [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.update :as wtu]
-   [app.main.ui.workspace.tokens.warnings :as wtw]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
@@ -64,7 +64,7 @@
   (let [path-exists-schema
         (m/-simple-schema
          {:type :token/name-exists
-          :pred #(not (wtt/token-name-path-exists? % tokens-tree))
+          :pred #(not (cft/token-name-path-exists? % tokens-tree))
           :type-properties {:error/fn #(str "A token already exists at the path: " (:value %))}})]
     (m/schema
      [:and
@@ -239,8 +239,8 @@
   [{:keys [token token-type action selected-token-set-name on-display-colorpicker]}]
   (let [create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
-        token-properties (wtch/get-token-properties token)
-        color? (wtt/color-token? token)
+        token-properties (dwta/get-token-properties token)
+        color? (cft/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
 
         active-theme-tokens (cond-> (mf/deref refs/workspace-active-theme-sets-tokens)
@@ -254,7 +254,7 @@
                                                                      :interactive? true})
         token-path (mf/use-memo
                     (mf/deps (:name token))
-                    #(wtt/token-name->path (:name token)))
+                    #(cft/token-name->path (:name token)))
 
         selected-set-tokens-tree (mf/use-memo
                                   (mf/deps token-path selected-set-tokens)
@@ -329,7 +329,7 @@
         value-input-ref (mf/use-ref nil)
         value-ref (mf/use-var (:value token))
 
-        token-resolve-result* (mf/use-state (get resolved-tokens (wtt/token-identifier token)))
+        token-resolve-result* (mf/use-state (get resolved-tokens (cft/token-identifier token)))
         token-resolve-result (deref token-resolve-result*)
 
         set-resolve-value
@@ -452,16 +452,16 @@
                               (when (and (seq result) (not err))
                                 (st/emit!
                                  (if (ctob/token? token)
-                                   (dt/update-token (:name token)
-                                                    {:name final-name
-                                                     :value final-value
-                                                     :description final-description})
+                                   (dwtl/update-token (:name token)
+                                                      {:name final-name
+                                                       :value final-value
+                                                       :description final-description})
 
-                                   (dt/create-token {:name final-name
-                                                     :type token-type
-                                                     :value final-value
-                                                     :description final-description}))
-                                 (wtu/update-workspace-tokens)
+                                   (dwtl/create-token {:name final-name
+                                                       :type token-type
+                                                       :value final-value
+                                                       :description final-description}))
+                                 (dwtp/propagate-workspace-tokens)
                                  (modal/hide)))))))))
 
         on-delete-token
@@ -470,7 +470,7 @@
          (fn [e]
            (dom/prevent-default e)
            (modal/hide!)
-           (st/emit! (dt/delete-token (ctob/prefixed-set-path-string->set-name-string selected-token-set-name) (:name token)))))
+           (st/emit! (dwtl/delete-token (ctob/prefixed-set-path-string->set-name-string selected-token-set-name) (:name token)))))
 
         on-cancel
         (mf/use-fn

@@ -4,16 +4,19 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.changes
+(ns app.main.data.workspace.tokens.application
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cft]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.style-dictionary :as sd]
+   [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace.shape-layout :as dwsl]
@@ -21,16 +24,13 @@
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
-   [app.main.ui.workspace.tokens.style-dictionary :as sd]
-   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
-   [app.main.ui.workspace.tokens.token :as wtt]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
 
 (declare token-properties)
 
-;; Token Updates ---------------------------------------------------------------
+;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
 
 (defn apply-token
   "Apply `attributes` that match `token` for `shape-ids`.
@@ -56,8 +56,8 @@
                                          (keys))
                                     [])
 
-                      resolved-value (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value])
-                      tokenized-attributes (wtt/attributes-map attributes token)]
+                      resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
+                      tokenized-attributes (cft/attributes-map attributes token)]
                   (rx/of
                    (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
                    (dwu/start-undo-transaction undo-id)
@@ -80,7 +80,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
-       (let [remove-token #(when % (wtt/remove-attributes-for-token attributes token %))]
+       (let [remove-token #(when % (cft/remove-attributes-for-token attributes token %))]
          (dwsh/update-shapes
           shape-ids
           (fn [shape]
@@ -95,7 +95,7 @@
             (get token-properties (:type token))
 
             unapply-tokens?
-            (wtt/shapes-token-applied? token shapes (or all-attributes attributes))
+            (cft/shapes-token-applied? token shapes (or all-attributes attributes))
 
             shape-ids (map :id shapes)]
         (if unapply-tokens?
@@ -109,7 +109,9 @@
                          :shape-ids shape-ids
                          :on-update-shape on-update-shape})))))))
 
-;; Shape Updates ---------------------------------------------------------------
+;; Events to update the value of attributes with applied tokens ---------------------------------------------------------
+
+;; (note that dwsh/update-shapes function returns an event)
 
 (defn update-shape-radius-all
   ([value shape-ids attributes] (update-shape-radius-all value shape-ids attributes nil))
@@ -326,7 +328,7 @@
             (dwsl/update-layout-child shape-ids props {:ignore-touched true
                                                        :page-id page-id}))))))))
 
-;; Token Types -----------------------------------------------------------------
+;; Map token types to different properties used along the cokde ---------------------------------------------------------
 
 ;; FIXME: the values should be lazy evaluated, probably a function,
 ;; becasue on future we will need to translate that labels and that
