@@ -274,40 +274,44 @@
     (when name-error?
       (wte/error-ex-info :error.import/invalid-token-name (:value schema-error) err))))
 
+(defn parse-json [data]
+  (try
+    (t/decode-str data)
+    (catch js/Error e
+      (throw (wte/error-ex-info :error.import/json-parse-error data e)))))
+
+(defn decode-json-data [data file-name]
+  (let [single-set? (ctob/single-set? data)
+        json-format (ctob/get-json-format data)]
+    (try
+      (cond
+        (and single-set?
+             (= :json-format/legacy json-format))
+        (decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) file-name data)
+
+        (and single-set?
+             (= :json-format/dtcg json-format))
+        (decode-single-set-json (ctob/ensure-tokens-lib nil) file-name data)
+
+        (= :json-format/legacy json-format)
+        (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) data)
+
+        :else
+        (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) data))
+
+      (catch js/Error e
+        (let [err (or (name-error e)
+                      (wte/error-ex-info :error.import/invalid-json-data data e))]
+          (throw err))))))
+
 (defn process-json-stream
   ([data-stream]
    (process-json-stream nil data-stream))
   ([params data-stream]
    (let [{:keys [file-name]} params]
      (->> data-stream
-          (rx/map (fn [data]
-                    (try
-                      (t/decode-str data)
-                      (catch js/Error e
-                        (throw (wte/error-ex-info :error.import/json-parse-error data e))))))
-          (rx/map (fn [json-data]
-                    (let [single-set? (ctob/single-set? json-data)
-                          json-format (ctob/get-json-format json-data)]
-                      (try
-                        (cond
-                          (and single-set?
-                               (= :json-format/legacy json-format))
-                          (decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) file-name json-data)
-
-                          (and single-set?
-                               (= :json-format/dtcg json-format))
-                          (decode-single-set-json (ctob/ensure-tokens-lib nil) file-name json-data)
-
-                          (= :json-format/legacy json-format)
-                          (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data)
-
-                          :else
-                          (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data))
-
-                        (catch js/Error e
-                          (let [err (or (name-error e)
-                                        (wte/error-ex-info :error.import/invalid-json-data json-data e))]
-                            (throw err)))))))
+          (rx/map parse-json)
+          (rx/map #(decode-json-data % file-name))
           (rx/mapcat (fn [tokens-lib]
                        (try
                          (-> (ctob/get-all-tokens tokens-lib)

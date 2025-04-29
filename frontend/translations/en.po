@@ -2069,6 +2069,30 @@ msgstr "Hide resolved comments"
 msgid "labels.import"
 msgstr "Import"
 
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:116
+msgid "workspace.token.import-tokens"
+msgstr "Import tokens"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:121
+msgid "workspace.token.import-single-file"
+msgstr "In a single JSON file, the first-level keys should be the token set names."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:122
+msgid "workspace.token.import-multiple-files"
+msgstr "In multiple files, the file name / path are the set names."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:127
+msgid "workspace.token.import-warning"
+msgstr "Importing tokens will override all your current tokens, sets and themes."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:149
+msgid "workspace.token.choose-file"
+msgstr "Choose file"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:155
+msgid "workspace.token.choose-folder"
+msgstr "Choose folder"
+
 #: src/app/main/ui/dashboard/team.cljs:1018
 msgid "labels.inactive"
 msgstr "Inactive"

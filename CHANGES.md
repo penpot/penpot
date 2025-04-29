@@ -17,6 +17,7 @@
 - Duplicate token sets [Taiga #10694](https://tree.taiga.io/project/penpot/issue/10694)
 - Add set selection in create Token themes flow [Taiga #10746](https://tree.taiga.io/project/penpot/issue/10746)
 - Display indicator on not active sets [Taiga #10668](https://tree.taiga.io/project/penpot/issue/10668)
+- Allow multi file token import [Github #27](https://github.com/tokens-studio/penpot/issues/27)
 
 ### :bug: Bugs fixed
 
