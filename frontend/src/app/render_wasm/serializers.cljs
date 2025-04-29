@@ -46,10 +46,14 @@
 
 (defn serialize-uuid
   [id]
-  (if (nil? id)
-    [uuid/zero]
-    (let [as-uuid (uuid/uuid id)]
-      (uuid/get-u32 as-uuid))))
+  (try
+    (if (nil? id)
+      (do
+        [uuid/zero])
+      (let [as-uuid (uuid/uuid id)]
+        (uuid/get-u32 as-uuid)))
+    (catch :default _e
+      [uuid/zero])))
 
 (defn heapu32-set-u32
   [value heap offset]

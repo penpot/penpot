@@ -144,12 +144,19 @@
 
 (defn serialize-font-id
   [font-id]
-  (let [google-font? (str/starts-with? font-id "gfont-")]
-    (if google-font?
-      (uuid/get-u32 (google-font-id->uuid font-id))
-      (let [no-prefix (subs font-id (inc (str/index-of font-id "-")))
-            as-uuid (uuid/uuid no-prefix)]
-        (uuid/get-u32 as-uuid)))))
+  (try
+    (if (nil? font-id)
+      (do
+        [uuid/zero])
+      (let [google-font? (str/starts-with? font-id "gfont-")]
+        (if google-font?
+          (uuid/get-u32 (google-font-id->uuid font-id))
+          (let [no-prefix (subs font-id (inc (str/index-of font-id "-")))]
+            (if (or (nil? no-prefix) (not (string? no-prefix)) (str/blank? no-prefix))
+              [uuid/zero]
+              (uuid/get-u32 (uuid/uuid no-prefix)))))))
+    (catch :default _e
+      [uuid/zero])))
 
 (defn serialize-font-weight
   [font-weight]
