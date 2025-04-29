@@ -297,8 +297,12 @@
                   (store-image id)))
 
               (some? color)
-              (let [rgba (sr-clr/hex->u32argb color opacity)]
-                (h/call wasm/internal-module "_add_shape_stroke_solid_fill" rgba)))))
+              (let [size   sr-fills/SOLID-BYTE-SIZE
+                    offset (mem/alloc-bytes size)
+                    heap   (mem/get-heap-u32)
+                    argb (sr-clr/hex->u32argb color opacity)]
+                (sr-fills/write-solid-fill! offset heap argb)
+                (h/call wasm/internal-module "_add_shape_stroke_solid_fill")))))
         strokes))
 
 (defn set-shape-path-attrs

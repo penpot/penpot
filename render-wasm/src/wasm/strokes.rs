@@ -34,11 +34,13 @@ pub extern "C" fn add_shape_outer_stroke(width: f32, style: u8, cap_start: u8, c
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_stroke_solid_fill(raw_color: u32) {
+pub extern "C" fn add_shape_stroke_solid_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
-        let color = skia::Color::new(raw_color);
+        let bytes = mem::bytes();
+        let solid_color =
+            shapes::SolidColor::try_from(&bytes[..]).expect("Invalid solid color data");
         shape
-            .set_stroke_fill(shapes::Fill::Solid(shapes::SolidColor(color)))
+            .set_stroke_fill(shapes::Fill::Solid(solid_color))
             .expect("could not add stroke solid fill");
     });
 }
