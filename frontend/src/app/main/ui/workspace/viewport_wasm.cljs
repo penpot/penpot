@@ -283,6 +283,7 @@
     ;;       canvas, even though we are not using `page-id` inside the hook.
     ;;       We think moving this out to a handler will make the render code
     ;;       harder to follow through.
+
     (mf/with-effect [page-id]
       (when-let [canvas (mf/ref-val canvas-ref)]
         (->> wasm.api/module

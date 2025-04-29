@@ -6,14 +6,24 @@ use crate::STATE;
 use crate::shapes::FontFamily;
 
 #[no_mangle]
-pub extern "C" fn store_font(a: u32, b: u32, c: u32, d: u32, weight: u32, style: u8) {
+pub extern "C" fn store_font(
+    a: u32,
+    b: u32,
+    c: u32,
+    d: u32,
+    weight: u32,
+    style: u8,
+    is_emoji: bool,
+) {
     with_state!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
         let font_bytes = mem::bytes();
-
         let family = FontFamily::new(id, weight, style.into());
+        let res = state
+            .render_state()
+            .fonts_mut()
+            .add(family, &font_bytes, is_emoji);
 
-        let res = state.render_state().fonts_mut().add(family, &font_bytes);
         match res {
             Err(msg) => {
                 eprintln!("{}", msg);

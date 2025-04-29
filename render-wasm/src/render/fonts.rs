@@ -3,7 +3,6 @@ use skia_safe::{self as skia, textlayout, Font, FontMgr};
 use crate::shapes::{FontFamily, FontStyle};
 use crate::uuid::Uuid;
 
-const EMOJI_FONT_BYTES: &[u8] = include_bytes!("../fonts/NotoColorEmoji-Regular.ttf");
 pub static DEFAULT_EMOJI_FONT: &'static str = "noto-color-emoji";
 
 const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../fonts/sourcesanspro-regular.ttf");
@@ -27,15 +26,7 @@ pub struct FontStore {
 impl FontStore {
     pub fn new() -> Self {
         let font_mgr = FontMgr::new();
-
-        let mut font_provider = load_default_provider(&font_mgr);
-
-        // TODO: Load emoji font lazily
-        let emoji_font = font_mgr
-            .new_from_data(EMOJI_FONT_BYTES, None)
-            .expect("Failed to load font");
-        font_provider.register_typeface(emoji_font, DEFAULT_EMOJI_FONT);
-
+        let font_provider = load_default_provider(&font_mgr);
         let mut font_collection = skia::textlayout::FontCollection::new();
         font_collection.set_default_font_manager(FontMgr::from(font_provider.clone()), None);
 
@@ -65,22 +56,30 @@ impl FontStore {
         &self.debug_font
     }
 
-    pub fn add(&mut self, family: FontFamily, font_data: &[u8]) -> Result<(), String> {
+    pub fn add(
+        &mut self,
+        family: FontFamily,
+        font_data: &[u8],
+        is_emoji: bool,
+    ) -> Result<(), String> {
         if self.has_family(&family) {
             return Ok(());
         }
 
-        let alias = format!("{}", family);
         let typeface = self
             .font_mgr
             .new_from_data(font_data, None)
             .ok_or("Failed to create typeface")?;
 
-        self.font_provider
-            .register_typeface(typeface, alias.as_str());
+        let alias = format!("{}", family);
+        let font_name = if is_emoji {
+            DEFAULT_EMOJI_FONT
+        } else {
+            alias.as_str()
+        };
 
+        self.font_provider.register_typeface(typeface, font_name);
         self.font_collection.clear_caches();
-
         Ok(())
     }
 

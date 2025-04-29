@@ -20,13 +20,12 @@
 (defn write-shape-text
   ;; buffer has the following format:
   ;; [<num-leaves> <paragraph_attributes> <leaves_attributes> <text>]
-  [leaves paragraph]
+  [leaves paragraph text]
   (let [leaves (filter #(not (str/blank? (:text %))) leaves)
         num-leaves (count leaves)
         paragraph-attr-size 48
         leaf-attr-size 52
         metadata-size (+ 1 paragraph-attr-size (* num-leaves leaf-attr-size))
-        text (apply str (map :text leaves))
         text-buffer (utf8->buffer text)
         text-size (.-byteLength text-buffer)
         buffer (js/ArrayBuffer. (+ metadata-size text-size))
@@ -106,3 +105,8 @@
       (.set heap (js/Uint8Array. buffer) metadata-offset)))
 
   (h/call wasm/internal-module "_set_shape_text_content"))
+
+(def emoji-pattern #"[\uD83C-\uDBFF][\uDC00-\uDFFF]")
+
+(defn contains-emoji? [s]
+  (boolean (re-find emoji-pattern s)))
