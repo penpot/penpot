@@ -17,7 +17,6 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
-   [app.main.data.workspace.path.drawing :as drawing]
    [app.main.data.workspace.path.helpers :as helpers]
    [app.main.data.workspace.path.selection :as selection]
    [app.main.data.workspace.path.state :as st]
@@ -309,23 +308,21 @@
           (assoc-in [:workspace-local :edit-path id] {:edit-mode :move
                                                       :selected #{}
                                                       :snap-toggled false})
-
           (and (some? edit-path)
                (= :move (:edit-mode edit-path)))
           (assoc-in [:workspace-local :edit-path id :edit-mode] :draw))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
-      (let [mode (dm/get-in state [:workspace-local :edit-path id :edit-mode])
-            stopper (->> stream
-                         (rx/filter #(or
-                                      (= (ptk/type %) ::dwe/clear-edition-mode)
-                                      (= (ptk/type %) ::start-path-edit))))
-            interrupt (->> stream (rx/filter #(= % :interrupt)) (rx/take 1))]
+    (watch [_ _ stream]
+      (let [stopper (->> stream
+                         (rx/filter #(let [type (ptk/type %)]
+                                       (= type ::dwe/clear-edition-mode)
+                                       (= type ::start-path-edit))))]
         (rx/concat
-         (rx/of (undo/start-path-undo)
-                (drawing/change-edit-mode mode))
-         (->> interrupt
+         (rx/of (undo/start-path-undo))
+         (->> stream
+              (rx/filter #(= % :interrupt))
+              (rx/take 1)
               (rx/map #(stop-path-edit id))
               (rx/take-until stopper)))))))
 

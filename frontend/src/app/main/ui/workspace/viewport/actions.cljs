@@ -227,8 +227,9 @@
                           (dw/start-editing-selected))
 
                 (some? selected-shape)
-                (do (reset! hover selected-shape)
-                    (st/emit! (dw/select-shape (:id selected-shape))))
+                (do
+                  (reset! hover selected-shape)
+                  (st/emit! (dw/select-shape (:id selected-shape))))
 
                 (and (not selected-shape) (some? grid-layout-id) (not read-only?))
                 (st/emit! (dw/start-edition-mode grid-layout-id)))))))))))

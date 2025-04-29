@@ -13,16 +13,17 @@
    [app.common.types.path.helpers :as path.helpers]
    [app.common.types.path.segment :as path.segment]
    [app.main.data.workspace.path :as drp]
+   [app.main.refs :as refs]
    [app.main.snap :as snap]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.workspace.shapes.path.common :as pc]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [clojure.set :refer [map-invert]]
    [goog.events :as events]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (def point-radius 5)
@@ -35,6 +36,12 @@
 
 (def path-preview-dasharray 4)
 (def path-snap-stroke-width 1)
+
+(def accent-color "var(--color-accent-tertiary)")
+(def secondary-color "var(--color-accent-quaternary)")
+(def black-color "var(--app-black)")
+(def white-color "var(--app-white)")
+(def gray-color "var(--df-secondary)")
 
 (mf/defc path-point*
   {::mf/private true}
@@ -97,11 +104,11 @@
             (/ point-radius zoom)
             (/ point-radius-selected zoom))
        :style {:stroke-width (/ point-radius-stroke-width zoom)
-               :stroke (cond ^boolean is-active pc/black-color
-                             ^boolean is-preview pc/secondary-color
-                             :else pc/accent-color)
-               :fill (cond is-selected pc/accent-color
-                           :else pc/white-color)}}]
+               :stroke (cond ^boolean is-active black-color
+                             ^boolean is-preview secondary-color
+                             :else accent-color)
+               :fill (cond is-selected accent-color
+                           :else white-color)}}]
      [:circle {:cx x
                :cy y
                :r (/ point-radius-active-area zoom)
@@ -155,8 +162,8 @@
        :x2 x
        :y2 y
        :style {:stroke (if ^boolean is-hover
-                         pc/black-color
-                         pc/gray-color)
+                         black-color
+                         gray-color)
                :stroke-width (/ point-radius-stroke-width zoom)}}]
 
      (when ^boolean snap-angle
@@ -165,7 +172,7 @@
          :y1 (:y point)
          :x2 x
          :y2 y
-         :style {:stroke pc/secondary-color
+         :style {:stroke secondary-color
                  :stroke-width (/ point-radius-stroke-width zoom)}}])
 
      [:rect
@@ -175,10 +182,10 @@
        :height (/ handler-side zoom)
 
        :style {:stroke-width (/ handler-stroke-width zoom)
-               :stroke (cond ^boolean is-active pc/black-color
-                             :else pc/accent-color)
-               :fill (cond ^boolean is-selected pc/accent-color
-                           :else pc/white-color)}}]
+               :stroke (cond ^boolean is-active black-color
+                             :else accent-color)
+               :fill (cond ^boolean is-selected accent-color
+                           :else white-color)}}]
      [:circle {:cx x
                :cy y
                :r (/ point-radius-active-area zoom)
@@ -209,7 +216,7 @@
     [:g.preview {:style {:pointer-events "none"}}
      (when (some? path)
        [:path {:style {:fill "none"
-                       :stroke pc/black-color
+                       :stroke black-color
                        :stroke-width (/ handler-stroke-width zoom)
                        :stroke-dasharray (/ path-preview-dasharray zoom)}
                :d (str path)}])
@@ -238,7 +245,7 @@
                :y1 (:y from)
                :x2 (:x to)
                :y2 (:y to)
-               :style {:stroke pc/secondary-color
+               :style {:stroke secondary-color
                        :stroke-width (/ path-snap-stroke-width zoom)}}])]))
 
 (defn- matching-handler? [content node handlers]
@@ -253,12 +260,19 @@
           angle (gpt/angle-with-other v1 v2)]
       (<= (- 180 angle) 0.1))))
 
+(defn- make-edit-path-ref [id]
+  (let [get-fn #(dm/get-in % [:edit-path id])]
+    (l/derived get-fn refs/workspace-local)))
+
 (mf/defc path-editor*
   [{:keys [shape zoom]}]
 
-  (let [editor-ref    (mf/use-ref nil)
-        edit-path-ref (pc/make-edit-path-ref (:id shape))
+  (let [shape-id      (dm/get-prop shape :id)
+        edit-path-ref (mf/with-memo [shape-id]
+                        (make-edit-path-ref shape-id))
+
         hover-point   (mf/use-state nil)
+        editor-ref    (mf/use-ref nil)
 
         {:keys [edit-mode
                 drag-handler
@@ -333,7 +347,7 @@
     [:g.path-editor {:ref editor-ref}
      [:path {:d (.toString content)
              :style {:fill "none"
-                     :stroke pc/accent-color
+                     :stroke accent-color
                      :strokeWidth (/ 1 zoom)}}]
      (when (and preview (not drag-handler))
        [:> path-preview* {:segment preview

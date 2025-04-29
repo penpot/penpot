@@ -12,8 +12,14 @@
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.shapes.debug :as wsd]
-   [app.main.ui.workspace.shapes.path.common :as pc]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
+
+(defn- make-content-modifiers-ref
+  [id]
+  (l/derived (fn [local]
+               (dm/get-in local [:edit-path id :content-modifiers]))
+             refs/workspace-local))
 
 (defn- apply-content-modifiers
   [shape content-modifiers]
@@ -26,11 +32,13 @@
   (let [shape-id (dm/get-prop shape :id)
 
         content-modifiers-ref
-        (pc/make-content-modifiers-ref shape-id)
+        (mf/with-memo [shape-id]
+          (make-content-modifiers-ref shape-id))
 
         content-modifiers
         (mf/deref content-modifiers-ref)
 
+        ;; FIXME: this should be provided by react context instead of using refs
         editing-id
         (mf/deref refs/selected-edition)
 

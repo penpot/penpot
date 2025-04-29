@@ -7,23 +7,22 @@
 (ns app.main.ui.workspace.viewport.top-bar
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
-   [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
    [app.main.ui.workspace.top-toolbar :refer [top-toolbar]]
    [app.main.ui.workspace.viewport.grid-layout-editor :refer [grid-edition-actions]]
-   [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
+   [app.main.ui.workspace.viewport.path-actions :refer [path-actions*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc view-only-actions
+(mf/defc view-only-actions*
   []
   (let [handle-close-view-mode
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (st/emit! :interrupt
                      (dw/set-options-mode :design)
@@ -38,43 +37,44 @@
                 :on-click handle-close-view-mode}
        (tr "workspace.top-bar.read-only.done")]]]))
 
-(mf/defc top-bar
-  {::mf/wrap [mf/memo]}
-  [{:keys [layout]}]
-  (let [edition     (mf/deref refs/selected-edition)
-        selected    (mf/deref refs/selected-objects)
-        drawing     (mf/deref refs/workspace-drawing)
-        rulers?     (mf/deref refs/rulers?)
-        drawing-obj (:object drawing)
+(mf/defc top-bar*
+  [{:keys [layout drawing is-read-only edition selected edit-path]}]
+  (let [rulers?     (contains? layout :rulers)
+        hide-ui?    (contains? layout :hide-ui)
+
+        drawing-obj (get drawing :object)
         shape       (or drawing-obj (-> selected first))
+        shape-id    (dm/get-prop shape :id)
 
-        single? (= (count selected) 1)
-        editing? (= (:id shape) edition)
-        draw-path? (and (some? drawing-obj)
-                        (cfh/path-shape? drawing-obj)
-                        (not= :curve (:tool drawing)))
+        single?     (= (count selected) 1)
+        editing?    (= shape-id edition)
 
-        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
-        hide-ui?       (:hide-ui layout)
+        draw-path?  (and (some? drawing-obj)
+                         (cfh/path-shape? drawing-obj)
+                         (not= :curve (:tool drawing)))
 
-        path-edition? (or (and single? editing?
-                               (and (not (cfh/text-shape? shape))
-                                    (not (cfh/frame-shape? shape))))
-                          draw-path?)
+        is-path-edition
+        (or (and single? editing?
+                 (and (not (cfh/text-shape? shape))
+                      (not (cfh/frame-shape? shape))))
+            draw-path?)
 
-        grid-edition? (and single? editing? (ctl/grid-layout? shape))]
+        grid-edition?
+        (and single? editing? (ctl/grid-layout? shape))]
 
     [:*
-     (when-not hide-ui?
+     (when-not ^boolean hide-ui?
        [:& top-toolbar {:layout layout}])
 
      (cond
-       workspace-read-only?
-       [:& view-only-actions]
+       ^boolean
+       is-read-only
+       [:> view-only-actions*]
 
-       path-edition?
+       ^boolean
+       is-path-edition
        [:div {:class (stl/css-case :viewport-actions-path true :viewport-actions-no-rulers (not rulers?))}
-        [:& path-actions {:shape shape}]]
+        [:> path-actions* {:shape shape :edit-path edit-path}]]
 
        grid-edition?
        [:& grid-edition-actions {:shape shape}])]))

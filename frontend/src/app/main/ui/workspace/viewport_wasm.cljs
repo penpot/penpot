@@ -173,14 +173,18 @@
 
         editing-shape     (when edition (get base-objects edition))
 
+        edit-path         (get edit-path edition)
+        edit-path-mode    (get edit-path :edit-mode)
+
         create-comment?   (= :comments drawing-tool)
-        drawing-path?     (or (and edition (= :draw (get-in edit-path [edition :edit-mode])))
-                              (and (some? drawing-obj) (= :path (:type drawing-obj))))
-        node-editing?     (and edition (= :path (get-in base-objects [edition :type])))
-        text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
+        drawing-path?     (or (= edit-path-mode :draw)
+                              (= :path (get drawing-obj :type)))
+
+        node-editing?     (cfh/path-shape? editing-shape)
+        text-editing?     (cfh/text-shape? editing-shape)
         grid-editing?     (and edition (ctl/grid-layout? base-objects edition))
 
-        mode-inspect?       (= options-mode :inspect)
+        mode-inspect?     (= options-mode :inspect)
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
@@ -338,7 +342,12 @@
 
     [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
      (when (:can-edit permissions)
-       [:& top-bar/top-bar {:layout layout}])
+       [:> top-bar/top-bar* {:layout layout
+                             :selected selected-shapes
+                             :edit-path edit-path
+                             :drawing drawing
+                             :edition edition
+                             :is-read-only read-only?}])
      [:div {:class (stl/css :viewport-overlays)}
       (when show-comments?
         [:> comments/comments-layer* {:vbox vbox
