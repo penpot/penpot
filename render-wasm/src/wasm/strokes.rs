@@ -38,7 +38,7 @@ pub extern "C" fn add_shape_stroke_solid_fill(raw_color: u32) {
     with_current_shape!(state, |shape: &mut Shape| {
         let color = skia::Color::new(raw_color);
         shape
-            .set_stroke_fill(shapes::Fill::Solid(color))
+            .set_stroke_fill(shapes::Fill::Solid(shapes::SolidColor(color)))
             .expect("could not add stroke solid fill");
     });
 }

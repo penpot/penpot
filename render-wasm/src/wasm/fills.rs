@@ -2,16 +2,18 @@ use skia_safe as skia;
 
 use crate::mem;
 use crate::shapes;
-use crate::shapes::Gradient;
+use crate::shapes::{Gradient, SolidColor};
 use crate::utils::uuid_from_u32_quartet;
 use crate::with_current_shape;
 use crate::STATE;
 
 #[no_mangle]
-pub extern "C" fn add_shape_solid_fill(raw_color: u32) {
+pub extern "C" fn add_shape_solid_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
-        let color = skia::Color::new(raw_color);
-        shape.add_fill(shapes::Fill::Solid(color));
+        let bytes = mem::bytes();
+        let solid_color = SolidColor::try_from(&bytes[..]).expect("Invalid solid color data");
+
+        shape.add_fill(shapes::Fill::Solid(solid_color));
     });
 }
 
@@ -58,6 +60,38 @@ pub extern "C" fn clear_shape_fills() {
     with_current_shape!(state, |shape: &mut Shape| {
         shape.clear_fills();
     });
+}
+
+#[repr(C)]
+pub struct RawSolidData {
+    color: u32,
+}
+
+impl From<[u8; 4]> for RawSolidData {
+    fn from(value: [u8; 4]) -> Self {
+        Self {
+            color: u32::from_le_bytes(value),
+        }
+    }
+}
+
+impl From<RawSolidData> for SolidColor {
+    fn from(value: RawSolidData) -> Self {
+        Self(skia::Color::new(value.color))
+    }
+}
+
+impl TryFrom<&[u8]> for SolidColor {
+    type Error = String;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let raw_solid_bytes: [u8; 4] = bytes[0..4]
+            .try_into()
+            .map_err(|_| "Invalid solid fill data".to_string())?;
+        let color = RawSolidData::from(raw_solid_bytes).into();
+
+        Ok(color)
+    }
 }
 
 const MAX_GRADIENT_STOPS: usize = 16;

@@ -1,6 +1,6 @@
 use skia_safe::{self as skia, Rect};
 
-use super::Color;
+pub use super::Color;
 use crate::uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -112,9 +112,12 @@ impl ImageFill {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub struct SolidColor(pub Color);
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Fill {
-    Solid(Color),
+    Solid(SolidColor),
     LinearGradient(Gradient),
     RadialGradient(Gradient),
     Image(ImageFill),
@@ -132,7 +135,7 @@ impl Fill {
 
     pub fn to_paint(&self, rect: &Rect, anti_alias: bool) -> skia::Paint {
         match self {
-            Self::Solid(color) => {
+            Self::Solid(SolidColor(color)) => {
                 let mut p = skia::Paint::default();
                 p.set_color(*color);
                 p.set_style(skia::PaintStyle::Fill);

@@ -860,8 +860,11 @@ mod tests {
         let mut shape = any_shape();
         assert_eq!(shape.fills.len(), 0);
 
-        shape.add_fill(Fill::Solid(Color::TRANSPARENT));
-        assert_eq!(shape.fills.get(0), Some(&Fill::Solid(Color::TRANSPARENT)))
+        shape.add_fill(Fill::Solid(SolidColor(Color::TRANSPARENT)));
+        assert_eq!(
+            shape.fills.get(0),
+            Some(&Fill::Solid(SolidColor(Color::TRANSPARENT)))
+        )
     }
 
     #[test]

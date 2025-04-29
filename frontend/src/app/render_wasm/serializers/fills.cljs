@@ -2,6 +2,14 @@
   (:require
    [app.render-wasm.serializers.color :as clr]))
 
+(def SOLID-BYTE-SIZE 4)
+
+(defn write-solid-fill!
+  [offset heap-u32 argb]
+  (let [dview (js/DataView. (.-buffer heap-u32))]
+    (.setUint32 dview offset argb true)
+    (+ offset 4)))
+
 (def ^:private GRADIENT-STOP-SIZE 8)
 (def ^:private GRADIENT-BASE-SIZE 28)
 ;; TODO: Define in shape model
@@ -11,8 +19,8 @@
   (+ GRADIENT-BASE-SIZE (* MAX-GRADIENT-STOPS GRADIENT-STOP-SIZE)))
 
 (defn write-gradient-fill!
-  [offset heap gradient opacity]
-  (let [dview   (js/DataView. (.-buffer heap))
+  [offset heap-u32 gradient opacity]
+  (let [dview   (js/DataView. (.-buffer heap-u32))
         start-x (:start-x gradient)
         start-y (:start-y gradient)
         end-x   (:end-x gradient)
