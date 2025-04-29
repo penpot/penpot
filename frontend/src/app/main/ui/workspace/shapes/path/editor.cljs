@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]
@@ -289,8 +290,14 @@
          :as edit-path}
         (mf/deref edit-path-ref)
 
-        selected-points (or selected-points #{})
-        shape (hooks/use-equal-memo shape)
+        selected-points
+        (or selected-points #{})
+
+        shape
+        (mf/with-memo [shape]
+          (cond-> shape
+            (not (cfh/path-shape? shape))
+            (path/convert-to-path)))
 
         base-content
         (get shape :content)

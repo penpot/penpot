@@ -23,6 +23,7 @@
    [app.main.ui.flex-controls :as mfc]
    [app.main.ui.hooks :as ui-hooks]
    [app.main.ui.measurements :as msr]
+   [app.main.ui.workspace.shapes.path.editor :refer [path-editor*]]
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
    [app.main.ui.workspace.shapes.text.v2-editor :as editor-v2]
@@ -119,8 +120,9 @@
                             (binding [cts/*wasm-sync* false]
                               (apply-modifiers-to-selected selected base-objects text-modifiers modifiers)))
 
-        selected-shapes   (keep (d/getf objects-modified) selected)
-
+        selected-shapes   (->> selected
+                               (into [] (keep (d/getf objects-modified)))
+                               (not-empty))
         ;; STATE
         alt?              (mf/use-state false)
         shift?            (mf/use-state false)
@@ -443,12 +445,13 @@
            :zoom zoom
            :modifiers modifiers}])
 
-       (when show-selection-handlers?
-         [:& selection/selection-area
+       (when (and show-selection-handlers?
+                  selected-shapes)
+         [:> selection/area*
           {:shapes selected-shapes
            :zoom zoom
            :edition edition
-           :disable-handlers (or drawing-tool edition @space? @mod?)
+           :disabled (or drawing-tool edition @space? @mod?)
            :on-move-selected on-move-selected
            :on-context-menu on-menu-selected}])
 
@@ -618,12 +621,16 @@
 
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}
-          [:& selection/selection-handlers
-           {:selected selected
-            :shapes selected-shapes
-            :zoom zoom
-            :edition edition
-            :disable-handlers (or drawing-tool edition @space?)}]
+          (when-not text-editing?
+            (if editing-shape
+              [:> path-editor* {:shape editing-shape
+                                :zoom zoom}]
+              (when selected-shapes
+                [:> selection/handlers*
+                 {:selected selected
+                  :shapes selected-shapes
+                  :zoom zoom
+                  :disabled (or drawing-tool @space?)}])))
 
           (when show-prototypes?
             [:& interactions/interactions
