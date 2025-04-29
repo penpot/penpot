@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.6.2 (Unreleased)
+## 2.6.2
 
 ### :bug: Bugs fixed
 
