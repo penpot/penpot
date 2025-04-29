@@ -59,11 +59,17 @@
 ;; A set of features enabled by default
 (def default-features
   #{"fdata/shape-data-type"
+    "fdata/path-data"
     "styles/v2"
     "layout/grid"
     "components/v2"
     "plugins/runtime"
     "design-tokens/v1"})
+
+;; A set of features that should not be propagated to team on creating
+;; or modifying a file
+(def no-team-inheritable-features
+  #{"fdata/path-data"})
 
 ;; A set of features which only affects on frontend and can be enabled
 ;; and disabled freely by the user any time. This features does not

@@ -1309,6 +1309,8 @@
 
 (defmethod migrate-data "0003-convert-path-content"
   [data _]
+  (some-> cfeat/*new* (swap! conj "fdata/path-data"))
+
   (letfn [(update-object [object]
             (if (or (cfh/bool-shape? object)
                     (cfh/path-shape? object))

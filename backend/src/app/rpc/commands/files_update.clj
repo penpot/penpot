@@ -177,12 +177,19 @@
                                             :stored-revn (:revn file)}))
 
                       ;; When newly computed features does not match exactly with
-                      ;; the features defined on team row, we update it.
-                      (when (not= features (:features team))
-                        (let [features (db/create-array conn "text" features)]
+                      ;; the features defined on team row, we update it
+                      (when-let [features (-> features
+                                              (set/difference (:features team))
+                                              (set/difference cfeat/no-team-inheritable-features)
+                                              (not-empty))]
+                        (let [features (->> features
+                                            (set/union (:features team))
+                                            (db/create-array conn "text"))]
                           (db/update! conn :team
                                       {:features features}
-                                      {:id (:id team)})))
+                                      {:id (:id team)}
+                                      {::db/return-keys false})))
+
 
                       (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
 
