@@ -423,7 +423,8 @@
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! (assoc main/system ::db/rollback rollback?)
                 (fn [system]
-                  (binding [h/*system* system]
+                  (binding [h/*system* system
+                            db/*conn* (db/get-connection system)]
                     (h/process-file! system file-id update-fn opts))))))
 
 (defn process-team-files!
@@ -436,7 +437,8 @@
                   (when (string? label)
                     (h/take-team-snapshot! system team-id label))
 
-                  (binding [h/*system* system]
+                  (binding [h/*system* system
+                            db/*conn* (db/get-connection system)]
                     (->> (feat.comp-v2/get-and-lock-team-files conn team-id)
                          (reduce (fn [result file-id]
                                    (if (h/process-file! system file-id update-fn opts)
