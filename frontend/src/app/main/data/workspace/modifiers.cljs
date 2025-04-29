@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -484,9 +485,13 @@
    []
    (keep
     (fn [[id data]]
-      (when (ctm/has-geometry? (:modifiers data))
+      (if (ctm/has-geometry? (:modifiers data))
         {:id id
-         :transform (ctm/modifiers->transform (:modifiers data))})))
+         :transform (ctm/modifiers->transform (:modifiers data))}
+
+        ;; Unit matrix is used for reflowing
+        {:id id
+         :transform (gmt/matrix)})))
    modif-tree))
 
 (defn- extract-property-changes
@@ -498,43 +503,69 @@
        (filter (fn [[_ {:keys [type]}]]
                  (= type :change-property)))))
 
+#_:clj-kondo/ignore
 (defn set-wasm-modifiers
-  ([modif-tree]
-   (set-wasm-modifiers modif-tree false))
+  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel]
+                 :or {ignore-constraints false ignore-snap-pixel false}
+                 :as params}]
+  (ptk/reify ::set-wasm-modifiers
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [property-changes
+            (extract-property-changes modif-tree)]
 
-  ([modif-tree ignore-constraints]
-   (set-wasm-modifiers modif-tree ignore-constraints false))
+        (-> state
+            (assoc :prev-wasm-props (:wasm-props state))
+            (assoc :wasm-props property-changes))))
 
-  ([modif-tree ignore-constraints ignore-snap-pixel]
-   (set-wasm-modifiers modif-tree ignore-constraints ignore-snap-pixel nil))
+    ptk/EffectEvent
+    (effect [_ state _]
+      (wasm.api/clean-modifiers)
 
-  ([modif-tree _ignore-constraints _ignore-snap-pixel _params]
-   (ptk/reify ::set-wasm-modifiers
-     ptk/UpdateEvent
-     (update [_ state]
-       (let [property-changes
-             (extract-property-changes modif-tree)]
+      (let [prev-wasm-props (:prev-wasm-props state)
+            wasm-props (:wasm-props state)
+            objects (dsh/lookup-page-objects state)]
 
-         (-> state
-             (assoc :prev-wasm-props (:wasm-props state))
-             (assoc :wasm-props property-changes))))
+        (set-wasm-props! objects prev-wasm-props wasm-props)
 
-     ptk/EffectEvent
-     (effect [_ state _]
-       (wasm.api/clean-modifiers)
+        (let [structure-entries (parse-structure-modifiers modif-tree)]
+          (wasm.api/set-structure-modifiers structure-entries)
+          (let [geometry-entries (parse-geometry-modifiers modif-tree)]
+            (wasm.api/propagate-apply geometry-entries)))))))
 
-       (let [prev-wasm-props (:prev-wasm-props state)
-             wasm-props (:wasm-props state)
-             objects (dsh/lookup-page-objects state)]
+#_:clj-kondo/ignore
+(defn apply-wasm-modifiers
+  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-group]
+                 :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil undo-group nil}
+                 :as params}]
+  (ptk/reify ::apply-wasm-modifiesr
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [geometry-entries
+            (parse-geometry-modifiers modif-tree)
 
-         (set-wasm-props! objects prev-wasm-props wasm-props)
+            transforms
+            (into
+             {}
+             (map (fn [{:keys [id transform]}] [id transform]))
+             (wasm.api/propagate-modifiers geometry-entries))
 
-         (let [structure-entries (parse-structure-modifiers modif-tree)]
-           (wasm.api/set-structure-modifiers structure-entries)
-           (let [geometry-entries (parse-geometry-modifiers modif-tree)
-                 modifiers-new
-                 (wasm.api/propagate-modifiers geometry-entries)]
-             (wasm.api/set-modifiers modifiers-new))))))))
+            ids
+            (into (set (keys modif-tree)) (keys transforms))
+
+            update-shape
+            (fn [shape]
+              (let [shape-id    (dm/get-prop shape :id)
+                    transform   (get transforms shape-id)
+                    modifiers   (dm/get-in modif-tree [shape-id :modifiers])]
+                (-> shape
+                    (gsh/apply-transform transform)
+                    (ctm/apply-structure-modifiers modifiers))))]
+
+        (rx/of
+         (clear-local-transform)
+         (dwsh/update-shapes ids update-shape))))))
+
 
 (defn set-selrect-transform
   [modifiers]

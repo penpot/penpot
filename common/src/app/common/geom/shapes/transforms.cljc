@@ -371,8 +371,14 @@
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform-mtx]
-  (if ^boolean (gmt/move? transform-mtx)
+  (cond
+    (nil? transform-mtx)
+    shape
+
+    ^boolean (gmt/move? transform-mtx)
     (apply-transform-move shape transform-mtx)
+
+    :else
     (apply-transform-generic shape transform-mtx)))
 
 (defn- update-group-viewbox

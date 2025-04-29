@@ -334,9 +334,9 @@ fn set_fr_value(
     layout_size: f32,
 ) {
     let tot_gap: f32 = if column {
-        layout_data.column_gap * (tracks.len() - 1) as f32
+        layout_data.column_gap * (tracks.len() as f32 - 1.0)
     } else {
-        layout_data.row_gap * (tracks.len() - 1) as f32
+        layout_data.row_gap * (tracks.len() as f32 - 1.0)
     };
 
     // Total size already used
