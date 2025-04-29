@@ -7,7 +7,7 @@ use crate::uuid::Uuid;
 pub struct Gradient {
     start: (f32, f32),
     end: (f32, f32),
-    opacity: f32,
+    opacity: u8,
     width: f32,
     colors: Vec<Color>,
     offsets: Vec<f32>,
@@ -17,7 +17,7 @@ impl Gradient {
     pub fn new(
         start: (f32, f32),
         end: (f32, f32),
-        opacity: f32,
+        opacity: u8,
         width: f32,
         stops: &[(Color, f32)],
     ) -> Self {
@@ -143,7 +143,7 @@ impl Fill {
             Self::LinearGradient(gradient) => {
                 let mut p = skia::Paint::default();
                 p.set_shader(gradient.to_linear_shader(rect));
-                p.set_alpha((gradient.opacity * 255.) as u8);
+                p.set_alpha(gradient.opacity);
                 p.set_style(skia::PaintStyle::Fill);
                 p.set_anti_alias(anti_alias);
                 p.set_blend_mode(skia::BlendMode::SrcOver);
@@ -152,7 +152,7 @@ impl Fill {
             Self::RadialGradient(gradient) => {
                 let mut p = skia::Paint::default();
                 p.set_shader(gradient.to_radial_shader(rect));
-                p.set_alpha((gradient.opacity * 255.) as u8);
+                p.set_alpha(gradient.opacity);
                 p.set_style(skia::PaintStyle::Fill);
                 p.set_anti_alias(anti_alias);
                 p.set_blend_mode(skia::BlendMode::SrcOver);

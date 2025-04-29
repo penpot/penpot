@@ -67,7 +67,7 @@ const RAW_GRADIENT_DATA_SIZE: usize =
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct RawGradientData {
+struct RawGradientData {
     start_x: f32,
     start_y: f32,
     end_x: f32,
@@ -111,21 +111,13 @@ impl RawGradientData {
     pub fn end(&self) -> (f32, f32) {
         (self.end_x, self.end_y)
     }
-
-    pub fn opacity(&self) -> f32 {
-        self.opacity
-    }
-
-    pub fn width(&self) -> f32 {
-        self.width
-    }
 }
 
 pub const RAW_STOP_DATA_SIZE: usize = 8;
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct RawStopData {
+struct RawStopData {
     color: u32,
     offset: f32,
 }
@@ -173,8 +165,8 @@ impl From<RawGradientData> for Gradient {
         Gradient::new(
             raw_gradient.start(),
             raw_gradient.end(),
-            raw_gradient.opacity(),
-            raw_gradient.width(),
+            (raw_gradient.opacity * 255.) as u8,
+            raw_gradient.width,
             &stops,
         )
     }
