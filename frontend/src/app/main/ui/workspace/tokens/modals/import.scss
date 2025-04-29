@@ -1,0 +1,84 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../../ds/typography.scss" as t;
+@use "../../../ds/_sizes.scss" as *;
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+  width: 100%;
+  max-width: $s-512;
+  max-height: unset;
+  user-select: none;
+  background-color: var(--color-background-primary);
+  border-radius: $s-8;
+}
+
+.import-modal-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-24;
+}
+
+.import-modal-title {
+  color: var(--color-foreground-primary);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.import-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: $s-24;
+}
+
+.import-description {
+  color: var(--color-foreground-secondary);
+
+  ul {
+    list-style: disc;
+    padding-left: $s-12;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: $s-8;
+  }
+}
+
+.import-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: $s-8;
+  padding: $s-12;
+  border-radius: $s-8;
+  border: 1px solid var(--color-accent-primary-muted);
+  background: var(--color-accent-select);
+  color: var(--color-foreground-primary);
+}
+
+.import-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $s-8;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: $s-4;
+  }
+}
+
+.close-btn {
+  position: absolute;
+  top: $s-8;
+  right: $s-8;
+}
