@@ -236,17 +236,13 @@
                   (h/call wasm/internal-module "_add_shape_radial_fill")))
 
               (some? image)
-              (let [id            (dm/get-prop image :id)
+              (let [heap          (mem/get-heap-u32)
+                    offset        (mem/alloc-bytes sr-fills/IMAGE-BYTE-SIZE)
+                    id            (dm/get-prop image :id)
                     buffer        (uuid/get-u32 id)
                     cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
-                (h/call wasm/internal-module "_add_shape_image_fill"
-                        (aget buffer 0)
-                        (aget buffer 1)
-                        (aget buffer 2)
-                        (aget buffer 3)
-                        opacity
-                        (dm/get-prop image :width)
-                        (dm/get-prop image :height))
+                (sr-fills/write-image-fill! offset heap id opacity (dm/get-prop image :width) (dm/get-prop image :height))
+                (h/call wasm/internal-module "_add_shape_image_fill")
                 (when (== cached-image? 0)
                   (store-image id))))))
         fills))

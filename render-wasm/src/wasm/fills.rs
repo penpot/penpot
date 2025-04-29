@@ -1,9 +1,9 @@
 mod gradient;
+mod image;
 mod solid;
 
 use crate::mem;
 use crate::shapes;
-use crate::utils::uuid_from_u32_quartet;
 use crate::with_current_shape;
 use crate::STATE;
 
@@ -37,22 +37,12 @@ pub extern "C" fn add_shape_radial_fill() {
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_image_fill(
-    a: u32,
-    b: u32,
-    c: u32,
-    d: u32,
-    alpha: f32,
-    width: i32,
-    height: i32,
-) {
+pub extern "C" fn add_shape_image_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
-        let id = uuid_from_u32_quartet(a, b, c, d);
-        shape.add_fill(shapes::Fill::new_image_fill(
-            id,
-            (alpha * 0xff as f32).floor() as u8,
-            (width, height),
-        ));
+        let bytes = mem::bytes();
+        let image_fill = shapes::ImageFill::try_from(&bytes[..]).expect("Invalid image fill data");
+
+        shape.add_fill(shapes::Fill::Image(image_fill));
     });
 }
 

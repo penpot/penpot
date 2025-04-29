@@ -98,11 +98,20 @@ impl Gradient {
 pub struct ImageFill {
     id: Uuid,
     opacity: u8,
-    height: i32,
     width: i32,
+    height: i32,
 }
 
 impl ImageFill {
+    pub fn new(id: Uuid, opacity: u8, width: i32, height: i32) -> Self {
+        Self {
+            id,
+            opacity,
+            width,
+            height,
+        }
+    }
+
     pub fn size(&self) -> (i32, i32) {
         (self.width, self.height)
     }
@@ -124,15 +133,6 @@ pub enum Fill {
 }
 
 impl Fill {
-    pub fn new_image_fill(id: Uuid, opacity: u8, (width, height): (i32, i32)) -> Self {
-        Self::Image(ImageFill {
-            id,
-            opacity,
-            height,
-            width,
-        })
-    }
-
     pub fn to_paint(&self, rect: &Rect, anti_alias: bool) -> skia::Paint {
         match self {
             Self::Solid(SolidColor(color)) => {
