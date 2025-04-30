@@ -97,15 +97,17 @@
 ;; Never call this directly but through the data-event `:layout/update`
 ;; Otherwise a lot of cycle dependencies could be generated
 (defn- update-layout-positions
-  [{:keys [ids undo-group]}]
+  [{:keys [page-id ids undo-group]}]
   (ptk/reify ::update-layout-positions
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
+      (let [page-id (or page-id (:current-page-id state))
+            objects (dsh/lookup-page-objects state page-id)
             ids (->> ids (filter #(contains? objects %)))]
         (if (d/not-empty? ids)
           (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
-            (rx/of (dwm/apply-modifiers {:modifiers modif-tree
+            (rx/of (dwm/apply-modifiers {:page-id page-id
+                                         :modifiers modif-tree
                                          :stack-undo? true
                                          :undo-group undo-group})))
           (rx/empty))))))
@@ -127,8 +129,9 @@
              (rx/filter #(d/not-empty? %))
              (rx/map
               (fn [data]
-                (let [ids (reduce #(into %1 (:ids %2)) #{} data)]
-                  (update-layout-positions {:ids ids}))))
+                (let [page-id (->> data (keep :page-id) first)
+                      ids (reduce #(into %1 (:ids %2)) #{} data)]
+                  (update-layout-positions {:page-id page-id :ids ids}))))
              (rx/take-until stopper))))))
 
 (defn finalize-shape-layout
