@@ -581,11 +581,14 @@
             changes (-> (pcb/empty-changes it)
                         (cll/generate-restore-component ldata component-id library-id page objects))
 
+            page-id
+            (->> changes :redo-changes (keep :page-id) first)
+
             frames
             (->> changes :redo-changes (keep :frame-id))]
 
         (rx/of (dch/commit-changes changes)
-               (ptk/data-event :layout/update {:ids frames}))))))
+               (ptk/data-event :layout/update {:page-id page-id :ids frames}))))))
 
 
 (defn restore-components
