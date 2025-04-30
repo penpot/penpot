@@ -1624,6 +1624,56 @@
       (seq applied-tokens)
       (update-tokens container dest-shape origin-shape applied-tokens))))
 
+(defn- generate-update-attrs
+  [changes dest-shape container roperations uoperations]
+  (let [all-parents (cfh/get-parent-ids (:objects container)
+                                        (:id dest-shape))]
+    (-> changes
+        (update :redo-changes conj (make-change
+                                    container
+                                    {:type :mod-obj
+                                     :id (:id dest-shape)
+                                     :operations roperations}))
+        (update :redo-changes conj (make-change
+                                    container
+                                    {:type :reg-objects
+                                     :shapes all-parents}))
+        (update :undo-changes conj (make-change
+                                    container
+                                    {:type :mod-obj
+                                     :id (:id dest-shape)
+                                     :operations (vec uoperations)}))
+        (update :undo-changes concat [(make-change
+                                       container
+                                       {:type :reg-objects
+                                        :shapes all-parents})]))))
+
+(defn- update-attr-operations
+  [attr dest-shape origin-shape roperations uoperations touched]
+  (let [;; position-data is a special case because can be affected by :geometry-group and :content-group
+        ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
+        ;; so it's calculated again
+        reset-pos-data?
+        (and (cfh/text-shape? origin-shape)
+             (= attr :position-data)
+             (not= (get origin-shape attr) (get dest-shape attr))
+             (touched :geometry-group))
+
+        roperation {:type :set
+                    :attr attr
+                    :val (cond
+                           ;; If position data changes and the geometry group is touched
+                           ;; we need to put to nil so we can regenerate it
+                           reset-pos-data? nil
+                           :else (get origin-shape attr))
+                    :ignore-touched true}
+        uoperation {:type :set
+                    :attr attr
+                    :val (get dest-shape attr)
+                    :ignore-touched true}]
+    [(conj roperations roperation)
+     (conj uoperations uoperation)]))
+
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
   attributes that have changed in the origin shape to the dest shape.
@@ -1652,9 +1702,7 @@
         ;; In case of subinstances, the comparison is always done with the
         ;; near component, because this is that we are syncing with.
         origin-shape (reposition-shape origin-shape origin-root dest-root)
-        touched      (get dest-shape :touched #{})
-        all-parents (cfh/get-parent-ids (:objects container)
-                                        (:id dest-shape))]
+        touched      (get dest-shape :touched #{})]
 
     (loop [attrs (->> (seq (keys ctk/sync-attrs))
                       ;; We don't update the flex-child attrs
@@ -1668,58 +1716,19 @@
         (if (nil? attr)
           (cond-> changes
             (seq roperations)
-            (-> (update :redo-changes conj (make-change
-                                            container
-                                            {:type :mod-obj
-                                             :id (:id dest-shape)
-                                             :operations roperations}))
-                (update :redo-changes conj (make-change
-                                            container
-                                            {:type :reg-objects
-                                             :shapes all-parents}))
-                (update :undo-changes conj (make-change
-                                            container
-                                            {:type :mod-obj
-                                             :id (:id dest-shape)
-                                             :operations (vec uoperations)}))
-                (update :undo-changes concat [(make-change
-                                               container
-                                               {:type :reg-objects
-                                                :shapes all-parents})]))
+            (generate-update-attrs dest-shape container roperations uoperations)
             :always
             (generate-update-tokens container dest-shape origin-shape touched omit-touched?))
 
-          (let [;; position-data is a special case because can be affected by :geometry-group and :content-group
-                ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
-                ;; so it's calculated again
-                reset-pos-data?
-                (and (cfh/text-shape? origin-shape)
-                     (= attr :position-data)
-                     (not= (get origin-shape attr) (get dest-shape attr))
-                     (touched :geometry-group))
-
-                roperation {:type :set
-                            :attr attr
-                            :val (cond
-                                   ;; If position data changes and the geometry group is touched
-                                   ;; we need to put to nil so we can regenerate it
-                                   reset-pos-data? nil
-                                   :else (get origin-shape attr))
-                            :ignore-touched true}
-                uoperation {:type :set
-                            :attr attr
-                            :val (get dest-shape attr)
-                            :ignore-touched true}
-
-                attr-group (get ctk/sync-attrs attr)]
-            (if (or (= (get origin-shape attr) (get dest-shape attr))
-                    (and (touched attr-group) omit-touched?))
-              (recur (next attrs)
-                     roperations
-                     uoperations)
-              (recur (next attrs)
-                     (conj roperations roperation)
-                     (conj uoperations uoperation)))))))))
+          (let [attr-group (get ctk/sync-attrs attr)
+                [roperations' uoperations']
+                (if (or (= (get origin-shape attr) (get dest-shape attr))
+                        (and (touched attr-group) omit-touched?))
+                  [roperations uoperations]
+                  (update-attr-operations attr dest-shape origin-shape roperations uoperations touched))]
+            (recur (next attrs)
+                   roperations'
+                   uoperations')))))))
 
 (defn- propagate-attrs
   "Helper that puts the origin attributes (attrs) into dest but only if
