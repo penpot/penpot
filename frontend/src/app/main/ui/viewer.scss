@@ -127,6 +127,7 @@
   width: $s-28;
   margin-left: $s-8;
   background-color: var(--viewer-controls-background-color);
+  pointer-events: all;
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
