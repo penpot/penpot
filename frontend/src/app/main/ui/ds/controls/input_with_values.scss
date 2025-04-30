@@ -12,7 +12,7 @@
 .input-with-values-container {
   @include t.use-typography("body-small");
   border-radius: $br-8;
-  background-color: var(--assets-item-background-color);
+  background-color: var(--color-background-tertiary);
   padding: var(--sp-s);
   width: 99%;
   display: grid;
@@ -21,6 +21,11 @@
   overflow: hidden;
   white-space: nowrap;
   height: $sz-32;
+
+  &:hover {
+    background-color: var(--color-background-quaternary);
+    cursor: text;
+  }
 }
 
 .input-with-values-edit-container {
