@@ -573,3 +573,16 @@ export async function copyAssets() {
   const end = process.hrtime(start);
   log.info("done: copy assets", `(${ppt(end)})`);
 }
+
+export async function copyWasmPlayground() {
+  const start = process.hrtime();
+  log.info("init: copy wasm playground");
+
+  await syncDirs(
+    "resources/wasm-playground/",
+    "resources/public/wasm-playground/",
+  );
+
+  const end = process.hrtime(start);
+  log.info("done: copy wasm playground", `(${ppt(end)})`);
+}

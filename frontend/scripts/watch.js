@@ -44,6 +44,7 @@ async function compileSass(path) {
 await fs.mkdir("./resources/public/css/", { recursive: true });
 await compileSassAll();
 await h.copyAssets();
+await h.copyWasmPlayground();
 await h.compileSvgSprites();
 await h.compileTemplates();
 await h.compilePolyfills();
@@ -87,5 +88,11 @@ h.watch(
     await h.compileTemplates();
   },
 );
+
+log.info("watch: wasm playground (~)");
+h.watch(["resources/wasm-playground"], null, async function (path) {
+  log.info("changed:", path);
+  await h.copyWasmPlayground();
+});
 
 worker.terminate();
