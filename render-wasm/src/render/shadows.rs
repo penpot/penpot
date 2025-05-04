@@ -1,7 +1,8 @@
 use super::{RenderState, SurfaceId};
 use crate::render::strokes;
+use crate::render::text::{self};
 use crate::shapes::{Shadow, Shape, Stroke, Type};
-use skia_safe::Paint;
+use skia_safe::{textlayout::Paragraph, Paint};
 
 // Fill Shadows
 pub fn render_fill_drop_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
@@ -80,6 +81,64 @@ pub fn render_stroke_inner_shadows(
             )
         }
     }
+}
+
+pub fn render_text_drop_shadows(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    paragraphs: &[Paragraph],
+    antialias: bool,
+) {
+    for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
+        render_text_drop_shadow(render_state, &shape, &shadow, &paragraphs, antialias);
+    }
+}
+
+pub fn render_text_drop_shadow(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    shadow: &Shadow,
+    paragraphs: &[Paragraph],
+    antialias: bool,
+) {
+    let paint = &shadow.get_drop_shadow_paint(antialias);
+
+    text::render(
+        render_state,
+        shape,
+        &paragraphs,
+        Some(SurfaceId::DropShadows),
+        Some(paint),
+    );
+}
+
+pub fn render_text_inner_shadows(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    paragraphs: &[Paragraph],
+    antialias: bool,
+) {
+    for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
+        render_text_inner_shadow(render_state, &shape, &shadow, &paragraphs, antialias);
+    }
+}
+
+pub fn render_text_inner_shadow(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    shadow: &Shadow,
+    paragraphs: &[Paragraph],
+    antialias: bool,
+) {
+    let paint = &shadow.get_inner_shadow_paint(antialias);
+
+    text::render(
+        render_state,
+        shape,
+        &paragraphs,
+        Some(SurfaceId::InnerShadows),
+        Some(paint),
+    );
 }
 
 fn render_shadow_paint(

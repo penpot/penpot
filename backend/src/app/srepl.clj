@@ -6,13 +6,17 @@
 
 (ns app.srepl
   "Server Repl."
+  (:refer-clojure :exclude [read-line])
   (:require
+   [app.common.exceptions :as ex]
+   [app.common.json :as json]
    [app.common.logging :as l]
    [app.config :as cf]
-   [app.srepl.cli]
+   [app.srepl.cli :as cli]
    [app.srepl.main]
-   [app.util.json :as json]
    [app.util.locks :as locks]
+   [app.util.time :as dt]
+   [clojure.core :as c]
    [clojure.core.server :as ccs]
    [clojure.main :as cm]
    [integrant.core :as ig]))
@@ -28,17 +32,80 @@
    :init repl-init
    :read ccs/repl-read))
 
+(defn- ex->data
+  [cause phase]
+  (let [data (ex-data cause)
+        explain (ex/explain data)]
+    (cond-> {:phase phase
+             :code (get data :code :unknown)
+             :type (get data :type :unknown)
+             :hint (or (get data :hint) (ex-message cause))}
+      (some? explain)
+      (assoc :explain explain))))
+
+(defn read-line
+  []
+  (if-let [line (c/read-line)]
+    (try
+      (l/dbg :hint "decode" :data line)
+      (json/decode line :key-fn json/read-kebab-key)
+      (catch Throwable _cause
+        (l/warn :hint "unable to decode data" :data line)
+        nil))
+    ::eof))
+
 (defn json-repl
   []
-  (let [out  *out*
-        lock (locks/create)]
-    (ccs/prepl *in*
-               (fn [m]
-                 (binding [*out* out,
-                           *flush-on-newline* true,
-                           *print-readably* true]
-                   (locks/locking lock
-                     (println (json/encode-str m))))))))
+  (let [lock (locks/create)
+        out  *out*
+
+        out-fn
+        (fn [m]
+          (locks/locking lock
+            (binding [*out* out]
+              (l/warn :hint "write" :data m)
+              (println (json/encode m :key-fn json/write-camel-key)))))
+
+        tapfn
+        (fn [val]
+          (out-fn {:tag :tap :val val}))]
+
+    (binding [*out* (PrintWriter-on #(out-fn {:tag :out :val %1}) nil true)
+              *err* (PrintWriter-on #(out-fn {:tag :err :val %1}) nil true)]
+      (try
+        (add-tap tapfn)
+        (loop []
+          (when (try
+                  (let [data   (read-line)
+                        tpoint (dt/tpoint)]
+
+                    (l/dbg :hint "received" :data (if (= data ::eof) "EOF" data))
+
+                    (try
+                      (when-not (= data ::eof)
+                        (when-not (nil? data)
+                          (let [result  (cli/exec data)
+                                elapsed (tpoint)]
+                            (l/warn :hint "result" :data result)
+                            (out-fn {:tag :ret
+                                     :val (if (instance? Throwable result)
+                                            (Throwable->map result)
+                                            result)
+                                     :elapsed (inst-ms elapsed)})))
+                        true)
+                      (catch Throwable cause
+                        (let [elapsed (tpoint)]
+                          (out-fn {:tag :ret
+                                   :err (ex->data cause :eval)
+                                   :elapsed (inst-ms elapsed)})
+                          true))))
+                  (catch Throwable cause
+                    (out-fn {:tag :ret
+                             :err (ex->data cause :read)})
+                    true))
+            (recur)))
+        (finally
+          (remove-tap tapfn))))))
 
 ;; --- State initialization
 

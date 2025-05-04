@@ -1,16 +1,15 @@
-(ns app.main.ui.workspace.tokens.style-dictionary
+(ns app.main.data.style-dictionary
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
+   [app.common.files.tokens :as cft]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.ui.workspace.tokens.errors :as wte]
-   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
-   [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.warnings :as wtw]
-   [app.util.i18n :refer [tr]]
+   [app.main.data.tinycolor :as tinycolor]
+   [app.main.data.workspace.tokens.errors :as wte]
+   [app.main.data.workspace.tokens.warnings :as wtw]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -25,7 +24,7 @@
   "Initiates the StyleDictionary instance.
   Setup transforms from tokens-studio used to parse and resolved token values."
   (do
-    (sd-transforms/registerTransforms sd)
+    (sd-transforms/register sd)
     (.registerFormat sd #js {:name "custom/json"
                              :format (fn [^js res]
                                        (.-tokens (.-dictionary res)))})
@@ -55,7 +54,7 @@
   "Parses `value` of a numeric `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (let [parsed-value  (wtt/parse-token-value value)
+  (let [parsed-value  (cft/parse-token-value value)
         out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
                           (<= (:value parsed-value) sm/min-safe-int))]
     (if (and parsed-value (not out-of-bounds))
@@ -73,7 +72,7 @@
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value has-references?]
 
-  (let [parsed-value (wtt/parse-token-value value)
+  (let [parsed-value (cft/parse-token-value value)
         out-of-scope (not (<= 0 (:value parsed-value) 1))
         references (seq (ctob/find-token-value-references value))]
     (cond
@@ -99,7 +98,7 @@
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value has-references?]
 
-  (let [parsed-value (wtt/parse-token-value value)
+  (let [parsed-value (cft/parse-token-value value)
         out-of-scope (< (:value parsed-value) 0)
         references (seq (ctob/find-token-value-references value))]
     (cond
@@ -192,9 +191,11 @@
     config)
 
   (build-dictionary [_]
-    (let [config' (clj->js config)]
+    (let [platform "json"
+          config' (clj->js config)]
       (-> (sd. config')
-          (.buildAllPlatforms "json")
+          (.buildAllPlatforms platform)
+          (p/then #(.getPlatformTokens ^js % platform))
           (p/then #(.-allTokens ^js %))))))
 
 (defn resolve-tokens-tree+
@@ -240,7 +241,21 @@
 
 ;; === Import
 
-(defn reference-errors
+(defn- decode-single-set-json
+  "Decodes parsed json containing single token set and converts to library"
+  [this set-name tokens]
+  (assert (map? tokens) "expected a map data structure for `data`")
+
+  (ctob/add-set this (ctob/make-token-set :name (ctob/normalize-set-name set-name)
+                                          :tokens (ctob/flatten-nested-tokens-json tokens ""))))
+
+(defn- decode-single-set-legacy-json
+  "Decodes parsed legacy json containing single token set and converts to library"
+  [this set-name tokens]
+  (assert (map? tokens) "expected a map data structure for `data`")
+  (decode-single-set-json this set-name (ctob/legacy-nodes->dtcg-nodes tokens)))
+
+(defn- reference-errors
   "Extracts reference errors from StyleDictionary."
   [err]
   (let [[header-1 header-2 & errors] (str/split err "\n")]
@@ -248,6 +263,16 @@
            (= header-1 "Error: ")
            (= header-2 "Reference Errors:"))
       errors)))
+
+(defn name-error
+  "Extracts name error out of malli schema error during import."
+  [err]
+  (let [schema-error (some-> (ex-data err)
+                             (get-in [:app.common.schema/explain :errors])
+                             (first))
+        name-error? (= (:in schema-error) [:name])]
+    (when name-error?
+      (wte/error-ex-info :error.import/invalid-token-name (:value schema-error) err))))
 
 (defn process-json-stream
   ([data-stream]
@@ -267,11 +292,11 @@
                         (cond
                           (and single-set?
                                (= :json-format/legacy json-format))
-                          (ctob/decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) file-name json-data)
+                          (decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) file-name json-data)
 
                           (and single-set?
                                (= :json-format/dtcg json-format))
-                          (ctob/decode-single-set-json (ctob/ensure-tokens-lib nil) file-name json-data)
+                          (decode-single-set-json (ctob/ensure-tokens-lib nil) file-name json-data)
 
                           (= :json-format/legacy json-format)
                           (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data)
@@ -280,7 +305,9 @@
                           (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data))
 
                         (catch js/Error e
-                          (throw (wte/error-ex-info :error.import/invalid-json-data json-data e)))))))
+                          (let [err (or (name-error e)
+                                        (wte/error-ex-info :error.import/invalid-json-data json-data e))]
+                            (throw err)))))))
           (rx/mapcat (fn [tokens-lib]
                        (try
                          (-> (ctob/get-all-tokens tokens-lib)
@@ -294,17 +321,6 @@
                                           (throw err)))))
                          (catch js/Error e
                            (p/rejected (wte/error-ex-info :error.import/style-dictionary-unknown-error "" e))))))))))
-
-;; === Errors
-
-(defn humanize-errors [{:keys [errors] :as token}]
-  (->> (map (fn [err]
-              (case (:error/code err)
-                ;; TODO: This needs translations
-                :error.style-dictionary/missing-reference (tr "workspace.token.token-not-resolved" (:error/value err))
-                nil))
-            errors)
-       (str/join "\n")))
 
 ;; === Hooks
 

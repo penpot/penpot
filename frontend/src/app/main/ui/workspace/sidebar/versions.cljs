@@ -153,7 +153,7 @@
          (mf/deps on-pin-snapshot)
          (fn [event]
            (let [node  (dom/get-current-target event)
-                 id    (-> (dom/get-data node "id") uuid/uuid)]
+                 id    (-> (dom/get-data node "id") uuid/parse)]
              (when on-pin-snapshot (on-pin-snapshot id)))))
 
         handle-restore-snapshot
@@ -161,7 +161,7 @@
          (mf/deps on-restore-snapshot)
          (fn [event]
            (let [node  (dom/get-current-target event)
-                 id    (-> (dom/get-data node "id") uuid/uuid)]
+                 id    (-> (dom/get-data node "id") uuid/parse)]
              (when on-restore-snapshot (on-restore-snapshot id)))))
 
 

@@ -1,0 +1,78 @@
+@use "common/refactor/common-refactor.scss" as *;
+@use "common/refactor/common-dashboard";
+@use "../ds/typography.scss" as t;
+@use "../ds/_borders.scss" as *;
+
+.cta-power-up {
+  display: flex;
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: var(--sp-s);
+  flex-direction: column;
+  margin: var(--sp-m);
+  padding: var(--sp-m);
+}
+
+.cta-top-section {
+  @include buttonStyle;
+  display: grid;
+  color: var(--color-foreground-secondary);
+  grid-template-columns: 1fr auto;
+}
+
+.cta-top-section .content {
+  display: flex;
+  flex-direction: column;
+}
+
+.icon-dropdown {
+  @include flexCenter;
+  height: 100%;
+  width: $s-16;
+}
+
+.icon-dropdown svg {
+  @extend .button-icon-small;
+  stroke: var(--icon-foreground);
+  transform: rotate(90deg);
+}
+
+.cta-bottom-section {
+  border-block-start: $s-1 solid var(--color-background-quaternary);
+  display: grid;
+  color: var(--color-foreground-secondary);
+  grid-template-columns: 1fr auto;
+  margin-block-start: $s-12;
+  padding-block-start: $s-12;
+}
+.cta-bottom-section .content {
+  @include t.use-typography("body-small");
+  @include buttonStyle;
+  color: var(--color-foreground-secondary);
+  display: inline;
+  text-align: left;
+}
+
+.cta-text,
+.cta-title {
+  text-align: left;
+}
+
+.cta-text {
+  @include t.use-typography("body-small");
+}
+
+.cta-title {
+  @include t.use-typography("body-medium");
+}
+
+.cta-bottom-section .content strong,
+.cta-highlight {
+  @include t.use-typography("body-small");
+  color: var(--color-accent-tertiary);
+}
+
+.cta-link {
+  @include buttonStyle;
+  align-self: end;
+  margin-inline-start: $s-4;
+}

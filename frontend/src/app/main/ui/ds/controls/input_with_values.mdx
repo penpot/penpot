@@ -5,15 +5,15 @@ import * as InputWithValuesStories from "./input_with_values.stories";
 
 # InputWithValues
 
-The `input-with-values*` acts as an input with an addition of a series of values that are only indicators.
+The `input-with-values*` acts as an input with an optional addition of a series of values that are only indicators, and an event which is triggered when the focus is lost.
 
 <Canvas of={InputWithValuesStories.Default} />
 
-
 ## Technical notes
 
-* You need to pass the mandatory string properties `name` and `values`
-* You can pass a function property `on-blur` that will be called with the blur event when the component lost focus (including when the user press enter or esc)
+* You need to pass the mandatory string property `name`.
+* You can pass the optional string property `values`.
+* You can pass a function property `on-blur` that will be called with the blur event when the component loses focus (including when the user presses enter or esc).
 
 ```clj
 [:> input-with-values*
@@ -22,16 +22,14 @@ The `input-with-values*` acts as an input with an addition of a series of values
   :on-blur on-blur}]
 ```
 
-
 ## Usage guidelines (design)
-
 
 ### When to use
 
-When we have an element that need to be editable, and an extra set of values that aren't editables and are only indicators
-
+When we have an element that can be editable, but doesn't change its appearance on hover, and adds an extra set of values that aren't editable (they're just indicators).
 
 ### Interaction / Behavior
-* The component starts on "display" mode, showing the name and the values
-* Once the user clicks on it, the input goes into "active" mode and the only thing that remains and that is editable is the name (the values are hidden)
-* If the user press enter or esc, the component goes back to "display" mode
+
+* The component starts on "display" mode, showing the name and the values.
+* Once the user clicks on it, the input goes into "active" mode and the only thing that remains and can be editable is the name (the values are hidden).
+* If the user presses enter or esc, the component goes back to "display" mode.

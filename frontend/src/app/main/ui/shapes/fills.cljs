@@ -61,9 +61,9 @@
         embed       (embed/use-data-uris uris)
         transform   (gsh/transform-str shape)
 
-        pat-props   #js {:patternUnits "userSpaceOnUse"
-                         :x x
-                         :y y
+        pat-props   #js {:patternUnits (if (= :text type) "objectBoundingBox" "userSpaceOnUse")
+                         :x (when-not (= :text type) x)
+                         :y (when-not (= :text type) y)
                          :width width
                          :height height}
 

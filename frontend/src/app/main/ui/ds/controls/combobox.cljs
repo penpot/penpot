@@ -75,6 +75,7 @@
   (let [open* (mf/use-state false)
         open  (deref open*)
 
+        ;;use-memo-equal
         selected* (mf/use-state  default-selected)
         selected  (deref selected*)
 
@@ -214,6 +215,11 @@
 
     (mf/with-effect [options]
       (mf/set-ref-val! options-ref options))
+
+    (mf/use-effect
+     (mf/deps default-selected)
+     (fn []
+       (reset! selected* default-selected)))
 
     [:div {:ref combobox-ref
            :class (stl/css-case

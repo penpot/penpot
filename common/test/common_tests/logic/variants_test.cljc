@@ -9,6 +9,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
    [app.common.logic.libraries :as cll]
+   [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.files :as thf]
@@ -234,3 +235,33 @@
     (t/is (= (count (:components data')) 4))
     (t/is (= (count objects) 4))
     (t/is (= (count objects') 7))))
+
+
+(t/deftest test-delete-variant
+  ;; When a variant container becomes empty, it id automatically deleted
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02))
+        container (ths/get-shape file :v01)
+        m01-id    (-> (ths/get-shape file :m01) :id)
+        m02-id    (-> (ths/get-shape file :m02) :id)
+
+        page    (thf/current-page file)
+
+        ;; ==== Action
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (#(second (cls/generate-delete-shapes % #{m01-id m02-id} {}))))
+
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        container' (ths/get-shape file' :v01)]
+
+    ;; ==== Check
+    ;; The variant containew was not nil before the deletion
+    (t/is (not (nil? container)))
+    ;; The variant containew is nil after the deletion
+    (t/is (nil? container'))))

@@ -1,19 +1,22 @@
 use skia_safe as skia;
 
-mod debug;
+#[cfg(target_arch = "wasm32")]
 mod emscripten;
 mod math;
 mod mem;
+mod options;
+mod performance;
 mod render;
 mod shapes;
 mod state;
 mod utils;
 mod uuid;
 mod view;
+mod wapi;
 mod wasm;
 
 use crate::mem::SerializableResult;
-use crate::shapes::{BoolType, ConstraintH, ConstraintV, TransformEntry, Type};
+use crate::shapes::{BoolType, ConstraintH, ConstraintV, StructureEntry, TransformEntry, Type};
 use crate::utils::uuid_from_u32_quartet;
 use crate::uuid::Uuid;
 use indexmap::IndexSet;
@@ -23,14 +26,14 @@ pub(crate) static mut STATE: Option<Box<State>> = None;
 
 #[macro_export]
 macro_rules! with_state {
-    ($state:ident, $block:block) => {
+    ($state:ident, $block:block) => {{
         let $state = unsafe {
             #[allow(static_mut_refs)]
             STATE.as_mut()
         }
         .expect("Got an invalid state pointer");
         $block
-    };
+    }};
 }
 
 #[macro_export]
@@ -137,7 +140,11 @@ pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
         render_state.viewbox.set_all(zoom, x, y);
         if zoom_changed {
             with_state!(state, {
-                state.rebuild_tiles();
+                if state.render_state.options.is_profile_rebuild_tiles() {
+                    state.rebuild_tiles();
+                } else {
+                    state.rebuild_tiles_shallow();
+                }
             });
         }
     });
@@ -152,7 +159,7 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_parent(a: u32, b: u32, c: u32, d: u32) {
+pub extern "C" fn set_parent(a: u32, b: u32, c: u32, d: u32) {
     with_current_shape!(state, |shape: &mut Shape| {
         let id = uuid_from_u32_quartet(a, b, c, d);
         shape.set_parent(id);
@@ -174,7 +181,7 @@ pub extern "C" fn set_shape_bool_type(raw_bool_type: u8) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_type(shape_type: u8) {
+pub extern "C" fn set_shape_type(shape_type: u8) {
     with_current_shape!(state, |shape: &mut Shape| {
         shape.set_shape_type(Type::from(shape_type));
     });
@@ -218,7 +225,8 @@ pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
 
 #[no_mangle]
 pub extern "C" fn set_children() {
-    let bytes = mem::bytes();
+    let bytes = mem::bytes_or_empty();
+
     let entries: IndexSet<Uuid> = bytes
         .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
         .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
@@ -236,75 +244,10 @@ pub extern "C" fn set_children() {
             state.delete_shape(id);
         }
     });
-}
 
-#[no_mangle]
-pub extern "C" fn clear_shape_children() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.clear_children();
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_solid_fill(raw_color: u32) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let color = skia::Color::new(raw_color);
-        shape.add_fill(shapes::Fill::Solid(color));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_linear_fill(
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
-    opacity: f32,
-) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.add_fill(shapes::Fill::new_linear_gradient(
-            (start_x, start_y),
-            (end_x, end_y),
-            opacity,
-        ));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_radial_fill(
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
-    opacity: f32,
-    width: f32,
-) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.add_fill(shapes::Fill::new_radial_gradient(
-            (start_x, start_y),
-            (end_x, end_y),
-            opacity,
-            width,
-        ));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_fill_stops() {
-    let bytes = mem::bytes();
-
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<shapes::RawStopData>())
-        .map(|data| shapes::RawStopData::from_bytes(data.try_into().unwrap()))
-        .collect();
-
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape
-            .add_fill_gradient_stops(entries)
-            .expect("could not add gradient stops");
-    });
-
-    mem::free_bytes();
+    if !bytes.is_empty() {
+        mem::free_bytes();
+    }
 }
 
 #[no_mangle]
@@ -313,11 +256,8 @@ pub extern "C" fn store_image(a: u32, b: u32, c: u32, d: u32) {
         let id = uuid_from_u32_quartet(a, b, c, d);
         let image_bytes = mem::bytes();
 
-        match state.render_state().add_image(id, &image_bytes) {
-            Err(msg) => {
-                eprintln!("{}", msg);
-            }
-            _ => {}
+        if let Err(msg) = state.render_state().add_image(id, &image_bytes) {
+            eprintln!("{}", msg);
         }
 
         mem::free_bytes();
@@ -328,35 +268,8 @@ pub extern "C" fn store_image(a: u32, b: u32, c: u32, d: u32) {
 pub extern "C" fn is_image_cached(a: u32, b: u32, c: u32, d: u32) -> bool {
     with_state!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
-        return state.render_state().has_image(&id);
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_image_fill(
-    a: u32,
-    b: u32,
-    c: u32,
-    d: u32,
-    alpha: f32,
-    width: i32,
-    height: i32,
-) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let id = uuid_from_u32_quartet(a, b, c, d);
-        shape.add_fill(shapes::Fill::new_image_fill(
-            id,
-            (alpha * 0xff as f32).floor() as u8,
-            (width, height),
-        ));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn clear_shape_fills() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.clear_fills();
-    });
+        state.render_state().has_image(&id)
+    })
 }
 
 #[no_mangle]
@@ -429,101 +342,6 @@ pub extern "C" fn set_shape_path_content() {
     });
 }
 
-#[no_mangle]
-pub extern "C" fn add_shape_center_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.add_stroke(shapes::Stroke::new_center_stroke(
-            width, style, cap_start, cap_end,
-        ));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_inner_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.add_stroke(shapes::Stroke::new_inner_stroke(
-            width, style, cap_start, cap_end,
-        ));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_outer_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.add_stroke(shapes::Stroke::new_outer_stroke(
-            width, style, cap_start, cap_end,
-        ));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_stroke_solid_fill(raw_color: u32) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let color = skia::Color::new(raw_color);
-        shape
-            .set_stroke_fill(shapes::Fill::Solid(color))
-            .expect("could not add stroke solid fill");
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_stroke_linear_fill(
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
-    opacity: f32,
-) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape
-            .set_stroke_fill(shapes::Fill::new_linear_gradient(
-                (start_x, start_y),
-                (end_x, end_y),
-                opacity,
-            ))
-            .expect("could not add stroke linear fill");
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_stroke_radial_fill(
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
-    opacity: f32,
-    width: f32,
-) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape
-            .set_stroke_fill(shapes::Fill::new_radial_gradient(
-                (start_x, start_y),
-                (end_x, end_y),
-                opacity,
-                width,
-            ))
-            .expect("could not add stroke radial fill");
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_stroke_stops() {
-    let bytes = mem::bytes();
-
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<shapes::RawStopData>())
-        .map(|data| shapes::RawStopData::from_bytes(data.try_into().unwrap()))
-        .collect();
-
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape
-            .add_stroke_gradient_stops(entries)
-            .expect("could not add gradient stops");
-    });
-
-    mem::free_bytes();
-}
-
 // Extracts a string from the bytes slice until the next null byte (0) and returns the result as a `String`.
 // Updates the `start` index to the end of the extracted string.
 fn extract_string(start: &mut usize, bytes: &[u8]) -> String {
@@ -540,35 +358,6 @@ fn extract_string(start: &mut usize, bytes: &[u8]) -> String {
             String::new()
         }
     }
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_image_stroke(
-    a: u32,
-    b: u32,
-    c: u32,
-    d: u32,
-    alpha: f32,
-    width: i32,
-    height: i32,
-) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let id = uuid_from_u32_quartet(a, b, c, d);
-        shape
-            .set_stroke_fill(shapes::Fill::new_image_fill(
-                id,
-                (alpha * 0xff as f32).floor() as u8,
-                (width, height),
-            ))
-            .expect("could not add stroke image fill");
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn clear_shape_strokes() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        shape.clear_strokes();
-    });
 }
 
 #[no_mangle]
@@ -602,13 +391,37 @@ pub extern "C" fn propagate_modifiers() -> *mut u8 {
 
     with_state!(state, {
         let result = shapes::propagate_modifiers(state, entries);
-        return mem::write_vec(result);
+        mem::write_vec(result)
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn set_structure_modifiers() {
+    let bytes = mem::bytes();
+
+    let entries: Vec<_> = bytes
+        .chunks(40)
+        .map(|data| StructureEntry::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    with_state!(state, {
+        for entry in entries {
+            state.structure.entry(entry.parent).or_insert_with(Vec::new);
+            state
+                .structure
+                .get_mut(&entry.parent)
+                .expect("Parent not found for entry")
+                .push(entry);
+        }
     });
+
+    mem::free_bytes();
 }
 
 #[no_mangle]
 pub extern "C" fn clean_modifiers() {
     with_state!(state, {
+        state.structure.clear();
         state.modifiers.clear();
     });
 }
@@ -840,5 +653,6 @@ pub extern "C" fn set_grid_cells() {
 }
 
 fn main() {
+    #[cfg(target_arch = "wasm32")]
     init_gl!();
 }

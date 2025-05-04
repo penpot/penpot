@@ -76,9 +76,10 @@
   (perms/make-check-fn has-read-permissions?))
 
 (defn decode-row
-  [{:keys [features] :as row}]
+  [{:keys [features subscription] :as row}]
   (cond-> row
-    (some? features) (assoc :features (db/decode-pgarray features #{}))))
+    (some? features) (assoc :features (db/decode-pgarray features #{}))
+    (some? subscription) (assoc :subscription (db/decode-transit-pgobject subscription))))
 
 ;; FIXME: move
 
@@ -126,16 +127,40 @@
     (get-teams conn profile-id)))
 
 (def sql:get-teams-with-permissions
-  "select t.*,
+  "SELECT t.*,
           tp.is_owner,
           tp.is_admin,
           tp.can_edit,
-          (t.id = ?) as is_default
-     from team_profile_rel as tp
-     join team as t on (t.id = tp.team_id)
-    where t.deleted_at is null
-      and tp.profile_id = ?
-    order by tp.created_at asc")
+          (t.id = ?) AS is_default
+     FROM team_profile_rel AS tp
+     JOIN team AS t ON (t.id = tp.team_id)
+    WHERE t.deleted_at IS null
+      AND tp.profile_id = ?
+    ORDER BY tp.created_at ASC")
+
+(def sql:get-teams-with-permissions-and-subscription
+  "SELECT t.*,
+          tp.is_owner,
+          tp.is_admin,
+          tp.can_edit,
+          (t.id = ?) AS is_default,
+
+          jsonb_build_object(
+            '~:type', COALESCE(p.props->'~:subscription'->>'~:type', 'professional'),
+            '~:status', CASE COALESCE(p.props->'~:subscription'->>'~:type', 'professional')
+                          WHEN 'professional' THEN 'active'
+                          ELSE COALESCE(p.props->'~:subscription'->>'~:status', 'incomplete')
+                       END
+          ) AS subscription
+     FROM team_profile_rel AS tp
+     JOIN team AS t ON (t.id = tp.team_id)
+     JOIN team_profile_rel AS tpr
+       ON (tpr.team_id = t.id AND tpr.is_owner IS true)
+     JOIN profile AS p
+       ON (tpr.profile_id = p.id)
+    WHERE t.deleted_at IS null
+      AND tp.profile_id = ?
+    ORDER BY tp.created_at ASC;")
 
 (defn process-permissions
   [team]
@@ -150,13 +175,21 @@
         (dissoc :is-owner :is-admin :can-edit)
         (assoc :permissions permissions))))
 
+(def ^:private
+  xform:process-teams
+  (comp
+   (map decode-row)
+   (map process-permissions)))
+
 (defn get-teams
   [conn profile-id]
-  (let [profile (profile/get-profile conn profile-id)]
-    (->> (db/exec! conn [sql:get-teams-with-permissions (:default-team-id profile) profile-id])
-         (map decode-row)
-         (map process-permissions)
-         (vec))))
+  (let [profile (profile/get-profile conn profile-id)
+        sql     (if (contains? cf/flags :subscriptions)
+                  sql:get-teams-with-permissions-and-subscription
+                  sql:get-teams-with-permissions)]
+
+    (->> (db/exec! conn [sql (:default-team-id profile) profile-id])
+         (into [] xform:process-teams))))
 
 ;; --- Query: Team (by ID)
 

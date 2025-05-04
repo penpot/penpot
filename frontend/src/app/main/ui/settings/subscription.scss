@@ -1,0 +1,126 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+@use "../ds/typography.scss" as t;
+
+.dashboard-section {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+}
+
+.dashboard-content {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  max-width: $s-500;
+  margin-bottom: $s-32;
+  width: $s-580;
+  margin: $s-92 auto $s-120 auto;
+  justify-content: center;
+}
+
+.membership-container {
+  margin-block-start: $s-16;
+}
+
+.membership {
+  align-items: center;
+  display: flex;
+  margin-block-start: $s-8;
+}
+
+.membership.first {
+  margin-block-start: $s-16;
+}
+
+.membership-date {
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-secondary);
+  margin-inline-start: $s-8;
+}
+
+.subscription-member,
+.penpot-member {
+  @extend .button-icon;
+}
+
+.penpot-member {
+  stroke: var(--icon-foreground);
+}
+
+.subscription-member {
+  stroke: #fdcd79ff;
+}
+
+.title-section {
+  @include t.use-typography("title-large");
+  color: var(--color-foreground-primary);
+  margin-block-end: $s-16;
+}
+
+.plan-section-title {
+  @include t.use-typography("headline-small");
+  color: var(--color-foreground-primary);
+}
+
+.plan-card {
+  border: $s-1 solid var(--color-foreground-secondary);
+  border-radius: $s-8;
+  margin-block-start: $s-16;
+  padding: $s-16;
+}
+
+.plan-card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-block-end: $s-8;
+}
+
+.plan-card-title-container {
+  display: flex;
+  align-items: center;
+  gap: $s-8;
+}
+
+.plan-title-icon {
+  @extend .button-icon;
+  stroke: var(--color-foreground-primary);
+  border-radius: $s-4;
+  border: $s-1 solid var(--color-foreground-primary);
+}
+
+.plan-card-title,
+.plan-price-value {
+  @include t.use-typography("title-medium");
+  color: var(--color-foreground-primary);
+}
+
+.plan-price-period {
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-primary);
+}
+
+.benefits-list {
+  margin-block: 0;
+}
+
+.benefits-title,
+.benefit {
+  @include t.use-typography("body-medium");
+  color: var(--color-foreground-secondary);
+}
+
+.other-subscriptions {
+  margin-block-start: $s-36;
+}
+
+.cta-button {
+  @include t.use-typography("body-small");
+  color: var(--color-accent-tertiary);
+}

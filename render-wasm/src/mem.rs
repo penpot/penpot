@@ -20,7 +20,7 @@ pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
         if ptr.is_null() {
             panic!("Allocation failed");
         }
-        // TODO: Esto quizá se podría eliminar.
+        // TODO: Maybe this could be removed.
         ptr::write_bytes(ptr, 0, len);
         *guard = Some(Box::new(Vec::from_raw_parts(ptr, len, len)));
         ptr
@@ -54,6 +54,12 @@ pub fn bytes() -> Vec<u8> {
     guard
         .take()
         .map_or_else(|| panic!("Buffer is not initialized"), |buffer| *buffer)
+}
+
+pub fn bytes_or_empty() -> Vec<u8> {
+    let mut guard = BUFFERU8.lock().unwrap();
+
+    guard.take().map_or_else(|| Vec::new(), |buffer| *buffer)
 }
 
 pub trait SerializableResult {

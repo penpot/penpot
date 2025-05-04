@@ -8,7 +8,8 @@ use common::GetBounds;
 
 use crate::math::{identitish, Bounds, Matrix, Point};
 use crate::shapes::{
-    ConstraintH, ConstraintV, Frame, Group, Layout, Modifier, Shape, TransformEntry, Type,
+    modified_children_ids, ConstraintH, ConstraintV, Frame, Group, Layout, Modifier, Shape,
+    StructureEntry, TransformEntry, Type,
 };
 use crate::state::State;
 use crate::uuid::Uuid;
@@ -20,14 +21,17 @@ fn propagate_children(
     parent_bounds_after: &Bounds,
     transform: Matrix,
     bounds: &HashMap<Uuid, Bounds>,
+    structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> VecDeque<Modifier> {
-    if shape.children.len() == 0 || identitish(transform) {
+    let children_ids = modified_children_ids(shape, structure.get(&shape.id));
+
+    if children_ids.len() == 0 || identitish(transform) {
         return VecDeque::new();
     }
 
     let mut result = VecDeque::new();
 
-    for child_id in shape.children.iter() {
+    for child_id in children_ids.iter() {
         let Some(child) = shapes.get(child_id) else {
             continue;
         };
@@ -81,10 +85,13 @@ fn calculate_group_bounds(
     shape: &Shape,
     shapes: &HashMap<Uuid, Shape>,
     bounds: &HashMap<Uuid, Bounds>,
+    structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Option<Bounds> {
     let shape_bounds = bounds.find(&shape);
     let mut result = Vec::<Point>::new();
-    for child_id in shape.children.iter() {
+
+    let children_ids = modified_children_ids(shape, structure.get(&shape.id));
+    for child_id in children_ids.iter() {
         let Some(child) = shapes.get(child_id) else {
             continue;
         };
@@ -103,6 +110,13 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
         .iter()
         .map(|entry| Modifier::Transform(entry.clone()))
         .collect();
+
+    for (id, _) in &state.structure {
+        if id != &Uuid::nil() {
+            entries.push_back(Modifier::Reflow(*id));
+        }
+    }
+
     let mut modifiers = HashMap::<Uuid, Matrix>::new();
     let mut bounds = HashMap::<Uuid, Bounds>::new();
 
@@ -133,6 +147,7 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                             &shape_bounds_after,
                             entry.transform,
                             &bounds,
+                            &state.structure,
                         );
 
                         entries.append(&mut children);
@@ -191,7 +206,9 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                             }
                         }
                         Type::Group(Group { masked: true }) => {
-                            if let Some(child) = shapes.get(&shape.children[0]) {
+                            let children_ids =
+                                modified_children_ids(shape, state.structure.get(&shape.id));
+                            if let Some(child) = shapes.get(&children_ids[0]) {
                                 let child_bounds = bounds.find(&child);
                                 bounds.insert(shape.id, child_bounds);
                                 reflow_parent = true;
@@ -199,7 +216,7 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                         }
                         Type::Group(_) => {
                             if let Some(shape_bounds) =
-                                calculate_group_bounds(shape, shapes, &bounds)
+                                calculate_group_bounds(shape, shapes, &bounds, &state.structure)
                             {
                                 bounds.insert(shape.id, shape_bounds);
                                 reflow_parent = true;
@@ -210,7 +227,7 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                             // new path... impossible right now. I'm going to use for the moment the group
                             // calculation
                             if let Some(shape_bounds) =
-                                calculate_group_bounds(shape, shapes, &bounds)
+                                calculate_group_bounds(shape, shapes, &bounds, &state.structure)
                             {
                                 bounds.insert(shape.id, shape_bounds);
                                 reflow_parent = true;
@@ -250,15 +267,22 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                     flex_data,
                     shapes,
                     &mut bounds,
+                    &state.structure,
                 );
                 entries.append(&mut children);
             }
 
-            // if let Some(Layout::GridLayout(layout_data, grid_data)) = &frame_data.layout {
-            //     let mut children =
-            //         grid_layout::reflow_grid_layout(shape, layout_data, grid_data, shapes, &bounds);
-            //     entries.append(&mut children);
-            // }
+            if let Some(Layout::GridLayout(layout_data, grid_data)) = &frame_data.layout {
+                let mut children = grid_layout::reflow_grid_layout(
+                    shape,
+                    layout_data,
+                    grid_data,
+                    shapes,
+                    &mut bounds,
+                    &state.structure,
+                );
+                entries.append(&mut children);
+            }
             reflown.insert(*id);
         }
         layout_reflows = Vec::new();
@@ -308,7 +332,8 @@ mod tests {
             &bounds_before,
             &bounds_after,
             transform,
-            &HashMap::<Uuid, Bounds>::new(),
+            &HashMap::new(),
+            &HashMap::new(),
         );
 
         assert_eq!(result.len(), 1);
@@ -337,7 +362,7 @@ mod tests {
         shapes.insert(parent_id, parent.clone());
 
         let bounds =
-            calculate_group_bounds(&parent, &shapes, HashMap::<Uuid, Bounds>::new()).unwrap();
+            calculate_group_bounds(&parent, &shapes, &HashMap::new(), &HashMap::new()).unwrap();
 
         assert_eq!(bounds.width(), 3.0);
         assert_eq!(bounds.height(), 3.0);

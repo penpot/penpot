@@ -50,6 +50,7 @@
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
    [app.util.debug :as dbg]
+   [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
@@ -101,6 +102,10 @@
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
 
+        workspace-editor-state (mf/deref refs/workspace-editor-state)
+        workspace-v2-editor-state (mf/deref refs/workspace-v2-editor-state)
+
+        file-id           (get file :id)
         objects           (get page :objects)
         page-id           (get page :id)
         background        (get page :background clr/canvas)
@@ -138,6 +143,7 @@
          on-viewport-ref] (create-viewport-ref)
 
         canvas-ref        (mf/use-ref nil)
+        text-editor-ref   (mf/use-ref nil)
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -277,6 +283,7 @@
     ;;       canvas, even though we are not using `page-id` inside the hook.
     ;;       We think moving this out to a handler will make the render code
     ;;       harder to follow through.
+
     (mf/with-effect [page-id]
       (when-let [canvas (mf/ref-val canvas-ref)]
         (->> wasm.api/module
@@ -286,6 +293,18 @@
                          (wasm.api/assign-canvas canvas)))))
         (fn []
           (wasm.api/clear-canvas))))
+
+    (mf/with-effect [show-text-editor? workspace-editor-state workspace-v2-editor-state edition]
+      (let [editor-state (get workspace-editor-state edition)
+            v2-editor-state (get workspace-v2-editor-state edition)
+            active-editor-state (or v2-editor-state editor-state)]
+        (when (and show-text-editor? active-editor-state)
+          (let [content (-> active-editor-state
+                            (ted/get-editor-current-content)
+                            (ted/export-content))]
+            (wasm.api/set-shape-text-content content)
+            (wasm.api/clear-drawing-cache)
+            (wasm.api/request-render "content")))))
 
     (mf/with-effect [vport]
       (when @canvas-init?
@@ -324,6 +343,7 @@
       (when show-comments?
         [:> comments/comments-layer* {:vbox vbox
                                       :page-id page-id
+                                      :file-id file-id
                                       :vport vport
                                       :zoom zoom}])
 
@@ -352,7 +372,6 @@
        :class (dm/str @cursor (when drawing-tool " drawing") " " (stl/css :viewport-controls))
        :style {:touch-action "none"}
        :fill "none"
-
        :on-click         on-click
        :on-context-menu  on-context-menu
        :on-double-click  on-double-click
@@ -378,8 +397,10 @@
        (when show-text-editor?
          (if (features/active-feature? @st/state "text-editor/v2")
            [:& editor-v2/text-editor {:shape editing-shape
+                                      :ref text-editor-ref
                                       :modifiers modifiers}]
            [:& editor-v1/text-editor-svg {:shape editing-shape
+                                          :ref text-editor-ref
                                           :modifiers modifiers}]))
 
        (when show-frame-outline?

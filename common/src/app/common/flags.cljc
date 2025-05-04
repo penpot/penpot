@@ -79,7 +79,7 @@
     :file-schema-validation
     ;; Reports the schema validation errors internally.
     :soft-file-schema-validation
-    ;; Activates the referential integrity validation during update file; related to components-v2.
+    ;; Activates the referential integrity validation during update file.
     :file-validation
     ;; Reports the referential integrity validation errors internally.
     :soft-file-validation
@@ -124,7 +124,9 @@
     ;; TODO: deprecate this flag and consolidate the code
     :export-file-v3
     :render-wasm-dpr
-    :hide-release-modal})
+    :hide-release-modal
+    :subscriptions
+    :subscriptions-old})
 
 (def all-flags
   (set/union email login varia))

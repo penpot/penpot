@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.event :as ev]
-   [app.main.data.tokens :as dt]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -31,26 +31,26 @@
 
 (defn- on-start-creation
   []
-  (st/emit! (dt/start-token-set-creation [])))
+  (st/emit! (dwtl/start-token-set-creation [])))
 
 (defn- on-toggle-token-set-click [name]
-  (st/emit! (dt/toggle-token-set name)))
+  (st/emit! (dwtl/toggle-token-set name)))
 
 (defn- on-toggle-token-set-group-click [path]
-  (st/emit! (dt/toggle-token-set-group path)))
+  (st/emit! (dwtl/toggle-token-set-group path)))
 
 (defn- on-select-token-set-click [name]
-  (st/emit! (dt/set-selected-token-set-name name)))
+  (st/emit! (dwtl/set-selected-token-set-name name)))
 
 (defn on-update-token-set
   [token-set name]
-  (st/emit! (dt/clear-token-set-edition)
-            (dt/update-token-set token-set name)))
+  (st/emit! (dwtl/clear-token-set-edition)
+            (dwtl/update-token-set token-set name)))
 
 (defn- on-update-token-set-group
   [path name]
-  (st/emit! (dt/clear-token-set-edition)
-            (dt/rename-token-set-group path name)))
+  (st/emit! (dwtl/clear-token-set-edition)
+            (dwtl/rename-token-set-group path name)))
 
 (defn- on-create-token-set
   [parent-set name]
@@ -63,7 +63,12 @@
           (ctob/normalize-set-name name))]
 
     (st/emit! (ptk/data-event ::ev/event {::ev/name "create-token-set" :name name})
-              (dt/create-token-set name))))
+              (dwtl/create-token-set name))))
+
+(defn group-edition-id
+  "Prefix editing groups `edition-id` so it can be differentiated from sets with the same id."
+  [edition-id]
+  (str "group-" edition-id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPONENTS
@@ -162,20 +167,22 @@
            (dom/prevent-default event)
            (dom/stop-propagation event)
            (when (and can-edit? (not is-editing))
-             (st/emit! (dt/assign-token-set-context-menu
+             (st/emit! (dwtl/assign-token-set-context-menu
                         {:position (dom/get-client-position event)
                          :is-group true
                          :id id
+                         :edition-id (group-edition-id id)
                          :path tree-path})))))
 
         on-collapse-click
         (mf/use-fn
          (fn [event]
+           (dom/prevent-default event)
            (dom/stop-propagation event)
            (on-toggle-collapse tree-path)))
 
         on-double-click
-        (mf/use-fn (mf/deps id) #(on-start-edition id))
+        (mf/use-fn (mf/deps id) #(on-start-edition (group-edition-id id)))
 
         on-checkbox-click
         (mf/use-fn
@@ -263,10 +270,11 @@
            (dom/prevent-default event)
            (dom/stop-propagation event)
            (when (and can-edit? (not is-editing))
-             (st/emit! (dt/assign-token-set-context-menu
+             (st/emit! (dwtl/assign-token-set-context-menu
                         {:position (dom/get-client-position event)
                          :is-group false
                          :id id
+                         :edition-id id
                          :path tree-path})))))
 
         on-double-click
@@ -375,8 +383,8 @@
                          :position position
                          :collapsed-paths collapsed-paths}]
              (if (:is-group data)
-               (st/emit! (dt/drop-token-set-group params))
-               (st/emit! (dt/drop-token-set params))))))
+               (st/emit! (dwtl/drop-token-set-group params))
+               (st/emit! (dwtl/drop-token-set params))))))
 
         on-toggle-collapse
         (mf/use-fn
@@ -398,7 +406,7 @@
           :is-active (is-token-set-group-active path)
           :is-selected false
           :is-draggable is-draggable
-          :is-editing (= edition-id id)
+          :is-editing (= edition-id (group-edition-id id))
           :is-collapsed (collapsed? path)
           :on-select on-select
 
@@ -552,15 +560,15 @@
          (mf/deps can-edit?)
          (fn [_]
            (when can-edit?
-             (st/emit! (dt/clear-token-set-edition)
-                       (dt/clear-token-set-creation)))))
+             (st/emit! (dwtl/clear-token-set-edition)
+                       (dwtl/clear-token-set-creation)))))
 
         on-start-edition
         (mf/use-fn
          (mf/deps can-edit?)
          (fn [id]
            (when can-edit?
-             (st/emit! (dt/start-token-set-edition id)))))]
+             (st/emit! (dwtl/start-token-set-edition id)))))]
 
     [:> controlled-sets-list*
      {:token-sets token-sets

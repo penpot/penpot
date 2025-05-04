@@ -155,9 +155,9 @@
    [["" {:middleware [[mw/server-timing]
                       [mw/params]
                       [mw/format-response]
-                      [mw/parse-request]
                       [session/soft-auth cfg]
                       [actoken/soft-auth cfg]
+                      [mw/parse-request]
                       [mw/errors errors/handle]
                       [mw/restrict-methods]]}
 

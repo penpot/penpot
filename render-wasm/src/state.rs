@@ -4,6 +4,7 @@ use skia_safe as skia;
 
 use crate::render::RenderState;
 use crate::shapes::Shape;
+use crate::shapes::StructureEntry;
 use crate::uuid::Uuid;
 
 /// This struct holds the state of the Rust application between JS calls.
@@ -17,6 +18,7 @@ pub(crate) struct State<'a> {
     pub current_shape: Option<&'a mut Shape>,
     pub shapes: HashMap<Uuid, Shape>,
     pub modifiers: HashMap<Uuid, skia::Matrix>,
+    pub structure: HashMap<Uuid, Vec<StructureEntry>>,
 }
 
 impl<'a> State<'a> {
@@ -27,6 +29,7 @@ impl<'a> State<'a> {
             current_shape: None,
             shapes: HashMap::with_capacity(capacity),
             modifiers: HashMap::new(),
+            structure: HashMap::new(),
         }
     }
 
@@ -39,14 +42,22 @@ impl<'a> State<'a> {
     }
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
-        self.render_state
-            .start_render_loop(&mut self.shapes, &self.modifiers, timestamp)?;
+        self.render_state.start_render_loop(
+            &mut self.shapes,
+            &self.modifiers,
+            &self.structure,
+            timestamp,
+        )?;
         Ok(())
     }
 
     pub fn process_animation_frame(&mut self, timestamp: i32) -> Result<(), String> {
-        self.render_state
-            .process_animation_frame(&mut self.shapes, &self.modifiers, timestamp)?;
+        self.render_state.process_animation_frame(
+            &mut self.shapes,
+            &self.modifiers,
+            &self.structure,
+            timestamp,
+        )?;
         Ok(())
     }
 
@@ -62,7 +73,7 @@ impl<'a> State<'a> {
     pub fn delete_shape(&mut self, id: Uuid) {
         // We don't really do a self.shapes.remove so that redo/undo keep working
         if let Some(shape) = self.shapes.get(&id) {
-            let (rsx, rsy, rex, rey) = self.render_state.get_tiles_for_rect(&shape);
+            let (rsx, rsy, rex, rey) = self.render_state.get_tiles_for_shape(&shape);
             for x in rsx..=rex {
                 for y in rsy..=rey {
                     let tile = (x, y);
@@ -107,9 +118,14 @@ impl<'a> State<'a> {
         }
     }
 
+    pub fn rebuild_tiles_shallow(&mut self) {
+        self.render_state
+            .rebuild_tiles_shallow(&mut self.shapes, &self.modifiers, &self.structure);
+    }
+
     pub fn rebuild_tiles(&mut self) {
         self.render_state
-            .rebuild_tiles(&mut self.shapes, &self.modifiers);
+            .rebuild_tiles(&mut self.shapes, &self.modifiers, &self.structure);
     }
 
     pub fn rebuild_modifier_tiles(&mut self) {

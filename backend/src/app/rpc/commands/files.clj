@@ -292,7 +292,7 @@
 
 (defn get-file-etag
   [{:keys [::rpc/profile-id]} {:keys [modified-at revn vern permissions]}]
-  (str profile-id "/" revn "/" vern "/"
+  (str profile-id "/" revn "/" vern "/" (hash fmg/available-migrations) "/"
        (dt/format-instant modified-at :iso)
        "/"
        (uri/map->query-string permissions)))
@@ -328,7 +328,7 @@
 
       (-> (cfeat/get-team-enabled-features cf/flags team)
           (cfeat/check-client-features! (:features params))
-          (cfeat/check-file-features! (:features file) (:features params)))
+          (cfeat/check-file-features! (:features file)))
 
       ;; This operation is needed for backward comapatibility with frontends that
       ;; does not support pointer-map resolution mechanism; this just resolves the
@@ -474,7 +474,7 @@
   (update page :objects update-vals #(dissoc % :thumbnail)))
 
 (defn get-page
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id page-id object-id] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id page-id object-id share-id] :as params}]
 
   (when (and (uuid? object-id)
              (not (uuid? page-id)))
@@ -482,22 +482,30 @@
               :code :params-validation
               :hint "page-id is required when object-id is provided"))
 
-  (let [team (teams/get-team conn
-                             :profile-id profile-id
-                             :file-id file-id)
+  (let [perms (get-permissions conn profile-id file-id share-id)
 
-        file (get-file cfg file-id)
+        file  (get-file cfg file-id)
 
-        _    (-> (cfeat/get-team-enabled-features cf/flags team)
-                 (cfeat/check-client-features! (:features params))
-                 (cfeat/check-file-features! (:features file) (:features params)))
+        proj  (db/get conn :project {:id (:project-id file)})
 
-        page (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
-               (let [page-id (or page-id (-> file :data :pages first))
-                     page    (dm/get-in file [:data :pages-index page-id])]
-                 (if (pmap/pointer-map? page)
-                   (deref page)
-                   page)))]
+        team  (-> (db/get conn :team {:id (:team-id proj)})
+                  (teams/decode-row))
+
+        _     (-> (cfeat/get-team-enabled-features cf/flags team)
+                  (cfeat/check-client-features! (:features params))
+                  (cfeat/check-file-features! (:features file)))
+
+        page  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+                (let [page-id (or page-id (-> file :data :pages first))
+                      page    (dm/get-in file [:data :pages-index page-id])]
+                  (if (pmap/pointer-map? page)
+                    (deref page)
+                    page)))]
+
+    (when-not perms
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "object not found"))
 
     (cond-> (prune-thumbnails page)
       (some? object-id)
@@ -737,7 +745,7 @@
 
     (-> (cfeat/get-team-enabled-features cf/flags team)
         (cfeat/check-client-features! (:features params))
-        (cfeat/check-file-features! (:features file) (:features params)))
+        (cfeat/check-file-features! (:features file)))
 
     (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
       {:name             (:name file)

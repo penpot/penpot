@@ -117,6 +117,7 @@
   padding-right: 0 $s-8 $s-40 $s-8;
   transition: transform 400ms ease 300ms;
   z-index: $z-index-2;
+  pointer-events: none;
 }
 
 .reset-button {

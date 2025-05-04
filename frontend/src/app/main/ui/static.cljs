@@ -202,9 +202,8 @@
           cancel-text])
        [:button {:on-click on-click} button-text]]]]))
 
-(mf/defc request-access
-  {::mf/props :obj}
-  [{:keys [file-id team-id is-default workspace?]}]
+(mf/defc request-access*
+  [{:keys [file-id team-id is-default is-workspace]}]
   (let [profile     (mf/deref refs/profile)
         requested*  (mf/use-state {:sent false :already-requested false})
         requested   (deref requested*)
@@ -227,11 +226,11 @@
 
         on-request-access
         (mf/use-fn
-         (mf/deps file-id team-id workspace?)
+         (mf/deps file-id team-id is-workspace)
          (fn []
            (let [params (if (some? file-id)
                           {:file-id file-id
-                           :is-viewer (not workspace?)}
+                           :is-viewer (not is-workspace)}
                           {:team-id team-id})
                  mdata  {:on-success on-success
                          :on-error on-error}]
@@ -240,7 +239,7 @@
 
     [:*
      (if (some? file-id)
-       (if workspace?
+       (if is-workspace
          [:div {:class (stl/css :workspace)}
           [:div {:class (stl/css :workspace-left)}
            i/logo-icon
@@ -341,7 +340,7 @@
      [:div {:class (stl/css :sign-info)}
       [:button {:on-click handle-retry} (tr "labels.retry")]]]))
 
-(mf/defc service-unavailable
+(mf/defc service-unavailable*
   []
   (let [on-click (mf/use-fn #(st/emit! (rt/assign-exception nil)))]
     [:> error-container* {}
@@ -350,58 +349,55 @@
      [:div {:class (stl/css :sign-info)}
       [:button {:on-click on-click} (tr "labels.retry")]]]))
 
-(defn generate-report
+(defn- generate-report
   [data]
   (try
     (let [team-id    (:current-team-id @st/state)
           profile-id (:profile-id @st/state)
 
           trace      (:app.main.errors/trace data)
-          instance   (:app.main.errors/instance data)
-          content    (with-out-str
-                       (println "Hint:   " (or (:hint data) (ex-message instance) "--"))
-                       (println "Prof ID:" (str (or profile-id "--")))
-                       (println "Team ID:" (str (or team-id "--")))
+          instance   (:app.main.errors/instance data)]
+      (with-out-str
+        (println "Hint:   " (or (:hint data) (ex-message instance) "--"))
+        (println "Prof ID:" (str (or profile-id "--")))
+        (println "Team ID:" (str (or team-id "--")))
 
-                       (when-let [file-id (:file-id data)]
-                         (println "File ID:" (str file-id)))
+        (when-let [file-id (:file-id data)]
+          (println "File ID:" (str file-id)))
 
-                       (println)
+        (println)
 
-                       (println "Data:")
-                       (loop [data data]
-                         (-> (d/without-qualified data)
-                             (dissoc :explain)
-                             (d/update-when :data (constantly "(...)"))
-                             (pp/pprint {:level 8 :length 10}))
+        (println "Data:")
+        (loop [data data]
+          (-> (d/without-qualified data)
+              (dissoc :explain)
+              (d/update-when :data (constantly "(...)"))
+              (pp/pprint {:level 8 :length 10}))
 
-                         (println)
+          (println)
 
-                         (when-let [explain (:explain data)]
-                           (print explain))
+          (when-let [explain (:explain data)]
+            (print explain))
 
-                         (when (and (= :server-error (:type data))
-                                    (contains? data :data))
-                           (recur (:data data))))
+          (when (and (= :server-error (:type data))
+                     (contains? data :data))
+            (recur (:data data))))
 
-                       (println "Trace:")
-                       (println trace)
-                       (println)
+        (println "Trace:")
+        (println trace)
+        (println)
 
-                       (println "Last events:")
-                       (pp/pprint @st/last-events {:length 200})
+        (println "Last events:")
+        (pp/pprint @st/last-events {:length 200})
 
-                       (println))]
-      (wapi/create-blob content "text/plain"))
+        (println)))
     (catch :default cause
       (.error js/console "error on generating report.txt" cause)
       nil)))
 
 (mf/defc internal-error*
-  {::mf/props :obj}
-  [{:keys [data on-reset] :as props}]
+  [{:keys [on-reset report] :as props}]
   (let [report-uri (mf/use-ref nil)
-        report     (mf/use-memo (mf/deps data) #(generate-report data))
         on-reset   (or on-reset #(st/emit! (rt/assign-exception nil)))
 
         on-download
@@ -413,8 +409,8 @@
 
     (mf/with-effect [report]
       (when (some? report)
-
-        (let [uri    (wapi/create-uri report)]
+        (let [report (wapi/create-blob report "text/plain")
+              uri    (wapi/create-uri report)]
           (mf/set-ref-val! report-uri uri)
           (fn []
             (wapi/revoke-uri uri)))))
@@ -455,6 +451,38 @@
                        (rx/of default)
                        (rx/throw cause)))))))
 
+(mf/defc exception-section*
+  {::mf/private true}
+  [{:keys [data route] :as props}]
+  (let [type   (get data :type)
+        report (mf/with-memo [data]
+                 (generate-report data))
+        props  (mf/spread-props props {:report report})]
+
+    (mf/with-effect [data route report]
+      (let [params (:query-params route)
+            params (u/map->query-string params)]
+        (st/emit! (ptk/data-event ::ev/event
+                                  {::ev/name "exception-page"
+                                   :type (get data :type :unknown)
+                                   :hint (get data :hint)
+                                   :path (get route :path)
+                                   :report report
+                                   :params params}))))
+    (case type
+      :not-found
+      [:> not-found* {}]
+
+      :authentication
+      [:> not-found* {}]
+
+      :bad-gateway
+      [:> bad-gateway* props]
+
+      :service-unavailable
+      [:> service-unavailable*]
+
+      [:> internal-error* props])))
 
 (mf/defc exception-page*
   {::mf/props :obj}
@@ -477,42 +505,23 @@
 
         request-access?
         (and
-         (or (= (:type data) :not-found)
-             (= (:type data) :authentication))
+         (or (= type :not-found)
+             (= type :authentication))
          (or workspace? dashboard? view?)
          (or (:file-id info)
              (:team-id info)))]
 
-    (mf/with-effect [type path params]
-      (st/emit! (ptk/data-event ::ev/event
-                                {::ev/name "exception-page"
-                                 :type type
-                                 :path path
-                                 :params (u/map->query-string params)})))
-
     (mf/with-effect [params info]
       (when-not (:loaded info)
         (->> (load-info params)
-             (rx/subs! (partial reset! info*)))))
+             (rx/subs! (partial reset! info*)
+                       (partial reset! info* {:loaded true})))))
 
     (when loaded?
       (if request-access?
-        [:& request-access {:file-id (:file-id info)
-                            :team-id  (:team-id info)
-                            :is-default (:team-default info)
-                            :workspace? workspace?}]
+        [:> request-access* {:file-id (:file-id info)
+                             :team-id  (:team-id info)
+                             :is-default (:team-default info)
+                             :is-workspace workspace?}]
+        [:> exception-section* props]))))
 
-        (case (:type data)
-          :not-found
-          [:> not-found* {}]
-
-          :authentication
-          [:> not-found* {}]
-
-          :bad-gateway
-          [:> bad-gateway* props]
-
-          :service-unavailable
-          [:& service-unavailable]
-
-          [:> internal-error* props])))))

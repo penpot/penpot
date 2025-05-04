@@ -4,18 +4,18 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.update
+(ns app.main.data.workspace.tokens.propagation
   (:require
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
    [app.common.types.token :as ctt]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
+   [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwt]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.ui.workspace.tokens.changes :as wtch]
-   [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
-   [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [clojure.data :as data]
@@ -24,21 +24,21 @@
 
 ;; Constants -------------------------------------------------------------------
 
-(def filter-existing-values? false)
+(def ^:private filter-existing-values? false)
 
-(def attributes->shape-update
-  {ctt/border-radius-keys wtch/update-shape-radius-for-corners
-   ctt/color-keys wtch/update-fill-stroke
-   ctt/stroke-width-keys wtch/update-stroke-width
-   ctt/sizing-keys wtch/update-shape-dimensions
-   ctt/opacity-keys wtch/update-opacity
-   #{:x :y} wtch/update-shape-position
-   #{:p1 :p2 :p3 :p4} wtch/update-layout-padding
-   #{:m1 :m2 :m3 :m4} wtch/update-layout-item-margin
-   #{:column-gap :row-gap} wtch/update-layout-spacing
-   #{:width :height} wtch/update-shape-dimensions
-   #{:layout-item-min-w :layout-item-min-h :layout-item-max-w :layout-item-max-h} wtch/update-layout-sizing-limits
-   ctt/rotation-keys wtch/update-rotation})
+(def ^:private attributes->shape-update
+  {ctt/border-radius-keys dwta/update-shape-radius-for-corners
+   ctt/color-keys dwta/update-fill-stroke
+   ctt/stroke-width-keys dwta/update-stroke-width
+   ctt/sizing-keys dwta/update-shape-dimensions
+   ctt/opacity-keys dwta/update-opacity
+   #{:x :y} dwta/update-shape-position
+   #{:p1 :p2 :p3 :p4} dwta/update-layout-padding
+   #{:m1 :m2 :m3 :m4} dwta/update-layout-item-margin
+   #{:column-gap :row-gap} dwta/update-layout-spacing
+   #{:width :height} dwta/update-shape-dimensions
+   #{:layout-item-min-w :layout-item-min-h :layout-item-max-w :layout-item-max-h} dwta/update-layout-sizing-limits
+   ctt/rotation-keys dwta/update-rotation})
 
 (def attribute-actions-map
   (reduce
@@ -48,6 +48,7 @@
 
 ;; Helpers ---------------------------------------------------------------------
 
+;; TODO: see if this can be replaced by more standard functions
 (defn deep-merge
   "Like d/deep-merge but unions set values."
   ([a b]
@@ -60,7 +61,7 @@
 
 ;; Data flows ------------------------------------------------------------------
 
-(defn invert-collect-key-vals
+(defn- invert-collect-key-vals
   [xs resolved-tokens shape]
   (-> (reduce
        (fn [acc [k v]]
@@ -74,7 +75,7 @@
              (update acc resolved-value (fnil conj #{}) k))))
        {} xs)))
 
-(defn split-attribute-groups [attrs-values-map]
+(defn- split-attribute-groups [attrs-values-map]
   (reduce
    (fn [acc [attrs v]]
      (cond
@@ -91,7 +92,7 @@
        attrs (assoc acc attrs v)))
    {} attrs-values-map))
 
-(defn shape-ids-by-values
+(defn- shape-ids-by-values
   [attrs-values-map object-id]
   (->> (map (fn [[value attrs]] [attrs {value #{object-id}}]) attrs-values-map)
        (into {})))
@@ -121,7 +122,6 @@
 
       [tokens frame-ids text-ids])))
 
-;; FIXME: revisit this
 (defn- actionize-shapes-update-info [page-id shapes-update-info]
   (mapcat (fn [[attrs update-infos]]
             (let [action (some attribute-actions-map attrs)]
@@ -131,14 +131,15 @@
                update-infos)))
           shapes-update-info))
 
-(defn update-tokens
+(defn propagate-tokens
+  "Propagate tokens values to all shapes where they are applied"
   [state resolved-tokens]
   (let [file-id         (get state :current-file-id)
         current-page-id (get state :current-page-id)
         fdata           (dsh/lookup-file-data state file-id)
         tpoint          (dt/tpoint-ms)]
 
-    (l/inf :status "START" :hint "update-tokens")
+    (l/inf :status "START" :hint "propagate-tokens")
     (->> (rx/concat
           (rx/of current-page-id)
           (->> (rx/from (:pages fdata))
@@ -155,7 +156,7 @@
                   (actionize-shapes-update-info page-id attrs)]
 
               (l/inf :status "PROGRESS"
-                     :hint "update-tokens"
+                     :hint "propagate-tokens"
                      :page-id (str page-id)
                      :elapsed (tpoint)
                      ::l/sync? true)
@@ -175,19 +176,21 @@
          (rx/finalize
           (fn [_]
             (let [elapsed (tpoint)]
-              (l/inf :status "END" :hint "update-tokens" :elapsed elapsed)))))))
+              (l/inf :status "END" :hint "propagate-tokens" :elapsed elapsed)))))))
 
-(defn update-workspace-tokens
+(defn propagate-workspace-tokens
   []
-  (ptk/reify ::update-workspace-tokens
+  (ptk/reify ::propagate-workspace-tokens
     ptk/WatchEvent
     (watch [_ state _]
-      (let [tokens (-> (wtts/get-active-theme-sets-tokens-names-map state)
-                       (wtsd/resolve-tokens+))]
-        (->> (rx/from tokens)
-             (rx/mapcat (fn [sd-tokens]
-                          (let [undo-id (js/Symbol)]
-                            (rx/concat
-                             (rx/of (dwu/start-undo-transaction undo-id :timeout false))
-                             (update-tokens state sd-tokens)
-                             (rx/of (dwu/commit-undo-transaction undo-id)))))))))))
+      (when-let [tokens-lib (-> (dsh/lookup-file-data state)
+                                (get :tokens-lib))]
+        (let [tokens (-> (ctob/get-active-themes-set-tokens tokens-lib)
+                         (sd/resolve-tokens+))]
+          (->> (rx/from tokens)
+               (rx/mapcat (fn [sd-tokens]
+                            (let [undo-id (js/Symbol)]
+                              (rx/concat
+                               (rx/of (dwu/start-undo-transaction undo-id :timeout false))
+                               (propagate-tokens state sd-tokens)
+                               (rx/of (dwu/commit-undo-transaction undo-id))))))))))))

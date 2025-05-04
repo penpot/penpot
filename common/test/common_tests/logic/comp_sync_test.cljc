@@ -227,7 +227,7 @@
     (t/is (= (:touched copy-root') nil))
     (t/is (= (:touched copy-new-child') nil))
     (t/is (ctst/parent-of? copy-root' copy-new-child'))
-    (t/is (ctk/is-main-of? main-free-shape' copy-new-child' true))))
+    (t/is (ctk/is-main-of? main-free-shape' copy-new-child'))))
 
 (t/deftest test-sync-when-deleting-shape
   (let [;; ==== Setup

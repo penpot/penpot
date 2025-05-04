@@ -11,6 +11,7 @@
   @include bodySmallTypography;
   flex-grow: 1;
   color: var(--context-hover-color, var(--layer-row-foreground-color));
+
   &.selected {
     color: var(--layer-row-foreground-color-selected);
   }
@@ -25,6 +26,7 @@
     opacity: var(--context-hover-opacity, $op-7);
   }
 }
+
 .element-name-input {
   @include textEllipsis;
   @include bodySmallTypography;
@@ -37,7 +39,12 @@
   border-radius: $br-8;
   border: $s-1 solid var(--input-border-color-focus);
   color: var(--layer-row-foreground-color);
+
+  &.selected {
+    min-width: $s-88;
+  }
 }
+
 .element-name-touched {
   color: var(--layer-row-component-foreground-color);
 }

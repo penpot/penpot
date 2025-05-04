@@ -52,10 +52,6 @@
   @include bodyLargeTypography;
 }
 
-.modal-hint {
-  @extend .modal-hint-base;
-}
-
 .action-buttons {
   @extend .modal-action-btns;
 }

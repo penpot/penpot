@@ -9,16 +9,16 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cft]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
-   [app.main.data.tokens :as dt]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
-   [app.main.ui.workspace.tokens.changes :as wtch]
-   [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as timers]
@@ -30,15 +30,15 @@
 ;; Actions ---------------------------------------------------------------------
 
 (defn attribute-actions [token selected-shapes attributes]
-  (let [ids-by-attributes (wtt/shapes-ids-by-applied-attributes token selected-shapes attributes)
+  (let [ids-by-attributes (cft/shapes-ids-by-applied-attributes token selected-shapes attributes)
         shape-ids (into #{} (map :id selected-shapes))]
-    {:all-selected? (wtt/shapes-applied-all? ids-by-attributes shape-ids attributes)
+    {:all-selected? (cft/shapes-applied-all? ids-by-attributes shape-ids attributes)
      :shape-ids shape-ids
      :selected-pred #(seq (% ids-by-attributes))}))
 
 (defn generic-attribute-actions [attributes title {:keys [token selected-shapes on-update-shape hint]}]
   (let [on-update-shape-fn (or on-update-shape
-                               (-> (wtch/get-token-properties token)
+                               (-> (dwta/get-token-properties token)
                                    (:on-update-shape)))
         {:keys [selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)]
     (map (fn [attribute]
@@ -52,8 +52,8 @@
               :selected? selected?
               :action (fn []
                         (if selected?
-                          (st/emit! (wtch/unapply-token props))
-                          (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape-fn)))))}))
+                          (st/emit! (dwta/unapply-token props))
+                          (st/emit! (dwta/apply-token (assoc props :on-update-shape on-update-shape-fn)))))}))
          attributes)))
 
 (defn all-or-separate-actions [{:keys [attribute-labels on-update-shape-all on-update-shape hint]}
@@ -67,8 +67,8 @@
                       :selected? all-selected?
                       :hint hint
                       :action #(if all-selected?
-                                 (st/emit! (wtch/unapply-token props))
-                                 (st/emit! (wtch/apply-token (assoc props :on-update-shape (or on-update-shape-all on-update-shape)))))})
+                                 (st/emit! (dwta/unapply-token props))
+                                 (st/emit! (dwta/apply-token (assoc props :on-update-shape (or on-update-shape-all on-update-shape)))))})
         single-actions (map (fn [[attr title]]
                               (let [selected? (selected-pred attr)]
                                 {:title title
@@ -78,10 +78,10 @@
                                                        :shape-ids shape-ids}
                                                 event (cond
                                                         all-selected? (-> (assoc props :attributes-to-remove attributes)
-                                                                          (wtch/apply-token))
-                                                        selected? (wtch/unapply-token props)
+                                                                          (dwta/apply-token))
+                                                        selected? (dwta/unapply-token props)
                                                         :else (-> (assoc props :on-update-shape on-update-shape)
-                                                                  (wtch/apply-token)))]
+                                                                  (dwta/apply-token)))]
                                             (st/emit! event))}))
                             attribute-labels)]
     (concat [all-action] single-actions)))
@@ -105,17 +105,17 @@
                                              :token token
                                              :shape-ids shape-ids}]
                                   (if all-selected?
-                                    (st/emit! (wtch/unapply-token props))
-                                    (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape))))))}
+                                    (st/emit! (dwta/unapply-token props))
+                                    (st/emit! (dwta/apply-token (assoc props :on-update-shape on-update-shape))))))}
                      {:title "Horizontal"
                       :selected? horizontal-selected?
                       :action (fn []
                                 (let [props {:token token
                                              :shape-ids shape-ids}
                                       event (cond
-                                              all-selected? (wtch/apply-token (assoc props :attributes-to-remove vertical-attrs))
-                                              horizontal-selected? (wtch/apply-token (assoc props :attributes-to-remove horizontal-attrs))
-                                              :else (wtch/apply-token (assoc props
+                                              all-selected? (dwta/apply-token (assoc props :attributes-to-remove vertical-attrs))
+                                              horizontal-selected? (dwta/apply-token (assoc props :attributes-to-remove horizontal-attrs))
+                                              :else (dwta/apply-token (assoc props
                                                                              :attributes horizontal-attrs
                                                                              :on-update-shape on-update-shape)))]
                                   (st/emit! event)))}
@@ -125,9 +125,9 @@
                                 (let [props {:token token
                                              :shape-ids shape-ids}
                                       event (cond
-                                              all-selected? (wtch/apply-token (assoc props :attributes-to-remove horizontal-attrs))
-                                              vertical-selected? (wtch/apply-token (assoc props :attributes-to-remove vertical-attrs))
-                                              :else (wtch/apply-token (assoc props
+                                              all-selected? (dwta/apply-token (assoc props :attributes-to-remove horizontal-attrs))
+                                              vertical-selected? (dwta/apply-token (assoc props :attributes-to-remove vertical-attrs))
+                                              :else (dwta/apply-token (assoc props
                                                                              :attributes vertical-attrs
                                                                              :on-update-shape on-update-shape)))]
                                   (st/emit! event)))}]
@@ -147,10 +147,10 @@
                                                      :shape-ids shape-ids}
                                               event (cond
                                                       all-selected? (-> (assoc props :attributes-to-remove attrs)
-                                                                        (wtch/apply-token))
-                                                      selected? (wtch/unapply-token props)
+                                                                        (dwta/apply-token))
+                                                      selected? (dwta/unapply-token props)
                                                       :else (-> (assoc props :on-update-shape on-update-shape)
-                                                                (wtch/apply-token)))]
+                                                                (dwta/apply-token)))]
                                           (st/emit! event))}))
                           all-attr-labels)]
     (concat multi-items single-items)))
@@ -159,13 +159,13 @@
   (st/emit!
    (when (= (count attributes) 1)
      (dwsl/update-layout shape-ids {:layout-padding-type :multiple}))
-   (wtch/update-layout-padding value shape-ids attributes)))
+   (dwta/update-layout-padding value shape-ids attributes)))
 
 (defn update-shape-layout-margin [value shape-ids attributes]
   (st/emit!
    (when (= (count attributes) 1)
      (dwsl/update-layout shape-ids {:layout-item-margin-type :multiple}))
-   (wtch/update-layout-item-margin value shape-ids attributes)))
+   (dwta/update-layout-item-margin value shape-ids attributes)))
 
 (defn spacing-attribute-actions [{:keys [token selected-shapes] :as context-data}]
   (let [padding-items (layout-spacing-items {:token token
@@ -195,7 +195,7 @@
         gap-items (all-or-separate-actions {:attribute-labels {:column-gap "Column Gap"
                                                                :row-gap "Row Gap"}
                                             :hint (tr "workspace.token.gaps")
-                                            :on-update-shape wtch/update-layout-spacing}
+                                            :on-update-shape dwta/update-layout-spacing}
                                            context-data)]
     (concat gap-items
             [:separator]
@@ -208,25 +208,25 @@
    (all-or-separate-actions {:attribute-labels {:width "Width"
                                                 :height "Height"}
                              :hint (tr "workspace.token.size")
-                             :on-update-shape wtch/update-shape-dimensions}
+                             :on-update-shape dwta/update-shape-dimensions}
                             context-data)
    [:separator]
    (all-or-separate-actions {:attribute-labels {:layout-item-min-w "Min Width"
                                                 :layout-item-min-h "Min Height"}
                              :hint (tr "workspace.token.min-size")
-                             :on-update-shape wtch/update-layout-sizing-limits}
+                             :on-update-shape dwta/update-layout-sizing-limits}
                             context-data)
    [:separator]
    (all-or-separate-actions {:attribute-labels {:layout-item-max-w "Max Width"
                                                 :layout-item-max-h "Max Height"}
                              :hint (tr "workspace.token.max-size")
-                             :on-update-shape wtch/update-layout-sizing-limits}
+                             :on-update-shape dwta/update-layout-sizing-limits}
                             context-data)))
 
 (defn update-shape-radius-for-corners [value shape-ids attributes]
   (st/emit!
    (ptk/data-event :expand-border-radius)
-   (wtch/update-shape-radius-for-corners value shape-ids attributes)))
+   (dwta/update-shape-radius-for-corners value shape-ids attributes)))
 
 (def shape-attribute-actions-map
   (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")]
@@ -235,11 +235,11 @@
                                                                          :r4 "Bottom Left"
                                                                          :r3 "Bottom Right"}
                                                       :hint (tr "workspace.token.radius")
-                                                      :on-update-shape-all wtch/update-shape-radius-all
+                                                      :on-update-shape-all dwta/update-shape-radius-all
                                                       :on-update-shape update-shape-radius-for-corners})
      :color (fn [context-data]
-              [(generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape wtch/update-fill :hint (tr "workspace.token.color")))
-               (generic-attribute-actions #{:stroke-color} "Stroke" (assoc context-data :on-update-shape wtch/update-stroke-color))])
+              [(generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape dwta/update-fill :hint (tr "workspace.token.color")))
+               (generic-attribute-actions #{:stroke-color} "Stroke" (assoc context-data :on-update-shape dwta/update-stroke-color))])
      :spacing spacing-attribute-actions
      :sizing sizing-attribute-actions
      :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
@@ -252,19 +252,19 @@
                      :separator
                      {:title "Border Radius" :submenu :border-radius}]
                     [:separator]
-                    (stroke-width (assoc context-data :on-update-shape wtch/update-stroke-width))
+                    (stroke-width (assoc context-data :on-update-shape dwta/update-stroke-width))
                     [:separator]
-                    (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape wtch/update-shape-position :hint (tr "workspace.token.axis")))
-                    (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape wtch/update-shape-position))))}))
+                    (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape dwta/update-shape-position :hint (tr "workspace.token.axis")))
+                    (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape dwta/update-shape-position))))}))
 
 (defn default-actions [{:keys [token selected-token-set-name]}]
-  (let [{:keys [modal]} (wtch/get-token-properties token)]
+  (let [{:keys [modal]} (dwta/get-token-properties token)]
     [{:title (tr "workspace.token.edit")
       :no-selectable true
       :action (fn [event]
                 (let [{:keys [key fields]} modal]
                   (dom/stop-propagation event)
-                  (st/emit! (dt/assign-token-context-menu nil)
+                  (st/emit! (dwtl/assign-token-context-menu nil)
                             (modal/show key {:x (.-clientX ^js event)
                                              :y (.-clientY ^js event)
                                              :position :right
@@ -274,10 +274,10 @@
                                              :token token}))))}
      {:title (tr "workspace.token.duplicate")
       :no-selectable true
-      :action #(st/emit! (dt/duplicate-token (:name token)))}
+      :action #(st/emit! (dwtl/duplicate-token (:name token)))}
      {:title (tr "workspace.token.delete")
       :no-selectable true
-      :action #(st/emit! (dt/delete-token
+      :action #(st/emit! (dwtl/delete-token
                           (ctob/prefixed-set-path-string->set-name-string selected-token-set-name)
                           (:name token)))}]))
 
@@ -446,7 +446,7 @@
       (mf/portal
        (mf/html
         [:& dropdown {:show is-open?
-                      :on-close #(st/emit! (dt/assign-token-context-menu nil))}
+                      :on-close #(st/emit! (dwtl/assign-token-context-menu nil))}
          [:div {:class (stl/css :token-context-menu)
                 :data-testid "tokens-context-menu-for-token"
                 :ref dropdown-ref

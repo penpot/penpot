@@ -9,7 +9,9 @@
    #?(:clj [app.common.fressian :as fres])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
    [app.common.time :as dt]
    [app.common.transit :as t]
    [app.common.types.token :as cto]
@@ -117,12 +119,15 @@
    [:name cto/token-name-ref]
    [:type [::sm/one-of cto/token-types]]
    [:value :any]
-   [:description [:maybe :string]]
-   [:modified-at ::sm/inst]])
+   [:description {:optional true} :string]
+   [:modified-at {:optional true} ::sm/inst]])
+
+(declare make-token)
 
 (def schema:token
-  [:and
-   schema:token-attrs
+  [:and {:gen/gen (->> (sg/generator schema:token-attrs)
+                       (sg/fmap #(make-token %)))}
+   (sm/required-keys schema:token-attrs)
    [:fn token?]])
 
 (def check-token
@@ -321,6 +326,7 @@
            (assoc-in [:ids temp-id] token))))
    {:tokens-tree {} :ids {}} tokens))
 
+
 (defprotocol ITokenSet
   (update-name [_ set-name] "change a token set name while keeping the path")
   (add-token [_ token] "add a token at the end of the list")
@@ -380,15 +386,32 @@
 (def schema:token-set-attrs
   [:map {:title "TokenSet"}
    [:name :string]
-   [:description [:maybe :string]]
-   [:modified-at ::sm/inst]
-   [:tokens [:and
-             [:map-of {:gen/max 5} :string schema:token]
-             [:fn d/ordered-map?]]]])
+   [:description {:optional true} :string]
+   [:modified-at {:optional true} ::sm/inst]
+   [:tokens {:optional true
+             :gen/gen (->> (sg/generator [:map-of ::sm/text schema:token])
+                           (sg/fmap #(into (d/ordered-map) %)))}
+    [:and
+     [:map-of {:gen/max 5
+               :decode/json (fn [v]
+                              (cond
+                                (d/ordered-map? v)
+                                v
+
+                                (map? v)
+                                (into (d/ordered-map) v)
+
+                                :else
+                                v))}
+      :string schema:token]
+     [:fn d/ordered-map?]]]])
+
+(declare make-token-set)
 
 (def schema:token-set
-  [:and
-   schema:token-set-attrs
+  [:and {:gen/gen (->> (sg/generator schema:token-set-attrs)
+                       (sg/fmap #(make-token-set %)))}
+   (sm/required-keys schema:token-set-attrs)
    [:fn token-set?]])
 
 (sm/register! ::token-set schema:token-set)
@@ -552,16 +575,16 @@
 (def schema:token-theme-attrs
   [:map {:title "TokenTheme"}
    [:name :string]
-   [:group :string]
-   [:description [:maybe :string]]
-   [:is-source [:maybe :boolean]]
-   [:id :string]
-   [:modified-at ::sm/inst]
-   [:sets [:set {:gen/max 5} :string]]])
+   [:group {:optional true} :string]
+   [:description {:optional true} :string]
+   [:is-source {:optional true} :boolean]
+   [:id {:optional true} :string]
+   [:modified-at {:optional true} ::sm/inst]
+   [:sets {:optional true} [:set {:gen/max 5} :string]]])
 
 (def schema:token-theme
   [:and
-   schema:token-theme-attrs
+   (sm/required-keys schema:token-theme-attrs)
    [:fn token-theme?]])
 
 (sm/register! ::token-theme schema:token-theme)
@@ -803,7 +826,7 @@
          (map-indexed (fn [index item]
                         (assoc item :index index))))))
 
-(defn- flatten-nested-tokens-json
+(defn flatten-nested-tokens-json
   "Recursively flatten the dtcg token structure, joining keys with '.'."
   [tokens token-path]
   (reduce-kv
@@ -830,7 +853,7 @@
 
 (declare make-tokens-lib)
 
-(defn- legacy-nodes->dtcg-nodes [sets-data]
+(defn legacy-nodes->dtcg-nodes [sets-data]
   (walk/postwalk
    (fn [node]
      (cond-> node
@@ -866,8 +889,6 @@ Will return a value that matches this schema:
   (get-active-themes-set-tokens [_] "set of set names that are active in the the active themes")
   (encode-dtcg [_] "Encodes library to a dtcg compatible json string")
   (decode-dtcg-json [_ parsed-json] "Decodes parsed json containing tokens and converts to library")
-  (decode-single-set-json [_ set-name tokens] "Decodes parsed json containing single token set and converts to library")
-  (decode-single-set-legacy-json [_ set-name tokens] "Decodes parsed legacy json containing single token set and converts to library")
   (decode-legacy-json [_ parsed-json] "Decodes parsed legacy json containing tokens and converts to library")
   (get-all-tokens [_] "all tokens in the lib")
   (validate [_]))
@@ -920,6 +941,7 @@ Will return a value that matches this schema:
                         themes
                         active-themes)))
         this)))
+
 
 
   (delete-set [_ set-name]
@@ -1311,17 +1333,6 @@ Will return a value that matches this schema:
           (assoc-in ["$metadata" "activeThemes"] active-themes-clear)
           (assoc-in ["$metadata" "activeSets"] active-sets))))
 
-  (decode-single-set-json [this set-name tokens]
-    (assert (map? tokens) "expected a map data structure for `data`")
-
-    (add-set this (make-token-set :name (normalize-set-name set-name)
-                                  :tokens (flatten-nested-tokens-json tokens ""))))
-
-
-  (decode-single-set-legacy-json [this set-name tokens]
-    (assert (map? tokens) "expected a map data structure for `data`")
-    (decode-single-set-json this set-name (legacy-nodes->dtcg-nodes tokens)))
-
   (decode-dtcg-json [_ data]
     (assert (map? data) "expected a map data structure for `data`")
 
@@ -1480,6 +1491,14 @@ Will return a value that matches this schema:
    :type-properties
    {:encode/json encode-dtcg
     :decode/json decode-dtcg}})
+
+(defn duplicate-set [set-name lib & {:keys [suffix]}]
+  (let [sets (get-sets lib)
+        unames (map :name sets)
+        copy-name (cfh/generate-unique-name set-name unames :suffix suffix)]
+    (some-> (get-set lib set-name)
+            (assoc :name copy-name)
+            (assoc :modified-at (dt/now)))))
 
 (sm/register! type:tokens-lib)
 

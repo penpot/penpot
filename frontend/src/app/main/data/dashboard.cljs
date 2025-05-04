@@ -56,8 +56,7 @@
                    (rx/filter (fn [{:keys [topic] :as msg}]
                                 (or (= topic uuid/zero)
                                     (= topic profile-id))))
-                   (rx/map process-message)
-                   (rx/ignore)))
+                   (rx/map process-message)))
 
              (rx/take-until stopper))))))
 

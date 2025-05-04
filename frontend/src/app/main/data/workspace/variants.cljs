@@ -17,6 +17,7 @@
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape.layout :as ctsl]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
@@ -31,6 +32,59 @@
    [app.util.dom :as dom]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
+
+(defn update-properties-names-and-values
+  "Compares the previous properties with the updated ones and executes the correspondent action
+   for each one depending on if it needs to be removed, updated or added"
+  [component-id variant-id previous-properties updated-properties]
+  (ptk/reify ::update-properties-names-and-values
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local dissoc :shape-for-rename))
+
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id (:current-page-id state)
+            data    (dsh/lookup-file-data state)
+            objects (-> (dsh/get-page data page-id)
+                        (get :objects))
+
+            properties-to-remove (ctv/find-properties-to-remove previous-properties updated-properties)
+            properties-to-add    (ctv/find-properties-to-add previous-properties updated-properties)
+            properties-to-update (ctv/find-properties-to-update previous-properties updated-properties)
+
+            changes (-> (pcb/empty-changes it page-id)
+                        (pcb/with-objects objects)
+                        (pcb/with-library-data data))
+
+            changes (reduce
+                     (fn [changes {:keys [name]}]
+                       (-> changes
+                           (clvp/generate-update-property-value component-id (ctv/find-index-for-property-name previous-properties name) "")))
+                     changes
+                     properties-to-remove)
+
+            changes (reduce
+                     (fn [changes {:keys [name value]}]
+                       (-> changes
+                           (clvp/generate-update-property-value component-id (ctv/find-index-for-property-name previous-properties name) value)))
+                     changes
+                     properties-to-update)
+
+            changes (reduce
+                     (fn [changes [idx {:keys [name value]}]]
+                       (-> changes
+                           (clvp/generate-add-new-property variant-id {:property-name name})
+                           (clvp/generate-update-property-value component-id (+ idx (count previous-properties)) value)))
+                     changes
+                     (map-indexed vector properties-to-add))
+
+            undo-id (js/Symbol)]
+
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dch/commit-changes changes)
+         (dwu/commit-undo-transaction undo-id))))))
 
 (defn update-property-name
   "Update the variant property name on the position pos
@@ -290,7 +344,8 @@
 
          (rx/of
           (add-new-variant main-instance-id)
-          (dwu/commit-undo-transaction undo-id)))))))
+          (dwu/commit-undo-transaction undo-id)
+          (ptk/data-event :layout/update {:ids [variant-id]})))))))
 
 (defn add-component-or-variant
   "Manage the shared shortcut, and do the pertinent action"
@@ -348,6 +403,7 @@
 
 
 (defn rename-variant
+  "Rename the variant container and all components belonging to this variant"
   [variant-id name]
   (ptk/reify ::rename-variant
 
@@ -371,6 +427,8 @@
 
 
 (defn rename-comp-or-variant-and-main
+  "If the component is in a variant, rename the variant.
+   If it is not, rename the component and its main"
   [component-id name]
   (ptk/reify ::rename-comp-or-variant-and-main
 

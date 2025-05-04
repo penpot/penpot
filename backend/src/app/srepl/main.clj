@@ -209,100 +209,116 @@
   This method allows send flash notifications to specified target destinations.
   The message can be a free text or a preconfigured one.
 
-  The destination can be: all, profile-id, team-id, or a coll of them."
-  [{:keys [::mbus/msgbus ::db/pool]} & {:keys [dest code message level]
-                                        :or {code :generic level :info}
-                                        :as params}]
+  The destination can be: all, profile-id, team-id, or a coll of them.
+  It also can be:
+
+  {:email \"some@example.com\"}
+  [[:email \"some@example.com\"], ...]
+
+  Command examples:
+
+  (notify! :dest :all :code :maintenance)
+  (notify! :dest :all :code :upgrade-version)
+  "
+  [& {:keys [dest code message level]
+      :or {code :generic level :info}
+      :as params}]
 
   (when-not (contains? #{:success :error :info :warning} level)
     (ex/raise :type :assertion
               :code :incorrect-level
               :hint (str "level '" level "' not supported")))
 
-  (letfn [(send [dest]
-            (l/inf :hint "sending notification" :dest (str dest))
-            (let [message {:type :notification
-                           :code code
-                           :level level
-                           :version (:full cf/version)
-                           :subs-id dest
-                           :message message}
-                  message (->> (dissoc params :dest :code :message :level)
-                               (merge message))]
-              (mbus/pub! msgbus
-                         :topic (str dest)
-                         :message message)))
+  (let [{:keys [::mbus/msgbus ::db/pool]} main/system
 
-          (resolve-profile [email]
-            (some-> (db/get* pool :profile {:email (str/lower email)} {:columns [:id]}) :id vector))
+        send
+        (fn [dest]
+          (l/inf :hint "sending notification" :dest (str dest))
+          (let [message {:type :notification
+                         :code code
+                         :level level
+                         :version (:full cf/version)
+                         :subs-id dest
+                         :message message}
+                message (->> (dissoc params :dest :code :message :level)
+                             (merge message))]
+            (mbus/pub! msgbus
+                       :topic dest
+                       :message message)))
 
-          (resolve-team [team-id]
-            (->> (db/query pool :team-profile-rel
-                           {:team-id team-id}
-                           {:columns [:profile-id]})
-                 (map :profile-id)))
+        resolve-profile
+        (fn [email]
+          (some-> (db/get* pool :profile {:email (str/lower email)} {:columns [:id]}) :id vector))
 
-          (resolve-dest [dest]
-            (cond
-              (= :all dest)
-              [uuid/zero]
+        resolve-team
+        (fn [team-id]
+          (->> (db/query pool :team-profile-rel
+                         {:team-id team-id}
+                         {:columns [:profile-id]})
+               (map :profile-id)))
 
-              (uuid? dest)
-              [dest]
+        resolve-dest
+        (fn resolve-dest [dest]
+          (cond
+            (= :all dest)
+            [uuid/zero]
 
-              (string? dest)
-              (some-> dest h/parse-uuid resolve-dest)
+            (uuid? dest)
+            [dest]
 
-              (nil? dest)
-              (resolve-dest uuid/zero)
+            (string? dest)
+            (some-> dest h/parse-uuid resolve-dest)
 
-              (map? dest)
-              (sequence (comp
-                         (map vec)
-                         (mapcat resolve-dest))
-                        dest)
+            (nil? dest)
+            [uuid/zero]
 
-              (and (vector? dest)
-                   (every? vector? dest))
-              (sequence (comp
-                         (map vec)
-                         (mapcat resolve-dest))
-                        dest)
+            (map? dest)
+            (sequence (comp
+                       (map vec)
+                       (mapcat resolve-dest))
+                      dest)
 
-              (and (vector? dest)
-                   (keyword? (first dest)))
-              (let [[op param] dest]
+            (and (vector? dest)
+                 (every? vector? dest))
+            (sequence (comp
+                       (map vec)
+                       (mapcat resolve-dest))
+                      dest)
+
+            (and (vector? dest)
+                 (keyword? (first dest)))
+            (let [[op param] dest]
+              (cond
+                (= op :email)
                 (cond
-                  (= op :email)
-                  (cond
-                    (and (coll? param)
-                         (every? string? param))
-                    (sequence (comp
-                               (keep resolve-profile)
-                               (mapcat identity))
-                              param)
+                  (and (coll? param)
+                       (every? string? param))
+                  (sequence (comp
+                             (keep resolve-profile)
+                             (mapcat identity))
+                            param)
 
-                    (string? param)
-                    (resolve-profile param))
+                  (string? param)
+                  (resolve-profile param))
 
-                  (= op :team-id)
-                  (cond
-                    (coll? param)
-                    (sequence (comp
-                               (mapcat resolve-team)
-                               (keep h/parse-uuid))
-                              param)
+                (= op :team-id)
+                (cond
+                  (coll? param)
+                  (sequence (comp
+                             (mapcat resolve-team)
+                             (keep h/parse-uuid))
+                            param)
 
-                    (uuid? param)
-                    (resolve-team param)
+                  (uuid? param)
+                  (resolve-team param)
 
-                    (string? param)
-                    (some-> param h/parse-uuid resolve-team))
+                  (string? param)
+                  (some-> param h/parse-uuid resolve-team))
 
-                  (= op :profile-id)
-                  (if (coll? param)
-                    (sequence (keep h/parse-uuid) param)
-                    (resolve-dest param))))))]
+                (= op :profile-id)
+                (if (coll? param)
+                  (sequence (keep h/parse-uuid) param)
+                  (resolve-dest param))))))]
 
     (->> (resolve-dest dest)
          (filter some?)
@@ -321,14 +337,23 @@
     (db/tx-run! main/system fsnap/create-file-snapshot! {:file-id file-id :label label})))
 
 (defn restore-file-snapshot!
-  [file-id label]
-  (let [file-id (h/parse-uuid file-id)]
+  [file-id & {:keys [label id]}]
+  (let [file-id     (h/parse-uuid file-id)
+        snapshot-id (some-> id h/parse-uuid)]
     (db/tx-run! main/system
                 (fn [{:keys [::db/conn] :as system}]
-                  (when-let [snapshot (->> (h/search-file-snapshots conn #{file-id} label)
-                                           (map :id)
-                                           (first))]
-                    (fsnap/restore-file-snapshot! system file-id (:id snapshot)))))))
+                  (cond
+                    (uuid? snapshot-id)
+                    (fsnap/restore-file-snapshot! system file-id snapshot-id)
+
+                    (string? label)
+                    (->> (h/search-file-snapshots conn #{file-id} label)
+                         (map :id)
+                         (first)
+                         (fsnap/restore-file-snapshot! system file-id))
+
+                    :else
+                    (throw (ex-info "snapshot id or label should be provided" {})))))))
 
 (defn list-file-snapshots!
   [file-id & {:as _}]

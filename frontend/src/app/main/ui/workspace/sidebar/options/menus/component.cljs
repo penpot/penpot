@@ -12,6 +12,7 @@
    [app.common.files.variant :as cfv]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
+   [app.common.types.variant :as ctv]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -232,54 +233,36 @@
         (when (or editing? creating?)
           [:div {:class (stl/css  :counter)} (str size "/300")])]])))
 
-
-(mf/defc component-variant*
-  [{:keys [component shape data page-id]}]
-  (let [id-component (:id component)
-        properties   (:variant-properties component)
+(mf/defc component-variant-main-instance*
+  [{:keys [components data]}]
+  (let [component    (first components)
         variant-id   (:variant-id component)
-        objects      (-> (dsh/get-page data page-id)
+        objects      (-> (dsh/get-page data (:main-instance-page component))
                          (get :objects))
 
-        related-components (cfv/find-variant-components data objects variant-id)
+        properties-map (mapv :variant-properties components)
+        component-ids  (mapv :id components)
+        properties     (if (> (count component-ids) 1)
+                         (ctv/compare-properties properties-map false)
+                         (first properties-map))
 
-        flat-comps ;; Get a list like [{:id 0 :prop1 "v1" :prop2 "v2"} {:id 1, :prop1 "v3" :prop2 "v4"}]
-        (map (fn [{:keys [id variant-properties]}]
-               (into {:id id}
-                     (map (fn [{:keys [name value]}] [(keyword name) value])
-                          variant-properties)))
-             related-components)
-
+        prop-vals       (mf/with-memo [data objects variant-id]
+                          (cfv/extract-properties-values data objects variant-id))
         get-options
         (mf/use-fn
-         (mf/deps related-components)
+         (mf/deps prop-vals)
          (fn [prop-name]
-           (->> related-components
-                (mapcat (fn [component]
-                          (map :value (filter #(= (:name %) prop-name)
-                                              (:variant-properties component)))))
-                distinct
-                (map #(if (str/empty? %) "--" %))
+           (->> (filter #(= (:name %) prop-name) prop-vals)
+                first
+                :value
                 (map (fn [val] {:label val :id val})))))
-
-        filter-matching
-        (mf/use-fn
-         (mf/deps flat-comps)
-         (fn [id exclude-key]
-           (let [reference-item (first (filter #(= (:id %) id) flat-comps))
-                 reference-values (dissoc reference-item :id exclude-key)]
-
-             (->> flat-comps
-                  (filter (fn [item]
-                            (= (dissoc item :id exclude-key) reference-values)))
-                  (map (fn [item] {:label (get item exclude-key) :value (:id item)}))))))
-
 
         change-property-value
         (mf/use-fn
-         (mf/deps id-component)
+         (mf/deps component-ids)
          (fn [pos value]
-           (st/emit! (dwv/update-property-value id-component pos value))))
+           (doseq [id component-ids]
+             (st/emit! (dwv/update-property-value id pos value)))))
 
         update-property-name
         (mf/use-fn
@@ -289,35 +272,72 @@
                  pos   (-> (dom/get-current-target event)
                            (dom/get-data "position")
                            int)]
-             (st/emit! (dwv/update-property-name variant-id pos value)))))
+             (st/emit! (dwv/update-property-name variant-id pos value)))))]
+
+    [:*
+     (for [[pos prop] (map vector (range) properties)]
+       [:div {:key (str variant-id "-" pos) :class (stl/css :variant-property-container)}
+        [:*
+         [:div {:class (stl/css :variant-property-name-wrapper)}
+          [:> input-with-values* {:name (:name prop)
+                                  :data-position pos
+                                  :on-blur update-property-name}]]
+
+         (let [mixed-value? (= (:value prop) false)
+               empty-value? (str/empty? (:value prop))]
+           [:> combobox* {:id (str "variant-prop-" variant-id "-" pos)
+                          :placeholder (if mixed-value? (tr "settings.multiple") "")
+                          :default-selected (cond
+                                              mixed-value? ""
+                                              empty-value? "--"
+                                              :else (:value prop))
+                          :options (clj->js (get-options (:name prop)))
+                          :on-change (partial change-property-value pos)}])]])]))
+
+(mf/defc component-variant*
+  [{:keys [component shape data]}]
+  (let [component-id (:id component)
+        properties   (:variant-properties component)
+        variant-id   (:variant-id component)
+        objects      (-> (dsh/get-page data (:main-instance-page component))
+                         (get :objects))
+
+        variant-components (cfv/find-variant-components data objects variant-id)
+
+        prop-vals          (mf/with-memo [data objects variant-id]
+                             (cfv/extract-properties-values data objects variant-id))
+
+        get-options-vals
+        (mf/use-fn
+         (mf/deps prop-vals)
+         (fn [prop-name]
+           (->> (filter #(= (:name %) prop-name) prop-vals)
+                first
+                :value)))
 
         switch-component
         (mf/use-fn
          (mf/deps shape)
-         (fn [id]
-           (st/emit! (dwl/component-swap shape (:component-file shape) id))))]
+         (fn [pos val]
+           (when (not= val (dm/get-in component [:variant-properties pos :value]))
+             (let [target-props (-> (:variant-properties component)
+                                    (update pos assoc :value val))
+                   valid-comps  (->> variant-components
+                                     (remove #(= (:id %) component-id))
+                                     (filter #(= (dm/get-in % [:variant-properties pos :value]) val)))
+                   nearest-comp (apply min-key  #(ctv/distance target-props (:variant-properties %)) valid-comps)]
+               (when nearest-comp
+                 (st/emit! (dwl/component-swap shape (:component-file shape) (:id nearest-comp))))))))]
 
     [:*
      (for [[pos prop] (map vector (range) properties)]
-
        [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-container)}
-        (if (ctk/main-instance? shape)
-          [:*
-           [:div {:class (stl/css :variant-property-name-wrapper)}
-            [:> input-with-values* {:name (:name prop)
-                                    :data-position pos
-                                    :on-blur update-property-name}]]
-           [:> combobox* {:id (str "variant-prop-" (:id shape) pos)
-                          :default-selected (if (str/empty? (:value prop)) "--" (:value prop))
-                          :options (clj->js (get-options (:name prop)))
-                          :on-change (partial change-property-value pos)}]]
-
-          [:*
-           [:span {:class (stl/css :variant-property-name)}
-            (:name prop)]
-           [:& select {:default-value id-component
-                       :options (filter-matching id-component (keyword (:name prop)))
-                       :on-change switch-component}]])])]))
+        [:*
+         [:span {:class (stl/css :variant-property-name)}
+          (:name prop)]
+         [:& select {:default-value (if (str/empty? (:value prop)) "--" (:value prop))
+                     :options (clj->js (get-options-vals (:name prop)))
+                     :on-change #(switch-component pos %)}]]])]))
 
 (mf/defc component-swap-item
   {::mf/props :obj}
@@ -326,7 +346,9 @@
         (mf/use-fn
          (mf/deps shapes file-id item)
          #(when-not loop
-            (st/emit! (dwl/component-multi-swap shapes file-id (:id item)))))
+            (st/emit!
+             (dwl/component-multi-swap shapes file-id (:id item))
+             (dwsp/clear-specialized-panel))))
 
         item-ref       (mf/use-ref)
         visible?       (h/use-visible item-ref :once? true)]
@@ -610,11 +632,10 @@
   {::mf/props :obj}
   [{:keys [shapes swap-opened?]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
-        current-page-id (mf/use-ctx ctx/current-page-id)
 
         libraries       (deref refs/files)
         current-file    (get libraries current-file-id)
-        data            (get current-file :data)
+
 
         state*          (mf/use-state
                          #(do {:show-content true
@@ -637,10 +658,16 @@
                                                current-file
                                                libraries
                                                {:include-deleted? true})
-
+        data            (dm/get-in libraries [(:component-file shape) :data])
         variants?       (features/use-feature "variants/v1")
         is-variant?     (when variants? (ctk/is-variant? component))
         main-instance?  (ctk/main-instance? shape)
+
+        components      (mapv #(ctf/resolve-component %
+                                                      current-file
+                                                      libraries
+                                                      {:include-deleted? true}) shapes)
+        same-variant?   (ctv/same-variant? components)
 
         toggle-content
         (mf/use-fn #(swap! state* update :show-content not))
@@ -679,7 +706,7 @@
          (fn []
            (swap! state* update :render inc)))
 
-        menu-entries (cmm/generate-components-menu-entries shapes true)
+        menu-entries (cmm/generate-components-menu-entries shapes)
         show-menu?   (seq menu-entries)
         path         (->> component (:path) (cfh/split-path) (cfh/join-path-with-dot))]
 
@@ -723,13 +750,15 @@
             [:div {:class (stl/css :name-wrapper)}
              [:div {:class (stl/css :component-name)}
               [:span {:class (stl/css :component-name-inside)}
-               (if multi
+               (if (and multi (not same-variant?))
                  (tr "settings.multiple")
                  (cfh/last-path shape-name))]]
 
              (when (and can-swap? (not multi))
                [:div {:class (stl/css :component-parent-name)}
-                (cfh/merge-path-item-with-dot path (:name component))])]]
+                (if (:deleted component)
+                  (tr "workspace.options.component.unlinked")
+                  (cfh/merge-path-item-with-dot path (:name component)))])]]
 
            (when show-menu?
              [:div {:class (stl/css :component-actions)}
@@ -749,8 +778,18 @@
           (when (and (not swap-opened?) (not multi))
             [:& component-annotation {:id id :shape shape :component component :rerender-fn rerender-fn}])
 
-          (when (and is-variant? (not swap-opened?) (not multi))
-            [:> component-variant* {:component component :shape shape :data data :page-id current-page-id}])
+          (when (and is-variant?
+                     (not main-instance?)
+                     (not (:deleted component))
+                     (not swap-opened?)
+                     (not multi))
+            [:> component-variant* {:component component
+                                    :shape shape
+                                    :data data}])
+
+          (when (and is-variant? main-instance? same-variant? (not swap-opened?))
+            [:> component-variant-main-instance* {:components components
+                                                  :data data}])
 
           (when (dbg/enabled? :display-touched)
             [:div ":touched " (str (:touched shape))])])])))

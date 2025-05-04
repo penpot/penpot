@@ -10,9 +10,16 @@
    [app.common.colors :as c]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cft]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
-   [app.main.data.tokens :as dt]
+   [app.main.data.style-dictionary :as sd]
+   [app.main.data.tinycolor :as tinycolor]
+   [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.errors :as wte]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
+   [app.main.data.workspace.tokens.warnings :as wtw]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -22,15 +29,8 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
-   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.components.controls.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
-   [app.main.ui.workspace.tokens.errors :as wte]
-   [app.main.ui.workspace.tokens.style-dictionary :as sd]
-   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
-   [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.update :as wtu]
-   [app.main.ui.workspace.tokens.warnings :as wtw]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
@@ -64,7 +64,7 @@
   (let [path-exists-schema
         (m/-simple-schema
          {:type :token/name-exists
-          :pred #(not (wtt/token-name-path-exists? % tokens-tree))
+          :pred #(not (cft/token-name-path-exists? % tokens-tree))
           :type-properties {:error/fn #(str "A token already exists at the path: " (:value %))}})]
     (m/schema
      [:and
@@ -198,6 +198,13 @@
              (when-not (and dragging? hex)
                (reset! internal-color* selector-color)
                (on-change hex alpha)))))]
+    (mf/use-effect
+     (mf/deps color)
+     (fn []
+       ;; Update internal color when user changes input value
+       (when-let [color (tinycolor/valid-color color)]
+         (when-not (= (tinycolor/->hex-string color) (:hex internal-color))
+           (reset! internal-color* (hex->value color))))))
 
     (colorpicker/use-color-picker-css-variables! wrapper-node-ref internal-color)
     [:div {:ref wrapper-node-ref}
@@ -232,8 +239,8 @@
   [{:keys [token token-type action selected-token-set-name on-display-colorpicker]}]
   (let [create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
-        token-properties (wtch/get-token-properties token)
-        color? (wtt/color-token? token)
+        token-properties (dwta/get-token-properties token)
+        color? (cft/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
 
         active-theme-tokens (cond-> (mf/deref refs/workspace-active-theme-sets-tokens)
@@ -247,7 +254,7 @@
                                                                      :interactive? true})
         token-path (mf/use-memo
                     (mf/deps (:name token))
-                    #(wtt/token-name->path (:name token)))
+                    #(cft/token-name->path (:name token)))
 
         selected-set-tokens-tree (mf/use-memo
                                   (mf/deps token-path selected-set-tokens)
@@ -315,13 +322,14 @@
                            (valid-name? @token-name-ref))
 
         ;; Value
-        color (mf/use-state (when color? (:value token)))
+        color* (mf/use-state (when color? (:value token)))
+        color (deref color*)
         color-ramp-open* (mf/use-state false)
         color-ramp-open? (deref color-ramp-open*)
         value-input-ref (mf/use-ref nil)
         value-ref (mf/use-var (:value token))
 
-        token-resolve-result* (mf/use-state (get resolved-tokens (wtt/token-identifier token)))
+        token-resolve-result* (mf/use-state (get resolved-tokens (cft/token-identifier token)))
         token-resolve-result (deref token-resolve-result*)
 
         set-resolve-value
@@ -338,7 +346,7 @@
 
                      :else
                      (:resolved-value token-or-err))]
-             (when color? (reset! color (if error? nil v)))
+             (when color? (reset! color* (if error? nil v)))
              (reset! token-resolve-result* v))))
 
         on-update-value-debounced (use-debonced-resolve-callback token-name-ref token active-theme-tokens set-resolve-value)
@@ -355,13 +363,28 @@
                              (reset! value-ref value')
                              (on-update-value-debounced value'))))
         on-update-color (mf/use-fn
-                         (mf/deps on-update-value-debounced)
+                         (mf/deps color on-update-value-debounced)
                          (fn [hex-value alpha]
-                           (let [color-value (if (= 1 alpha)
-                                               hex-value
-                                               (-> (tinycolor/valid-color hex-value)
-                                                   (tinycolor/set-alpha alpha)
-                                                   (tinycolor/->rgba-string)))]
+                           (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
+                                 prev-input-color (some-> (dom/get-value (mf/ref-val value-input-ref))
+                                                          (tinycolor/valid-color))
+                                 ;; If the input is a reference we will take the format from the computed value
+                                 prev-computed-color (when-not prev-input-color
+                                                       (some-> color (tinycolor/valid-color)))
+                                 prev-format (some-> (or prev-input-color prev-computed-color)
+                                                     (tinycolor/color-format))
+                                 to-rgba? (and
+                                           (< alpha 1)
+                                           (or (= prev-format "hex") (not prev-format)))
+                                 to-hex? (and (not prev-format) (= alpha 1))
+                                 format (cond
+                                          to-rgba? "rgba"
+                                          to-hex? "hex"
+                                          prev-format prev-format
+                                          :else "hex")
+                                 color-value (-> (tinycolor/valid-color hex-value)
+                                                 (tinycolor/set-alpha (or alpha 1))
+                                                 (tinycolor/->string format))]
                              (reset! value-ref color-value)
                              (dom/set-value! (mf/ref-val value-input-ref) color-value)
                              (on-update-value-debounced color-value))))
@@ -429,16 +452,16 @@
                               (when (and (seq result) (not err))
                                 (st/emit!
                                  (if (ctob/token? token)
-                                   (dt/update-token (:name token)
-                                                    {:name final-name
-                                                     :value final-value
-                                                     :description final-description})
+                                   (dwtl/update-token (:name token)
+                                                      {:name final-name
+                                                       :value final-value
+                                                       :description final-description})
 
-                                   (dt/create-token {:name final-name
-                                                     :type token-type
-                                                     :value final-value
-                                                     :description final-description}))
-                                 (wtu/update-workspace-tokens)
+                                   (dwtl/create-token {:name final-name
+                                                       :type token-type
+                                                       :value final-value
+                                                       :description final-description}))
+                                 (dwtp/propagate-workspace-tokens)
                                  (modal/hide)))))))))
 
         on-delete-token
@@ -447,7 +470,7 @@
          (fn [e]
            (dom/prevent-default e)
            (modal/hide!)
-           (st/emit! (dt/delete-token (ctob/prefixed-set-path-string->set-name-string selected-token-set-name) (:name token)))))
+           (st/emit! (dwtl/delete-token (ctob/prefixed-set-path-string->set-name-string selected-token-set-name) (:name token)))))
 
         on-cancel
         (mf/use-fn
@@ -538,10 +561,10 @@
          :on-blur on-update-value}
         (when color?
           [:> input-token-color-bullet*
-           {:color @color :on-click on-display-colorpicker'}])]
+           {:color color
+            :on-click on-display-colorpicker'}])]
        (when color-ramp-open?
-         [:> ramp* {:color (some-> (or token-resolve-result (:value token))
-                                   (tinycolor/valid-color))
+         [:> ramp* {:color (some-> color (tinycolor/valid-color))
                     :on-change on-update-color}])
        [:& token-value-or-errors {:result-or-errors token-resolve-result}]]
 

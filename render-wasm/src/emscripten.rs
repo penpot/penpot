@@ -27,6 +27,16 @@ macro_rules! run_script_int {
 }
 
 #[macro_export]
+macro_rules! get_now {
+    () => {{
+        extern "C" {
+            pub fn emscripten_get_now() -> f64;
+        }
+        unsafe { emscripten_get_now() }
+    }};
+}
+
+#[macro_export]
 macro_rules! init_gl {
     () => {{
         extern "C" {
@@ -43,3 +53,15 @@ macro_rules! init_gl {
         }
     }};
 }
+
+#[allow(unused_imports)]
+pub use run_script;
+
+#[allow(unused_imports)]
+pub use run_script_int;
+
+#[allow(unused_imports)]
+pub use get_now;
+
+#[allow(unused_imports)]
+pub use init_gl;

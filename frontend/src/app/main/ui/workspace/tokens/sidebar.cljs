@@ -13,11 +13,13 @@
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.data.tokens :as dt]
+   [app.main.data.style-dictionary :as sd]
+   [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.errors :as wte]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown-menu :refer [dropdown-menu
-                                                 dropdown-menu-item*]]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -27,12 +29,9 @@
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
-   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
-   [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.sets :as tsets]
    [app.main.ui.workspace.tokens.sets-context-menu :refer [token-set-context-menu*]]
-   [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.theme-select :refer [theme-select]]
    [app.main.ui.workspace.tokens.token-pill :refer [token-pill*]]
    [app.util.array :as array]
@@ -71,7 +70,7 @@
   {::mf/private true}
   [{:keys [type tokens selected-shapes active-theme-tokens is-open]}]
   (let [{:keys [modal title]}
-        (get wtch/token-properties type)
+        (get dwta/token-properties type)
 
         can-edit?
         (mf/use-ctx ctx/can-edit?)
@@ -84,7 +83,7 @@
         (mf/use-fn
          (fn [event token]
            (dom/prevent-default event)
-           (st/emit! (dt/assign-token-context-menu
+           (st/emit! (dwtl/assign-token-context-menu
                       {:type :token
                        :position (dom/get-client-position event)
                        :errors (:errors token)
@@ -93,14 +92,14 @@
         on-toggle-open-click
         (mf/use-fn
          (mf/deps is-open type)
-         #(st/emit! (dt/set-token-type-section-open type (not is-open))))
+         #(st/emit! (dwtl/set-token-type-section-open type (not is-open))))
 
         on-popover-open-click
         (mf/use-fn
          (mf/deps type title modal)
          (fn [event]
            (dom/stop-propagation event)
-           (st/emit! (dt/set-token-type-section-open type true)
+           (st/emit! (dwtl/set-token-type-section-open type true)
                      ;; FIXME: use dom/get-client-position
                      (modal/show (:key modal)
                                  {:x (.-clientX ^js event)
@@ -117,7 +116,7 @@
          (fn [event token]
            (dom/stop-propagation event)
            (when (seq selected-shapes)
-             (st/emit! (wtch/toggle-token {:token token
+             (st/emit! (dwta/toggle-token {:token token
                                            :shapes selected-shapes})))))]
 
     [:div {:on-click on-toggle-open-click :class (stl/css :token-section-wrapper)}
@@ -152,7 +151,7 @@
   [tokens-by-type]
   (loop [empty  #js []
          filled #js []
-         types  (-> wtch/token-properties keys seq)]
+         types  (-> dwta/token-properties keys seq)]
     (if-let [type (first types)]
       (if (not-empty (get tokens-by-type type))
         (recur empty
@@ -304,6 +303,16 @@
                                   tokens)]
             (ctob/group-by-type tokens)))
 
+        active-token-sets-names
+        (mf/with-memo [tokens-lib]
+          (some-> tokens-lib (ctob/get-active-themes-set-names)))
+
+        token-set-active?
+        (mf/use-fn
+         (mf/deps active-token-sets-names)
+         (fn [name]
+           (contains? active-token-sets-names name)))
+
         [empty-group filled-group]
         (mf/with-memo [tokens-by-type]
           (get-sorted-token-groups tokens-by-type))]
@@ -316,11 +325,22 @@
         (let [match (->> (ctob/get-sets tokens-lib)
                          (first)
                          (:name))]
-          (st/emit! (dt/set-selected-token-set-name match)))))
+          (st/emit! (dwtl/set-selected-token-set-name match)))))
 
     [:*
      [:& token-context-menu]
-     [:span {:class (stl/css :sets-header)} (tr "workspace.token.tokens-section-title" selected-token-set-name)]
+     [:div {:class (stl/css :sets-header-container)}
+      [:span {:class (stl/css :sets-header)} (tr "workspace.token.tokens-section-title" selected-token-set-name)]
+      [:div {:class (stl/css :sets-header-status) :title (tr "workspace.token.inactive-set-description")}
+       ;; NOTE: when no set in tokens-lib, the selected-token-set-name
+       ;; will be `nil`, so for properly hide the inactive message we
+       ;; check that at least `selected-token-set-name` has a value
+       (when (and (some? selected-token-set-name)
+                  (not (token-set-active? selected-token-set-name)))
+         [:*
+          [:> i/icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
+          [:span {:class (stl/css :sets-header-status-text)}
+           (tr "workspace.token.inactive-set")]])]]
 
      (for [type filled-group]
        (let [tokens (get tokens-by-type type)]
@@ -374,10 +394,11 @@
                   (sd/process-json-stream {:file-name file-name})
                   (rx/subs! (fn [lib]
                               (st/emit! (ptk/data-event ::ev/event {::ev/name "import-tokens"})
-                                        (dt/import-tokens-lib lib)))
+                                        (dwtl/import-tokens-lib lib)))
                             (fn [err]
                               (js/console.error err)
                               (st/emit! (ntf/show {:content (wte/humanize-errors [(ex-data err)])
+                                                   :detail (wte/detail-errors [(ex-data err)])
                                                    :type :toast
                                                    :level :error})))))
              (-> (mf/ref-val input-ref)

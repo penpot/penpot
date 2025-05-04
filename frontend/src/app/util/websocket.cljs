@@ -104,7 +104,9 @@
 
 (defn send!
   [ws msg]
-  (-send ws (t/encode-str msg)))
+  (if *assert*
+    (-send ws (t/encode-str msg {:type :json-verbose}))
+    (-send ws (t/encode-str msg))))
 
 (defn close!
   [ws]

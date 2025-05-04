@@ -17,10 +17,10 @@
    [:class {:optional true} :string]
    [:variant {:optional true}
     [:maybe [:enum "default" "error"]]]
-   [:accept-label {:optional true} :string]
-   [:cancel-label {:optional true} :string]
-   [:on-accept {:optional true} [:fn fn?]]
-   [:on-cancel {:optional true} [:fn fn?]]])
+   [:accept-label {:optional true} [:maybe :string]]
+   [:cancel-label {:optional true} [:maybe :string]]
+   [:on-accept {:optional true} [:maybe [:fn fn?]]]
+   [:on-cancel {:optional true} [:maybe [:fn fn?]]]])
 
 (mf/defc actionable*
   {::mf/schema schema:actionable}
@@ -45,9 +45,13 @@
 
     [:> :aside props
      [:div {:class (stl/css :notification-message)} children]
-     [:> button* {:variant "secondary"
-                  :on-click on-cancel}
-      cancel-label]
-     [:> button* {:variant (if (= variant "default") "primary" "destructive")
-                  :on-click on-accept}
-      accept-label]]))
+
+     (when cancel-label
+       [:> button* {:variant "secondary"
+                    :on-click on-cancel}
+        cancel-label])
+
+     (when accept-label
+       [:> button* {:variant (if (= variant "default") "primary" "destructive")
+                    :on-click on-accept}
+        accept-label])]))

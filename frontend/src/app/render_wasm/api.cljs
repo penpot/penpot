@@ -10,7 +10,6 @@
    ["react-dom/server" :as rds]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.path :as path]
    [app.common.uuid :as uuid]
@@ -19,16 +18,20 @@
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.render-wasm.api.fonts :as f]
+   [app.render-wasm.api.texts :as t]
    [app.render-wasm.deserializers :as dr]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
+   [app.render-wasm.performance :as perf]
    [app.render-wasm.serializers :as sr]
+   [app.render-wasm.serializers.color :as sr-clr]
+   [app.render-wasm.serializers.fills :as sr-fills]
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.http :as http]
+   [app.util.perf :as uperf]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -48,11 +51,6 @@
 (def GRID-LAYOUT-ROW-ENTRY-SIZE 5)
 (def GRID-LAYOUT-COLUMN-ENTRY-SIZE 5)
 (def GRID-LAYOUT-CELL-ENTRY-SIZE 37)
-(def GRADIENT-STOP-SIZE 5)
-
-(defn gradient-stop-get-entries-size
-  [stops]
-  (mem/get-list-size stops GRADIENT-STOP-SIZE))
 
 (defn modifier-get-entries-size
   "Returns the list of a modifier list in bytes"
@@ -96,31 +94,10 @@
    (rds/renderToStaticMarkup)))
 
 ;; This should never be called from the outside.
-;; This function receives a "time" parameter that we're not using but maybe in the future could be useful (it is the time since
-;; the window started rendering elements so it could be useful to measure time between frames).
 (defn- render
-  [_]
-  (h/call wasm/internal-module "_render")
+  [timestamp]
+  (h/call wasm/internal-module "_render" timestamp)
   (set! wasm/internal-frame-id nil))
-
-(defn- rgba-from-hex
-  "Takes a hex color in #rrggbb format, and an opacity value from 0 to 1 and returns its 32-bit rgba representation"
-  [hex opacity]
-  (let [rgb (js/parseInt (subs hex 1) 16)
-        a (mth/floor (* (or opacity 1) 0xff))]
-        ;; rgba >>> 0 so we have an unsigned representation
-    (unsigned-bit-shift-right (bit-or (bit-shift-left a 24) rgb) 0)))
-
-(defn- rgba-bytes-from-hex
-  "Takes a hex color in #rrggbb format, and an opacity value from 0 to 1 and returns an array with its r g b a values"
-  [hex opacity]
-  (let [rgb (js/parseInt (subs hex 1) 16)
-        a (mth/floor (* (or opacity 1) 0xff))
-        ;; rgba >>> 0 so we have an unsigned representation
-        r (bit-shift-right rgb 16)
-        g (bit-and (bit-shift-right rgb 8) 255)
-        b (bit-and rgb 255)]
-    [r g b a]))
 
 (defn cancel-render
   [_]
@@ -189,6 +166,7 @@
 (defn set-shape-children
   [shape-ids]
   (let [num-shapes (count shape-ids)]
+    (perf/begin-measure "set-shape-children")
     (when (> num-shapes 0)
       (let [offset (mem/alloc-bytes (* CHILD-ENTRY-SIZE num-shapes))
             heap (mem/get-heap-u32)]
@@ -198,9 +176,11 @@
           (when-not (empty? entries)
             (let [id (first entries)]
               (sr/heapu32-set-uuid id heap (mem/ptr8->ptr32 current-offset))
-              (recur (rest entries) (+ current-offset CHILD-ENTRY-SIZE)))))
+              (recur (rest entries) (+ current-offset CHILD-ENTRY-SIZE)))))))
 
-        (h/call wasm/internal-module "_set_children")))))
+    (let [result (h/call wasm/internal-module "_set_children")]
+      (perf/end-measure "set-shape-children")
+      result)))
 
 (defn- get-string-length [string] (+ (count string) 1))
 
@@ -237,35 +217,19 @@
                 image    (:fill-image fill)]
             (cond
               (some? color)
-              (let [rgba (rgba-from-hex color opacity)]
+              (let [rgba (sr-clr/hex->u32argb color opacity)]
                 (h/call wasm/internal-module "_add_shape_solid_fill" rgba))
 
               (some? gradient)
-              (let [stops     (:stops gradient)
-                    size  (gradient-stop-get-entries-size stops)
+              (let [size   sr-fills/GRADIENT-BYTE-SIZE
                     offset (mem/alloc-bytes size)
-                    heap      (mem/get-heap-u8)
-                    mem       (js/Uint8Array. (.-buffer heap) offset size)]
-                (if (= (:type gradient) :linear)
-                  (h/call wasm/internal-module "_add_shape_linear_fill"
-                          (:start-x gradient)
-                          (:start-y gradient)
-                          (:end-x gradient)
-                          (:end-y gradient)
-                          opacity)
-                  (h/call wasm/internal-module "_add_shape_radial_fill"
-                          (:start-x gradient)
-                          (:start-y gradient)
-                          (:end-x gradient)
-                          (:end-y gradient)
-                          opacity
-                          (:width gradient)))
-                (.set mem (js/Uint8Array. (clj->js (flatten (map (fn [stop]
-                                                                   (let [[r g b a] (rgba-bytes-from-hex (:color stop) (:opacity stop))
-                                                                         offset (:offset stop)]
-                                                                     [r g b a (* 100 offset)]))
-                                                                 stops)))))
-                (h/call wasm/internal-module "_add_shape_fill_stops"))
+                    heap   (mem/get-heap-u32)]
+                (sr-fills/write-gradient-fill! offset heap gradient opacity)
+                (case (:type gradient)
+                  :linear
+                  (h/call wasm/internal-module "_add_shape_linear_fill")
+                  :radial
+                  (h/call wasm/internal-module "_add_shape_radial_fill")))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
@@ -303,31 +267,15 @@
 
             (cond
               (some? gradient)
-              (let [stops     (:stops gradient)
-                    size  (gradient-stop-get-entries-size stops)
+              (let [size   sr-fills/GRADIENT-BYTE-SIZE
                     offset (mem/alloc-bytes size)
-                    heap      (mem/get-heap-u8)
-                    mem       (js/Uint8Array. (.-buffer heap) offset size)]
-                (if (= (:type gradient) :linear)
-                  (h/call wasm/internal-module "_add_shape_stroke_linear_fill"
-                          (:start-x gradient)
-                          (:start-y gradient)
-                          (:end-x gradient)
-                          (:end-y gradient)
-                          opacity)
-                  (h/call wasm/internal-module "_add_shape_stroke_radial_fill"
-                          (:start-x gradient)
-                          (:start-y gradient)
-                          (:end-x gradient)
-                          (:end-y gradient)
-                          opacity
-                          (:width gradient)))
-                (.set mem (js/Uint8Array. (clj->js (flatten (map (fn [stop]
-                                                                   (let [[r g b a] (rgba-bytes-from-hex (:color stop) (:opacity stop))
-                                                                         offset (:offset stop)]
-                                                                     [r g b a (* 100 offset)]))
-                                                                 stops)))))
-                (h/call wasm/internal-module "_add_shape_stroke_stops"))
+                    heap   (mem/get-heap-u32)]
+                (sr-fills/write-gradient-fill! offset heap gradient opacity)
+                (case (:type gradient)
+                  :linear
+                  (h/call wasm/internal-module "_add_shape_stroke_linear_fill")
+                  :radial
+                  (h/call wasm/internal-module "_add_shape_stroke_radial_fill")))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
@@ -345,11 +293,9 @@
                   (store-image id)))
 
               (some? color)
-              (let [rgba (rgba-from-hex color opacity)]
+              (let [rgba (sr-clr/hex->u32argb color opacity)]
                 (h/call wasm/internal-module "_add_shape_stroke_solid_fill" rgba)))))
         strokes))
-
-
 
 (defn set-shape-path-attrs
   [attrs]
@@ -378,8 +324,6 @@
         offset (mem/alloc-bytes size)]
     (h/call wasm/internal-module "stringToUTF8" content offset size)
     (h/call wasm/internal-module "_set_shape_svg_raw_content")))
-
-
 
 (defn set-shape-blend-mode
   [blend-mode]
@@ -463,9 +407,8 @@
             padding-bottom
             padding-left)))
 
-(defn set-grid-layout
+(defn set-grid-layout-data
   [shape]
-
   (let [dir (-> (or (dm/get-prop shape :layout-grid-dir) :row) sr/translate-layout-grid-dir)
         gap (dm/get-prop shape :layout-gap)
         row-gap (or (dm/get-prop gap :row-gap) 0)
@@ -494,11 +437,11 @@
             padding-top
             padding-right
             padding-bottom
-            padding-left))
+            padding-left)))
 
-  ;; Send Rows
-  (let [entries (:layout-grid-rows shape)
-        size (grid-layout-get-row-entries-size entries)
+(defn set-grid-layout-rows
+  [entries]
+  (let [size (grid-layout-get-row-entries-size entries)
         offset (mem/alloc-bytes size)
 
         heap
@@ -513,11 +456,11 @@
           (.set heap (sr/u8 (sr/translate-grid-track-type type)) (+ current-offset 0))
           (.set heap (sr/f32->u8 value) (+ current-offset 1))
           (recur (rest entries) (+ current-offset GRID-LAYOUT-ROW-ENTRY-SIZE)))))
-    (h/call wasm/internal-module "_set_grid_rows"))
+    (h/call wasm/internal-module "_set_grid_rows")))
 
-  ;; Send Columns
-  (let [entries (:layout-grid-columns shape)
-        size (grid-layout-get-column-entries-size entries)
+(defn set-grid-layout-columns
+  [entries]
+  (let [size (grid-layout-get-column-entries-size entries)
         offset (mem/alloc-bytes size)
 
         heap
@@ -532,10 +475,11 @@
           (.set heap (sr/u8 (sr/translate-grid-track-type type)) (+ current-offset 0))
           (.set heap (sr/f32->u8 value) (+ current-offset 1))
           (recur (rest entries) (+ current-offset GRID-LAYOUT-COLUMN-ENTRY-SIZE)))))
-    (h/call wasm/internal-module "_set_grid_columns"))
+    (h/call wasm/internal-module "_set_grid_columns")))
 
-  ;; Send cells
-  (let [entries (-> shape :layout-grid-cells vals)
+(defn set-grid-layout-cells
+  [cells]
+  (let [entries (vals cells)
         size (grid-layout-get-cell-entries-size entries)
         offset (mem/alloc-bytes size)
 
@@ -586,6 +530,13 @@
           (recur (rest entries) (+ current-offset GRID-LAYOUT-CELL-ENTRY-SIZE)))))
 
     (h/call wasm/internal-module "_set_grid_cells")))
+
+(defn set-grid-layout
+  [shape]
+  (set-grid-layout-data shape)
+  (set-grid-layout-rows (:layout-grid-rows shape))
+  (set-grid-layout-columns (:layout-grid-columns shape))
+  (set-grid-layout-cells (:layout-grid-cells shape)))
 
 (defn set-layout-child
   [shape]
@@ -639,7 +590,7 @@
         (let [shadow (nth shadows index)
               color (dm/get-prop shadow :color)
               blur (dm/get-prop shadow :blur)
-              rgba (rgba-from-hex (dm/get-prop color :color) (dm/get-prop color :opacity))
+              rgba (sr-clr/hex->u32argb (dm/get-prop color :color) (dm/get-prop color :opacity))
               hidden (dm/get-prop shadow :hidden)
               x (dm/get-prop shadow :offset-x)
               y (dm/get-prop shadow :offset-y)
@@ -648,53 +599,32 @@
           (h/call wasm/internal-module "_add_shape_shadow" rgba blur spread x y (sr/translate-shadow-style style) hidden)
           (recur (inc index)))))))
 
-(defn utf8->buffer [text]
-  (let [encoder (js/TextEncoder.)]
-    (.encode encoder text)))
-
-(defn- add-text-leaf [leaf]
-  (let [text (dm/get-prop leaf :text)]
-    (when (and text (not (str/blank? text)))
-      (let [font-id (f/serialize-font-id (dm/get-prop leaf :font-id))
-            font-style (f/serialize-font-style (dm/get-prop leaf :font-style))
-            font-weight (f/serialize-font-weight (dm/get-prop leaf :font-weight))
-            font-size (js/Number (dm/get-prop leaf :font-size))
-            buffer (utf8->buffer text)
-            size (.-byteLength buffer)
-            offset (mem/alloc-bytes size)
-            heap (mem/get-heap-u8)
-            mem (js/Uint8Array. (.-buffer heap) offset size)]
-        (.set mem buffer)
-        (h/call wasm/internal-module "_add_text_leaf"
-                (aget font-id 0)
-                (aget font-id 1)
-                (aget font-id 2)
-                (aget font-id 3)
-                font-weight font-style font-size)))))
-
-(defn set-shape-text-content [content]
+(defn set-shape-text-content
+  [content]
   (h/call wasm/internal-module "_clear_shape_text")
   (let [paragraph-set (first (dm/get-prop content :children))
         paragraphs (dm/get-prop paragraph-set :children)
         fonts (fonts/get-content-fonts content)
-        total-paragraphs (count paragraphs)]
+        emoji? (atom false)]
     (loop [index 0]
-      (when (< index total-paragraphs)
+      (when (< index (count paragraphs))
         (let [paragraph (nth paragraphs index)
               leaves (dm/get-prop paragraph :children)]
           (when (seq leaves)
-            (h/call wasm/internal-module "_add_text_paragraph")
-            (loop [leaf-index 0]
-              (when (< leaf-index (count leaves))
-                (add-text-leaf (nth leaves leaf-index))
-                (recur (inc leaf-index))))))
-        (recur (inc index))))
-    (f/store-fonts fonts)))
+            (let [text (apply str (map :text leaves))]
+              (when (and (not @emoji?) (t/contains-emoji? text))
+                (reset! emoji? true))
+              (t/write-shape-text leaves paragraph text))
+            (recur (inc index))))))
+    (let [fonts (if @emoji?
+                  (f/add-emoji-font fonts)
+                  fonts)]
+      (f/store-fonts fonts))))
 
 (defn set-view-box
   [zoom vbox]
   (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-  (render nil))
+  (render (uperf/now)))
 
 (defn clear-drawing-cache []
   (h/call wasm/internal-module "_clear_drawing_cache"))
@@ -704,6 +634,7 @@
 
 (defn set-object
   [objects shape]
+  (perf/begin-measure "set-object")
   (let [id           (dm/get-prop shape :id)
         parent-id    (dm/get-prop shape :parent-id)
         type         (dm/get-prop shape :type)
@@ -754,7 +685,8 @@
     (when (and (some? content)
                (or (= type :path)
                    (= type :bool)))
-      (set-shape-path-attrs svg-attrs)
+      (when (some? svg-attrs)
+        (set-shape-path-attrs svg-attrs))
       (set-shape-path-content content))
     (when (and (some? content) (= type :svg-raw))
       (set-shape-svg-raw-content (get-static-markup shape)))
@@ -773,12 +705,15 @@
     (when (ctl/grid-layout? shape)
       (set-grid-layout shape))
 
-    (into [] (concat
-              (if (and (= type :text) (some? content))
-                (set-shape-text-content content)
-                [])
-              (set-shape-fills fills)
-              (set-shape-strokes strokes)))))
+    (let [pending (into [] (concat
+                            (if (and (= type :text) (some? content))
+                              (set-shape-text-content content)
+                              [])
+                            (set-shape-fills fills)
+                            (set-shape-strokes strokes)))]
+      (perf/end-measure "set-object")
+      pending)))
+
 
 (defn process-object
   [shape]
@@ -793,6 +728,7 @@
 
 (defn set-objects
   [objects]
+  (perf/begin-measure "set-objects")
   (let [shapes        (into [] (vals objects))
         total-shapes  (count shapes)
         pending
@@ -802,6 +738,7 @@
                   pending' (set-object objects shape)]
               (recur (inc index) (into pending pending')))
             pending))]
+    (perf/end-measure "set-objects")
     (clear-drawing-cache)
     (request-render "set-objects")
     (when-let [pending (seq pending)]
@@ -811,6 +748,22 @@
            (rx/subs! (fn [_]
                        (clear-drawing-cache)
                        (request-render "set-objects")))))))
+
+(defn set-structure-modifiers
+  [entries]
+  (when-not (empty? entries)
+    (let [offset (mem/alloc-bytes-32 (mem/get-list-size entries 40))
+          heapu32 (mem/get-heap-u32)]
+      (loop [entries (seq entries)
+             current-offset  offset]
+        (when-not (empty? entries)
+          (let [{:keys [type parent id index] :as entry} (first entries)]
+            (sr/heapu32-set-u32 (sr/translate-structure-modifier-type type) heapu32 (+ current-offset 0))
+            (sr/heapu32-set-u32 (or index 0) heapu32 (+ current-offset 1))
+            (sr/heapu32-set-uuid parent heapu32 (+ current-offset 2))
+            (sr/heapu32-set-uuid id heapu32 (+ current-offset 6))
+            (recur (rest entries) (+ current-offset 10)))))
+      (h/call wasm/internal-module "_set_structure_modifiers"))))
 
 (defn propagate-modifiers
   [entries]
@@ -839,15 +792,17 @@
 
 (defn set-canvas-background
   [background]
-  (let [rgba (rgba-from-hex background 1)]
+  (let [rgba (sr-clr/hex->u32argb background 1)]
     (h/call wasm/internal-module "_set_canvas_background" rgba)
     (request-render "set-canvas-background")))
 
+(defn clean-modifiers
+  []
+  (h/call wasm/internal-module "_clean_modifiers"))
+
 (defn set-modifiers
   [modifiers]
-  (if (empty? modifiers)
-    (h/call wasm/internal-module "_clean_modifiers")
-
+  (when-not (empty? modifiers)
     (let [offset (mem/alloc-bytes-32 (* MODIFIER-ENTRY-SIZE (count modifiers)))
           heapu32 (mem/get-heap-u32)
           heapf32 (mem/get-heap-f32)]
@@ -866,7 +821,7 @@
 
 (defn initialize
   [base-objects zoom vbox background]
-  (let [rgba (rgba-from-hex background 1)]
+  (let [rgba (sr-clr/hex->u32argb background 1)]
     (h/call wasm/internal-module "_set_canvas_background" rgba)
     (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
     (set-objects base-objects)))
@@ -926,4 +881,3 @@
                        (js/console.error cause)
                        (p/resolved false)))))
       (p/resolved false))))
-

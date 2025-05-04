@@ -15,6 +15,7 @@
 (defn find-variant-components
   "Find a list of the components thet belongs to this variant-id"
   [data objects variant-id]
+  ;; We can't simply filter components, because we need to maintain the order
   (->> (dm/get-in objects [variant-id :shapes])
        (map #(dm/get-in objects [% :component-id]))
        (map #(ctcl/get-component data % true))

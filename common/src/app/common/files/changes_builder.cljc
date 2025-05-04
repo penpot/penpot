@@ -921,11 +921,11 @@
         (apply-changes-local))))
 
 (defn add-component
-  ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page]
-   (add-component changes id path name new-shapes updated-shapes main-instance-id main-instance-page nil nil nil))
-  ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page annotation]
-   (add-component changes id path name new-shapes updated-shapes main-instance-id main-instance-page annotation nil nil))
-  ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page annotation variant-id variant-properties & {:keys [apply-changes-local-library?]}]
+  ([changes id path name updated-shapes main-instance-id main-instance-page]
+   (add-component changes id path name updated-shapes main-instance-id main-instance-page nil nil nil))
+  ([changes id path name updated-shapes main-instance-id main-instance-page annotation]
+   (add-component changes id path name updated-shapes main-instance-id main-instance-page annotation nil nil))
+  ([changes id path name updated-shapes main-instance-id main-instance-page annotation variant-id variant-properties & {:keys [apply-changes-local-library?]}]
    (assert-page-id! changes)
    (assert-objects! changes)
    (let [page-id (::page-id (meta changes))
@@ -965,8 +965,6 @@
                                       :main-instance-id main-instance-id
                                       :main-instance-page main-instance-page
                                       :annotation annotation}
-                               (some? new-shapes)  ;; this will be null in components-v2
-                               (assoc :shapes (vec new-shapes))
                                (some? variant-id)
                                (assoc :variant-id variant-id)
                                (seq variant-properties)
@@ -1000,7 +998,7 @@
                                               :main-instance-id (:main-instance-id new-component)
                                               :main-instance-page (:main-instance-page new-component)
                                               :annotation (:annotation new-component)
-                                              :objects (:objects new-component) ;; this won't exist in components-v2 (except for deleted components)
+                                              :objects (:objects new-component) ;; for deleted components
                                               :modified-at (:modified-at new-component)}
                                        (some? (:variant-id new-component))
                                        (assoc :variant-id (:variant-id new-component))
@@ -1041,13 +1039,12 @@
                                   :page-id page-id})))
 
 (defn restore-component
-  [changes id page-id delta parent-id]
+  [changes id page-id delta]
   (assert-library! changes)
   (-> changes
       (update :redo-changes conj {:type :restore-component
                                   :id id
-                                  :page-id page-id
-                                  :parent-id parent-id})
+                                  :page-id page-id})
       (update :undo-changes conj {:type :del-component
                                   :id id
                                   :delta delta})))
@@ -1098,3 +1095,11 @@
 (defn get-objects
   [changes]
   (dm/get-in (::file-data (meta changes)) [:pages-index uuid/zero :objects]))
+
+(defn get-page
+  [changes]
+  (::page (meta changes)))
+
+(defn get-page-id
+  [changes]
+  (::page-id (meta changes)))

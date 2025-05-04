@@ -1067,6 +1067,44 @@ msgstr "Penpot Gratis"
 msgid "dashboard.upgrade-plan.power-up"
 msgstr "Mejora"
 
+msgid "subscription.dashboard.power-up.professional.top-title"
+msgstr "Plan Professional"
+
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr "Consigue editores y almacenamiento adicionales, copias de seguridad de archivos y mucho más con el **Plan ilimitado**"
+
+msgid "subscription.dashboard.power-up.unlimited-plan"
+msgstr "Plan ilimitado"
+
+msgid "subscription.dashboard.power-up.unlimited.top-description"
+msgstr "Editores adicionales, almacenamiento y versión autoguardada, copia de seguridad de archivos y mucho más."
+
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-description"
+msgstr "Obtenga seguridad avanzada, registros de actividad, asistencia dedicada y mucho más con el **Plan de empresa**"
+
+msgid "subscription.dashboard.power-up.enterprise-plan"
+msgstr "Plan Enterprise"
+
+msgid "subscription.dashboard.power-up.unlimited.cta"
+msgstr "Echa un vistazo"
+
+msgid "subscription.dashboard.power-up.enterprise.description"
+msgstr "Seguridad avanzada, registros de actividad, asistencia dedicada y mucho más."
+
+msgid "subscription.dashboard.power-up.trial.top-title"
+msgstr "Plan Unlimited (Prueba)"
+
+msgid "subscription.dashboard.power-up.trial.top-description"
+msgstr "Editores adicionales, almacenamiento y versión autoguardada, copia de seguridad de archivos y mucho más."
+
+msgid "subscription.dashboard.power-up.trial.bottom-description"
+msgstr "¿Disfrutas de la prueba? Desbloquea el acceso completo para siempre."
+
+msgid "subscription.dashboard.power-up.subscribe"
+msgstr "Suscríbete"
+
 #: src/app/main/ui/dashboard/team.cljs:909
 msgid "dashboard.webhooks.active"
 msgstr "Activo"
@@ -1245,6 +1283,18 @@ msgstr ""
 "del fichero que se esta intentando abrir. Falta aplicar migraciones para "
 "'%s' antes de poder abrir el fichero."
 
+msgid "errors.deprecated"
+msgstr "¡Lo sentimos! Este es un fichero antiguo que utiliza un tipo de recurso de Penpot obsoleto, y no puedes abrirlo."
+
+msgid "errors.deprecated.contact.before"
+msgstr "Aunque Penpot ya no da soporte a este tipo de Recursos, puedes"
+
+msgid "errors.deprecated.contact.text"
+msgstr "contactar con nosotros"
+
+msgid "errors.deprecated.contact.after"
+msgstr "para que podamos ayudarte."
+
 #: src/app/main/data/auth.cljs:322, src/app/main/ui/auth/login.cljs:81, src/app/main/ui/auth/login.cljs:122, src/app/main/ui/auth/register.cljs:66, src/app/main/ui/auth/register.cljs:207, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:193, src/app/main/ui/onboarding/team_choice.cljs:112, src/app/main/ui/settings/access_tokens.cljs:80, src/app/main/ui/settings/feedback.cljs:49
 msgid "errors.generic"
 msgstr "Ha ocurrido algún error."
@@ -1372,6 +1422,10 @@ msgstr ""
 #: src/app/main/data/tokens.cljs:150, src/app/main/data/tokens.cljs:180
 msgid "errors.token-set-already-exists"
 msgstr "Ya existe un set con el mismo nombre"
+
+#: src/app/main/data/tokens.cljs:
+msgid "errors.token-set-doesnt-exists"
+msgstr "No se puede duplicar un set que no existe."
 
 #: src/app/main/data/tokens.cljs:245
 msgid "errors.token-set-exists-on-drop"
@@ -1907,6 +1961,10 @@ msgstr "Panel"
 msgid "labels.delete"
 msgstr "Borrar"
 
+#: src/app/main/ui/workspace/tokens/sets_context_menu.cljs
+msgid "labels.duplicate"
+msgstr "Duplicar"
+
 #: src/app/main/ui/comments.cljs:976
 msgid "labels.delete-comment"
 msgstr "Eliminar comentario"
@@ -1942,6 +2000,9 @@ msgstr "Borradores"
 #: src/app/main/ui/comments.cljs:972, src/app/main/ui/dashboard/fonts.cljs:258, src/app/main/ui/dashboard/team.cljs:950, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:212, src/app/main/ui/workspace/tokens/sidebar.cljs:197
 msgid "labels.edit"
 msgstr "Editar"
+
+msgid "labels.error"
+msgstr "Error"
 
 #, unused
 msgid "labels.edit-file"
@@ -2114,9 +2175,8 @@ msgid "labels.no-invitations"
 msgstr "No hay invitaciones pendientes."
 
 #: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "Pulsa el botón 'Invitar al equipo' para añadir más integrantes al equipo."
+msgid "labels.no-invitations-gather-people"
+msgstr "Reúne a tu gente y construid juntos grandes cosas."
 
 #: src/app/main/ui/static.cljs
 #, unused
@@ -2315,6 +2375,9 @@ msgstr "Sets"
 #: src/app/main/ui/dashboard/sidebar.cljs:539, src/app/main/ui/dashboard/team.cljs:95, src/app/main/ui/dashboard/team.cljs:109, src/app/main/ui/settings/options.cljs:80, src/app/main/ui/settings/sidebar.cljs:105
 msgid "labels.settings"
 msgstr "Configuración"
+
+msgid "subscription.labels"
+msgstr "Suscripción"
 
 #: src/app/main/ui/viewer/header.cljs:206
 msgid "labels.share"
@@ -4261,6 +4324,72 @@ msgstr "Contraseña - Penpot"
 msgid "title.settings.profile"
 msgstr "Perfil - Penpot"
 
+msgid "subscription.settings.section-plan"
+msgstr "Tu suscripción"
+
+msgid "subscription.settings.other-plans"
+msgstr "Otros planes de penpot"
+
+msgid "subscription.settings.professional"
+msgstr "Professional"
+
+msgid "subscription.settings.unlimited"
+msgstr "Unlimited"
+
+msgid "subscription.settings.enterprise"
+msgstr "Enterprise"
+
+msgid "subscription.settings.support-us-since"
+msgstr "Nos apoyas desde %s"
+
+msgid "subscription.settings.member-since"
+msgstr "Miembro de penpot desde %s"
+
+msgid "subscription.settings.price-editor-month"
+msgstr "editor por mes"
+
+msgid "subscription.settings.price-organization-month"
+msgstr "organización por mes"
+
+msgid "subscription.settings.professional.projects-files"
+msgstr "Proyectos, archivos y borradores ilimitados"
+
+msgid "subscription.settings.professional.teams-editors"
+msgstr "Equipos ilimitados de hasta 8 redactores"
+
+msgid "subscription.settings.professional.storage"
+msgstr "10 GB de almacenamiento y versiones de autoguardado de 7 días"
+
+msgid "subscription.settings.benefits.all-professional-benefits"
+msgstr "Todas las prestaciones del plan Professional y:"
+
+msgid "subscription.settings.benefits.all-unlimited-benefits"
+msgstr "Todas las prestaciones del plan Unlimited y:"
+
+msgid "subscription.settings.unlimited.teams"
+msgstr "Equipos ilimitados, independientemente de su tamaño"
+
+msgid "subscription.settings.unlimited.bill"
+msgstr "Factura mensual limitada"
+
+msgid "subscription.settings.unlimited.storage"
+msgstr "25 GB de almacenamiento y 30 días de autoguardado de versiones y copias de seguridad de archivos"
+
+msgid "subscription.settings.ulimited.try-it-free"
+msgstr "Pruébalo gratis durante 14 días"
+
+msgid "subscription.settings.manage-your-subscription"
+msgstr "Gestionar tu suscripción"
+
+msgid "subscription.settings.enterprise.support"
+msgstr "Apoyo específico"
+
+msgid "subscription.settings.enterprise.security"
+msgstr "Seguridad avanzada"
+
+msgid "subscription.settings.enterprise.logs"
+msgstr "Registros de actividad"
+
 #: src/app/main/ui/dashboard/team.cljs:779
 msgid "title.team-invitations"
 msgstr "Invitaciones - %s - Penpot"
@@ -5073,6 +5202,9 @@ msgstr "Nota"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:688
 msgid "workspace.options.component.copy"
 msgstr "Copia"
+
+msgid "workspace.options.component.unlinked"
+msgstr "Desvinculado"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:180
 msgid "workspace.options.component.create-annotation"
@@ -6527,6 +6659,9 @@ msgstr "Deshacer modificaciones"
 msgid "workspace.shape.menu.restore-main"
 msgstr "Restaurar componente principal"
 
+msgid "workspace.shape.menu.restore-variant"
+msgstr "Restaurar variante"
+
 #: src/app/main/ui/workspace/context_menu.cljs:247
 msgid "workspace.shape.menu.select-layer"
 msgstr "Seleccionar capa"
@@ -6698,6 +6833,10 @@ msgstr "Borrar theme"
 msgid "workspace.token.duplicate"
 msgstr "Duplicar token"
 
+#: src/app/main/data/tokens.cljs:386
+msgid "workspace.token.duplicate-suffix"
+msgstr "copiar"
+
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:262
 msgid "workspace.token.edit"
 msgstr "Editar token"
@@ -6755,6 +6894,17 @@ msgstr "Valor de color no válido: %s"
 #: src/app/main/ui/workspace/tokens/errors.cljs:13
 msgid "workspace.token.invalid-json"
 msgstr "Error al importar: Datos de token no válidos en JSON."
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:16
+msgid "workspace.token.invalid-json-token-name"
+msgstr "Error al importar: Nombre de token no válido en JSON."
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:18
+msgid "workspace.token.invalid-json-token-name-detail"
+msgstr ""
+"\"%s\" no es un nombre de token válido.\n"
+"Los nombres de token solo pueden contener letras y dígitos separados por "
+"caracteres . y no pueden empezar con un signo $."
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/errors.cljs:45
 msgid "workspace.token.invalid-value"
@@ -6908,6 +7058,14 @@ msgstr "Valor"
 #: src/app/main/ui/workspace/tokens/form.cljs:525
 msgid "workspace.token.token-value-enter"
 msgstr "Introduce un valor o un alias usando {alias}"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:345
+msgid "workspace.token.inactive-set"
+msgstr "Inactivo"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:340
+msgid "workspace.token.inactive-set-description"
+msgstr "Este set no está activo. Cambia el tema o activa este set para ver los cambios en el viewport"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
 msgid "workspace.token.tools"
@@ -7236,3 +7394,15 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "workspace.notification-pill.detail"
+msgstr "Detalles"
+
+msgid "dashboard.import.import-error.disclaimer"
+msgstr "No todos los ficheros han sido importados"
+
+msgid "dashboard.import.import-error.message1"
+msgstr "Estos ficheros tienen errores:"
+
+msgid "dashboard.import.import-error.message2"
+msgstr "Los ficheros con error no serán importados."

@@ -32,14 +32,9 @@
   @extend .modal-close-btn-base;
 }
 
-.modal-content,
-.no-selection {
+.modal-content {
   @include bodySmallTypography;
   margin-bottom: $s-24;
-  .modal-hint {
-    @include bodySmallTypography;
-    color: var(--modal-text-foreground-color);
-  }
   .modal-link {
     @include bodyLargeTypography;
     text-decoration: none;

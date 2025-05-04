@@ -1,4 +1,4 @@
-(ns app.main.ui.workspace.tokens.tinycolor
+(ns app.main.data.tinycolor
   "Bindings for tinycolor2 which supports a wide range of css compatible colors.
 
   This library was chosen as it is already used by StyleDictionary,
@@ -32,16 +32,23 @@
     (let [tc (tinycolor color-str)]
       (str/starts-with? (.getFormat tc) "hex"))))
 
-(defn ->string [^js tc]
-  (.toString tc))
+(defn ->string
+  "Stringify `tc` to `format`, uses `hex` as per default."
+  [^js tc format]
+  (let [format' (case format
+                  ;; Tinycolor `.toString` doesnt support the `a` suffix it gives you via `.getFormat`
+                  "rgba" "rgb"
+                  "hsva" "hsv"
+                  ;; Keep these formats
+                  "rgb"  "rgb"
+                  "hsv"  "hsv"
+                  ;; Fall back to hex as the default
+                  "hex")]
+    (.toString tc format')))
 
 (defn ->hex-string [^js tc]
   (assert (tinycolor? tc))
   (.toHexString tc))
-
-(defn ->rgba-string [^js tc]
-  (assert (tinycolor? tc))
-  (.toRgbString tc))
 
 (defn color-format [^js tc]
   (assert (tinycolor? tc))

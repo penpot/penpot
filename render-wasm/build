@@ -4,7 +4,10 @@ set -x
 _SCRIPT_DIR=$(dirname $0);
 pushd $_SCRIPT_DIR;
 
-. ./_build_env 
+. ./_build_env
+
+export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm32-unknown-emscripten"};
+export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.81.0-3/skia-binaries-24dee32a277b6c7b5357-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache.tar.gz"}
 
 cargo build $_CARGO_PARAMS
 

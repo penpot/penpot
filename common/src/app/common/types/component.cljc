@@ -182,10 +182,8 @@
        (= (:component-file shape) file-id)))
 
 (defn is-main-of?
-  [shape-main shape-inst components-v2]
-  (or (= (:shape-ref shape-inst) (:id shape-main))
-      (and (= (:shape-ref shape-inst) (:shape-ref shape-main))
-           (not components-v2))))
+  [shape-main shape-inst]
+  (= (:shape-ref shape-inst) (:id shape-main)))
 
 (defn main-instance?
   "Check if this shape is the root of the main instance of some
@@ -289,7 +287,7 @@
 
 (defn get-component-root
   [component]
-  (if (true? (:main-instance-id component))
+  (if (some? (:main-instance-id component))
     (get-in component [:objects (:main-instance-id component)])
     (get-in component [:objects (:id component)])))
 
@@ -336,8 +334,6 @@
   (let [parent (get objects (:parent-id shape))]
     ;; We don't want to change the structure of component copies
     (and (not (in-component-copy-not-head? shape))
-         ;; We don't want to duplicate variants
-         (not (is-variant? shape))
          ;; Non instance, non copy. We allow
          (or (not (instance-head? shape))
              (not (in-component-copy? parent))))))

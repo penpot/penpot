@@ -27,8 +27,7 @@
 }
 
 .info-block {
-  position: relative;
-  padding-top: $s-180;
+  margin-block-start: $s-16;
 }
 
 .block-label {
@@ -63,12 +62,11 @@
 
 .team-icon {
   --update-button-opacity: 0;
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   height: $s-120;
   width: $s-120;
   padding: $s-16;
+  margin-block-end: $s-32;
 
   &:hover {
     --update-button-opacity: 1;
@@ -76,6 +74,9 @@
 }
 
 .team-image {
+  position: absolute;
+  top: 0;
+  left: 0;
   border-radius: 50%;
   width: $s-120;
   height: $s-120;
@@ -86,8 +87,8 @@
   @include buttonStyle;
   @include flexCenter;
   position: absolute;
-  top: $s-16;
-  left: $s-16;
+  top: 0;
+  left: 0;
   height: 100%;
   width: 100%;
   z-index: $z-index-modal;
@@ -308,6 +309,12 @@
   border: $s-1 solid var(--panel-border-color);
   border-radius: $br-8;
   color: var(--dashboard-list-text-foreground-color);
+}
+
+.btn-empty-invitations {
+  @extend .button-primary;
+  margin-block-start: $s-16;
+  padding-inline: $s-12;
 }
 
 .title-field-status {

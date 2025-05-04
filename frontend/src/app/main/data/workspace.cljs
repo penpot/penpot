@@ -80,6 +80,7 @@
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.errors]
+   [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -305,7 +306,8 @@
              (rx/take-until stopper-s))))))
 
 (defn initialize-workspace
-  [file-id]
+  [team-id file-id]
+  (assert (uuid? team-id) "expected valud uuid for `team-id`")
   (assert (uuid? file-id) "expected valud uuid for `file-id`")
 
   (ptk/reify ::initialize-workspace
@@ -321,8 +323,7 @@
     (watch [_ state stream]
       (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
             rparams      (rt/get-params state)
-            team-id      (get state :current-team-id)
-            features     (get state :features)
+            features     (features/get-enabled-features state team-id)
             render-wasm? (contains? features "render-wasm/v1")]
 
         (log/debug :hint "initialize-workspace"
@@ -371,7 +372,7 @@
                    (rx/take 1)
                    (rx/map dwc/set-workspace-visited))
 
-              (when-let [component-id (some-> rparams :component-id parse-uuid)]
+              (when-let [component-id (some-> rparams :component-id uuid/parse)]
                 (->> stream
                      (rx/filter (ptk/type? ::workspace-initialized))
                      (rx/observe-on :async)
@@ -384,7 +385,7 @@
                      (rx/take 1)
                      (rx/map zoom-to-frame)))
 
-              (when-let [comment-id (some-> rparams :comment-id parse-uuid)]
+              (when-let [comment-id (some-> rparams :comment-id uuid/parse)]
                 (->> stream
                      (rx/filter (ptk/type? ::workspace-initialized))
                      (rx/observe-on :async)
@@ -417,7 +418,7 @@
         (unchecked-set ug/global "name" name)))))
 
 (defn finalize-workspace
-  [file-id]
+  [_team-id file-id]
   (ptk/reify ::finalize-workspace
     ptk/UpdateEvent
     (update [_ state]
@@ -432,7 +433,8 @@
            :workspace-tokens
            :workspace-undo)
           (update :workspace-global dissoc :read-only?)
-          (assoc-in [:workspace-global :options-mode] :design)))
+          (assoc-in [:workspace-global :options-mode] :design)
+          (update :files d/update-vals #(dissoc % :data))))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -450,8 +452,9 @@
   (ptk/reify ::reload-current-file
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)]
-        (rx/of (initialize-workspace file-id))))))
+      (let [file-id (:current-file-id state)
+            team-id (:current-team-id state)]
+        (rx/of (initialize-workspace team-id file-id))))))
 
 ;; Make this event callable through dynamic resolution
 (defmethod ptk/resolve ::reload-current-file [_ _] (reload-current-file))
@@ -492,18 +495,25 @@
 (defn initialize-page
   [file-id page-id]
   (assert (uuid? file-id) "expected valid uuid for `file-id`")
+  (assert (uuid? page-id) "expected valid uuid for `page-id`")
 
   (ptk/reify ::initialize-page
     ptk/WatchEvent
     (watch [_ state _]
       (if-let [page (dsh/lookup-page state file-id page-id)]
-        (rx/concat (rx/of (initialize-page* file-id page-id page)
-                          (dwth/watch-state-changes file-id page-id)
-                          (dwl/watch-component-changes))
-                   (let [profile (:profile state)
-                         props   (get profile :props)]
-                     (when (not (:workspace-visited props))
-                       (rx/of (select-frame-tool file-id page-id)))))
+        (rx/concat
+         (rx/of (initialize-page* file-id page-id page)
+                (dwth/watch-state-changes file-id page-id)
+                (dwl/watch-component-changes))
+         (let [profile (:profile state)
+               props   (get profile :props)]
+           (when (not (:workspace-visited props))
+             (rx/of (select-frame-tool file-id page-id)))))
+
+        ;; NOTE: this redirect is necessary for cases where user
+        ;; explicitly passes an non-existing page-id on the url
+        ;; params, so on check it we can detect that there are no data
+        ;; for the page and redirect user to an existing page
         (rx/of (dcm/go-to-workspace :file-id file-id ::rt/replace true))))))
 
 (defn finalize-page
@@ -582,7 +592,6 @@
                                                  component
                                                  fdata
                                                  (gpt/point (:x shape) (:y shape))
-                                                 true
                                                  {:keep-ids? true :force-frame-id (:frame-id shape)})
                     children (into {} (map (fn [shape] [(:id shape) shape]) new-shapes))
                     objs (assoc objs id new-shape)]
@@ -1365,15 +1374,31 @@
                                (assoc obj ::images images))))
                 (rx/of obj))))
 
+          (collect-variants [state shape]
+            (let [page-id (:current-page-id state)
+                  data    (dsh/lookup-file-data state)
+                  objects (-> (dsh/get-page data page-id)
+                              (get :objects))
+
+                  components (cfv/find-variant-components data objects (:id shape))]
+              (into {} (map (juxt :id :variant-properties) components))))
+
+
           ;; Collects all the items together and split images into a
           ;; separated data structure for a more easy paste process.
-          (collect-data [result {:keys [id ::images] :as item}]
+          ;; Also collects the variant properties of the copied variants
+          (collect-data [state result {:keys [id ::images] :as item}]
             (cond-> result
               :always
               (update :objects assoc id (dissoc item ::images))
 
               (some? images)
-              (update :images into images)))
+              (update :images into images)
+
+              (ctc/is-variant-container? item)
+              (update :variant-properties merge (collect-variants state item))))
+
+
 
           (maybe-translate [shape objects parent-frame-id]
             (if (= parent-frame-id uuid/zero)
@@ -1458,7 +1483,7 @@
                        (fn [resolve reject]
                          (->> (rx/from shapes)
                               (rx/merge-map (partial prepare-object objects frame-id))
-                              (rx/reduce collect-data initial)
+                              (rx/reduce (partial collect-data state) initial)
                               (rx/map (partial sort-selected state))
                               (rx/map (partial advance-copies state selected))
                               (rx/map #(t/encode-str % {:type :json-verbose}))
@@ -1473,7 +1498,7 @@
                 ;; https://caniuse.com/?search=ClipboardItem
                 (->> (rx/from shapes)
                      (rx/merge-map (partial prepare-object objects frame-id))
-                     (rx/reduce collect-data initial)
+                     (rx/reduce (partial collect-data state) initial)
                      (rx/map (partial sort-selected state))
                      (rx/map (partial advance-copies state selected))
                      (rx/map #(t/encode-str % {:type :json-verbose}))
@@ -2061,6 +2086,9 @@
 
               objects      (:objects pdata)
 
+              variant-props (:variant-properties pdata)
+
+
               position     (deref ms/mouse-position)
 
               ;; Calculate position for the pasted elements
@@ -2073,12 +2101,8 @@
               libraries    (dsh/lookup-libraries state)
               ldata        (dsh/lookup-file-data state file-id)
 
-              ;; full-libs    (assoc-in libraries [(:id ldata) :data] ldata)
-
-              full-libs    libraries
-
               [parent-id
-               frame-id]   (ctn/find-valid-parent-and-frame-ids candidate-parent-id page-objects (vals objects) true full-libs)
+               frame-id]   (ctn/find-valid-parent-and-frame-ids candidate-parent-id page-objects (vals objects) true libraries)
 
               index        (if (= candidate-parent-id parent-id)
                              index
@@ -2092,12 +2116,12 @@
 
               all-objects  (merge page-objects objects)
 
-
               drop-cell    (when (ctl/grid-layout? all-objects parent-id)
                              (gslg/get-drop-cell frame-id all-objects position))
 
               changes      (-> (pcb/empty-changes it)
-                               (cll/generate-duplicate-changes all-objects page selected delta libraries ldata file-id)
+                               (cll/generate-duplicate-changes all-objects page selected delta
+                                                               libraries ldata file-id {:variant-props variant-props})
                                (pcb/amend-changes (partial process-rchange media-idx))
                                (pcb/amend-changes (partial change-add-obj-index objects selected index)))
 
@@ -2457,13 +2481,6 @@
                            copies)]
         (js/console.log "Copies no ref" (count copies-no-ref) (clj->js copies-no-ref))
         (js/console.log "Childs no ref" (count childs-no-ref) (clj->js childs-no-ref))))))
-
-(defn set-shape-ref
-  [id shape-ref]
-  (ptk/reify ::set-shape-ref
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (update-shape (uuid/uuid id) {:shape-ref (uuid/uuid shape-ref)})))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports
