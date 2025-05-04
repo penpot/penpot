@@ -24,29 +24,29 @@ Examples:
 
 
 ## 3.3. [Vercel](https://vercel.com/)
-![Vercel logo](/img/plugins/Vercel-Logotype-Light.webp)
+
 You need a Vercel account if you don't already have one. You can <a target="_blank" href="https://vercel.com/signup">sign up</a> with Github, GItlab, BItbucket, Passkey or via email and verification code.
 
 ### Login by email
 
 If you choose to log in with an email address, you will receive a verification code via email that you need to enter to log in.
 Enter your email address and press ‘continue with Email’.
-![Vercel_login_by_email](/img/plugins/Vercel_login_by_email.webp)
+![vercel_login_by_email](/img/plugins/Vercel_login_by_email.webp)
 Fill in your verification code.
-![Vercel_login_verefication_code](/img/plugins/Vercel_login_verefication_code.webp)
+![vercel_login_verification_code](/img/plugins/Vercel_login_verefication_code.webp)
 
 ### Vercel import Git repository
 
 Vercel allows you to import an existing project from GitHub, GitLab, Bitbucket or Azure DevOps.
 You can also use the [Vercel CLI to deploy](https://vercel.com/guides/using-vercel-cli-for-custom-workflows) with any git provider.
-![Vercel_deploy_new_project](/img/plugins/Vercel_deploy_new_project.webp)
+![vercel_deploy_new_project](/img/plugins/Vercel_deploy_new_project.webp)
 
 <a target="_blank" href="https://vercel.com/docs/deployments/">Vercel deployment documentation</a>.
 
 1. Go to <a target="_blank" href="https://vercel.com/new">New</a> and connect with your repository or choose [Import Third-Party Git Repository](https://vercel.com/new/git/third-party).
 
 ## 3.3. [Netlify](https://www.netlify.com/)
-![Netlify logo](/img/plugins/Netlify-Logotype-Light.webp)
+
 ### Create an account
 
 You need a Netlify account if you don't already have one. You can <a target="_blank" href="https://app.netlify.com/signup">sign up</a> with Github, GItlab, BItbucket or via email and password.
@@ -109,7 +109,7 @@ npm run build
 4. Done!
 
 ## 3.4. [Cloudflare](https://www.cloudflare.com/)
-![Cloudflare logo](/img/plugins/Cloudfare-Logotype-Light.webp)
+
 ### Create an account
 
 You need a Cloudflare account if you don't already have one. You can <a target="_blank" href="https://dash.cloudflare.com/sign-up">sign up</a> via email and password.
