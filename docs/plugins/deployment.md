@@ -23,7 +23,7 @@ Examples:
 ![Angular dist example](/img/plugins/angular_dist.png)
 
 
-## 3.3. [Vercel](https://vercel.com/)
+## 3.2. [Vercel](https://vercel.com/)
 
 You need a Vercel account if you don't already have one. You can <a target="_blank" href="https://vercel.com/signup">sign up</a> with Github, GItlab, BItbucket, Passkey or via email and verification code.
 
