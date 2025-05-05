@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.logic.tokens :as clt]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.constants :refer [max-input-length]]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
@@ -19,11 +20,11 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
+   [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as ic]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
    [app.main.ui.workspace.tokens.sets :as wts]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -202,14 +203,13 @@
                      :on-change on-update-group}]]
 
      [:div {:class (stl/css :group-input-wrapper)}
-      [:> input-tokens* {:id "theme-input"
-                         :label (tr "workspace.token.label.theme")
-                         :type "text"
-                         :max-length 256
-                         :placeholder (tr "workspace.token.label.theme-placeholder")
-                         :on-change on-update-name
-                         :value (mf/ref-val theme-name-ref)
-                         :auto-focus true}]]]))
+      [:> input* {:label (tr "workspace.token.label.theme")
+                  :placeholder (tr "workspace.token.label.theme-placeholder")
+                  :max-length max-input-length
+                  :variant "comfortable"
+                  :default-value (mf/ref-val theme-name-ref)
+                  :auto-focus true
+                  :on-change on-update-name}]]]))
 
 (mf/defc theme-modal-buttons*
   [{:keys [close-modal on-save-form disabled?] :as props}]

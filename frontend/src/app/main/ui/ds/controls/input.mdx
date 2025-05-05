@@ -5,12 +5,9 @@ import * as InputStories from "./input.stories";
 
 # Input
 
-The `input*` component is a wrapper to the HTML `<input>` element with custom styling
-and additional elements that adds context and, in some cases, adds extra
-functionality.
+The `input*` component is a wrapper composed of `label*`, `input-field*`, and `hint-message*` components, functioning as a form element that adapts its UI based on configuration, making it suitable for different areas of the interface.
 
 <Canvas of={InputStories.Default} />
-
 
 ## Technical notes
 
@@ -28,8 +25,6 @@ These are available in the `app.main.ds.foundations.assets.icon` namespace.
 ```clj
 [:> input* {:icon i/effects}]
 ```
-
-<Canvas of={InputStories.WithIcon} />
 
 ## Usage guidelines (design)
 

@@ -34,6 +34,7 @@
 
 .input-wrapper {
   display: flex;
+  flex: 1;
   align-items: center;
 
   &:has(.input-swatch) {
@@ -50,4 +51,8 @@
   display: flex;
   inset-inline-start: var(--sp-s);
   z-index: 2;
+}
+
+.input {
+  flex: 1;
 }

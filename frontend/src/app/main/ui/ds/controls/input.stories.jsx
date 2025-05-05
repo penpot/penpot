@@ -14,34 +14,74 @@ export default {
   title: "Controls/Input",
   component: Components.Input,
   argTypes: {
+    defaultValue: {
+      control: { type: "text" },
+    },
+    label: {
+      control: { type: "text" },
+    },
+    placeholder: {
+      control: { type: "text" },
+    },
+    isOptional: { control: { type: "boolean" } },
     icon: {
       options: icons,
       control: { type: "select" },
     },
-    value: {
+    type: {
+      options: ["text", "email", "password"],
+      control: { type: "select" },
+    },
+    hintMessage: {
       control: { type: "text" },
     },
-    disabled: { control: "boolean" },
+    hintType: {
+      options: ["hint", "error", "warning"],
+      control: { type: "select" },
+    },
+    variant: {
+      options: ["dense", "comfortable"],
+      control: { type: "select" },
+    },
+    disabled: {
+      control: { type: "boolean" },
+    },
   },
   args: {
+    id: "input",
+    label: "Label",
+    isOptional: false,
+    defaultValue: "Value",
+    placeholder: "Placeholder",
+    type: "text",
+    icon: "search",
+    hintMessage: "This is a hint text to help user.",
+    hintType: "hint",
+    variant: "dense",
     disabled: false,
-    value: "Lorem ipsum",
+  },
+  parameters: {
+    controls: { exclude: ["id"] },
   },
   render: ({ ...args }) => <Input {...args} />,
 };
 
 export const Default = {};
 
-export const WithIcon = {
+export const Dense = {
   args: {
-    icon: "effects",
+    variant: "dense",
   },
 };
 
-export const WithPlaceholder = {
+export const Comfortable = {
   args: {
-    icon: "effects",
-    value: undefined,
-    placeholder: "Mixed",
+    variant: "comfortable",
+  },
+};
+
+export const Seamless = {
+  args: {
+    variant: "seamless",
   },
 };
