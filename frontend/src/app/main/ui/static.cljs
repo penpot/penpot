@@ -162,7 +162,7 @@
 
          :register-validate
          [:div {:class (stl/css :form-container)}
-          [:& register/register-validate-form
+          [:& register/register-form
            {:params {:token @register-token}
             :on-success-callback register-email-sent}]
           [:div {:class (stl/css :links)}

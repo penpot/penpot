@@ -167,7 +167,6 @@
         (and (contains? cf/flags :onboarding)
              (not (:onboarding-viewed props))
              (not (contains? props :onboarding-team-id))
-             (contains? props :newsletter-updates)
              (:is-default team))
 
         show-release-modal?
@@ -233,7 +232,7 @@
             [:& onboarding-newsletter]
 
             show-team-modal?
-            [:& onboarding-team-modal {:go-to-team? true}]
+            [:& onboarding-team-modal {:go-to-team true}]
 
             show-release-modal?
             [:& release-notes-modal {:version (:main cf/version)}])
@@ -259,11 +258,8 @@
               show-question-modal?
               [:& questions-modal]
 
-              show-newsletter-modal?
-              [:& onboarding-newsletter]
-
               show-team-modal?
-              [:& onboarding-team-modal {:go-to-team? false}]
+              [:& onboarding-team-modal {:go-to-team false}]
 
               show-release-modal?
               [:& release-notes-modal {:version (:main cf/version)}]))

@@ -18,7 +18,6 @@
    [app.main.ui.auth.login :as login]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
-   [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
@@ -26,11 +25,48 @@
 
 ;; --- PAGE: Register
 
+(mf/defc newsletter-options*
+  {::mf/private true}
+  []
+  (let [updates-label
+        (mf/html
+         [:> i18n/tr-html*
+          {:tag-name "div"
+           :content (tr "onboarding-v2.newsletter.updates")}])]
+    [:div {:class (stl/css :fields-row :input-visible :newsletter-option-wrapper)}
+     [:& fm/input {:name :accept-newsletter-updates
+                   :type "checkbox"
+                   :default-checked false
+                   :label updates-label}]]))
+
+(mf/defc terms-and-privacy
+  {::mf/props :obj
+   ::mf/private true}
+  []
+  (let [terms-label
+        (mf/html
+         [:> i18n/tr-html*
+          {:tag-name "div"
+           :content (tr "auth.terms-and-privacy-agreement"
+                        cf/terms-of-service-uri
+                        cf/privacy-policy-uri)}])]
+
+    [:div {:class (stl/css :fields-row :input-visible :accept-terms-and-privacy-wrapper)}
+     [:& fm/input {:name :accept-terms-and-privacy
+                   :class (stl/css :checkbox-terms-and-privacy)
+                   :type "checkbox"
+                   :default-checked false
+                   :label terms-label}]]))
+
 (def ^:private schema:register-form
   [:map {:title "RegisterForm"}
    [:password ::sm/password]
+   [:fullname [::sm/text {:max 250}]]
    [:email ::sm/email]
-   [:invitation-token {:optional true} ::sm/text]])
+   [:accept-terms-and-privacy {:optional (not (contains? cf/flags :terms-and-privacy-checkbox))}
+    [:and :boolean [:= true]]]
+   [:accept-newsletter-updates {:optional true} :boolean]
+   [:token {:optional true} ::sm/text]])
 
 (mf/defc register-form
   {::mf/props :obj}
@@ -65,23 +101,59 @@
 
                (st/emit! (ntf/error (tr "errors.generic")))))))
 
+        on-success
+        (mf/use-fn
+         (mf/deps on-success-callback)
+         (fn [params]
+           (if (fn? on-success-callback)
+             (on-success-callback (:email params))
+
+             (cond
+               (some? (:token params))
+               (let [token (:token params)]
+                 (st/emit! (rt/nav :auth-verify-token {:token token})))
+
+               (:is-active params)
+               (st/emit! (da/login-from-register))
+
+               :else
+               (do
+                 (swap! storage/user assoc ::email (:email params))
+                 (st/emit! (rt/nav :auth-register-success)))))))
+
+        on-register-profile
+        (mf/use-fn
+         (mf/deps on-success on-error)
+         (fn [form]
+           (reset! submitted? true)
+           (let [create-welcome-file?
+                 (cf/external-feature-flag "onboarding-03" "test")
+
+                 params
+                 (cond-> form
+                   create-welcome-file? (assoc :create-welcome-file true))]
+             (->> (rp/cmd! :register-profile params)
+                  (rx/subs! on-success on-error #(reset! submitted? false))))))
+
         on-submit
         (mf/use-fn
          (mf/deps on-success-callback)
          (fn [form _event]
            (reset! submitted? true)
-           (let [cdata      (:clean-data @form)
-                 on-success (fn [data]
-                              (if (fn? on-success-callback)
-                                (on-success-callback data)
-                                (st/emit! (rt/nav :auth-register-validate data))))]
-
+           (let [cdata      (:clean-data @form)]
              (->> (rp/cmd! :prepare-register-profile cdata)
-                  (rx/map #(merge % params))
+                  (rx/map #(merge % cdata))
                   (rx/finalize #(reset! submitted? false))
-                  (rx/subs! on-success (partial on-error form))))))]
+                  (rx/subs! on-register-profile)))))]
 
     [:& fm/form {:on-submit on-submit :form form}
+     [:div {:class (stl/css :fields-row)}
+
+      [:& fm/input {:name :fullname
+                    :label (tr "auth.fullname")
+                    :type "text"
+                    :show-success? true
+                    :class (stl/css :form-field)}]]
      [:div {:class (stl/css :fields-row)}
       [:& fm/input {:type "text"
                     :name :email
@@ -96,6 +168,11 @@
                     :show-success? true
                     :type "password"
                     :class (stl/css :form-field)}]]
+
+     (when (contains? cf/flags :terms-and-privacy-checkbox)
+       [:& terms-and-privacy])
+
+     [:> newsletter-options*]
 
      [:> fm/submit-button*
       {:label (tr "auth.register-submit")
@@ -120,8 +197,6 @@
   [:div {:class (stl/css :auth-form-wrapper :register-form)}
    [:h1 {:class (stl/css :auth-title)
          :data-testid "registration-title"} (tr "auth.register-title")]
-   [:p {:class (stl/css :auth-tagline)}
-    (tr "auth.register-tagline")]
 
    (when (contains? cf/flags :demo-warning)
      [:& login/demo-warning])
@@ -144,26 +219,41 @@
                      :class (stl/css :demo-account-link)}
          (tr "auth.create-demo-account")]]])]])
 
-;; --- PAGE: register validation
+;; --- PAGE: register success page
 
-(mf/defc terms-and-privacy
-  {::mf/props :obj
-   ::mf/private true}
+(mf/defc register-success-page
+  {::mf/props :obj}
+  [{:keys [params]}]
+  (let [email (or (:email params) (::email storage/user))]
+    [:div {:class (stl/css :auth-form-wrapper :register-success)}
+     [:div {:class (stl/css :auth-title-wrapper)}
+      [:h2 {:class (stl/css :auth-title)}
+       (tr "auth.check-mail")]
+      [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]]
+     [:div {:class (stl/css :notification-text-email)} email]]))
+
+
+(mf/defc terms-register
   []
-  (let [terms-label
-        (mf/html
-         [:> i18n/tr-html*
-          {:tag-name "div"
-           :content (tr "auth.terms-and-privacy-agreement"
-                        cf/terms-of-service-uri
-                        cf/privacy-policy-uri)}])]
+  (let [show-all?     (and cf/terms-of-service-uri cf/privacy-policy-uri)
+        show-terms?   (some? cf/terms-of-service-uri)
+        show-privacy? (some? cf/privacy-policy-uri)]
 
-    [:div {:class (stl/css :fields-row :input-visible :accept-terms-and-privacy-wrapper)}
-     [:& fm/input {:name :accept-terms-and-privacy
-                   :class (stl/css :checkbox-terms-and-privacy)
-                   :type "checkbox"
-                   :default-checked false
-                   :label terms-label}]]))
+    (when show-all?
+      [:div {:class (stl/css :terms-register)}
+       (when show-terms?
+         [:a {:href cf/terms-of-service-uri :target "_blank" :class (stl/css :auth-link)}
+          (tr "auth.terms-of-service")])
+
+       (when show-all?
+         [:span {:class (stl/css :and-text)}
+          (dm/str " " (tr "labels.and") "  ")])
+
+       (when show-privacy?
+         [:a {:href cf/privacy-policy-uri :target "_blank" :class (stl/css :auth-link)}
+          (tr "auth.privacy-policy")])])))
+
+;; --- PAGE: register validation
 
 (def ^:private schema:register-validate-form
   [:map {:title "RegisterValidateForm"}
@@ -245,9 +335,9 @@
 (mf/defc register-validate-page
   {::mf/props :obj}
   [{:keys [params]}]
-  [:div {:class (stl/css :auth-form-wrapper)}
-   [:h1 {:class (stl/css :logo-container)}
-    [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]]
+  [:div {:class (stl/css :auth-form-wrapper :register-form)}
+
+
    [:div {:class (stl/css :auth-title-wrapper)}
     [:h2 {:class (stl/css :auth-title)
           :data-testid "register-title"} (tr "auth.register-account-title")]
@@ -260,40 +350,3 @@
      [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {}))
                   :class (stl/css :go-back-link)}
       (tr "labels.go-back")]]]])
-
-(mf/defc register-success-page
-  {::mf/props :obj}
-  [{:keys [params]}]
-  (let [email (or (:email params) (::email storage/user))]
-    [:div {:class (stl/css :auth-form-wrapper :register-success)}
-     (when-not (:hide-logo params)
-       [:h1 {:class (stl/css :logo-container)}
-        [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]])
-     [:div {:class (stl/css :auth-title-wrapper)}
-      [:h2 {:class (stl/css :auth-title)}
-       (tr "auth.check-mail")]
-      [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]]
-     [:div {:class (stl/css :notification-text-email)} email]
-     [:div {:class (stl/css :notification-text)} (tr "auth.check-your-email")]]))
-
-
-(mf/defc terms-register
-  []
-  (let [show-all?     (and cf/terms-of-service-uri cf/privacy-policy-uri)
-        show-terms?   (some? cf/terms-of-service-uri)
-        show-privacy? (some? cf/privacy-policy-uri)]
-
-    (when show-all?
-      [:div {:class (stl/css :terms-register)}
-       (when show-terms?
-         [:a {:href cf/terms-of-service-uri :target "_blank" :class (stl/css :auth-link)}
-          (tr "auth.terms-of-service")])
-
-       (when show-all?
-         [:span {:class (stl/css :and-text)}
-          (dm/str " " (tr "labels.and") "  ")])
-
-       (when show-privacy?
-         [:a {:href cf/privacy-policy-uri :target "_blank" :class (stl/css :auth-link)}
-          (tr "auth.privacy-policy")])])))
-

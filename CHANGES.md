@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.7.0 (Unreleased)
+## 2.8.0 (Next / Unreleased)
 
 ### :rocket: Epics and highlights
 
@@ -10,6 +10,20 @@
 
 ### :sparkles: New features
 
+- Optimize profile setup flow for better user experience [Taiga #10028](https://tree.taiga.io/project/penpot/us/10028)
+
+### :bug: Bugs fixed
+
+
+## 2.7.0 (Unreleased)
+
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features
 
 - Update board presets with a newer devices [Taiga #10610](https://tree.taiga.io/project/penpot/us/10610)
 - Propagate "sharing a prototype" to editors and viewers [Taiga #8853](https://tree.taiga.io/project/penpot/us/8853)

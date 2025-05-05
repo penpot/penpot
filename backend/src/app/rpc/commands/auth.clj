@@ -231,7 +231,7 @@
               :hint "email has complaint reports")))
 
 (defn prepare-register
-  [{:keys [::db/pool] :as cfg} {:keys [email] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [email accept-newsletter-updates] :as params}]
 
   (validate-register-attempt! cfg params)
 
@@ -243,7 +243,8 @@
                  :backend "penpot"
                  :iss :prepared-register
                  :profile-id (:id profile)
-                 :exp (dt/in-future {:days 7})}
+                 :exp (dt/in-future {:days 7})
+                 :props {:newsletter-updates (or accept-newsletter-updates false)}}
 
         params (d/without-nils params)
         token  (tokens/generate (::setup/props cfg) params)]
