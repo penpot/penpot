@@ -7,24 +7,24 @@
 import * as React from "react";
 import Components from "@target/components";
 
-const { InputWithValues } = Components;
+const { InputWithMeta } = Components;
 
 export default {
-  title: "Controls/InputWithValues",
-  component: Components.InputWithValues,
+  title: "Product/InputWithMeta",
+  component: Components.InputWithMeta,
   argTypes: {
-    name: {
+    value: {
       control: { type: "text" },
     },
-    values: {
+    meta: {
       control: { type: "text" },
     },
   },
   args: {
-    name: "Property 1",
-    values: "Value1, Value2",
+    value: "Property 1",
+    meta: "Value1, Value2",
   },
-  render: ({ ...args }) => <InputWithValues {...args} />,
+  render: ({ ...args }) => <InputWithMeta {...args} />,
 };
 
 export const Default = {};

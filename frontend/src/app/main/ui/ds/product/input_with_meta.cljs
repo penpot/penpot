@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.ds.controls.input-with-values
+(ns app.main.ui.ds.product.input-with-meta
   (:require-macros
    [app.main.style :as stl])
   (:require
@@ -13,23 +13,23 @@
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
-(def ^:private schema:input-with-values
+(def ^:private schema:input-with-meta
   [:map
-   [:name :string]
-   [:values {:optional true} :string]
+   [:value :string]
+   [:meta {:optional true} :string]
    [:on-blur {:optional true} fn?]])
 
-(mf/defc input-with-values*
+(mf/defc input-with-meta*
   {::mf/props :obj
-   ::mf/schema schema:input-with-values}
-  [{:keys [name values on-blur] :rest props}]
+   ::mf/schema schema:input-with-meta}
+  [{:keys [value meta on-blur] :rest props}]
   (let [editing*  (mf/use-state false)
         editing?  (deref editing*)
 
         input-ref (mf/use-ref)
         input     (mf/ref-val input-ref)
 
-        title     (if values (str name ": " values) name)
+        title     (if meta (str value ": " meta) value)
 
         on-edit
         (mf/use-fn
@@ -63,19 +63,18 @@
              (when ^boolean esc? (dom/blur! node)))))
 
         props (mf/spread-props props {:ref input-ref
-                                      :class (stl/css :input-with-values-editing)
-                                      :default-value name
+                                      :default-value value
                                       :auto-focus true
                                       :on-focus on-focus
                                       :on-blur on-stop-edit
                                       :on-key-down handle-key-down})]
 
     (if editing?
-      [:div {:class (stl/css :input-with-values-edit-container)}
+      [:div {:class (stl/css :input-with-meta-edit-container)}
        [:> input* props]]
-      [:div {:class (stl/css :input-with-values-container :input-with-values-grid)
+      [:div {:class (stl/css :input-with-meta-container)
              :title title
              :on-click on-edit}
-       [:span {:class (stl/css :input-with-values-name)} name]
-       (when values
-         [:span {:class (stl/css :input-with-values-values)} values])])))
+       [:span {:class (stl/css :input-with-meta-value)} value]
+       (when meta
+         [:span {:class (stl/css :input-with-meta-data)} meta])])))

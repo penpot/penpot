@@ -9,7 +9,7 @@
 @use "../_sizes.scss" as *;
 @use "../typography.scss" as t;
 
-.input-with-values-container {
+.input-with-meta-container {
   @include t.use-typography("body-small");
   border-radius: $br-8;
   background-color: var(--color-background-tertiary);
@@ -28,25 +28,25 @@
   }
 }
 
-.input-with-values-edit-container {
+.input-with-meta-edit-container {
   width: 99%;
   border-radius: $br-8;
   height: $sz-32;
 }
 
-.input-with-values-name,
-.input-with-values-values {
+.input-with-meta-value,
+.input-with-meta-data {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.input-with-values-name {
+.input-with-meta-value {
   color: var(--color-foreground-primary);
   min-width: 0;
 }
 
-.input-with-values-values {
+.input-with-meta-data {
   color: var(--color-foreground-secondary);
   min-width: 0;
 }
