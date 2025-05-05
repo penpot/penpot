@@ -58,4 +58,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: penpot-all-bundles
-          path: bundles/penpot-bundles.zip
+          path: bundles/penpot-all-bundles.zip
