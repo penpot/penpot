@@ -5,9 +5,9 @@ const BASE_GRADIENT_DATA_SIZE: usize = 28;
 const RAW_GRADIENT_DATA_SIZE: usize =
     BASE_GRADIENT_DATA_SIZE + RAW_STOP_DATA_SIZE * MAX_GRADIENT_STOPS;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 #[repr(C)]
-struct RawGradientData {
+pub struct RawGradientData {
     start_x: f32,
     start_y: f32,
     end_x: f32,
@@ -43,6 +43,17 @@ impl From<[u8; RAW_GRADIENT_DATA_SIZE]> for RawGradientData {
     }
 }
 
+impl TryFrom<&[u8]> for RawGradientData {
+    type Error = String;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let data: [u8; RAW_GRADIENT_DATA_SIZE] = bytes
+            .try_into()
+            .map_err(|_| "Invalid gradient data".to_string())?;
+        Ok(RawGradientData::from(data))
+    }
+}
+
 impl RawGradientData {
     pub fn start(&self) -> (f32, f32) {
         (self.start_x, self.start_y)
@@ -55,7 +66,7 @@ impl RawGradientData {
 
 pub const RAW_STOP_DATA_SIZE: usize = 8;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 #[repr(C)]
 struct RawStopData {
     color: u32,

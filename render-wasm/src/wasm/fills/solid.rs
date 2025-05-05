@@ -1,8 +1,9 @@
 use crate::shapes::{Color, SolidColor};
 
 #[repr(C)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct RawSolidData {
-    color: u32,
+    pub color: u32,
 }
 
 impl From<[u8; 4]> for RawSolidData {
@@ -10,6 +11,18 @@ impl From<[u8; 4]> for RawSolidData {
         Self {
             color: u32::from_le_bytes(value),
         }
+    }
+}
+
+impl TryFrom<&[u8]> for RawSolidData {
+    type Error = String;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let data: [u8; 4] = bytes
+            .get(0..4)
+            .and_then(|slice| slice.try_into().ok())
+            .ok_or("Invalid solid fill data".to_string())?;
+        Ok(RawSolidData::from(data))
     }
 }
 
