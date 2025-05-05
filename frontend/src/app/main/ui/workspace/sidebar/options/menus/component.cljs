@@ -327,7 +327,7 @@
                                      (filter #(= (dm/get-in % [:variant-properties pos :value]) val)))
                    nearest-comp (apply min-key  #(ctv/distance target-props (:variant-properties %)) valid-comps)]
                (when nearest-comp
-                 (st/emit! (dwl/component-swap shape (:component-file shape) (:id nearest-comp))))))))]
+                 (st/emit! (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true)))))))]
 
     [:*
      (for [[pos prop] (map vector (range) properties)]

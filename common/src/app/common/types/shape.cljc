@@ -396,6 +396,50 @@
   (or (some :fill-image fills)
       (some :stroke-image strokes)))
 
+;; Valid attributes
+
+(def ^:private valid-shape-attrs #{:page-id :component-id :component-file :component-root :main-instance
+                                   :remote-synced :shape-ref :touched :blocked :collapsed :locked
+                                   :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
+                                   :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :opacity :grids :exports
+                                   :strokes :blend-mode :interactions :shadow :blur :grow-type :applied-tokens
+                                   :plugin-data})
+(def ^:private valid-shape-geom-attrs #{:x :y :width :height})
+(def ^:private valid-shape-base-attrs #{:id :name :type :selrect :points :transform :transform-inverse :parent-id :frame-id})
+(def ^:private valid-bool-attrs #{:shapes :bool-type :content})
+(def ^:private valid-group-attrs #{:shapes})
+(def ^:private valid-frame-attrs #{:shapes :hide-fill-on-export :show-content :hide-in-viewer})
+(def ^:private valid-image-attrs #{:metadata})
+(def ^:private valid-svg-attrs #{:content})
+(def ^:private valid-path-attrs #{:content})
+(def ^:private valid-text-attrs #{:content})
+(def ^:private valid-generic-attrs (set/union valid-shape-attrs valid-shape-geom-attrs valid-shape-base-attrs))
+
+(defn is-valid-attr?
+  [attr type]
+  (case type
+    :group   (or (contains? valid-group-attrs attr)
+                 (contains? valid-generic-attrs attr))
+    :frame   (or (contains? valid-frame-attrs attr)
+                 (contains? valid-generic-attrs attr))
+    :bool    (or (contains? valid-bool-attrs attr)
+                 (contains? valid-shape-attrs attr)
+                 (contains? valid-shape-base-attrs attr))
+    :rect    (contains? valid-generic-attrs attr)
+    :circle  (contains? valid-generic-attrs attr)
+    :image   (or (contains? valid-image-attrs attr)
+                 (contains? valid-generic-attrs attr))
+    :svg-raw (or (contains? valid-svg-attrs attr)
+                 (contains? valid-generic-attrs attr))
+    :path    (or (contains? valid-path-attrs attr)
+                 (contains? valid-shape-attrs attr)
+                 (contains? valid-shape-base-attrs attr))
+    :text    (or (contains? valid-text-attrs attr)
+                 (contains? valid-generic-attrs attr))))
+
+
+
+
 ;; --- Initialization
 
 (def ^:private minimal-rect-attrs
