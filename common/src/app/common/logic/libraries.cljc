@@ -1605,6 +1605,75 @@
                                                      :val dest-tokens
                                                      :ignore-touched true}]}))))))
 
+(defn- generate-update-tokens
+  [changes container dest-shape origin-shape touched omit-touched?]
+  (let [attrs (->> (seq (keys ctk/sync-attrs))
+                   ;; We don't update the flex-child attrs
+                   (remove #(= :layout-grid-cells %)))
+
+        applied-tokens (reduce (fn [applied-tokens attr]
+                                 (let [attr-group (get ctk/sync-attrs attr)
+                                       token-attrs (cto/shape-attr->token-attrs attr)]
+                                   (if (not (and (touched attr-group)
+                                                 omit-touched?))
+                                     (into applied-tokens token-attrs)
+                                     applied-tokens)))
+                               #{}
+                               attrs)]
+    (cond-> changes
+      (seq applied-tokens)
+      (update-tokens container dest-shape origin-shape applied-tokens))))
+
+(defn- add-update-attr-changes
+  [changes dest-shape container roperations uoperations]
+  (let [all-parents (cfh/get-parent-ids (:objects container)
+                                        (:id dest-shape))]
+    (-> changes
+        (update :redo-changes conj (make-change
+                                    container
+                                    {:type :mod-obj
+                                     :id (:id dest-shape)
+                                     :operations roperations}))
+        (update :redo-changes conj (make-change
+                                    container
+                                    {:type :reg-objects
+                                     :shapes all-parents}))
+        (update :undo-changes conj (make-change
+                                    container
+                                    {:type :mod-obj
+                                     :id (:id dest-shape)
+                                     :operations (vec uoperations)}))
+        (update :undo-changes concat [(make-change
+                                       container
+                                       {:type :reg-objects
+                                        :shapes all-parents})]))))
+
+(defn- add-update-attr-operations
+  [attr dest-shape origin-shape roperations uoperations touched]
+  (let [;; position-data is a special case because can be affected by :geometry-group and :content-group
+        ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
+        ;; so it's calculated again
+        reset-pos-data?
+        (and (cfh/text-shape? origin-shape)
+             (= attr :position-data)
+             (not= (get origin-shape attr) (get dest-shape attr))
+             (touched :geometry-group))
+
+        roperation {:type :set
+                    :attr attr
+                    :val (cond
+                           ;; If position data changes and the geometry group is touched
+                           ;; we need to put to nil so we can regenerate it
+                           reset-pos-data? nil
+                           :else (get origin-shape attr))
+                    :ignore-touched true}
+        uoperation {:type :set
+                    :attr attr
+                    :val (get dest-shape attr)
+                    :ignore-touched true}]
+    [(conj roperations roperation)
+     (conj uoperations uoperation)]))
+
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
   attributes that have changed in the origin shape to the dest shape.
@@ -1640,92 +1709,26 @@
                       (remove ctk/swap-keep-attrs)
                       ;; We don't do automatic update of the `layout-grid-cells` property.
                       (remove #(= :layout-grid-cells %)))
-           applied-tokens #{}
            roperations []
            uoperations '()]
 
       (let [attr (first attrs)]
         (if (nil? attr)
-          (if (and (empty? roperations) (empty? applied-tokens))
-            changes
-            (let [all-parents (cfh/get-parent-ids (:objects container)
-                                                  (:id dest-shape))
+          (cond-> changes
+            (seq roperations)
+            (add-update-attr-changes dest-shape container roperations uoperations)
+            :always
+            (generate-update-tokens container dest-shape origin-shape touched omit-touched?))
 
-                  ;; Sync tokens of attributes ignored above.
-                  ;; FIXME: this probably may be merged with the other calculation
-                  ;;        of applied tokens, below, and to the calculation only once
-                  ;;        for all sync-attrs.
-                  applied-tokens (reduce (fn [applied-tokens attr]
-                                           (let [attr-group (get ctk/sync-attrs attr)
-                                                 token-attrs (cto/shape-attr->token-attrs attr)]
-                                             (if (not (and (touched attr-group)
-                                                           omit-touched?))
-                                               (into applied-tokens token-attrs)
-                                               applied-tokens)))
-                                         applied-tokens
-                                         ctk/swap-keep-attrs)]
-              (cond-> changes
-                (seq roperations)
-                (-> (update :redo-changes conj (make-change
-                                                container
-                                                {:type :mod-obj
-                                                 :id (:id dest-shape)
-                                                 :operations roperations}))
-                    (update :redo-changes conj (make-change
-                                                container
-                                                {:type :reg-objects
-                                                 :shapes all-parents}))
-                    (update :undo-changes conj (make-change
-                                                container
-                                                {:type :mod-obj
-                                                 :id (:id dest-shape)
-                                                 :operations (vec uoperations)}))
-                    (update :undo-changes concat [(make-change
-                                                   container
-                                                   {:type :reg-objects
-                                                    :shapes all-parents})]))
-                (seq applied-tokens)
-                (update-tokens container dest-shape origin-shape applied-tokens))))
-
-          (let [;; position-data is a special case because can be affected by :geometry-group and :content-group
-                ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
-                ;; so it's calculated again
-                reset-pos-data?
-                (and (cfh/text-shape? origin-shape)
-                     (= attr :position-data)
-                     (not= (get origin-shape attr) (get dest-shape attr))
-                     (touched :geometry-group))
-
-                roperation {:type :set
-                            :attr attr
-                            :val (cond
-                                   ;; If position data changes and the geometry group is touched
-                                   ;; we need to put to nil so we can regenerate it
-                                   reset-pos-data? nil
-                                   :else (get origin-shape attr))
-                            :ignore-touched true}
-                uoperation {:type :set
-                            :attr attr
-                            :val (get dest-shape attr)
-                            :ignore-touched true}
-
-                attr-group (get ctk/sync-attrs attr)
-
-                token-attrs (cto/shape-attr->token-attrs attr)
-                applied-tokens' (cond-> applied-tokens
-                                  (not (and (touched attr-group)
-                                            omit-touched?))
-                                  (into token-attrs))]
-            (if (or (= (get origin-shape attr) (get dest-shape attr))
-                    (and (touched attr-group) omit-touched?))
-              (recur (next attrs)
-                     applied-tokens'
-                     roperations
-                     uoperations)
-              (recur (next attrs)
-                     applied-tokens'
-                     (conj roperations roperation)
-                     (conj uoperations uoperation)))))))))
+          (let [attr-group (get ctk/sync-attrs attr)
+                [roperations' uoperations']
+                (if (or (= (get origin-shape attr) (get dest-shape attr))
+                        (and (touched attr-group) omit-touched?))
+                  [roperations uoperations]
+                  (add-update-attr-operations attr dest-shape origin-shape roperations uoperations touched))]
+            (recur (next attrs)
+                   roperations'
+                   uoperations')))))))
 
 (defn- propagate-attrs
   "Helper that puts the origin attributes (attrs) into dest but only if
