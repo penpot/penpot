@@ -1,0 +1,16 @@
+# Dockerfile para Penpot CI Builder
+
+FROM penpotapp/devenv:latest
+
+USER root
+
+RUN mkdir -p /home/penpot/.cache/node/corepack/v1 && \
+    chown -R 1000:1000 /home/penpot
+
+USER penpot
+ENV HOME=/home/penpot
+WORKDIR /home/penpot/penpot
+
+COPY . .
+
+RUN corepack enable && corepack prepare yarn@stable --activate

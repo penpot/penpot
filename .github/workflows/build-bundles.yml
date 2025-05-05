@@ -1,0 +1,60 @@
+name: Build and Upload Penpot Bundles
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - github-actions-bundle-build
+
+jobs:
+  build-bundles:
+    name: Build frontend, backend, exporter and upload bundles
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Penpot CI Builder Image
+        run: |
+          docker build \
+            --build-arg EXTERNAL_UID=1000 \
+            --build-arg EXTERNAL_GID=1000 \
+            -t penpotapp/penpot-ci-builder:latest \
+            -f docker/devenv/Dockerfile .
+
+      - name: Run manage.sh build-bundle from host
+        run: ./manage.sh build-bundle
+
+      - name: Create global README and package all bundles
+        run: |
+          echo "# Penpot Bundles" > bundles/README.md
+          echo "" >> bundles/README.md
+          echo "This package contains the automatically built Penpot artifacts (frontend, backend, and exporter) from the official repository." >> bundles/README.md
+          echo "" >> bundles/README.md
+          echo "## Contents" >> bundles/README.md
+          echo "" >> bundles/README.md
+          echo "- frontend/: Compiled frontend files of Penpot." >> bundles/README.md
+          echo "- backend/: Backend build artifacts of Penpot." >> bundles/README.md
+          echo "- exporter/: Module responsible for exporting resources from Penpot." >> bundles/README.md
+          echo "- README.md: This file." >> bundles/README.md
+          echo "" >> bundles/README.md
+          echo "## Usage" >> bundles/README.md
+          echo "" >> bundles/README.md
+          echo "1. Unzip the \"penpot-all-bundles.zip\" archive in your target environment." >> bundles/README.md
+          echo "2. Explore each subdirectory and follow the appropriate deployment steps for frontend, backend, and exporter based on your infrastructure." >> bundles/README.md
+          echo "3. You can use servers like NGINX to serve the frontend and Dockerized or custom environments to run backend/exporter services." >> bundles/README.md
+
+          cd bundles
+          mkdir all-in-one
+          cp -r ../frontend ../backend ../exporter README.md all-in-one/
+          zip -r penpot-all-bundles.zip all-in-one
+
+      - name: Upload all-in-one bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: penpot-all-bundles
+          path: bundles/penpot-all-bundles.zip
