@@ -1624,7 +1624,7 @@
       (seq applied-tokens)
       (update-tokens container dest-shape origin-shape applied-tokens))))
 
-(defn- generate-update-attrs
+(defn- add-update-attr-changes
   [changes dest-shape container roperations uoperations]
   (let [all-parents (cfh/get-parent-ids (:objects container)
                                         (:id dest-shape))]
@@ -1648,7 +1648,7 @@
                                        {:type :reg-objects
                                         :shapes all-parents})]))))
 
-(defn- update-attr-operations
+(defn- add-update-attr-operations
   [attr dest-shape origin-shape roperations uoperations touched]
   (let [;; position-data is a special case because can be affected by :geometry-group and :content-group
         ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
@@ -1716,7 +1716,7 @@
         (if (nil? attr)
           (cond-> changes
             (seq roperations)
-            (generate-update-attrs dest-shape container roperations uoperations)
+            (add-update-attr-changes dest-shape container roperations uoperations)
             :always
             (generate-update-tokens container dest-shape origin-shape touched omit-touched?))
 
@@ -1725,7 +1725,7 @@
                 (if (or (= (get origin-shape attr) (get dest-shape attr))
                         (and (touched attr-group) omit-touched?))
                   [roperations uoperations]
-                  (update-attr-operations attr dest-shape origin-shape roperations uoperations touched))]
+                  (add-update-attr-operations attr dest-shape origin-shape roperations uoperations touched))]
             (recur (next attrs)
                    roperations'
                    uoperations')))))))
