@@ -24,7 +24,7 @@ jobs:
             --build-arg EXTERNAL_UID=1000 \
             --build-arg EXTERNAL_GID=1000 \
             -t penpotapp/penpot-ci-builder:latest \
-            -f Dockerfile \
+            -f docker/devenv/Dockerfile \
             docker/devenv
 
       - name: Run manage.sh build-bundle from host
