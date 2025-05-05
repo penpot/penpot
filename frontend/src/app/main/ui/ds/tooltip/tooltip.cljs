@@ -12,15 +12,16 @@
    [app.common.data :as d]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
+   [app.util.timers :as ts]
    [rumext.v2 :as mf]))
 
-(defn- calculate-tooltip-rect [tooltip trigger placement offset]
+(defn- calculate-tooltip-rect [tooltip trigger-rect placement offset]
   (let [{trigger-top    :top
          trigger-left   :left
          trigger-right  :right
          trigger-bottom :bottom
          trigger-width  :width
-         trigger-height :height} (dom/get-bounding-rect trigger)
+         trigger-height :height} trigger-rect
 
         {tooltip-width  :width
          tooltip-height :height} (dom/get-bounding-rect tooltip)
@@ -118,37 +119,55 @@
   (let [placement* (mf/use-state (d/nilv placement "top"))
         placement  (deref placement*)
 
+        schedule-ref (mf/use-ref nil)
+
+        position-tooltip
+        (fn [^js tooltip trigger]
+          (let [all-placements (get-fallback-order placement)]
+            (.showPopover tooltip)
+            (loop [[current-placement & remaining-placements] all-placements]
+              (when current-placement
+                (reset! placement* (name current-placement))
+                (let [tooltip-rect (calculate-tooltip-rect tooltip trigger current-placement offset)]
+                  (if (dom/is-bounding-rect-outside? tooltip-rect)
+                    (recur remaining-placements)
+                    (do (dom/set-css-property! tooltip "display" "grid")
+                        (dom/set-css-property! tooltip "top" (dm/str (:top tooltip-rect) "px"))
+                        (dom/set-css-property! tooltip "left" (dm/str (:left tooltip-rect) "px")))))))))
+
         on-show
         (mf/use-fn
          (mf/deps id placement)
          (fn [event]
+           (when-let [schedule (mf/ref-val schedule-ref)]
+             (ts/dispose! schedule)
+             (mf/set-ref-val! schedule-ref nil))
            (when-let [tooltip (dom/get-element id)]
-             (let [trigger (dom/get-current-target event)
-                   all-placements (get-fallback-order placement)]
-               (.showPopover tooltip)
+             (let [trigger-rect (->> (dom/get-current-target event)
+                                     (dom/get-bounding-rect))]
+               (mf/set-ref-val!
+                schedule-ref
+                (ts/schedule
+                 300
+                 #(position-tooltip tooltip trigger-rect)))))))
 
-               (loop [[current-placement & remaining-placements] all-placements]
-                 (when current-placement
-                   (reset! placement* (name current-placement))
-                   (let [tooltip-rect (calculate-tooltip-rect tooltip trigger current-placement offset)]
-                     (if (dom/is-bounding-rect-outside? tooltip-rect)
-                       (recur remaining-placements)
-                       (do (dom/set-css-property! tooltip "display" "grid")
-                           (dom/set-css-property! tooltip "top" (dm/str (:top tooltip-rect) "px"))
-                           (dom/set-css-property! tooltip "left" (dm/str (:left tooltip-rect) "px")))))))))))
-
-        on-hide (mf/use-fn
-                 (mf/deps id)
-                 (fn [] (when-let [tooltip (dom/get-element id)]
-                          (dom/unset-css-property! tooltip "display")
-                          (dom/unset-css-property! tooltip "top")
-                          (dom/unset-css-property! tooltip "bottom")
-                          (dom/unset-css-property! tooltip "left")
-                          (dom/unset-css-property! tooltip "right")
-                          (.hidePopover tooltip))))
+        on-hide
+        (mf/use-fn
+         (mf/deps id)
+         (fn [] (when-let [tooltip (dom/get-element id)]
+                  (when-let [schedule (mf/ref-val schedule-ref)]
+                    (ts/dispose! schedule)
+                    (mf/set-ref-val! schedule-ref nil))
+                  (dom/unset-css-property! tooltip "display")
+                  (dom/unset-css-property! tooltip "top")
+                  (dom/unset-css-property! tooltip "bottom")
+                  (dom/unset-css-property! tooltip "left")
+                  (dom/unset-css-property! tooltip "right")
+                  (.hidePopover tooltip))))
 
         handle-key-down
         (mf/use-fn
+         (mf/deps on-hide)
          (fn [event]
            (when (kbd/esc? event)
              (on-hide))))
@@ -163,6 +182,7 @@
                                       :tooltip-bottom-right (= placement "bottom-right")
                                       :tooltip-bottom-left (= placement "bottom-left")
                                       :tooltip-top-left (= placement "top-left")))
+
         props (mf/spread-props props {:on-mouse-enter on-show
                                       :on-mouse-leave on-hide
                                       :on-focus on-show
@@ -172,6 +192,7 @@
                                       :aria-describedby id})]
     [:> "div" props
      children
+
      [:span {:class class
              :id id
              :popover "auto"
