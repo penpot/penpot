@@ -72,7 +72,7 @@ jobs:
             zip -r frontend.zip frontend
             zip -r backend.zip backend
             zip -r exporter.zip exporter
-
+          fi
       - name: Upload unified bundle
         if: env.ZIP_MODE == 'all'
         uses: actions/upload-artifact@v4
