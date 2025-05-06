@@ -396,6 +396,27 @@ pub extern "C" fn propagate_modifiers() -> *mut u8 {
 }
 
 #[no_mangle]
+pub extern "C" fn propagate_apply() {
+    let bytes = mem::bytes();
+
+    let entries: Vec<_> = bytes
+        .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
+        .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    with_state!(state, {
+        let result = shapes::propagate_modifiers(state, entries);
+
+        for entry in result {
+            state.modifiers.insert(entry.id, entry.transform);
+        }
+        state.rebuild_modifier_tiles();
+    });
+
+    mem::free_bytes();
+}
+
+#[no_mangle]
 pub extern "C" fn set_structure_modifiers() {
     let bytes = mem::bytes();
 

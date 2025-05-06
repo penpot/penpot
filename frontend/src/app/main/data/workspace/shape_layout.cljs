@@ -29,6 +29,7 @@
    [app.main.data.workspace.selection :as dwse]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -101,13 +102,17 @@
   (ptk/reify ::update-layout-positions
     ptk/WatchEvent
     (watch [_ state _]
+      (prn ">update-layout-positions")
       (let [objects (dsh/lookup-page-objects state)
             ids (->> ids (filter #(contains? objects %)))]
         (if (d/not-empty? ids)
           (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
-            (rx/of (dwm/apply-modifiers {:modifiers modif-tree
-                                         :stack-undo? true
-                                         :undo-group undo-group})))
+            (if (features/active-feature? state "render-wasm/v1")
+              (rx/of (dwm/apply-wasm-modifiers modif-tree :stack-undo? true :undo-group undo-group))
+
+              (rx/of (dwm/apply-modifiers {:modifiers modif-tree
+                                           :stack-undo? true
+                                           :undo-group undo-group}))))
           (rx/empty))))))
 
 (defn initialize-shape-layout
