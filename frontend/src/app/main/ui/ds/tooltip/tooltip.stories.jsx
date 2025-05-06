@@ -14,6 +14,7 @@ export default {
   component: Tooltip,
   argTypes: {
     placement: {
+      description: "Position of the tooltip",
       control: { type: "select" },
       options: [
         "top",
@@ -26,6 +27,10 @@ export default {
         "bottom-right",
       ],
     },
+    delay: {
+      control: { type: "number" },
+      description: "Delay in milliseconds before showing the tooltip",
+    },
   },
   parameters: {
     controls: { exclude: ["children", "id"] },
@@ -36,6 +41,7 @@ export default {
     ),
     id: "popover-example",
     content: "This is the tooltip content",
+    delay: 300,
   },
   render: ({ children, ...args }) => (
     <div
@@ -52,11 +58,7 @@ export default {
   ),
 };
 
-export const Default = {
-  args: {
-    placement: "bottom",
-  },
-};
+export const Default = {};
 
 export const Corners = {
   render: ({}) => (

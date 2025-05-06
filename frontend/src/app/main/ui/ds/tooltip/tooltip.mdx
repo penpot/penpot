@@ -46,7 +46,8 @@ Tooltip content can include HTML elements:
 
 ### Accessibility
 
-The tooltip requires an `id` prop, which is used to associate the trigger with the tooltip content via the `aria-describedby` attribute. This ensures screen readers can announce the tooltip content when the trigger is focused.
+The tooltip requires an `id` prop, which is used to associate the trigger with the tooltip content via the `aria-describedby` attribute.
+This ensures screen readers can announce the tooltip content when the trigger is focused.
 
 Tooltips should not contain interactive elements like buttons, links, or form inputs, since users cannot interact with them via mouse or keyboard.
 
@@ -70,4 +71,4 @@ They automatically disappear on mouse leave or blur
 
 Tooltip positioning is dynamically adjusted to stay within the viewport
 
-A small delay is applied before showing the tooltip to avoid accidental triggers, the duration of this delay is 300ms.
+A small delay is applied before showing the tooltip to avoid accidental triggers, the duration of this delay is configurable by default it is 300ms.

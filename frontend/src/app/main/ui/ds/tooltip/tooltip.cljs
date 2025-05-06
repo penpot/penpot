@@ -109,15 +109,17 @@
    [:class {:optional true} :string]
    [:id :string]
    [:offset {:optional true} :int]
+   [:delay {:optional true} :int]
    [:placement {:optional true}
     [:maybe [:enum "top" "bottom" "left" "right" "top-right" "bottom-right" "bottom-left" "top-left"]]]])
 
 (mf/defc tooltip*
   {::mf/props :obj
    ::mf/schema schema:tooltip}
-  [{:keys [class id children content placement offset] :rest props}]
+  [{:keys [class id children content placement offset delay] :rest props}]
   (let [placement* (mf/use-state (d/nilv placement "top"))
         placement  (deref placement*)
+        delay      (d/nilv delay 300)
 
         schedule-ref (mf/use-ref nil)
 
@@ -148,7 +150,7 @@
                (mf/set-ref-val!
                 schedule-ref
                 (ts/schedule
-                 300
+                 delay
                  #(position-tooltip tooltip trigger-rect)))))))
 
         on-hide
