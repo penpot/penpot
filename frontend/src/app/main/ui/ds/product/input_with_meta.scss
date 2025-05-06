@@ -10,9 +10,13 @@
 @use "../typography.scss" as t;
 
 .input-with-meta-container {
+  --input-meta-value: var(--color-foreground-primary);
+  --input-meta-data: var(--color-foreground-secondary);
+  --input-meta-background: var(--color-background-tertiary);
+
   @include t.use-typography("body-small");
   border-radius: $br-8;
-  background-color: var(--color-background-tertiary);
+  background-color: var(--input-meta-background);
   padding: var(--sp-s);
   width: 99%;
   display: grid;
@@ -23,7 +27,7 @@
   height: $sz-32;
 
   &:hover {
-    background-color: var(--color-background-quaternary);
+    --input-meta-background: var(--color-background-quaternary);
     cursor: text;
   }
 }
@@ -42,11 +46,11 @@
 }
 
 .input-with-meta-value {
-  color: var(--color-foreground-primary);
+  color: var(--input-meta-value);
   min-width: 0;
 }
 
 .input-with-meta-data {
-  color: var(--color-foreground-secondary);
+  color: var(--input-meta-data);
   min-width: 0;
 }
