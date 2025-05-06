@@ -160,7 +160,7 @@
                   (when-let [schedule (mf/ref-val schedule-ref)]
                     (ts/dispose! schedule)
                     (mf/set-ref-val! schedule-ref nil))
-                  (dom/set-css-property! tooltip "display" "none")
+                  (dom/unset-css-property! tooltip "display")
                   (.hidePopover ^js tooltip))))
 
         handle-key-down
