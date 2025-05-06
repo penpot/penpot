@@ -16,6 +16,7 @@
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -305,9 +306,12 @@
           (let [content (-> active-editor-state
                             (ted/get-editor-current-content)
                             (ted/export-content))]
+            (wasm.api/use-shape edition)
             (wasm.api/set-shape-text-content content)
-            (wasm.api/clear-drawing-cache)
-            (wasm.api/request-render "content")))))
+            (let [dimension (wasm.api/text-dimensions)]
+              (st/emit! (dwt/resize-text-editor edition dimension))
+              (wasm.api/clear-drawing-cache)
+              (wasm.api/request-render "content"))))))
 
     (mf/with-effect [vport]
       (when @canvas-init?

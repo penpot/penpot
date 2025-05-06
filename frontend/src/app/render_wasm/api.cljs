@@ -582,6 +582,8 @@
           (h/call wasm/internal-module "_add_shape_shadow" rgba blur spread x y (sr/translate-shadow-style style) hidden)
           (recur (inc index)))))))
 
+(declare propagate-apply)
+
 (defn set-shape-text-content
   [content]
   (h/call wasm/internal-module "_clear_shape_text")
@@ -603,6 +605,22 @@
                   (f/add-emoji-font fonts)
                   fonts)]
       (f/store-fonts fonts))))
+
+(defn set-shape-grow-type
+  [grow-type]
+  (h/call wasm/internal-module "_set_shape_grow_type" (sr/translate-grow-type grow-type)))
+
+(defn text-dimensions
+  ([id]
+   (use-shape id)
+   (text-dimensions))
+  ([]
+   (let [offset (h/call wasm/internal-module "_get_text_dimensions")
+         heapf32 (mem/get-heap-f32)
+         width (aget heapf32 (mem/ptr8->ptr32 offset))
+         height (aget heapf32 (mem/ptr8->ptr32 (+ offset 4)))]
+     (h/call wasm/internal-module "_free_bytes")
+     {:width width :height height})))
 
 (defn set-view-box
   [zoom vbox]
@@ -639,6 +657,7 @@
         opacity      (dm/get-prop shape :opacity)
         hidden       (dm/get-prop shape :hidden)
         content      (dm/get-prop shape :content)
+        grow-type    (dm/get-prop shape :grow-type)
         blur         (dm/get-prop shape :blur)
         corners      (when (some? (dm/get-prop shape :r1))
                        [(dm/get-prop shape :r1)
@@ -677,7 +696,8 @@
     (when (some? shadows) (set-shape-shadows shadows))
     (when (and (= type :text) (some? content))
       (set-shape-text-content content))
-
+    (when (= type :text)
+      (set-shape-grow-type grow-type))
     (when (or (ctl/any-layout? shape)
               (ctl/any-layout-immediate-child? objects shape))
       (set-layout-child shape))

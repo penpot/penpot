@@ -1169,3 +1169,31 @@
         (if (features/active-feature? state "render-wasm/v1")
           (rx/of (dwm/apply-wasm-modifiers modifiers {:undo-group undo-group}))
           (rx/of (dwm/apply-modifiers {:modifiers modifiers :undo-group undo-group})))))))
+
+(defn resize-text-editor
+  [id {:keys [width height]}]
+  (ptk/reify ::resize-text-editor
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (dsh/lookup-page-objects state)
+            shape   (get objects id)
+
+            resize-v
+            (gpt/point
+             (/ width (-> shape :selrect :width))
+             (/ height (-> shape :selrect :height)))
+
+            origin
+            (first (:points shape))
+
+            modifiers
+            {id
+             {:modifiers
+              (ctm/resize-modifiers
+               resize-v
+               origin
+               (:transform shape (gmt/matrix))
+               (:transform-inverse shape (gmt/matrix)))}}]
+
+        (.log js/console (clj->js modifiers))
+        (rx/of (dwm/set-wasm-modifiers modifiers))))))
