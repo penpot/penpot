@@ -117,7 +117,7 @@
   {::mf/props :obj
    ::mf/schema schema:tooltip}
   [{:keys [class id children content placement offset delay] :rest props}]
-  (let [placement* (mf/use-state (d/nilv placement "top"))
+  (let [placement* (mf/use-state #(d/nilv placement "top"))
         placement  (deref placement*)
         delay      (d/nilv delay 300)
 
@@ -126,10 +126,10 @@
         position-tooltip
         (fn [^js tooltip trigger]
           (let [all-placements (get-fallback-order placement)]
-            (.showPopover tooltip)
+            (.showPopover ^js tooltip)
             (loop [[current-placement & remaining-placements] all-placements]
               (when current-placement
-                (reset! placement* (name current-placement))
+                (reset! placement* current-placement)
                 (let [tooltip-rect (calculate-tooltip-rect tooltip trigger current-placement offset)]
                   (if (dom/is-bounding-rect-outside? tooltip-rect)
                     (recur remaining-placements)
@@ -165,7 +165,7 @@
                   (dom/unset-css-property! tooltip "bottom")
                   (dom/unset-css-property! tooltip "left")
                   (dom/unset-css-property! tooltip "right")
-                  (.hidePopover tooltip))))
+                  (.hidePopover ^js tooltip))))
 
         handle-key-down
         (mf/use-fn
@@ -192,7 +192,7 @@
                                       :on-key-down handle-key-down
                                       :class (stl/css :tooltip-trigger)
                                       :aria-describedby id})]
-    [:> "div" props
+    [:> :div props
      children
 
      [:span {:class class

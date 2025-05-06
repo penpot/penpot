@@ -242,7 +242,7 @@
              (on-click event))))
         on-hover
         (mf/use-fn
-         (mf/deps  selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set)
+         (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set)
          (fn [event]
            (let [node  (dom/get-current-target event)
                  theme-token (get active-theme-tokens (:name token))
