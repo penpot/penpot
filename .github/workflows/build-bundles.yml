@@ -11,7 +11,9 @@ on:
         options:
           - individual
           - all
-
+  push:
+    branches:
+      - github-actions-bundle-build 
 env:
   ZIP_MODE: ${{ github.event.inputs.zip_mode }}
 
