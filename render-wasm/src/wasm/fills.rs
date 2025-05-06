@@ -11,7 +11,7 @@ use crate::STATE;
 #[repr(align(4))]
 #[repr(u8)]
 #[derive(Debug, PartialEq, Clone, Copy)]
-enum RawFillData {
+pub enum RawFillData {
     Solid(solid::RawSolidData) = 0x00,
     Linear(gradient::RawGradientData) = 0x01,
     Radial(gradient::RawGradientData) = 0x02,
@@ -43,16 +43,16 @@ impl TryFrom<&[u8]> for RawFillData {
         let fill_type = bytes[0];
         match fill_type {
             0x00 => Ok(RawFillData::Solid(solid::RawSolidData::try_from(
-                &bytes[1..],
+                &bytes[4..],
             )?)),
             0x01 => Ok(RawFillData::Linear(gradient::RawGradientData::try_from(
-                &bytes[1..],
+                &bytes[4..],
             )?)),
             0x02 => Ok(RawFillData::Radial(gradient::RawGradientData::try_from(
-                &bytes[1..],
+                &bytes[4..],
             )?)),
             0x03 => Ok(RawFillData::Image(image::RawImageFillData::try_from(
-                &bytes[1..],
+                &bytes[4..],
             )?)),
             _ => Err("Invalid fill type".to_string()),
         }
@@ -65,45 +65,6 @@ pub extern "C" fn add_shape_fill() {
         let bytes = mem::bytes();
         let raw_fill = RawFillData::try_from(&bytes[..]).expect("Invalid fill data");
         shape.add_fill(raw_fill.into());
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_solid_fill() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let bytes = mem::bytes();
-        let solid_color =
-            shapes::SolidColor::try_from(&bytes[..]).expect("Invalid solid color data");
-
-        shape.add_fill(shapes::Fill::Solid(solid_color));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_linear_fill() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let bytes = mem::bytes();
-        let gradient = shapes::Gradient::try_from(&bytes[..]).expect("Invalid gradient data");
-        shape.add_fill(shapes::Fill::LinearGradient(gradient));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_radial_fill() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let bytes = mem::bytes();
-        let gradient = shapes::Gradient::try_from(&bytes[..]).expect("Invalid gradient data");
-        shape.add_fill(shapes::Fill::RadialGradient(gradient));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_image_fill() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let bytes = mem::bytes();
-        let image_fill = shapes::ImageFill::try_from(&bytes[..]).expect("Invalid image fill data");
-
-        shape.add_fill(shapes::Fill::Image(image_fill));
     });
 }
 

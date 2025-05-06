@@ -31,50 +31,13 @@ pub extern "C" fn add_shape_outer_stroke(width: f32, style: u8, cap_start: u8, c
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_stroke_solid_fill() {
+pub extern "C" fn add_shape_stroke_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
         let bytes = mem::bytes();
-        let solid_color =
-            shapes::SolidColor::try_from(&bytes[..]).expect("Invalid solid color data");
+        let raw_fill = super::fills::RawFillData::try_from(&bytes[..]).expect("Invalid fill data");
         shape
-            .set_stroke_fill(shapes::Fill::Solid(solid_color))
-            .expect("could not add stroke solid fill");
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_stroke_linear_fill() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let bytes = mem::bytes();
-        let gradient = shapes::Gradient::try_from(&bytes[..]).expect("Invalid gradient data");
-
-        shape
-            .set_stroke_fill(shapes::Fill::LinearGradient(gradient))
-            .expect("could not add stroke linear gradient fill");
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_stroke_radial_fill() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let bytes = mem::bytes();
-        let gradient = shapes::Gradient::try_from(&bytes[..]).expect("Invalid gradient data");
-
-        shape
-            .set_stroke_fill(shapes::Fill::RadialGradient(gradient))
-            .expect("could not add stroke radial gradient fill");
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_image_stroke() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let bytes = mem::bytes();
-        let image_fill = shapes::ImageFill::try_from(&bytes[..]).expect("Invalid image fill data");
-
-        shape
-            .set_stroke_fill(shapes::Fill::Image(image_fill))
-            .expect("could not add stroke image fill");
+            .set_stroke_fill(raw_fill.into())
+            .expect("could not add stroke fill");
     });
 }
 

@@ -50,8 +50,9 @@ impl TryFrom<&[u8]> for RawImageFillData {
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let data: [u8; RAW_IMAGE_DATA_SIZE] = value
-            .try_into()
-            .map_err(|_| "Invalid image fill data".to_string())?;
+            .get(0..RAW_IMAGE_DATA_SIZE)
+            .and_then(|slice| slice.try_into().ok())
+            .ok_or("Invalid image fill data".to_string())?;
         Ok(Self::from(data))
     }
 }

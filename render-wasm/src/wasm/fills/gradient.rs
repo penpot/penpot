@@ -48,8 +48,9 @@ impl TryFrom<&[u8]> for RawGradientData {
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         let data: [u8; RAW_GRADIENT_DATA_SIZE] = bytes
-            .try_into()
-            .map_err(|_| "Invalid gradient data".to_string())?;
+            .get(0..RAW_GRADIENT_DATA_SIZE)
+            .and_then(|slice| slice.try_into().ok())
+            .ok_or("Invalid gradient fill data".to_string())?;
         Ok(RawGradientData::from(data))
     }
 }
