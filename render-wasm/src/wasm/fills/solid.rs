@@ -3,6 +3,7 @@ use crate::shapes::{Color, SolidColor};
 const RAW_SOLID_DATA_SIZE: usize = 4;
 
 #[repr(C)]
+#[repr(align(4))]
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct RawSolidData {
     pub color: u32,
@@ -10,9 +11,7 @@ pub struct RawSolidData {
 
 impl From<[u8; 4]> for RawSolidData {
     fn from(value: [u8; RAW_SOLID_DATA_SIZE]) -> Self {
-        Self {
-            color: u32::from_le_bytes(value),
-        }
+        unsafe { std::mem::transmute(value) }
     }
 }
 

@@ -7,6 +7,7 @@ const RAW_GRADIENT_DATA_SIZE: usize =
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 #[repr(C)]
+#[repr(align(4))]
 pub struct RawGradientData {
     start_x: f32,
     start_y: f32,
@@ -15,31 +16,12 @@ pub struct RawGradientData {
     opacity: f32,
     width: f32,
     stop_count: u8,
-    _pad: [u8; 3],
     stops: [RawStopData; MAX_GRADIENT_STOPS],
 }
 
 impl From<[u8; RAW_GRADIENT_DATA_SIZE]> for RawGradientData {
     fn from(bytes: [u8; RAW_GRADIENT_DATA_SIZE]) -> Self {
-        Self {
-            start_x: f32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
-            start_y: f32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
-            end_x: f32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
-            end_y: f32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
-            opacity: f32::from_le_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]),
-            width: f32::from_le_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]),
-            stop_count: bytes[24],
-            _pad: [0; 3],
-            // FIXME: 2025-04-22: use `array_chunks` once the next release is out
-            //        and we update our devenv.
-            // See https://github.com/rust-lang/rust/issues/74985
-            stops: bytes[28..]
-                .chunks_exact(RAW_STOP_DATA_SIZE)
-                .map(|chunk| RawStopData::try_from(chunk).unwrap())
-                .collect::<Vec<_>>()
-                .try_into()
-                .unwrap(),
-        }
+        unsafe { std::mem::transmute(bytes) }
     }
 }
 

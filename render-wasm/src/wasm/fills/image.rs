@@ -4,6 +4,7 @@ const RAW_IMAGE_DATA_SIZE: usize = 28;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(C)]
+#[repr(align(4))]
 pub struct RawImageFillData {
     a: u32,
     b: u32,
@@ -25,23 +26,7 @@ impl From<RawImageFillData> for ImageFill {
 
 impl From<[u8; RAW_IMAGE_DATA_SIZE]> for RawImageFillData {
     fn from(value: [u8; RAW_IMAGE_DATA_SIZE]) -> Self {
-        let a = u32::from_le_bytes([value[0], value[1], value[2], value[3]]);
-        let b = u32::from_le_bytes([value[4], value[5], value[6], value[7]]);
-        let c = u32::from_le_bytes([value[8], value[9], value[10], value[11]]);
-        let d = u32::from_le_bytes([value[12], value[13], value[14], value[15]]);
-        let opacity = f32::from_le_bytes([value[16], value[17], value[18], value[19]]);
-        let width = i32::from_le_bytes([value[20], value[21], value[22], value[23]]);
-        let height = i32::from_le_bytes([value[24], value[25], value[26], value[27]]);
-
-        Self {
-            a,
-            b,
-            c,
-            d,
-            opacity,
-            width,
-            height,
-        }
+        unsafe { std::mem::transmute(value) }
     }
 }
 
