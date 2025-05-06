@@ -7,15 +7,13 @@
 (ns app.main.ui.workspace.viewport.path-actions
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.types.path.segment :as path.segm]
    [app.main.data.workspace.path :as drp]
    [app.main.data.workspace.path.shortcuts :as sc]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.shapes.path.common :as pc]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.path.tools :as upt]
    [rumext.v2 :as mf]))
-
 
 (def ^:private pentool-icon
   (i/icon-xref :pentool (stl/css :pentool-icon :pathbar-icon)))
@@ -47,9 +45,8 @@
 (def ^:private snap-nodes-icon
   (i/icon-xref :snap-nodes (stl/css :snap-nodes-icon :pathbar-icon)))
 
-
 (defn check-enabled [content selected-points]
-  (let [segments (upt/get-segments content selected-points)
+  (let [segments (path.segm/get-segments-with-points content selected-points)
         num-segments (count segments)
         num-points (count selected-points)
         points-selected? (seq selected-points)
@@ -58,7 +55,7 @@
         max-segments (-> num-points
                          (* (- num-points 1))
                          (/ 2))
-        is-curve? (some #(upt/is-curve? content %) selected-points)]
+        is-curve? (some #(path.segm/is-curve? content %) selected-points)]
 
     {:make-corner (and points-selected? is-curve?)
      :make-curve (and points-selected? (not is-curve?))
@@ -68,9 +65,10 @@
      :join-nodes (and points-selected? (>= num-points 2) (< num-segments max-segments))
      :separate-nodes segments-selected?}))
 
+(mf/defc path-actions*
+  [{:keys [shape edit-path]}]
+  (let [{:keys [edit-mode selected-points snap-toggled]} edit-path
 
-(mf/defc path-actions [{:keys [shape]}]
-  (let [{:keys [edit-mode selected-points snap-toggled] :as all} (mf/deref pc/current-edit-path-ref)
         content (:content shape)
 
         enabled-buttons
@@ -79,66 +77,66 @@
          #(check-enabled content selected-points))
 
         on-select-draw-mode
-        (mf/use-callback
+        (mf/use-fn
          (fn [_]
            (st/emit! (drp/change-edit-mode :draw))))
 
         on-select-edit-mode
-        (mf/use-callback
+        (mf/use-fn
          (fn [_]
            (st/emit! (drp/change-edit-mode :move))))
 
         on-add-node
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:add-node enabled-buttons))
          (fn [_]
            (when (:add-node enabled-buttons)
              (st/emit! (drp/add-node)))))
 
         on-remove-node
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:remove-node enabled-buttons))
          (fn [_]
            (when (:remove-node enabled-buttons)
              (st/emit! (drp/remove-node)))))
 
         on-merge-nodes
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:merge-nodes enabled-buttons))
          (fn [_]
            (when (:merge-nodes enabled-buttons)
              (st/emit! (drp/merge-nodes)))))
 
         on-join-nodes
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:join-nodes enabled-buttons))
          (fn [_]
            (when (:join-nodes enabled-buttons)
              (st/emit! (drp/join-nodes)))))
 
         on-separate-nodes
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:separate-nodes enabled-buttons))
          (fn [_]
            (when (:separate-nodes enabled-buttons)
              (st/emit! (drp/separate-nodes)))))
 
         on-make-corner
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:make-corner enabled-buttons))
          (fn [_]
            (when (:make-corner enabled-buttons)
              (st/emit! (drp/make-corner)))))
 
         on-make-curve
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:make-curve enabled-buttons))
          (fn [_]
            (when (:make-curve enabled-buttons)
              (st/emit! (drp/make-curve)))))
 
         on-toggle-snap
-        (mf/use-callback
+        (mf/use-fn
          (fn [_]
            (st/emit! (drp/toggle-snap))))]
 

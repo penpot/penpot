@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.features :as cfeat]
    [app.common.files.changes :as cfc]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
@@ -84,8 +83,7 @@
 
 (defn with-objects
   [changes objects]
-  (let [fdata (binding [cfeat/*current* #{"components/v2"}]
-                (ctf/make-file-data (uuid/next) uuid/zero))
+  (let [fdata (ctf/make-file-data (uuid/next) uuid/zero)
         fdata (assoc-in fdata [:pages-index uuid/zero :objects] objects)]
     (vary-meta changes assoc
                ::file-data fdata
@@ -480,9 +478,12 @@
           (let [old-val (get old attr)
                 new-val (get new attr)]
             (not= old-val new-val)))
-        new-obj (if with-objects?
-                  (update-fn object objects)
-                  (update-fn object))]
+
+        new-obj
+        (if with-objects?
+          (update-fn object objects)
+          (update-fn object))]
+
     (when-not (= object new-obj)
       (let [attrs (or attrs (d/concat-set (keys object) (keys new-obj)))]
         (filter (partial changed? object new-obj) attrs)))))
@@ -659,7 +660,7 @@
                                  nil               ;; so it does not need resize
 
                                  (= (:type parent) :bool)
-                                 (gsh/update-bool-selrect parent children objects)
+                                 (gsh/update-bool parent children objects)
 
                                  (= (:type parent) :group)
                                  (if (:masked-group parent)

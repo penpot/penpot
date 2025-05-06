@@ -46,6 +46,7 @@
   #{"fdata/objects-map"
     "fdata/pointer-map"
     "fdata/shape-data-type"
+    "fdata/path-data"
     "components/v2"
     "styles/v2"
     "layout/grid"
@@ -58,11 +59,17 @@
 ;; A set of features enabled by default
 (def default-features
   #{"fdata/shape-data-type"
+    "fdata/path-data"
     "styles/v2"
     "layout/grid"
     "components/v2"
     "plugins/runtime"
     "design-tokens/v1"})
+
+;; A set of features that should not be propagated to team on creating
+;; or modifying a file
+(def no-team-inheritable-features
+  #{"fdata/path-data"})
 
 ;; A set of features which only affects on frontend and can be enabled
 ;; and disabled freely by the user any time. This features does not
@@ -86,8 +93,9 @@
 ;; without migration applied)
 (def no-migration-features
   (-> #{"layout/grid"
+        "design-tokens/v1"
         "fdata/shape-data-type"
-        "design-tokens/v1"}
+        "fdata/path-data"}
       (into frontend-only-features)
       (into backend-only-features)))
 

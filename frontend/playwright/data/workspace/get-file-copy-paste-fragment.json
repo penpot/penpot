@@ -448,55 +448,7 @@
           },
           "~:rotation": 0,
           "~:grow-type": "~:fixed",
-          "~:content": [
-            {
-              "~:command": "~:move-to",
-              "~:params": {
-                "~:x": 1121,
-                "~:y": 554
-              }
-            },
-            {
-              "~:command": "~:line-to",
-              "~:params": {
-                "~:x": 1229,
-                "~:y": 458
-              }
-            },
-            {
-              "~:command": "~:curve-to",
-              "~:params": {
-                "~:x": 1303,
-                "~:y": 518,
-                "~:c1x": 1229,
-                "~:c1y": 458,
-                "~:c2x": 1320,
-                "~:c2y": 492
-              }
-            },
-            {
-              "~:command": "~:curve-to",
-              "~:params": {
-                "~:x": 1219,
-                "~:y": 584,
-                "~:c1x": 1286,
-                "~:c1y": 544,
-                "~:c2x": 1258,
-                "~:c2y": 572
-              }
-            },
-            {
-              "~:command": "~:curve-to",
-              "~:params": {
-                "~:x": 1121,
-                "~:y": 554,
-                "~:c1x": 1180,
-                "~:c1y": 596,
-                "~:c2x": 1121,
-                "~:c2y": 554
-              }
-            }
-          ],
+          "~:content": ["~#penpot/path-data","~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAIIxEAIAKRAIAAAAAAAAAAAAAAAAAAAAAAAAAAKCZRAAA5UMDAAAAAKCZRAAA5UMAAKVEAAD2QwDgokQAgAFEAwAAAADAoEQAAAhEAECdRAAAD0QAYJhEAAASRAMAAAAAgJNEAAAVRAAgjEQAgApEACCMRACACkQ="],
           "~:name": "Path",
           "~:width": null,
           "~:type": "~:path",

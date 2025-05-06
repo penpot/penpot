@@ -272,14 +272,13 @@
 
           :else
           (let [objects (lookup-objects file)
-                content (gsh/calc-bool-content bool objects)
-                bool'   (gsh/update-bool-selrect bool children objects)]
+                bool'   (gsh/update-bool bool children objects)]
             (commit-change
              file
              {:type :mod-obj
               :id bool-id
               :operations
-              [{:type :set :attr :content :val content :ignore-touched true}
+              [{:type :set :attr :content :val (:content bool') :ignore-touched true}
                {:type :set :attr :selrect :val (:selrect bool') :ignore-touched true}
                {:type :set :attr :points  :val (:points bool') :ignore-touched true}
                {:type :set :attr :x       :val (-> bool' :selrect :x) :ignore-touched true}

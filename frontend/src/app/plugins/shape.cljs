@@ -15,18 +15,19 @@
    [app.common.record :as crc]
    [app.common.schema :as sm]
    [app.common.spec :as us]
-   [app.common.svg.path :as path]
+   [app.common.svg.path :as svg.path]
    [app.common.text :as txt]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.grid :as ctg]
+   [app.common.types.path :as path]
+   [app.common.types.path.segment :as path.segm]
    [app.common.types.shape :as cts]
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
    [app.common.uuid :as uuid]
@@ -50,7 +51,6 @@
    [app.plugins.text :as text]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
-   [app.util.path.format :as upf]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
@@ -1018,7 +1018,7 @@
                  (u/display-not-valid :makeMask (:type shape))
 
                  :else
-                 (upf/format-path (:content shape)))))
+                 (.toString (:content shape)))))
 
            ;; Text shapes
            :getRange
@@ -1309,21 +1309,22 @@
          (cond-> (or (cfh/path-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
             {:name "content"
-             :get #(-> % u/proxy->shape :content upf/format-path)
+             :get #(-> % u/proxy->shape :content .toString)
              :set
              (fn [_ value]
-               (let [content (->> (path/parse value))]
+               (let [content (svg.path/parse value)]
                  (cond
                    (not (cfh/path-shape? data))
                    (u/display-not-valid :content-type type)
 
-                   (not (sm/validate ::ctsp/content content))
+                   ;; FIXME: revisit path content validation
+                   (not (sm/validate ::path/content content))
                    (u/display-not-valid :content value)
 
                    (not (r/check-permission plugin-id "content:write"))
                    (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
 
                    :else
-                   (let [selrect  (gsh/content->selrect content)
+                   (let [selrect  (path.segm/content->selrect content)
                          points   (grc/rect->points selrect)]
                      (st/emit! (dwsh/update-shapes [id] (fn [shape] (assoc shape :content content :selrect selrect :points points))))))))}))))))

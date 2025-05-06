@@ -376,10 +376,10 @@
           (u/display-not-valid :createBoolean-shapes shapes)
 
           :else
-          (let [ids (into #{} (map #(obj/get % "$id")) shapes)
-                id-ret (atom nil)]
-            (st/emit! (dwb/create-bool bool-type ids {:id-ret id-ret}))
-            (shape/shape-proxy plugin-id @id-ret)))))
+          (let [ids      (into #{} (map #(obj/get % "$id")) shapes)
+                shape-id (uuid/next)]
+            (st/emit! (dwb/create-bool bool-type :ids ids :force-shape-id shape-id))
+            (shape/shape-proxy plugin-id shape-id)))))
 
     :generateMarkup
     (fn [shapes options]

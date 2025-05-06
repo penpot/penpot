@@ -14,6 +14,7 @@
    [app.common.geom.shapes.transforms :as gsht]
    [app.common.math :as mth :refer [close?]]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [clojure.test :as t]))
 
@@ -30,7 +31,7 @@
    (if (= type :path)
      (cts/setup-shape
       (into {:type :path
-             :content (:content params default-path)}
+             :content (path/content (:content params default-path))}
             params))
      (cts/setup-shape
       (into {:type type

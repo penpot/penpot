@@ -10,12 +10,13 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.text :as gst]
    [app.common.math :as mth]
-   [app.common.svg.path.bool :as pb]
-   [app.common.svg.path.shapes-to-path :as stp]
-   [app.common.svg.path.subpath :as ups]
+   [app.common.types.path :as path]
+   [app.common.types.path.bool :as path.bool]
+   [app.common.types.path.helpers :as path.helpers]
+   [app.common.types.path.segment :as path.segment]
+   [app.common.types.path.subpath :as path.subpath]
    [app.main.refs :as refs]
    [app.util.color :as uc]
    [app.util.debug :as dbg]
@@ -101,49 +102,49 @@
         radius (/ 3 zoom)
 
         c1 (-> (get objects (first (:shapes shape)))
-               (stp/convert-to-path objects))
+               (path/convert-to-path objects))
         c2 (-> (get objects (second (:shapes shape)))
-               (stp/convert-to-path objects))
+               (path/convert-to-path objects))
 
         content-a (:content c1)
         content-b (:content c2)
 
         bool-type (:bool-type shape)
         should-reverse? (and (not= :union bool-type)
-                             (= (ups/clockwise? content-b)
-                                (ups/clockwise? content-a)))
+                             (= (path.subpath/clockwise? content-b)
+                                (path.subpath/clockwise? content-a)))
 
         content-a (-> (:content c1)
-                      (pb/close-paths)
-                      (pb/add-previous))
+                      (path.bool/close-paths)
+                      (path.bool/add-previous))
 
         content-b (-> (:content c2)
-                      (pb/close-paths)
-                      (cond-> should-reverse? (ups/reverse-content))
-                      (pb/add-previous))
+                      (path.bool/close-paths)
+                      (cond-> should-reverse? (path.subpath/reverse-content))
+                      (path.bool/add-previous))
 
 
-        sr-a (gsp/content->selrect content-a)
-        sr-b (gsp/content->selrect content-b)
+        sr-a (path.segment/content->selrect content-a)
+        sr-b (path.segment/content->selrect content-b)
 
-        [content-a-split content-b-split] (pb/content-intersect-split content-a content-b sr-a sr-b)
+        [content-a-split content-b-split] (path.bool/content-intersect-split content-a content-b sr-a sr-b)
 
-        ;;content-a-geom (gsp/content->geom-data content-a)
-        ;;content-b-geom (gsp/content->geom-data content-b)
-        ;;content-a-split (->> content-a-split #_(filter #(pb/contains-segment? % content-b sr-b content-b-geom)))
-        ;;content-b-split (->> content-b-split #_(filter #(pb/contains-segment? % content-a sr-a content-a-geom)))
+        ;;content-a-geom (path.segment/content->geom-data content-a)
+        ;;content-b-geom (path.segment/content->geom-data content-b)
+        ;;content-a-split (->> content-a-split #_(filter #(path.bool/contains-segment? % content-b sr-b content-b-geom)))
+        ;;content-b-split (->> content-b-split #_(filter #(path.bool/contains-segment? % content-a sr-a content-a-geom)))
         ]
     [:*
-     (for [[i cmd] (d/enumerate content-a-split)]
-       (let [p1 (:prev cmd)
-             p2 (gsp/command->point cmd)
+     (for [[i segment] (d/enumerate content-a-split)]
+       (let [p1 (:prev segment)
+             p2 (path.helpers/segment->point segment)
 
-             hp (case (:command cmd)
-                  :line-to  (-> (gsp/command->line cmd)
-                                (gsp/line-values 0.5))
+             hp (case (:command segment)
+                  :line-to  (-> (path.helpers/command->line segment)
+                                (path.helpers/line-values 0.5))
 
-                  :curve-to (-> (gsp/command->bezier cmd)
-                                (gsp/curve-values 0.5))
+                  :curve-to (-> (path.helpers/command->bezier segment)
+                                (path.helpers/curve-values 0.5))
                   nil)]
          [:*
           (when p1
@@ -153,16 +154,16 @@
           (when hp
             [:circle {:data-i i :key (dm/str "c13-" i) :cx (:x hp) :cy (:y hp) :r radius :fill "orange"}])]))
 
-     (for [[i cmd] (d/enumerate content-b-split)]
-       (let [p1 (:prev cmd)
-             p2 (gsp/command->point cmd)
+     (for [[i segment] (d/enumerate content-b-split)]
+       (let [p1 (:prev segment)
+             p2 (path.helpers/segment->point segment)
 
-             hp (case (:command cmd)
-                  :line-to  (-> (gsp/command->line cmd)
-                                (gsp/line-values 0.5))
+             hp (case (:command segment)
+                  :line-to  (-> (path.helpers/command->line segment)
+                                (path.helpers/line-values 0.5))
 
-                  :curve-to (-> (gsp/command->bezier cmd)
-                                (gsp/curve-values 0.5))
+                  :curve-to (-> (path.helpers/command->bezier segment)
+                                (path.helpers/curve-values 0.5))
                   nil)]
          [:*
           (when p1

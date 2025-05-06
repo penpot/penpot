@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.schema.generators
-  (:refer-clojure :exclude [set subseq uuid filter map let boolean])
+  (:refer-clojure :exclude [set subseq uuid filter map let boolean vector])
   #?(:cljs (:require-macros [app.common.schema.generators]))
   (:require
    [app.common.schema.registry :as sr]
@@ -126,3 +126,7 @@
 (defn tuple
   [& opts]
   (apply tg/tuple opts))
+
+(defn vector
+  [& opts]
+  (apply tg/vector opts))
