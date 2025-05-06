@@ -1,3 +1,4 @@
+
 name: Build and Upload Penpot Bundles
 
 on:
@@ -11,9 +12,7 @@ on:
         options:
           - individual
           - all
-  push:
-    branches:
-      - github-actions-bundle-build
+
 env:
   ZIP_MODE: ${{ github.event.inputs.zip_mode }}
 
@@ -36,6 +35,7 @@ jobs:
             --build-arg EXTERNAL_GID=1000 \
             -t penpotapp/penpot-ci-builder:latest \
             -f docker/devenv/Dockerfile .
+            docker/devenv
 
       - name: Run manage.sh build-bundle from host
         run: ./manage.sh build-bundle
