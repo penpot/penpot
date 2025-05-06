@@ -7,10 +7,13 @@ use crate::shapes;
 use crate::with_current_shape;
 use crate::STATE;
 
+const RAW_FILL_DATA_SIZE: usize = std::mem::size_of::<RawFillData>();
+
 #[repr(C)]
 #[repr(align(4))]
 #[repr(u8)]
 #[derive(Debug, PartialEq, Clone, Copy)]
+#[allow(dead_code)]
 pub enum RawFillData {
     Solid(solid::RawSolidData) = 0x00,
     Linear(gradient::RawGradientData) = 0x01,
@@ -33,29 +36,20 @@ impl From<RawFillData> for shapes::Fill {
     }
 }
 
+impl From<[u8; RAW_FILL_DATA_SIZE]> for RawFillData {
+    fn from(bytes: [u8; RAW_FILL_DATA_SIZE]) -> Self {
+        unsafe { std::mem::transmute(bytes) }
+    }
+}
+
 impl TryFrom<&[u8]> for RawFillData {
     type Error = String;
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        if bytes.len() < std::mem::size_of::<RawFillData>() {
-            return Err("Invalid fill data".to_string());
-        }
-
-        let fill_type = bytes[0];
-        match fill_type {
-            0x00 => Ok(RawFillData::Solid(solid::RawSolidData::try_from(
-                &bytes[4..],
-            )?)),
-            0x01 => Ok(RawFillData::Linear(gradient::RawGradientData::try_from(
-                &bytes[4..],
-            )?)),
-            0x02 => Ok(RawFillData::Radial(gradient::RawGradientData::try_from(
-                &bytes[4..],
-            )?)),
-            0x03 => Ok(RawFillData::Image(image::RawImageFillData::try_from(
-                &bytes[4..],
-            )?)),
-            _ => Err("Invalid fill type".to_string()),
-        }
+        let data: [u8; RAW_FILL_DATA_SIZE] = bytes
+            .get(0..RAW_FILL_DATA_SIZE)
+            .and_then(|slice| slice.try_into().ok())
+            .ok_or("Invalid fill data".to_string())?;
+        Ok(RawFillData::from(data))
     }
 }
 
@@ -92,7 +86,7 @@ mod tests {
     fn test_raw_fill_data_from_bytes_to_solid_fill() {
         let mut bytes = vec![0x00; std::mem::size_of::<RawFillData>()];
         bytes[0] = 0x00;
-        bytes[1..=4].copy_from_slice(&0xfffabada_u32.to_le_bytes());
+        bytes[4..8].copy_from_slice(&0xfffabada_u32.to_le_bytes());
 
         let raw_fill = RawFillData::try_from(&bytes[..]);
 

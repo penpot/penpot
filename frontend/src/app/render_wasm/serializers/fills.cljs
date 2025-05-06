@@ -17,11 +17,6 @@
 ;; FIXME: get it from the wasm module
 (def FILL-BYTE-SIZE (+ 4 (max GRADIENT-BYTE-SIZE IMAGE-BYTE-SIZE SOLID-BYTE-SIZE)))
 
-;; (defn write-fill! [offset heap-u32 fill]
-;;   (let [dview (js/DataView. (.-buffer heap-u32))]
-;;     offset))
-
-
 (defn write-solid-fill!
   [offset heap-u32 argb]
   (let [dview (js/DataView. (.-buffer heap-u32))]
