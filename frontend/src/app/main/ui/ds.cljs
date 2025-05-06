@@ -11,7 +11,6 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
-   [app.main.ui.ds.controls.input-with-values :refer [input-with-values*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg* raw-svg-list]]
@@ -29,6 +28,7 @@
    [app.main.ui.ds.product.avatar :refer [avatar*]]
    [app.main.ui.ds.product.cta :refer [cta*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
+   [app.main.ui.ds.product.input-with-meta :refer [input-with-meta*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.ds.product.user-milestone :refer [user-milestone*]]
    [app.main.ui.ds.storybook :as sb]
@@ -48,7 +48,7 @@
     :Icon icon*
     :IconButton icon-button*
     :Input input*
-    :InputWithValues input-with-values*
+    :InputWithMeta input-with-meta*
     :EmptyPlaceholder empty-placeholder*
     :Loader loader*
     :RawSvg raw-svg*

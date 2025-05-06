@@ -30,7 +30,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
-   [app.main.ui.ds.controls.input-with-values :refer [input-with-values*]]
+   [app.main.ui.ds.product.input-with-meta :refer [input-with-meta*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
@@ -279,9 +279,9 @@
        [:div {:key (str variant-id "-" pos) :class (stl/css :variant-property-container)}
         [:*
          [:div {:class (stl/css :variant-property-name-wrapper)}
-          [:> input-with-values* {:name (:name prop)
-                                  :data-position pos
-                                  :on-blur update-property-name}]]
+          [:> input-with-meta* {:value (:name prop)
+                                :data-position pos
+                                :on-blur update-property-name}]]
 
          (let [mixed-value? (= (:value prop) false)
                empty-value? (str/empty? (:value prop))]
@@ -900,12 +900,12 @@
         (when-not multi?
           [:*
            (for [[pos property] (map vector (range) properties)]
-             (let [val (str/join ", " (:value property))]
+             (let [meta (str/join ", " (:value property))]
                [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-row)}
-                [:> input-with-values* {:name (:name property)
-                                        :values val
-                                        :data-position pos
-                                        :on-blur update-property-name}]
+                [:> input-with-meta* {:value (:name property)
+                                      :meta meta
+                                      :data-position pos
+                                      :on-blur update-property-name}]
                 [:> icon-button* {:variant "ghost"
                                   :aria-label (tr "workspace.shape.menu.remove-variant-property")
                                   :on-click remove-property
