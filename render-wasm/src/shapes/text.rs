@@ -12,17 +12,55 @@ use super::FontFamily;
 use crate::utils::uuid_from_u32;
 use crate::Uuid;
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum GrowType {
+    Fixed,
+    AutoWidth,
+    AutoHeight,
+}
+
+impl GrowType {
+    pub fn from(grow_type: u8) -> Self {
+        match grow_type {
+            0 => Self::Fixed,
+            1 => Self::AutoWidth,
+            2 => Self::AutoHeight,
+            _ => unreachable!(),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct TextContent {
     paragraphs: Vec<Paragraph>,
     bounds: Rect,
+    grow_type: GrowType,
+}
+
+pub fn set_paragraphs_width(width: f32, paragraphs: &mut Vec<Vec<skia::textlayout::Paragraph>>) {
+    for group in paragraphs {
+        for paragraph in group {
+            paragraph.layout(width)
+        }
+    }
 }
 
 impl TextContent {
-    pub fn new(bounds: Rect) -> Self {
+    pub fn new(bounds: Rect, grow_type: GrowType) -> Self {
         let mut res = Self::default();
         res.bounds = bounds;
+        res.grow_type = grow_type;
         res
+    }
+
+    pub fn new_bounds(&self, bounds: Rect) -> Self {
+        let paragraphs = self.paragraphs.clone();
+        let grow_type = self.grow_type;
+        Self {
+            paragraphs,
+            bounds,
+            grow_type,
+        }
     }
 
     pub fn set_xywh(&mut self, x: f32, y: f32, w: f32, h: f32) {
@@ -97,22 +135,25 @@ impl TextContent {
         paragraph_group
     }
 
+    pub fn collect_paragraphs(
+        &self,
+        mut paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
+    ) -> Vec<Vec<skia::textlayout::Paragraph>> {
+        if self.grow_type() == GrowType::AutoWidth {
+            set_paragraphs_width(f32::MAX, &mut paragraphs);
+            let max_width = auto_width(&paragraphs).ceil();
+            set_paragraphs_width(max_width, &mut paragraphs);
+        } else {
+            set_paragraphs_width(self.width(), &mut paragraphs);
+        }
+        paragraphs
+    }
+
     pub fn get_skia_paragraphs(
         &self,
         fonts: &FontCollection,
     ) -> Vec<Vec<skia::textlayout::Paragraph>> {
-        self.to_paragraphs(fonts)
-            .into_iter()
-            .map(|group| {
-                group
-                    .into_iter()
-                    .map(|mut paragraph| {
-                        paragraph.layout(self.width());
-                        paragraph
-                    })
-                    .collect()
-            })
-            .collect()
+        self.collect_paragraphs(self.to_paragraphs(fonts))
     }
 
     pub fn get_skia_stroke_paragraphs(
@@ -120,18 +161,15 @@ impl TextContent {
         fonts: &FontCollection,
         paints: &Vec<Paint>,
     ) -> Vec<Vec<skia::textlayout::Paragraph>> {
-        self.to_stroke_paragraphs(fonts, paints)
-            .into_iter()
-            .map(|group| {
-                group
-                    .into_iter()
-                    .map(|mut paragraph| {
-                        paragraph.layout(self.width());
-                        paragraph
-                    })
-                    .collect()
-            })
-            .collect()
+        self.collect_paragraphs(self.to_stroke_paragraphs(fonts, paints))
+    }
+
+    pub fn grow_type(&self) -> GrowType {
+        self.grow_type
+    }
+
+    pub fn set_grow_type(&mut self, grow_type: GrowType) {
+        self.grow_type = grow_type;
     }
 }
 
@@ -140,6 +178,7 @@ impl Default for TextContent {
         Self {
             paragraphs: vec![],
             bounds: Rect::default(),
+            grow_type: GrowType::Fixed,
         }
     }
 }
@@ -494,4 +533,17 @@ impl From<&Vec<u8>> for RawTextData {
 
         Self { paragraph }
     }
+}
+
+pub fn auto_width(paragraphs: &Vec<Vec<skia::textlayout::Paragraph>>) -> f32 {
+    paragraphs.iter().flatten().fold(0.0, |auto_width, p| {
+        f32::max(p.max_intrinsic_width(), auto_width)
+    })
+}
+
+pub fn auto_height(paragraphs: &Vec<Vec<skia::textlayout::Paragraph>>) -> f32 {
+    paragraphs
+        .iter()
+        .flatten()
+        .fold(0.0, |auto_height, p| auto_height + p.height())
 }

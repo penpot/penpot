@@ -152,6 +152,9 @@
         (= (:type shape) :text)
         (into [] (api/set-shape-text-content v)))
 
+      :grow-type
+      (api/set-shape-grow-type v)
+
       (:layout-item-margin
        :layout-item-margin-type
        :layout-item-h-sizing

@@ -283,6 +283,13 @@
     :remove-children 1
     :add-children    2))
 
+(defn translate-grow-type
+  [grow-type]
+  (case grow-type
+    :auto-width 1
+    :auto-height 2
+    0))
+
 (defn- serialize-enum
   [value enum-map]
   (get enum-map value 0))

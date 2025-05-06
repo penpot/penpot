@@ -69,7 +69,10 @@
         on-blur
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content update-name? (gen-name instance))))
+            (st/emit! (dwt/v2-update-text-shape-content shape-id content
+                                                        :update-name? update-name?
+                                                        :name (gen-name instance)
+                                                        :finalize? true)))
 
           (let [container-node (mf/ref-val container-ref)]
             (dom/set-style! container-node "opacity" 0)))
@@ -87,7 +90,7 @@
         on-needs-layout
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content true)))
+            (st/emit! (dwt/v2-update-text-shape-content shape-id content :update-name? true)))
           ;; FIXME: We need to find a better way to trigger layout changes.
           #_(st/emit!
              (dwt/v2-update-text-shape-position-data shape-id [])))
@@ -95,7 +98,7 @@
         on-change
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content true))))]
+            (st/emit! (dwt/v2-update-text-shape-content shape-id content :update-name? true))))]
 
     (.addEventListener ^js global/document "keyup" on-key-up)
     (.addEventListener ^js instance "blur" on-blur)

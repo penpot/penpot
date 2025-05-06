@@ -356,6 +356,7 @@ impl RenderState {
                     s.canvas().concat(&matrix);
                 });
 
+                let text_content = text_content.new_bounds(shape.selrect());
                 let paragraphs = text_content.get_skia_paragraphs(&self.fonts.font_collection());
 
                 shadows::render_text_drop_shadows(self, &shape, &paragraphs, antialias);

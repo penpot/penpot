@@ -711,9 +711,9 @@ impl Shape {
     }
 
     pub fn clear_text(&mut self) {
-        match self.shape_type {
-            Type::Text(_) => {
-                let new_text_content = TextContent::new(self.selrect);
+        match &self.shape_type {
+            Type::Text(old_text_content) => {
+                let new_text_content = TextContent::new(self.selrect, old_text_content.grow_type());
                 self.shape_type = Type::Text(new_text_content);
             }
             _ => {}
