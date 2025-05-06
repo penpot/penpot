@@ -104,7 +104,6 @@
         focus             (mf/deref refs/workspace-focus-selected)
 
         workspace-editor-state (mf/deref refs/workspace-editor-state)
-        workspace-v2-editor-state (mf/deref refs/workspace-v2-editor-state)
 
         file-id           (get file :id)
         objects           (get page :objects)
@@ -300,10 +299,8 @@
         (fn []
           (wasm.api/clear-canvas))))
 
-    (mf/with-effect [show-text-editor? workspace-editor-state workspace-v2-editor-state edition]
-      (let [editor-state (get workspace-editor-state edition)
-            v2-editor-state (get workspace-v2-editor-state edition)
-            active-editor-state (or v2-editor-state editor-state)]
+    (mf/with-effect [show-text-editor? workspace-editor-state edition]
+      (let [active-editor-state (get workspace-editor-state edition)]
         (when (and show-text-editor? active-editor-state)
           (let [content (-> active-editor-state
                             (ted/get-editor-current-content)
