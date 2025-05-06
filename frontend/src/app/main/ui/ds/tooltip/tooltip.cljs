@@ -40,8 +40,8 @@
 
       "left"
       {:top (- (+ trigger-top (/ trigger-height 2) 8) (/ tooltip-height 2))
-       :left (- trigger-left tooltip-width 8)
-       :right (+ (- trigger-left tooltip-width) tooltip-width)
+       :left (- trigger-left tooltip-width 12)
+       :right (+ (- trigger-left tooltip-width 12) tooltip-width)
        :bottom (+ (- (+ trigger-top (/ trigger-height 2) 12) (/ tooltip-height 2)) tooltip-height)
        :width tooltip-width
        :height tooltip-height}

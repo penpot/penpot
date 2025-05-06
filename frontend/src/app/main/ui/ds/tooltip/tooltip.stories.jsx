@@ -14,6 +14,7 @@ export default {
   component: Tooltip,
   argTypes: {
     placement: {
+      control: { type: "select" },
       options: [
         "top",
         "bottom",
@@ -24,17 +25,17 @@ export default {
         "bottom-left",
         "bottom-right",
       ],
-      control: { type: "select" },
     },
   },
   parameters: {
     controls: { exclude: ["children", "id"] },
   },
   args: {
-    children: <button popovertarget="popover-example">haz hover aquí</button>,
+    children: (
+      <button popovertarget="popover-example">Hover this element</button>
+    ),
     id: "popover-example",
-    placement: "top",
-    content: "Este es content del Tooltip que deberia ocupar más de una línea",
+    content: "This is the tooltip content",
   },
   render: ({ children, ...args }) => (
     <div
@@ -70,19 +71,19 @@ export const Corners = {
       }}
     >
       <Tooltip
-        id="popover-example"
-        content="Este es content del Tooltip que deberia ocupar más de una línea"
+        id="popover-example10"
+        content="This is the tooltip content, and must be shown in two lines."
         style={{
           placeSelf: "start start",
           width: "fit-content",
           height: "fit-content",
         }}
       >
-        <button popovertarget="popover-example">haz hover aquí</button>
+        <button popovertarget="popover-example10">Hover here</button>
       </Tooltip>
       <Tooltip
         id="popover-example2"
-        content="Este es content del Tooltip que deberia ocupar más de una línea"
+        content="This is the tooltip content, and must be shown in two lines."
         style={{
           alignSelf: "start",
           justifySelf: "center",
@@ -98,12 +99,12 @@ export const Corners = {
             width: "fit-content",
           }}
         >
-          haz hover aquí
+          Hover here
         </button>
       </Tooltip>
       <Tooltip
         id="popover-example3"
-        content="Este es content del Tooltip que deberia ocupar más de una línea"
+        content="This is the tooltip content, and must be shown in two lines."
         style={{
           alignSelf: "start",
           justifySelf: "end",
@@ -111,18 +112,11 @@ export const Corners = {
           height: "fit-content",
         }}
       >
-        <button
-          popovertarget="popover-example3"
-          style={{
-            width: "fit-content",
-          }}
-        >
-          haz hover aquí
-        </button>
+        <button popovertarget="popover-example3">Hover here</button>
       </Tooltip>
       <Tooltip
         id="popover-example4"
-        content="Este es content del Tooltip que deberia ocupar más de una línea"
+        content="This is the tooltip content, and must be shown in two lines."
         style={{
           alignSelf: "center",
           justifySelf: "start",
@@ -130,11 +124,11 @@ export const Corners = {
           height: "fit-content",
         }}
       >
-        <button popovertarget="popover-example4">haz hover aquí</button>
+        <button popovertarget="popover-example4">Hover here</button>
       </Tooltip>
       <Tooltip
         id="popover-example5"
-        content="Este es content del Tooltip que deberia ocupar más de una línea"
+        content="This is the tooltip content, and must be shown in two lines."
         style={{
           alignSelf: "center",
           justifySelf: "center",
@@ -142,11 +136,11 @@ export const Corners = {
           height: "fit-content",
         }}
       >
-        <button popovertarget="popover-example5">haz hover aquí</button>
+        <button popovertarget="popover-example5">Hover here</button>
       </Tooltip>
       <Tooltip
         id="popover-example6"
-        content="Este es content del Tooltip que deberia ocupar más de una línea"
+        content="This is the tooltip content, and must be shown in two lines."
         style={{
           alignSelf: "center",
           justifySelf: "end",
@@ -154,11 +148,11 @@ export const Corners = {
           height: "fit-content",
         }}
       >
-        <button popovertarget="popover-example6">haz hover aquí</button>
+        <button popovertarget="popover-example6">Hover here</button>
       </Tooltip>
       <Tooltip
         id="popover-example7"
-        content="Este es content del Tooltip que deberia ocupar más de una línea"
+        content="This is the tooltip content, and must be shown in two lines."
         style={{
           alignSelf: "end",
           justifySelf: "start",
@@ -166,11 +160,11 @@ export const Corners = {
           height: "fit-content",
         }}
       >
-        <button popovertarget="popover-example7">haz hover aquí</button>
+        <button popovertarget="popover-example7">Hover here</button>
       </Tooltip>
       <Tooltip
         id="popover-example8"
-        content="Este es content del Tooltip que deberia ocupar más de una línea"
+        content="This is the tooltip content, and must be shown in two lines."
         style={{
           alignSelf: "end",
           justifySelf: "center",
@@ -178,11 +172,11 @@ export const Corners = {
           height: "fit-content",
         }}
       >
-        <button popovertarget="popover-example8">haz hover aquí</button>
+        <button popovertarget="popover-example8">Hover here</button>
       </Tooltip>
       <Tooltip
         id="popover-example9"
-        content="Este es content del Tooltip que deberia ocupar más de una línea"
+        content="This is the tooltip content, and must be shown in two lines."
         style={{
           alignSelf: "end",
           justifySelf: "end",
@@ -190,7 +184,7 @@ export const Corners = {
           height: "fit-content",
         }}
       >
-        <button popovertarget="popover-example9">haz hover aquí</button>
+        <button popovertarget="popover-example9">Hover here</button>
       </Tooltip>
     </div>
   ),
