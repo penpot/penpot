@@ -116,7 +116,7 @@
 (mf/defc tooltip*
   {::mf/props :obj
    ::mf/schema schema:tooltip}
-  [{:keys [class id children content placement offset delay] :rest props}]
+  [{:keys [class id children tooltip-content placement offset delay] :rest props}]
   (let [placement* (mf/use-state #(d/nilv placement "top"))
         placement  (deref placement*)
         delay      (d/nilv delay 300)
@@ -124,13 +124,13 @@
         schedule-ref (mf/use-ref nil)
 
         position-tooltip
-        (fn [^js tooltip trigger]
+        (fn [^js tooltip trigger-rect]
           (let [all-placements (get-fallback-order placement)]
             (.showPopover ^js tooltip)
             (loop [[current-placement & remaining-placements] all-placements]
               (when current-placement
                 (reset! placement* current-placement)
-                (let [tooltip-rect (calculate-tooltip-rect tooltip trigger current-placement offset)]
+                (let [tooltip-rect (calculate-tooltip-rect tooltip trigger-rect current-placement offset)]
                   (if (dom/is-bounding-rect-outside? tooltip-rect)
                     (recur remaining-placements)
                     (do (dom/set-css-property! tooltip "display" "grid")
@@ -160,11 +160,7 @@
                   (when-let [schedule (mf/ref-val schedule-ref)]
                     (ts/dispose! schedule)
                     (mf/set-ref-val! schedule-ref nil))
-                  (dom/unset-css-property! tooltip "display")
-                  (dom/unset-css-property! tooltip "top")
-                  (dom/unset-css-property! tooltip "bottom")
-                  (dom/unset-css-property! tooltip "left")
-                  (dom/unset-css-property! tooltip "right")
+                  (dom/set-css-property! tooltip "display" "none")
                   (.hidePopover ^js tooltip))))
 
         handle-key-down
@@ -194,14 +190,13 @@
                                       :aria-describedby id})]
     [:> :div props
      children
-
-     [:span {:class class
-             :id id
-             :popover "auto"
-             :role "tooltip"}
+     [:div {:class class
+            :id id
+            :popover "auto"
+            :role "tooltip"}
       [:div {:class (stl/css :tooltip-content)}
-       (if (fn? content)
-         (content)
-         content)]
+       (if (fn? tooltip-content)
+         (tooltip-content)
+         tooltip-content)]
       [:div {:class (stl/css :tooltip-arrow)
              :id "tooltip-arrow"}]]]))

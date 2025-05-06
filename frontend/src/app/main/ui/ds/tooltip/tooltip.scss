@@ -8,6 +8,12 @@
 @use "../_borders.scss" as *;
 @use "../typography.scss" as *;
 
+// This variable  refers to the legs of
+// an equilateral triangle with base 16px
+// and height 8px to design of the arrow.
+
+$arrow-size: 11px;
+
 .tooltip {
   position: absolute;
   max-width: $sz-352;
@@ -19,11 +25,8 @@
 .tooltip-arrow {
   background-color: var(--color-background-primary);
   border-radius: var(--sp-xs);
-  // These units are hardcoded because they refer to the legs of
-  // an equilateral triangle with base 16px and height 8px to
-  // match the design of the arrow.
-  width: 11px;
-  height: 11px;
+  width: $arrow-size;
+  height: $arrow-size;
   grid-area: arrow;
 }
 

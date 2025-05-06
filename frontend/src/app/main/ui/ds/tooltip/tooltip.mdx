@@ -27,7 +27,7 @@ If `placement` is not provided, the tooltip will default to "top".
 
    [:> tlp/tooltip* {:id "test-tooltip"
                      :placement "bottom"
-                     :content "Tooltip content"}
+                     :tooltip-content "Tooltip content"}
    [:div  "Trigger component"]])
 ```
 
@@ -39,7 +39,7 @@ Tooltip content can include HTML elements:
 
    [:> tlp/tooltip* {:id "test-tooltip"
                      :placement "bottom"
-                     :content (mf/html
+                     :tooltip-content (mf/html
                                 [:span "Tooltip content"])}
    [:div  "Trigger component"]])
 ```
