@@ -527,8 +527,6 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes (map :id child-with-duplicate) repair-shape))))
 
-
-
 (defmethod repair-error :component-duplicate-slot
   [_ {:keys [shape] :as error} file-data _]
   (let [main-shape            (get-in shape [:objects (:main-instance-id shape)])
@@ -622,6 +620,17 @@
   (log/error :hint "Unknown error code, don't know how to repair" :code (:code error))
   file)
 
+(defmethod repair-error :invalid-container
+  [_ {:keys [shape] :as error} file-data _]
+  (let [deleted-component
+        (fn [component]
+          (log/debug :hint "  -> setting component as deleted" :id (:id component))
+          (assoc component :deleted true))]
+    (log/dbg :hint "repairing: component has an invalid-container, set as deleted" :id (:id shape))
+    (-> (pcb/empty-changes nil)
+        (pcb/with-library-data file-data)
+        (pcb/update-component (:id shape) deleted-component))))
+
 (defn repair-file
   [{:keys [data id] :as file} libraries errors]
   (log/dbg :hint "repairing file" :id (str id) :errors (count errors))
@@ -635,3 +644,4 @@
                 (pcb/empty-changes nil)
                 errors)]
     redo-changes))
+

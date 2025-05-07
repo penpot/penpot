@@ -61,6 +61,7 @@
     :missing-slot
     :shape-ref-cycle
     :not-a-variant
+    :invalid-container
     :invalid-variant-id
     :invalid-variant-properties
     :variant-not-main
@@ -598,10 +599,18 @@
 (defn- check-component
   "Validate semantic coherence of a component. Report all errors found."
   [component file]
+
   (when (and (contains? component :objects) (nil? (:objects component)))
     (report-error :component-nil-objects-not-allowed
                   "Objects list cannot be nil"
                   component file nil))
+
+  (let [component-page (ctf/get-component-page (:data file) component)]
+    (when (nil? component-page)
+      (report-error :invalid-container
+                    (str/ffmt "Component container is nil")
+                    component file nil)))
+
   (when (:deleted component)
     (check-component-duplicate-swap-slot component file)
     (check-ref-cycles component file))
