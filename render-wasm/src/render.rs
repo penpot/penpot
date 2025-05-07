@@ -178,7 +178,7 @@ impl RenderState {
         self.viewbox.set_wh(width as f32, height as f32);
     }
 
-    pub fn flush(&mut self) {
+    pub fn flush_and_submit(&mut self) {
         self.surfaces
             .flush_and_submit(&mut self.gpu_state, SurfaceId::Target);
     }
@@ -208,17 +208,12 @@ impl RenderState {
 
     pub fn apply_drawing_to_render_canvas(&mut self, shape: Option<&Shape>) {
         performance::begin_measure!("apply_drawing_to_render_canvas");
-        self.surfaces
-            .flush_and_submit(&mut self.gpu_state, SurfaceId::DropShadows);
 
         self.surfaces.draw_into(
             SurfaceId::DropShadows,
             SurfaceId::Current,
             Some(&skia::Paint::default()),
         );
-
-        self.surfaces
-            .flush_and_submit(&mut self.gpu_state, SurfaceId::Fills);
 
         self.surfaces.draw_into(
             SurfaceId::Fills,
@@ -232,18 +227,12 @@ impl RenderState {
         }
 
         if render_overlay_below_strokes {
-            self.surfaces
-                .flush_and_submit(&mut self.gpu_state, SurfaceId::InnerShadows);
-
             self.surfaces.draw_into(
                 SurfaceId::InnerShadows,
                 SurfaceId::Current,
                 Some(&skia::Paint::default()),
             );
         }
-
-        self.surfaces
-            .flush_and_submit(&mut self.gpu_state, SurfaceId::Strokes);
 
         self.surfaces.draw_into(
             SurfaceId::Strokes,
@@ -252,18 +241,12 @@ impl RenderState {
         );
 
         if !render_overlay_below_strokes {
-            self.surfaces
-                .flush_and_submit(&mut self.gpu_state, SurfaceId::InnerShadows);
-
             self.surfaces.draw_into(
                 SurfaceId::InnerShadows,
                 SurfaceId::Current,
                 Some(&skia::Paint::default()),
             );
         }
-
-        self.surfaces
-            .flush_and_submit(&mut self.gpu_state, SurfaceId::Current);
 
         self.surfaces.apply_mut(
             &[
@@ -504,7 +487,7 @@ impl RenderState {
         performance::begin_measure!("process_animation_frame");
         if self.render_in_progress {
             self.render_shape_tree(tree, modifiers, structure, timestamp)?;
-            self.flush();
+            self.flush_and_submit();
 
             if self.render_in_progress {
                 if let Some(frame_id) = self.render_request_id {
@@ -814,7 +797,6 @@ impl RenderState {
         }
 
         debug::render_wasm_label(self);
-        self.flush();
 
         Ok(())
     }

@@ -59,13 +59,18 @@ impl Surfaces {
         );
         let margins = skia::ISize::new(extra_tile_dims.width / 4, extra_tile_dims.height / 4);
 
-        let mut target = gpu_state.create_target_surface(width, height);
-        let current = target.new_surface_with_dimensions(extra_tile_dims).unwrap();
-        let drop_shadows = target.new_surface_with_dimensions(extra_tile_dims).unwrap();
-        let inner_shadows = target.new_surface_with_dimensions(extra_tile_dims).unwrap();
-        let shape_fills = target.new_surface_with_dimensions(extra_tile_dims).unwrap();
-        let shape_strokes = target.new_surface_with_dimensions(extra_tile_dims).unwrap();
-        let debug = target.new_surface_with_dimensions((width, height)).unwrap();
+        let target = gpu_state.create_target_surface(width, height);
+
+        let current = gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims);
+        let drop_shadows =
+            gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims);
+        let inner_shadows =
+            gpu_state.create_surface_with_isize("inner_shadows".to_string(), extra_tile_dims);
+        let shape_fills =
+            gpu_state.create_surface_with_isize("shape_fills".to_string(), extra_tile_dims);
+        let shape_strokes =
+            gpu_state.create_surface_with_isize("shape_strokes".to_string(), extra_tile_dims);
+        let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height);
 
         let tiles = TileTextureCache::new();
         Surfaces {
