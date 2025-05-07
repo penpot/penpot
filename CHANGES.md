@@ -42,6 +42,7 @@
 - Fix Out of Sync Token Value & Color Picker [Github #102](https://github.com/tokens-studio/penpot/issues/102)
 - Fix Color should preserve color space [Github #69](https://github.com/tokens-studio/penpot/issues/69)
 - Fix cannot rename Design Token Sets when group of same name exists [Taiga Issue #10773](https://tree.taiga.io/project/penpot/issue/10773)
+- Fix problem when duplicating grid layout [Github #6391](https://github.com/penpot/penpot/issues/6391)
 
 ## 2.6.2 (Unreleased)
 
