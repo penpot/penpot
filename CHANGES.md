@@ -41,6 +41,7 @@ root.
 ### :sparkles: New features
 
 - Optimize profile setup flow for better user experience [Taiga #10028](https://tree.taiga.io/project/penpot/us/10028)
+- Update base image for Docker Backend and Exporter to Ubuntu 24.04
 
 ### :bug: Bugs fixed
 
