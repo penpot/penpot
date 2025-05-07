@@ -93,16 +93,6 @@
                 related-components)]
     changes))
 
-
-(defn generate-delete-variant-info
-  [changes shape]
-  (-> changes
-      (pcb/update-component (:component-id shape)
-                            #(dissoc % :variant-id :variant-properties)
-                            {:apply-changes-local-library? true})
-      (pcb/update-shapes [(:id shape)]
-                         #(dissoc % :variant-id :variant-name))))
-
 (defn- generate-make-shape-no-variant
   [changes shape]
   (let [new-name      (ctv/variant-name-to-name shape)
