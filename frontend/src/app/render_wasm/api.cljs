@@ -224,13 +224,9 @@
                 (h/call wasm/internal-module "_add_shape_fill"))
 
               (some? gradient)
-              (let [_ nil]
+              (do
                 (sr-fills/write-gradient-fill! offset heap gradient opacity)
-                (case (:type gradient)
-                  :linear
-                  (h/call wasm/internal-module "_add_shape_fill")
-                  :radial
-                  (h/call wasm/internal-module "_add_shape_fill")))
+                (h/call wasm/internal-module "_add_shape_fill"))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
@@ -266,11 +262,7 @@
               (some? gradient)
               (let [_ nil]
                 (sr-fills/write-gradient-fill! offset heap gradient opacity)
-                (case (:type gradient)
-                  :linear
-                  (h/call wasm/internal-module "_add_shape_stroke_fill")
-                  :radial
-                  (h/call wasm/internal-module "_add_shape_stroke_fill")))
+                (h/call wasm/internal-module "_add_shape_stroke_fill"))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
