@@ -37,21 +37,22 @@
       init(Module);
       assignCanvas(canvas);
       Module._set_canvas_background(hexToU32ARGB("#FABADA", 1));
-      Module._set_view(1, 0, 0);
+      Module._set_view(0.033, 0, 0);
       setupInteraction(canvas);
 
       const children = [];
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < 100000; i++) {
         const uuid = crypto.randomUUID();
         children.push(uuid);
 
         useShape(uuid);
         Module._set_parent(0, 0, 0, 0);
         Module._set_shape_type(3);
-        const x1 = getRandomInt(0, canvas.width);
-        const y1 = getRandomInt(0, canvas.height);
-        const width = getRandomInt(20, 100);
-        const height = getRandomInt(20, 100);
+        console.log("canvas.width", canvas.width)
+        const x1 = getRandomInt(0, canvas.width * 30);
+        const y1 = getRandomInt(0, canvas.height * 30);
+        const width = getRandomInt(200, 400);
+        const height = getRandomInt(200, 400);
         Module._set_shape_selrect(x1, y1, x1 + width, y1 + height);
 
         const color = getRandomColor();

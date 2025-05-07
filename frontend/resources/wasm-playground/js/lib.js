@@ -1,6 +1,6 @@
 let Module = null;
 
-let scale = 1;
+let scale = 0.033;
 let offsetX = 0;
 let offsetY = 0;
 
@@ -98,7 +98,7 @@ export function useShape(id) {
 export function setupInteraction(canvas) {
   canvas.addEventListener("wheel", (e) => {
     e.preventDefault();
-    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+    const zoomFactor = e.deltaY < 0 ? 1.3 : 0.6;
     scale *= zoomFactor;
     const mouseX = e.offsetX;
     const mouseY = e.offsetY;
