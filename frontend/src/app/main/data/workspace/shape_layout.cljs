@@ -102,7 +102,6 @@
   (ptk/reify ::update-layout-positions
     ptk/WatchEvent
     (watch [_ state _]
-      (prn ">update-layout-positions")
       (let [objects (dsh/lookup-page-objects state)
             ids (->> ids (filter #(contains? objects %)))]
         (if (d/not-empty? ids)
