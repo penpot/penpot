@@ -398,44 +398,44 @@
 
 ;; Valid attributes
 
-(def ^:private valid-shape-attrs #{:page-id :component-id :component-file :component-root :main-instance
-                                   :remote-synced :shape-ref :touched :blocked :collapsed :locked
-                                   :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
-                                   :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :opacity :grids :exports
-                                   :strokes :blend-mode :interactions :shadow :blur :grow-type :applied-tokens
-                                   :plugin-data})
-(def ^:private valid-shape-geom-attrs #{:x :y :width :height})
-(def ^:private valid-shape-base-attrs #{:id :name :type :selrect :points :transform :transform-inverse :parent-id :frame-id})
-(def ^:private valid-bool-attrs #{:shapes :bool-type :content})
-(def ^:private valid-group-attrs #{:shapes})
-(def ^:private valid-frame-attrs #{:shapes :hide-fill-on-export :show-content :hide-in-viewer})
-(def ^:private valid-image-attrs #{:metadata})
-(def ^:private valid-svg-attrs #{:content})
-(def ^:private valid-path-attrs #{:content})
-(def ^:private valid-text-attrs #{:content})
-(def ^:private valid-generic-attrs (set/union valid-shape-attrs valid-shape-geom-attrs valid-shape-base-attrs))
+(def ^:private allowed-shape-attrs #{:page-id :component-id :component-file :component-root :main-instance
+                                     :remote-synced :shape-ref :touched :blocked :collapsed :locked
+                                     :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
+                                     :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :opacity :grids :exports
+                                     :strokes :blend-mode :interactions :shadow :blur :grow-type :applied-tokens
+                                     :plugin-data})
+(def ^:private allowed-shape-geom-attrs #{:x :y :width :height})
+(def ^:private allowed-shape-base-attrs #{:id :name :type :selrect :points :transform :transform-inverse :parent-id :frame-id})
+(def ^:private allowed-bool-attrs #{:shapes :bool-type :content})
+(def ^:private allowed-group-attrs #{:shapes})
+(def ^:private allowed-frame-attrs #{:shapes :hide-fill-on-export :show-content :hide-in-viewer})
+(def ^:private allowed-image-attrs #{:metadata})
+(def ^:private allowed-svg-attrs #{:content})
+(def ^:private allowed-path-attrs #{:content})
+(def ^:private allowed-text-attrs #{:content})
+(def ^:private allowed-generic-attrs (set/union allowed-shape-attrs allowed-shape-geom-attrs allowed-shape-base-attrs))
 
-(defn is-valid-attr?
+(defn is-allowed-attr?
   [attr type]
   (case type
-    :group   (or (contains? valid-group-attrs attr)
-                 (contains? valid-generic-attrs attr))
-    :frame   (or (contains? valid-frame-attrs attr)
-                 (contains? valid-generic-attrs attr))
-    :bool    (or (contains? valid-bool-attrs attr)
-                 (contains? valid-shape-attrs attr)
-                 (contains? valid-shape-base-attrs attr))
-    :rect    (contains? valid-generic-attrs attr)
-    :circle  (contains? valid-generic-attrs attr)
-    :image   (or (contains? valid-image-attrs attr)
-                 (contains? valid-generic-attrs attr))
-    :svg-raw (or (contains? valid-svg-attrs attr)
-                 (contains? valid-generic-attrs attr))
-    :path    (or (contains? valid-path-attrs attr)
-                 (contains? valid-shape-attrs attr)
-                 (contains? valid-shape-base-attrs attr))
-    :text    (or (contains? valid-text-attrs attr)
-                 (contains? valid-generic-attrs attr))))
+    :group   (or (contains? allowed-group-attrs attr)
+                 (contains? allowed-generic-attrs attr))
+    :frame   (or (contains? allowed-frame-attrs attr)
+                 (contains? allowed-generic-attrs attr))
+    :bool    (or (contains? allowed-bool-attrs attr)
+                 (contains? allowed-shape-attrs attr)
+                 (contains? allowed-shape-base-attrs attr))
+    :rect    (contains? allowed-generic-attrs attr)
+    :circle  (contains? allowed-generic-attrs attr)
+    :image   (or (contains? allowed-image-attrs attr)
+                 (contains? allowed-generic-attrs attr))
+    :svg-raw (or (contains? allowed-svg-attrs attr)
+                 (contains? allowed-generic-attrs attr))
+    :path    (or (contains? allowed-path-attrs attr)
+                 (contains? allowed-shape-attrs attr)
+                 (contains? allowed-shape-base-attrs attr))
+    :text    (or (contains? allowed-text-attrs attr)
+                 (contains? allowed-generic-attrs attr))))
 
 
 

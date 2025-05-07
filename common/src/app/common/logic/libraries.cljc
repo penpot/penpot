@@ -1745,36 +1745,34 @@
     (loop [attrs       updatable-attrs
            roperations [{:type :set-touched :touched (:touched origin-shape)}]
            uoperations (list {:type :set-touched :touched (:touched dest-shape)})]
-      (let [attr (first attrs)]
-        (if (nil? attr)
-          (cond-> changes
-            (> (count roperations) 1)
-            (add-update-attr-changes dest-shape container roperations uoperations)
+      (if-let [attr (first attrs)]
+        (let [attr-group (get ctk/sync-attrs attr)
+              [roperations' uoperations']
+              (if (or
+                             ;; If the attribute is not valid for the destiny, don't copy it
+                   (not (cts/is-allowed-attr? attr (:type dest-shape)))
+                             ;; If the values are already equal, don't copy it
+                   (= (get origin-shape attr) (get dest-shape attr))
+                             ;; If the referenced shape on the original component doesn't have the same value, don't copy it
+                             ;; Exceptions: :points :selrect and :content can be different
+                   (and
+                    (not (contains? #{:points :selrect :content} attr))
+                    (not= (get origin-ref-shape attr) (get dest-shape attr)))
+                             ;; The :content attr cant't be copied to elements of different type
+                   (and (= attr :content) (not= (:type origin-shape) (:type dest-shape)))
+                             ;; If the attr is not touched in the origin shape, don't copy it
+                   (not (touched-origin attr-group)))
+                [roperations uoperations]
+                (add-update-attr-operations attr dest-shape origin-shape roperations uoperations touched))]
+          (recur (next attrs)
+                 roperations'
+                 uoperations'))
+        (cond-> changes
+          (> (count roperations) 1)
+          (add-update-attr-changes dest-shape container roperations uoperations)
 
-            :always
-            (generate-update-tokens container dest-shape origin-shape touched false))
-
-          (let [attr-group (get ctk/sync-attrs attr)
-                [roperations' uoperations']
-                (if (or
-                     ;; If the attribute is not valid for the destiny, don't copy it
-                     (not (cts/is-valid-attr? attr (:type dest-shape)))
-                     ;; If the values are already equal, don't copy it
-                     (= (get origin-shape attr) (get dest-shape attr))
-                     ;; If the referenced shape on the original component doesn't have the same value, don't copy it
-                     ;; Exceptions: :points :selrect and :content can be different
-                     (and
-                      (not (contains? #{:points :selrect :content} attr))
-                      (not= (get origin-ref-shape attr) (get dest-shape attr)))
-                     ;; The :content attr cant't be copied to elements of different type
-                     (and (= attr :content) (not= (:type origin-shape) (:type dest-shape)))
-                     ;; If the attr is not touched in the origin shape, don't copy it
-                     (not (touched-origin attr-group)))
-                  [roperations uoperations]
-                  (add-update-attr-operations attr dest-shape origin-shape roperations uoperations touched))]
-            (recur (next attrs)
-                   roperations'
-                   uoperations')))))))
+          :always
+          (generate-update-tokens container dest-shape origin-shape touched false))))))
 
 (defn- propagate-attrs
   "Helper that puts the origin attributes (attrs) into dest but only if
