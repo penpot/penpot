@@ -890,9 +890,7 @@
            (let [data (:clean-data @form)]
              (if (:id data)
                (on-update-submit form)
-               (on-create-submit form)))))
-
-        on-modal-close #(st/emit! (modal/hide))]
+               (on-create-submit form)))))]
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
       [:& fm/form {:form form :on-submit on-submit}
@@ -903,7 +901,7 @@
            (tr "modals.create-webhook.title"))]
 
         [:button {:class (stl/css :modal-close-btn)
-                  :on-click on-modal-close} i/close]]
+                  :on-click modal/hide!} i/close]]
 
        [:div {:class (stl/css :modal-content)}
         [:div {:class (stl/css :fields-row)}
@@ -931,7 +929,7 @@
          [:input {:class (stl/css :cancel-button)
                   :type "button"
                   :value (tr "labels.cancel")
-                  :on-click #(modal/hide!)}]
+                  :on-click modal/hide!}]
          [:> fm/submit-button*
           {:label (if webhook
                     (tr "modals.edit-webhook.submit-label")
@@ -1097,7 +1095,7 @@
                         (:is-admin permissions))
 
         on-image-click
-        (mf/use-callback #(dom/click (mf/ref-val finput)))
+        (mf/use-fn #(dom/click (mf/ref-val finput)))
 
         on-file-selected
         (fn [file]

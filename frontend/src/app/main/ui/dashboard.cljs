@@ -176,7 +176,7 @@
            :plugin-try-out
            {:plugin plugin
             :on-accept #(create-file! plugin)
-            :on-close #(modal/hide!)}))
+            :on-close modal/hide!}))
 
         open-permissions-dialog
         (fn [plugin]
