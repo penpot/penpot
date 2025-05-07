@@ -6,27 +6,23 @@
 
 @use "../_sizes.scss" as *;
 @use "../_borders.scss" as *;
-@use "../typography.scss" as *;
+@use "../typography.scss" as t;
 
-// This variable  refers to the legs of
-// an equilateral triangle with base 16px
-// and height 8px to design of the arrow.
-
-$arrow-size: 11px;
+$arrow-side: 12px;
 
 .tooltip {
   position: absolute;
-  max-width: $sz-352;
+  max-inline-size: $sz-352;
   background-color: transparent;
   overflow: hidden;
-  width: fit-content;
+  inline-size: fit-content;
 }
 
 .tooltip-arrow {
   background-color: var(--color-background-primary);
   border-radius: var(--sp-xs);
-  width: $arrow-size;
-  height: $arrow-size;
+  inline-size: $arrow-side;
+  block-size: $arrow-side;
   grid-area: arrow;
 }
 
@@ -39,9 +35,10 @@ $arrow-size: 11px;
 .tooltip-top .tooltip-arrow {
   justify-self: center;
   border-radius: 0 0 var(--sp-xs) 0;
-  transform: rotate(45deg) translateX(calc(-1 * var(--sp-s)));
-  border-bottom: $b-1 solid var(--color-accent-primary-muted);
-  border-right: $b-1 solid var(--color-accent-primary-muted);
+  transform-origin: 0 0;
+  transform: rotate(45deg) translate(-2px, -10px);
+  border-block-end: $b-1 solid var(--color-accent-primary-muted);
+  border-inline-end: $b-1 solid var(--color-accent-primary-muted);
 }
 
 .tooltip-bottom {
@@ -52,9 +49,10 @@ $arrow-size: 11px;
 .tooltip-bottom .tooltip-arrow {
   justify-self: center;
   border-radius: var(--sp-xs) 0;
-  transform: rotate(45deg) translateX(var(--sp-s));
-  border-top: $b-1 solid var(--color-accent-primary-muted);
-  border-left: $b-1 solid var(--color-accent-primary-muted);
+  transform-origin: 0 0;
+  transform: rotate(45deg) translate(7px, -2px);
+  border-block-start: $b-1 solid var(--color-accent-primary-muted);
+  border-inline-start: $b-1 solid var(--color-accent-primary-muted);
 }
 
 .tooltip-left {
@@ -64,21 +62,23 @@ $arrow-size: 11px;
 .tooltip-left .tooltip-arrow {
   align-self: center;
   border-radius: 0 var(--sp-xs);
-  transform: rotate(45deg) translateX(calc(-1 * var(--sp-xs))) translateY(var(--sp-xs));
-  border-top: $b-1 solid var(--color-accent-primary-muted);
-  border-right: $b-1 solid var(--color-accent-primary-muted);
+  transform-origin: 0 0;
+  transform: rotate(45deg) translate(-2px, -1px);
+  border-block-start: $b-1 solid var(--color-accent-primary-muted);
+  border-inline-end: $b-1 solid var(--color-accent-primary-muted);
 }
 
 .tooltip-right {
-  grid-template-areas: " arrow content";
+  grid-template-areas: "arrow content";
 }
 
 .tooltip-right .tooltip-arrow {
   align-self: center;
   border-radius: 0 var(--sp-xs);
-  transform: rotate(45deg) translateX(var(--sp-xs)) translateY(calc(-1 * var(--sp-xs)));
-  border-bottom: $b-1 solid var(--color-accent-primary-muted);
-  border-left: $b-1 solid var(--color-accent-primary-muted);
+  transform-origin: 0 0;
+  transform: rotate(45deg) translate(7px, -10px);
+  border-block-end: $b-1 solid var(--color-accent-primary-muted);
+  border-inline-start: $b-1 solid var(--color-accent-primary-muted);
 }
 
 .tooltip-top-right {
@@ -91,8 +91,8 @@ $arrow-size: 11px;
   margin: 0 var(--sp-l);
   border-radius: var(--sp-xs) 0;
   transform: rotate(45deg) translateX(calc(-1 * var(--sp-s)));
-  border-bottom: $b-1 solid var(--color-accent-primary-muted);
-  border-right: $b-1 solid var(--color-accent-primary-muted);
+  border-block-end: $b-1 solid var(--color-accent-primary-muted);
+  border-inline-end: $b-1 solid var(--color-accent-primary-muted);
 }
 
 .tooltip-bottom-right {
@@ -105,8 +105,8 @@ $arrow-size: 11px;
   margin: 0px var(--sp-s);
   transform: rotate(45deg) translateX(var(--sp-s));
   border-radius: var(--sp-xs) 0;
-  border-top: $b-1 solid var(--color-accent-primary-muted);
-  border-left: $b-1 solid var(--color-accent-primary-muted);
+  border-block-start: $b-1 solid var(--color-accent-primary-muted);
+  border-inline-start: $b-1 solid var(--color-accent-primary-muted);
 }
 
 .tooltip-bottom-left {
@@ -119,8 +119,8 @@ $arrow-size: 11px;
   margin: 0 var(--sp-s);
   transform: rotate(45deg) translateY(var(--sp-s));
   border-radius: var(--sp-xs) 0;
-  border-top: $b-1 solid var(--color-accent-primary-muted);
-  border-left: $b-1 solid var(--color-accent-primary-muted);
+  border-block-start: $b-1 solid var(--color-accent-primary-muted);
+  border-inline-start: $b-1 solid var(--color-accent-primary-muted);
 }
 
 .tooltip-top-left {
@@ -133,11 +133,12 @@ $arrow-size: 11px;
   justify-self: end;
   border-radius: var(--sp-xs) 0;
   transform: rotate(45deg) translateX(calc(-1 * var(--sp-s)));
-  border-bottom: $b-1 solid var(--color-accent-primary-muted);
-  border-right: $b-1 solid var(--color-accent-primary-muted);
+  border-block-end: $b-1 solid var(--color-accent-primary-muted);
+  border-inline-end: $b-1 solid var(--color-accent-primary-muted);
 }
 
 .tooltip-content {
+  @include t.use-typography("body-small");
   background-color: var(--color-background-primary);
   color: var(--color-foreground-secondary);
   border-radius: var(--sp-xs);
@@ -147,6 +148,7 @@ $arrow-size: 11px;
 }
 
 .tooltip-trigger {
-  width: fit-content;
-  height: fit-content;
+  block-size: fit-content;
+  inline-size: fit-content;
+  line-height: 0;
 }
