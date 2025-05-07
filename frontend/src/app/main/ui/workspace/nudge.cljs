@@ -34,8 +34,7 @@
   (let [profile      (mf/deref refs/profile)
         nudge        (or (get-in profile [:props :nudge]) {:big 10 :small 1})
         update-big   (mf/use-fn #(st/emit! (dw/update-nudge {:big %})))
-        update-small (mf/use-fn #(st/emit! (dw/update-nudge {:small %})))
-        on-close     (mf/use-fn #(modal/hide!))]
+        update-small (mf/use-fn #(st/emit! (dw/update-nudge {:small %})))]
 
     (mf/with-effect
       (->> (events/listen js/document EventType.KEYDOWN on-keydown)
@@ -46,7 +45,7 @@
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} (tr "modals.nudge-title")]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click on-close} i/close]]
+                 :on-click modal/hide!} i/close]]
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :input-wrapper)}
         [:label {:class (stl/css :modal-msg)

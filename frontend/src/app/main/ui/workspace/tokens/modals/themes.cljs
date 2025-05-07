@@ -38,10 +38,7 @@
   (let [create-theme
         (mf/use-fn
          (mf/deps change-view)
-         #(change-view :create-theme))
-        close-modal
-        (mf/use-fn
-         #(st/emit! (modal/hide)))]
+         #(change-view :create-theme))]
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
       (tr "workspace.token.themes-list")]
@@ -56,7 +53,7 @@
       [:div {:class (stl/css :button-footer)}
        [:> button* {:variant "secondary"
                     :type "button"
-                    :on-click close-modal}
+                    :on-click modal/hide!}
         (tr "labels.close")]
        [:> button* {:variant "primary"
                     :type "button"
@@ -89,11 +86,7 @@
          (fn [e]
            (dom/prevent-default e)
            (dom/stop-propagation e)
-           (change-view :create-theme)))
-
-        close-modal
-        (mf/use-fn
-         #(st/emit! (modal/hide)))]
+           (change-view :create-theme)))]
 
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
@@ -163,7 +156,7 @@
      [:div {:class (stl/css :button-footer)}
       [:> button* {:variant "secondary"
                    :type "button"
-                   :on-click close-modal}
+                   :on-click modal/hide!}
        (tr "labels.close")]
       [:> button* {:variant "primary"
                    :type "button"

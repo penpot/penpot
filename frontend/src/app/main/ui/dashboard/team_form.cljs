@@ -84,10 +84,7 @@
            (when (kbd/enter? e)
              (dom/prevent-default e)
              (dom/stop-propagation e)
-             (on-submit form e))))
-
-        on-close
-        (mf/use-fn #(st/emit! (modal/hide)))]
+             (on-submit form e))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
@@ -103,7 +100,7 @@
            (tr "labels.create-team")])
 
         [:button {:class (stl/css :modal-close-btn)
-                  :on-click on-close} i/close]]
+                  :on-click modal/hide!} i/close]]
 
        [:div {:class (stl/css :modal-content)}
         [:& fm/input {:type "text"
