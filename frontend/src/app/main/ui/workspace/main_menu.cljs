@@ -618,7 +618,7 @@
         [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                                  :on-click    on-pin-version
                                  :on-key-down on-pin-version-key-down
-                                 :id          "file-menu-show-version-history"}
+                                 :id          "file-menu-create-version"}
          [:span {:class (stl/css :item-name)}
           (tr "dashboard.create-version-menu")]]
 
