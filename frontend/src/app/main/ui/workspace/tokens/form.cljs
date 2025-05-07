@@ -536,6 +536,7 @@
                      :variant "comfortable"
                      :auto-focus true
                      :default-value @token-name-ref
+                     :hint-type (when (seq (:errors @name-errors)) "error")
                      :ref name-ref
                      :on-blur on-blur-name
                      :on-change on-update-name}])
