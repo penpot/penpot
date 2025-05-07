@@ -42,7 +42,7 @@
   :dev
   {:extra-paths ["dev"]
    :extra-deps
-   {thheller/shadow-cljs {:mvn/version "2.28.18"}
+   {thheller/shadow-cljs {:mvn/version "3.0.3"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     org.clojure/tools.namespace {:mvn/version "RELEASE"}
     criterium/criterium {:mvn/version "RELEASE"}
