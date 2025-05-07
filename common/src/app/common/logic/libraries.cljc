@@ -450,12 +450,12 @@
                                    changes
                                    (rest moved-shapes))
          changes           (cond-> changes
-                             ;; Transform variant info into name when restoring into a parent that is not a variant-container
-                             (and is-variant? parent (not (ctk/is-variant-container? parent)))
+                             ;; Transform variant info into name when restoring into a parent that is not a variant-container,
+                             ;; or when restoring into a variant-container that doesn't exists anymore
+                             (and is-variant?
+                                  (or (and parent (not (ctk/is-variant-container? parent)))
+                                      (nil? restoring-into-parent)))
                              (clvp/generate-make-shapes-no-variant [first-shape])
-                             ;; Remove variant info when restoring into a variant-container that doesn't exists anymore
-                             (and is-variant? (nil? restoring-into-parent))
-                             (clvp/generate-delete-variant-info first-shape)
                              ;; Add variant info and rename when restoring into a variant-container
                              (ctk/is-variant-container? restoring-into-parent)
                              (clvp/generate-make-shapes-variant [first-shape] restoring-into-parent))]
