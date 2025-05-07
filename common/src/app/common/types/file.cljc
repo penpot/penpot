@@ -83,6 +83,7 @@
   because sometimes we want to validate file without the data."
   [:map {:title "file"}
    [:id ::sm/uuid]
+   [:name :string]
    [:revn {:optional true} :int]
    [:vern {:optional true} :int]
    [:created-at {:optional true} ::sm/inst]
@@ -101,13 +102,15 @@
 (sm/register! ::media schema:media)
 (sm/register! ::colors schema:colors)
 (sm/register! ::typographies schema:typographies)
-
 (sm/register! ::media-object schema:media)
 
-(def check-file-data!
-  (sm/check-fn ::data))
+(def check-file
+  (sm/check-fn schema:file :hint "check error on validating file"))
 
-(def check-media-object!
+(def check-file-data
+  (sm/check-fn schema:data))
+
+(def check-media-object
   (sm/check-fn schema:media))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -51,15 +51,13 @@
 ;; TODO HYMA: Copied over from workspace.cljs
 (defn update-shape
   [id attrs]
-  (dm/assert!
-   "expected valid parameters"
-   (and (cts/check-shape-attrs! attrs)
-        (uuid? id)))
+  (assert (uuid? id) "expected valid uuid for `id`")
 
-  (ptk/reify ::update-shape
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (dwsh/update-shapes [id] #(merge % attrs))))))
+  (let [attrs (cts/check-shape-attrs attrs)]
+    (ptk/reify ::update-shape
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (rx/of (dwsh/update-shapes [id] #(merge % attrs)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions

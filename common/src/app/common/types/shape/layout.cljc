@@ -168,25 +168,24 @@
 (def item-align-self-types
   #{:start :end :center :stretch})
 
-(sm/register!
- ^{::sm/type ::layout-child-attrs}
- [:map {:title "LayoutChildAttrs"}
-  [:layout-item-margin-type {:optional true} [::sm/one-of item-margin-types]]
-  [:layout-item-margin {:optional true}
-   [:map
-    [:m1 {:optional true} ::sm/safe-number]
-    [:m2 {:optional true} ::sm/safe-number]
-    [:m3 {:optional true} ::sm/safe-number]
-    [:m4 {:optional true} ::sm/safe-number]]]
-  [:layout-item-max-h {:optional true} ::sm/safe-number]
-  [:layout-item-min-h {:optional true} ::sm/safe-number]
-  [:layout-item-max-w {:optional true} ::sm/safe-number]
-  [:layout-item-min-w {:optional true} ::sm/safe-number]
-  [:layout-item-h-sizing {:optional true} [::sm/one-of item-h-sizing-types]]
-  [:layout-item-v-sizing {:optional true} [::sm/one-of item-v-sizing-types]]
-  [:layout-item-align-self {:optional true} [::sm/one-of item-align-self-types]]
-  [:layout-item-absolute {:optional true} :boolean]
-  [:layout-item-z-index {:optional true} ::sm/safe-number]])
+(def schema:layout-attrs
+  [:map {:title "LayoutChildAttrs"}
+   [:layout-item-margin-type {:optional true} [::sm/one-of item-margin-types]]
+   [:layout-item-margin {:optional true}
+    [:map
+     [:m1 {:optional true} ::sm/safe-number]
+     [:m2 {:optional true} ::sm/safe-number]
+     [:m3 {:optional true} ::sm/safe-number]
+     [:m4 {:optional true} ::sm/safe-number]]]
+   [:layout-item-max-h {:optional true} ::sm/safe-number]
+   [:layout-item-min-h {:optional true} ::sm/safe-number]
+   [:layout-item-max-w {:optional true} ::sm/safe-number]
+   [:layout-item-min-w {:optional true} ::sm/safe-number]
+   [:layout-item-h-sizing {:optional true} [::sm/one-of item-h-sizing-types]]
+   [:layout-item-v-sizing {:optional true} [::sm/one-of item-v-sizing-types]]
+   [:layout-item-align-self {:optional true} [::sm/one-of item-align-self-types]]
+   [:layout-item-absolute {:optional true} :boolean]
+   [:layout-item-z-index {:optional true} ::sm/safe-number]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS
