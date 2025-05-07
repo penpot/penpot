@@ -1,0 +1,29 @@
+# Ignorar Git y configuración
+.git
+.gitignore
+.gitattributes
+
+# Ignorar cachés de dependencias
+node_modules
+bower_components
+tmp
+.cache
+
+# Ignorar archivos locales de desarrollo
+.DS_Store
+*.swp
+*.swo
+*.log
+
+# Ignorar artefactos de builds
+bundles/
+frontend/target/
+backend/target/
+exporter/target/
+docs/_dist/
+
+# Ignorar configuración de CI no necesaria
+.github/
+.circleci/
+.vscode/
+.idea/

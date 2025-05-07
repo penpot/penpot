@@ -1,0 +1,102 @@
+name: Build and Upload Penpot Bundles
+
+on:
+  workflow_dispatch:
+    inputs:
+      zip_mode:
+        description: 'Bundle packaging mode'
+        required: false
+        default: 'individual'
+        type: choice
+        options:
+          - individual
+          - all
+  push:
+    branches:
+      - github-actions-bundle-build 
+env:
+  ZIP_MODE: ${{ github.event.inputs.zip_mode }}
+
+jobs:
+  build-bundles:
+    name: Build frontend, backend, exporter and upload bundles
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Penpot CI Builder Image
+        run: |
+          docker build \
+            --build-arg EXTERNAL_UID=1000 \
+            --build-arg EXTERNAL_GID=1000 \
+            -t penpotapp/penpot-ci-builder:latest \
+            -f docker/devenv/Dockerfile \
+            docker/devenv
+
+      - name: Run manage.sh build-bundle from host
+        run: ./manage.sh build-bundle
+
+      - name: Create README and zip bundles
+        run: |
+          echo "📦 Generating bundle documentation and packaging..."
+
+          mkdir -p bundles
+
+          echo "# Penpot Frontend Bundle" > frontend/README.md
+          echo "This bundle contains the compiled frontend of Penpot. To deploy, serve it via a static file server like NGINX." >> frontend/README.md
+
+          echo "# Penpot Backend Bundle" > backend/README.md
+          echo "This bundle contains the backend services of Penpot. Deploy in a containerized or server environment supporting Clojure/Java." >> backend/README.md
+
+          echo "# Penpot Exporter Bundle" > exporter/README.md
+          echo "This bundle includes Penpot's export service. Use alongside backend for complete document conversion features." >> exporter/README.md
+
+          if [[ "${ZIP_MODE}" == "all" ]]; then
+            echo "Creating unified penpot-all-bundles.zip"
+            cp -r frontend backend exporter bundles/
+            echo "# Penpot Bundles" > bundles/README.md
+            echo "" >> bundles/README.md
+            echo "This package contains all Penpot components: frontend, backend, and exporter." >> bundles/README.md
+            echo "Refer to each subdirectory for specific deployment instructions." >> bundles/README.md
+            cd bundles
+            mkdir all-in-one
+            mv frontend backend exporter README.md all-in-one/
+            zip -r penpot-all-bundles.zip all-in-one
+          else
+            echo "Creating individual zip files"
+            zip -r frontend.zip frontend
+            zip -r backend.zip backend
+            zip -r exporter.zip exporter
+          fi
+      - name: Upload unified bundle
+        if: env.ZIP_MODE == 'all'
+        uses: actions/upload-artifact@v4
+        with:
+          name: penpot-all-bundles
+          path: bundles/penpot-all-bundles.zip
+
+      - name: Upload frontend bundle
+        if: env.ZIP_MODE != 'all'
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-bundle
+          path: frontend.zip
+
+      - name: Upload backend bundle
+        if: env.ZIP_MODE != 'all'
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-bundle
+          path: backend.zip
+
+      - name: Upload exporter bundle
+        if: env.ZIP_MODE != 'all'
+        uses: actions/upload-artifact@v4
+        with:
+          name: exporter-bundle
+          path: exporter.zip
