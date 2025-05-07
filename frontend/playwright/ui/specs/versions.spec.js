@@ -4,11 +4,13 @@ import { presenceFixture } from "../../data/workspace/ws-notifications";
 
 test.beforeEach(async ({ page }) => {
   await WorkspacePage.init(page);
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
 });
 
 test("Save and restore version", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
-  await workspacePage.setupEmptyFile(page);
+
   await workspacePage.mockRPC(/get\-file\?/, "workspace/versions-init.json");
   await workspacePage.mockRPC(
     "get-file-fragment?file-id=*&fragment-id=406b7b01-d3e2-80e4-8005-3138b7cc5f0b",
@@ -86,4 +88,21 @@ test("Save and restore version", async ({ page }) => {
 
   // check that the history panel is closed after restore
   await expect(page.getByRole("tab", { name: "design" })).toBeVisible();
+});
+
+test("BUG 11006 - Fix history panel shortcut", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.mockRPC(/get\-file\?/, "workspace/versions-init.json");
+  await workspacePage.mockRPC(
+    "get-file-snapshots?file-id=*",
+    "workspace/versions-snapshot-1.json",
+  );
+
+  await workspacePage.goToWorkspace();
+
+  await page.keyboard.press("Control+Alt+h");
+
+  await expect(
+    workspacePage.rightSidebar.getByText("There are no versions yet"),
+  ).toBeVisible();
 });

@@ -464,11 +464,11 @@
                           :subsections [:panels]
                           :fn #(st/emit! (dcm/go-to-workspace :layout :assets))}
 
-   :toggle-history       {:tooltip (ds/alt "H")
-                          :command (ds/a-mod "h")
+   :toggle-history       {:tooltip (ds/meta-alt "H")
+                          :command (ds/ca-mod "h")
                           :subsections [:panels]
                           :fn #(emit-when-no-readonly
-                                (dcm/go-to-workspace :layout :document-history))}
+                                (dw/toggle-layout-flag :document-history))}
 
    :toggle-colorpalette  {:tooltip (ds/alt "P")
                           :command (ds/a-mod "p")
