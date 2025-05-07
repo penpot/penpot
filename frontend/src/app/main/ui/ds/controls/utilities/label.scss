@@ -19,6 +19,11 @@
   align-items: center;
 }
 
+.label-text,
+.label-optional {
+  line-height: inherit;
+}
+
 .label-text {
   color: var(--label-color);
 }

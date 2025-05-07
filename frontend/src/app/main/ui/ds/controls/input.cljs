@@ -48,9 +48,9 @@
         props (mf/spread-props props {:ref ref
                                       :type type
                                       :id id
-                                      :hint-type hint-type
                                       :max-length max-length
                                       :has-hint has-hint
+                                      :hint-type hint-type
                                       :variant variant})]
     [:div {:class (dm/str class " " (stl/css-case :input-wrapper true
                                                   :variant-dense (= variant "dense")
