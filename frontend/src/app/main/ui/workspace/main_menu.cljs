@@ -627,7 +627,10 @@
                                  :on-key-down on-show-version-history-key-down
                                  :id          "file-menu-show-version-history"}
          [:span {:class (stl/css :item-name)}
-          (tr "dashboard.show-version-history")]]
+          (tr "dashboard.show-version-history")]
+         [:span {:class (stl/css :shortcut)}
+          (for [sc (scd/split-sc (sc/get-tooltip :toggle-history))]
+            [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
         [:div {:class (stl/css :separator)}]])
 
