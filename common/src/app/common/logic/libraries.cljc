@@ -25,6 +25,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
@@ -42,6 +43,12 @@
 ;; contained in them).
 (def log-shape-ids #{})
 (def log-container-ids #{})
+
+(def updatable-attrs (->> (seq (keys ctk/sync-attrs))
+                           ;; We don't update the flex-child attrs
+                          (remove ctk/swap-keep-attrs)
+                           ;; We don't do automatic update of the `layout-grid-cells` property.
+                          (remove #(= :layout-grid-cells %))))
 
 (defn enabled-shape?
   [id container]
@@ -1704,11 +1711,7 @@
         origin-shape (reposition-shape origin-shape origin-root dest-root)
         touched      (get dest-shape :touched #{})]
 
-    (loop [attrs (->> (seq (keys ctk/sync-attrs))
-                      ;; We don't update the flex-child attrs
-                      (remove ctk/swap-keep-attrs)
-                      ;; We don't do automatic update of the `layout-grid-cells` property.
-                      (remove #(= :layout-grid-cells %)))
+    (loop [attrs updatable-attrs
            roperations []
            uoperations '()]
 
@@ -1729,6 +1732,47 @@
             (recur (next attrs)
                    roperations'
                    uoperations')))))))
+
+(defn update-attrs-on-switch
+  "Copy attributes that have changed in the origin shape to the dest shape. Used on variants switch"
+  [changes dest-shape origin-shape dest-root origin-root origin-ref-shape container]
+  (let [;; We need to sync only the position relative to the origin of the component.
+        ;; (see update-attrs for a full explanation)
+        origin-shape   (reposition-shape origin-shape origin-root dest-root)
+        touched        (get dest-shape :touched #{})
+        touched-origin (get origin-shape :touched #{})]
+
+    (loop [attrs       updatable-attrs
+           roperations [{:type :set-touched :touched (:touched origin-shape)}]
+           uoperations (list {:type :set-touched :touched (:touched dest-shape)})]
+      (if-let [attr (first attrs)]
+        (let [attr-group (get ctk/sync-attrs attr)
+              [roperations' uoperations']
+              (if (or
+                             ;; If the attribute is not valid for the destiny, don't copy it
+                   (not (cts/is-allowed-attr? attr (:type dest-shape)))
+                             ;; If the values are already equal, don't copy it
+                   (= (get origin-shape attr) (get dest-shape attr))
+                             ;; If the referenced shape on the original component doesn't have the same value, don't copy it
+                             ;; Exceptions: :points :selrect and :content can be different
+                   (and
+                    (not (contains? #{:points :selrect :content} attr))
+                    (not= (get origin-ref-shape attr) (get dest-shape attr)))
+                             ;; The :content attr cant't be copied to elements of different type
+                   (and (= attr :content) (not= (:type origin-shape) (:type dest-shape)))
+                             ;; If the attr is not touched in the origin shape, don't copy it
+                   (not (touched-origin attr-group)))
+                [roperations uoperations]
+                (add-update-attr-operations attr dest-shape origin-shape roperations uoperations touched))]
+          (recur (next attrs)
+                 roperations'
+                 uoperations'))
+        (cond-> changes
+          (> (count roperations) 1)
+          (add-update-attr-changes dest-shape container roperations uoperations)
+
+          :always
+          (generate-update-tokens container dest-shape origin-shape touched false))))))
 
 (defn- propagate-attrs
   "Helper that puts the origin attributes (attrs) into dest but only if

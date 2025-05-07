@@ -16,6 +16,7 @@
    [app.common.logging :as log]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.variants :as clv]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -988,7 +989,7 @@
 
 (defn component-swap
   "Swaps a component with another one"
-  [shape file-id id-new-component]
+  [shape file-id id-new-component keep-touched?]
   (dm/assert! (uuid? id-new-component))
   (dm/assert! (uuid? file-id))
   (ptk/reify ::component-swap
@@ -996,12 +997,13 @@
     (watch [it state _]
       ;; First delete shapes so we have space in the layout otherwise we can have problems
       ;; in the grid creating new rows/columns to make space
-      (let [libraries (dsh/lookup-libraries state)
-            page      (dsh/lookup-page state)
-            objects   (:objects page)
-            parent    (get objects (:parent-id shape))
+      (let [libraries   (dsh/lookup-libraries state)
+            page        (dsh/lookup-page state)
+            objects     (:objects page)
+            parent      (get objects (:parent-id shape))
 
-            ldata     (dsh/lookup-file-data state file-id)
+            ldata       (dsh/lookup-file-data state file-id)
+            orig-shapes (when keep-touched? (cfh/get-children-with-self objects (:id shape)))
 
             ;; If the target parent is a grid layout we need to pass the target cell
             target-cell (when (ctl/grid-layout? parent)
@@ -1018,7 +1020,11 @@
             [new-shape all-parents changes]
             (-> (pcb/empty-changes it (:id page))
                 (pcb/set-undo-group undo-group)
-                (cll/generate-component-swap objects shape ldata page libraries id-new-component index target-cell keep-props-values))]
+                (cll/generate-component-swap objects shape ldata page libraries id-new-component index target-cell keep-props-values))
+
+            changes (if keep-touched?
+                      (clv/generate-keep-touched changes new-shape shape orig-shapes page)
+                      changes)]
 
         (rx/of
          (dwu/start-undo-transaction undo-id)
@@ -1047,7 +1053,7 @@
                   :undo-id undo-id)
         (rx/concat
          (rx/of (dwu/start-undo-transaction undo-id))
-         (rx/map #(component-swap % file-id id-new-component) (rx/from shapes))
+         (rx/map #(component-swap % file-id id-new-component false) (rx/from shapes))
          (rx/of (dwu/commit-undo-transaction undo-id))
          (rx/of (dwsp/open-specialized-panel :component-swap)))))))
 
