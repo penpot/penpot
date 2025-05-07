@@ -1,4 +1,4 @@
-use crate::shapes::fills::Fill;
+use crate::shapes::fills::{Fill, SolidColor};
 use skia_safe::{self as skia, Rect};
 use std::collections::HashMap;
 
@@ -78,10 +78,9 @@ impl Stroke {
     }
 
     pub fn new_center_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
-        let transparent = skia::Color::from_argb(0, 0, 0, 0);
         Stroke {
-            fill: Fill::Solid(transparent),
-            width: width,
+            fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
+            width,
             style: StrokeStyle::from(style),
             cap_end: StrokeCap::from(cap_end),
             cap_start: StrokeCap::from(cap_start),
@@ -90,10 +89,9 @@ impl Stroke {
     }
 
     pub fn new_inner_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
-        let transparent = skia::Color::from_argb(0, 0, 0, 0);
         Stroke {
-            fill: Fill::Solid(transparent),
-            width: width,
+            fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
+            width,
             style: StrokeStyle::from(style),
             cap_end: StrokeCap::from(cap_end),
             cap_start: StrokeCap::from(cap_start),
@@ -102,10 +100,9 @@ impl Stroke {
     }
 
     pub fn new_outer_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
-        let transparent = skia::Color::from_argb(0, 0, 0, 0);
         Stroke {
-            fill: Fill::Solid(transparent),
-            width: width,
+            fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
+            width,
             style: StrokeStyle::from(style),
             cap_end: StrokeCap::from(cap_end),
             cap_start: StrokeCap::from(cap_start),

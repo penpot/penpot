@@ -214,35 +214,26 @@
           (let [opacity  (or (:fill-opacity fill) 1.0)
                 color    (:fill-color fill)
                 gradient (:fill-color-gradient fill)
-                image    (:fill-image fill)]
+                image    (:fill-image fill)
+                offset   (mem/alloc-bytes sr-fills/FILL-BYTE-SIZE)
+                heap     (mem/get-heap-u32)]
             (cond
               (some? color)
-              (let [rgba (sr-clr/hex->u32argb color opacity)]
-                (h/call wasm/internal-module "_add_shape_solid_fill" rgba))
+              (let [argb (sr-clr/hex->u32argb color opacity)]
+                (sr-fills/write-solid-fill! offset heap argb)
+                (h/call wasm/internal-module "_add_shape_fill"))
 
               (some? gradient)
-              (let [size   sr-fills/GRADIENT-BYTE-SIZE
-                    offset (mem/alloc-bytes size)
-                    heap   (mem/get-heap-u32)]
+              (do
                 (sr-fills/write-gradient-fill! offset heap gradient opacity)
-                (case (:type gradient)
-                  :linear
-                  (h/call wasm/internal-module "_add_shape_linear_fill")
-                  :radial
-                  (h/call wasm/internal-module "_add_shape_radial_fill")))
+                (h/call wasm/internal-module "_add_shape_fill"))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
                     buffer        (uuid/get-u32 id)
                     cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
-                (h/call wasm/internal-module "_add_shape_image_fill"
-                        (aget buffer 0)
-                        (aget buffer 1)
-                        (aget buffer 2)
-                        (aget buffer 3)
-                        opacity
-                        (dm/get-prop image :width)
-                        (dm/get-prop image :height))
+                (sr-fills/write-image-fill! offset heap id opacity (dm/get-prop image :width) (dm/get-prop image :height))
+                (h/call wasm/internal-module "_add_shape_fill")
                 (when (== cached-image? 0)
                   (store-image id))))))
         fills))
@@ -259,7 +250,9 @@
                 align     (:stroke-alignment stroke)
                 style     (-> stroke :stroke-style sr/translate-stroke-style)
                 cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
-                cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)]
+                cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)
+                offset    (mem/alloc-bytes sr-fills/FILL-BYTE-SIZE)
+                heap      (mem/get-heap-u32)]
             (case align
               :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end)
               :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end)
@@ -267,34 +260,23 @@
 
             (cond
               (some? gradient)
-              (let [size   sr-fills/GRADIENT-BYTE-SIZE
-                    offset (mem/alloc-bytes size)
-                    heap   (mem/get-heap-u32)]
+              (let [_ nil]
                 (sr-fills/write-gradient-fill! offset heap gradient opacity)
-                (case (:type gradient)
-                  :linear
-                  (h/call wasm/internal-module "_add_shape_stroke_linear_fill")
-                  :radial
-                  (h/call wasm/internal-module "_add_shape_stroke_radial_fill")))
+                (h/call wasm/internal-module "_add_shape_stroke_fill"))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
                     buffer        (uuid/get-u32 id)
                     cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
-                (h/call wasm/internal-module "_add_shape_image_stroke"
-                        (aget buffer 0)
-                        (aget buffer 1)
-                        (aget buffer 2)
-                        (aget buffer 3)
-                        opacity
-                        (dm/get-prop image :width)
-                        (dm/get-prop image :height))
+                (sr-fills/write-image-fill! offset heap id opacity (dm/get-prop image :width) (dm/get-prop image :height))
+                (h/call wasm/internal-module "_add_shape_stroke_fill")
                 (when (== cached-image? 0)
                   (store-image id)))
 
               (some? color)
-              (let [rgba (sr-clr/hex->u32argb color opacity)]
-                (h/call wasm/internal-module "_add_shape_stroke_solid_fill" rgba)))))
+              (let [argb (sr-clr/hex->u32argb color opacity)]
+                (sr-fills/write-solid-fill! offset heap argb)
+                (h/call wasm/internal-module "_add_shape_stroke_fill")))))
         strokes))
 
 (defn set-shape-path-attrs

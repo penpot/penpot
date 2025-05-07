@@ -67,21 +67,60 @@ Paths are made of segments of **28 bytes** each. The layout (assuming positions 
 
 **Flags** is not being used at the moment.
 
-## Gradient stops
+## Fills
 
-Gradient stops are serialized in a `Uint8Array`, each stop taking **5 bytes**.
+All fills take `160` bytes, but depending on the fill type, not all bytes are actually used.
+
+### Solid color fills
+
+| Offset | Length (bytes) | Data Type | Field      |
+| ------ | -------------- | --------- | ---------- |
+| 0      | 1              | `0x00`    | Fill type  |
+| 1      | 3              | ?         | Reserved   |
+| 4      | 4              | `u32`     | ARGB color |
+
+### Image fills
+
+| Offset | Length (bytes) | Data Type | Field     |
+| ------ | -------------- | --------- | --------- |
+| 0      | 1              | `0x03`    | Fill type |
+| 1      | 3              | ?         | Reserved  |
+| 4      | 4              | `u32`     | `a` (ID)  |
+| 8      | 4              | `u32`     | `b` (ID)  |
+| 12     | 4              | `u32`     | `c` (ID)  |
+| 16     | 4              | `u32`     | `d` (ID)  |
+| 20     | 4              | `f32`     | Opacity   |
+| 24     | 4              | `width`   | Opacity   |
+| 29     | 4              | `height`  | Opacity   |
+
+### Gradient fills
+
+| Offset | Length (bytes) | Data Type   | Field       |
+| ------ | -------------- | ----------- | ----------- |
+| 0      | 1              | `0x03`      | Fill type\* |
+| 1      | 3              | ?           | Reserved    |
+| 4      | 4              | `f32`       | Start `x`   |
+| 8      | 4              | `f32`       | Start `y`   |
+| 12     | 4              | `f32`       | End `x`     |
+| 16     | 4              | `f32`       | End `y`     |
+| 20     | 4              | `f32`       | Opacity     |
+| 24     | 4              | `f32`       | Width\*\*   |
+| 28     | 4              | `u8`        | Stop count  |
+| 29     | 3              | ?           | Reserved    |
+| 32     | 128            | _See below_ | Stop data   |
+
+\*: **Fill type** is `0x01` for linear gradients and `0x02` for radial gradients.
+
+\*\*: **Width** is unused in linear gradients.
+
+#### Gradient stop data
+
+Gradient stops are serialized as a sequence of `16` chunks with the following layout:
 
 | Offset | Length (bytes) | Data Type | Field       |
 | ------ | -------------- | --------- | ----------- |
-| 0      | 1              | `u8`      | Red         |
-| 1      | 1              | `u8`      | Green       |
-| 2      | 1              | `u8`      | Blue        |
-| 3      | 1              | `u8`      | Alpha       |
-| 4      | 1              | `u8`      | Stop Offset |
-
-**Red**, **Green**, **Blue** and **Alpha** are the RGBA components of the stop.
-
-**Stop offset** is the offset, being integer values ranging from `0` to `100` (both inclusive).
+| 0      | 4              | `u32`     | ARGB Color  |
+| 4      | 4              | `f32`     | Stop offset |
 
 ## Stroke Caps
 
@@ -154,11 +193,11 @@ Shadow styles are serialized as `u8`:
 
 ### Grid Direction
 
-| Value | Field         |
-| ----- | ------------- |
-| 0     | Row           |
-| 1     | Column        |
-| \_    | error         |
+| Value | Field  |
+| ----- | ------ |
+| 0     | Row    |
+| 1     | Column |
+| \_    | error  |
 
 ### Align Items
 
@@ -264,8 +303,6 @@ Shadow styles are serialized as `u8`:
 | 2     | Auto    |
 | 3     | Fixed   |
 | \_    | error   |
-
-
 
 ## Font
 
