@@ -11,6 +11,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
+   [app.common.types.shape :as shp]
+   [app.main.features :as features]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.reorder-handler :refer [reorder-handler]]
    [app.main.ui.components.select :refer [select]]
@@ -283,7 +285,9 @@
          (mf/deps on-reverse-stops)
          (fn []
            (when on-reverse-stops
-             (on-reverse-stops))))]
+             (on-reverse-stops))))
+        render-wasm? (features/use-feature "render-wasm/v1")
+        add-stop-disabled? (when render-wasm? (= (count stops) shp/MAX-GRADIENT-STOPS))]
 
     [:div {:class (stl/css :gradient-panel)}
      [:div {:class (stl/css :gradient-preview)}
@@ -339,6 +343,7 @@
                          :icon "switch"}]
        [:> icon-button* {:variant "ghost"
                          :aria-label "Add stop"
+                         :disabled add-stop-disabled?
                          :on-click handle-add-stop
                          :icon "add"}]]]
 

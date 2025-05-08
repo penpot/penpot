@@ -15,6 +15,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.points :as gsp]
    [app.common.math :as mth]
+   [app.common.types.shape :as shp]
    [app.main.data.workspace.colors :as dc]
    [app.main.refs :as refs]
    [app.main.store :as st]

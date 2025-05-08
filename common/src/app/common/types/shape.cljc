@@ -756,3 +756,5 @@
         (d/patch-object (select-keys props basic-extract-props))
         (cond-> (cfh/text-shape? shape) (patch-text-props props))
         (cond-> (cfh/frame-shape? shape) (patch-layout-props props)))))
+
+(def MAX-GRADIENT-STOPS 16)

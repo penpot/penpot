@@ -1,15 +1,17 @@
 (ns app.render-wasm.serializers.fills
   (:require
+   [app.common.types.shape :as shp]
    [app.common.uuid :as uuid]
    [app.render-wasm.serializers.color :as clr]))
 
 (def ^:private GRADIENT-STOP-SIZE 8)
 (def ^:private GRADIENT-BASE-SIZE 28)
-;; TODO: Define in shape model
-(def ^:private MAX-GRADIENT-STOPS 16)
 
-(def GRADIENT-BYTE-SIZE
-  (+ GRADIENT-BASE-SIZE (* MAX-GRADIENT-STOPS GRADIENT-STOP-SIZE)))
+;; (def GRADIENT-BYTE-SIZE
+;;   (+ GRADIENT-BASE-SIZE (* shp/MAX-GRADIENT-STOPS GRADIENT-STOP-SIZE)))
+
+(def GRADIENT-BYTE-SIZE 156)
+
 
 (def SOLID-BYTE-SIZE 4)
 (def IMAGE-BYTE-SIZE 28)
@@ -48,7 +50,7 @@
         end-x   (:end-x gradient)
         end-y   (:end-y  gradient)
         width   (or (:width gradient) 0)
-        stops   (take MAX-GRADIENT-STOPS (:stops gradient))
+        stops   (take shp/MAX-GRADIENT-STOPS (:stops gradient))
         type    (if (= (:type gradient) :linear) 0x01 0x02)]
     (.setUint8   dview offset        type true)
     (.setFloat32 dview (+ offset 4)  start-x true)
