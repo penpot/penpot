@@ -45,7 +45,6 @@ jobs:
       - name: Create zip bundles
         run: |
           echo "📦 Packaging Penpot bundles..."
-
           mkdir -p zips
 
           if [[ "${ZIP_MODE}" == "all" ]]; then
@@ -60,15 +59,12 @@ jobs:
             echo "Creating individual zip files"
             mkdir -p temp
 
-            cp -r bundles/frontend temp/penpot-frontend
-            cp -r bundles/backend temp/penpot-backend
-            cp -r bundles/exporter temp/penpot-exporter
-
-            cd temp
-            zip -r ../zips/penpot-frontend.zip penpot-frontend
-            zip -r ../zips/penpot-backend.zip penpot-backend
-            zip -r ../zips/penpot-exporter.zip penpot-exporter
-            cd ..
+            for component in frontend backend exporter; do
+              name="penpot-${component}"
+              mkdir -p temp/${name}
+              cp -r bundles/${component}/* temp/${name}/
+              (cd temp && zip -r ../zips/${name}.zip ${name})
+            done
           fi
 
       - name: Upload unified bundle
@@ -80,22 +76,5 @@ jobs:
 
       - name: Upload frontend bundle
         if: env.ZIP_MODE != 'all'
-        uses: actions/upload-artifact@v4
-        with:
-          name: penpot-frontend
-          path: zips/penpot-frontend.zip
-
-      - name: Upload backend bundle
-        if: env.ZIP_MODE != 'all'
-        uses: actions/upload-artifact@v4
-        with:
-          name: penpot-backend
-          path: zips/penpot-backend.zip
-
-      - name: Upload exporter bundle
-        if: env.ZIP_MODE != 'all'
-        uses: actions/upload-artifact@v4
-        with:
-          name: penpot-exporter
-          path: zips/penpot-exporter.zip
+        uses: actions/upload-ar
 
