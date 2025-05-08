@@ -69,7 +69,7 @@
           [:& options-page]
 
           :settings-subscription
-          [:> subscription-page*]
+          [:> subscription-page* {:profile profile}]
 
           :settings-access-tokens
           [:& access-tokens-page]

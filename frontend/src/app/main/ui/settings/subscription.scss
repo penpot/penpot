@@ -91,8 +91,11 @@
 .plan-title-icon {
   @extend .button-icon;
   stroke: var(--color-foreground-primary);
+  height: $s-20;
+  width: $s-20;
   border-radius: $s-4;
   border: $s-1 solid var(--color-foreground-primary);
+  padding: $s-1;
 }
 
 .plan-card-title,
@@ -122,5 +125,16 @@
 
 .cta-button {
   @include t.use-typography("body-small");
+  @include buttonStyle;
   color: var(--color-accent-tertiary);
+  display: flex;
+  margin-block-start: $s-12;
+}
+
+.cta-button svg {
+  @extend .button-icon;
+  height: $s-16;
+  width: $s-16;
+  stroke: var(--color-accent-tertiary);
+  margin-inline-start: $s-4;
 }

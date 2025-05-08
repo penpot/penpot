@@ -1,7 +1,8 @@
 (ns app.main.ui.settings.subscription
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.refs :as refs]
+   [app.common.uri :as u]
+   [app.config :as cf]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -10,7 +11,7 @@
 
 (mf/defc plan-card*
   {::mf/props :obj}
-  [{:keys [card-title card-title-icon price-value price-period benefits-title benefits cta-text cta-link]}]
+  [{:keys [card-title card-title-icon price-value price-period benefits-title benefits cta-text cta-link cta-text-with-icon cta-link-with-icon]}]
   [:div {:class (stl/css :plan-card)}
    [:div {:class (stl/css :plan-card-header)}
     [:div {:class (stl/css :plan-card-title-container)}
@@ -24,21 +25,31 @@
    [:ul {:class (stl/css :benefits-list)}
     (for [benefit  benefits]
       [:li {:key (str benefit) :class (stl/css :benefit)} "- " benefit])]
-   (when (and cta-link cta-text) [:a {:class (stl/css :cta-button)
-                                      :href cta-link} cta-text])])
+   (when (and cta-link-with-icon cta-text-with-icon) [:button {:class (stl/css :cta-button :more-info)
+                                      :on-click cta-link-with-icon} cta-text-with-icon i/open-link])
+   (when (and cta-link cta-text) [:button {:class (stl/css :cta-button)
+                                      :on-click cta-link} cta-text])])
 
 (mf/defc subscription-page*
-  []
-  (let [;; TODO subscription cases professional/unlimited/enterprise
-        subscription-name      :unlimited
-        subscription-is-trial  false
+  [{:keys [profile]}]
+  (let [subscription           (:subscription (:props profile))
+        subscription-name      (if subscription
+                                 (:type subscription)
+                                 "professional")
+        subscription-is-trial  (= (:status subscription) "trialing")
         locale                 (mf/deref i18n/locale)
-        profile                (mf/deref refs/profile)
         penpot-member          (dt/format-date-locale-short (:created-at profile) {:locale locale})
-        ;; TODO get subscription member date
-        subscription-member    "January 17, 2024"
-        ;; TODO update url to penpot payments
-        go-to-payments         "https://penpot.app/pricing"]
+        subscription-member    (:start-date subscription)
+        ;; TODO encode URL
+        ;; u/query-encode
+        go-to-pricing-page     (mf/use-fn
+         (fn []
+           ;; TODO add event tracking
+           (dom/open-new-window "https://penpot.app/pricing")))
+        go-to-payments         (mf/use-fn
+         (fn []
+           ;; TODO add event tracking
+           (dom/open-new-window (u/join cf/public-uri (str "payments/subscriptions/show?returnUrl=" js/window.location.href)))))]
 
     (mf/with-effect []
       (dom/set-html-title (tr "subscription.labels")))
@@ -50,13 +61,13 @@
       [:div {:class (stl/css :your-subscription)}
        [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.section-plan")]
        (case subscription-name
-         :professional
+         "professional"
          [:> plan-card* {:card-title (tr "subscription.settings.professional")
                          :benefits [(tr "subscription.settings.professional.projects-files"),
                                     (tr "subscription.settings.professional.teams-editors"),
                                     (tr "subscription.settings.professional.storage")]}]
 
-         :unlimited
+         "unlimited"
          (if subscription-is-trial
            [:> plan-card* {:card-title (tr "subscription.settings.unlimited-trial")
                            :card-title-icon i/character-u
@@ -76,7 +87,7 @@
                            :cta-text (tr "subscription.settings.manage-your-subscription")
                            :cta-link go-to-payments}])
 
-         :enterprise
+         "enterprise"
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                          :card-title-icon i/character-e
                          :benefits-title (tr "subscription.settings.benefits.all-professiona-benefits")
@@ -104,8 +115,8 @@
                          :benefits [(tr "subscription.settings.professional.projects-files"),
                                     (tr "subscription.settings.professional.teams-editors"),
                                     (tr "subscription.settings.professional.storage")]
-                         :cta-text (tr "subscription.dashboard.power-up.subscribe")
-                         :cta-link go-to-payments}])
+                         :cta-text-with-icon (tr "subscription.settings.more-information")
+                         :cta-link-with-icon go-to-pricing-page}])
 
        (when (not= subscription-name :unlimited)
          [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
@@ -117,7 +128,9 @@
                                     (tr "subscription.settings.unlimited.bill"),
                                     (tr "subscription.settings.unlimited.storage")]
                          :cta-text (tr "subscription.settings.ulimited.try-it-free")
-                         :cta-link go-to-payments}])
+                         :cta-link go-to-payments
+                         :cta-text-with-icon (tr "subscription.settings.more-information")
+                         :cta-link-with-icon go-to-pricing-page}])
 
        (when (not= subscription-name :enterprise)
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
@@ -128,5 +141,7 @@
                          :benefits [(tr "subscription.settings.enterprise.support"),
                                     (tr "subscription.settings.enterprise.security"),
                                     (tr "subscription.settings.enterprise.logs")]
-                         :cta-text (tr "subscription.dashboard.power-up.subscribe")
-                         :cta-link go-to-payments}])]]]))
+                         :cta-text (tr "subscription.settings.try-it-free")
+                         :cta-link go-to-payments
+                         :cta-text-with-icon (tr "subscription.settings.more-information")
+                         :cta-link-with-icon go-to-pricing-page}])]]]))

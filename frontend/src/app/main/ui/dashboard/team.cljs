@@ -541,14 +541,22 @@
    [:section {:class (stl/css-case
                       :dashboard-container true
                       :dashboard-team-members true
-                      :dashboard-top-cta (>= (count (:members team)) 8))}
-    (when (and (contains? cfg/flags :subscriptions) (>= (count (:members team)) 8))
-      [:> members-cta* {:banner-is-expanded true}])
+                      :dashboard-top-cta (or (>= (count (:members team)) 8) (= (:status (:subscription team)) "paused")))}
+    (when (and (contains? cfg/flags :subscriptions)
+               (or
+                (and (= (:type (:subscription team)) "professional") (>= (count (:members team)) 8))
+                (= (:status (:subscription team)) "paused")))
+      [:> members-cta* {:banner-is-expanded true :team team}])
     [:> team-members*
      {:profile profile
       :team team}]
-    (when (and (contains? cfg/flags :subscriptions) (< (count (:members team)) 8))
-      [:> members-cta* {:banner-is-expanded false}])]])
+    (when (and
+           (contains? cfg/flags :subscriptions)
+           (or
+           (and (= (:type (:subscription team)) "professional") (< (count (:members team)) 8))
+            (= (:status (:subscription team)) "trialing"))
+           )
+      [:> members-cta* {:banner-is-expanded false :team team}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INVITATIONS SECTION
@@ -813,14 +821,18 @@
                :team team}]
    [:section {:class (stl/css-case
                       :dashboard-team-invitations true
-                      :dashboard-top-cta (>= (count (:members team)) 8))}
-    ;; TODO change the condition to when trial expired
-    (when (and (contains? cfg/flags :subscriptions) (>= (count (:members team)) 8))
-      [:> members-cta* {:banner-is-expanded true}])
+                      :dashboard-top-cta (or (>= (count (:members team)) 8) (= (:status (:subscription team)) "paused")))}
+    (when (and (contains? cfg/flags :subscriptions)
+               (or
+                (and (= (:type (:subscription team)) "professional") (>= (count (:members team)) 8))
+                (= (:status (:subscription team)) "paused")))
+      [:> members-cta* {:banner-is-expanded true :team team}])
     [:> invitation-section* {:team team}]
-    ;; TODO change the condition to when trial activated
-    (when (and (contains? cfg/flags :subscriptions) (< (count (:members team)) 8))
-      [:> members-cta* {:banner-is-expanded false}])]])
+    (when (and (contains? cfg/flags :subscriptions)
+               (or
+                (and (= (:type (:subscription team)) "professional") (< (count (:members team)) 8))
+                (= (:status (:subscription team)) "trialing")))
+      [:> members-cta* {:banner-is-expanded false :team team}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WEBHOOKS SECTION
@@ -1180,5 +1192,5 @@
          (tr "labels.num-of-files" (i18n/c (:files stats)))]]]
 
       (when (contains? cfg/flags :subscriptions)
-        [:> team* {:is-owner (:is-owner permissions)}])]]))
+        [:> team* {:is-owner (:is-owner permissions) :team team}])]]))
 

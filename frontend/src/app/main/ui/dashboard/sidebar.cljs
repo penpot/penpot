@@ -309,8 +309,8 @@
            (when (kbd/enter? event)
              (on-create-clicked event))))
 
-        ;; TODO subscription cases professional/unlimited/enterprise
-        subscription-name :unlimited]
+        subscription          (:subscription team)
+        subscription-name     (:type subscription)]
 
     [:*
      [:> dropdown-menu-item* {:on-click    team-selected
@@ -336,8 +336,7 @@
                :alt (:name team-item)}]
         ;; TODO complete this condition with the case that a user belongs to a team with a subscription
         (if (and (contains? cf/flags :subscriptions)
-                 (or (= :unlimited subscription-name) (= :enterprise subscription-name))
-                 (:is-owner (:permissions team-item)))
+                 (or (= "unlimited" subscription-name) (= "enterprise" subscription-name)))
           [:div  {:class (stl/css :team-text-with-icon)}
            [:span {:class (stl/css :team-text) :title (:name team-item)} (:name team-item)]
            [:> menu-team-icon* {:subscription-name subscription-name}]]
@@ -656,7 +655,9 @@
 
         handle-close-team
         (fn []
-          (reset! show-teams-ddwn? false))]
+          (reset! show-teams-ddwn? false))
+        subscription          (:subscription team)
+        subscription-name     (:type subscription)]
 
     [:div {:class (stl/css :sidebar-team-switch)}
      [:div {:class (stl/css :switch-content)}
@@ -664,11 +665,27 @@
                 :on-click handle-show-team-click
                 :on-key-down handle-show-team-keydown}
 
-       (if (:is-default team)
+       (cond
+         (and (:is-default team)
+              (not (contains? cf/flags :subscriptions)))
          [:div {:class (stl/css :team-name)}
           [:span {:class (stl/css :penpot-icon)} i/logo-icon]
           [:span {:class (stl/css :team-text)} (tr "dashboard.default-team-name")]]
 
+         (and (contains? cf/flags :subscriptions)
+              (not (:is-default team))
+              (or (= "unlimited" subscription-name) (= "enterprise" subscription-name)))
+         [:div {:class (stl/css :team-name)}
+          [:img {:src (cf/resolve-team-photo-url team)
+                 :class (stl/css :team-picture)
+                 :alt (:name team)}]
+          [:div  {:class (stl/css :team-text-with-icon)}
+           [:span {:class (stl/css :team-text) :title (:name team)} (:name team)]
+           [:> menu-team-icon* {:subscription-name subscription-name}]]]
+
+
+         (and (not (:is-default team))
+              (not (contains? cf/flags :subscriptions)))
          [:div {:class (stl/css :team-name)}
           [:img {:src (cf/resolve-team-photo-url team)
                  :class (stl/css :team-picture)
@@ -975,7 +992,7 @@
 
     [:*
      (when (contains? cf/flags :subscriptions)
-       [:> subscription-sidebar*])
+       [:> subscription-sidebar* {:profile profile}])
 
      ;; TODO remove this block when subscriptions is full implemented
      (when (contains? cf/flags :subscriptions-old)

@@ -38,9 +38,7 @@
 
 .cta-bottom-section {
   border-block-start: $s-1 solid var(--color-background-quaternary);
-  display: grid;
   color: var(--color-foreground-secondary);
-  grid-template-columns: 1fr auto;
   margin-block-start: $s-12;
   padding-block-start: $s-12;
 }
@@ -48,7 +46,7 @@
   @include t.use-typography("body-small");
   @include buttonStyle;
   color: var(--color-foreground-secondary);
-  display: inline;
+  display: inline-block;
   text-align: left;
 }
 
@@ -65,10 +63,10 @@
   @include t.use-typography("body-medium");
 }
 
-.cta-bottom-section .content strong,
-.cta-highlight {
+.cta-bottom-section .content a {
   @include t.use-typography("body-small");
   color: var(--color-accent-tertiary);
+  margin-inline-start: $s-4;
 }
 
 .cta-link {
@@ -105,9 +103,10 @@
 
 .subscription-icon {
   @extend .button-icon;
-  stroke: var(--color-foreground-primary);
+  background: var(--color-background-primary);
+  stroke: var(--color-foreground-secondary);
   border-radius: $s-4;
-  border: $s-1 solid var(--color-foreground-primary);
+  border: $s-1 solid var(--color-foreground-secondary);
 }
 
 .menu-item {
