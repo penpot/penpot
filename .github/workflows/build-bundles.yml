@@ -13,7 +13,7 @@ on:
           - all
   push:
     branches:
-      - github-actions-bundle
+      - github-actions-bundle-build 
 
 env:
   ZIP_MODE: ${{ github.event.inputs.zip_mode }}
@@ -46,19 +46,29 @@ jobs:
         run: |
           echo "📦 Packaging Penpot bundles..."
 
+          mkdir -p zips
+
           if [[ "${ZIP_MODE}" == "all" ]]; then
             echo "Creating unified penpot-all-bundles.zip"
-            mkdir -p all-in-one
-            cp -r bundles/frontend all-in-one/
-            cp -r bundles/backend all-in-one/
-            cp -r bundles/exporter all-in-one/
+            mkdir -p all-in-one/penpot-frontend all-in-one/penpot-backend all-in-one/penpot-exporter
+            cp -r bundles/frontend/* all-in-one/penpot-frontend/
+            cp -r bundles/backend/* all-in-one/penpot-backend/
+            cp -r bundles/exporter/* all-in-one/penpot-exporter/
             cd all-in-one
-            zip -r ../penpot-all-bundles.zip .
+            zip -r ../zips/penpot-all-bundles.zip .
           else
             echo "Creating individual zip files"
-            zip -r penpot-frontend.zip bundles/frontend
-            zip -r penpot-backend.zip bundles/backend
-            zip -r penpot-exporter.zip bundles/exporter
+            mkdir -p temp
+
+            cp -r bundles/frontend temp/penpot-frontend
+            cp -r bundles/backend temp/penpot-backend
+            cp -r bundles/exporter temp/penpot-exporter
+
+            cd temp
+            zip -r ../zips/penpot-frontend.zip penpot-frontend
+            zip -r ../zips/penpot-backend.zip penpot-backend
+            zip -r ../zips/penpot-exporter.zip penpot-exporter
+            cd ..
           fi
 
       - name: Upload unified bundle
@@ -66,25 +76,26 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: penpot-all-bundles
-          path: penpot-all-bundles.zip
+          path: zips/penpot-all-bundles.zip
 
       - name: Upload frontend bundle
         if: env.ZIP_MODE != 'all'
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-bundle
-          path: penpot-frontend.zip
+          name: penpot-frontend
+          path: zips/penpot-frontend.zip
 
       - name: Upload backend bundle
         if: env.ZIP_MODE != 'all'
         uses: actions/upload-artifact@v4
         with:
-          name: backend-bundle
-          path: penpot-backend.zip
+          name: penpot-backend
+          path: zips/penpot-backend.zip
 
       - name: Upload exporter bundle
         if: env.ZIP_MODE != 'all'
         uses: actions/upload-artifact@v4
         with:
-          name: exporter-bundle
-          path: penpot-exporter.zip
+          name: penpot-exporter
+          path: zips/penpot-exporter.zip
+
