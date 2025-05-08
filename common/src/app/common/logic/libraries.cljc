@@ -223,10 +223,12 @@
   "Generate changes to create a new instance from a component."
   ([changes objects file-id component-id position page libraries]
    (generate-instantiate-component changes objects file-id component-id position page libraries nil nil nil {}))
-
-  ([changes objects file-id component-id position page libraries old-id parent-id frame-id
+  ([changes objects file-id component-id position page libraries old-id parent-id frame-id params]
+   (generate-instantiate-component changes objects file-id component-id position page libraries old-id parent-id frame-id {} params))
+  ([changes objects file-id component-id position page libraries old-id parent-id frame-id ids-map
     {:keys [force-frame?]
      :or {force-frame? false}}]
+
    (let [component     (ctf/get-component libraries file-id component-id)
          library       (get libraries file-id)
          parent        (when parent-id (get objects parent-id))
@@ -246,6 +248,9 @@
                                       (:data library)
                                       position
                                       (cond-> {}
+                                        (contains? ids-map old-id)
+                                        (assoc :force-id (get ids-map old-id))
+
                                         force-frame?
                                         (assoc :force-frame-id frame-id)))
 
@@ -267,8 +272,11 @@
          (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
            (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id)))
 
+         duplicated-parent?
+         (->> ids-map vals (some #(= % (:parent-id first-shape))))
+
          changes
-         (if (ctl/grid-layout? objects (:parent-id first-shape))
+         (if (and (ctl/grid-layout? objects (:parent-id first-shape)) (not duplicated-parent?))
            (let [target-cell (-> position meta :cell)
 
                  [row column]
@@ -2028,17 +2036,26 @@
   [changes library-data component-id library-id current-page objects]
   (let [{:keys [changes shape]} (prepare-restore-component changes library-data component-id current-page)
         parent-id (:parent-id shape)
-        objects (cond-> (assoc objects (:id shape) shape)
-                  (not (nil? parent-id))
-                  (update-in [parent-id :shapes]
-                             #(conj % (:id shape))))
+
+        insert-before?
+        (and (ctl/flex-layout? objects parent-id)
+             (not (ctl/reverse? objects parent-id)))
+
+        objects
+        (-> objects
+            (assoc (:id shape) shape)
+            (cond-> (and (some? parent-id) insert-before?)
+              (update-in [parent-id :shapes] #(d/concat-vec [(:id shape)] %)))
+            (cond-> (and (some? parent-id) (not insert-before?))
+              (update-in [parent-id :shapes] conj (:id shape))))
 
         ;; Adds a resize-parents operation so the groups are updated. We add all the new objects
         new-objects-ids (->> changes :redo-changes (filter #(= (:type %) :add-obj)) (mapv :id))
         changes (-> changes
                     (pcb/with-objects objects)
-                    (pcb/resize-parents new-objects-ids))]
-
+                    (pcb/resize-parents new-objects-ids)
+                    ;; Fix the order of the children inside the parent
+                    (pcb/reorder-children parent-id (get-in objects [parent-id :shapes])))]
     (assoc changes :file-id library-id)))
 
 (defn generate-detach-component
@@ -2277,6 +2294,7 @@
                                             main-id
                                             parent-id
                                             frame-id
+                                            ids-map
                                             {})))]
     changes))
 

@@ -35,7 +35,7 @@
 - Fix problem in viewer with the back button [Taiga #10907](https://tree.taiga.io/project/penpot/issue/10907)
 
 ### :bug: Bugs fixed
-
+- Fix resize bar background on tokens panel [Taiga #10811](https://tree.taiga.io/project/penpot/issue/10811)
 - Fix shortcut for history version panel [Taiga #11006](https://tree.taiga.io/project/penpot/issue/11006)
 - Fix positioning of comment drafts when near the right / bottom edges of viewport [Taiga #10534](https://tree.taiga.io/project/penpot/issue/10534)
 - Fix path having a wrong selrect [Taiga #10257](https://tree.taiga.io/project/penpot/issue/10257)
@@ -58,6 +58,7 @@
 - Fix Out of Sync Token Value & Color Picker [Github #102](https://github.com/tokens-studio/penpot/issues/102)
 - Fix Color should preserve color space [Github #69](https://github.com/tokens-studio/penpot/issues/69)
 - Fix cannot rename Design Token Sets when group of same name exists [Taiga Issue #10773](https://tree.taiga.io/project/penpot/issue/10773)
+- Fix problem when duplicating grid layout [Github #6391](https://github.com/penpot/penpot/issues/6391)
 
 ## 2.6.2 (Unreleased)
 
