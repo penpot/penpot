@@ -17,6 +17,7 @@
    [app.common.math :as mth]
    [app.common.types.shape :as shp]
    [app.main.data.workspace.colors :as dc]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
@@ -519,7 +520,10 @@
         shape        (mf/deref shape-ref)
         state        (mf/deref refs/colorpicker)
         gradient     (:gradient state)
-        stops        (:stops state)
+        render-wasm? (features/use-feature "render-wasm/v1")
+        stops        (if render-wasm?
+                       (vec (take shp/MAX-GRADIENT-STOPS (:stops state)))
+                       (:stops state))
         editing-stop (:editing-stop state)]
 
     (when (and (some? gradient) (= id (:shape-id gradient)))
