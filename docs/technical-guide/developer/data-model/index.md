@@ -1,5 +1,5 @@
 ---
-title: 3.2. Data model
+title: 3.02. Data model
 ---
 
 # Penpot Data Model

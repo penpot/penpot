@@ -1,5 +1,5 @@
 ---
-title: 3.1. Architecture
+title: 3.01. Architecture
 ---
 
 # Architecture
