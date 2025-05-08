@@ -25,7 +25,7 @@
   <script type="module">
     import initWasmModule from '/js/render_wasm.js';
     import {
-      init, assignCanvas, hexToU32ARGB, getRandomInt, getRandomColor,
+      init, addShapeSolidFill, assignCanvas, hexToU32ARGB, getRandomInt, getRandomColor,
       getRandomFloat, useShape, setShapeChildren, setupInteraction
     } from './js/lib.js';
 
@@ -41,13 +41,14 @@
       setupInteraction(canvas);
 
       const children = [];
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < 10_000; i++) {
         const uuid = crypto.randomUUID();
         children.push(uuid);
 
         useShape(uuid);
         Module._set_parent(0, 0, 0, 0);
         Module._set_shape_type(3);
+
         const x1 = getRandomInt(0, canvas.width);
         const y1 = getRandomInt(0, canvas.height);
         const width = getRandomInt(20, 100);
@@ -56,14 +57,20 @@
 
         const color = getRandomColor();
         const argb = hexToU32ARGB(color, getRandomFloat(0.1, 1.0));
-        Module._add_shape_solid_fill(argb);
+        addShapeSolidFill(argb)
+
+        // Module._add_shape_solid_fill(argb);
       }
 
       useShape("00000000-0000-0000-0000-000000000000");
       setShapeChildren(children);
+      performance.mark('render:begin');
       Module._render(Date.now());
+      performance.mark('render:end');
+      const { duration } = performance.measure('render', 'render:begin', 'render:end');
+      alert(`render time: ${duration.toFixed(2)}ms`);
     });
-    
+
   </script>
 </body>
 </html>

@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+use rustc_hash::FxBuildHasher;
+
 use crate::math::{self as math, Bounds, Matrix, Point, Vector, VectorExt};
 use crate::shapes::{
     modified_children_ids, AlignContent, AlignItems, AlignSelf, FlexData, JustifyContent,
@@ -178,7 +180,7 @@ fn initialize_tracks(
     layout_bounds: &Bounds,
     layout_axis: &LayoutAxis,
     flex_data: &FlexData,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, Shape, FxBuildHasher>,
     bounds: &HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Vec<TrackData> {
@@ -420,7 +422,7 @@ fn calculate_track_data(
     layout_data: &LayoutData,
     flex_data: &FlexData,
     layout_bounds: &Bounds,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, Shape, FxBuildHasher>,
     bounds: &HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Vec<TrackData> {
@@ -551,7 +553,7 @@ pub fn reflow_flex_layout(
     shape: &Shape,
     layout_data: &LayoutData,
     flex_data: &FlexData,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, Shape, FxBuildHasher>,
     bounds: &mut HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> VecDeque<Modifier> {

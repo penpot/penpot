@@ -5,6 +5,7 @@ mod flex_layout;
 mod grid_layout;
 
 use common::GetBounds;
+use rustc_hash::FxBuildHasher;
 
 use crate::math::{identitish, Bounds, Matrix, Point};
 use crate::shapes::{
@@ -16,7 +17,7 @@ use crate::uuid::Uuid;
 
 fn propagate_children(
     shape: &Shape,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, Shape, FxBuildHasher>,
     parent_bounds_before: &Bounds,
     parent_bounds_after: &Bounds,
     transform: Matrix,
@@ -83,7 +84,7 @@ fn propagate_children(
 
 fn calculate_group_bounds(
     shape: &Shape,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, Shape, FxBuildHasher>,
     bounds: &HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Option<Bounds> {

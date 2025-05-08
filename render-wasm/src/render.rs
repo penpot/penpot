@@ -1,3 +1,4 @@
+use rustc_hash::FxBuildHasher;
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 
 use crate::uuid::Uuid;
@@ -20,10 +21,11 @@ mod surfaces;
 mod text;
 mod tiles;
 
-use crate::shapes::{modified_children_ids, Corners, Shape, StructureEntry, Type};
+use crate::shapes::{modified_children_ids, Corners, Fill, Shape, SolidColor, StructureEntry, Type};
 use gpu_state::GpuState;
 use options::RenderOptions;
 use surfaces::{SurfaceId, Surfaces};
+use rand::Rng;
 
 pub use blend::BlendMode;
 pub use fonts::*;
@@ -429,7 +431,7 @@ impl RenderState {
 
     pub fn start_render_loop(
         &mut self,
-        tree: &mut HashMap<Uuid, Shape>,
+        tree: &mut HashMap<Uuid, Shape, FxBuildHasher>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         timestamp: i32,
@@ -496,7 +498,7 @@ impl RenderState {
 
     pub fn process_animation_frame(
         &mut self,
-        tree: &mut HashMap<Uuid, Shape>,
+        tree: &mut HashMap<Uuid, Shape, FxBuildHasher>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         timestamp: i32,
@@ -595,7 +597,7 @@ impl RenderState {
 
     pub fn render_shape_tree(
         &mut self,
-        tree: &mut HashMap<Uuid, Shape>,
+        tree: &mut HashMap<Uuid, Shape, FxBuildHasher>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         timestamp: i32,
@@ -642,6 +644,24 @@ impl RenderState {
                             "Error: Element with root_id {node_render_state.id} not found in the tree."
                                 .to_string(),
                         )?;
+
+                        // let element = &mut Shape::new(node_id);
+                        // element.parent_id = Some(Uuid::nil());
+                        // // element.shape_type = Type::Rect(CustomRect::Rect::default());
+                        // let mut rng = rand::thread_rng();
+                        // element.selrect = Rect::from_xywh(
+                        //     rng.gen_range(0..=2498) as f32,
+                        //     rng.gen_range(0..=1321) as f32,
+                        //     rng.gen_range(20..=100) as f32,
+                        //     rng.gen_range(20..=100) as f32,
+                        // );
+                        // let mut rng = rand::thread_rng();
+                        // let a = rng.gen_range(16..=255);
+                        // let r = rng.gen_range(0..=255);
+                        // let g = rng.gen_range(0..=255);
+                        // let b = rng.gen_range(0..=255);
+                        // let c = skia::Color::from_argb(a, r, g, b);
+                        // element.add_fill(Fill::Solid(SolidColor(c)));
 
                         // If the shape is not in the tile set, then we update
                         // it.
@@ -745,12 +765,12 @@ impl RenderState {
                         }
 
                         // We try to avoid doing too many calls to get_time
-                        if i % NODE_BATCH_THRESHOLD == 0
-                            && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS
-                        {
-                            return Ok(());
-                        }
-                        i += 1;
+                        // if i % NODE_BATCH_THRESHOLD == 0
+                        //     && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS
+                        // {
+                        //     return Ok(());
+                        // }
+                        // i += 1;
                     }
                     performance::end_measure!("render_shape_tree::uncached");
                     let tile_rect = self.get_current_tile_bounds();
@@ -850,7 +870,7 @@ impl RenderState {
 
     pub fn rebuild_tiles_shallow(
         &mut self,
-        tree: &mut HashMap<Uuid, Shape>,
+        tree: &mut HashMap<Uuid, Shape, FxBuildHasher>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) {
@@ -880,7 +900,7 @@ impl RenderState {
 
     pub fn rebuild_tiles(
         &mut self,
-        tree: &mut HashMap<Uuid, Shape>,
+        tree: &mut HashMap<Uuid, Shape, FxBuildHasher>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) {
@@ -909,7 +929,7 @@ impl RenderState {
 
     pub fn rebuild_modifier_tiles(
         &mut self,
-        tree: &mut HashMap<Uuid, Shape>,
+        tree: &mut HashMap<Uuid, Shape, FxBuildHasher>,
         modifiers: &HashMap<Uuid, Matrix>,
     ) {
         for (uuid, matrix) in modifiers {

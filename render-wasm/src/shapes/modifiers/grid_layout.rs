@@ -6,6 +6,7 @@ use crate::shapes::{
 };
 use crate::uuid::Uuid;
 use indexmap::IndexSet;
+use rustc_hash::FxBuildHasher;
 use std::collections::{HashMap, VecDeque};
 
 use super::common::GetBounds;
@@ -40,7 +41,7 @@ fn calculate_tracks(
     grid_data: &GridData,
     layout_bounds: &Bounds,
     cells: &Vec<GridCell>,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, Shape, FxBuildHasher>,
     bounds: &HashMap<Uuid, Bounds>,
 ) -> Vec<TrackData> {
     let layout_size = if is_column {
@@ -105,7 +106,7 @@ fn set_auto_base_size(
     column: bool,
     tracks: &mut Vec<TrackData>,
     cells: &Vec<GridCell>,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, Shape, FxBuildHasher>,
     bounds: &HashMap<Uuid, Bounds>,
 ) {
     for cell in cells {
@@ -156,7 +157,7 @@ fn set_auto_multi_span(
     column: bool,
     tracks: &mut Vec<TrackData>,
     cells: &Vec<GridCell>,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, Shape, FxBuildHasher>,
     bounds: &HashMap<Uuid, Bounds>,
 ) {
     // Remove groups with flex (will be set in flex_multi_span)
@@ -230,7 +231,7 @@ fn set_flex_multi_span(
     column: bool,
     tracks: &mut Vec<TrackData>,
     cells: &Vec<GridCell>,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, Shape, FxBuildHasher>,
     bounds: &HashMap<Uuid, Bounds>,
 ) {
     // Remove groups without flex
@@ -509,7 +510,7 @@ fn cell_bounds(
 fn create_cell_data<'a>(
     layout_bounds: &Bounds,
     children: &IndexSet<Uuid>,
-    shapes: &'a HashMap<Uuid, Shape>,
+    shapes: &'a HashMap<Uuid, Shape, FxBuildHasher>,
     cells: &Vec<GridCell>,
     column_tracks: &Vec<TrackData>,
     row_tracks: &Vec<TrackData>,
@@ -618,7 +619,7 @@ pub fn reflow_grid_layout<'a>(
     shape: &Shape,
     layout_data: &LayoutData,
     grid_data: &GridData,
-    shapes: &'a HashMap<Uuid, Shape>,
+    shapes: &'a HashMap<Uuid, Shape, FxBuildHasher>,
     bounds: &mut HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> VecDeque<Modifier> {

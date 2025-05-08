@@ -1,4 +1,7 @@
 use std::collections::HashMap;
+use std::hash::RandomState;
+use rustc_hash::FxBuildHasher;
+use rustc_hash::FxHashMap;
 
 use skia_safe as skia;
 
@@ -16,18 +19,19 @@ pub(crate) struct State<'a> {
     pub render_state: RenderState,
     pub current_id: Option<Uuid>,
     pub current_shape: Option<&'a mut Shape>,
-    pub shapes: HashMap<Uuid, Shape>,
+    pub shapes: HashMap<Uuid, Shape, FxBuildHasher>,
     pub modifiers: HashMap<Uuid, skia::Matrix>,
     pub structure: HashMap<Uuid, Vec<StructureEntry>>,
 }
 
 impl<'a> State<'a> {
     pub fn new(width: i32, height: i32, capacity: usize) -> Self {
+        let s = FxBuildHasher::default();
         State {
             render_state: RenderState::new(width, height),
             current_id: None,
             current_shape: None,
-            shapes: HashMap::with_capacity(capacity),
+            shapes: HashMap::with_capacity_and_hasher(capacity, s),
             modifiers: HashMap::new(),
             structure: HashMap::new(),
         }
