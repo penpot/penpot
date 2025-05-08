@@ -27,30 +27,32 @@
          tooltip-height :height} (dom/get-bounding-rect tooltip)
 
         offset (d/nilv offset 2)
+        arrow-height 12
+        half-arrow-height (/ arrow-height 2)
         overlay-offset 32]
 
     (case placement
       "bottom"
       {:top (+ trigger-bottom offset)
        :left (- (+ trigger-left (/ trigger-width 2)) (/ tooltip-width 2))
-       :right (+ (- (+ trigger-left (/ trigger-width 2)) (/ tooltip-width 2)) tooltip-width)
+       :right (+ trigger-left (/ trigger-width 2) (/ tooltip-width 2))
        :bottom (+ (- trigger-bottom offset) tooltip-height)
        :width tooltip-width
        :height tooltip-height}
 
       "left"
-      {:top (- (+ trigger-top (/ trigger-height 2) 8) (/ tooltip-height 2))
-       :left (- trigger-left tooltip-width 12)
-       :right (+ (- trigger-left tooltip-width 12) tooltip-width)
-       :bottom (+ (- (+ trigger-top (/ trigger-height 2) 12) (/ tooltip-height 2)) tooltip-height)
+      {:top (- (+ trigger-top (/ trigger-height 2) half-arrow-height) (/ tooltip-height 2))
+       :left (- trigger-left tooltip-width)
+       :right (+ (- trigger-left tooltip-width) tooltip-width)
+       :bottom (+ (- (+ trigger-top (/ trigger-height 2) half-arrow-height) (/ tooltip-height 2)) tooltip-height)
        :width tooltip-width
        :height tooltip-height}
 
       "right"
-      {:top (- (+ trigger-top (/ trigger-height 2) 4) (/ tooltip-height 2))
-       :left (+ trigger-right offset 4)
-       :right (+ trigger-right offset tooltip-width 4)
-       :bottom (+ (- (+ trigger-top (/ trigger-height 2) 4) (/ tooltip-height 2)) tooltip-height)
+      {:top (- (+ trigger-top (/ trigger-height 2) half-arrow-height) (/ tooltip-height 2))
+       :left (+ trigger-right offset)
+       :right (+ trigger-right offset tooltip-width)
+       :bottom (+ (- (+ trigger-top (/ trigger-height 2) half-arrow-height) (/ tooltip-height 2)) tooltip-height)
        :width tooltip-width
        :height tooltip-height}
 
@@ -65,7 +67,7 @@
       "bottom-left"
       {:top (+ trigger-bottom offset)
        :left (+ (- trigger-left tooltip-width) overlay-offset)
-       :right (+ (- trigger-left tooltip-width) overlay-offset tooltip-width)
+       :right (+ trigger-left overlay-offset)
        :bottom (+ (- trigger-bottom offset) tooltip-height)
        :width tooltip-width
        :height tooltip-height}
@@ -74,22 +76,22 @@
       {:top (- trigger-top offset tooltip-height)
        :left (- trigger-right overlay-offset)
        :right (+ (- trigger-right overlay-offset) tooltip-width)
-       :bottom (+ (- trigger-top offset tooltip-height) tooltip-height)
+       :bottom (- trigger-top offset)
        :width tooltip-width
        :height tooltip-height}
 
       "top-left"
       {:top (- trigger-top offset tooltip-height)
        :left (+ (- trigger-left tooltip-width) overlay-offset)
-       :right (+ (- trigger-left tooltip-width) overlay-offset tooltip-width)
-       :bottom (+ (- trigger-top offset tooltip-height) tooltip-height)
+       :right (+ trigger-left overlay-offset)
+       :bottom (- trigger-top offset)
        :width tooltip-width
        :height tooltip-height}
 
       {:top (- trigger-top offset tooltip-height)
        :left (- (+ trigger-left (/ trigger-width 2)) (/ tooltip-width 2))
        :right (+ (- (+ trigger-left (/ trigger-width 2)) (/ tooltip-width 2)) tooltip-width)
-       :bottom (+ (- trigger-top offset tooltip-height) tooltip-height)
+       :bottom (- trigger-top offset)
        :width tooltip-width
        :height tooltip-height})))
 
@@ -134,8 +136,8 @@
                   (if (dom/is-bounding-rect-outside? tooltip-rect)
                     (recur remaining-placements)
                     (do (dom/set-css-property! tooltip "display" "grid")
-                        (dom/set-css-property! tooltip "top" (dm/str (:top tooltip-rect) "px"))
-                        (dom/set-css-property! tooltip "left" (dm/str (:left tooltip-rect) "px")))))))))
+                        (dom/set-css-property! tooltip "inset-block-start" (dm/str (:top tooltip-rect) "px"))
+                        (dom/set-css-property! tooltip "inset-inline-start" (dm/str (:left tooltip-rect) "px")))))))))
 
         on-show
         (mf/use-fn
