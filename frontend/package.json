@@ -14,7 +14,8 @@
     "url": "https://github.com/penpot/penpot"
   },
   "resolutions": {
-    "@vitejs/plugin-react": "^4.2.0"
+    "@vitejs/plugin-react": "^4.2.0",
+    "@zip.js/zip.js@npm:^2.7.44": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch"
   },
   "scripts": {
     "build:app:assets": "node ./scripts/build-app-assets.js",
@@ -108,11 +109,11 @@
     "@penpot/svgo": "penpot/svgo#v3.1",
     "@penpot/text-editor": "portal:./text-editor",
     "@tokens-studio/sd-transforms": "1.2.11",
+    "@zip.js/zip.js": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch",
     "compression": "^1.7.5",
     "date-fns": "^4.1.0",
     "eventsource-parser": "^3.0.1",
     "js-beautify": "^1.15.4",
-    "jszip": "^3.10.1",
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",
     "luxon": "^3.6.1",
