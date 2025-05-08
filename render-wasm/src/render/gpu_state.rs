@@ -1,5 +1,5 @@
 use skia_safe::gpu::{self, gl::FramebufferInfo, gl::TextureInfo, DirectContext};
-use skia_safe::{self as skia, ISize, Surface, SurfaceProps, SurfacePropsFlags};
+use skia_safe::{self as skia, ISize};
 
 pub struct GpuState {
     pub context: DirectContext,
