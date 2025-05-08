@@ -618,7 +618,7 @@
         [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                                  :on-click    on-pin-version
                                  :on-key-down on-pin-version-key-down
-                                 :id          "file-menu-show-version-history"}
+                                 :id          "file-menu-create-version"}
          [:span {:class (stl/css :item-name)}
           (tr "dashboard.create-version-menu")]]
 
@@ -627,7 +627,10 @@
                                  :on-key-down on-show-version-history-key-down
                                  :id          "file-menu-show-version-history"}
          [:span {:class (stl/css :item-name)}
-          (tr "dashboard.show-version-history")]]
+          (tr "dashboard.show-version-history")]
+         [:span {:class (stl/css :shortcut)}
+          (for [sc (scd/split-sc (sc/get-tooltip :toggle-history))]
+            [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
         [:div {:class (stl/css :separator)}]])
 
@@ -786,6 +789,7 @@
         on-power-up-click
         (mf/use-fn
          (fn []
+           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "workspace-menu"}))
            (dom/open-new-window "https://penpot.app/pricing")))
 
         toggle-flag
@@ -900,14 +904,16 @@
                                :id          "file-menu-help-info"}
        [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.help-info")]
        [:span {:class (stl/css :open-arrow)} i/arrow]]
-      [:> dropdown-menu-item* {:class (stl/css-case :menu-item true)
-                               :on-click    on-power-up-click
-                               :on-key-down (fn [event]
-                                              (when (kbd/enter? event)
-                                                (on-power-up-click)))
-                               :on-pointer-enter close-sub-menu
-                               :id          "file-menu-power-up"}
-       [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.power-up")]]]
+      ;; TODO remove this block when subscriptions is full implemented
+      (when (contains? cf/flags :subscriptions-old)
+        [:> dropdown-menu-item* {:class (stl/css-case :menu-item true)
+                                 :on-click    on-power-up-click
+                                 :on-key-down (fn [event]
+                                                (when (kbd/enter? event)
+                                                  (on-power-up-click)))
+                                 :on-pointer-enter close-sub-menu
+                                 :id          "file-menu-power-up"}
+         [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.power-up")]])]
 
      (case sub-menu
        :file
