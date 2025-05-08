@@ -1976,17 +1976,26 @@
   [changes library-data component-id library-id current-page objects]
   (let [{:keys [changes shape]} (prepare-restore-component changes library-data component-id current-page)
         parent-id (:parent-id shape)
-        objects (cond-> (assoc objects (:id shape) shape)
-                  (not (nil? parent-id))
-                  (update-in [parent-id :shapes]
-                             #(conj % (:id shape))))
+
+        insert-before?
+        (and (ctl/flex-layout? objects parent-id)
+             (not (ctl/reverse? objects parent-id)))
+
+        objects
+        (-> objects
+            (assoc (:id shape) shape)
+            (cond-> (and (some? parent-id) insert-before?)
+              (update-in [parent-id :shapes] #(d/concat-vec [(:id shape)] %)))
+            (cond-> (and (some? parent-id) (not insert-before?))
+              (update-in [parent-id :shapes] conj (:id shape))))
 
         ;; Adds a resize-parents operation so the groups are updated. We add all the new objects
         new-objects-ids (->> changes :redo-changes (filter #(= (:type %) :add-obj)) (mapv :id))
         changes (-> changes
                     (pcb/with-objects objects)
-                    (pcb/resize-parents new-objects-ids))]
-
+                    (pcb/resize-parents new-objects-ids)
+                    ;; Fix the order of the children inside the parent
+                    (pcb/reorder-children parent-id (get-in objects [parent-id :shapes])))]
     (assoc changes :file-id library-id)))
 
 (defn generate-detach-component

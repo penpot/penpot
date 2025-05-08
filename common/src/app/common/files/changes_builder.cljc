@@ -1049,6 +1049,33 @@
                                   :id id
                                   :delta delta})))
 
+(defn reorder-children
+  [changes id children]
+  (assert-page-id! changes)
+  (assert-objects! changes)
+
+  (let [page-id (::page-id (meta changes))
+        objects (lookup-objects changes)
+        shape (get objects id)
+        old-children (:shapes shape)
+
+        redo-change
+        {:type :reorder-children
+         :parent-id (:id shape)
+         :page-id page-id
+         :shapes children}
+
+        undo-change
+        {:type :reorder-children
+         :parent-id (:id shape)
+         :page-id page-id
+         :shapes old-children}]
+
+    (-> changes
+        (update :redo-changes conj redo-change)
+        (update :undo-changes conj undo-change)
+        (apply-changes-local))))
+
 (defn reorder-grid-children
   [changes ids]
   (assert-page-id! changes)
