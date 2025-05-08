@@ -31,7 +31,7 @@
 
 (defn- read-zip-manifest
   [zipfile]
-  (->> (uz/get-file zipfile "manifest.json")
+  (->> (rx/from (uz/get-file zipfile "manifest.json"))
        (rx/map :content)
        (rx/map json/decode)))
 
@@ -121,7 +121,7 @@
                        (let [mtype (parse-mtype body)]
                          (cond
                            (= "application/zip" mtype)
-                           (->> (uz/load body)
+                           (->> (rx/from (uz/load body))
                                 (rx/merge-map read-zip-manifest)
                                 (rx/map
                                  (fn [manifest]

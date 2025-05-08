@@ -8,7 +8,6 @@
   "The file exportation API and events"
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
