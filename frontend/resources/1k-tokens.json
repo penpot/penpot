@@ -1,0 +1,4682 @@
+{
+    "dark": {
+        "primary": {
+            "bold": {
+                "pressed": {
+                    "opacity": {
+                        "$value": "1",
+                        "$type": "opacity"
+                    },
+                    "backdropFilter": {
+                        "$value": "unset",
+                        "$type": "other"
+                    },
+                    "swiftUI": {
+                        "background": {
+                            "$value": "",
+                            "$type": "other"
+                        }
+                    },
+                    "content": {
+                        "bold": {
+                            "$value": "#190610",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#190610",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#330b23",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#250b1a",
+                            "$type": "color"
+                        }
+                    },
+                    "icon": {
+                        "subtle": {
+                            "$value": "#d971a4",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#9a4b73",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#270a1b",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#270a1b",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#190610",
+                            "$type": "color"
+                        }
+                    },
+                    "icon-color": {
+                        "$value": "#270a1b",
+                        "$type": "color"
+                    },
+                    "text": {
+                        "high": {
+                            "$value": "#190610",
+                            "$type": "color"
+                        },
+                        "medium": {
+                            "$value": "#190610",
+                            "$type": "color"
+                        },
+                        "low": {
+                            "$value": "#190610",
+                            "$type": "color"
+                        }
+                    },
+                    "background-color": {
+                        "$value": "#F483BA",
+                        "$type": "color"
+                    },
+                    "color": {
+                        "$value": "#190610",
+                        "$type": "color"
+                    },
+                    "border": {
+                        "ghost": {
+                            "$value": "#F483BA",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#d870a3",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#994b73",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#270a1b",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#190610",
+                            "$type": "color"
+                        }
+                    }
+                },
+                "hover": {
+                    "opacity": {
+                        "$value": "1",
+                        "$type": "opacity"
+                    },
+                    "backdropFilter": {
+                        "$value": "unset",
+                        "$type": "other"
+                    },
+                    "swiftUI": {
+                        "background": {
+                            "$value": "",
+                            "$type": "other"
+                        }
+                    },
+                    "content": {
+                        "bold": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#fff",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#f3bed5",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#fadeea",
+                            "$type": "color"
+                        }
+                    },
+                    "icon": {
+                        "subtle": {
+                            "$value": "#f186bc",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#f3bed5",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        }
+                    },
+                    "icon-color": {
+                        "$value": "#f6d0e0",
+                        "$type": "color"
+                    },
+                    "text": {
+                        "high": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        },
+                        "medium": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        },
+                        "low": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        }
+                    },
+                    "background-color": {
+                        "$value": "#EE57A8",
+                        "$type": "color"
+                    },
+                    "color": {
+                        "$value": "#FFFFFF",
+                        "$type": "color"
+                    },
+                    "border": {
+                        "ghost": {
+                            "$value": "#EE57A8",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#f186bc",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#f3bed5",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#fff",
+                            "$type": "color"
+                        }
+                    }
+                },
+                "idle": {
+                    "opacity": {
+                        "$value": "1",
+                        "$type": "opacity"
+                    },
+                    "backdropFilter": {
+                        "$value": "unset",
+                        "$type": "other"
+                    },
+                    "swiftUI": {
+                        "background": {
+                            "$value": "",
+                            "$type": "other"
+                        }
+                    },
+                    "content": {
+                        "bold": {
+                            "$value": "#FDEFF5",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#fdeff5",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#f3bed5",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#f8d6e5",
+                            "$type": "color"
+                        }
+                    },
+                    "icon": {
+                        "subtle": {
+                            "$value": "#eb66b1",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#f1abcd",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#FDEFF5",
+                            "$type": "color"
+                        }
+                    },
+                    "icon-color": {
+                        "$value": "#f6d0e0",
+                        "$type": "color"
+                    },
+                    "text": {
+                        "high": {
+                            "$value": "#FDEFF5",
+                            "$type": "color"
+                        },
+                        "medium": {
+                            "$value": "#fcdaec",
+                            "$type": "color"
+                        },
+                        "low": {
+                            "$value": "#fcdaec",
+                            "$type": "color"
+                        }
+                    },
+                    "background-color": {
+                        "$value": "#E22296",
+                        "$type": "color"
+                    },
+                    "color": {
+                        "$value": "#fcdaec",
+                        "$type": "color"
+                    },
+                    "border": {
+                        "ghost": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#eb67b1",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#f1abcd",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#fdeff5",
+                            "$type": "color"
+                        }
+                    }
+                },
+                "level": {
+                    "$value": "1200",
+                    "$type": "other"
+                },
+                "appearance": {
+                    "$value": "primary",
+                    "$type": "other"
+                },
+                "minimalIncreased": {
+                    "pressed": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fff",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#fadeea",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#f398c4",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#F16EB1",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#F16EB1",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f398c4",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fff",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "hover": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fff",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#fadeea",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#f186bc",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#EE57A8",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#EE57A8",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f186bc",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fff",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "idle": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fdeff5",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f8d6e5",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#ee74b5",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f2b2d0",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#fddeed",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#fddeed",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#E73D9D",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#fddeed",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#E73D9D",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#ee74b5",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f2b2d0",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fdeff5",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "level": {
+                        "$value": "1100",
+                        "$type": "other"
+                    },
+                    "appearance": {
+                        "$value": "primary",
+                        "$type": "other"
+                    }
+                },
+                "subtle": {
+                    "pressed": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#330b23",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#250b1a",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#d971a4",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#9a4b73",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#270a1b",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#270a1b",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#270a1b",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#F483BA",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#190610",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#F483BA",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#d870a3",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#994b73",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#270a1b",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "hover": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fff",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#fadeea",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#f398c4",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#F16EB1",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#F16EB1",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f398c4",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fff",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "idle": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fff",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#fadeea",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#f186bc",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#EE57A8",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#EE57A8",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f186bc",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fff",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "level": {
+                        "$value": "1000",
+                        "$type": "other"
+                    },
+                    "appearance": {
+                        "$value": "primary",
+                        "$type": "other"
+                    }
+                },
+                "bold": {
+                    "pressed": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F4ABCC",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#e4aec7",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#efc7d8",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#7f3961",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a76b8b",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#dcb2c6",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#dcb2c6",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#dcb2c6",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#dfd2d9",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#c6adba",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#510D37",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#dfd2d9",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#510D37",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#7e3960",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a76b8b",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#dbb1c5",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "hover": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F597C3",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#dca8bf",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#ebc4d4",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#693853",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#996a82",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#d1abbd",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#d1abbd",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#d1abbd",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#d9d0d4",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#baaab3",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#330B23",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#d9d0d4",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#330B23",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#693852",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#996a81",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#d1abbc",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "idle": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F597C3",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#d0a0b5",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#e4c0cf",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#5d3a4b",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#8d6879",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#cdaab9",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#cdaab9",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#cdaab9",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#d3cfd1",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#aea8ab",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#190610",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#d3cfd1",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#5d394a",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#8c6778",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#ccaab9",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "level": {
+                        "$value": "2500",
+                        "$type": "other"
+                    },
+                    "appearance": {
+                        "$value": "primary",
+                        "$type": "other"
+                    }
+                }
+            },
+            "subtle": {
+                "pressed": {
+                    "opacity": {
+                        "$value": "1",
+                        "$type": "opacity"
+                    },
+                    "backdropFilter": {
+                        "$value": "unset",
+                        "$type": "other"
+                    },
+                    "swiftUI": {
+                        "background": {
+                            "$value": "",
+                            "$type": "other"
+                        }
+                    },
+                    "content": {
+                        "bold": {
+                            "$value": "#F4ABCC",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#f9e0ea",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#e4aec7",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#efc7d8",
+                            "$type": "color"
+                        }
+                    },
+                    "icon": {
+                        "subtle": {
+                            "$value": "#7f3961",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#a76b8b",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#dcb2c6",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#dcb2c6",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#F9E0EA",
+                            "$type": "color"
+                        }
+                    },
+                    "icon-color": {
+                        "$value": "#dcb2c6",
+                        "$type": "color"
+                    },
+                    "text": {
+                        "high": {
+                            "$value": "#F9E0EA",
+                            "$type": "color"
+                        },
+                        "medium": {
+                            "$value": "#dfd2d9",
+                            "$type": "color"
+                        },
+                        "low": {
+                            "$value": "#c6adba",
+                            "$type": "color"
+                        }
+                    },
+                    "background-color": {
+                        "$value": "#510D37",
+                        "$type": "color"
+                    },
+                    "color": {
+                        "$value": "#dfd2d9",
+                        "$type": "color"
+                    },
+                    "border": {
+                        "ghost": {
+                            "$value": "#510D37",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#7e3960",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#a76b8b",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#dbb1c5",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#f9e0ea",
+                            "$type": "color"
+                        }
+                    }
+                },
+                "hover": {
+                    "opacity": {
+                        "$value": "1",
+                        "$type": "opacity"
+                    },
+                    "backdropFilter": {
+                        "$value": "unset",
+                        "$type": "other"
+                    },
+                    "swiftUI": {
+                        "background": {
+                            "$value": "",
+                            "$type": "other"
+                        }
+                    },
+                    "content": {
+                        "bold": {
+                            "$value": "#F4ABCC",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#f9e0ea",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#dea8c1",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#ecc4d5",
+                            "$type": "color"
+                        }
+                    },
+                    "icon": {
+                        "subtle": {
+                            "$value": "#76395a",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#a16b87",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#d5abbf",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#d5abbf",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#F9E0EA",
+                            "$type": "color"
+                        }
+                    },
+                    "icon-color": {
+                        "$value": "#d5abbf",
+                        "$type": "color"
+                    },
+                    "text": {
+                        "high": {
+                            "$value": "#F9E0EA",
+                            "$type": "color"
+                        },
+                        "medium": {
+                            "$value": "#ddd1d7",
+                            "$type": "color"
+                        },
+                        "low": {
+                            "$value": "#c0acb7",
+                            "$type": "color"
+                        }
+                    },
+                    "background-color": {
+                        "$value": "#440D2E",
+                        "$type": "color"
+                    },
+                    "color": {
+                        "$value": "#ddd1d7",
+                        "$type": "color"
+                    },
+                    "border": {
+                        "ghost": {
+                            "$value": "#440D2E",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#75395a",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#a16b86",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#d4abbe",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#f9e0ea",
+                            "$type": "color"
+                        }
+                    }
+                },
+                "idle": {
+                    "opacity": {
+                        "$value": "1",
+                        "$type": "opacity"
+                    },
+                    "backdropFilter": {
+                        "$value": "unset",
+                        "$type": "other"
+                    },
+                    "swiftUI": {
+                        "background": {
+                            "$value": "",
+                            "$type": "other"
+                        }
+                    },
+                    "content": {
+                        "bold": {
+                            "$value": "#F597C3",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#f9e0ea",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#dca8bf",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#ebc4d4",
+                            "$type": "color"
+                        }
+                    },
+                    "icon": {
+                        "subtle": {
+                            "$value": "#693853",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#996a82",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#d1abbd",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#d1abbd",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#F9E0EA",
+                            "$type": "color"
+                        }
+                    },
+                    "icon-color": {
+                        "$value": "#d1abbd",
+                        "$type": "color"
+                    },
+                    "text": {
+                        "high": {
+                            "$value": "#F9E0EA",
+                            "$type": "color"
+                        },
+                        "medium": {
+                            "$value": "#d9d0d4",
+                            "$type": "color"
+                        },
+                        "low": {
+                            "$value": "#baaab3",
+                            "$type": "color"
+                        }
+                    },
+                    "background-color": {
+                        "$value": "#330B23",
+                        "$type": "color"
+                    },
+                    "color": {
+                        "$value": "#d9d0d4",
+                        "$type": "color"
+                    },
+                    "border": {
+                        "ghost": {
+                            "$value": "#330B23",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#693852",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#996a81",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#d1abbc",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#f9e0ea",
+                            "$type": "color"
+                        }
+                    }
+                },
+                "level": {
+                    "$value": "2300",
+                    "$type": "other"
+                },
+                "appearance": {
+                    "$value": "primary",
+                    "$type": "other"
+                },
+                "minimalIncreased": {
+                    "pressed": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F4ABCC",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#e6aec8",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f0c7d9",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#893968",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#b27194",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#deb2c7",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#deb2c7",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#deb2c7",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#e2d2db",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#cbaebe",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#5F0D41",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#e2d2db",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#5F0D41",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#883968",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#b27094",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#deb1c6",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "hover": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F4ABCC",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#e4aec7",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#efc7d8",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#7f3961",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a76b8b",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#dcb2c6",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#dcb2c6",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#dcb2c6",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#dfd2d9",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#c6adba",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#510D37",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#dfd2d9",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#510D37",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#7e3960",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a76b8b",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#dbb1c5",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "idle": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F4ABCC",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#dea8c1",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#ecc4d5",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#76395a",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a16b87",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#d5abbf",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#d5abbf",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#d5abbf",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#ddd1d7",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#c0acb7",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#440D2E",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#ddd1d7",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#440D2E",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#75395a",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a16b86",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#d4abbe",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "level": {
+                        "$value": "2200",
+                        "$type": "other"
+                    },
+                    "appearance": {
+                        "$value": "primary",
+                        "$type": "other"
+                    }
+                },
+                "subtle": {
+                    "pressed": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F4ABCC",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#ebb3cd",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f2c9db",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#973b73",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#bd749d",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#e5b7cd",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#e5b7cd",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#e5b7cd",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#e5d2dd",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#d0aec1",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#6D084B",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#e5d2dd",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#6D084B",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#973a73",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#bc739c",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#e5b8ce",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "hover": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F4ABCC",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#e6aec8",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f0c7d9",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#893968",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#b27194",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#deb2c7",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#deb2c7",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#deb2c7",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#e2d2db",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#cbaebe",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#5F0D41",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#e2d2db",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#5F0D41",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#883968",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#b27094",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#deb1c6",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "idle": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F4ABCC",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#e4aec7",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#efc7d8",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#7f3961",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a76b8b",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#dcb2c6",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#dcb2c6",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#dcb2c6",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#dfd2d9",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#c6adba",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#510D37",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#dfd2d9",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#510D37",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#7e3960",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a76b8b",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#dbb1c5",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "level": {
+                        "$value": "2100",
+                        "$type": "other"
+                    },
+                    "appearance": {
+                        "$value": "primary",
+                        "$type": "other"
+                    }
+                },
+                "bold": {
+                    "pressed": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#330b23",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#250b1a",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#d971a4",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#9a4b73",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#270a1b",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#270a1b",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#270a1b",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#F483BA",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#190610",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#F483BA",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#d870a3",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#994b73",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#270a1b",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "hover": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fff",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#fadeea",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#f186bc",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#EE57A8",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#EE57A8",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f186bc",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fff",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "idle": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fdeff5",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f8d6e5",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#eb66b1",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f1abcd",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#fcdaec",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#fcdaec",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#fcdaec",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#eb67b1",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f1abcd",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fdeff5",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "level": {
+                        "$value": "1200",
+                        "$type": "other"
+                    },
+                    "appearance": {
+                        "$value": "primary",
+                        "$type": "other"
+                    }
+                }
+            },
+            "minimalIncreased": {
+                "pressed": {
+                    "opacity": {
+                        "$value": "1",
+                        "$type": "opacity"
+                    },
+                    "backdropFilter": {
+                        "$value": "unset",
+                        "$type": "other"
+                    },
+                    "swiftUI": {
+                        "background": {
+                            "$value": "",
+                            "$type": "other"
+                        }
+                    },
+                    "content": {
+                        "bold": {
+                            "$value": "#F4ABCC",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#f9e0ea",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#dea8c1",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#ecc4d5",
+                            "$type": "color"
+                        }
+                    },
+                    "icon": {
+                        "subtle": {
+                            "$value": "#76395a",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#a16b87",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#d5abbf",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#d5abbf",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#F9E0EA",
+                            "$type": "color"
+                        }
+                    },
+                    "icon-color": {
+                        "$value": "#d5abbf",
+                        "$type": "color"
+                    },
+                    "text": {
+                        "high": {
+                            "$value": "#F9E0EA",
+                            "$type": "color"
+                        },
+                        "medium": {
+                            "$value": "#ddd1d7",
+                            "$type": "color"
+                        },
+                        "low": {
+                            "$value": "#c0acb7",
+                            "$type": "color"
+                        }
+                    },
+                    "background-color": {
+                        "$value": "#440D2E",
+                        "$type": "color"
+                    },
+                    "color": {
+                        "$value": "#ddd1d7",
+                        "$type": "color"
+                    },
+                    "border": {
+                        "ghost": {
+                            "$value": "#440D2E",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#75395a",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#a16b86",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#d4abbe",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#f9e0ea",
+                            "$type": "color"
+                        }
+                    }
+                },
+                "hover": {
+                    "opacity": {
+                        "$value": "1",
+                        "$type": "opacity"
+                    },
+                    "backdropFilter": {
+                        "$value": "unset",
+                        "$type": "other"
+                    },
+                    "swiftUI": {
+                        "background": {
+                            "$value": "",
+                            "$type": "other"
+                        }
+                    },
+                    "content": {
+                        "bold": {
+                            "$value": "#F597C3",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#f9e0ea",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#dca8bf",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#ebc4d4",
+                            "$type": "color"
+                        }
+                    },
+                    "icon": {
+                        "subtle": {
+                            "$value": "#693853",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#996a82",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#d1abbd",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#d1abbd",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#F9E0EA",
+                            "$type": "color"
+                        }
+                    },
+                    "icon-color": {
+                        "$value": "#d1abbd",
+                        "$type": "color"
+                    },
+                    "text": {
+                        "high": {
+                            "$value": "#F9E0EA",
+                            "$type": "color"
+                        },
+                        "medium": {
+                            "$value": "#d9d0d4",
+                            "$type": "color"
+                        },
+                        "low": {
+                            "$value": "#baaab3",
+                            "$type": "color"
+                        }
+                    },
+                    "background-color": {
+                        "$value": "#330B23",
+                        "$type": "color"
+                    },
+                    "color": {
+                        "$value": "#d9d0d4",
+                        "$type": "color"
+                    },
+                    "border": {
+                        "ghost": {
+                            "$value": "#330B23",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#693852",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#996a81",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#d1abbc",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#f9e0ea",
+                            "$type": "color"
+                        }
+                    }
+                },
+                "idle": {
+                    "opacity": {
+                        "$value": "1",
+                        "$type": "opacity"
+                    },
+                    "backdropFilter": {
+                        "$value": "unset",
+                        "$type": "other"
+                    },
+                    "swiftUI": {
+                        "background": {
+                            "$value": "",
+                            "$type": "other"
+                        }
+                    },
+                    "content": {
+                        "bold": {
+                            "$value": "#F597C3",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#f9e0ea",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#daa8be",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#eac4d4",
+                            "$type": "color"
+                        }
+                    },
+                    "icon": {
+                        "subtle": {
+                            "$value": "#61374d",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#936a7e",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#cfabbb",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#cfabbb",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#F9E0EA",
+                            "$type": "color"
+                        }
+                    },
+                    "icon-color": {
+                        "$value": "#cfabbb",
+                        "$type": "color"
+                    },
+                    "text": {
+                        "high": {
+                            "$value": "#F9E0EA",
+                            "$type": "color"
+                        },
+                        "medium": {
+                            "$value": "#d6cfd3",
+                            "$type": "color"
+                        },
+                        "low": {
+                            "$value": "#b5a9b0",
+                            "$type": "color"
+                        }
+                    },
+                    "background-color": {
+                        "$value": "#270A1B",
+                        "$type": "color"
+                    },
+                    "color": {
+                        "$value": "#d6cfd3",
+                        "$type": "color"
+                    },
+                    "border": {
+                        "ghost": {
+                            "$value": "#270A1B",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#60374c",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#93697d",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#cfabbb",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#f9e0ea",
+                            "$type": "color"
+                        }
+                    }
+                },
+                "level": {
+                    "$value": "2400",
+                    "$type": "other"
+                },
+                "appearance": {
+                    "$value": "primary",
+                    "$type": "other"
+                },
+                "minimalIncreased": {
+                    "pressed": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F4ABCC",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#e4aec7",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#efc7d8",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#7f3961",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a76b8b",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#dcb2c6",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#dcb2c6",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#dcb2c6",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#dfd2d9",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#c6adba",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#510D37",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#dfd2d9",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#510D37",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#7e3960",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a76b8b",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#dbb1c5",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "hover": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F4ABCC",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#dea8c1",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#ecc4d5",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#76395a",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a16b87",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#d5abbf",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#d5abbf",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#d5abbf",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#ddd1d7",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#c0acb7",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#440D2E",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#ddd1d7",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#440D2E",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#75395a",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a16b86",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#d4abbe",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "idle": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F597C3",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#dca8bf",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#ebc4d4",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#693853",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#996a82",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#d1abbd",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#d1abbd",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#d1abbd",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#d9d0d4",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#baaab3",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#330B23",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#d9d0d4",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#330B23",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#693852",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#996a81",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#d1abbc",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "level": {
+                        "$value": "2300",
+                        "$type": "other"
+                    },
+                    "appearance": {
+                        "$value": "primary",
+                        "$type": "other"
+                    }
+                },
+                "subtle": {
+                    "pressed": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F4ABCC",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#e6aec8",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f0c7d9",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#893968",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#b27194",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#deb2c7",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#deb2c7",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#deb2c7",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#e2d2db",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#cbaebe",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#5F0D41",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#e2d2db",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#5F0D41",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#883968",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#b27094",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#deb1c6",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "hover": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F4ABCC",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#e4aec7",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#efc7d8",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#7f3961",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a76b8b",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#dcb2c6",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#dcb2c6",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#dcb2c6",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#dfd2d9",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#c6adba",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#510D37",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#dfd2d9",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#510D37",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#7e3960",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a76b8b",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#dbb1c5",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "idle": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#F4ABCC",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#dea8c1",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#ecc4d5",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#76395a",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a16b87",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#d5abbf",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#d5abbf",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#d5abbf",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#F9E0EA",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#ddd1d7",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#c0acb7",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#440D2E",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#ddd1d7",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#440D2E",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#75395a",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#a16b86",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#d4abbe",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#f9e0ea",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "level": {
+                        "$value": "2200",
+                        "$type": "other"
+                    },
+                    "appearance": {
+                        "$value": "primary",
+                        "$type": "other"
+                    }
+                },
+                "bold": {
+                    "pressed": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#330b23",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#250b1a",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#d971a4",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#9a4b73",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#270a1b",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#270a1b",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#270a1b",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#F483BA",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#190610",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#F483BA",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#d870a3",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#994b73",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#270a1b",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#190610",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "hover": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fff",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#fadeea",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#f186bc",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#EE57A8",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#EE57A8",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f186bc",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fff",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "idle": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fdeff5",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f8d6e5",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#eb66b1",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f1abcd",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#fcdaec",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#fcdaec",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#fcdaec",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#eb67b1",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f1abcd",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fdeff5",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "level": {
+                        "$value": "1200",
+                        "$type": "other"
+                    },
+                    "appearance": {
+                        "$value": "primary",
+                        "$type": "other"
+                    }
+                }
+            },
+            "default": {
+                "pressed": {
+                    "opacity": {
+                        "$value": "1",
+                        "$type": "opacity"
+                    },
+                    "backdropFilter": {
+                        "$value": "unset",
+                        "$type": "other"
+                    },
+                    "swiftUI": {
+                        "background": {
+                            "$value": "",
+                            "$type": "other"
+                        }
+                    },
+                    "content": {
+                        "bold": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#fff",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#f3bed5",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#fadeea",
+                            "$type": "color"
+                        }
+                    },
+                    "icon": {
+                        "subtle": {
+                            "$value": "#f186bc",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#f3bed5",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        }
+                    },
+                    "icon-color": {
+                        "$value": "#f6d0e0",
+                        "$type": "color"
+                    },
+                    "text": {
+                        "high": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        },
+                        "medium": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        },
+                        "low": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        }
+                    },
+                    "background-color": {
+                        "$value": "#EE57A8",
+                        "$type": "color"
+                    },
+                    "color": {
+                        "$value": "#FFFFFF",
+                        "$type": "color"
+                    },
+                    "border": {
+                        "ghost": {
+                            "$value": "#EE57A8",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#f186bc",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#f3bed5",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#fff",
+                            "$type": "color"
+                        }
+                    }
+                },
+                "hover": {
+                    "opacity": {
+                        "$value": "1",
+                        "$type": "opacity"
+                    },
+                    "backdropFilter": {
+                        "$value": "unset",
+                        "$type": "other"
+                    },
+                    "swiftUI": {
+                        "background": {
+                            "$value": "",
+                            "$type": "other"
+                        }
+                    },
+                    "content": {
+                        "bold": {
+                            "$value": "#FDEFF5",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#fdeff5",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#f3bed5",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#f8d6e5",
+                            "$type": "color"
+                        }
+                    },
+                    "icon": {
+                        "subtle": {
+                            "$value": "#ee74b5",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#f2b2d0",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#FDEFF5",
+                            "$type": "color"
+                        }
+                    },
+                    "icon-color": {
+                        "$value": "#f6d0e0",
+                        "$type": "color"
+                    },
+                    "text": {
+                        "high": {
+                            "$value": "#FDEFF5",
+                            "$type": "color"
+                        },
+                        "medium": {
+                            "$value": "#fddeed",
+                            "$type": "color"
+                        },
+                        "low": {
+                            "$value": "#fddeed",
+                            "$type": "color"
+                        }
+                    },
+                    "background-color": {
+                        "$value": "#E73D9D",
+                        "$type": "color"
+                    },
+                    "color": {
+                        "$value": "#fddeed",
+                        "$type": "color"
+                    },
+                    "border": {
+                        "ghost": {
+                            "$value": "#E73D9D",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#ee74b5",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#f2b2d0",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#fdeff5",
+                            "$type": "color"
+                        }
+                    }
+                },
+                "idle": {
+                    "opacity": {
+                        "$value": "1",
+                        "$type": "opacity"
+                    },
+                    "backdropFilter": {
+                        "$value": "unset",
+                        "$type": "other"
+                    },
+                    "swiftUI": {
+                        "background": {
+                            "$value": "",
+                            "$type": "other"
+                        }
+                    },
+                    "content": {
+                        "bold": {
+                            "$value": "#FDEFF5",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#fdeff5",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#f3bed5",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#f8d6e5",
+                            "$type": "color"
+                        }
+                    },
+                    "icon": {
+                        "subtle": {
+                            "$value": "#eb66b1",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#f1abcd",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#FDEFF5",
+                            "$type": "color"
+                        }
+                    },
+                    "icon-color": {
+                        "$value": "#f6d0e0",
+                        "$type": "color"
+                    },
+                    "text": {
+                        "high": {
+                            "$value": "#FDEFF5",
+                            "$type": "color"
+                        },
+                        "medium": {
+                            "$value": "#fcdaec",
+                            "$type": "color"
+                        },
+                        "low": {
+                            "$value": "#fcdaec",
+                            "$type": "color"
+                        }
+                    },
+                    "background-color": {
+                        "$value": "#E22296",
+                        "$type": "color"
+                    },
+                    "color": {
+                        "$value": "#fcdaec",
+                        "$type": "color"
+                    },
+                    "border": {
+                        "ghost": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "subtle": {
+                            "$value": "#eb67b1",
+                            "$type": "color"
+                        },
+                        "moderate": {
+                            "$value": "#f1abcd",
+                            "$type": "color"
+                        },
+                        "bold": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "heavy": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "contrasting": {
+                            "$value": "#fdeff5",
+                            "$type": "color"
+                        }
+                    }
+                },
+                "level": {
+                    "$value": "1200",
+                    "$type": "other"
+                },
+                "appearance": {
+                    "$value": "primary",
+                    "$type": "other"
+                },
+                "default": {
+                    "pressed": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fff",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#fadeea",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#f186bc",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#FFFFFF",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#EE57A8",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#FFFFFF",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#EE57A8",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f186bc",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fff",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "hover": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fdeff5",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f8d6e5",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#ee74b5",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f2b2d0",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#fddeed",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#fddeed",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#E73D9D",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#fddeed",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#E73D9D",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#ee74b5",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f2b2d0",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fdeff5",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "idle": {
+                        "opacity": {
+                            "$value": "1",
+                            "$type": "opacity"
+                        },
+                        "backdropFilter": {
+                            "$value": "unset",
+                            "$type": "other"
+                        },
+                        "swiftUI": {
+                            "background": {
+                                "$value": "",
+                                "$type": "other"
+                            }
+                        },
+                        "content": {
+                            "bold": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fdeff5",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#f3bed5",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f8d6e5",
+                                "$type": "color"
+                            }
+                        },
+                        "icon": {
+                            "subtle": {
+                                "$value": "#eb66b1",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f1abcd",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            }
+                        },
+                        "icon-color": {
+                            "$value": "#f6d0e0",
+                            "$type": "color"
+                        },
+                        "text": {
+                            "high": {
+                                "$value": "#FDEFF5",
+                                "$type": "color"
+                            },
+                            "medium": {
+                                "$value": "#fcdaec",
+                                "$type": "color"
+                            },
+                            "low": {
+                                "$value": "#fcdaec",
+                                "$type": "color"
+                            }
+                        },
+                        "background-color": {
+                            "$value": "#E22296",
+                            "$type": "color"
+                        },
+                        "color": {
+                            "$value": "#fcdaec",
+                            "$type": "color"
+                        },
+                        "border": {
+                            "ghost": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "subtle": {
+                                "$value": "#eb67b1",
+                                "$type": "color"
+                            },
+                            "moderate": {
+                                "$value": "#f1abcd",
+                                "$type": "color"
+                            },
+                            "bold": {
+                                "$value": "#E22296",
+                                "$type": "color"
+                            },
+                            "heavy": {
+                                "$value": "#f6d0e0",
+                                "$type": "color"
+                            },
+                            "contrasting": {
+                                "$value": "#fdeff5",
+                                "$type": "color"
+                            }
+                        }
+                    },
+                    "level": {
+                        "$value": "1200",
+                        "$type": "other"
+                    },
+                    "appearance": {
+                        "$value": "primary",
+                        "$type": "other"
+                    }
+                }
+            }
+        }
+    }
+}

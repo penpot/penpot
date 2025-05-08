@@ -2,6 +2,7 @@
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
+   ["style-dictionary/utils" :as sd-utils]
    [app.common.files.tokens :as cft]
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -16,6 +17,8 @@
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
+(js/console.log sd-utils/resolveReferences)
+
 (l/set-level! :debug)
 
 ;; === Style Dictionary
@@ -24,7 +27,6 @@
   "Initiates the StyleDictionary instance.
   Setup transforms from tokens-studio used to parse and resolved token values."
   (do
-    (sd-transforms/register sd)
     (.registerFormat sd #js {:name "custom/json"
                              :format (fn [^js res]
                                        (.-tokens (.-dictionary res)))})
@@ -32,10 +34,8 @@
 
 (def default-config
   {:platforms {:json
-               {:transformGroup "tokens-studio"
-                ;; Required: The StyleDictionary API is focused on files even when working in the browser
+               {;; Required: The StyleDictionary API is focused on files even when working in the browser
                 :files [{:format "custom/json" :destination "penpot"}]}}
-   :preprocessors ["tokens-studio"]
    ;; Silences style dictionary logs and errors
    ;; We handle token errors in the UI
    :log {:verbosity "silent"
