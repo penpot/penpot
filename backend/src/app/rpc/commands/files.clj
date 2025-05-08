@@ -492,7 +492,7 @@
 
   (let [perms (get-permissions conn profile-id file-id share-id)
 
-        file  (get-file cfg file-id)
+        file  (get-file cfg file-id :read-only? true)
 
         proj  (db/get conn :project {:id (:project-id file)})
 
@@ -749,7 +749,9 @@
                              :project-id project-id
                              :file-id id)
 
-        file (get-file cfg id :project-id project-id)]
+        file (get-file cfg id
+                       :project-id project-id
+                       :read-only? true)]
 
     (-> (cfeat/get-team-enabled-features cf/flags team)
         (cfeat/check-client-features! (:features params))

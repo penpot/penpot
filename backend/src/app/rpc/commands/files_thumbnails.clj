@@ -10,7 +10,6 @@
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
-   [app.common.files.migrations :as fmg]
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
    [app.common.thumbnails :as thc]
@@ -18,7 +17,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
-   [app.features.fdata :as feat.fdata]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
@@ -200,14 +198,13 @@
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                  (files/check-read-permissions! conn profile-id file-id)
 
-                 (let [team     (teams/get-team conn
-                                                :profile-id profile-id
-                                                :file-id file-id)
+                 (let [team (teams/get-team conn
+                                            :profile-id profile-id
+                                            :file-id file-id)
 
-                       file     (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
-                                  (-> (files/get-file cfg file-id :migrate? false)
-                                      (update :data feat.fdata/process-pointers deref)
-                                      (fmg/migrate-file)))]
+                       file (files/get-file cfg file-id
+                                            :preload-pointers? true
+                                            :read-only? true)]
 
                    (-> (cfeat/get-team-enabled-features cf/flags team)
                        (cfeat/check-file-features! (:features file)))
