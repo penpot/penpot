@@ -13,6 +13,7 @@
   --input-bg-color: var(--color-background-tertiary);
   --input-fg-color: var(--color-foreground-primary);
   --input-icon-color: var(--color-foreground-secondary);
+  --input-text-indent: 0;
   --input-outline-color: none;
   --input-height: #{$sz-32};
   --input-margin: unset;
@@ -43,7 +44,8 @@
   }
 }
 
-.variant-dense {
+.variant-dense,
+.variant-seamless {
   @include use-typography("body-small");
 }
 
@@ -79,6 +81,7 @@
   border: none;
   background: none;
   inline-size: 100%;
+  text-indent: var(--input-text-indent, 0);
 
   font-family: inherit;
   font-size: inherit;

@@ -32,6 +32,10 @@
    {:error/code :error.import/style-dictionary-reference-errors
     :error/fn #(tr "workspace.token.import-error")}
 
+   :error.token/empty-input
+   {:error/code :error.token/empty-input
+    :error/fn #(tr "workspace.token.empty-input")}
+
    :error.token/direct-self-reference
    {:error/code :error.token/direct-self-reference
     :error/fn #(tr "workspace.token.self-reference")}

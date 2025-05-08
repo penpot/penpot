@@ -409,7 +409,7 @@ test.describe("Tokens: Tokens Tab", () => {
     // Clearing the input field should pick hex
     await valueField.fill("");
     await expect(
-      tokensUpdateCreateModal.getByText("Resolved value: -"),
+      tokensUpdateCreateModal.getByText("Token value cannot be empty"),
     ).toBeVisible();
     await valueSaturationSelector.click({ position: { x: 50, y: 50 } });
     await expect(valueField).toHaveValue(/^#[A-Fa-f\d]+$/);

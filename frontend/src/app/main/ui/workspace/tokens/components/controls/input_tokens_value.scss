@@ -41,7 +41,7 @@
     position: relative;
 
     & .input {
-      padding-inline-start: var(--sp-xxxl);
+      --input-text-indent: var(--sp-xxl);
     }
   }
 }

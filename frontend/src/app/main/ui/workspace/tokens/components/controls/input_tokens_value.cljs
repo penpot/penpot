@@ -9,38 +9,37 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.main.constants :refer [max-input-length]]
-   [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
+   [app.main.ui.ds.controls.utilities.label :refer [label*]]
    [rumext.v2 :as mf]))
 
 (def ^:private schema::input-tokens-value
   [:map
    [:label :string]
    [:placeholder {:optional true} :string]
-   [:default-value {:optional true} [:maybe :string]]
+   [:value {:optional true} [:maybe :string]]
    [:class {:optional true} :string]
-   [:max-length {:optional true} :int]
-   [:error {:optional true} :boolean]
-   [:value {:optional true} :string]])
+   [:error {:optional true} :boolean]])
 
 (mf/defc input-tokens-value*
   {::mf/props :obj
    ::mf/forward-ref true
    ::mf/schema schema::input-tokens-value}
-  [{:keys [class label max-length error value children] :rest props} ref]
+  [{:keys [class label placeholder error value children] :rest props} ref]
   (let [id (mf/use-id)
         input-ref (mf/use-ref)
         props (mf/spread-props props {:id id
                                       :type "text"
                                       :class (stl/css :input)
-                                      :aria-invalid error
-                                      :max-length (d/nilv max-length max-input-length)
-                                      :value value
+                                      :placeholder placeholder
+                                      :value (d/nilv value "")
+                                      :variant "comfortable"
+                                      :hint-type (when error "error")
                                       :ref (or ref input-ref)})]
     [:div {:class (dm/str class " " (stl/css-case :wrapper true
                                                   :input-error error))}
-     [:label {:for id :class (stl/css :label)} label]
+     [:> label* {:for id} label]
      [:div {:class (stl/css :input-wrapper)}
       (when (some? children)
         [:div {:class (stl/css :input-swatch)} children])
-      [:> input* props]]]))
+      [:> input-field* props]]]))
