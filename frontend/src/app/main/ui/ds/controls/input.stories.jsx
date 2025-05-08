@@ -40,7 +40,7 @@ export default {
       control: { type: "select" },
     },
     variant: {
-      options: ["dense", "comfortable"],
+      options: ["dense", "comfortable", "seamless"],
       control: { type: "select" },
     },
     disabled: {

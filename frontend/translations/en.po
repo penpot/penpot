@@ -6832,8 +6832,8 @@ msgid "workspace.token.edit-token"
 msgstr "Edit token"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:544
-msgid "workspace.token.enter-token-description"
-msgstr "Add a description (optional)"
+msgid "workspace.token.token-description"
+msgstr "Add a description"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:498
 msgid "workspace.token.enter-token-name"
@@ -6868,6 +6868,10 @@ msgstr "Import Error:"
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
 msgid "workspace.token.import-tooltip"
 msgstr "Importing a JSON file will override all your current tokens, sets and themes"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:29
+msgid "workspace.token.empty-input"
+msgstr "Token value cannot be empty"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:29
 msgid "workspace.token.invalid-color"
