@@ -85,6 +85,7 @@ $width-settings-bar-max: $s-500;
 }
 
 .resize-area-horiz {
+  background-color: var(--panel-background-color);
   position: absolute;
   left: 0;
   width: 100%;

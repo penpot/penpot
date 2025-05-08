@@ -193,12 +193,14 @@
 }
 
 .resize-area-horiz {
+  background-color: var(--panel-background-color);
   position: absolute;
   left: 0;
   width: 100%;
   padding: $s-3 0 $s-1 0;
   height: $s-6;
   cursor: ns-resize;
+  z-index: 1;
 }
 
 .resize-handle-horiz {
