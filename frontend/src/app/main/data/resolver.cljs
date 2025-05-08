@@ -33,6 +33,37 @@
   (sd-transforms/checkAndEvaluateMath new-token))
 ;; => "2px"
 
+;; Errors ----------------------------------------------------------------------
+
+(def circular-tokens-map
+  (doto (js/Map.)
+    (.set "{foo}" #js {"value" "{bar}"})
+    (.set "{bar}" #js {"value" "{foo}"})))
+
+(sd-utils/resolveReferences "{foo}" circular-tokens-map)
+;; => Execution error (Error) at (<cljs repl>:1).
+;;    Circular definition cycle for  => {foo}, {bar}, {foo}
+;;    :repl/exception!
+
+
+(sd-utils/resolveReferences "{foo}" {})
+;; => Execution error (Error) at (<cljs repl>:1).
+;;    tries to reference foo, which is not defined.
+;;    :repl/exception!
+
+(def deep-missing-ref-tokens-map
+  (doto (js/Map.)
+    (.set "{foo}" #js {"value" "{baz}"})
+    (.set "{bar}" #js {"value" "{foo}"})))
+
+(try
+  (sd-utils/resolveReferences "{bar}" deep-missing-ref-tokens-map)
+  (catch js/Error e {:error e
+                     :refs (sd-utils/getReferences "{bar}" deep-missing-ref-tokens-map)}))
+;; => Execution error (Error) at (<cljs repl>:1).
+;;    tries to reference {baz}, which is not defined.
+;;    :repl/exception!
+
 ;; Performance Tests -----------------------------------------------------------
 
 (defonce a (atom nil))
