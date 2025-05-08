@@ -771,12 +771,12 @@
 
 ;; --- Update Shape Attrs
 
-;; FIXME: revisit this before merge
+;; FIXME: rename to update-shape-generic-attrs because on the end we
+;; only allow here to update generic attrs
 (defn update-shape
   [id attrs]
   (assert (uuid? id) "expected valid uuid for `id`")
-
-  (let [attrs (cts/check-shape-attrs attrs)]
+  (let [attrs (cts/check-shape-generic-attrs attrs)]
     (ptk/reify ::update-shape
       ptk/WatchEvent
       (watch [_ _ _]

@@ -23,28 +23,32 @@
 
 (defn sample-file
   [label & {:keys [page-label name view-only?] :as params}]
-  (binding [ffeat/*current* #{"components/v2"}]
-    (let [params (cond-> params
-                   label
-                   (assoc :id (thi/new-id! label))
+  (let [params
+        (cond-> params
+          label
+          (assoc :id (thi/new-id! label))
 
-                   page-label
-                   (assoc :page-id (thi/new-id! page-label))
+          (nil? name)
+          (assoc :name "Test file")
 
-                   (nil? name)
-                   (assoc :name "Test file"))
+          :always
+          (assoc :features ffeat/default-features))
 
-          file (-> (ctf/make-file (dissoc params :page-label))
-                   (assoc :features #{"components/v2"})
-                   (assoc :permissions {:can-edit (not (true? view-only?))}))
+        opts
+        (cond-> {}
+          page-label
+          (assoc :page-id (thi/new-id! page-label)))
 
-          page (-> file
-                   :data
-                   (ctpl/pages-seq)
-                   (first))]
+        file (-> (ctf/make-file params opts)
+                 (assoc :permissions {:can-edit (not (true? view-only?))}))
 
-      (with-meta file
-        {:current-page-id (:id page)}))))
+        page (-> file
+                 :data
+                 (ctpl/pages-seq)
+                 (first))]
+
+    (with-meta file
+      {:current-page-id (:id page)})))
 
 (defn validate-file!
   ([file] (validate-file! file {}))

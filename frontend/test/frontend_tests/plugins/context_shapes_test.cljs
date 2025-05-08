@@ -16,8 +16,7 @@
 
 (t/deftest test-common-shape-properties
   (let [;; ==== Setup
-        store   (ths/setup-store
-                 (cthf/sample-file :file1 :page-label :page1))
+        store   (ths/setup-store (cthf/sample-file :file1 :page-label :page1))
 
         ^js context (api/create-context "TEST")
 

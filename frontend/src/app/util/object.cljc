@@ -6,7 +6,7 @@
 
 (ns app.util.object
   "A collection of helpers for work with javascript objects."
-  (:refer-clojure :exclude [set! new get merge clone contains? array? into-array reify])
+  (:refer-clojure :exclude [set! new get merge clone contains? array? into-array reify class])
   #?(:cljs (:require-macros [app.util.object]))
   (:require
    [clojure.core :as c]))

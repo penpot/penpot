@@ -137,33 +137,36 @@
        (update :options assoc :components-v2 true)))))
 
 (defn make-file
-  [{:keys [id project-id name revn is-shared features
-           ignore-sync-until modified-at deleted-at
-           create-page page-id]
-    :or {is-shared false revn 0 create-page true}}]
+  [{:keys [id project-id name revn is-shared features migrations
+           ignore-sync-until modified-at deleted-at]
+    :or {is-shared false revn 0}}
+
+   & {:keys [create-page page-id]
+      :or {create-page true}}]
 
   (let [id       (or id (uuid/next))
-
         data     (if create-page
                    (if page-id
                      (make-file-data id page-id)
                      (make-file-data id))
                    (make-file-data id nil))
 
-        file     {:id id
-                  :project-id project-id
-                  :name name
-                  :revn revn
-                  :vern 0
-                  :is-shared is-shared
-                  :version version
-                  :data data
-                  :features features
-                  :ignore-sync-until ignore-sync-until
-                  :modified-at modified-at
-                  :deleted-at deleted-at}]
+        file     (d/without-nils
+                  {:id id
+                   :project-id project-id
+                   :name name
+                   :revn revn
+                   :vern 0
+                   :is-shared is-shared
+                   :version version
+                   :data data
+                   :features features
+                   :migrations migrations
+                   :ignore-sync-until ignore-sync-until
+                   :modified-at modified-at
+                   :deleted-at deleted-at})]
 
-    (d/without-nils file)))
+    (check-file file)))
 
 ;; Helpers
 
