@@ -5,32 +5,82 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.util.zip
-  "Helpers for make zip file (using jszip)."
+  "Helpers for make zip file."
   (:require
-   ["jszip" :as zip]
+   ["@zip.js/zip.js" :as zip]
+   [app.util.array :as array]
    [promesa.core :as p]))
 
-(defn load
-  [data]
-  (zip/loadAsync data))
+(defn reader
+  [blob]
+  (cond
+    (instance? js/Blob blob)
+    (let [breader (new zip/BlobReader blob)]
+      (new zip/ZipReader breader))
 
-(defn get-file
-  "Gets a single file from the zip archive"
-  ([zip path]
-   (get-file zip path "text"))
+    (instance? js/Uint8Array blob)
+    (let [breader (new zip/Uint8ArrayReader blob)
+          zreader (new zip/ZipReader breader #js {:useWebWorkers false})]
+      zreader)
 
-  ([zip path type]
-   (let [entry (.file zip path)]
-     (cond
-       (nil? entry)
-       (p/rejected (str "File not found: " path))
+    (instance? js/ArrayBuffer blob)
+    (reader (js/Uint8Array. blob))
 
-       (.-dir ^js entry)
-       (p/resolved {:dir path})
+    :else
+    (throw (ex-info "invalid arguments"
+                    {:type :internal
+                     :code :invalid-type}))))
 
-       :else
-       (->> (.async ^js entry type)
-            (p/fmap (fn [content]
-                      ;; (js/console.log "zip:process-file" 2 content)
-                      {:path path
-                       :content content})))))))
+(defn blob-writer
+  [& {:keys [mtype]}]
+  (new zip/BlobWriter (or mtype "application/octet-stream")))
+
+(defn bytes-writer
+  []
+  (new zip/Uint8ArrayWriter))
+
+(defn writer
+  [stream-writer]
+  (new zip/ZipWriter stream-writer))
+
+(defn add
+  [writer path content]
+  (assert (instance? zip/ZipWriter writer))
+  (cond
+    (instance? js/Uint8Array content)
+    (.add writer path (new zip/Uint8ArrayReader content))
+
+    (instance? js/ArrayBuffer content)
+    (.add writer path  (new zip/Uint8ArrayReader
+                            (new js/Uint8Array content)))
+
+    (instance? js/Blob content)
+    (.add writer path  (new zip/BlobReader content))
+
+
+    (string? content)
+    (.add writer path (new zip/TextReader content))
+
+    :else
+    (throw (ex-info "invalid arguments"
+                    {:type :internal
+                     :code :invalid-type}))))
+
+
+(defn get-entry
+  [reader path]
+  (assert (instance? zip/ZipReader reader))
+  (->> (.getEntries ^zip/ZipReader reader)
+       (p/fmap (fn [entries]
+                 (array/find #(= (.-filename ^js %) path) entries)))))
+
+(defn read-as-text
+  [entry]
+  (let [writer (new zip/TextWriter)]
+    (.getData entry writer)))
+
+(defn close
+  [closeable]
+  (assert (or (instance? zip/ZipReader closeable)
+              (instance? zip/ZipWriter closeable)))
+  (.close ^js closeable))

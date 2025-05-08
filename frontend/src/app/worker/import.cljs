@@ -30,9 +30,9 @@
 (def conjv (fnil conj []))
 
 (defn- read-zip-manifest
-  [zipfile]
-  (->> (rx/from (uz/get-file zipfile "manifest.json"))
-       (rx/map :content)
+  [zip-reader]
+  (->> (rx/from (uz/get-entry zip-reader "manifest.json"))
+       (rx/mapcat uz/read-as-text)
        (rx/map json/decode)))
 
 (defn slurp-uri
@@ -121,14 +121,15 @@
                        (let [mtype (parse-mtype body)]
                          (cond
                            (= "application/zip" mtype)
-                           (->> (rx/from (uz/load body))
-                                (rx/merge-map read-zip-manifest)
-                                (rx/map
-                                 (fn [manifest]
-                                   (if (= (:type manifest) "penpot/export-files")
-                                     (let [manifest (decode-manifest manifest)]
-                                       (assoc file :type :binfile-v3 :files (:files manifest)))
-                                     (assoc file :type :legacy-zip :body body)))))
+                           (let [zip-reader (uz/reader body)]
+                             (->> (read-zip-manifest zip-reader)
+                                  (rx/map
+                                   (fn [manifest]
+                                     (if (= (:type manifest) "penpot/export-files")
+                                       (let [manifest (decode-manifest manifest)]
+                                         (assoc file :type :binfile-v3 :files (:files manifest)))
+                                       (assoc file :type :legacy-zip :body body))))
+                                  (rx/finalize (partial uz/close zip-reader))))
 
                            (= "application/octet-stream" mtype)
                            (rx/of (assoc file :type :binfile-v1))
