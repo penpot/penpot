@@ -1,4 +1,4 @@
-use skia_safe::{self as skia, Matrix, RRect, Rect};
+use skia_safe::{self as skia, image, Matrix, RRect, Rect};
 
 use crate::uuid::Uuid;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -20,7 +20,7 @@ mod surfaces;
 mod text;
 mod tiles;
 
-use crate::shapes::{modified_children_ids, Corners, Shape, StructureEntry, Type};
+use crate::shapes::{modified_children_ids, Corners, Fill, Shape, StructureEntry, Type};
 use gpu_state::GpuState;
 use options::RenderOptions;
 use surfaces::{SurfaceId, Surfaces};
@@ -362,7 +362,11 @@ impl RenderState {
                 text::render(self, &shape, &paragraphs, None, None);
 
                 for stroke in shape.strokes().rev() {
-                    let stroke_paints = shape.get_text_stroke_paint(&stroke);
+                    let mut image: Option<image::Image> = None;
+                    if let Fill::Image(image_fill) = &stroke.fill {
+                        image = self.images.get(&image_fill.id()).cloned();
+                    }
+                    let stroke_paints = shape.get_text_stroke_paint(&stroke, image.as_ref());
                     let stroke_paragraphs = text_content
                         .get_skia_stroke_paragraphs(&self.fonts.font_collection(), &stroke_paints);
                     shadows::render_text_drop_shadows(self, &shape, &stroke_paragraphs, antialias);
