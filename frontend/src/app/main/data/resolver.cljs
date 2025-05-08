@@ -6,6 +6,7 @@
    [app.main.data.style-dictionary :as sd]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
+   ["tinycolor2$default" :as tinycolor]
    [promesa.core :as p]
    [shadow.resource]))
 
@@ -45,7 +46,6 @@
 ;;    Circular definition cycle for  => {foo}, {bar}, {foo}
 ;;    :repl/exception!
 
-
 (sd-utils/resolveReferences "{foo}" {})
 ;; => Execution error (Error) at (<cljs repl>:1).
 ;;    tries to reference foo, which is not defined.
@@ -54,15 +54,47 @@
 (def deep-missing-ref-tokens-map
   (doto (js/Map.)
     (.set "{foo}" #js {"value" "{baz}"})
-    (.set "{bar}" #js {"value" "{foo}"})))
+    (.set "{bar}" #js {"value" "{foo}"})
+    (.set "{bam}" #js {"value" "{bar}"})))
 
 (try
-  (sd-utils/resolveReferences "{bar}" deep-missing-ref-tokens-map)
+  (sd-utils/resolveReferences "{bam}" deep-missing-ref-tokens-map)
   (catch js/Error e {:error e
-                     :refs (sd-utils/getReferences "{bar}" deep-missing-ref-tokens-map)}))
-;; => Execution error (Error) at (<cljs repl>:1).
-;;    tries to reference {baz}, which is not defined.
-;;    :repl/exception!
+                     :refs (sd-utils/getReferences "{bam}" deep-missing-ref-tokens-map)}))
+;; => {:error #object[u Error: tries to reference {baz}, which is not defined.],
+;;     :refs #js [#js {:value "{bar}", :ref #js ["bam"]}]}
+
+;; Transitive Colors -----------------------------------------------------------
+
+(def transitive-colors
+  (doto (js/Map.)
+    (.set "{color.red}" #js {"value" "#f00"})
+    (.set "{color.danger}" #js {"value" "{color.red}" "darken" 0.75})
+    (.set "{color.error}" #js {"value" "{color.red}" "lighten" 0.75})))
+
+(defn get-references [token colors-map]
+  (letfn [(find-refs [token-str path]
+            (when-let [color-obj (.get colors-map token-str)]
+              (let [value (.-value color-obj)]
+                (if (has-reference? value)
+                  ;; Recursively find references for value
+                  (let [refs (find-refs value (conj path value))]
+                    ;; Return current object with its refs
+                    #js [#js (merge
+                               (js->clj color-obj)
+                               {:ref (clj->js (rest (str/split token-str #"[\{\}]")))}
+                               {:references refs})])
+                  ;; Base case: no more references
+                  #js [#js (merge
+                             (js->clj color-obj)
+                             {:ref (clj->js (rest (str/split token-str #"[\{\}]")))})]))))]
+    (find-refs token [])))
+
+(defn has-reference? [val]
+  (str/includes? val "{"))
+
+(sd-utils/getReferences "{color.error}" transitive-colors)
+;; => #js [#js {:value "{color.red}", :lighten 0.75, :ref #js ["color" "error"]}]
 
 ;; Performance Tests -----------------------------------------------------------
 
