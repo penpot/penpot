@@ -76,5 +76,5 @@ jobs:
 
       - name: Upload frontend bundle
         if: env.ZIP_MODE != 'all'
-        uses: actions/upload-ar
+        uses: actions/upload-artifact@v4
 
