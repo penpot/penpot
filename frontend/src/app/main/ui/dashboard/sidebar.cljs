@@ -665,9 +665,17 @@
                 :on-click handle-show-team-click
                 :on-key-down handle-show-team-keydown}
 
+       (println "1" (and (:is-default team)
+              (not (contains? cf/flags :subscriptions))))
+
+       (println "2" (and (contains? cf/flags :subscriptions)
+              (not (:is-default team))
+              (or (= "unlimited" subscription-name) (= "enterprise" subscription-name))))
+
+       (println "3" (and (not (:is-default team))
+              (not (contains? cf/flags :subscriptions))))
        (cond
-         (and (:is-default team)
-              (not (contains? cf/flags :subscriptions)))
+         (:is-default team)
          [:div {:class (stl/css :team-name)}
           [:span {:class (stl/css :penpot-icon)} i/logo-icon]
           [:span {:class (stl/css :team-text)} (tr "dashboard.default-team-name")]]
