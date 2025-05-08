@@ -1,0 +1,31 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.help-btn {
+  z-index: $z-index-2;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  @extend .button-secondary;
+  height: $s-40;
+  width: $s-40;
+  border-radius: $br-circle;
+  border: none !important;
+  svg {
+    @extend .button-icon;
+    position: absolute;
+    top: $s-8;
+    left: $s-8;
+    stroke: var(--icon-foreground);
+    height: $s-24;
+    width: $s-24;
+  }
+  &.selected {
+    @extend .button-icon-selected;
+  }
+}

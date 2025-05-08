@@ -12,6 +12,10 @@
   left: 0;
   bottom: 0;
   padding-bottom: $s-4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $s-8;
 }
 
 .palettes {

@@ -100,6 +100,7 @@
     "workerpool": "^9.2.0"
   },
   "dependencies": {
+    "@inkeep/cxkit-react": "^0.5.77",
     "@penpot/draft-js": "portal:./vendor/draft-js",
     "@penpot/hljs": "portal:./vendor/hljs",
     "@penpot/mousetrap": "portal:./vendor/mousetrap",

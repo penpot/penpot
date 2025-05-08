@@ -20,6 +20,7 @@
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.chat-button :refer [chat-button*]]
    [app.main.ui.workspace.color-palette :refer [color-palette*]]
    [app.main.ui.workspace.color-palette-ctx-menu :refer [color-palette-ctx-menu*]]
    [app.main.ui.workspace.text-palette :refer [text-palette]]
@@ -150,61 +151,64 @@
            :style  (calculate-palette-padding rulers?)
            :data-testid "palette"}
      (when-not workspace-read-only?
-       [:div {:ref parent-ref
-              :class (dm/str size-classname " " (stl/css-case :palettes true
-                                                              :wide any-palette?
-                                                              :hidden-bts hide-palettes?))
-              :style #js {"--height" (dm/str size "px")}}
+       [:*
+        [:div {:ref parent-ref
+               :class (dm/str size-classname " " (stl/css-case :palettes true
+                                                               :wide any-palette?
+                                                               :hidden-bts hide-palettes?))
+               :style #js {"--height" (dm/str size "px")}}
 
-        [:div {:class (stl/css :resize-area)
-               :on-pointer-down on-pointer-down
-               :on-lost-pointer-capture on-lost-pointer-capture
-               :on-pointer-move on-pointer-move}]
-        [:ul {:class (dm/str size-classname " " (stl/css-case :palette-btn-list true
-                                                              :hidden-bts hide-palettes?))}
-         [:li {:class (stl/css :palette-item)}
-          [:button {:title (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
-                    :aria-label (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
-                    :class (stl/css-case :palette-btn true
-                                         :selected color-palette?)
-                    :on-click on-select-color-palette}
-           i/drop-icon]]
+         [:div {:class (stl/css :resize-area)
+                :on-pointer-down on-pointer-down
+                :on-lost-pointer-capture on-lost-pointer-capture
+                :on-pointer-move on-pointer-move}]
+         [:ul {:class (dm/str size-classname " " (stl/css-case :palette-btn-list true
+                                                               :hidden-bts hide-palettes?))}
+          [:li {:class (stl/css :palette-item)}
+           [:button {:title (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
+                     :aria-label (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
+                     :class (stl/css-case :palette-btn true
+                                          :selected color-palette?)
+                     :on-click on-select-color-palette}
+            i/drop-icon]]
 
-         [:li {:class (stl/css :palette-item)}
-          [:button {:title (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
-                    :aria-label (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
-                    :class (stl/css-case :palette-btn true
-                                         :selected text-palette?)
-                    :on-click on-select-text-palette}
-           i/text-palette]]]
+          [:li {:class (stl/css :palette-item)}
+           [:button {:title (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
+                     :aria-label (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
+                     :class (stl/css-case :palette-btn true
+                                          :selected text-palette?)
+                     :on-click on-select-text-palette}
+            i/text-palette]]]
 
 
-        (if any-palette?
-          [:*
-           [:button {:class (stl/css :palette-actions)
-                     :on-click #(swap! state* update :show-menu not)}
-            i/menu]
-           [:div {:class (stl/css :palette)
-                  :ref container}
-            (when text-palette?
-              [:*
-               [:& text-palette-ctx-menu {:show-menu?  show-menu?
-                                          :close-menu on-close-menu
-                                          :on-select-palette on-select-text-palette-menu
-                                          :selected selected-text}]
-               [:& text-palette {:size size
-                                 :selected selected-text
-                                 :width vport-width}]])
-            (when color-palette?
-              [:*
-               [:> color-palette-ctx-menu* {:show show-menu?
-                                            :on-close on-close-menu
-                                            :on-select on-select-palette
-                                            :selected @selected}]
-               [:> color-palette* {:size size
-                                   :selected @selected
-                                   :width vport-width}]])]]
-          [:div {:class (stl/css :handler)
-                 :on-click toggle-palettes
-                 :data-testid "toggle-palettes-visibility"}
-           [:div {:class (stl/css :handler-btn)}]])])]))
+         (if any-palette?
+           [:*
+            [:button {:class (stl/css :palette-actions)
+                      :on-click #(swap! state* update :show-menu not)}
+             i/menu]
+            [:div {:class (stl/css :palette)
+                   :ref container}
+             (when text-palette?
+               [:*
+                [:& text-palette-ctx-menu {:show-menu?  show-menu?
+                                           :close-menu on-close-menu
+                                           :on-select-palette on-select-text-palette-menu
+                                           :selected selected-text}]
+                [:& text-palette {:size size
+                                  :selected selected-text
+                                  :width vport-width}]])
+             (when color-palette?
+               [:*
+                [:> color-palette-ctx-menu* {:show show-menu?
+                                             :on-close on-close-menu
+                                             :on-select on-select-palette
+                                             :selected @selected}]
+                [:> color-palette* {:size size
+                                    :selected @selected
+                                    :width vport-width}]])]]
+           [:div {:class (stl/css :handler)
+                  :on-click toggle-palettes
+                  :data-testid "toggle-palettes-visibility"}
+            [:div {:class (stl/css :handler-btn)}]])]
+        [:> chat-button*]])]))
+
