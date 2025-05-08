@@ -216,10 +216,12 @@
   "Generate changes to create a new instance from a component."
   ([changes objects file-id component-id position page libraries]
    (generate-instantiate-component changes objects file-id component-id position page libraries nil nil nil {}))
-
-  ([changes objects file-id component-id position page libraries old-id parent-id frame-id
+  ([changes objects file-id component-id position page libraries old-id parent-id frame-id params]
+   (generate-instantiate-component changes objects file-id component-id position page libraries old-id parent-id frame-id {} params))
+  ([changes objects file-id component-id position page libraries old-id parent-id frame-id ids-map
     {:keys [force-frame?]
      :or {force-frame? false}}]
+
    (let [component     (ctf/get-component libraries file-id component-id)
          library       (get libraries file-id)
          parent        (when parent-id (get objects parent-id))
@@ -239,6 +241,9 @@
                                       (:data library)
                                       position
                                       (cond-> {}
+                                        (contains? ids-map old-id)
+                                        (assoc :force-id (get ids-map old-id))
+
                                         force-frame?
                                         (assoc :force-frame-id frame-id)))
 
@@ -260,8 +265,11 @@
          (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
            (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id)))
 
+         duplicated-parent?
+         (->> ids-map vals (some #(= % (:parent-id first-shape))))
+
          changes
-         (if (ctl/grid-layout? objects (:parent-id first-shape))
+         (if (and (ctl/grid-layout? objects (:parent-id first-shape)) (not duplicated-parent?))
            (let [target-cell (-> position meta :cell)
 
                  [row column]
@@ -2234,6 +2242,7 @@
                                             main-id
                                             parent-id
                                             frame-id
+                                            ids-map
                                             {})))]
     changes))
 
