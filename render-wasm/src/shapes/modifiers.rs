@@ -6,10 +6,10 @@ mod grid_layout;
 
 use common::GetBounds;
 
-use crate::math::{identitish, Bounds, Matrix, Point};
+use crate::math::{self as math, identitish, Bounds, Matrix, Point};
 use crate::shapes::{
-    modified_children_ids, ConstraintH, ConstraintV, Frame, Group, Layout, Modifier, Shape,
-    StructureEntry, TransformEntry, Type,
+    auto_height, modified_children_ids, set_paragraphs_width, ConstraintH, ConstraintV, Frame,
+    Group, GrowType, Layout, Modifier, Shape, StructureEntry, TransformEntry, Type,
 };
 use crate::state::State;
 use crate::uuid::Uuid;
@@ -106,6 +106,7 @@ fn calculate_group_bounds(
 pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec<TransformEntry> {
     let shapes = &state.shapes;
 
+    let font_col = state.render_state.fonts.font_collection();
     let mut entries: VecDeque<_> = modifiers
         .iter()
         .map(|entry| Modifier::Transform(entry.clone()))
@@ -137,7 +138,25 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                     };
 
                     let shape_bounds_before = bounds.find(&shape);
-                    let shape_bounds_after = shape_bounds_before.transform(&entry.transform);
+                    let mut shape_bounds_after = shape_bounds_before.transform(&entry.transform);
+
+                    let mut transform = entry.transform;
+
+                    if let Type::Text(content) = &shape.shape_type {
+                        if content.grow_type() == GrowType::AutoHeight {
+                            let mut paragraphs = content.get_skia_paragraphs(font_col);
+                            set_paragraphs_width(shape_bounds_after.width(), &mut paragraphs);
+                            let height = auto_height(&paragraphs);
+                            let resize_transform = math::resize_matrix(
+                                &shape_bounds_after,
+                                &shape_bounds_after,
+                                shape_bounds_after.width(),
+                                height,
+                            );
+                            shape_bounds_after = shape_bounds_after.transform(&resize_transform);
+                            transform.post_concat(&resize_transform);
+                        }
+                    }
 
                     if entry.propagate {
                         let mut children = propagate_children(
@@ -145,11 +164,10 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                             shapes,
                             &shape_bounds_before,
                             &shape_bounds_after,
-                            entry.transform,
+                            transform,
                             &bounds,
                             &state.structure,
                         );
-
                         entries.append(&mut children);
                     }
 
@@ -158,7 +176,7 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                     let default_matrix = Matrix::default();
                     let mut shape_modif =
                         modifiers.get(&shape.id).unwrap_or(&default_matrix).clone();
-                    shape_modif.post_concat(&entry.transform);
+                    shape_modif.post_concat(&transform);
                     modifiers.insert(shape.id, shape_modif);
 
                     if let Some(parent) = shape.parent_id.and_then(|id| shapes.get(&id)) {
