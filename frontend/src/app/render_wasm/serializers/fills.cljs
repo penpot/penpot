@@ -15,16 +15,14 @@
 (def FILL-BYTE-SIZE (+ 4 (max GRADIENT-BYTE-SIZE IMAGE-BYTE-SIZE SOLID-BYTE-SIZE)))
 
 (defn write-solid-fill!
-  [offset heap-u32 argb]
-  (let [dview (js/DataView. (.-buffer heap-u32))]
-    (.setUint8  dview offset       0x00 true)
-    (.setUint32 dview (+ offset 4) argb true)
-    (+ offset FILL-BYTE-SIZE)))
+  [offset dview argb]
+  (.setUint8  dview offset       0x00 true)
+  (.setUint32 dview (+ offset 4) argb true)
+  (+ offset FILL-BYTE-SIZE))
 
 (defn write-image-fill!
-  [offset heap-u32 id opacity width height]
-  (let [dview (js/DataView. (.-buffer heap-u32))
-        uuid-buffer (uuid/get-u32 id)]
+  [offset dview id opacity width height]
+  (let [uuid-buffer (uuid/get-u32 id)]
     (.setUint8 dview   offset        0x03 true)
     (.setUint32 dview  (+ offset 4)  (aget uuid-buffer 0) true)
     (.setUint32 dview  (+ offset 8)  (aget uuid-buffer 1) true)
@@ -35,22 +33,19 @@
     (.setInt32 dview   (+ offset 28) height true)
     (+ offset FILL-BYTE-SIZE)))
 
-
-
 (defn write-gradient-fill!
-  [offset heap-u32 gradient opacity]
-  (let [dview   (js/DataView. (.-buffer heap-u32))
-        start-x (:start-x gradient)
+  [offset dview gradient opacity]
+  (let [start-x (:start-x gradient)
         start-y (:start-y gradient)
         end-x   (:end-x gradient)
-        end-y   (:end-y  gradient)
+        end-y   (:end-y gradient)
         width   (or (:width gradient) 0)
         stops   (take shp/MAX-GRADIENT-STOPS (:stops gradient))
         type    (if (= (:type gradient) :linear) 0x01 0x02)]
     (.setUint8   dview offset        type true)
     (.setFloat32 dview (+ offset 4)  start-x true)
     (.setFloat32 dview (+ offset 8)  start-y true)
-    (.setFloat32 dview (+ offset 12)  end-x true)
+    (.setFloat32 dview (+ offset 12) end-x true)
     (.setFloat32 dview (+ offset 16) end-y true)
     (.setFloat32 dview (+ offset 20) opacity true)
     (.setFloat32 dview (+ offset 24) width true)
@@ -60,8 +55,8 @@
         (+ offset FILL-BYTE-SIZE)
         (let [stop (first stops)
               hex-color (:color stop)
-              opacity (:opacity stop)
-              argb (clr/hex->u32argb hex-color opacity)
+              stop-opacity (:opacity stop)
+              argb (clr/hex->u32argb hex-color stop-opacity)
               stop-offset (:offset stop)]
           (.setUint32  dview  loop-offset       argb true)
           (.setFloat32 dview  (+ loop-offset 4) stop-offset true)

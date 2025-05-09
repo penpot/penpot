@@ -6,15 +6,47 @@
 
 (ns app.render-wasm.api.texts
   (:require
+   [app.common.data.macros :as dm]
    [app.render-wasm.api.fonts :as f]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
    [app.render-wasm.serializers :as sr]
+   [app.render-wasm.serializers.color :as sr-clr]
+   [app.render-wasm.serializers.fills :as sr-fills]
    [app.render-wasm.wasm :as wasm]))
 
 (defn utf8->buffer [text]
   (let [encoder (js/TextEncoder.)]
     (.encode encoder text)))
+
+(defn set-text-leaf-fills
+  [fills current-offset dview]
+  (reduce (fn [offset fill]
+            (let [opacity  (or (:fill-opacity fill) 1.0)
+                  color    (:fill-color fill)
+                  gradient (:fill-color-gradient fill)
+                  image    (:fill-image fill)]
+              (cond
+                (some? color)
+                (sr-fills/write-solid-fill! offset dview (sr-clr/hex->u32argb color opacity))
+
+                (some? gradient)
+                (sr-fills/write-gradient-fill! offset dview gradient opacity)
+
+                (some? image)
+                (sr-fills/write-image-fill! offset dview
+                                            (dm/get-prop image :id)
+                                            opacity
+                                            (dm/get-prop image :width)
+                                            (dm/get-prop image :height)))
+
+              (+ offset sr-fills/FILL-BYTE-SIZE)))
+          current-offset
+          fills))
+
+(defn total-fills-count
+  [leaves]
+  (reduce #(+ %1 (count (:fills %2))) 0 leaves))
 
 (defn write-shape-text
   ;; buffer has the following format:
@@ -22,8 +54,10 @@
   [leaves paragraph text]
   (let [num-leaves (count leaves)
         paragraph-attr-size 48
-        leaf-attr-size 52
-        metadata-size (+ 1 paragraph-attr-size (* num-leaves leaf-attr-size))
+        total-fills (total-fills-count leaves)
+        total-fills-size (* sr-fills/FILL-BYTE-SIZE total-fills)
+        leaf-attr-size 56
+        metadata-size (+ 1 paragraph-attr-size (* num-leaves leaf-attr-size) total-fills-size)
         text-buffer (utf8->buffer text)
         text-size (.-byteLength text-buffer)
         buffer (js/ArrayBuffer. (+ metadata-size text-size))
@@ -70,7 +104,9 @@
               font-family (hash (:font-family leaf))
               font-variant-id (sr/serialize-uuid (:font-variant-id leaf))
               text-buffer (utf8->buffer (:text leaf))
-              text-length (.-byteLength text-buffer)]
+              text-length (.-byteLength text-buffer)
+              fills (:fills leaf)
+              total-fills (count fills)]
 
           (.setUint8 dview offset font-style)
           (.setFloat32 dview (+ offset 4) font-size)
@@ -88,8 +124,10 @@
           (.setInt32 dview (+ offset 44) (aget font-variant-id 3))
 
           (.setInt32 dview (+ offset 48) text-length)
+          (.setInt32 dview (+ offset 52) total-fills)
 
-          (recur (inc index) (+ offset leaf-attr-size)))))
+          (let [new-offset (set-text-leaf-fills fills (+ offset leaf-attr-size) dview)]
+            (recur (inc index) new-offset)))))
 
     ;; Add text content to buffer
     (let [text-offset metadata-size
