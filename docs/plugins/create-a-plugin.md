@@ -1,6 +1,7 @@
 ---
 layout: layouts/plugins.njk
 title: 2. Create a Plugin
+desc: Dive into Penpot plugin development! This guide covers creating plugins from scratch or using templates, libraries, API communication, & deployment.
 ---
 
 # Create a Plugin

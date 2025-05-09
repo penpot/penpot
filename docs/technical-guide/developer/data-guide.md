@@ -1,5 +1,6 @@
 ---
 title: 3.08. Data Guide
+desc: Learn about data structures, code organization, file operations, migrations, shape editing, and component syncing. See Penpot's technical guide. Try it free!
 ---
 
 # Data Guide

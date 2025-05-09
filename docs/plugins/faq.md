@@ -1,6 +1,7 @@
 ---
 layout: layouts/plugins.njk
 title: 6. FAQ
+desc: Find answers to common questions about plugin development, from choosing the right Node version to creating components. See Penpot plugins!
 ---
 
 # FAQ

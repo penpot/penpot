@@ -1,5 +1,6 @@
 ---
 title: 3.03. Dev environment
+desc: Dive into Penpot's development environment. Learn about self-hosting, configuration, developer tools, architecture, and more. See the Penpot Technical Guide!
 ---
 
 # Development environment
@@ -95,7 +96,7 @@ npx shadow-cljs cljs-repl main
 ### Storybook
 
 The storybook local server is started on tmux **window 2** and will listen
-for changes in the styles, components or stories defined in the folders 
+for changes in the styles, components or stories defined in the folders
 under the design system namespace: `app.main.ui.ds`.
 
 You can open the broser on http://localhost:6006/ to see it.
