@@ -7,6 +7,54 @@ use crate::shapes::Shape;
 use crate::shapes::StructureEntry;
 use crate::uuid::Uuid;
 
+/// A pool allocator for `Shape` objects that attempts to minimize memory reallocations.
+///
+/// `ShapesPool` pre-allocates a contiguous vector of boxed `Shape` instances,
+/// which can be reused and indexed efficiently. This design helps avoid
+/// memory reallocation overhead by reserving enough space in advance.
+///
+/// # Memory Layout
+///
+/// Shapes are stored in a `Vec<Box<Shape>>`, which keeps the `Box` pointers
+/// in a contiguous memory block. The actual `Shape` instances are heap-allocated,
+/// and this approach ensures that pushing new shapes does not invalidate
+/// previously returned mutable references.
+///
+/// This is especially important because references to `Shape` are also held in the
+/// state shapes attribute
+pub(crate) struct ShapesPool {
+    // We need a box so that pushing here doesn't invalidate state.shapes references
+    shapes: Vec<Box<Shape>>,
+    counter: usize,
+}
+
+impl ShapesPool {
+    pub fn new() -> Self {
+        ShapesPool {
+            shapes: vec![],
+            counter: 0,
+        }
+    }
+
+    pub fn initialize(&mut self, capacity: usize) {
+        self.counter = 0;
+        self.shapes = Vec::with_capacity(capacity);
+        for _ in 0..capacity {
+            self.shapes.push(Box::new(Shape::new(Uuid::nil())));
+        }
+    }
+
+    pub fn add_shape(&mut self, id: Uuid) -> &mut Shape {
+        if self.counter >= self.shapes.len() {
+            self.shapes.push(Box::new(Shape::new(Uuid::nil())));
+        }
+        let new_shape = &mut self.shapes[self.counter];
+        new_shape.id = id;
+        self.counter += 1;
+        new_shape
+    }
+}
+
 /// This struct holds the state of the Rust application between JS calls.
 ///
 /// It is created by [init] and passed to the other exported functions.
@@ -16,9 +64,10 @@ pub(crate) struct State<'a> {
     pub render_state: RenderState,
     pub current_id: Option<Uuid>,
     pub current_shape: Option<&'a mut Shape>,
-    pub shapes: HashMap<Uuid, Shape>,
+    pub shapes: HashMap<Uuid, &'a mut Shape>,
     pub modifiers: HashMap<Uuid, skia::Matrix>,
     pub structure: HashMap<Uuid, Vec<StructureEntry>>,
+    pub shapes_pool: ShapesPool,
 }
 
 impl<'a> State<'a> {
@@ -30,6 +79,7 @@ impl<'a> State<'a> {
             shapes: HashMap::with_capacity(capacity),
             modifiers: HashMap::new(),
             structure: HashMap::new(),
+            shapes_pool: ShapesPool::new(),
         }
     }
 
@@ -61,13 +111,17 @@ impl<'a> State<'a> {
         Ok(())
     }
 
+    pub fn init_shapes_pool(&mut self, capacity: usize) {
+        self.shapes_pool.initialize(capacity);
+    }
+
     pub fn use_shape(&'a mut self, id: Uuid) {
         if !self.shapes.contains_key(&id) {
-            let new_shape = Shape::new(id);
+            let new_shape = self.shapes_pool.add_shape(id);
             self.shapes.insert(id, new_shape);
         }
         self.current_id = Some(id);
-        self.current_shape = self.shapes.get_mut(&id);
+        self.current_shape = self.shapes.get_mut(&id).map(|r| &mut **r);
     }
 
     pub fn delete_shape(&mut self, id: Uuid) {

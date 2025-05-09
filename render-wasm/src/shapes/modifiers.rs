@@ -16,7 +16,7 @@ use crate::uuid::Uuid;
 
 fn propagate_children(
     shape: &Shape,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, &mut Shape>,
     parent_bounds_before: &Bounds,
     parent_bounds_after: &Bounds,
     transform: Matrix,
@@ -83,7 +83,7 @@ fn propagate_children(
 
 fn calculate_group_bounds(
     shape: &Shape,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, &mut Shape>,
     bounds: &HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Option<Bounds> {
@@ -303,19 +303,20 @@ mod tests {
 
     #[test]
     fn test_propagate_shape() {
-        let mut shapes = HashMap::<Uuid, Shape>::new();
+        let mut shapes = HashMap::<Uuid, &mut Shape>::new();
 
         let child_id = Uuid::new_v4();
         let mut child = Shape::new(child_id);
         child.set_selrect(3.0, 3.0, 2.0, 2.0);
-        shapes.insert(child_id, child);
+        shapes.insert(child_id, &mut child);
 
         let parent_id = Uuid::new_v4();
         let mut parent = Shape::new(parent_id);
         parent.set_shape_type(Type::Group(Group::default()));
         parent.add_child(child_id);
         parent.set_selrect(1.0, 1.0, 5.0, 5.0);
-        shapes.insert(parent_id, parent.clone());
+        let mut parent_clone = parent.clone();
+        shapes.insert(parent_id, &mut parent_clone);
 
         let mut transform = Matrix::scale((2.0, 1.5));
         let x = parent.selrect.x();
@@ -341,17 +342,17 @@ mod tests {
 
     #[test]
     fn test_group_bounds() {
-        let mut shapes = HashMap::<Uuid, Shape>::new();
+        let mut shapes = HashMap::<Uuid, &mut Shape>::new();
 
         let child1_id = Uuid::new_v4();
         let mut child1 = Shape::new(child1_id);
         child1.set_selrect(3.0, 3.0, 2.0, 2.0);
-        shapes.insert(child1_id, child1);
+        shapes.insert(child1_id, &mut child1);
 
         let child2_id = Uuid::new_v4();
         let mut child2 = Shape::new(child2_id);
         child2.set_selrect(0.0, 0.0, 1.0, 1.0);
-        shapes.insert(child2_id, child2);
+        shapes.insert(child2_id, &mut child2);
 
         let parent_id = Uuid::new_v4();
         let mut parent = Shape::new(parent_id);
@@ -359,7 +360,8 @@ mod tests {
         parent.add_child(child1_id);
         parent.add_child(child2_id);
         parent.set_selrect(0.0, 0.0, 3.0, 3.0);
-        shapes.insert(parent_id, parent.clone());
+        let mut parent_clone = parent.clone();
+        shapes.insert(parent_id, &mut parent_clone);
 
         let bounds =
             calculate_group_bounds(&parent, &shapes, &HashMap::new(), &HashMap::new()).unwrap();

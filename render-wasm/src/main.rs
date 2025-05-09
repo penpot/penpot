@@ -151,6 +151,13 @@ pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
 }
 
 #[no_mangle]
+pub extern "C" fn init_shapes_pool(capacity: usize) {
+    with_state!(state, {
+        state.init_shapes_pool(capacity);
+    });
+}
+
+#[no_mangle]
 pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
     with_state!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
