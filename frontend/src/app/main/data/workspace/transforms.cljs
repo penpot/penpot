@@ -1194,6 +1194,4 @@
                origin
                (:transform shape (gmt/matrix))
                (:transform-inverse shape (gmt/matrix)))}}]
-
-        (.log js/console (clj->js modifiers))
         (rx/of (dwm/set-wasm-modifiers modifiers))))))
