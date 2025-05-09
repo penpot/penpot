@@ -125,10 +125,10 @@ impl TextContent {
                     let text: String = leaf.apply_text_transform(paragraph.text_transform);
                     builder.push_style(&stroke_style);
                     builder.add_text(&text);
-                    let p = builder.build();
-                    stroke_paragraphs.push(p);
+                    builder.pop();
                 }
-                builder.reset();
+                let p = builder.build();
+                stroke_paragraphs.push(p);
             }
             paragraph_group.push(stroke_paragraphs);
         }
