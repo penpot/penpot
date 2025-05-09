@@ -392,7 +392,6 @@ impl TextLeaf {
 
 const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
 //const RAW_LEAF_DATA_SIZE: usize = std::mem::size_of::<RawTextLeaf>();
-// FIXME
 pub const RAW_LEAF_DATA_SIZE: usize = 56;
 pub const RAW_LEAF_FILLS_SIZE: usize = 160;
 
@@ -445,7 +444,6 @@ impl From<&[u8]> for RawTextLeafData {
         let text_leaf: RawTextLeaf = RawTextLeaf::try_from(bytes).unwrap();
         let total_fills = text_leaf.total_fills as usize;
 
-        // Use checked_mul to prevent overflow
         let fills_size = total_fills
             .checked_mul(RAW_LEAF_FILLS_SIZE)
             .expect("Overflow occurred while calculating fills size");
