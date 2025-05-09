@@ -96,7 +96,34 @@ jobs:
           name: penpot-exporter
           path: zips/penpot-exporter.zip
 
+      - name: Upload bundles to S3 with date prefix
+        if: ${{ github.event.inputs.zip_mode != 'all' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          FECHA=$(date +%F)
+          for file in penpot-frontend.zip penpot-backend.zip penpot-exporter.zip; do
+            echo "📤 Subiendo $file a s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/$file"
+            aws s3 cp zips/$file s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/$file
+          done
+
+      - name: Generate presigned URLs (24h)
+        if: ${{ github.event.inputs.zip_mode != 'all' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          FECHA=$(date +%F)
+          echo "📥 Enlaces de descarga válidos por 24h:"
+          for file in penpot-frontend.zip penpot-backend.zip penpot-exporter.zip; do
+            url=$(aws s3 presign s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/$file --expires-in 86400)
+            echo "$file: $url"
+          done
+
       - name: Print artifact summary URL
         run: |
-          echo "📦 Artifacts available at:"
+          echo "📦 Artifacts disponibles en:"
           echo "🔗 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
