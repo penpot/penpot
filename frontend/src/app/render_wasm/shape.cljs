@@ -150,7 +150,7 @@
         (api/set-shape-svg-raw-content (api/get-static-markup shape))
 
         (= (:type shape) :text)
-        (into [] (api/set-shape-text-content v)))
+        (api/set-shape-text v))
 
       :grow-type
       (api/set-shape-grow-type v)

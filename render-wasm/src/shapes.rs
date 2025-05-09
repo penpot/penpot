@@ -1,5 +1,4 @@
-use skia_safe::Image;
-use skia_safe::{self as skia, paint::Paint};
+use skia_safe::{self as skia};
 
 use crate::render::BlendMode;
 use crate::uuid::Uuid;
@@ -805,87 +804,6 @@ impl Shape {
 
     pub fn has_fills(&self) -> bool {
         !self.fills.is_empty()
-    }
-
-    fn set_paint_fill(&self, paint: &mut Paint, fill: &Fill, image: Option<Image>) {
-        match fill {
-            Fill::Solid(SolidColor(color)) => {
-                paint.set_color(*color);
-            }
-            Fill::LinearGradient(gradient) => {
-                paint.set_shader(gradient.to_linear_shader(&self.selrect()));
-            }
-            Fill::RadialGradient(gradient) => {
-                paint.set_shader(gradient.to_radial_shader(&self.selrect()));
-            }
-            Fill::Image(image_fill) => {
-                if let Some(image) = image {
-                    let position = (self.selrect().x(), self.selrect().y());
-                    let sampling_options = skia::SamplingOptions::new(
-                        skia::FilterMode::Linear,
-                        skia::MipmapMode::Nearest,
-                    );
-                    let tile_modes = (skia::TileMode::Clamp, skia::TileMode::Clamp);
-                    let mut matrix = skia::Matrix::default();
-                    matrix.set_translate(position);
-
-                    let shader = image.to_shader(tile_modes, sampling_options, &matrix);
-                    paint.set_shader(shader);
-                    paint.set_alpha(image_fill.opacity());
-                }
-            }
-        }
-    }
-
-    pub fn get_text_stroke_paint(&self, stroke: &Stroke, image: Option<&Image>) -> Vec<Paint> {
-        let mut paints = Vec::new();
-
-        match stroke.kind {
-            StrokeKind::Inner => {
-                let mut paint = skia::Paint::default();
-                paint.set_blend_mode(skia::BlendMode::DstOver);
-                paint.set_anti_alias(true);
-                paints.push(paint);
-
-                let mut paint = skia::Paint::default();
-                paint.set_style(skia::PaintStyle::Stroke);
-                paint.set_blend_mode(skia::BlendMode::SrcATop);
-                paint.set_anti_alias(true);
-                paint.set_stroke_width(stroke.width * 2.0);
-
-                self.set_paint_fill(&mut paint, &stroke.fill, image.cloned());
-
-                paints.push(paint);
-            }
-            StrokeKind::Center => {
-                let mut paint = skia::Paint::default();
-                paint.set_style(skia::PaintStyle::Stroke);
-                paint.set_anti_alias(true);
-                paint.set_stroke_width(stroke.width);
-
-                self.set_paint_fill(&mut paint, &stroke.fill, image.cloned());
-
-                paints.push(paint);
-            }
-            StrokeKind::Outer => {
-                let mut paint = skia::Paint::default();
-                paint.set_style(skia::PaintStyle::Stroke);
-                paint.set_blend_mode(skia::BlendMode::DstOver);
-                paint.set_anti_alias(true);
-                paint.set_stroke_width(stroke.width * 2.0);
-
-                self.set_paint_fill(&mut paint, &stroke.fill, image.cloned());
-
-                paints.push(paint);
-
-                let mut paint = skia::Paint::default();
-                paint.set_blend_mode(skia::BlendMode::Clear);
-                paint.set_anti_alias(true);
-                paints.push(paint);
-            }
-        }
-
-        paints
     }
 }
 

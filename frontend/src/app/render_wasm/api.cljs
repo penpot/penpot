@@ -188,7 +188,6 @@
 
 (defn- store-image
   [id]
-
   (let [buffer (uuid/get-u32 id)
         url    (cf/resolve-file-media {:id id})]
     (->> (http/send! {:method :get
@@ -209,6 +208,33 @@
                              (aget buffer 3))
                      true))))))
 
+(defn- get-fill-images
+  [leaf]
+  (filter :fill-image (:fills leaf)))
+
+(defn- process-fill-image
+  [fill]
+  (rx/from
+   (when-let [image (:fill-image fill)]
+     (let [id (dm/get-prop image :id)
+           buffer (uuid/get-u32 id)
+           cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                 (aget buffer 0)
+                                 (aget buffer 1)
+                                 (aget buffer 2)
+                                 (aget buffer 3))]
+       (when (zero? cached-image?)
+         (store-image id))))))
+
+(defn set-shape-text-images
+  [content]
+  (let [paragraph-set (first (get content :children))
+        paragraphs (get paragraph-set :children)]
+    (->> paragraphs
+         (mapcat :children)
+         (mapcat get-fill-images)
+         (map process-fill-image))))
+
 (defn set-shape-fills
   [fills]
   (h/call wasm/internal-module "_clear_shape_fills")
@@ -218,23 +244,24 @@
                 gradient (:fill-color-gradient fill)
                 image    (:fill-image fill)
                 offset   (mem/alloc-bytes sr-fills/FILL-BYTE-SIZE)
-                heap     (mem/get-heap-u32)]
+                heap     (mem/get-heap-u8)
+                dview    (js/DataView. (.-buffer heap))]
             (cond
               (some? color)
-              (let [argb (sr-clr/hex->u32argb color opacity)]
-                (sr-fills/write-solid-fill! offset heap argb)
+              (do
+                (sr-fills/write-solid-fill! offset dview (sr-clr/hex->u32argb color opacity))
                 (h/call wasm/internal-module "_add_shape_fill"))
 
               (some? gradient)
               (do
-                (sr-fills/write-gradient-fill! offset heap gradient opacity)
+                (sr-fills/write-gradient-fill! offset dview gradient opacity)
                 (h/call wasm/internal-module "_add_shape_fill"))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
                     buffer        (uuid/get-u32 id)
                     cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
-                (sr-fills/write-image-fill! offset heap id opacity (dm/get-prop image :width) (dm/get-prop image :height))
+                (sr-fills/write-image-fill! offset dview id opacity (dm/get-prop image :width) (dm/get-prop image :height))
                 (h/call wasm/internal-module "_add_shape_fill")
                 (when (== cached-image? 0)
                   (store-image id))))))
@@ -254,7 +281,8 @@
                 cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
                 cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)
                 offset    (mem/alloc-bytes sr-fills/FILL-BYTE-SIZE)
-                heap      (mem/get-heap-u32)]
+                heap      (mem/get-heap-u8)
+                dview     (js/DataView. (.-buffer heap))]
             (case align
               :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end)
               :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end)
@@ -262,22 +290,22 @@
 
             (cond
               (some? gradient)
-              (let [_ nil]
-                (sr-fills/write-gradient-fill! offset heap gradient opacity)
+              (do
+                (sr-fills/write-gradient-fill! offset dview gradient opacity)
                 (h/call wasm/internal-module "_add_shape_stroke_fill"))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
                     buffer        (uuid/get-u32 id)
                     cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
-                (sr-fills/write-image-fill! offset heap id opacity (dm/get-prop image :width) (dm/get-prop image :height))
+                (sr-fills/write-image-fill! offset dview id opacity (dm/get-prop image :width) (dm/get-prop image :height))
                 (h/call wasm/internal-module "_add_shape_stroke_fill")
                 (when (== cached-image? 0)
                   (store-image id)))
 
               (some? color)
-              (let [argb (sr-clr/hex->u32argb color opacity)]
-                (sr-fills/write-solid-fill! offset heap argb)
+              (do
+                (sr-fills/write-solid-fill! offset dview (sr-clr/hex->u32argb color opacity))
                 (h/call wasm/internal-module "_add_shape_stroke_fill")))))
         strokes))
 
@@ -608,6 +636,12 @@
                   fonts)]
       (f/store-fonts fonts))))
 
+(defn set-shape-text
+  [content]
+  (concat
+   (set-shape-text-images content)
+   (set-shape-text-content content)))
+
 (defn set-shape-grow-type
   [grow-type]
   (h/call wasm/internal-module "_set_shape_grow_type" (sr/translate-grow-type grow-type)))
@@ -697,7 +731,7 @@
     (when (some? corners) (set-shape-corners corners))
     (when (some? shadows) (set-shape-shadows shadows))
     (when (and (= type :text) (some? content))
-      (set-shape-text-content content))
+      (set-shape-text content))
     (when (= type :text)
       (set-shape-grow-type grow-type))
     (when (or (ctl/any-layout? shape)
@@ -711,9 +745,7 @@
       (set-grid-layout shape))
 
     (let [pending (into [] (concat
-                            (if (and (= type :text) (some? content))
-                              (set-shape-text-content content)
-                              [])
+                            (set-shape-text content)
                             (set-shape-fills fills)
                             (set-shape-strokes strokes)))]
       (perf/end-measure "set-object")
