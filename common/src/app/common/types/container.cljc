@@ -18,6 +18,7 @@
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.text-content :as cttc]
    [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]))
 
@@ -565,23 +566,36 @@
           (gsh/close-attrs? attr val shape-val 1)
           (gsh/close-attrs? attr val shape-val))
 
-        touched?
-        (and group (not equal?) (not (and ignore-geometry is-geometry?)))]
+        group-not-equal? (and group (not equal?))
 
+        touched?
+        (and group-not-equal? (not (and ignore-geometry is-geometry?)))
+
+        content-diff (when (and (= (:type shape) :text) (= attr :content))
+                       (cttc/text-content-diff (:content shape) val))
+
+        groups (cond->> (d/nilv token-groups #{})
+                 group-not-equal?
+                 (cons group)
+
+                 (and group-not-equal? (contains? content-diff :text))
+                 (cons :text-content-text)
+
+                 (and group-not-equal? (contains? content-diff :attribute))
+                 (cons :text-content-attribute))]
     (cond-> shape
       ;; Depending on the origin of the attribute change, we need or not to
       ;; set the "touched" flag for the group the attribute belongs to.
       ;; In some cases we need to ignore touched only if the attribute is
       ;; geometric (position, width or transformation).
       (and in-copy?
-           (or (and group (not equal?)) (seq token-groups))
-           (not ignore?) (not (and ignore-geometry is-geometry?)))
+           (not-empty groups)
+           (not ignore?)
+           (not (and ignore-geometry is-geometry?)))
       (-> (update :touched (fn [touched]
                              (reduce #(ctk/set-touched-group %1 %2)
                                      touched
-                                     (if group
-                                       (cons group token-groups)
-                                       token-groups))))
+                                     groups)))
           (dissoc :remote-synced))
 
       (nil? val)
