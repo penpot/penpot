@@ -12,6 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.types.shape :as shp]
+   [app.config :as cfg]
    [app.main.features :as features]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.reorder-handler :refer [reorder-handler]]
@@ -286,8 +287,8 @@
          (fn []
            (when on-reverse-stops
              (on-reverse-stops))))
-        render-wasm? (features/use-feature "render-wasm/v1")
-        add-stop-disabled? (when render-wasm? (= (count stops) shp/MAX-GRADIENT-STOPS))]
+        cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :binary-fills))
+        add-stop-disabled? (when cap-stops? (>= (count stops) shp/MAX-GRADIENT-STOPS))]
 
     [:div {:class (stl/css :gradient-panel)}
      [:div {:class (stl/css :gradient-preview)}
@@ -298,9 +299,10 @@
              :on-pointer-leave handle-preview-leave
              :on-pointer-move handle-preview-move
              :on-pointer-down handle-preview-down}
-       [:div {:class (stl/css :gradient-preview-stop-preview)
-              :style {:display (if (:hover? @preview-state) "block" "none")
-                      "--preview-position" (dm/str (* 100 (:offset @preview-state)) "%")}}]]
+       (when (not add-stop-disabled?)
+         [:div {:class (stl/css :gradient-preview-stop-preview)
+                :style {:display (if (:hover? @preview-state) "block" "none")
+                        "--preview-position" (dm/str (* 100 (:offset @preview-state)) "%")}}])]
 
       [:div {:class (stl/css :gradient-preview-stop-wrapper)}
        (for [[index {:keys [color offset r g b alpha]}] (d/enumerate stops)]

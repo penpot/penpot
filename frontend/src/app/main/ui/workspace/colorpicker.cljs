@@ -338,7 +338,7 @@
          (fn [value]
            (st/emit! (dc/update-colorpicker-gradient-opacity (/ value 100)))))
 
-        render-wasm? (features/use-feature "render-wasm/v1")
+        cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :binary-fills))
 
         tabs
         #js [#js {:aria-label (tr "workspace.libraries.colors.rgba")
@@ -439,7 +439,7 @@
       (when (= selected-mode :gradient)
         [:> gradients*
          {:type (:type state)
-          :stops (if render-wasm? (take shp/MAX-GRADIENT-STOPS (:stops state)) (:stops state))
+          :stops (if cap-stops? (vec (take shp/MAX-GRADIENT-STOPS (:stops state))) (:stops state))
           :editing-stop (:editing-stop state)
           :on-stop-edit-start handle-stop-edit-start
           :on-stop-edit-finish handle-stop-edit-finish
