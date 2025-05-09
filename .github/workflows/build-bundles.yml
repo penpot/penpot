@@ -45,26 +45,26 @@ jobs:
       - name: Create zip bundles
         run: |
           echo "📦 Packaging Penpot bundles..."
-          mkdir -p zips
+          mkdir -p zips temp
 
           if [[ "${ZIP_MODE}" == "all" ]]; then
             echo "Creating unified penpot-all-bundles.zip"
-            mkdir -p all-in-one/penpot-frontend all-in-one/penpot-backend all-in-one/penpot-exporter
-            cp -r bundles/frontend/* all-in-one/penpot-frontend/
-            cp -r bundles/backend/* all-in-one/penpot-backend/
-            cp -r bundles/exporter/* all-in-one/penpot-exporter/
-            cd all-in-one
-            zip -r ../zips/penpot-all-bundles.zip .
-            cd ..
+            mkdir -p temp/penpot-all/penpot-frontend temp/penpot-all/penpot-backend temp/penpot-all/penpot-exporter
+            cp -r bundles/frontend/* temp/penpot-all/penpot-frontend/
+            cp -r bundles/backend/* temp/penpot-all/penpot-backend/
+            cp -r bundles/exporter/* temp/penpot-all/penpot-exporter/
+            cd temp
+            zip -r ../zips/penpot-all-bundles.zip penpot-all
           else
             echo "Creating individual zip files"
-            mkdir -p temp
-
             for component in frontend backend exporter; do
               name="penpot-${component}"
               mkdir -p temp/${name}
               cp -r bundles/${component}/* temp/${name}/
-              (cd temp && zip -r ../zips/${name}.zip ${name})
+            done
+            cd temp
+            for name in penpot-frontend penpot-backend penpot-exporter; do
+              zip -r ../zips/${name}.zip ${name}
             done
           fi
 
