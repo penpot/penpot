@@ -451,8 +451,11 @@ impl RawTextData {
         }
 
         let text_utf8 = buffer[offset..text_end].to_vec();
-        let text = String::from_utf8(text_utf8).expect("Invalid UTF-8 text");
+        if text_utf8.is_empty() {
+            return (String::new(), text_end);
+        }
 
+        let text = String::from_utf8_lossy(&text_utf8).to_string();
         (text, text_end)
     }
 }
