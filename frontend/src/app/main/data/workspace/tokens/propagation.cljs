@@ -185,12 +185,11 @@
     (watch [_ state _]
       (when-let [tokens-lib (-> (dsh/lookup-file-data state)
                                 (get :tokens-lib))]
-        (let [tokens (-> (ctob/get-active-themes-set-tokens tokens-lib)
-                         (sd/resolve-tokens+))]
-          (->> (rx/from tokens)
-               (rx/mapcat (fn [sd-tokens]
-                            (let [undo-id (js/Symbol)]
-                              (rx/concat
-                               (rx/of (dwu/start-undo-transaction undo-id :timeout false))
-                               (propagate-tokens state sd-tokens)
-                               (rx/of (dwu/commit-undo-transaction undo-id))))))))))))
+        (->> (ctob/get-active-themes-set-tokens tokens-lib)
+             (sd/resolve-tokens)
+             (rx/mapcat (fn [sd-tokens]
+                          (let [undo-id (js/Symbol)]
+                            (rx/concat
+                             (rx/of (dwu/start-undo-transaction undo-id :timeout false))
+                             (propagate-tokens state sd-tokens)
+                             (rx/of (dwu/commit-undo-transaction undo-id)))))))))))

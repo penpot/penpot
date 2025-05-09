@@ -45,7 +45,7 @@
       (when-let [tokens (some-> (dsh/lookup-file-data state)
                                 (get :tokens-lib)
                                 (ctob/get-active-themes-set-tokens))]
-        (->> (rx/from (sd/resolve-tokens+ tokens))
+        (->> (sd/resolve-tokens tokens)
              (rx/mapcat
               (fn [resolved-tokens]
                 (let [undo-id (js/Symbol)

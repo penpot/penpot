@@ -36,6 +36,7 @@
    [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [malli.core :as m]
    [malli.error :as me]
@@ -94,14 +95,9 @@
 (defn valid-value? [value]
   (seq (finalize-value value)))
 
-(defn schema-validation->promise [validated]
-  (if (:errors validated)
-    (p/rejected validated)
-    (p/resolved validated)))
-
 ;; Component -------------------------------------------------------------------
 
-(defn validate-token-value+
+(defn validate-token-value
   "Validates token value by resolving the value `input` using `StyleDictionary`.
   Returns a promise of either resolved tokens or rejects with an error state."
   [{:keys [value name-value token tokens]}]
@@ -122,14 +118,15 @@
                       :always (update token-name #(ctob/make-token (merge % {:value value
                                                                              :name token-name
                                                                              :type (:type token)}))))]
-        (-> tokens'
-            (sd/resolve-tokens-interactive+)
-            (p/then
-             (fn [resolved-tokens]
-               (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
-                 (cond
-                   resolved-value (p/resolved resolved-token)
-                   :else (p/rejected {:errors (or errors (wte/get-error-code :error/unknown-error))}))))))))))
+        (->> tokens'
+             (sd/resolve-tokens-interactive)
+             (rx/mapcat
+              (fn [resolved-tokens]
+                (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
+                  (js/console.log "resolved-token" resolved-token)
+                  (cond
+                    resolved-value (rx/of resolved-token)
+                    :else (rx/error {:errors (or errors (wte/get-error-code :error/unknown-error))}))))))))))
 
 (defn use-debonced-resolve-callback
   "Resolves a token values using `StyleDictionary`.
@@ -148,14 +145,12 @@
              (js/setTimeout
               (fn []
                 (when (not (timeout-outdated-cb?))
-                  (-> (validate-token-value+ {:value value
+                  (->> (validate-token-value {:value value
                                               :name-value @name-ref
                                               :token token
                                               :tokens tokens})
-                      (p/finally
-                        (fn [x err]
-                          (when-not (timeout-outdated-cb?)
-                            (callback (or err x))))))))
+                       (rx/filter #(not (timeout-outdated-cb?)))
+                       (rx/subs! callback callback))))
               timeout))))]
     debounced-resolver-callback))
 
@@ -442,33 +437,36 @@
            ;; and the user might have edited a valid form to make it invalid,
            ;; and press enter before the next validations could return.
            (let [final-name (finalize-name @token-name-ref)
-                 valid-name?+ (-> (validate-name final-name) schema-validation->promise)
+                 valid-name? (try
+                               (not (:errors (validate-name final-name)))
+                               (catch js/Error _ nil))
                  final-value (finalize-value (mf/ref-val value-ref))
                  final-description @description-ref
-                 valid-description?+ (some-> final-description validate-descripion schema-validation->promise)]
-             (-> (p/all [valid-name?+
-                         valid-description?+
-                         (validate-token-value+ {:value final-value
-                                                 :name-value final-name
-                                                 :token token
-                                                 :tokens active-theme-tokens})])
-                 (p/finally (fn [result err]
-                              ;; The result should be a vector of all resolved validations
-                              ;; We do not handle the error case as it will be handled by the components validations
-                              (when (and (seq result) (not err))
-                                (st/emit!
-                                 (if (ctob/token? token)
-                                   (dwtl/update-token (:name token)
-                                                      {:name final-name
-                                                       :value final-value
-                                                       :description final-description})
+                 valid-description? (if final-description
+                                      (try
+                                        (not (:errors (validate-descripion final-description)))
+                                        (catch js/Error _ nil))
+                                      true)]
+             (when (and valid-name? valid-description?)
+               (->> (validate-token-value {:value final-value
+                                           :name-value final-name
+                                           :token token
+                                           :tokens active-theme-tokens})
+                    (rx/subs!
+                     (fn []
+                       (st/emit!
+                        (if (ctob/token? token)
+                          (dwtl/update-token (:name token)
+                                             {:name final-name
+                                              :value final-value
+                                              :description final-description})
 
-                                   (dwtl/create-token {:name final-name
-                                                       :type token-type
-                                                       :value final-value
-                                                       :description final-description}))
-                                 (dwtp/propagate-workspace-tokens)
-                                 (modal/hide)))))))))
+                          (dwtl/create-token {:name final-name
+                                              :type token-type
+                                              :value final-value
+                                              :description final-description}))
+                        (dwtp/propagate-workspace-tokens)
+                        (modal/hide)))))))))
 
         on-delete-token
         (mf/use-fn
