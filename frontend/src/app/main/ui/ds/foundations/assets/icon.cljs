@@ -147,6 +147,7 @@
 (def ^:icon-id flex-vertical "flex-vertical")
 (def ^:icon-id flip-horizontal "flip-horizontal")
 (def ^:icon-id flip-vertical "flip-vertical")
+(def ^:icon-id folder "folder")
 (def ^:icon-id gap-horizontal "gap-horizontal")
 (def ^:icon-id gap-vertical "gap-vertical")
 (def ^:icon-id graphics "graphics")

@@ -11,9 +11,10 @@
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.webapi :as wapi]
@@ -113,44 +114,42 @@
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :import-modal-title)}
       (tr "workspace.token.import-tokens")]
 
-     [:div {:class (stl/css :import-modal-content)}
-      [:> text* {:as "div" :typography "body-medium" :class (stl/css :import-description)}
-       [:ul
-        [:li (tr "workspace.token.import-single-file")]
-        [:li (tr "workspace.token.import-multiple-files")]]]
+     [:> text* {:as "ul" :typography "body-medium" :class (stl/css :import-description)}
+      [:li (tr "workspace.token.import-single-file")]
+      [:li (tr "workspace.token.import-multiple-files")]]
 
-      [:div {:class (stl/css :import-warning)}
-       [:> icon* {:icon-id i/msg-neutral}]
-       [:> text* {:as "div" :typography "body-medium"}
-        (tr "workspace.token.import-warning")]]
+     [:> context-notification* {:type :context
+                                :appearance "neutral"
+                                :level "default"
+                                :is-html true}
+      (tr "workspace.token.import-warning")]
 
-      [:div {:class (stl/css :import-actions)}
-       [:input {:type "file"
-                :ref file-input-ref
-                :style {:display "none"}
-                :accept ".json"
-                :on-change on-import}]
-       [:input {:type "file"
-                :ref dir-input-ref
-                :style {:display "none"}
-                :accept ""
-                :webkitdirectory "true"
-                :on-change on-import-directory}]
-       [:> button* {:variant "secondary"
-                    :type "button"
-                    :on-click modal/hide!}
-        (tr "labels.cancel")]
-       [:> button* {:variant "primary"
-                    :type "button"
-                    :on-click on-display-file-explorer}
-        [:> icon* {:icon-id i/document}]
-        (tr "workspace.token.choose-file")]
-       [:> button* {:variant "primary"
-                    :type "button"
-                    :on-click on-display-dir-explorer}
-        ;; TODO Add folder icon
-        [:> icon* {:icon-id i/document}]
-        (tr "workspace.token.choose-folder")]]]]))
+     [:div {:class (stl/css :import-actions)}
+      [:input {:type "file"
+               :ref file-input-ref
+               :style {:display "none"}
+               :accept ".json"
+               :on-change on-import}]
+      [:input {:type "file"
+               :ref dir-input-ref
+               :style {:display "none"}
+               :accept ""
+               :webkitdirectory "true"
+               :on-change on-import-directory}]
+      [:> button* {:variant "secondary"
+                   :type "button"
+                   :on-click modal/hide!}
+       (tr "labels.cancel")]
+      [:> button* {:variant "primary"
+                   :type "button"
+                   :icon i/document
+                   :on-click on-display-file-explorer}
+       (tr "workspace.token.choose-file")]
+      [:> button* {:variant "primary"
+                   :type "button"
+                   :icon i/folder
+                   :on-click on-display-dir-explorer}
+       (tr "workspace.token.choose-folder")]]]))
 
 (mf/defc import-modal
   {::mf/wrap-props false
@@ -162,6 +161,6 @@
     [:> icon-button* {:class (stl/css :close-btn)
                       :on-click modal/hide!
                       :aria-label (tr "labels.close")
-                      :variant "action"
+                      :variant "ghost"
                       :icon "close"}]
     [:> import-modal-body*]]])
