@@ -257,7 +257,7 @@
                 :value
                 (map (fn [val] {:label val :id val})))))
 
-        change-property-value
+        update-property-value
         (mf/use-fn
          (mf/deps component-ids)
          (fn [pos value]
@@ -283,16 +283,12 @@
                                 :data-position pos
                                 :on-blur update-property-name}]]
 
-         (let [mixed-value? (= (:value prop) false)
-               empty-value? (str/empty? (:value prop))]
+         (let [mixed-value? (= (:value prop) false)]
            [:> combobox* {:id (str "variant-prop-" variant-id "-" pos)
-                          :placeholder (if mixed-value? (tr "settings.multiple") "")
-                          :default-selected (cond
-                                              mixed-value? ""
-                                              empty-value? "--"
-                                              :else (:value prop))
+                          :placeholder (if mixed-value? (tr "settings.multiple") "--")
+                          :default-selected (if mixed-value? "" (:value prop))
                           :options (clj->js (get-options (:name prop)))
-                          :on-change (partial change-property-value pos)}])]])]))
+                          :on-change (partial update-property-value pos)}])]])]))
 
 (mf/defc component-variant*
   [{:keys [component shape data]}]
