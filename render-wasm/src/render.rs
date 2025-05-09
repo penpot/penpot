@@ -1,3 +1,7 @@
+use skia_safe::{self as skia, Matrix, RRect, Rect};
+use std::borrow::Cow;
+use std::collections::{HashMap, HashSet};
+
 mod blend;
 mod debug;
 mod fills;
@@ -9,10 +13,6 @@ mod shadows;
 mod strokes;
 mod surfaces;
 mod text;
-
-use skia_safe::{self as skia, Matrix, RRect, Rect};
-use std::borrow::Cow;
-use std::collections::{HashMap, HashSet};
 
 use gpu_state::GpuState;
 use options::RenderOptions;
