@@ -125,10 +125,10 @@ impl TextContent {
                     let text: String = leaf.apply_text_transform(paragraph.text_transform);
                     builder.push_style(&stroke_style);
                     builder.add_text(&text);
-                    let p = builder.build();
-                    stroke_paragraphs.push(p);
+                    builder.pop();
                 }
-                builder.reset();
+                let p = builder.build();
+                stroke_paragraphs.push(p);
             }
             paragraph_group.push(stroke_paragraphs);
         }
@@ -451,8 +451,11 @@ impl RawTextData {
         }
 
         let text_utf8 = buffer[offset..text_end].to_vec();
-        let text = String::from_utf8(text_utf8).expect("Invalid UTF-8 text");
+        if text_utf8.is_empty() {
+            return (String::new(), text_end);
+        }
 
+        let text = String::from_utf8_lossy(&text_utf8).to_string();
         (text, text_end)
     }
 }
