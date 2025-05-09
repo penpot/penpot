@@ -55,6 +55,7 @@ jobs:
             cp -r bundles/exporter/* all-in-one/penpot-exporter/
             cd all-in-one
             zip -r ../zips/penpot-all-bundles.zip .
+            cd ..
           else
             echo "Creating individual zip files"
             mkdir -p temp
@@ -68,13 +69,34 @@ jobs:
           fi
 
       - name: Upload unified bundle
-        if: env.ZIP_MODE == 'all'
+        if: ${{ github.event.inputs.zip_mode == 'all' }}
         uses: actions/upload-artifact@v4
         with:
           name: penpot-all-bundles
           path: zips/penpot-all-bundles.zip
 
       - name: Upload frontend bundle
-        if: env.ZIP_MODE != 'all'
+        if: ${{ github.event.inputs.zip_mode != 'all' }}
         uses: actions/upload-artifact@v4
+        with:
+          name: penpot-frontend
+          path: zips/penpot-frontend.zip
 
+      - name: Upload backend bundle
+        if: ${{ github.event.inputs.zip_mode != 'all' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: penpot-backend
+          path: zips/penpot-backend.zip
+
+      - name: Upload exporter bundle
+        if: ${{ github.event.inputs.zip_mode != 'all' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: penpot-exporter
+          path: zips/penpot-exporter.zip
+
+      - name: Print artifact summary URL
+        run: |
+          echo "📦 Artifacts available at:"
+          echo "🔗 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
