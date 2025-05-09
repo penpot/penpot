@@ -99,13 +99,13 @@
                     (if (nil? migrations)
                       (generate-migrations-from-version version)
                       migrations)))
-          (update :features (fnil into #{}) (deref cfeat/*new*))
           ;; NOTE: in some future we can consider to apply
           ;; a migration to the whole database and remove
           ;; this code from this function that executes on
           ;; each file migration operation
           (update :features cfeat/migrate-legacy-features)
-          (migrate)))))
+          (migrate)
+          (update :features (fnil into #{}) (deref cfeat/*new*))))))
 
 (defn migrated?
   [file]
