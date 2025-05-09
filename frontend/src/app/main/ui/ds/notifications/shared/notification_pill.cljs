@@ -18,7 +18,7 @@
   [level]
   (case level
     :info i/info
-    :default i/msg-neutral
+    :default i/info
     :warning i/msg-neutral
     :error i/delete-text
     :success i/status-tick

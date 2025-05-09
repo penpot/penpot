@@ -383,7 +383,11 @@
                                      (ctob/encode-dtcg)
                                      (json/encode :key-fn identity))]
              (->> (wapi/create-blob (or tokens-json "{}") "application/json")
-                  (dom/trigger-download "tokens.json")))))]
+                  (dom/trigger-download "tokens.json")))))
+        on-modal-show
+        (mf/use-fn
+         (fn []
+           (modal/show! :tokens/import {})))]
 
     [:div {:class (stl/css :import-export-button-wrapper)}
      [:> button* {:on-click open-menu
@@ -395,7 +399,7 @@
                         :list-class (stl/css :import-export-menu)}
       (when can-edit?
         [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
-                                 :on-click #(modal/show! :tokens/import {})}
+                                 :on-click on-modal-show}
          [:div {:class (stl/css :import-menu-item)}
           [:div (tr "labels.import")]]])
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
