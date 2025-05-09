@@ -41,7 +41,7 @@ impl Gradient {
         self.offsets.extend(offsets);
     }
 
-    fn to_linear_shader(&self, rect: &Rect) -> Option<skia::Shader> {
+    pub fn to_linear_shader(&self, rect: &Rect) -> Option<skia::Shader> {
         let start = (
             rect.left + self.start.0 * rect.width(),
             rect.top + self.start.1 * rect.height(),
@@ -60,7 +60,7 @@ impl Gradient {
         )
     }
 
-    fn to_radial_shader(&self, rect: &Rect) -> Option<skia::Shader> {
+    pub fn to_radial_shader(&self, rect: &Rect) -> Option<skia::Shader> {
         let center = skia::Point::new(
             rect.left + self.start.0 * rect.width(),
             rect.top + self.start.1 * rect.height(),
@@ -118,6 +118,10 @@ impl ImageFill {
 
     pub fn id(&self) -> Uuid {
         self.id
+    }
+
+    pub fn opacity(&self) -> u8 {
+        self.opacity
     }
 }
 
