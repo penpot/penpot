@@ -40,7 +40,11 @@ pub struct TextContent {
 pub fn set_paragraphs_width(width: f32, paragraphs: &mut Vec<Vec<skia::textlayout::Paragraph>>) {
     for group in paragraphs {
         for paragraph in group {
-            paragraph.layout(width)
+            // We first set max so we can get the min_intrinsic_width (this is the min word size)
+            // then after we set either the real with or the min.
+            // This is done this way so the words are not break into lines.
+            paragraph.layout(f32::MAX);
+            paragraph.layout(f32::max(width, paragraph.min_intrinsic_width().ceil()));
         }
     }
 }

@@ -217,11 +217,14 @@
 
                   ;; When the horizontal/vertical scale a flex children with auto/fill
                   ;; we change it too fixed
-                  set-fix-width?
+                  change-width?
                   (not (mth/close? (dm/get-prop scalev :x) 1))
 
-                  set-fix-height?
-                  (not (mth/close? (dm/get-prop scalev :y) 1))]
+                  change-height?
+                  (not (mth/close? (dm/get-prop scalev :y) 1))
+
+                  auto-width-text?  (and (cfh/text-shape? shape) (= :auto-width (dm/get-prop shape :grow-type)))
+                  auto-height-text? (and (cfh/text-shape? shape) (= :auto-height (dm/get-prop shape :grow-type)))]
 
               (cond-> (ctm/empty)
                 (some? displacement)
@@ -230,11 +233,17 @@
                 :always
                 (ctm/resize scalev resize-origin shape-transform shape-transform-inverse)
 
-                ^boolean set-fix-width?
+                ^boolean change-width?
                 (ctm/change-property :layout-item-h-sizing :fix)
 
-                ^boolean set-fix-height?
+                ^boolean change-height?
                 (ctm/change-property :layout-item-v-sizing :fix)
+
+                (and auto-width-text? (or change-width? change-height?))
+                (ctm/change-property :grow-type :fixed)
+
+                (and auto-height-text? change-height?)
+                (ctm/change-property :grow-type :fixed)
 
                 ^boolean scale-text
                 (ctm/scale-content (dm/get-prop scalev :x)))))
