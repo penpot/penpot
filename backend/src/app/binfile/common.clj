@@ -431,7 +431,13 @@
                           (update :components relink-shapes)
                           (update :media relink-media)
                           (update :colors relink-colors)
-                          (d/without-nils))))))
+                          (d/without-nils))))
+
+      ;; NOTE: this is necessary because when we just creating a new
+      ;; file from imported artifact or cloned file there are no
+      ;; migrations registered on the database, so we need to persist
+      ;; all of them, not only the applied
+      (vary-meta dissoc ::fmg/migrated)))
 
 (defn encode-file
   [{:keys [::db/conn] :as cfg} {:keys [id features] :as file}]
