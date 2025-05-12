@@ -434,7 +434,7 @@ impl RenderState {
 
     pub fn start_render_loop(
         &mut self,
-        tree: &mut HashMap<Uuid, Shape>,
+        tree: &mut HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         timestamp: i32,
@@ -501,7 +501,7 @@ impl RenderState {
 
     pub fn process_animation_frame(
         &mut self,
-        tree: &mut HashMap<Uuid, Shape>,
+        tree: &mut HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         timestamp: i32,
@@ -600,7 +600,7 @@ impl RenderState {
 
     pub fn render_shape_tree(
         &mut self,
-        tree: &mut HashMap<Uuid, Shape>,
+        tree: &mut HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         timestamp: i32,
@@ -855,7 +855,7 @@ impl RenderState {
 
     pub fn rebuild_tiles_shallow(
         &mut self,
-        tree: &mut HashMap<Uuid, Shape>,
+        tree: &mut HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) {
@@ -864,7 +864,7 @@ impl RenderState {
         self.surfaces.remove_cached_tiles();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
-            if let Some(shape) = tree.get(&shape_id) {
+            if let Some(shape) = tree.get_mut(&shape_id) {
                 let mut shape = shape.clone();
                 if shape_id != Uuid::nil() {
                     if let Some(modifier) = modifiers.get(&shape_id) {
@@ -885,7 +885,7 @@ impl RenderState {
 
     pub fn rebuild_tiles(
         &mut self,
-        tree: &mut HashMap<Uuid, Shape>,
+        tree: &mut HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) {
@@ -894,7 +894,7 @@ impl RenderState {
         self.surfaces.remove_cached_tiles();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
-            if let Some(shape) = tree.get(&shape_id) {
+            if let Some(shape) = tree.get_mut(&shape_id) {
                 let mut shape = shape.clone();
                 if shape_id != Uuid::nil() {
                     if let Some(modifier) = modifiers.get(&shape_id) {
@@ -914,11 +914,11 @@ impl RenderState {
 
     pub fn rebuild_modifier_tiles(
         &mut self,
-        tree: &mut HashMap<Uuid, Shape>,
+        tree: &mut HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
     ) {
         for (uuid, matrix) in modifiers {
-            if let Some(shape) = tree.get(uuid) {
+            if let Some(shape) = tree.get_mut(uuid) {
                 let mut shape: Shape = shape.clone();
                 shape.apply_transform(matrix);
                 self.update_tile_for(&shape);

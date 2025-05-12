@@ -842,9 +842,12 @@
 
 (defn initialize
   [base-objects zoom vbox background]
-  (let [rgba (sr-clr/hex->u32argb background 1)]
+  (let [rgba         (sr-clr/hex->u32argb background 1)
+        shapes       (into [] (vals base-objects))
+        total-shapes (count shapes)]
     (h/call wasm/internal-module "_set_canvas_background" rgba)
     (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+    (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
     (set-objects base-objects)))
 
 (def ^:private canvas-options

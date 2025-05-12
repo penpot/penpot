@@ -79,6 +79,19 @@ function getHeapU32() {
   return Module.HEAPU32;
 }
 
+export function clearShapeFills() {
+  Module._clear_shape_fills();
+}
+
+export function addShapeSolidFill(argb) {
+  const ptr = allocBytes(176);
+  const heap = getHeapU32();
+  const dv = new DataView(heap.buffer);
+  dv.setUint8(ptr, 0x00, true);
+  dv.setUint32(ptr + 4, argb, true);
+  Module._add_shape_fill();
+}
+
 export function setShapeChildren(shapeIds) {
   const offset = allocBytes(shapeIds.length * 16);
   const heap = getHeapU32();

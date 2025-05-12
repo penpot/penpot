@@ -178,7 +178,7 @@ fn initialize_tracks(
     layout_bounds: &Bounds,
     layout_axis: &LayoutAxis,
     flex_data: &FlexData,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, &mut Shape>,
     bounds: &HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Vec<TrackData> {
@@ -420,7 +420,7 @@ fn calculate_track_data(
     layout_data: &LayoutData,
     flex_data: &FlexData,
     layout_bounds: &Bounds,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, &mut Shape>,
     bounds: &HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Vec<TrackData> {
@@ -551,7 +551,7 @@ pub fn reflow_flex_layout(
     shape: &Shape,
     layout_data: &LayoutData,
     flex_data: &FlexData,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, &mut Shape>,
     bounds: &mut HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> VecDeque<Modifier> {
