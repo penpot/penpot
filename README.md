@@ -34,7 +34,7 @@
 
 <br />
 
-[Penpot video](https://github.com/penpot/penpot/assets/5446186/b8ad0764-585e-4ddc-b098-9b4090d337cc)
+[Penpot video](https://github.com/user-attachments/assets/08b83119-c090-4a74-86ed-7bfbdda9a793)
 
 <br />
 
