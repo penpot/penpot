@@ -472,16 +472,23 @@
 (defn setup-shortcuts
   [path-editing? drawing-path? text-editing? grid-editing?]
   (hooks/use-shortcuts ::workspace wsc/shortcuts)
-  (mf/use-effect
-   (mf/deps path-editing? drawing-path? grid-editing?)
-   (fn []
-     (cond
-       grid-editing?
-       (do (st/emit! (dsc/push-shortcuts ::grid gsc/shortcuts))
-           #(st/emit! (dsc/pop-shortcuts ::grid)))
-       (or drawing-path? path-editing?)
-       (do (st/emit! (dsc/push-shortcuts ::path psc/shortcuts))
-           #(st/emit! (dsc/pop-shortcuts ::path)))
-       text-editing?
-       (do (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts))
-           #(st/emit! (dsc/pop-shortcuts ::text)))))))
+
+  (mf/with-effect [path-editing? drawing-path? grid-editing?]
+    (cond
+      grid-editing?
+      (do
+        (st/emit! (dsc/push-shortcuts ::grid gsc/shortcuts))
+        (fn []
+          (st/emit! (dsc/pop-shortcuts ::grid))))
+
+      (or drawing-path? path-editing?)
+      (do
+        (st/emit! (dsc/push-shortcuts ::path psc/shortcuts))
+        (fn []
+          (st/emit! (dsc/pop-shortcuts ::path))))
+
+      text-editing?
+      (do
+        (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts))
+        (fn []
+          (st/emit! (dsc/pop-shortcuts ::text)))))))
