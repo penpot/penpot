@@ -25,13 +25,15 @@
    [:hint-type {:optional true} [:maybe [:enum "hint" "error" "warning"]]]
    [:type {:optional true} :string]
    [:max-length {:optional true} :int]
-   [:variant {:optional true} [:enum "seamless" "dense" "comfortable"]]])
+   [:variant {:optional true} [:enum "seamless" "dense" "comfortable"]]
+   [:slot-start {:optional true} [:maybe some?]]
+   [:slot-end {:optional true} [:maybe some?]]])
 
 (mf/defc input-field*
   {::mf/props :obj
    ::mf/forward-ref true
    ::mf/schema schema:input-field}
-  [{:keys [id icon has-hint hint-type class type max-length variant children] :rest props} ref]
+  [{:keys [id icon has-hint hint-type class type max-length variant slot-start slot-end] :rest props} ref]
   (let [input-ref (mf/use-ref)
         type  (d/nilv type "text")
         variant (d/nilv variant "dense")
@@ -65,8 +67,10 @@
                                                   :variant-seamless (= variant "seamless")
                                                   :variant-dense (= variant "dense")
                                                   :variant-comfortable (= variant "comfortable")))}
+     (when (some? slot-start)
+       slot-start)
      (when (some? icon)
        [:> icon* {:icon-id icon :class (stl/css :icon) :on-click on-icon-click}])
      [:> "input" props]
-     (when (some? children)
-       [:div {:class (stl/css :input-actions)} children])]))
+     (when (some? slot-end)
+       slot-end)]))

@@ -31,7 +31,6 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
-   [app.main.ui.workspace.tokens.components.controls.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.components.controls.input-tokens-value :refer [input-tokens-value*]]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
@@ -563,13 +562,11 @@
          :label (tr "workspace.token.token-value")
          :value (mf/ref-val value-ref)
          :ref value-input-ref
+         :color color
          :on-change on-update-value
          :error (not (nil? (:errors token-resolve-result)))
-         :on-blur on-update-value}
-        (when color?
-          [:> input-token-color-bullet*
-           {:color color
-            :on-click on-display-colorpicker'}])]
+         :display-colorpicker on-display-colorpicker'
+         :on-blur on-update-value}]
        (when color-ramp-open?
          [:> ramp* {:color (some-> color (tinycolor/valid-color))
                     :on-change on-update-color}])
