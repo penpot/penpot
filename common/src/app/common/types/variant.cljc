@@ -23,9 +23,11 @@
 
 (def schema:variant-component
   ;; A component that is part of a variant set.
-  [:map
-   [:variant-id {:optional true} ::sm/uuid]
-   [:variant-properties {:optional true} [:vector schema:variant-property]]])
+  (sm/register!
+   ^{::sm/type ::variant-component}
+   [:map
+    [:variant-id {:optional true} ::sm/uuid]
+    [:variant-properties {:optional true} [:vector schema:variant-property]]]))
 
 (def schema:variant-shape
   ;; The root shape of the main instance of a variant component.
@@ -40,7 +42,6 @@
    [:is-variant-container {:optional true} :boolean]])
 
 (sm/register! ::variant-property schema:variant-property)
-(sm/register! ::variant-component schema:variant-component)
 (sm/register! ::variant-shape schema:variant-shape)
 (sm/register! ::variant-container schema:variant-container)
 

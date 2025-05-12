@@ -732,20 +732,22 @@
 
           (update-group [group objects]
             (let [lookup   (d/getf objects)
-                  children (->> group :shapes (map lookup))]
+                  children (get group :shapes)]
               (cond
                 ;; If the group is empty we don't make any changes. Will be removed by a later process
                 (empty? children)
                 group
 
                 (= :bool (:type group))
-                (gsh/update-bool group children objects)
+                (gsh/update-bool group objects)
 
                 (:masked-group group)
-                (set-mask-selrect group children)
+                (->> (map lookup children)
+                     (set-mask-selrect group))
 
                 :else
-                (gsh/update-group-selrect group children))))]
+                (->> (map lookup children)
+                     (gsh/update-group-selrect group)))))]
 
     (if page-id
       (d/update-in-when data [:pages-index page-id :objects] reg-objects)

@@ -16,6 +16,8 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
 
+
+;; FIXME: the order of arguments seems arbitrary, container should be a first artgument
 (defn add-shape
   "Insert a shape in the tree, at the given index below the given parent or frame.
   Update the parent as needed."

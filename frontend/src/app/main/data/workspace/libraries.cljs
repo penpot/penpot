@@ -254,20 +254,17 @@
 
 (defn add-media
   [media]
-  (dm/assert!
-   "expected valid media object"
-   (ctf/check-media-object! media))
+  (let [media (ctf/check-media-object media)]
+    (ptk/reify ::add-media
+      ev/Event
+      (-data [_] media)
 
-  (ptk/reify ::add-media
-    ev/Event
-    (-data [_] media)
-
-    ptk/WatchEvent
-    (watch [it _ _]
-      (let [obj     (select-keys media [:id :name :width :height :mtype])
-            changes (-> (pcb/empty-changes it)
-                        (pcb/add-media obj))]
-        (rx/of (dch/commit-changes changes))))))
+      ptk/WatchEvent
+      (watch [it _ _]
+        (let [obj     (select-keys media [:id :name :width :height :mtype])
+              changes (-> (pcb/empty-changes it)
+                          (pcb/add-media obj))]
+          (rx/of (dch/commit-changes changes)))))))
 
 (defn rename-media
   [id new-name]
@@ -297,10 +294,7 @@
 
 (defn delete-media
   [{:keys [id]}]
-  (dm/assert!
-   "expected valid uuid for `id`"
-   (uuid? id))
-
+  (assert (uuid? id) "expected valid uuid for `id`")
   (ptk/reify ::delete-media
     ev/Event
     (-data [_] {:id id})
@@ -316,11 +310,8 @@
 (defn add-typography
   ([typography] (add-typography typography true))
   ([typography edit?]
-   (let [typography (update typography :id #(or % (uuid/next)))]
-     (dm/assert!
-      "expected valid typography"
-      (ctt/check-typography! typography))
-
+   (let [typography (-> (update typography :id #(or % (uuid/next)))
+                        (ctt/check-typography))]
      (ptk/reify ::add-typography
        ev/Event
        (-data [_] typography)
@@ -349,16 +340,12 @@
 
 (defn update-typography
   [typography file-id]
-
-  (dm/assert!
-   "expected valid typography and file-id"
-   (and (ctt/check-typography! typography)
-        (uuid? file-id)))
-
-  (ptk/reify ::update-typography
-    ptk/WatchEvent
-    (watch [it state _]
-      (do-update-tipography it state typography file-id))))
+  (assert (uuid? file-id) "expected valid uuid for `file-id`")
+  (let [typography (ctt/check-typography typography)]
+    (ptk/reify ::update-typography
+      ptk/WatchEvent
+      (watch [it state _]
+        (do-update-tipography it state typography file-id)))))
 
 (defn rename-typography
   [file-id id new-name]

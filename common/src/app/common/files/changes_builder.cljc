@@ -660,9 +660,13 @@
                                  nil               ;; so it does not need resize
 
                                  (= (:type parent) :bool)
-                                 (gsh/update-bool parent children objects)
+                                 (gsh/update-bool parent objects)
 
                                  (= (:type parent) :group)
+                                 ;; FIXME: this functions should be
+                                 ;; normalized in the same way as
+                                 ;; update-bool in order to make all
+                                 ;; this code consistent
                                  (if (:masked-group parent)
                                    (gsh/update-mask-selrect parent children)
                                    (gsh/update-group-selrect parent children)))]

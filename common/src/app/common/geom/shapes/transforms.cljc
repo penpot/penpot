@@ -455,12 +455,12 @@
 
 (defn update-bool
   "Calculates the selrect+points for the boolean shape"
-  [shape _children objects]
-
+  [shape objects]
   (let [content (path/calc-bool-content shape objects)
         shape   (assoc shape :content content)]
     (path/update-geometry shape)))
 
+;; FIXME: revisit
 (defn update-shapes-geometry
   [objects ids]
   (->> ids
@@ -474,7 +474,7 @@
                   (update-mask-selrect shape children)
 
                   (cfh/bool-shape? shape)
-                  (update-bool shape children objects)
+                  (update-bool shape objects)
 
                   (cfh/group-shape? shape)
                   (update-group-selrect shape children)

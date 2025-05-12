@@ -41,17 +41,18 @@
   [o]
   (and (string? o) (some? (re-matches rgb-color-re o))))
 
-(def ^:private type:rgb-color
-  {:type :string
-   :pred rgb-color-string?
-   :type-properties
-   {:title "rgb-color"
-    :description "RGB Color String"
-    :error/message "expected a valid RGB color"
-    :error/code "errors.invalid-rgb-color"
-    :gen/gen (generate-rgb-color)
-    ::oapi/type "integer"
-    ::oapi/format "int64"}})
+(def schema:rgb-color
+  (sm/register!
+   {:type ::rgb-color
+    :pred rgb-color-string?
+    :type-properties
+    {:title "rgb-color"
+     :description "RGB Color String"
+     :error/message "expected a valid RGB color"
+     :error/code "errors.invalid-rgb-color"
+     :gen/gen (generate-rgb-color)
+     ::oapi/type "integer"
+     ::oapi/format "int64"}}))
 
 (def schema:image-color
   [:map {:title "ImageColor"}
@@ -76,7 +77,7 @@
    [:stops
     [:vector {:min 1 :gen/max 2}
      [:map {:title "GradientStop"}
-      [:color ::rgb-color]
+      [:color schema:rgb-color]
       [:opacity {:optional true} [:maybe ::sm/safe-number]]
       [:offset ::sm/safe-number]]]]])
 
@@ -86,7 +87,7 @@
    [:name {:optional true} :string]
    [:path {:optional true} [:maybe :string]]
    [:value {:optional true} [:maybe :string]]
-   [:color {:optional true} [:maybe ::rgb-color]]
+   [:color {:optional true} [:maybe schema:rgb-color]]
    [:opacity {:optional true} [:maybe ::sm/safe-number]]
    [:modified-at {:optional true} ::sm/inst]
    [:ref-id {:optional true} ::sm/uuid]
@@ -103,12 +104,17 @@
   [:and
    [:map {:title "RecentColor"}
     [:opacity {:optional true} [:maybe ::sm/safe-number]]
-    [:color {:optional true} [:maybe ::rgb-color]]
+    [:color {:optional true} [:maybe schema:rgb-color]]
     [:gradient {:optional true} [:maybe schema:gradient]]
     [:image {:optional true} [:maybe schema:image-color]]]
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
-(sm/register! ::rgb-color type:rgb-color)
+;; Same as color but with :id prop required
+(def schema:library-color
+  [:and
+   (sm/required-keys schema:color-attrs [:id])
+   [::sm/contains-any {:strict true} [:color :gradient :image]]])
+
 (sm/register! ::color schema:color)
 (sm/register! ::gradient schema:gradient)
 (sm/register! ::image-color schema:image-color)
@@ -119,10 +125,13 @@
   (sm/lazy-validator schema:color))
 
 (def check-color
-  (sm/check-fn schema:color :hint "expected valid color struct"))
+  (sm/check-fn schema:color :hint "expected valid color"))
+
+(def check-library-color
+  (sm/check-fn schema:library-color :hint "expected valid library color"))
 
 (def check-recent-color
-  (sm/check-fn schema:recent-color))
+  (sm/check-fn schema:recent-color :hint "expected valid recent color"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS

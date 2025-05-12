@@ -55,8 +55,8 @@
                                :features features
                                :ignore-sync-until ignore-sync-until
                                :modified-at modified-at
-                               :deleted-at deleted-at
-                               :create-page create-page
+                               :deleted-at deleted-at}
+                              {:create-page create-page
                                :page-id page-id})
           file (-> (bfc/insert-file! cfg file)
                    (bfc/decode-row))]

@@ -771,17 +771,16 @@
 
 ;; --- Update Shape Attrs
 
+;; FIXME: rename to update-shape-generic-attrs because on the end we
+;; only allow here to update generic attrs
 (defn update-shape
   [id attrs]
-  (dm/assert!
-   "expected valid parameters"
-   (and (cts/check-shape-attrs! attrs)
-        (uuid? id)))
-
-  (ptk/reify ::update-shape
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (dwsh/update-shapes [id] #(merge % attrs))))))
+  (assert (uuid? id) "expected valid uuid for `id`")
+  (let [attrs (cts/check-shape-generic-attrs attrs)]
+    (ptk/reify ::update-shape
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (rx/of (dwsh/update-shapes [id] #(merge % attrs)))))))
 
 (defn start-rename-shape
   "Start shape renaming process"
@@ -832,10 +831,6 @@
 
 (defn update-selected-shapes
   [attrs]
-  (dm/assert!
-   "expected valid shape attrs"
-   (cts/check-shape-attrs! attrs))
-
   (ptk/reify ::update-selected-shapes
     ptk/WatchEvent
     (watch [_ state _]

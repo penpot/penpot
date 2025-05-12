@@ -149,13 +149,16 @@
    {:test {:init-fn frontend-tests.runner/init
            :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}}
 
-  :lib-penpot
+  :library
   {:target :esm
-   :output-dir "resources/public/libs"
+   :runtime :custom
+   :output-dir "target/library"
+   :devtools {:autoload false}
 
    :modules
-   {:penpot {:exports {:renderPage app.libs.render/render-page-export
-                       :createFile app.libs.file-builder/create-file-export}}}
+   {:penpot
+    {:exports {BuilderError lib.file-builder/BuilderError
+               createFile lib.file-builder/create-file}}}
 
    :compiler-options
    {:output-feature-set :es2020
@@ -165,6 +168,8 @@
    :release
    {:compiler-options
     {:fn-invoke-direct true
+     :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :advanced]
+     :pretty-print false
      :source-map true
      :elide-asserts true
      :anon-fn-naming-policy :off

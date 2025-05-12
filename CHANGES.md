@@ -6,6 +6,36 @@
 
 ### :boom: Breaking changes & Deprecations
 
+**Breaking changes on penpot library:**
+
+- Change the signature of the `addPage` method: it now accepts an object (as a single argument) where you can pass `id`,
+  `name`, and `background` props (instead of the previous positional arguments)
+- Rename the `file.createRect` method to `file.addRect`
+- Rename the `file.createCircle` method to `file.addCircle`
+- Rename the `file.createPath` method to `file.addPath`
+- Rename the `file.createText` method to `file.addText`
+- Rename `file.startComponent` to `file.addComponent` (to preserve the naming style)
+- Rename `file.createComponentInstance` to `file.addComponentInstance` (to preserve the naming style)
+- Rename `file.lookupShape` to `file.getShape`
+- Rename `file.asMap` to `file.toMap`
+- Remove `file.updateLibraryColor` (use `file.addLibraryColor` if you just need to replace a color)
+- Remove `file.deleteLibraryColor` (this library is intended to build files)
+- Remove `file.updateLibraryTypography` (use `file.addLibraryTypography` if you just need to replace a typography)
+- Remove `file.deleteLibraryTypography` (this library is intended to build files)
+- Remove `file.add/update/deleteLibraryMedia` (they are no longer supported by Penpot and have been replaced by components)
+- Remove `file.deleteObject` (this library is intended to build files)
+- Remove `file.updateObject` (this library is intended to build files)
+- Remove `file.finishComponent` (it is no longer necessary; see below for more details on component creation changes)
+- Change the `file.getCurrentPageId` function to a read-only `file.currentPageId` property
+- Add `file.currentFrameId` read-only property
+- Add `file.lastId` read-only property
+
+There are also relevant semantic changes in how components should be created: this refactor removes
+all notions of the old components (v1). Since v2, the shapes that are part of a component live on a
+page. So, from now on, to create a component, you should first create a frame, then add shapes
+and/or groups to that frame, and then create a component by declaring that frame as the component
+root.
+
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features

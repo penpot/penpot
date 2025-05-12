@@ -17,25 +17,25 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def schema:typography
-  [:map {:title "Typography"}
-   [:id ::sm/uuid]
-   [:name :string]
-   [:font-id :string]
-   [:font-family :string]
-   [:font-variant-id :string]
-   [:font-size :string]
-   [:font-weight :string]
-   [:font-style :string]
-   [:line-height :string]
-   [:letter-spacing :string]
-   [:text-transform :string]
-   [:modified-at {:optional true} ::sm/inst]
-   [:path {:optional true} [:maybe :string]]
-   [:plugin-data {:optional true} ::ctpg/plugin-data]])
+  (sm/register!
+   ^{::sm/type ::typography}
+   [:map {:title "Typography"}
+    [:id ::sm/uuid]
+    [:name :string]
+    [:font-id :string]
+    [:font-family :string]
+    [:font-variant-id :string]
+    [:font-size :string]
+    [:font-weight :string]
+    [:font-style :string]
+    [:line-height :string]
+    [:letter-spacing :string]
+    [:text-transform :string]
+    [:modified-at {:optional true} ::sm/inst]
+    [:path {:optional true} [:maybe :string]]
+    [:plugin-data {:optional true} ::ctpg/plugin-data]]))
 
-(sm/register! ::typography schema:typography)
-
-(def check-typography!
+(def check-typography
   (sm/check-fn ::typography))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

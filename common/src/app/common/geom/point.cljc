@@ -85,24 +85,22 @@
     (into {} p)
     p))
 
-;; FIXME: make like matrix
 (def schema:point
-  {:type ::point
-   :pred valid-point?
-   :type-properties
-   {:title "point"
-    :description "Point"
-    :error/message "expected a valid point"
-    :gen/gen (->> (sg/tuple (sg/small-int) (sg/small-int))
-                  (sg/fmap #(apply pos->Point %)))
-    ::oapi/type "string"
-    ::oapi/format "point"
-    :decode/json decode-point
-    :decode/string decode-point
-    :encode/json point->json
-    :encode/string point->str}})
-
-(sm/register! schema:point)
+  (sm/register!
+   {:type ::point
+    :pred valid-point?
+    :type-properties
+    {:title "point"
+     :description "Point"
+     :error/message "expected a valid point"
+     :gen/gen (->> (sg/tuple (sg/small-int) (sg/small-int))
+                   (sg/fmap #(apply pos->Point %)))
+     ::oapi/type "string"
+     ::oapi/format "point"
+     :decode/json decode-point
+     :decode/string decode-point
+     :encode/json point->json
+     :encode/string point->str}}))
 
 (defn point-like?
   [{:keys [x y] :as v}]

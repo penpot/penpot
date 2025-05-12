@@ -12,7 +12,6 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.component :as ctc]
    [app.common.types.container :as ctn]
-   [app.common.types.path :as path]
    [app.common.types.path.bool :as bool]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
@@ -30,9 +29,6 @@
   (let [shape-id
         (or id (uuid/next))
 
-        shapes
-        (mapv #(path/convert-to-path % objects) shapes)
-
         head
         (if (= type :difference) (first shapes) (last shapes))
 
@@ -48,13 +44,13 @@
          :frame-id (:frame-id head)
          :parent-id (:parent-id head)
          :name name
-         :shapes (mapv :id shapes)}
+         :shapes (vec shapes)}
 
         shape
         (-> shape
             (merge (select-keys head bool/style-properties))
             (cts/setup-shape)
-            (gsh/update-bool shapes objects))]
+            (gsh/update-bool objects))]
 
     [shape (cph/get-position-on-parent objects (:id head))]))
 
@@ -108,19 +104,16 @@
 (defn group->bool
   [type group objects]
   (let [shapes (->> (:shapes group)
-                    (map #(get objects %))
-                    (mapv #(path/convert-to-path % objects)))
+                    (map (d/getf objects)))
         head (if (= type :difference) (first shapes) (last shapes))
         head (cond-> head
                (and (contains? head :svg-attrs) (empty? (:fills head)))
-               (assoc :fills bool/default-fills))
-        head-data (select-keys head bool/style-properties)]
-
+               (assoc :fills bool/default-fills))]
     (-> group
         (assoc :type :bool)
         (assoc :bool-type type)
-        (merge head-data)
-        (gsh/update-bool shapes objects))))
+        (merge (select-keys head bool/style-properties))
+        (gsh/update-bool objects))))
 
 (defn group-to-bool
   [shape-id type]
