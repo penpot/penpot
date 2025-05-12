@@ -17,7 +17,7 @@
   "devDependencies": {
     "concurrently": "^9.0.1",
     "nodemon": "^3.1.7",
-    "shadow-cljs": "3.0.3",
+    "shadow-cljs": "3.0.5",
     "source-map-support": "^0.5.21",
     "ws": "^8.17.0"
   },

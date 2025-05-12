@@ -91,7 +91,7 @@
     "rimraf": "^6.0.1",
     "sass": "^1.83.4",
     "sass-embedded": "^1.83.4",
-    "shadow-cljs": "3.0.3",
+    "shadow-cljs": "3.0.5",
     "storybook": "^8.5.2",
     "svg-sprite": "^2.0.4",
     "typescript": "^5.7.3",
