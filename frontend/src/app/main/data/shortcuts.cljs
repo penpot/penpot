@@ -8,7 +8,7 @@
   (:refer-clojure :exclude [meta reset!])
   (:require
    ["@penpot/mousetrap$default" :as mousetrap]
-   [app.common.data.macros :as dm]
+   [app.common.data :as d]
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.config :as cf]
@@ -135,7 +135,7 @@
     [:fn {:optional true} fn?]
     [:tooltip {:optional true} :string]]])
 
-(def check-shortcuts!
+(def ^:private check-shortcuts
   (sm/check-fn schema:shortcuts))
 
 (defn- wrap-cb
@@ -167,23 +167,20 @@
    (mousetrap/reset)
    (bind! shortcuts)))
 
+(def ^:private conj*
+  (fnil conj (d/ordered-map)))
+
 (defn push-shortcuts
   [key shortcuts]
+  (assert (keyword? key) "expected a keyword for `key`")
+  (let [shortcuts (check-shortcuts shortcuts)]
+    (ptk/reify ::push-shortcuts
+      ptk/UpdateEvent
+      (update [_ state]
+        (update state :shortcuts conj* [key shortcuts]))
 
-  (dm/assert!
-   "expected valid parameters"
-   (and (keyword? key)
-        (check-shortcuts! shortcuts)))
-
-  (ptk/reify ::push-shortcuts
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update :shortcuts (fnil conj '()) [key shortcuts])))
-
-    ptk/EffectEvent
-    (effect [_ state _]
-      (let [[_key shortcuts] (peek (:shortcuts state))]
+      ptk/EffectEvent
+      (effect [_ _ _]
         (reset! shortcuts)))))
 
 (defn pop-shortcuts
@@ -192,12 +189,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :shortcuts (fn [shortcuts]
-                                 (let [current-key (first (peek shortcuts))]
-                                   (if (= key current-key)
-                                     (pop shortcuts)
-                                     shortcuts)))))
+                                 (dissoc shortcuts key))))
+
     ptk/EffectEvent
     (effect [_ state _]
-      (let [[key* shortcuts] (peek (:shortcuts state))]
-        (when (not= key key*)
-          (reset! shortcuts))))))
+      (let [[_key shortcuts] (last (:shortcuts state))]
+        (reset! shortcuts)))))
