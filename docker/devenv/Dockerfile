@@ -45,11 +45,18 @@ RUN set -ex; \
     locale-gen; \
     rm -rf /var/lib/apt/lists/*;
 
+ARG EXTERNAL_UID=1000
+ARG EXTERNAL_GID=1000
+    
 RUN set -ex; \
-    usermod -l penpot -d /home/penpot -G users -s /bin/bash ubuntu; \
-    passwd penpot -d; \
+    groupmod -g $EXTERNAL_GID ubuntu || true; \
+    usermod -l penpot -d /home/penpot -u $EXTERNAL_UID -g $EXTERNAL_GID -m ubuntu || true; \
+    usermod -s /bin/bash penpot; \
+    mkdir -p /home/penpot; \
+    chown -R $EXTERNAL_UID:$EXTERNAL_GID /home/penpot; \
+    passwd -d penpot || true; \
     echo "penpot ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
+    
 RUN set -ex; \
     apt-get -qq update; \
     apt-get -qqy install --no-install-recommends \
