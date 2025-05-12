@@ -20,6 +20,7 @@ use crate::shapes::{BoolType, ConstraintH, ConstraintV, StructureEntry, Transfor
 use crate::utils::uuid_from_u32_quartet;
 use crate::uuid::Uuid;
 use indexmap::IndexSet;
+use math::{Bounds, Matrix};
 use state::State;
 
 pub(crate) static mut STATE: Option<Box<State>> = None;
@@ -397,13 +398,13 @@ pub extern "C" fn propagate_modifiers() -> *mut u8 {
         .collect();
 
     with_state!(state, {
-        let result = shapes::propagate_modifiers(state, entries);
+        let (result, _) = shapes::propagate_modifiers(state, &entries);
         mem::write_vec(result)
     })
 }
 
 #[no_mangle]
-pub extern "C" fn propagate_apply() {
+pub extern "C" fn propagate_apply() -> *mut u8 {
     let bytes = mem::bytes();
 
     let entries: Vec<_> = bytes
@@ -412,15 +413,42 @@ pub extern "C" fn propagate_apply() {
         .collect();
 
     with_state!(state, {
-        let result = shapes::propagate_modifiers(state, entries);
+        let (result, bounds) = shapes::propagate_modifiers(state, &entries);
 
         for entry in result {
             state.modifiers.insert(entry.id, entry.transform);
         }
         state.rebuild_modifier_tiles();
-    });
 
-    mem::free_bytes();
+        mem::free_bytes();
+
+        let bbs: Vec<_> = entries.iter().flat_map(|e| bounds.get(&e.id)).collect();
+
+        let result_bound = if bbs.len() == 1 {
+            bbs[0]
+        } else {
+            &Bounds::join_bounds(&bbs)
+        };
+
+        let width = result_bound.width();
+        let height = result_bound.height();
+        let center = result_bound.center();
+        let transform = result_bound.transform_matrix().unwrap_or(Matrix::default());
+
+        let mut bytes = Vec::<u8>::with_capacity(40);
+        bytes.resize(40, 0);
+        bytes[0..4].clone_from_slice(&width.to_le_bytes());
+        bytes[4..8].clone_from_slice(&height.to_le_bytes());
+        bytes[8..12].clone_from_slice(&center.x.to_le_bytes());
+        bytes[12..16].clone_from_slice(&center.y.to_le_bytes());
+        bytes[16..20].clone_from_slice(&transform[0].to_le_bytes());
+        bytes[20..24].clone_from_slice(&transform[3].to_le_bytes());
+        bytes[24..28].clone_from_slice(&transform[1].to_le_bytes());
+        bytes[28..32].clone_from_slice(&transform[4].to_le_bytes());
+        bytes[32..36].clone_from_slice(&transform[2].to_le_bytes());
+        bytes[36..40].clone_from_slice(&transform[5].to_le_bytes());
+        return mem::write_bytes(bytes);
+    });
 }
 
 #[no_mangle]

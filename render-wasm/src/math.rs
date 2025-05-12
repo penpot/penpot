@@ -64,6 +64,29 @@ impl Bounds {
         Self { nw, ne, se, sw }
     }
 
+    pub fn join_bounds(bounds: &Vec<&Bounds>) -> Self {
+        let (min_x, min_y, max_x, max_y) =
+            bounds
+                .iter()
+                .fold((f32::MAX, f32::MAX, f32::MIN, f32::MIN), {
+                    |(min_x, min_y, max_x, max_y), bound| {
+                        (
+                            f32::min(bound.min_x(), min_x),
+                            f32::min(bound.min_y(), min_y),
+                            f32::max(bound.max_x(), max_x),
+                            f32::max(bound.max_y(), max_y),
+                        )
+                    }
+                });
+
+        Self::new(
+            Point::new(min_x, min_y),
+            Point::new(max_x, min_y),
+            Point::new(max_x, max_y),
+            Point::new(min_x, max_y),
+        )
+    }
+
     pub fn horizontal_vec(&self) -> Vector {
         Vector::new_points(&self.nw, &self.ne)
     }
@@ -249,7 +272,10 @@ impl Bounds {
 
     pub fn center(&self) -> Point {
         // Calculates the centroid of the four points
-        Point::new(self.nw.x + self.se.x / 2.0, self.nw.y + self.se.y / 2.0)
+        Point::new(
+            self.nw.x + (self.se.x - self.nw.x) / 2.0,
+            self.nw.y + (self.se.y - self.nw.y) / 2.0,
+        )
     }
 
     pub fn transform_matrix(&self) -> Option<Matrix> {
@@ -297,11 +323,23 @@ impl Bounds {
     }
 
     pub fn to_rect(&self) -> Rect {
-        let minx = self.nw.x.min(self.ne.x).min(self.sw.x).min(self.se.x);
-        let miny = self.nw.y.min(self.ne.y).min(self.sw.y).min(self.se.y);
-        let maxx = self.nw.x.max(self.ne.x).max(self.sw.x).max(self.se.x);
-        let maxy = self.nw.y.max(self.ne.y).max(self.sw.y).max(self.se.y);
-        Rect::from_ltrb(minx, miny, maxx, maxy)
+        Rect::from_ltrb(self.min_x(), self.min_y(), self.max_x(), self.max_y())
+    }
+
+    pub fn min_x(&self) -> f32 {
+        self.nw.x.min(self.ne.x).min(self.sw.x).min(self.se.x)
+    }
+
+    pub fn min_y(&self) -> f32 {
+        self.nw.y.min(self.ne.y).min(self.sw.y).min(self.se.y)
+    }
+
+    pub fn max_x(&self) -> f32 {
+        self.nw.x.max(self.ne.x).max(self.sw.x).max(self.se.x)
+    }
+
+    pub fn max_y(&self) -> f32 {
+        self.nw.y.max(self.ne.y).max(self.sw.y).max(self.se.y)
     }
 }
 

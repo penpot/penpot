@@ -18,8 +18,8 @@
   [{:keys [shape zoom modifiers]}]
   (if (features/active-feature? @st/state "render-wasm/v1")
     (let [transform (gsh/transform-str shape)
-          {:keys [id x y]} shape
-          {:keys [width height]} (wasm.api/text-dimensions id)]
+          {:keys [id x y grow-type]} shape
+          {:keys [width height]} (if (= :fixed grow-type) shape (wasm.api/text-dimensions id))]
       [:rect.main.viewport-selrect
        {:x x
         :y y

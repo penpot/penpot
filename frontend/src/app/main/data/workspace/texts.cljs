@@ -25,6 +25,7 @@
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
@@ -945,14 +946,17 @@
                 new-shape))
             {:undo-group (when new-shape? id)})
 
-           (if finalize?
+           (if (and (not= :fixed (:grow-type shape)) finalize?)
              (dwm/apply-wasm-modifiers
               (resize-wasm-text-modifiers shape content)
               {:undo-group (when new-shape? id)})
 
              (dwm/set-wasm-modifiers
               (resize-wasm-text-modifiers shape content)
-              {:undo-group (when new-shape? id)}))))
+              {:undo-group (when new-shape? id)}))
+
+           (when finalize?
+             (dwt/finish-transform))))
 
         (let [objects      (dsh/lookup-page-objects state)
               shape        (get objects id)

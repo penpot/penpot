@@ -47,15 +47,11 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
         height = shape.selrect.height();
 
         if let Type::Text(content) = &shape.shape_type {
+            let paragraphs = content.get_skia_paragraphs(font_col);
+            height = auto_height(&paragraphs).ceil();
             match content.grow_type() {
                 GrowType::AutoWidth => {
-                    let paragraphs = content.get_skia_paragraphs(font_col);
-                    width = auto_width(&paragraphs);
-                    height = auto_height(&paragraphs);
-                }
-                GrowType::AutoHeight => {
-                    let paragraphs = content.get_skia_paragraphs(font_col);
-                    height = auto_height(&paragraphs);
+                    width = auto_width(&paragraphs).ceil();
                 }
                 _ => {}
             }

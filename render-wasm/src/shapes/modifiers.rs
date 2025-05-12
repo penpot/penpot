@@ -103,7 +103,10 @@ fn calculate_group_bounds(
     shape_bounds.from_points(result)
 }
 
-pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec<TransformEntry> {
+pub fn propagate_modifiers(
+    state: &State,
+    modifiers: &Vec<TransformEntry>,
+) -> (Vec<TransformEntry>, HashMap<Uuid, Bounds>) {
     let shapes = &state.shapes;
 
     let font_col = state.render_state.fonts.font_collection();
@@ -306,10 +309,13 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
         layout_reflows = Vec::new();
     }
 
-    modifiers
-        .iter()
-        .map(|(key, val)| TransformEntry::new(*key, *val))
-        .collect()
+    (
+        modifiers
+            .iter()
+            .map(|(key, val)| TransformEntry::new(*key, *val))
+            .collect(),
+        bounds,
+    )
 }
 
 #[cfg(test)]
