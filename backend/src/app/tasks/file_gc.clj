@@ -10,6 +10,7 @@
   file is eligible to be garbage collected after some period of
   inactivity (the default threshold is 72h)."
   (:require
+   [app.binfile.cleaner :as bfl]
    [app.binfile.common :as bfc]
    [app.common.files.helpers :as cfh]
    [app.common.files.validate :as cfv]
@@ -258,6 +259,7 @@
   (if-let [file (get-file cfg file-id)]
     (let [file (->> file
                     (bfc/decode-file cfg)
+                    (bfl/clean-file)
                     (clean-media! cfg)
                     (clean-fragments! cfg))
           file (assoc file :has-media-trimmed true)]
