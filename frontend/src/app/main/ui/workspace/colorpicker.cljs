@@ -586,10 +586,10 @@
 
     (mf/with-effect []
       (st/emit! (st/emit! (dsc/push-shortcuts ::colorpicker sc/shortcuts)))
-      #(do
-         (st/emit! (dsc/pop-shortcuts ::colorpicker))
-         (when (and @dirty? @last-change on-close)
-           (on-close @last-change))))
+      (fn []
+        (st/emit! (dsc/pop-shortcuts ::colorpicker))
+        (when (and @dirty? @last-change on-close)
+          (on-close @last-change))))
 
     [:div {:class (stl/css :colorpicker-tooltip)
            :data-testid "colorpicker"
