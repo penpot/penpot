@@ -1013,7 +1013,7 @@
                 (cll/generate-component-swap objects shape ldata page libraries id-new-component index target-cell keep-props-values))
 
             changes (if keep-touched?
-                      (clv/generate-keep-touched changes new-shape shape orig-shapes page)
+                      (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries)
                       changes)]
 
         (rx/of

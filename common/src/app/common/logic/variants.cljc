@@ -5,7 +5,6 @@
    [app.common.files.variant :as cfv]
    [app.common.logic.libraries :as cll]
    [app.common.logic.variant-properties :as clvp]
-   [app.common.types.components-list :as ctcl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.variant :as ctv]))
@@ -48,12 +47,8 @@
         (pcb/change-parent (:parent-id shape) [new-shape] 0))))
 
 (defn generate-keep-touched
-  [changes new-shape original-shape original-shapes page]
-  (let [data         (pcb/get-library-data changes)
-        objects      (pcb/get-objects changes)
-
-        orig-comp    (ctcl/get-component data (:component-id original-shape) true)
-
+  [changes new-shape original-shape original-shapes page libraries]
+  (let [objects      (pcb/get-objects changes)
         new-path-map (into {}
                            (map (fn [shape] {(generate-path "" objects (:id new-shape) shape) shape}))
                            (cfh/get-children-with-self objects (:id new-shape)))
@@ -65,7 +60,7 @@
      (fn [changes touched-shape]
        (let [path (generate-path "" orig-objects (:id original-shape) touched-shape)
              related-shape  (get new-path-map path)
-             orig-ref-shape (ctf/get-ref-shape data orig-comp touched-shape)]
+             orig-ref-shape (ctf/find-ref-shape nil container libraries touched-shape)]
          (if related-shape
            (cll/update-attrs-on-switch
             changes related-shape touched-shape new-shape original-shape orig-ref-shape container)
