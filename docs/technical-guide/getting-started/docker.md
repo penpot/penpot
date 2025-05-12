@@ -1,5 +1,6 @@
 ---
 title: 1.3  Install with Docker
+desc: This Penpot technical guide covers self-hosting, Docker installation, configuration, updates, backups, and proxy setup with NGINX and Caddy. Try Penpot!
 ---
 
 <p class="advice">

@@ -1,5 +1,7 @@
 ---
 layout: layouts/plugins-no-sidebar.njk
+title: Beta changelog
+desc: See the Penpot plugin API changelog for version 1.0! Find breaking changes, deprecations, new features, and updated documentation. Try Penpot for free.
 ---
 
 # Beta changelog
