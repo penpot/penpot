@@ -9,7 +9,6 @@
   (:require
    ["@penpot/mousetrap$default" :as mousetrap]
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.config :as cf]
@@ -194,5 +193,5 @@
 
     ptk/EffectEvent
     (effect [_ state _]
-      (let [[key shortcuts] (last (:shortcuts state))]
+      (let [[_key shortcuts] (last (:shortcuts state))]
         (reset! shortcuts)))))
