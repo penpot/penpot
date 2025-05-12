@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
    [app.main.ui.ds.controls.utilities.label :refer [label*]]
+   [app.main.ui.workspace.tokens.components.controls.input-token-color-bullet :refer [input-token-color-bullet*]]
    [rumext.v2 :as mf]))
 
 (def ^:private schema::input-tokens-value
@@ -19,15 +20,25 @@
    [:placeholder {:optional true} :string]
    [:value {:optional true} [:maybe :string]]
    [:class {:optional true} :string]
+   [:color {:optional true} [:maybe :string]]
+   [:display-colorpicker {:optional true} fn?]
    [:error {:optional true} :boolean]])
+
 
 (mf/defc input-tokens-value*
   {::mf/props :obj
    ::mf/forward-ref true
    ::mf/schema schema::input-tokens-value}
-  [{:keys [class label placeholder error value children] :rest props} ref]
+  [{:keys [class label placeholder error value color display-colorpicker] :rest props} ref]
   (let [id (mf/use-id)
         input-ref (mf/use-ref)
+        swatch
+        (when color
+          (mf/html [:> input-token-color-bullet*
+                    {:color color
+                     :class (stl/css :slot-start)
+                     :on-click display-colorpicker}]))
+
         props (mf/spread-props props {:id id
                                       :type "text"
                                       :class (stl/css :input)
@@ -35,11 +46,9 @@
                                       :value (d/nilv value "")
                                       :variant "comfortable"
                                       :hint-type (when error "error")
+                                      :slot-start swatch
                                       :ref (or ref input-ref)})]
     [:div {:class (dm/str class " " (stl/css-case :wrapper true
                                                   :input-error error))}
      [:> label* {:for id} label]
-     [:div {:class (stl/css :input-wrapper)}
-      (when (some? children)
-        [:div {:class (stl/css :input-swatch)} children])
-      [:> input-field* props]]]))
+     [:> input-field* props]]))
