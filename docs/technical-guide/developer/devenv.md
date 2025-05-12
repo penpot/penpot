@@ -78,24 +78,25 @@ connect to penpot by browsing to http://localhost:3449 .
 ### Frontend
 
 The frontend build process is located on the tmux **window 0** and
-**window 1**. On the **window 0** we have the gulp process responsible
-of watching and building styles, fonts, icon-spreads and templates.
+**window 1**. On **window 0** we have the gulp process responsible
+for watching and building styles, fonts, icon-spreads and templates.
 
-On the **window 1** we can found the **shadow-cljs** process that is
-responsible on watch and build frontend clojurescript code.
+On **window 1** we can find the **shadow-cljs** process that is
+responsible for watching and building frontend clojurescript code.
 
-Additionally to the watch process you probably want to be able open a REPL
-process on the frontend application, for this case you can split the window
-and execute this:
+Additionally to the watch process you probably want to be able to open a REPL
+process on the frontend application. In order to do this you can split the
+window and execute:
 
 ```bash
+cd penpot/frontend
 npx shadow-cljs cljs-repl main
 ```
 
 ### Storybook
 
 The storybook local server is started on tmux **window 2** and will listen
-for changes in the styles, components or stories defined in the folders 
+for changes in the styles, components or stories defined in the folders
 under the design system namespace: `app.main.ui.ds`.
 
 You can open the broser on http://localhost:6006/ to see it.
