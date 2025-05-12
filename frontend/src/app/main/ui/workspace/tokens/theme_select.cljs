@@ -11,7 +11,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
-   [app.main.data.tokens :as wdt]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -31,7 +31,7 @@
                  selected? (get active-theme-paths theme-id)
                  select-theme (fn [e]
                                 (dom/stop-propagation e)
-                                (st/emit! (wdt/toggle-token-theme-active? group name))
+                                (st/emit! (dwtl/toggle-token-theme-active? group name))
                                 (on-close))]]
        [:li {:key theme-id
              :role "option"

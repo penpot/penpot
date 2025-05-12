@@ -714,24 +714,25 @@
   width: 100%;
   display: flex;
   gap: var(--sp-xs);
-}
-
-.variant-property-name-bg {
-  border-radius: $br-8;
-  background-color: var(--assets-item-background-color);
+  padding-right: var(--sp-xxs);
 }
 
 .variant-property-name {
   color: var(--color-foreground-primary);
-
+  height: var(--sp-xxxl);
   width: $s-104;
 
   display: flex;
   align-items: center;
   justify-content: center;
-  height: var(--sp-xxxl);
 
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.variant-property-name-wrapper {
+  display: flex;
+  flex: 0 0 auto;
+  width: $s-104;
 }

@@ -620,13 +620,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"css-tree@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "css-tree@npm:3.0.0"
+"css-tree@npm:^3.1.0":
+  version: 3.1.0
+  resolution: "css-tree@npm:3.1.0"
   dependencies:
-    mdn-data: "npm:2.10.0"
+    mdn-data: "npm:2.12.2"
     source-map-js: "npm:^1.0.1"
-  checksum: 10c0/43d44fdf7004ae91d73d486f17894fef77efa33747a6752b9241cf0f5fb47fabc16ec34a96a993651d9014dfdeee803d7c5fcd3548214252ee19f4e5c98999b2
+  checksum: 10c0/b5715852c2f397c715ca00d56ec53fc83ea596295ae112eb1ba6a1bda3b31086380e596b1d8c4b980fe6da09e7d0fc99c64d5bb7313030dd0fba9c1415f30979
   languageName: node
   linkType: hard
 
@@ -898,7 +898,7 @@ __metadata:
     raw-body: "npm:^3.0.0"
     shadow-cljs: "npm:2.28.20"
     source-map-support: "npm:^0.5.21"
-    svgo: "penpot/svgo#v3"
+    svgo: "penpot/svgo#v3.1"
     xml-js: "npm:^1.6.11"
     xregexp: "npm:^5.1.1"
   languageName: unknown
@@ -1383,10 +1383,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mdn-data@npm:2.10.0":
-  version: 2.10.0
-  resolution: "mdn-data@npm:2.10.0"
-  checksum: 10c0/f6f1a6a6eb092bab250d06f6f6c7cb1733a77a17e7119aac829ad67d4322bbf6a30df3c6d88686e71942e66bd49274b2ddfede22a1d3df0d6c49a56fbd09eb7c
+"mdn-data@npm:2.12.2":
+  version: 2.12.2
+  resolution: "mdn-data@npm:2.12.2"
+  checksum: 10c0/b22443b71d70f72ccc3c6ba1608035431a8fc18c3c8fc53523f06d20e05c2ac10f9b53092759a2ca85cf02f0d37036f310b581ce03e7b99ac74d388ef8152ade
   languageName: node
   linkType: hard
 
@@ -2286,16 +2286,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svgo@penpot/svgo#v3":
+"svgo@penpot/svgo#v3.1":
   version: 4.0.0
-  resolution: "svgo@https://github.com/penpot/svgo.git#commit=71c0db44c3c2665f2ffc0c4c5383acaebd5c524f"
+  resolution: "svgo@https://github.com/penpot/svgo.git#commit=a46262c12c0d967708395972c374eb2adead4180"
   dependencies:
     "@trysound/sax": "npm:0.2.0"
     css-select: "npm:^5.1.0"
-    css-tree: "npm:^3.0.0"
+    css-tree: "npm:^3.1.0"
     csso: "npm:^5.0.5"
     lodash: "npm:^4.17.21"
-  checksum: 10c0/642c583372a610e484382cbf8a8fe28256dd354598d2e65ade2a3a63bf841b4d3dab4106f929f183ae3610007db2fc1413e82acc23793fe1a2e882bc923acc72
+  checksum: 10c0/87a51a0cd1168a31c07ddfa9ffa544d0cad1412b3549dc20146143a179c66e36420a88ae40221cdb23146775876d684b47972663b08b3f62335eb4f98773677e
   languageName: node
   linkType: hard
 

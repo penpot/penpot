@@ -85,7 +85,7 @@
    & {:keys [component-params root-params child-params]}]
   ;; Generated shape tree:
   ;; {:root-label} [:name Frame1]    # [Component :component-label]
-  ;;     :child-label [:name Rect1]  
+  ;;     :child-label [:name Rect1]
   (-> file
       (add-frame-with-child root-label child-label :frame-params root-params :child-params child-params)
       (thc/make-component component-label root-label component-params)))
@@ -95,7 +95,7 @@
    & {:keys [component-params main-root-params main-child-params copy-root-params]}]
   ;; Generated shape tree:
   ;; {:main-root-label} [:name Frame1]       # [Component :component-label]
-  ;;     :main-child-label [:name Rect1]     
+  ;;     :main-child-label [:name Rect1]
   ;;
   ;; :copy-root-label [:name Frame1]         #--> [Component :component-label] :main-root-label
   ;;     <no-label> [:name Rect1]            ---> :main-child-label
@@ -113,9 +113,9 @@
    & {:keys [component-params root-params child-params-list]}]
   ;; Generated shape tree:
   ;; {:root-label} [:name Frame1]            # [Component :component-label]
-  ;;     :child1-label [:name Rect1]         
-  ;;     :child2-label [:name Rect2]         
-  ;;     :child3-label [:name Rect3]         
+  ;;     :child1-label [:name Rect1]
+  ;;     :child2-label [:name Rect2]
+  ;;     :child3-label [:name Rect3]
   (as-> file $
     (add-frame $ root-label root-params)
     (reduce (fn [file [index [label params]]]
@@ -134,9 +134,9 @@
    & {:keys [component-params main-root-params main-child-params-list copy-root-params]}]
   ;; Generated shape tree:
   ;;  {:root-label} [:name Frame1]            # [Component :component-label]
-  ;;      :child1-label [:name Rect1]         
-  ;;      :child2-label [:name Rect2]         
-  ;;      :child3-label [:name Rect3]         
+  ;;      :child1-label [:name Rect1]
+  ;;      :child2-label [:name Rect2]
+  ;;      :child3-label [:name Rect3]
   ;;
   ;;  :copy-root-label [:name Frame1]         #--> [Component :component-label] :root-label
   ;;      <no-label> [:name Rect1]            ---> :child1-label
@@ -156,7 +156,7 @@
    & {:keys [component1-params root1-params main1-child-params component2-params main2-root-params nested-head-params]}]
   ;; Generated shape tree:
   ;; {:main1-root-label} [:name Frame1]      # [Component :component1-label]
-  ;;     :main1-child-label [:name Rect1]    
+  ;;     :main1-child-label [:name Rect1]
   ;;
   ;; {:main2-root-label} [:name Frame2]      # [Component :component2-label]
   ;;     :nested-head-label [:name Frame1]   @--> [Component :component1-label] :main1-root-label
@@ -183,7 +183,7 @@
    & {:keys [component1-params root1-params main1-child-params component2-params main2-root-params nested-head-params copy2-root-params]}]
   ;; Generated shape tree:
   ;; {:main1-root-label} [:name Frame1]      # [Component :component1-label]
-  ;;     :main1-child-label [:name Rect1]    
+  ;;     :main1-child-label [:name Rect1]
   ;;
   ;; {:main2-root-label} [:name Frame2]      # [Component :component2-label]
   ;;     :nested-head-label [:name Frame1]   @--> [Component :component1-label] :main1-root-label
@@ -336,8 +336,7 @@
                        file
                        {file-id file}
                        (ctn/make-container container :page)
-                       (:id shape)
-                       true))
+                       (:id shape)))
         file' (thf/apply-changes file changes)]
     (if propagate-fn
       (propagate-fn file')
@@ -361,7 +360,7 @@
                                                 (:objects page)
                                                 #{(-> (ths/get-shape file shape-tag :page-label page-label)
                                                       :id)}
-                                                {:components-v2 true})
+                                                {})
         file' (thf/apply-changes file changes)]
     (if propagate-fn
       (propagate-fn file')
@@ -380,7 +379,7 @@
                                             (gpt/point 0 0)         ;; delta
                                             {(:id  file) file}      ;; libraries
                                             (:data file)            ;; library-data
-                                            (:id file))             ;; file-id 
+                                            (:id file))             ;; file-id
             (cll/generate-duplicate-changes-update-indices (:objects page)  ;; objects
                                                            #{(:id shape)}))
         file' (thf/apply-changes file changes)]

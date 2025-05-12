@@ -347,7 +347,11 @@
                move-p nil
                content (seq content)]
           (if content
-            (let [command (first content)
+            (let [last-p (last content)
+                  content (if (= :move-to (:command last-p))
+                            (butlast content)
+                            content)
+                  command (first content)
                   to-p    (command->point command)
 
                   [from-p move-p command-pts]

@@ -33,16 +33,16 @@
     :name "Source Sans Pro"
     :family "sourcesanspro"
     :variants
-    [{:id "200" :name "200" :weight "200" :style "normal" :suffix "extralight"}
-     {:id "200italic" :name "200 (italic)" :weight "200" :style "italic" :suffix "extralightitalic"}
-     {:id "300" :name "300" :weight "300" :style "normal" :suffix "light"}
-     {:id "300italic" :name "300 (italic)"  :weight "300" :style "italic" :suffix "lightitalic"}
-     {:id "regular" :name "regular" :weight "400" :style "normal"}
-     {:id "italic" :name "italic" :weight "400" :style "italic"}
-     {:id "bold" :name "bold" :weight "bold" :style "normal"}
-     {:id "bolditalic" :name "bold (italic)" :weight "bold" :style "italic"}
-     {:id "black" :name "black" :weight "900" :style "normal"}
-     {:id "blackitalic" :name "black (italic)" :weight "900" :style "italic"}]}])
+    [{:id "200" :name "200" :weight "200" :style "normal" :suffix "extralight" :ttf-url "sourcesanspro-extralight.ttf"}
+     {:id "200italic" :name "200 (italic)" :weight "200" :style "italic" :suffix "extralightitalic" :ttf-url "sourcesanspro-extralightitalic.ttf"}
+     {:id "300" :name "300" :weight "300" :style "normal" :suffix "light" :ttf-url "sourcesanspro-light.ttf"}
+     {:id "300italic" :name "300 (italic)"  :weight "300" :style "italic" :suffix "lightitalic" :ttf-url "sourcesanspro-lightitalic.ttf"}
+     {:id "regular" :name "regular" :weight "400" :style "normal" :ttf-url "sourcesanspro-regular.ttf"}
+     {:id "italic" :name "italic" :weight "400" :style "italic" :ttf-url "sourcesanspro-italic.ttf"}
+     {:id "bold" :name "bold" :weight "bold" :style "normal" :ttf-url "sourcesanspro-bold.ttf"}
+     {:id "bolditalic" :name "bold (italic)" :weight "bold" :style "italic" :ttf-url "sourcesanspro-bolditalic.ttf"}
+     {:id "black" :name "black" :weight "900" :style "normal" :ttf-url "sourcesanspro-black.ttf"}
+     {:id "blackitalic" :name "black (italic)" :weight "900" :style "italic" :ttf-url "sourcesanspro-blackitalic.ttf"}]}])
 
 (defonce fontsdb (l/atom {}))
 (defonce fonts (l/atom []))

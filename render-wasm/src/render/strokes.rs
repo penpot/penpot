@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::math::{Matrix, Point, Rect};
 
 use crate::shapes::{Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, Type};
-use skia_safe::{self as skia, RRect};
+use skia_safe::{self as skia, ImageFilter, RRect};
 
 use super::{RenderState, SurfaceId};
 
@@ -15,13 +15,19 @@ fn draw_stroke_on_rect(
     corners: &Option<Corners>,
     svg_attrs: &HashMap<String, String>,
     scale: f32,
+    shadow: Option<&ImageFilter>,
+    antialias: bool,
 ) {
     // Draw the different kind of strokes for a rect is straightforward, we just need apply a stroke to:
     // - The same rect if it's a center stroke
     // - A bigger rect if it's an outer stroke
     // - A smaller rect if it's an outer stroke
     let stroke_rect = stroke.outer_rect(rect);
-    let paint = stroke.to_paint(selrect, svg_attrs, scale);
+    let mut paint = stroke.to_paint(selrect, svg_attrs, scale, antialias);
+
+    if let Some(filter) = shadow {
+        paint.set_image_filter(filter.clone());
+    }
 
     match corners {
         Some(radii) => {
@@ -42,16 +48,24 @@ fn draw_stroke_on_circle(
     selrect: &Rect,
     svg_attrs: &HashMap<String, String>,
     scale: f32,
+    shadow: Option<&ImageFilter>,
+    antialias: bool,
 ) {
     // Draw the different kind of strokes for an oval is straightforward, we just need apply a stroke to:
     // - The same oval if it's a center stroke
     // - A bigger oval if it's an outer stroke
     // - A smaller oval if it's an outer stroke
     let stroke_rect = stroke.outer_rect(rect);
-    canvas.draw_oval(&stroke_rect, &stroke.to_paint(selrect, svg_attrs, scale));
+    let mut paint = stroke.to_paint(selrect, svg_attrs, scale, antialias);
+
+    if let Some(filter) = shadow {
+        paint.set_image_filter(filter.clone());
+    }
+
+    canvas.draw_oval(&stroke_rect, &paint);
 }
 
-fn draw_stroke_on_path(
+pub fn draw_stroke_on_path(
     canvas: &skia::Canvas,
     stroke: &Stroke,
     path: &Path,
@@ -59,36 +73,45 @@ fn draw_stroke_on_path(
     path_transform: Option<&Matrix>,
     svg_attrs: &HashMap<String, String>,
     scale: f32,
+    shadow: Option<&ImageFilter>,
+    antialias: bool,
 ) {
     let mut skia_path = path.to_skia_path();
     skia_path.transform(path_transform.unwrap());
 
     let is_open = path.is_open();
-    let paint_stroke = stroke.to_stroked_paint(is_open, selrect, svg_attrs, scale);
+    let mut paint: skia_safe::Handle<_> =
+        stroke.to_stroked_paint(path.is_open(), selrect, svg_attrs, scale, antialias);
+
+    if let Some(filter) = shadow {
+        paint.set_image_filter(filter.clone());
+    }
+
     // Draw the different kind of strokes for a path requires different strategies:
     match stroke.render_kind(is_open) {
         // For inner stroke we draw a center stroke (with double width) and clip to the original path (that way the extra outer stroke is removed)
         StrokeKind::InnerStroke => {
-            canvas.clip_path(&skia_path, skia::ClipOp::Intersect, true);
-            canvas.draw_path(&skia_path, &paint_stroke);
+            canvas.save(); // As we are using clear for surfaces we use save and restore here to still be able to clean the full surface
+            canvas.clip_path(&skia_path, skia::ClipOp::Intersect, antialias);
+            canvas.draw_path(&skia_path, &paint);
+            canvas.restore();
         }
         // For center stroke we don't need to do anything extra
         StrokeKind::CenterStroke => {
-            canvas.draw_path(&skia_path, &paint_stroke);
+            canvas.draw_path(&skia_path, &paint);
         }
         // For outer stroke we draw a center stroke (with double width) and use another path with blend mode clear to remove the inner stroke added
         StrokeKind::OuterStroke => {
-            let mut paint = skia::Paint::default();
-            paint.set_blend_mode(skia::BlendMode::SrcOver);
-            paint.set_anti_alias(true);
-            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+            let mut outer_paint = skia::Paint::default();
+            outer_paint.set_blend_mode(skia::BlendMode::SrcOver);
+            outer_paint.set_anti_alias(antialias);
+            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&outer_paint);
             canvas.save_layer(&layer_rec);
-
-            canvas.draw_path(&skia_path, &paint_stroke);
+            canvas.draw_path(&skia_path, &paint);
 
             let mut clear_paint = skia::Paint::default();
             clear_paint.set_blend_mode(skia::BlendMode::Clear);
-            clear_paint.set_anti_alias(true);
+            clear_paint.set_anti_alias(antialias);
             canvas.draw_path(&skia_path, &clear_paint);
 
             canvas.restore();
@@ -103,6 +126,7 @@ fn draw_stroke_on_path(
         is_open,
         svg_attrs,
         scale,
+        antialias,
     );
 }
 
@@ -152,7 +176,8 @@ fn handle_stroke_caps(
     canvas: &skia::Canvas,
     is_open: bool,
     svg_attrs: &HashMap<String, String>,
-    dpr_scale: f32,
+    scale: f32,
+    antialias: bool,
 ) {
     let points_count = path.count_points();
     let mut points = vec![Point::default(); points_count];
@@ -163,7 +188,8 @@ fn handle_stroke_caps(
         let first_point = points.first().unwrap();
         let last_point = points.last().unwrap();
 
-        let mut paint_stroke = stroke.to_stroked_paint(is_open, selrect, svg_attrs, dpr_scale);
+        let mut paint_stroke =
+            stroke.to_stroked_paint(is_open, selrect, svg_attrs, scale, antialias);
 
         handle_stroke_cap(
             canvas,
@@ -323,6 +349,7 @@ fn draw_image_stroke_in_container(
     shape: &Shape,
     stroke: &Stroke,
     image_fill: &ImageFill,
+    antialias: bool,
 ) {
     let image = render_state.images.get(&image_fill.id());
     if image.is_none() {
@@ -330,16 +357,16 @@ fn draw_image_stroke_in_container(
     }
 
     let size = image_fill.size();
-    let canvas = render_state.surfaces.canvas(SurfaceId::Fills);
+    let scale = render_state.get_scale();
+    let canvas = render_state.surfaces.canvas(SurfaceId::Strokes);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
     let svg_attrs = &shape.svg_attrs;
-    let dpr_scale = render_state.viewbox.zoom * render_state.options.dpr();
 
     // Save canvas and layer state
     let mut pb = skia::Paint::default();
     pb.set_blend_mode(skia::BlendMode::SrcOver);
-    pb.set_anti_alias(true);
+    pb.set_anti_alias(antialias);
     let layer_rec = skia::canvas::SaveLayerRec::default().paint(&pb);
     canvas.save_layer(&layer_rec);
 
@@ -356,12 +383,21 @@ fn draw_image_stroke_in_container(
                 &outer_rect,
                 &shape_type.corners(),
                 svg_attrs,
-                dpr_scale,
+                scale,
+                None,
+                antialias,
             );
         }
-        Type::Circle => {
-            draw_stroke_on_circle(canvas, stroke, container, &outer_rect, svg_attrs, dpr_scale)
-        }
+        Type::Circle => draw_stroke_on_circle(
+            canvas,
+            stroke,
+            container,
+            &outer_rect,
+            svg_attrs,
+            scale,
+            None,
+            antialias,
+        ),
 
         shape_type @ (Type::Path(_) | Type::Bool(_)) => {
             if let Some(p) = shape_type.path() {
@@ -371,20 +407,21 @@ fn draw_image_stroke_in_container(
                 let stroke_kind = stroke.render_kind(p.is_open());
                 match stroke_kind {
                     StrokeKind::InnerStroke => {
-                        canvas.clip_path(&path, skia::ClipOp::Intersect, true);
+                        canvas.clip_path(&path, skia::ClipOp::Intersect, antialias);
                     }
                     StrokeKind::CenterStroke => {}
                     StrokeKind::OuterStroke => {
-                        canvas.clip_path(&path, skia::ClipOp::Difference, true);
+                        canvas.clip_path(&path, skia::ClipOp::Difference, antialias);
                     }
                 }
                 let is_open = p.is_open();
-                let mut paint = stroke.to_stroked_paint(is_open, &outer_rect, svg_attrs, dpr_scale);
+                let mut paint =
+                    stroke.to_stroked_paint(is_open, &outer_rect, svg_attrs, scale, antialias);
                 canvas.draw_path(&path, &paint);
-                canvas.restore();
                 if stroke.render_kind(is_open) == StrokeKind::OuterStroke {
-                    // Small extra inner stroke to overlap with the fill and avoid unnecesary artifacts
-                    paint.set_stroke_width(1. / dpr_scale);
+                    // Small extra inner stroke to overlap with the fill
+                    // and avoid unnecesary artifacts.
+                    paint.set_stroke_width(1. / scale);
                     canvas.draw_path(&path, &paint);
                 }
                 handle_stroke_caps(
@@ -394,23 +431,33 @@ fn draw_image_stroke_in_container(
                     canvas,
                     is_open,
                     svg_attrs,
-                    dpr_scale,
+                    scale,
+                    antialias,
                 );
+                canvas.restore();
             }
         }
 
         _ => unreachable!("This shape should not have strokes"),
     }
 
-    // Draw the image. We are using now the SrcIn blend mode, so the rendered piece of image will the area of the stroke over the image.
+    // Draw the image. We are using now the SrcIn blend mode,
+    // so the rendered piece of image will the area of the
+    // stroke over the image.
     let mut image_paint = skia::Paint::default();
     image_paint.set_blend_mode(skia::BlendMode::SrcIn);
-    image_paint.set_anti_alias(true);
+    image_paint.set_anti_alias(antialias);
 
     // Compute scaled rect and clip to it
     let dest_rect = calculate_scaled_rect(size, container, stroke.delta());
-    canvas.clip_rect(dest_rect, skia::ClipOp::Intersect, true);
-    canvas.draw_image_rect(image.unwrap(), None, dest_rect, &image_paint);
+    canvas.clip_rect(dest_rect, skia::ClipOp::Intersect, antialias);
+    canvas.draw_image_rect_with_sampling_options(
+        image.unwrap(),
+        None,
+        dest_rect,
+        render_state.sampling_options,
+        &image_paint,
+    );
 
     // Clear outer stroke for paths if necessary. When adding an outer stroke we need to empty the stroke added too in the inner area.
     if let Type::Path(p) = &shape.shape_type {
@@ -419,7 +466,7 @@ fn draw_image_stroke_in_container(
             path.transform(&path_transform.unwrap());
             let mut clear_paint = skia::Paint::default();
             clear_paint.set_blend_mode(skia::BlendMode::Clear);
-            clear_paint.set_anti_alias(true);
+            clear_paint.set_anti_alias(antialias);
             canvas.draw_path(&path, &clear_paint);
         }
     }
@@ -431,15 +478,26 @@ fn draw_image_stroke_in_container(
 /**
  * This SHOULD be the only public function in this module.
  */
-pub fn render(render_state: &mut RenderState, shape: &Shape, stroke: &Stroke) {
-    let canvas = render_state.surfaces.canvas(SurfaceId::Strokes);
-    let dpr_scale = render_state.viewbox.zoom * render_state.options.dpr();
+pub fn render(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    stroke: &Stroke,
+    surface_id: Option<SurfaceId>,
+    shadow: Option<&ImageFilter>,
+    antialias: bool,
+) {
+    let scale = render_state.get_scale();
+    let canvas = render_state
+        .surfaces
+        .canvas(surface_id.unwrap_or(SurfaceId::Strokes));
     let selrect = shape.selrect;
     let path_transform = shape.to_path_transform();
     let svg_attrs = &shape.svg_attrs;
 
-    if let Fill::Image(image_fill) = &stroke.fill {
-        draw_image_stroke_in_container(render_state, shape, stroke, image_fill);
+    if !shadow.is_some() && matches!(stroke.fill, Fill::Image(_)) {
+        if let Fill::Image(image_fill) = &stroke.fill {
+            draw_image_stroke_in_container(render_state, shape, stroke, image_fill, antialias);
+        }
     } else {
         match &shape.shape_type {
             shape_type @ (Type::Rect(_) | Type::Frame(_)) => {
@@ -450,15 +508,16 @@ pub fn render(render_state: &mut RenderState, shape: &Shape, stroke: &Stroke) {
                     &selrect,
                     &shape_type.corners(),
                     svg_attrs,
-                    dpr_scale,
+                    scale,
+                    shadow,
+                    antialias,
                 );
             }
-            Type::Circle => {
-                draw_stroke_on_circle(canvas, stroke, &selrect, &selrect, &svg_attrs, dpr_scale)
-            }
+            Type::Circle => draw_stroke_on_circle(
+                canvas, stroke, &selrect, &selrect, svg_attrs, scale, shadow, antialias,
+            ),
             shape_type @ (Type::Path(_) | Type::Bool(_)) => {
                 if let Some(path) = shape_type.path() {
-                    let svg_attrs = &shape.svg_attrs;
                     draw_stroke_on_path(
                         canvas,
                         stroke,
@@ -466,7 +525,9 @@ pub fn render(render_state: &mut RenderState, shape: &Shape, stroke: &Stroke) {
                         &selrect,
                         path_transform.as_ref(),
                         svg_attrs,
-                        dpr_scale,
+                        scale,
+                        shadow,
+                        antialias,
                     );
                 }
             }

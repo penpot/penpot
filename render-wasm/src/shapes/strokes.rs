@@ -116,8 +116,8 @@ impl Stroke {
     pub fn delta(&self) -> f32 {
         match self.kind {
             StrokeKind::InnerStroke => 0.,
-            StrokeKind::CenterStroke => self.width / 2.,
-            StrokeKind::OuterStroke => self.width,
+            StrokeKind::CenterStroke => self.width,
+            StrokeKind::OuterStroke => self.width * 2.,
         }
     }
 
@@ -160,8 +160,9 @@ impl Stroke {
         rect: &Rect,
         svg_attrs: &HashMap<String, String>,
         scale: f32,
+        antialias: bool,
     ) -> skia::Paint {
-        let mut paint = self.fill.to_paint(rect);
+        let mut paint = self.fill.to_paint(rect, antialias);
         paint.set_style(skia::PaintStyle::Stroke);
 
         let width = match self.kind {
@@ -171,7 +172,7 @@ impl Stroke {
         };
 
         paint.set_stroke_width(width);
-        paint.set_anti_alias(true);
+        paint.set_anti_alias(antialias);
 
         if let Some("round") = svg_attrs.get("stroke-linecap").map(String::as_str) {
             paint.set_stroke_cap(skia::paint::Cap::Round);
@@ -225,18 +226,19 @@ impl Stroke {
         rect: &Rect,
         svg_attrs: &HashMap<String, String>,
         scale: f32,
+        antialias: bool,
     ) -> skia::Paint {
-        let mut paint = self.to_paint(rect, svg_attrs, scale);
+        let mut paint = self.to_paint(rect, svg_attrs, scale, antialias);
         match self.render_kind(is_open) {
             StrokeKind::InnerStroke => {
                 paint.set_stroke_width(2. * paint.stroke_width());
-                paint
             }
-            StrokeKind::CenterStroke => paint,
+            StrokeKind::CenterStroke => {}
             StrokeKind::OuterStroke => {
                 paint.set_stroke_width(2. * paint.stroke_width());
-                paint
             }
         }
+
+        paint
     }
 }

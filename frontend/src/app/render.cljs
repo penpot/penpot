@@ -143,17 +143,7 @@
         nil)
 
       (do
-        (st/emit! (ptk/reify ::initialize-render-objects
-                    ptk/WatchEvent
-                    (watch [_ _ stream]
-                      (rx/merge
-                       (rx/of (fetch-team :file-id file-id))
-
-                       (->> stream
-                            (rx/filter (ptk/type? ::team-fetched))
-                            (rx/observe-on :async)
-                            (rx/map (constantly params))
-                            (rx/map fetch-objects-bundle))))))
+        (st/emit! (fetch-objects-bundle :file-id file-id :page-id page-id :share-id share-id :object-id object-id))
 
         (if (uuid? object-id)
           (mf/html

@@ -19,6 +19,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.editable-label :refer [editable-label]]
@@ -54,7 +55,7 @@
   {::mf/wrap-props false}
   [{:keys [component renaming listing-thumbs? selected
            file-id on-asset-click on-context-menu on-drag-start do-rename
-           cancel-rename selected-full selected-paths is-local]}]
+           cancel-rename selected-full selected-paths is-local num-variants]}]
 
   (let [item-ref       (mf/use-ref)
 
@@ -95,7 +96,7 @@
          (fn [event]
            (when (and is-local (:is-local @drag-data*))
              (cmm/on-drop-asset event component dragging* selected selected-full
-                                selected-paths dwl/rename-component-and-main-instance))))
+                                selected-paths dwv/rename-comp-or-variant-and-main))))
 
         on-drag-enter
         (mf/use-fn
@@ -129,7 +130,8 @@
     [:div {:ref item-ref
            :class (stl/css-case :selected (contains? selected (:id component))
                                 :grid-cell listing-thumbs?
-                                :enum-item (not listing-thumbs?))
+                                :enum-item (not listing-thumbs?)
+                                :enum-item-with-mark (and (not listing-thumbs?) (ctc/is-variant? component)))
            :id (dm/str "component-shape-id-" (:id component))
            :draggable (and (not read-only?) (not renaming?))
            :on-click on-component-click
@@ -166,13 +168,16 @@
           :root-shape root-shape
           :component component
           :container container
-          :is-hidden (not visible?)}]])]))
+          :is-hidden (not visible?)}]
+        (when (ctc/is-variant? component)
+          [:span {:class (stl/css-case :variant-mark-cell listing-thumbs? :variant-mark true :component-icon true)
+                  :title (tr "workspace.assets.components.num-variants" num-variants)} i/variant])])]))
 
 (mf/defc components-group
   {::mf/wrap-props false}
   [{:keys [file-id prefix groups open-groups force-open? renaming listing-thumbs? selected on-asset-click
            on-drag-start do-rename cancel-rename on-rename-group on-group on-ungroup on-context-menu
-           selected-full is-local]}]
+           selected-full is-local count-variants]}]
 
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
                          false
@@ -205,7 +210,7 @@
          (mf/deps dragging* prefix selected-paths selected-full is-local drag-data*)
          (fn [event]
            (when (and is-local (:is-local @drag-data*))
-             (cmm/on-drop-asset-group event dragging* prefix selected-paths selected-full dwl/rename-component-and-main-instance))))]
+             (cmm/on-drop-asset-group event dragging* prefix selected-paths selected-full dwv/rename-comp-or-variant-and-main))))]
 
     [:div {:class (stl/css :component-group)
            :on-drag-enter on-drag-enter
@@ -219,7 +224,6 @@
        :group-open? group-open?
        :on-rename on-rename-group
        :on-ungroup on-ungroup}]
-
 
      (when group-open?
        [:*
@@ -257,7 +261,8 @@
                :on-group on-group
                :do-rename do-rename
                :cancel-rename cancel-rename
-               :is-local is-local}])])
+               :is-local is-local
+               :num-variants (count-variants (:variant-id component))}])])
 
         (for [[path-item content] groups]
           (when-not (empty? path-item)
@@ -278,13 +283,14 @@
                                   :on-ungroup on-ungroup
                                   :on-context-menu on-context-menu
                                   :selected-full selected-full
-                                  :is-local is-local}]))])]))
+                                  :is-local is-local
+                                  :count-variants count-variants}]))])]))
 
 (mf/defc components-section
   {::mf/wrap-props false}
   [{:keys [file-id is-local components listing-thumbs? open? force-open?
            reverse-sort? selected on-asset-click on-assets-delete
-           on-clear-selection open-status-ref]}]
+           on-clear-selection open-status-ref count-variants]}]
 
   (let [input-ref                (mf/use-ref nil)
 
@@ -302,7 +308,6 @@
 
         menu-state               (mf/use-state cmm/initial-context-menu-state)
         read-only?               (mf/use-ctx ctx/workspace-read-only?)
-        components-v2            (mf/use-ctx ctx/components-v2)
         toggle-list-style        (mf/use-ctx cmm/assets-toggle-list-style)
 
         selected                 (:components selected)
@@ -379,7 +384,7 @@
            (swap! state* dissoc :renaming)
            (when (not (str/blank? new-name))
              (st/emit!
-              (dwl/rename-component-and-main-instance current-component-id new-name)))))
+              (dwv/rename-comp-or-variant-and-main current-component-id new-name)))))
 
         on-context-menu
         (mf/use-fn
@@ -408,7 +413,7 @@
                         (filter #(if multi-components?
                                    (contains? selected (:id %))
                                    (= current-component-id (:id %))))
-                        (map #(dwl/rename-component-and-main-instance
+                        (map #(dwv/rename-comp-or-variant-and-main
                                (:id %)
                                (cmm/add-group % group-name)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
@@ -423,7 +428,7 @@
              (run! st/emit!
                    (->> components
                         (filter #(str/starts-with? (:path %) path))
-                        (map #(dwl/rename-component-and-main-instance
+                        (map #(dwv/rename-comp-or-variant-and-main
                                (:id %)
                                (cmm/rename-group % path last-path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
@@ -454,7 +459,7 @@
              (run! st/emit!
                    (->> components
                         (filter #(str/starts-with? (:path %) path))
-                        (map #(dwl/rename-component-and-main-instance (:id %) (cmm/ungroup % path)))))
+                        (map #(dwv/rename-comp-or-variant-and-main (:id %) (cmm/ungroup % path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
         on-drag-start
@@ -515,7 +520,7 @@
                             :title (tr "workspace.assets.grid-view")
                             :id "opt-grid"}]]])
 
-      (when (and components-v2 (not read-only?) is-local)
+      (when (and (not read-only?) is-local)
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.assets.components.add-component")
                           :on-click add-component
@@ -544,7 +549,8 @@
                               :on-ungroup on-ungroup
                               :on-context-menu on-context-menu
                               :selected-full selected-full
-                              :is-local ^boolean is-local}])
+                              :is-local ^boolean is-local
+                              :count-variants count-variants}])
 
       [:& cmm/assets-context-menu
        {:on-close on-close-menu
@@ -554,9 +560,7 @@
                      :id      "assets-rename-component"
                      :handler on-rename})
                   (when (and is-local (not (or multi-assets? read-only? any-variant?)))
-                    {:name    (if components-v2
-                                (tr "workspace.assets.duplicate-main")
-                                (tr "workspace.assets.duplicate"))
+                    {:name    (tr "workspace.assets.duplicate-main")
                      :id     "assets-duplicate-component"
                      :handler on-duplicate})
 
@@ -564,12 +568,12 @@
                     {:name    (tr "workspace.assets.delete")
                      :id      "assets-delete-component"
                      :handler on-delete})
-                  (when (and is-local (not (or multi-assets? read-only? any-variant?)))
+                  (when (and is-local (not (or multi-assets? read-only?)))
                     {:name   (tr "workspace.assets.group")
                      :id     "assets-group-component"
                      :handler on-group})
 
-                  (when (and components-v2 (not multi-assets?))
+                  (when (not multi-assets?)
                     {:name   (tr "workspace.shape.menu.show-main")
                      :id     "assets-show-main-component"
                      :handler on-show-main})]}]]]))

@@ -1,8 +1,8 @@
 use skia_safe as skia;
-use uuid::Uuid;
 
 use crate::mem::SerializableResult;
 use crate::utils::{uuid_from_u32_quartet, uuid_to_u32_quartet};
+use crate::uuid::Uuid;
 use skia::Matrix;
 
 #[derive(PartialEq, Debug, Clone)]
@@ -98,15 +98,74 @@ impl SerializableResult for TransformEntry {
     }
 }
 
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum StructureEntryType {
+    RemoveChild,
+    AddChild,
+}
+
+impl StructureEntryType {
+    pub fn from_u32(value: u32) -> Self {
+        match value {
+            1 => Self::RemoveChild,
+            2 => Self::AddChild,
+            _ => unreachable!(),
+        }
+    }
+}
+
+#[derive(PartialEq, Debug, Clone)]
+#[repr(C)]
+pub struct StructureEntry {
+    pub entry_type: StructureEntryType,
+    pub index: u32,
+    pub parent: Uuid,
+    pub id: Uuid,
+}
+
+impl StructureEntry {
+    pub fn new(entry_type: StructureEntryType, index: u32, parent: Uuid, id: Uuid) -> Self {
+        StructureEntry {
+            entry_type,
+            index,
+            parent,
+            id,
+        }
+    }
+
+    pub fn from_bytes(bytes: [u8; 40]) -> Self {
+        let entry_type = StructureEntryType::from_u32(u32::from_le_bytes([
+            bytes[0], bytes[1], bytes[2], bytes[3],
+        ]));
+
+        let index = u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]);
+
+        let parent = uuid_from_u32_quartet(
+            u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+            u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
+            u32::from_le_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]),
+            u32::from_le_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]),
+        );
+
+        let id = uuid_from_u32_quartet(
+            u32::from_le_bytes([bytes[24], bytes[25], bytes[26], bytes[27]]),
+            u32::from_le_bytes([bytes[28], bytes[29], bytes[30], bytes[31]]),
+            u32::from_le_bytes([bytes[32], bytes[33], bytes[34], bytes[35]]),
+            u32::from_le_bytes([bytes[36], bytes[37], bytes[38], bytes[39]]),
+        );
+
+        StructureEntry::new(entry_type, index, parent, id)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use uuid::uuid;
 
     #[test]
     fn test_serialization() {
         let entry = TransformEntry::new(
-            uuid!("550e8400-e29b-41d4-a716-446655440000"),
+            Uuid::new_v4(),
             Matrix::new_all(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.0, 0.0, 1.0),
         );
 

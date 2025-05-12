@@ -5,6 +5,8 @@ pub type Matrix = skia::Matrix;
 pub type Vector = skia::Vector;
 pub type Point = skia::Point;
 
+const THRESHOLD: f32 = 0.001;
+
 pub trait VectorExt {
     fn new_points(a: &Point, b: &Point) -> Vector;
 }
@@ -16,7 +18,20 @@ impl VectorExt for Vector {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+pub fn is_close_to(current: f32, value: f32) -> bool {
+    (current - value).abs() <= THRESHOLD
+}
+
+pub fn identitish(m: Matrix) -> bool {
+    is_close_to(m.scale_x(), 1.0)
+        && is_close_to(m.scale_y(), 1.0)
+        && is_close_to(m.translate_x(), 0.0)
+        && is_close_to(m.translate_y(), 0.0)
+        && is_close_to(m.skew_x(), 0.0)
+        && is_close_to(m.skew_y(), 0.0)
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Bounds {
     pub nw: Point,
     pub ne: Point,
@@ -95,9 +110,9 @@ impl Bounds {
         self.sw = mtx.map_point(self.sw);
     }
 
-    // pub fn box_bounds(&self, other: &Self) -> Option<Self> {
-    //     self.from_points(other.points())
-    // }
+    pub fn box_bounds(&self, other: &Self) -> Option<Self> {
+        self.from_points(other.points())
+    }
 
     pub fn from_points(&self, points: Vec<Point>) -> Option<Self> {
         let hv = self.horizontal_vec();
@@ -279,6 +294,14 @@ impl Bounds {
     pub fn flip_y(&self) -> bool {
         let m = self.transform_matrix().unwrap_or(Matrix::default());
         m.scale_y() < 0.0
+    }
+
+    pub fn to_rect(&self) -> Rect {
+        let minx = self.nw.x.min(self.ne.x).min(self.sw.x).min(self.se.x);
+        let miny = self.nw.y.min(self.ne.y).min(self.sw.y).min(self.se.y);
+        let maxx = self.nw.x.max(self.ne.x).max(self.sw.x).max(self.se.x);
+        let maxy = self.nw.y.max(self.ne.y).max(self.sw.y).max(self.se.y);
+        Rect::from_ltrb(minx, miny, maxx, maxy)
     }
 }
 

@@ -10,12 +10,15 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
+   [app.common.files.variant :as cfv]
    [app.common.schema :as sm]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -56,7 +59,17 @@
     :instance-head-not-frame
     :misplaced-slot
     :missing-slot
-    :shape-ref-cycle})
+    :shape-ref-cycle
+    :not-a-variant
+    :invalid-variant-id
+    :invalid-variant-properties
+    :variant-not-main
+    :parent-not-variant
+    :variant-bad-name
+    :variant-bad-variant-name
+    :variant-component-bad-name
+    :variant-no-properties
+    :variant-component-bad-id})
 
 (def ^:private schema:error
   [:map {:title "ValidationError"}
@@ -401,6 +414,68 @@
   (check-empty-swap-slot shape file page)
   (run! #(check-shape % file page libraries :context :not-component) (:shapes shape)))
 
+(defn- check-variant-container
+  "Shape is a variant container, so:
+     -all its children should be variants with variant-id equals to the shape-id
+     -all the components should have the same properties
+   "
+  [shape file page]
+  (let [shape-id   (:id shape)
+        shapes     (:shapes shape)
+        children   (map #(ctst/get-shape page %) shapes)
+        prop-names (cfv/extract-properties-names (first children) (:data file))]
+    (doseq [child children]
+      (if (not (ctk/is-variant? child))
+        (report-error :not-a-variant
+                      (str/ffmt "Shape % should be a variant" (:id child))
+                      child file page)
+        (do
+          (when (not= (:variant-id child) shape-id)
+            (report-error :invalid-variant-id
+                          (str/ffmt "Variant % has invalid variant-id %" (:id child) (:variant-id child))
+                          child file page))
+          (when (not= prop-names (cfv/extract-properties-names child (:data file)))
+            (report-error :invalid-variant-properties
+                          (str/ffmt "Variant % has invalid properties %" (:id child) (vec prop-names))
+                          child file page)))))))
+
+(defn- check-variant
+  "Shape is a variant, so
+     -it should be a main component
+     -its parent should be a variant-container
+     -its variant-name is derived from the properties
+     -its name should be tha same as its parent's
+   "
+  [shape file page]
+  (let [parent    (ctst/get-shape page (:parent-id shape))
+        component (ctkl/get-component (:data file) (:component-id shape) true)
+        name      (ctv/properties-to-name (:variant-properties component))]
+    (when-not (ctk/main-instance? shape)
+      (report-error :variant-not-main
+                    (str/ffmt "Variant % is not a main instance" (:id shape))
+                    shape file page))
+    (when-not (ctk/is-variant-container? parent)
+      (report-error :parent-not-variant
+                    (str/ffmt "Variant % has an invalid parent" (:id shape))
+                    shape file page))
+
+    (when-not (= name (:variant-name shape))
+      (report-error :variant-bad-variant-name
+                    (str/ffmt "Variant % has an invalid variant-name" (:id shape))
+                    shape file page))
+    (when-not (= (:name parent) (:name shape))
+      (report-error :variant-bad-name
+                    (str/ffmt "Variant % has an invalid name" (:id shape))
+                    shape file page))
+    (when-not (= (:name parent) (cfh/merge-path-item (:path component) (:name component)))
+      (report-error :variant-component-bad-name
+                    (str/ffmt "Component % has an invalid name" (:id shape))
+                    shape file page))
+    (when-not (= (:variant-id component) (:variant-id shape))
+      (report-error :variant-component-bad-id
+                    (str/ffmt "Variant % has adifferent variant-id than its component" (:id shape))
+                    shape file page))))
+
 (defn- check-shape
   "Validate referential integrity and semantic coherence of
   a shape and all its children. Report all errors found.
@@ -420,6 +495,12 @@
       (check-geometry shape file page)
       (check-parent-children shape file page)
       (check-frame shape file page)
+
+      (when (ctk/is-variant-container? shape)
+        (check-variant-container shape file page))
+
+      (when (ctk/is-variant? shape)
+        (check-variant shape file page))
 
       (if (ctk/instance-head? shape)
         (if (not= :frame (:type shape))
@@ -496,6 +577,24 @@
                     "This deleted component has shapes with shape-ref pointing to self"
                     component file nil :cycles-ids cycles-ids))))
 
+(defn- check-variant-component
+  "Component is a variant, so:
+     -Its main should be a variant
+     -It should have at least one variant property"
+  [component file]
+  (let [component-page (ctf/get-component-page (:data file) component)
+        main-component (if (:deleted component)
+                         (dm/get-in component [:objects (:main-instance-id component)])
+                         (ctst/get-shape component-page (:main-instance-id component)))]
+    (when-not (ctk/is-variant? main-component)
+      (report-error :not-a-variant
+                    (str/ffmt "Shape % should be a variant" (:id main-component))
+                    main-component file component-page))
+    (when (< (count (:variant-properties component)) 1)
+      (report-error :variant-no-properties
+                    (str/ffmt "Component variant % should have properties" (:id main-component))
+                    main-component file nil))))
+
 (defn- check-component
   "Validate semantic coherence of a component. Report all errors found."
   [component file]
@@ -505,7 +604,10 @@
                   component file nil))
   (when (:deleted component)
     (check-component-duplicate-swap-slot component file)
-    (check-ref-cycles component file)))
+    (check-ref-cycles component file))
+
+  (when (ctk/is-variant? component)
+    (check-variant-component component file)))
 
 (defn- get-orphan-shapes
   [{:keys [objects] :as page}]

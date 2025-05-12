@@ -11,6 +11,25 @@
    [app.common.data :as d]
    [app.common.uuid :as uuid]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PRE DECODE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn clean-shape-pre-decode
+  "Applies a pre-decode phase migration to the shape"
+  [shape]
+  (if (= "bool" (:type shape))
+    (if-let [content (get shape :bool-content)]
+      (-> shape
+          (assoc :content content)
+          (dissoc :bool-content))
+      shape)
+    shape))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; POST DECODE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn- fix-shape-shadow-color
   "Some shapes can come with invalid `id` property on shadow colors
   caused by incorrect uuid parsing bug that should be already fixed;

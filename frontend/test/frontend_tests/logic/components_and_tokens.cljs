@@ -15,11 +15,11 @@
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
-   [app.main.data.tokens :as dt]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
-   [app.main.ui.workspace.tokens.changes :as wtch]
-   [app.main.ui.workspace.tokens.update :as wtu]
+   [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
@@ -134,10 +134,10 @@
           store    (ths/setup-store file)
 
          ;; ==== Action
-          events [(wtch/apply-token {:shape-ids [(cthi/id :frame1)]
+          events [(dwta/apply-token {:shape-ids [(cthi/id :frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-2")
-                                     :on-update-shape wtch/update-shape-radius-all})]
+                                     :on-update-shape dwta/update-shape-radius-all})]
 
           step2 (fn [_]
                   (let [events2 [(dwl/sync-file (:id file) (:id file))]]
@@ -171,7 +171,7 @@
           store    (ths/setup-store file)
 
          ;; ==== Action
-          events [(wtch/unapply-token {:shape-ids [(cthi/id :frame1)]
+          events [(dwta/unapply-token {:shape-ids [(cthi/id :frame1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "test-token-1")})]
 
@@ -203,14 +203,14 @@
           store    (ths/setup-store file)
 
          ;; ==== Action
-          events [(dt/set-selected-token-set-name "test-token-set")
-                  (dt/update-token "test-token-1"
-                                   {:name "test-token-1"
-                                    :type :border-radius
-                                    :value 66})]
+          events [(dwtl/set-selected-token-set-name "test-token-set")
+                  (dwtl/update-token "test-token-1"
+                                     {:name "test-token-1"
+                                      :type :border-radius
+                                      :value 66})]
 
           step2 (fn [_]
-                  (let [events2 [(wtu/update-workspace-tokens)
+                  (let [events2 [(dwtp/propagate-workspace-tokens)
                                  (dwl/sync-file (:id file) (:id file))]]
                     (tohs/run-store-async
                      store done events2
@@ -242,14 +242,14 @@
           store    (ths/setup-store file)
 
          ;; ==== Action
-          events [(wtch/apply-token {:shape-ids [(cthi/id :c-frame1)]
+          events [(dwta/apply-token {:shape-ids [(cthi/id :c-frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-2")
-                                     :on-update-shape wtch/update-shape-radius-all})
-                  (wtch/apply-token {:shape-ids [(cthi/id :frame1)]
+                                     :on-update-shape dwta/update-shape-radius-all})
+                  (dwta/apply-token {:shape-ids [(cthi/id :frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-3")
-                                     :on-update-shape wtch/update-shape-radius-all})]
+                                     :on-update-shape dwta/update-shape-radius-all})]
 
           step2 (fn [_]
                   (let [events2 [(dwl/sync-file (:id file) (:id file))]]
@@ -283,13 +283,13 @@
           store    (ths/setup-store file)
 
          ;; ==== Action
-          events [(wtch/unapply-token {:shape-ids [(cthi/id :c-frame1)]
+          events [(dwta/unapply-token {:shape-ids [(cthi/id :c-frame1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "test-token-1")})
-                  (wtch/apply-token {:shape-ids [(cthi/id :frame1)]
+                  (dwta/apply-token {:shape-ids [(cthi/id :frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-3")
-                                     :on-update-shape wtch/update-shape-radius-all})]
+                                     :on-update-shape dwta/update-shape-radius-all})]
 
           step2 (fn [_]
                   (let [events2 [(dwl/sync-file (:id file) (:id file))]]
@@ -359,28 +359,28 @@
           store (ths/setup-store file)
 
          ;; ==== Action
-          events [(dt/set-selected-token-set-name "test-token-set")
-                  (dt/update-token "token-radius"
-                                   {:name "token-radius"
-                                    :value 30})
-                  (dt/update-token "token-rotation"
-                                   {:name "token-rotation"
-                                    :value 45})
-                  (dt/update-token "token-opacity"
-                                   {:name "token-opacity"
-                                    :value 0.9})
-                  (dt/update-token "token-stroke-width"
-                                   {:name "token-stroke-width"
-                                    :value 8})
-                  (dt/update-token "token-color"
-                                   {:name "token-color"
-                                    :value "#ff0000"})
-                  (dt/update-token "token-dimensions"
-                                   {:name "token-dimensions"
-                                    :value 200})]
+          events [(dwtl/set-selected-token-set-name "test-token-set")
+                  (dwtl/update-token "token-radius"
+                                     {:name "token-radius"
+                                      :value 30})
+                  (dwtl/update-token "token-rotation"
+                                     {:name "token-rotation"
+                                      :value 45})
+                  (dwtl/update-token "token-opacity"
+                                     {:name "token-opacity"
+                                      :value 0.9})
+                  (dwtl/update-token "token-stroke-width"
+                                     {:name "token-stroke-width"
+                                      :value 8})
+                  (dwtl/update-token "token-color"
+                                     {:name "token-color"
+                                      :value "#ff0000"})
+                  (dwtl/update-token "token-dimensions"
+                                     {:name "token-dimensions"
+                                      :value 200})]
 
           step2 (fn [_]
-                  (let [events2 [(wtu/update-workspace-tokens)
+                  (let [events2 [(dwtp/propagate-workspace-tokens)
                                  (dwl/sync-file (:id file) (:id file))]]
                     (tohs/run-store-async
                      store done events2

@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.path :as gsp]
+   [app.common.math :as mth]
    [app.common.svg.path.command :as upc]
    [app.common.svg.path.subpath :as ups]))
 
@@ -233,6 +234,45 @@
                (gsp/command->point current)
                (conj result (dissoc current :prev)))))))
 
+(defn remove-duplicated-segments
+  "Remove from the content segments"
+  [content]
+  (letfn [;; This is a comparator for float points with a precission
+          ;; used to remove already existing segments
+          (comparator [[fx1 fy1 tx1 ty1 :as v1] [fx2 fy2 tx2 ty2 :as v2]]
+            (if (and (mth/close? tx1 tx2)
+                     (mth/close? ty1 ty2)
+                     (mth/close? fx1 fx2)
+                     (mth/close? fy1 fy2))
+              0 ;; equal
+              (compare v1 v2)))]
+
+    (loop [current (first content)
+           content (rest content)
+           segments (sorted-set-by comparator)
+           result []]
+
+      (if (nil? current)
+        result
+
+        (let [fx (-> current :prev :x)
+              fy (-> current :prev :y)
+              tx (-> current :params :x)
+              ty (-> current :params :y)
+
+              result
+              (cond-> result
+                (and (not (contains? segments [fx fy tx ty]))
+                     (not (contains? segments [tx ty fx fy])))
+                (conj current))
+
+              segments (conj segments [fx fy tx ty])]
+
+          (recur (first content)
+                 (rest content)
+                 segments
+                 result))))))
+
 (defn create-union [content-a content-a-split content-b content-b-split sr-a sr-b]
   ;; Pick all segments in content-a that are not inside content-b
   ;; Pick all segments in content-b that are not inside content-a
@@ -312,15 +352,17 @@
         content-a-split (->> content-a-split add-previous (filter is-segment?))
         content-b-split (->> content-b-split add-previous (filter is-segment?))
 
-        bool-content
+        content
         (case bool-type
           :union        (create-union        content-a content-a-split content-b content-b-split sr-a sr-b)
           :difference   (create-difference   content-a content-a-split content-b content-b-split sr-a sr-b)
           :intersection (create-intersection content-a content-a-split content-b content-b-split sr-a sr-b)
           :exclude      (create-exclusion    content-a-split content-b-split))]
 
-    (->> (fix-move-to bool-content)
-         (ups/close-subpaths))))
+    (-> content
+        remove-duplicated-segments
+        fix-move-to
+        ups/close-subpaths)))
 
 (defn content-bool
   [bool-type contents]
@@ -331,4 +373,3 @@
          (reduce (partial content-bool-pair bool-type))
          (into []))
     []))
-

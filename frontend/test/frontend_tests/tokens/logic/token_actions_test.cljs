@@ -1,10 +1,16 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
 (ns frontend-tests.tokens.logic.token-actions-test
   (:require
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.ui.workspace.tokens.changes :as wtch]
+   [app.main.data.workspace.tokens.application :as dwta]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
@@ -48,10 +54,10 @@
       (let [file   (setup-file-with-tokens)
             store  (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
-            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
+            events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.md")
-                                       :on-update-shape wtch/update-shape-radius-all})]]
+                                       :on-update-shape dwta/update-shape-radius-all})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -73,14 +79,14 @@
       (let [file (setup-file-with-tokens)
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
-            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
+            events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.sm")
-                                       :on-update-shape wtch/update-shape-radius-all})
-                    (wtch/apply-token {:shape-ids [(:id rect-1)]
+                                       :on-update-shape dwta/update-shape-radius-all})
+                    (dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.md")
-                                       :on-update-shape wtch/update-shape-radius-all})]]
+                                       :on-update-shape dwta/update-shape-radius-all})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -101,17 +107,17 @@
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
             events [;; Apply "borderRadius.sm" to all border radius attributes
-                    (wtch/apply-token {:attributes #{:r1 :r2 :r3 :r4}
+                    (dwta/apply-token {:attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.sm")
                                        :shape-ids [(:id rect-1)]
-                                       :on-update-shape wtch/update-shape-radius-all})
+                                       :on-update-shape dwta/update-shape-radius-all})
                    ;; Apply single `:r1` attribute to same shape
                    ;; while removing other attributes from the border-radius set
                    ;; but keep `:r4` for testing purposes
-                    (wtch/apply-token {:attributes #{:r1 :r2 :r3}
+                    (dwta/apply-token {:attributes #{:r1 :r2 :r3}
                                        :token (toht/get-token file "borderRadius.md")
                                        :shape-ids [(:id rect-1)]
-                                       :on-update-shape wtch/update-shape-radius-all})]]
+                                       :on-update-shape dwta/update-shape-radius-all})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -133,14 +139,14 @@
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
             rect-2 (cths/get-shape file :rect-2)
-            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
+            events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r3 :r4}
                                        :token (toht/get-token file "borderRadius.sm")
-                                       :on-update-shape wtch/update-shape-radius-for-corners})
-                    (wtch/apply-token {:shape-ids [(:id rect-2)]
+                                       :on-update-shape dwta/update-shape-radius-for-corners})
+                    (dwta/apply-token {:shape-ids [(:id rect-2)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.sm")
-                                       :on-update-shape wtch/update-shape-radius-all})]]
+                                       :on-update-shape dwta/update-shape-radius-all})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -185,22 +191,22 @@
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
             rect-2 (cths/get-shape file :rect-2)
-            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
+            events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:color}
                                        :token (toht/get-token file "color.primary")
-                                       :on-update-shape wtch/update-fill})
-                    (wtch/apply-token {:shape-ids [(:id rect-1)]
+                                       :on-update-shape dwta/update-fill})
+                    (dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:stroke-color}
                                        :token (toht/get-token file "color.primary")
-                                       :on-update-shape wtch/update-stroke-color})
-                    (wtch/apply-token {:shape-ids [(:id rect-2)]
+                                       :on-update-shape dwta/update-stroke-color})
+                    (dwta/apply-token {:shape-ids [(:id rect-2)]
                                        :attributes #{:color}
                                        :token (toht/get-token file "color.secondary")
-                                       :on-update-shape wtch/update-fill})
-                    (wtch/apply-token {:shape-ids [(:id rect-2)]
+                                       :on-update-shape dwta/update-fill})
+                    (dwta/apply-token {:shape-ids [(:id rect-2)]
                                        :attributes #{:stroke-color}
                                        :token (toht/get-token file "color.secondary")
-                                       :on-update-shape wtch/update-stroke-color})]]
+                                       :on-update-shape dwta/update-stroke-color})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -239,10 +245,10 @@
                                 #(ctob/add-token-in-set % "Set A" (ctob/make-token dimensions-token))))
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
-            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
+            events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:width :height}
                                        :token (toht/get-token file "dimensions.sm")
-                                       :on-update-shape wtch/update-shape-dimensions})]]
+                                       :on-update-shape dwta/update-shape-dimensions})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -272,10 +278,10 @@
             store (ths/setup-store file)
             frame-1 (cths/get-shape file :frame-1)
             frame-2 (cths/get-shape file :frame-2)
-            events [(wtch/apply-token {:shape-ids [(:id frame-1) (:id frame-2)]
+            events [(dwta/apply-token {:shape-ids [(:id frame-1) (:id frame-2)]
                                        :attributes #{:padding}
                                        :token (toht/get-token file "padding.sm")
-                                       :on-update-shape wtch/update-layout-padding})]]
+                                       :on-update-shape dwta/update-layout-padding})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -303,10 +309,10 @@
                                 #(ctob/add-token-in-set % "Set A" (ctob/make-token sizing-token))))
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
-            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
+            events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:width :height}
                                        :token (toht/get-token file "sizing.sm")
-                                       :on-update-shape wtch/update-shape-dimensions})]]
+                                       :on-update-shape dwta/update-shape-dimensions})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -344,18 +350,18 @@
             rect-1 (cths/get-shape file :rect-1)
             rect-2 (cths/get-shape file :rect-2)
             rect-3 (cths/get-shape file :rect-3)
-            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
+            events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:opacity}
                                        :token (toht/get-token file "opacity.float")
-                                       :on-update-shape wtch/update-opacity})
-                    (wtch/apply-token {:shape-ids [(:id rect-2)]
+                                       :on-update-shape dwta/update-opacity})
+                    (dwta/apply-token {:shape-ids [(:id rect-2)]
                                        :attributes #{:opacity}
                                        :token (toht/get-token file "opacity.percent")
-                                       :on-update-shape wtch/update-opacity})
-                    (wtch/apply-token {:shape-ids [(:id rect-3)]
+                                       :on-update-shape dwta/update-opacity})
+                    (dwta/apply-token {:shape-ids [(:id rect-3)]
                                        :attributes #{:opacity}
                                        :token (toht/get-token file "opacity.invalid")
-                                       :on-update-shape wtch/update-opacity})]]
+                                       :on-update-shape dwta/update-opacity})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -388,10 +394,10 @@
                                 #(ctob/add-token-in-set % "Set A" (ctob/make-token rotation-token))))
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
-            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
+            events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:rotation}
                                        :token (toht/get-token file "rotation.medium")
-                                       :on-update-shape wtch/update-rotation})]]
+                                       :on-update-shape dwta/update-rotation})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -419,10 +425,10 @@
             store (ths/setup-store file)
             rect-with-stroke (cths/get-shape file :rect-1)
             rect-without-stroke (cths/get-shape file :rect-2)
-            events [(wtch/apply-token {:shape-ids [(:id rect-with-stroke) (:id rect-without-stroke)]
+            events [(dwta/apply-token {:shape-ids [(:id rect-with-stroke) (:id rect-without-stroke)]
                                        :attributes #{:stroke-width}
                                        :token (toht/get-token file "stroke-width.sm")
-                                       :on-update-shape wtch/update-stroke-width})]]
+                                       :on-update-shape dwta/update-stroke-width})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -445,9 +451,9 @@
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
             rect-2 (cths/get-shape file :rect-2)
-            events [(wtch/toggle-token {:shapes [rect-1 rect-2]
+            events [(dwta/toggle-token {:shapes [rect-1 rect-2]
                                         :token-type-props {:attributes #{:r1 :r2 :r3 :r4}
-                                                           :on-update-shape wtch/update-shape-radius-all}
+                                                           :on-update-shape dwta/update-shape-radius-all}
                                         :token (toht/get-token file "borderRadius.md")})]]
         (tohs/run-store-async
          store done events
@@ -476,7 +482,7 @@
             rect-without-token (cths/get-shape file :rect-2)
             rect-with-other-token (cths/get-shape file :rect-3)
 
-            events [(wtch/toggle-token {:shapes [rect-with-token rect-without-token rect-with-other-token]
+            events [(dwta/toggle-token {:shapes [rect-with-token rect-without-token rect-with-other-token]
                                         :token (toht/get-token file "borderRadius.sm")
                                         :token-type-props {:attributes #{:r1 :r2 :r3 :r4}}})]]
         (tohs/run-store-async
@@ -509,7 +515,7 @@
             rect-without-token (cths/get-shape file :rect-2)
             rect-with-other-token-2 (cths/get-shape file :rect-3)
 
-            events [(wtch/toggle-token {:shapes [rect-with-other-token-1 rect-without-token rect-with-other-token-2]
+            events [(dwta/toggle-token {:shapes [rect-with-other-token-1 rect-without-token rect-with-other-token-2]
                                         :token (toht/get-token file "borderRadius.sm")
                                         :token-type-props {:attributes #{:r1 :r2 :r3 :r4}}})]]
         (tohs/run-store-async

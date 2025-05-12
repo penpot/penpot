@@ -6,7 +6,7 @@
 
 (ns app.common.data.macros
   "Data retrieval & manipulation specific macros."
-  (:refer-clojure :exclude [get-in select-keys str with-open min max])
+  (:refer-clojure :exclude [get-in select-keys str with-open max])
   #?(:cljs (:require-macros [app.common.data.macros]))
   (:require
    #?(:clj [clojure.core :as c]
@@ -144,3 +144,8 @@
                  (str "expr assert: " (pr-str expr)))]
      (when *assert*
        `(runtime-assert ~hint (fn [] ~expr))))))
+
+(defn truncate
+  "Truncates a string to a certain length"
+  [s max-length]
+  (subs s 0 (min max-length (count s))))

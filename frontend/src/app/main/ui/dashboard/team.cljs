@@ -74,6 +74,7 @@
         invitations-section? (= section :dashboard-team-invitations)
         webhooks-section?    (= section :dashboard-team-webhooks)
         permissions          (:permissions team)
+        invitations          (:invitations team)
 
         on-invite-member
         (mf/use-fn
@@ -108,7 +109,7 @@
        [:li {:class (when settings-section? (stl/css :active))}
         [:a {:on-click on-nav-settings} (tr "labels.settings")]]]]
      [:div {:class (stl/css :dashboard-buttons)}
-      (if (and (or invitations-section? members-section?) (:is-admin permissions))
+      (if (and (or invitations-section? members-section?) (:is-admin permissions) (not-empty invitations))
         [:a
          {:class (stl/css :btn-secondary :btn-small)
           :on-click on-invite-member
@@ -735,12 +736,27 @@
 (mf/defc empty-invitation-table*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [can-invite]}]
-  [:div {:class (stl/css :empty-invitations)}
-   [:span (tr "labels.no-invitations")]
-   (when ^boolean can-invite
-     [:> i18n/tr-html* {:content (tr "labels.no-invitations-hint")
-                        :tag-name "span"}])])
+  [{:keys [can-invite team]}]
+  (let
+   [route                (mf/deref refs/route)
+    invite-email         (-> route :query-params :invite-email)
+    on-invite-member     (mf/use-fn
+                          (mf/deps team invite-email)
+                          (fn []
+                            (st/emit! (modal/show {:type :invite-members
+                                                   :team team
+                                                   :origin :team
+                                                   :invite-email invite-email}))))]
+    [:div {:class (stl/css :empty-invitations)}
+     [:span (tr "labels.no-invitations")]
+     (when ^boolean can-invite
+       [[:span (tr "labels.no-invitations-gather-people")]
+        [:a
+         {:class (stl/css :btn-empty-invitations)
+          :on-click on-invite-member
+          :data-testid "invite-member"}
+         (tr "dashboard.invite-profile")]
+        [:div {:class (stl/css :blank-space)}]])]))
 
 (mf/defc invitation-section*
   {::mf/props :obj
@@ -761,7 +777,7 @@
       [:div {:class (stl/css :title-field-role)} (tr "labels.role")]
       [:div {:class (stl/css :title-field-status)} (tr "labels.status")]]
      (if (empty? invitations)
-       [:> empty-invitation-table* {:can-invite can-invite?}]
+       [:> empty-invitation-table* {:can-invite can-invite? :team team}]
        [:div {:class (stl/css :table-rows)}
         (for [invitation invitations]
           [:> invitation-row*
@@ -881,9 +897,10 @@
      [:div {:class (stl/css :modal-container)}
       [:& fm/form {:form form :on-submit on-submit}
        [:div {:class (stl/css :modal-header)}
-        (if webhook
-          [:h2 {:class (stl/css :modal-title)} (tr "modals.edit-webhook.title")]
-          [:h2 {:class (stl/css :modal-title)} (tr "modals.create-webhook.title")])
+        [:h2 {:class (stl/css :modal-title)}
+         (if webhook
+           (tr "modals.edit-webhook.title")
+           (tr "modals.create-webhook.title"))]
 
         [:button {:class (stl/css :modal-close-btn)
                   :on-click on-modal-close} i/close]]
@@ -1100,10 +1117,6 @@
      [:& header {:section :dashboard-team-settings :team team}]
      [:section {:class (stl/css :dashboard-team-settings)}
       [:div {:class (stl/css :block :info-block)}
-       [:div {:class (stl/css :block-label)}
-        (tr "dashboard.team-info")]
-       [:div {:class (stl/css :block-text)}
-        (:name team)]
        [:div {:class (stl/css :team-icon)}
         (when can-edit
           [:button {:class (stl/css :update-overlay)
@@ -1115,7 +1128,11 @@
           [:& file-uploader {:accept "image/jpeg,image/png"
                              :multi false
                              :ref finput
-                             :on-selected on-file-selected}])]]
+                             :on-selected on-file-selected}])]
+       [:div {:class (stl/css :block-label)}
+        (tr "dashboard.team-info")]
+       [:div {:class (stl/css :block-text)}
+        (:name team)]]
 
       [:div {:class (stl/css :block)}
        [:div {:class (stl/css :block-label)}

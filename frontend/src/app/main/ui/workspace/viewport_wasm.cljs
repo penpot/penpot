@@ -26,7 +26,6 @@
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
    [app.main.ui.workspace.shapes.text.v2-editor :as editor-v2]
-   [app.main.ui.workspace.shapes.text.viewport-texts-html :as stvh]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
    [app.main.ui.workspace.viewport.debug :as wvd]
@@ -51,6 +50,7 @@
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
    [app.util.debug :as dbg]
+   [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
@@ -102,6 +102,10 @@
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
 
+        workspace-editor-state (mf/deref refs/workspace-editor-state)
+        workspace-v2-editor-state (mf/deref refs/workspace-v2-editor-state)
+
+        file-id           (get file :id)
         objects           (get page :objects)
         page-id           (get page :id)
         background        (get page :background clr/canvas)
@@ -139,6 +143,7 @@
          on-viewport-ref] (create-viewport-ref)
 
         canvas-ref        (mf/use-ref nil)
+        text-editor-ref   (mf/use-ref nil)
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -288,13 +293,21 @@
         (fn []
           (wasm.api/clear-canvas))))
 
+    (mf/with-effect [show-text-editor? workspace-editor-state workspace-v2-editor-state edition]
+      (let [editor-state (get workspace-editor-state edition)
+            v2-editor-state (get workspace-v2-editor-state edition)
+            active-editor-state (or v2-editor-state editor-state)]
+        (when (and show-text-editor? active-editor-state)
+          (let [content (-> active-editor-state
+                            (ted/get-editor-current-content)
+                            (ted/export-content))]
+            (wasm.api/set-shape-text-content content)
+            (wasm.api/clear-drawing-cache)
+            (wasm.api/request-render "content")))))
+
     (mf/with-effect [vport]
       (when @canvas-init?
         (wasm.api/resize-viewbox (:width vport) (:height vport))))
-
-    (mf/with-effect [@canvas-init?  base-objects]
-      (when (and @canvas-init? @initialized?)
-        (wasm.api/set-objects base-objects)))
 
     (mf/with-effect [@canvas-init? preview-blend]
       (when (and @canvas-init? preview-blend)
@@ -326,24 +339,10 @@
      (when (:can-edit permissions)
        [:& top-bar/top-bar {:layout layout}])
      [:div {:class (stl/css :viewport-overlays)}
-      ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
-      ;; inside a foreign object "dummy" so this awkward behaviour is take into account
-      [:svg {:style {:top 0 :left 0 :position "fixed" :width "100%" :height "100%" :opacity (when-not (dbg/enabled? :html-text) 0)}}
-       [:foreignObject {:x 0 :y 0 :width "100%" :height "100%"}
-        [:div {:style {:pointer-events (when-not (dbg/enabled? :html-text) "none")
-                       ;; some opacity because to debug auto-width events will fill the screen
-                       :opacity 0.6}}
-         (when (and (:can-edit permissions) (not read-only?))
-           [:& stvh/viewport-texts
-            {:key (dm/str "texts-" page-id)
-             :page-id page-id
-             :objects objects
-             :modifiers modifiers
-             :edition edition}])]]]
-
       (when show-comments?
         [:> comments/comments-layer* {:vbox vbox
                                       :page-id page-id
+                                      :file-id file-id
                                       :vport vport
                                       :zoom zoom}])
 
@@ -372,7 +371,6 @@
        :class (dm/str @cursor (when drawing-tool " drawing") " " (stl/css :viewport-controls))
        :style {:touch-action "none"}
        :fill "none"
-
        :on-click         on-click
        :on-context-menu  on-context-menu
        :on-double-click  on-double-click
@@ -398,8 +396,10 @@
        (when show-text-editor?
          (if (features/active-feature? @st/state "text-editor/v2")
            [:& editor-v2/text-editor {:shape editing-shape
+                                      :ref text-editor-ref
                                       :modifiers modifiers}]
            [:& editor-v1/text-editor-svg {:shape editing-shape
+                                          :ref text-editor-ref
                                           :modifiers modifiers}]))
 
        (when show-frame-outline?

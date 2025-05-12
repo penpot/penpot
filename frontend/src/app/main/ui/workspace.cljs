@@ -235,19 +235,18 @@
     [:> (mf/provider ctx/current-project-id) {:value project-id}
      [:> (mf/provider ctx/current-file-id) {:value file-id}
       [:> (mf/provider ctx/current-page-id) {:value page-id}
-       [:> (mf/provider ctx/components-v2) {:value true}
-        [:> (mf/provider ctx/design-tokens) {:value design-tokens?}
-         [:> (mf/provider ctx/workspace-read-only?) {:value read-only?}
-          [:> modal-container*]
-          [:section {:class (stl/css :workspace)
-                     :style {:background-color background-color
-                             :touch-action "none"}}
-           [:> context-menu*]
-           (if (and file-loaded? page-id)
-             [:> workspace-page*
-              {:page-id page-id
-               :file-id file-id
-               :file file
-               :wglobal wglobal
-               :layout layout}]
-             [:> workspace-loader*])]]]]]]]))
+       [:> (mf/provider ctx/design-tokens) {:value design-tokens?}
+        [:> (mf/provider ctx/workspace-read-only?) {:value read-only?}
+         [:> modal-container*]
+         [:section {:class (stl/css :workspace)
+                    :style {:background-color background-color
+                            :touch-action "none"}}
+          [:> context-menu*]
+          (if (and file-loaded? page-id)
+            [:> workspace-page*
+             {:page-id page-id
+              :file-id file-id
+              :file file
+              :wglobal wglobal
+              :layout layout}]
+            [:> workspace-loader*])]]]]]]))

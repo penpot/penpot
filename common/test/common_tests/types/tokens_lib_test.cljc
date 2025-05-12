@@ -120,7 +120,6 @@
       (t/is (= ["Foo/Foo" "Foo/Baz" "Foo/Bar"] (move ["Foo"] ["Foo" "Foo"] ["Foo" "Baz"] false)))
       (t/is (= ["Foo/Baz" "Foo/Bar" "Foo/Foo"] (move ["Foo"] ["Foo" "Foo"] nil false))))))
 
-
 (t/deftest move-token-set-nested-2
   (let [tokens-lib (-> (ctob/make-tokens-lib)
                        (ctob/add-set (ctob/make-token-set :name "a/b"))
@@ -220,7 +219,6 @@
     (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid params for token-theme"
                             (ctob/make-token-theme params)))))
 
-
 (t/deftest make-tokens-lib
   (let [tokens-lib (ctob/make-tokens-lib)]
     (t/is (= (ctob/set-count tokens-lib) 0))))
@@ -314,6 +312,58 @@
     (t/is (= (ctob/set-count tokens-lib') 0))
     (t/is (= (:sets token-theme') #{}))
     (t/is (nil? token-set'))))
+
+(t/deftest duplicate-token-set
+  (let [tokens-lib  (-> (ctob/make-tokens-lib)
+                        (ctob/add-set (ctob/make-token-set :name "test-token-set"
+                                                           :tokens {"test-token"
+                                                                    (ctob/make-token :name "test-token"
+                                                                                     :type :boolean
+                                                                                     :value true)})))
+        token-set-copy (ctob/duplicate-set "test-token-set" tokens-lib {:suffix "copy"})
+        token (get-in token-set-copy [:tokens "test-token"])]
+
+    (t/is (some? token-set-copy))
+    (t/is (= (:name token-set-copy) "test-token-set-copy"))
+    (t/is (= (count (:tokens token-set-copy)) 1))
+    (t/is (= (:name token) "test-token"))))
+
+(t/deftest duplicate-token-set-twice
+  (let [tokens-lib  (-> (ctob/make-tokens-lib)
+                        (ctob/add-set (ctob/make-token-set :name "test-token-set"
+                                                           :tokens {"test-token"
+                                                                    (ctob/make-token :name "test-token"
+                                                                                     :type :boolean
+                                                                                     :value true)})))
+
+        tokens-lib (ctob/add-set tokens-lib (ctob/duplicate-set "test-token-set" tokens-lib {:suffix "copy"}))
+
+        token-set-copy (ctob/duplicate-set "test-token-set" tokens-lib {:suffix "copy"})
+        token (get-in token-set-copy [:tokens "test-token"])]
+
+    (t/is (some? token-set-copy))
+    (t/is (= (:name token-set-copy) "test-token-set-copy-2"))
+    (t/is (= (count (:tokens token-set-copy)) 1))
+    (t/is (= (:name token) "test-token"))))
+
+(t/deftest duplicate-empty-token-set
+  (let [tokens-lib      (-> (ctob/make-tokens-lib)
+                            (ctob/add-set (ctob/make-token-set :name "test-token-set")))
+
+        token-set-copy (ctob/duplicate-set "test-token-set" tokens-lib {:suffix "copy"})
+        tokens         (get token-set-copy :tokens)]
+
+    (t/is (some? token-set-copy))
+    (t/is (= (:name token-set-copy) "test-token-set-copy"))
+    (t/is (= (count (:tokens token-set-copy)) 0))
+    (t/is (= (count tokens) 0))))
+
+(t/deftest duplicate-not-existing-token-set
+  (let [tokens-lib      (ctob/make-tokens-lib)
+
+        token-set-copy (ctob/duplicate-set "test-token-set" tokens-lib {:suffix "copy"})]
+
+    (t/is (nil? token-set-copy))))
 
 (t/deftest active-themes-set-names
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -918,7 +968,6 @@
     (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))
     (t/is (dt/is-after? (:modified-at token') (:modified-at token)))))
 
-
 (t/deftest update-token-in-sets-rename
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
                         (ctob/add-set (ctob/make-token-set :name "test-token-set"))
@@ -1370,30 +1419,6 @@
                    :description ""})))
        (t/testing "invalid tokens got discarded"
          (t/is (nil? (get-set-token "typography" "H1.Bold")))))))
-
-#?(:clj
-   (t/deftest single-set-legacy-json-decoding
-     (let [json (-> (slurp "test/common_tests/types/data/legacy-single-set.json")
-                    (tr/decode-str))
-           lib (ctob/decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) "single_set" json)
-           get-set-token (fn [set-name token-name]
-                           (some-> (ctob/get-set lib set-name)
-                                   (ctob/get-token token-name)))]
-       (t/is (= '("single_set") (ctob/get-ordered-set-names lib)))
-       (t/testing "token added"
-         (t/is (some? (get-set-token "single_set" "color.red.100")))))))
-
-#?(:clj
-   (t/deftest single-set-dtcg-json-decoding
-     (let [json (-> (slurp "test/common_tests/types/data/single-set.json")
-                    (tr/decode-str))
-           lib (ctob/decode-single-set-json (ctob/ensure-tokens-lib nil) "single_set" json)
-           get-set-token (fn [set-name token-name]
-                           (some-> (ctob/get-set lib set-name)
-                                   (ctob/get-token token-name)))]
-       (t/is (= '("single_set") (ctob/get-ordered-set-names lib)))
-       (t/testing "token added"
-         (t/is (some? (get-set-token "single_set" "color.red.100")))))))
 
 #?(:clj
    (t/deftest dtcg-encoding-decoding-json

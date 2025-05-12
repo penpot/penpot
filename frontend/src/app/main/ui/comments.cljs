@@ -450,7 +450,6 @@
 (mf/defc mentions-panel*
   []
   (let [mentions-s (mf/use-ctx mentions-context)
-        profile    (mf/deref refs/profile)
 
         team       (mf/deref refs/team)
         members    (:members team)
@@ -467,13 +466,11 @@
         mentions-users
         (mf/with-memo [mention-filter members]
           (->> members
-               (filter (fn [{:keys [id fullname email]}]
-                         (and
-                          (not= id (:id profile))
-                          (or (not mention-filter)
-                              (empty? mention-filter)
-                              (str/includes? (str/lower fullname) (str/lower mention-filter))
-                              (str/includes? (str/lower email) (str/lower mention-filter))))))
+               (filter (fn [{:keys [fullname email]}]
+                         (or (not mention-filter)
+                             (empty? mention-filter)
+                             (str/includes? (str/lower fullname) (str/lower mention-filter))
+                             (str/includes? (str/lower email) (str/lower mention-filter)))))
                (take 4)
                (into [])))
 
@@ -762,9 +759,29 @@
      [:> comment-form-buttons* {:on-submit on-submit*
                                 :on-cancel on-cancel
                                 :is-disabled disabled?}]]))
+(defn- offset-position [position viewport zoom bubble-margin]
+  (let [viewport (or viewport {:offset-x 0 :offset-y 0 :width 0 :height 0})
+        base-x   (+ (* (:x position) zoom) (:offset-x viewport))
+        base-y   (+ (* (:y position) zoom) (:offset-y viewport))
+
+        x (:x position)
+        y (:y position)
+
+        w (:width viewport)
+        h (:height viewport)
+
+        comment-width 284 ;; TODO: this is the width set via CSS in an outer container…
+                          ;; We should probably do this in a different way.
+
+        orientation-left? (>= (+ base-x comment-width (:x bubble-margin)) w)
+        orientation-top?  (>= base-y (/ h 2))
+
+        h-dir (if orientation-left? :left :right)
+        v-dir (if orientation-top? :top :bottom)]
+    {:x x :y y :h-dir h-dir :v-dir v-dir}))
 
 (mf/defc comment-floating-thread-draft*
-  [{:keys [draft zoom on-cancel on-submit position-modifier]}]
+  [{:keys [draft zoom on-cancel on-submit position-modifier viewport]}]
   (let [profile   (mf/deref refs/profile)
 
         mentions-s (mf/use-memo #(rx/subject))
@@ -773,9 +790,14 @@
                     (some? position-modifier)
                     (gpt/transform position-modifier))
         content   (:content draft)
+        bubble-margin (gpt/point 0 0)
 
-        pos-x     (* (:x position) zoom)
-        pos-y     (* (:y position) zoom)
+        pos           (offset-position position viewport zoom bubble-margin)
+
+        margin-x      (* (:x bubble-margin) (if (= (:h-dir pos) :left) -1 1))
+        margin-y      (* (:y bubble-margin) (if (= (:v-dir pos) :top) -1 1))
+        pos-x         (+ (* (:x pos) zoom) margin-x)
+        pos-y         (- (* (:y pos) zoom) margin-y)
 
         disabled? (or (blank-content? content)
                       (exceeds-length? content))
@@ -802,33 +824,39 @@
            (on-submit draft)))]
 
     [:> (mf/provider mentions-context) {:value mentions-s}
-     [:div
-      {:class (stl/css :floating-preview-wrapper)
-       :data-testid "floating-thread-bubble"
-       :style {:top (str pos-y "px")
-               :left (str pos-x "px")}
-       :on-click dom/stop-propagation}
-      [:> comment-avatar* {:class (stl/css :avatar-lg)
-                           :image (cfg/resolve-profile-photo-url profile)}]]
-     [:div {:class (stl/css :floating-thread-wrapper :cursor-auto)
-            :style {:top (str (- pos-y 24) "px")
-                    :left (str (+ pos-x 28) "px")}
-            :on-click dom/stop-propagation}
-      [:div {:class (stl/css :form)}
-       [:> comment-input*
-        {:placeholder (tr "labels.write-new-comment")
-         :value (or content "")
-         :autofocus true
-         :on-esc on-esc
-         :on-change on-change
-         :on-ctrl-enter on-submit*}]
-       (when (exceeds-length? content)
-         [:div {:class (stl/css :error-text)}
-          (tr "errors.character-limit-exceeded")])
-       [:> comment-form-buttons* {:on-submit on-submit*
-                                  :on-cancel on-esc
-                                  :is-disabled disabled?}]]
-      [:> mentions-panel*]]]))
+     [:div {:class (stl/css-case :floating-thread-draft-wrapper true
+                                 :left (= (:h-dir pos) :left)
+                                 :top (= (:v-dir pos) :top))
+            :style {:top (str pos-y "px")
+                    :left (str pos-x "px")}}
+      [:div
+       {:data-testid "floating-thread-bubble"
+        :style {:top (str pos-y "px")
+                :left (str pos-x "px")}
+        :on-click dom/stop-propagation}
+       [:> comment-avatar* {:class (stl/css :avatar-lg)
+                            :image (cfg/resolve-profile-photo-url profile)}]]
+      [:div {:class (stl/css :floating-thread-draft-inner-wrapper
+                             :cursor-auto)
+             :style {:top (str (- pos-y 24) "px")
+                     :left (str (+ pos-x 28) "px")}
+
+             :on-click dom/stop-propagation}
+       [:div {:class (stl/css :form)}
+        [:> comment-input*
+         {:placeholder (tr "labels.write-new-comment")
+          :value (or content "")
+          :autofocus true
+          :on-esc on-esc
+          :on-change on-change
+          :on-ctrl-enter on-submit*}]
+        (when (exceeds-length? content)
+          [:div {:class (stl/css :error-text)}
+           (tr "errors.character-limit-exceeded")])
+        [:> comment-form-buttons* {:on-submit on-submit*
+                                   :on-cancel on-esc
+                                   :is-disabled disabled?}]]
+       [:> mentions-panel*]]]]))
 
 (mf/defc comment-floating-thread-header*
   {::mf/private true}
@@ -980,26 +1008,7 @@
   [thread-id]
   (l/derived (l/in [:comments thread-id]) st/state))
 
-(defn- offset-position [position viewport zoom bubble-margin]
-  (let [viewport (or viewport {:offset-x 0 :offset-y 0 :width 0 :height 0})
-        base-x   (+ (* (:x position) zoom) (:offset-x viewport))
-        base-y   (+ (* (:y position) zoom) (:offset-y viewport))
 
-        x (:x position)
-        y (:y position)
-
-        w (:width viewport)
-        h (:height viewport)
-
-        comment-width 284 ;; TODO: this is the width set via CSS in an outer container…
-                          ;; We should probably do this in a different way.
-
-        orientation-left? (>= (+ base-x comment-width (:x bubble-margin)) w)
-        orientation-top?  (>= base-y (/ h 2))
-
-        h-dir (if orientation-left? :left :right)
-        v-dir (if orientation-top? :top :bottom)]
-    {:x x :y y :h-dir h-dir :v-dir v-dir}))
 
 (mf/defc comment-floating-thread*
   {::mf/wrap [mf/memo]}

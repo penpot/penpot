@@ -603,10 +603,20 @@
                            (reduce-kv (fn [objects id shape]
                                         (assoc objects id (bfl/clean-shape-post-decode shape)))
                                       objects
+                                      objects))))
+        clean-component-pre-decode
+        (fn [component]
+          (d/update-when component :objects
+                         (fn [objects]
+                           (reduce-kv (fn [objects id shape]
+                                        (assoc objects id (bfl/clean-shape-pre-decode shape)))
+                                      objects
                                       objects))))]
+
     (->> (keep (match-component-entry-fn file-id) entries)
          (reduce (fn [result {:keys [id entry]}]
                    (let [object (->> (read-entry input entry)
+                                     (clean-component-pre-decode)
                                      (decode-component)
                                      (clean-component-post-decode)
                                      (validate-component))]
@@ -641,10 +651,10 @@
   (->> (keep (match-shape-entry-fn file-id page-id) entries)
        (reduce (fn [result {:keys [id entry]}]
                  (let [object (->> (read-entry input entry)
+                                   (bfl/clean-shape-pre-decode)
                                    (decode-shape)
                                    (bfl/clean-shape-post-decode)
                                    (validate-shape))]
-
                    (if (= id (:id object))
                      (assoc result id object)
                      result)))
@@ -754,7 +764,6 @@
                    ;; database, so we need to persist all of them, not
                    ;; only the applied
                    (vary-meta dissoc ::fmg/migrated))]
-
 
       (bfm/register-pending-migrations! cfg file)
       (bfc/save-file! cfg file ::db/return-keys false)

@@ -38,13 +38,16 @@
   "They are persistent, informative and non-actionable.
   They are contextual messages in specific areas off the app"
   {::mf/props :obj}
-  [{:keys [level content links is-html] :as props}]
-  [:aside {:class (stl/css-case :context-notification true
-                                :contain-html is-html
-                                :warning      (= level :warning)
-                                :error        (= level :error)
-                                :success      (= level :success)
-                                :info         (= level :info))}
+  [{:keys [level content links is-html class] :as props}]
+  [:aside {:class (dm/str
+                   class
+                   " "
+                   (stl/css-case :context-notification true
+                                 :contain-html is-html
+                                 :warning      (= level :warning)
+                                 :error        (= level :error)
+                                 :success      (= level :success)
+                                 :info         (= level :info)))}
 
    (get-icon-by-level level)
 

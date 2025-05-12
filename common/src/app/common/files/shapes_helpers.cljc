@@ -62,6 +62,10 @@
     changes id parent-id objects selected index frame-name without-fill? nil))
 
   ([changes id parent-id objects selected index frame-name without-fill? target-cell-id]
+   (prepare-create-artboard-from-selection
+    changes id parent-id objects selected index frame-name without-fill? target-cell-id nil))
+
+  ([changes id parent-id objects selected index frame-name without-fill? target-cell-id delta]
    (when-let [selected-objs (->> selected
                                  (map (d/getf objects))
                                  (not-empty))]
@@ -99,10 +103,11 @@
                     :id))
              target-cell-id)
 
+
            attrs
            {:type :frame
-            :x (:x srect)
-            :y (:y srect)
+            :x (cond-> (:x srect) delta (+ (:x delta)))
+            :y (cond-> (:y srect) delta (+ (:y delta)))
             :width (:width srect)
             :height (:height srect)}
 

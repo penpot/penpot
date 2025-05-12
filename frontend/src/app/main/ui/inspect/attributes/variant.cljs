@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.logic.variants :as clv]
+   [app.common.files.variant :as cfv]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.main.ui.components.copy-button :refer [copy-button*]]
@@ -30,26 +30,18 @@
 (mf/defc variant-panel*
   [{:keys [objects shapes libraries file-id] :as kk}]
   (let [shape           (->> shapes first)
-        title           (cond
-                          (ctc/is-variant-container? shape)
-                          "inspect.attributes.variant.component"
-                          (ctc/main-instance? shape)
-                          "inspect.attributes.variant.variant"
-                          :else
-                          "inspect.attributes.variant.copy")
-
+        is-container?   (ctc/is-variant-container? shape)
         properties      (mf/with-memo [objects shape]
                           (let [data          (dm/get-in libraries [file-id :data])
-                                is-container? (ctc/is-variant-container? shape)
                                 component     (when-not is-container? (ctkl/get-component data (:component-id shape)))]
                             (if is-container?
-                              (->> (clv/extract-properties-values data objects (:id shape))
+                              (->> (cfv/extract-properties-values data objects (:id shape))
                                    (map #(update % :value (partial str/join ", "))))
                               (->> (:variant-properties component)
                                    (map #(update % :value (fn [v] (if (str/blank? v) "--" v))))))))]
     [:div {:class (stl/css :attributes-block)}
      [:> inspect-title-bar*
-      {:title (tr title)
+      {:title (if is-container? (tr "inspect.attributes.variants") (tr "inspect.attributes.variant"))
        :class (stl/css :title-spacing-variant)}]
 
      (for [[pos property] (map-indexed vector properties)]

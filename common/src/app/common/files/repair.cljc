@@ -572,6 +572,51 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
+(defmethod repair-error :not-a-variant
+  [_ error file _]
+  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
+  file)
+
+(defmethod repair-error :invalid-variant-id
+  [_ error file _]
+  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
+  file)
+
+(defmethod repair-error :invalid-variant-properties
+  [_ error file _]
+  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
+  file)
+
+(defmethod repair-error :variant-not-main
+  [_ error file _]
+  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
+  file)
+
+(defmethod repair-error :parent-not-variant
+  [_ error file _]
+  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
+  file)
+
+(defmethod repair-error :variant-bad-name
+  [_ error file _]
+  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
+  file)
+
+(defmethod repair-error :variant-no-properties
+  [_ error file _]
+  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
+  file)
+
+(defmethod repair-error :variant-bad-variant-name
+  [_ error file _]
+  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
+  file)
+
+(defmethod repair-error :variant-component-bad-name
+  [_ error file _]
+  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
+  file)
+
 (defmethod repair-error :default
   [_ error file _]
   (log/error :hint "Unknown error code, don't know how to repair" :code (:code error))

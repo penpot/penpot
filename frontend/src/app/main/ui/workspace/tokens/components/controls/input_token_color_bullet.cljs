@@ -7,8 +7,8 @@
 (ns app.main.ui.workspace.tokens.components.controls.input-token-color-bullet
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.data.workspace.tokens.color :as dwtc]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
-   [app.main.ui.workspace.tokens.token :as wtt]
    [rumext.v2 :as mf]))
 
 (def ^:private schema::input-token-color-bullet
@@ -20,8 +20,9 @@
   {::mf/props :obj
    ::mf/schema schema::input-token-color-bullet}
   [{:keys [color on-click]}]
-  [:div {:class (stl/css :input-token-color-bullet)
+  [:div {:data-testid "token-form-color-bullet"
+         :class (stl/css :input-token-color-bullet)
          :on-click on-click}
-   (if-let [color' (wtt/color-bullet-color color)]
+   (if-let [color' (dwtc/color-bullet-color color)]
      [:> color-bullet {:color color' :mini true}]
      [:div {:class (stl/css :input-token-color-bullet-placeholder)}])])

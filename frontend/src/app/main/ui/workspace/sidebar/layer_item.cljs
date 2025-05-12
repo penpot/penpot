@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -23,7 +24,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.layer-name :refer [layer-name]]
+   [app.main.ui.workspace.sidebar.layer-name :refer [layer-name*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -44,20 +45,26 @@
            on-toggle-collapse on-enable-drag on-disable-drag on-toggle-visibility on-toggle-blocking]}
    dref]
 
-  (let [id             (:id item)
-        name           (:name item)
-        blocked?       (:blocked item)
-        hidden?        (:hidden item)
-        has-shapes?    (-> item :shapes seq boolean)
-        touched?       (-> item :touched seq boolean)
-        parent-board? (and (cfh/frame-shape? item)
-                           (= uuid/zero (:parent-id item)))
-        absolute?      (ctl/item-absolute? item)
-        components-v2  (mf/use-ctx ctx/components-v2)
-        main-instance? (or (not components-v2) (:main-instance item))
-        variants?      (features/use-feature "variants/v1")
-        is-variant?    (when variants? (ctk/is-variant? item))
-        variant-name   (when is-variant? (:variant-name item))]
+  (let [id                    (:id item)
+        name                  (:name item)
+        blocked?              (:blocked item)
+        hidden?               (:hidden item)
+        has-shapes?           (-> item :shapes seq boolean)
+        touched?              (-> item :touched seq boolean)
+        parent-board?         (and (cfh/frame-shape? item)
+                                   (= uuid/zero (:parent-id item)))
+        absolute?             (ctl/item-absolute? item)
+        main-instance?        (:main-instance item)
+
+        variants?             (features/use-feature "variants/v1")
+        is-variant?           (when variants? (ctk/is-variant? item))
+        is-variant-container? (when variants? (ctk/is-variant-container? item))
+        variant-id            (when is-variant? (:variant-id item))
+        variant-name          (when is-variant? (:variant-name item))
+
+        data                  (deref refs/workspace-data)
+        component             (ctkl/get-component data (:component-id item))
+        variant-properties    (:variant-properties component)]
     [:*
      [:div {:id id
             :ref dref
@@ -72,7 +79,7 @@
                     :selected selected?
                     :type-frame (cfh/frame-shape? item)
                     :type-bool (cfh/bool-shape? item)
-                    :type-comp component-tree?
+                    :type-comp (or component-tree? is-variant-container?)
                     :hidden hidden?
                     :dnd-over dnd-over?
                     :dnd-over-top dnd-over-top?
@@ -121,21 +128,24 @@
             {:shape item
              :main-instance? main-instance?}]]])
 
-       [:& layer-name {:ref name-ref
-                       :shape-id id
-                       :shape-name name
-                       :is-shape-touched touched?
-                       :disabled-double-click read-only?
-                       :on-start-edit on-disable-drag
-                       :on-stop-edit on-enable-drag
-                       :depth depth
-                       :is-blocked blocked?
-                       :parent-size parent-size
-                       :is-selected selected?
-                       :type-comp component-tree?
-                       :type-frame (cfh/frame-shape? item)
-                       :variant-name variant-name
-                       :is-hidden hidden?}]
+       [:> layer-name* {:ref name-ref
+                        :shape-id id
+                        :shape-name name
+                        :is-shape-touched touched?
+                        :disabled-double-click read-only?
+                        :on-start-edit on-disable-drag
+                        :on-stop-edit on-enable-drag
+                        :depth depth
+                        :is-blocked blocked?
+                        :parent-size parent-size
+                        :is-selected selected?
+                        :type-comp (or component-tree? is-variant-container?)
+                        :type-frame (cfh/frame-shape? item)
+                        :variant-id variant-id
+                        :variant-name variant-name
+                        :variant-properties variant-properties
+                        :component-id (:id component)
+                        :is-hidden hidden?}]
 
        (when (not read-only?)
          [:div {:class (stl/css-case
@@ -345,18 +355,14 @@
             first-child-node (dom/get-first-child parent-node)
 
             subid
-            (when (and single? selected?)
-              (let [scroll-to @scroll-to-middle?]
-                (ts/schedule
-                 100
-                 #(when (and node scroll-node)
-                    (let [scroll-distance-ratio (dom/get-scroll-distance-ratio node scroll-node)
-                          scroll-behavior (if (> scroll-distance-ratio 1) "instant" "smooth")]
-                      (if scroll-to
-                        (dom/scroll-into-view! first-child-node #js {:block "center" :behavior scroll-behavior  :inline "start"})
-                        (do
-                          (dom/scroll-into-view-if-needed! first-child-node #js {:block "center" :behavior scroll-behavior :inline "start"})
-                          (reset! scroll-to-middle? true))))))))]
+            (when (and single? selected? @scroll-to-middle?)
+              (ts/schedule
+               100
+               #(when (and node scroll-node)
+                  (let [scroll-distance-ratio (dom/get-scroll-distance-ratio node scroll-node)
+                        scroll-behavior (if (> scroll-distance-ratio 1) "instant" "smooth")]
+                    (dom/scroll-into-view-if-needed! first-child-node #js {:block "center" :behavior scroll-behavior :inline "start"})
+                    (reset! scroll-to-middle? true)))))]
 
         #(when (some? subid)
            (rx/dispose! subid))))

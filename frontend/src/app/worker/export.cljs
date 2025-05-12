@@ -421,11 +421,9 @@
                             :uri uri}))
                  (rx/catch
                   (fn [cause]
-                    (rx/of (ex/raise :type :internal
-                                     :code :export-error
-                                     :hint "unexpected error on exporting file"
-                                     :file-id (:id file)
-                                     :cause cause))))))))
+                    (rx/of {:type :error
+                            :file-id (:id file)
+                            :hint (ex-message cause)})))))))
 
     (= format :legacy-zip)
     (->> (rx/from files)

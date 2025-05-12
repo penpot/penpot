@@ -1,8 +1,14 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
 (ns frontend-tests.tokens.helpers.state
   (:require
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
-   [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.data.style-dictionary :as sd]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 

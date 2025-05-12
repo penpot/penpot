@@ -1264,6 +1264,26 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0002-normalize-bool-content"
+  [data _]
+  (letfn [(update-object [object]
+            ;; NOTE: we still preserve the previous value for possible
+            ;; rollback, we still need to perform an other migration
+            ;; for properly delete the bool-content prop from shapes
+            ;; once the know the migration was OK
+            (if (cfh/bool-shape? object)
+              (if-let [content (:bool-content object)]
+                (assoc object :content content)
+                object)
+              (dissoc object :bool-content :bool-type)))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
 (defmethod migrate-data "0003-fix-root-shape"
   [data _]
   (letfn [(update-object [shape]
@@ -1341,5 +1361,6 @@
          "legacy-66"
          "legacy-67"
          "0001-remove-tokens-from-groups"
+         "0002-normalize-bool-content"
          "0002-clean-shape-interactions"
          "0003-fix-root-shape"]))

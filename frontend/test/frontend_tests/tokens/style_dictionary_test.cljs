@@ -1,8 +1,14 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
 (ns frontend-tests.tokens.style-dictionary-test
   (:require
    [app.common.transit :as tr]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.data.style-dictionary :as sd]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [promesa.core :as p]))
@@ -133,3 +139,29 @@ color.value tries to reference missing, which is not defined.")))
               (fn [err]
                 (t/is (= :error.import/style-dictionary-reference-errors (:error/code (ex-data err))))
                 (done))))))))
+
+(t/deftest single-set-legacy-json-decoding
+  (let [decode-single-set-legacy-json #'sd/decode-single-set-legacy-json
+        json {"color" {"red" {"100" {"value" "red"
+                                     "type" "color"
+                                     "description" ""}}}}
+        lib (decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) "single_set" json)
+        get-set-token (fn [set-name token-name]
+                        (some-> (ctob/get-set lib set-name)
+                                (ctob/get-token token-name)))]
+    (t/is (= '("single_set") (ctob/get-ordered-set-names lib)))
+    (t/testing "token added"
+      (t/is (some? (get-set-token "single_set" "color.red.100"))))))
+
+(t/deftest single-set-dtcg-json-decoding
+  (let [decode-single-set-json #'sd/decode-single-set-json
+        json (-> {"color" {"red" {"100" {"$value" "red"
+                                         "$type" "color"
+                                         "$description" ""}}}})
+        lib (decode-single-set-json (ctob/ensure-tokens-lib nil) "single_set" json)
+        get-set-token (fn [set-name token-name]
+                        (some-> (ctob/get-set lib set-name)
+                                (ctob/get-token token-name)))]
+    (t/is (= '("single_set") (ctob/get-ordered-set-names lib)))
+    (t/testing "token added"
+      (t/is (some? (get-set-token "single_set" "color.red.100"))))))

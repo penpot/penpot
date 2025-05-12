@@ -1,11 +1,13 @@
-use skia_safe::{self as skia, Contains, Matrix, RRect, Rect};
-use std::collections::HashMap;
-use uuid::Uuid;
+use skia_safe::{self as skia, Matrix, RRect, Rect};
 
+use crate::uuid::Uuid;
+use std::collections::{HashMap, HashSet, VecDeque};
+
+use crate::performance;
 use crate::view::Viewbox;
+use crate::wapi;
 
 mod blend;
-mod cache;
 mod debug;
 mod fills;
 mod fonts;
@@ -16,9 +18,9 @@ mod shadows;
 mod strokes;
 mod surfaces;
 mod text;
+mod tiles;
 
-use crate::shapes::{Corners, Shape, Type};
-use cache::CachedSurfaceImage;
+use crate::shapes::{modified_children_ids, Corners, Shape, StructureEntry, Type};
 use gpu_state::GpuState;
 use options::RenderOptions;
 use surfaces::{SurfaceId, Surfaces};
@@ -27,18 +29,10 @@ pub use blend::BlendMode;
 pub use fonts::*;
 pub use images::*;
 
+// This is the extra are used for tile rendering.
+const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
-
-extern "C" {
-    fn emscripten_run_script(script: *const i8);
-    fn emscripten_run_script_int(script: *const i8) -> i32;
-}
-
-fn get_time() -> i32 {
-    let script = std::ffi::CString::new("performance.now()").unwrap();
-    unsafe { emscripten_run_script_int(script.as_ptr()) }
-}
 
 pub struct NodeRenderState {
     pub id: Uuid,
@@ -56,7 +50,7 @@ impl NodeRenderState {
     pub fn get_children_clip_bounds(
         &self,
         element: &Shape,
-        modifiers: &HashMap<Uuid, Matrix>,
+        modifiers: Option<&Matrix>,
     ) -> Option<(Rect, Option<Corners>, Matrix)> {
         if self.id.is_nil() || !element.clip() {
             return self.clip_bounds;
@@ -67,7 +61,7 @@ impl NodeRenderState {
         transform.post_translate(bounds.center());
         transform.pre_translate(-bounds.center());
 
-        if let Some(modifier) = modifiers.get(&element.id) {
+        if let Some(modifier) = modifiers {
             transform.post_concat(modifier);
         }
 
@@ -85,8 +79,7 @@ pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub options: RenderOptions,
     pub surfaces: Surfaces,
-    fonts: FontStore,
-    pub cached_surface_image: Option<CachedSurfaceImage>,
+    pub fonts: FontStore,
     pub viewbox: Viewbox,
     pub images: ImageStore,
     pub background_color: skia::Color,
@@ -95,40 +88,50 @@ pub(crate) struct RenderState {
     // Indicates whether the rendering process has pending frames.
     pub render_in_progress: bool,
     // Stack of nodes pending to be rendered.
-    pub pending_nodes: Vec<NodeRenderState>,
-    pub render_complete: bool,
+    pub pending_nodes: VecDeque<NodeRenderState>,
+    pub current_tile: Option<tiles::Tile>,
     pub sampling_options: skia::SamplingOptions,
+    pub render_area: Rect,
+    pub tiles: tiles::TileHashMap,
+    pub pending_tiles: Vec<tiles::TileWithDistance>,
 }
 
 impl RenderState {
     pub fn new(width: i32, height: i32) -> RenderState {
         // This needs to be done once per WebGL context.
         let mut gpu_state = GpuState::new();
-
         let sampling_options =
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
-        let surfaces = Surfaces::new(&mut gpu_state, (width, height), sampling_options);
 
         let fonts = FontStore::new();
+        let surfaces = Surfaces::new(
+            &mut gpu_state,
+            (width, height),
+            sampling_options,
+            tiles::get_tile_dimensions(),
+        );
 
         // This is used multiple times everywhere so instead of creating new instances every
         // time we reuse this one.
+
+        let tiles = tiles::TileHashMap::new();
+
         RenderState {
             gpu_state,
-            surfaces,
-            cached_surface_image: None,
-            // font_provider,
-            // font_collection,
-            fonts,
             options: RenderOptions::default(),
+            surfaces,
+            fonts,
             viewbox: Viewbox::new(width as f32, height as f32),
             images: ImageStore::new(),
             background_color: skia::Color::TRANSPARENT,
             render_request_id: None,
             render_in_progress: false,
-            pending_nodes: vec![],
-            render_complete: true,
+            pending_nodes: VecDeque::new(),
+            current_tile: None,
             sampling_options,
+            render_area: Rect::new_empty(),
+            tiles,
+            pending_tiles: vec![],
         }
     }
 
@@ -141,7 +144,7 @@ impl RenderState {
     }
 
     pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
-        self.images.add(id, image_data)
+        self.images.add(id, image_data, &mut self.gpu_state.context)
     }
 
     pub fn has_image(&mut self, id: &Uuid) -> bool {
@@ -149,7 +152,7 @@ impl RenderState {
     }
 
     pub fn set_debug_flags(&mut self, debug: u32) {
-        self.options.debug_flags = debug;
+        self.options.flags = debug;
     }
 
     pub fn set_dpr(&mut self, dpr: f32) {
@@ -164,7 +167,6 @@ impl RenderState {
 
     pub fn set_background_color(&mut self, color: skia::Color) {
         self.background_color = color;
-        let _ = self.render_from_cache();
     }
 
     pub fn resize(&mut self, width: i32, height: i32) {
@@ -182,45 +184,30 @@ impl RenderState {
     }
 
     pub fn reset_canvas(&mut self) {
-        self.surfaces.canvas(SurfaceId::Fills).restore_to_count(1);
-        self.surfaces
-            .canvas(SurfaceId::DropShadows)
-            .restore_to_count(1);
-        self.surfaces.canvas(SurfaceId::Strokes).restore_to_count(1);
-        self.surfaces.canvas(SurfaceId::Current).restore_to_count(1);
-
-        self.surfaces.apply_mut(
-            &[
-                SurfaceId::Fills,
-                SurfaceId::Strokes,
-                SurfaceId::Current,
-                SurfaceId::DropShadows,
-                SurfaceId::Shadow,
-                SurfaceId::Overlay,
-            ],
-            |s| {
-                s.canvas().clear(self.background_color).reset_matrix();
-            },
-        );
-
-        self.surfaces
-            .canvas(SurfaceId::Debug)
-            .clear(skia::Color::TRANSPARENT)
-            .reset_matrix();
+        self.surfaces.reset(self.background_color);
     }
 
-    pub fn apply_render_to_final_canvas(&mut self) {
-        self.surfaces.draw_into(
-            SurfaceId::Current,
-            SurfaceId::Target,
-            Some(&skia::Paint::default()),
-        );
+    pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect) {
+        let x = self.current_tile.unwrap().0;
+        let y = self.current_tile.unwrap().1;
+
+        self.surfaces.cache_current_tile_texture((x, y));
+
+        self.surfaces
+            .draw_cached_tile_surface(self.current_tile.unwrap(), rect);
+
+        if self.options.is_debug_visible() {
+            debug::render_workspace_current_tile(
+                self,
+                "".to_string(),
+                self.current_tile.unwrap(),
+                rect,
+            );
+        }
     }
 
-    pub fn apply_drawing_to_render_canvas(&mut self, shape: &Shape) {
-        self.surfaces
-            .flush_and_submit(&mut self.gpu_state, SurfaceId::Fills);
-
+    pub fn apply_drawing_to_render_canvas(&mut self, shape: Option<&Shape>) {
+        performance::begin_measure!("apply_drawing_to_render_canvas");
         self.surfaces
             .flush_and_submit(&mut self.gpu_state, SurfaceId::DropShadows);
 
@@ -230,18 +217,26 @@ impl RenderState {
             Some(&skia::Paint::default()),
         );
 
+        self.surfaces
+            .flush_and_submit(&mut self.gpu_state, SurfaceId::Fills);
+
         self.surfaces.draw_into(
             SurfaceId::Fills,
             SurfaceId::Current,
             Some(&skia::Paint::default()),
         );
 
-        let render_overlay_below_strokes = shape.fills().len() > 0;
+        let mut render_overlay_below_strokes = false;
+        if let Some(shape) = shape {
+            render_overlay_below_strokes = shape.has_fills();
+        }
+
         if render_overlay_below_strokes {
             self.surfaces
-                .flush_and_submit(&mut self.gpu_state, SurfaceId::Overlay);
+                .flush_and_submit(&mut self.gpu_state, SurfaceId::InnerShadows);
+
             self.surfaces.draw_into(
-                SurfaceId::Overlay,
+                SurfaceId::InnerShadows,
                 SurfaceId::Current,
                 Some(&skia::Paint::default()),
             );
@@ -249,6 +244,7 @@ impl RenderState {
 
         self.surfaces
             .flush_and_submit(&mut self.gpu_state, SurfaceId::Strokes);
+
         self.surfaces.draw_into(
             SurfaceId::Strokes,
             SurfaceId::Current,
@@ -257,24 +253,22 @@ impl RenderState {
 
         if !render_overlay_below_strokes {
             self.surfaces
-                .flush_and_submit(&mut self.gpu_state, SurfaceId::Overlay);
+                .flush_and_submit(&mut self.gpu_state, SurfaceId::InnerShadows);
+
             self.surfaces.draw_into(
-                SurfaceId::Overlay,
+                SurfaceId::InnerShadows,
                 SurfaceId::Current,
                 Some(&skia::Paint::default()),
             );
         }
 
         self.surfaces
-            .draw_into(SurfaceId::Overlay, SurfaceId::Current, None);
-        self.surfaces
             .flush_and_submit(&mut self.gpu_state, SurfaceId::Current);
 
         self.surfaces.apply_mut(
             &[
-                SurfaceId::Shadow,
                 SurfaceId::DropShadows,
-                SurfaceId::Overlay,
+                SurfaceId::InnerShadows,
                 SurfaceId::Fills,
                 SurfaceId::Strokes,
             ],
@@ -284,43 +278,45 @@ impl RenderState {
         );
     }
 
-    pub fn invalidate_cache_if_needed(&mut self) {
-        if let Some(ref mut cached_surface_image) = self.cached_surface_image {
-            cached_surface_image.invalidate_if_dirty(&self.viewbox);
-        }
-    }
-
     pub fn render_shape(
         &mut self,
         shape: &mut Shape,
         modifiers: Option<&Matrix>,
         clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
     ) {
-        let surface_ids = &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::DropShadows];
+        let surface_ids = &[
+            SurfaceId::Fills,
+            SurfaceId::Strokes,
+            SurfaceId::DropShadows,
+            SurfaceId::InnerShadows,
+        ];
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().save();
         });
 
+        let antialias = shape.should_use_antialias(self.get_scale());
+
         // set clipping
         if let Some((bounds, corners, transform)) = clip_bounds {
-            self.surfaces.apply_mut(
-                &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::DropShadows],
-                |s| {
-                    s.canvas().concat(&transform);
-                },
-            );
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas().concat(&transform);
+            });
 
             if let Some(corners) = corners {
                 let rrect = RRect::new_rect_radii(bounds, &corners);
                 self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas().clip_rrect(rrect, skia::ClipOp::Intersect, true);
+                    s.canvas()
+                        .clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
                 });
             } else {
                 self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas().clip_rect(bounds, skia::ClipOp::Intersect, true);
+                    s.canvas()
+                        .clip_rect(bounds, skia::ClipOp::Intersect, antialias);
                 });
             }
 
+            // This renders a red line around clipped
+            // shapes (frames).
             if self.options.is_debug_visible() {
                 let mut paint = skia::Paint::default();
                 paint.set_style(skia::PaintStyle::Stroke);
@@ -372,199 +368,162 @@ impl RenderState {
                 }
             }
             Type::Text(text_content) => {
-                text::render(self, text_content);
+                self.surfaces.apply_mut(&[SurfaceId::Fills], |s| {
+                    s.canvas().concat(&matrix);
+                });
+
+                let paragraphs = text_content.to_skia_paragraphs(&self.fonts.font_collection());
+
+                shadows::render_text_drop_shadows(self, &shape, &paragraphs, antialias);
+                text::render(self, &shape, &paragraphs, None, None);
+                shadows::render_text_inner_shadows(self, &shape, &paragraphs, antialias);
             }
             _ => {
                 self.surfaces.apply_mut(
-                    &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::DropShadows],
+                    &[
+                        SurfaceId::Fills,
+                        SurfaceId::Strokes,
+                        SurfaceId::DropShadows,
+                        SurfaceId::InnerShadows,
+                    ],
                     |s| {
                         s.canvas().concat(&matrix);
                     },
                 );
 
                 for fill in shape.fills().rev() {
-                    fills::render(self, &shape, fill);
+                    fills::render(self, &shape, fill, antialias);
                 }
 
                 for stroke in shape.strokes().rev() {
-                    strokes::render(self, &shape, stroke);
+                    shadows::render_stroke_drop_shadows(self, &shape, stroke, antialias);
+                    strokes::render(self, &shape, stroke, None, None, antialias);
+                    shadows::render_stroke_inner_shadows(self, &shape, stroke, antialias);
                 }
 
-                for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
-                    shadows::render_inner_shadow(
-                        self,
-                        shadow,
-                        self.viewbox.zoom * self.options.dpr(),
-                        shape.fills().len() > 0,
-                    );
-                }
-
-                shadows::render_drop_shadows(self, &shape);
+                shadows::render_fill_inner_shadows(self, &shape, antialias);
+                shadows::render_fill_drop_shadows(self, &shape, antialias);
             }
         };
 
-        self.apply_drawing_to_render_canvas(&shape);
+        self.apply_drawing_to_render_canvas(Some(&shape));
         self.surfaces.apply_mut(
-            &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::DropShadows],
+            &[
+                SurfaceId::Fills,
+                SurfaceId::Strokes,
+                SurfaceId::DropShadows,
+                SurfaceId::InnerShadows,
+            ],
             |s| {
                 s.canvas().restore();
             },
         );
     }
 
+    pub fn update_render_context(&mut self, tile: tiles::Tile) {
+        self.current_tile = Some(tile);
+        self.render_area = tiles::get_tile_rect(self.viewbox, tile);
+        self.surfaces
+            .update_render_context(self.render_area, self.viewbox);
+    }
+
     pub fn start_render_loop(
         &mut self,
         tree: &mut HashMap<Uuid, Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         timestamp: i32,
     ) -> Result<(), String> {
         if self.render_in_progress {
             if let Some(frame_id) = self.render_request_id {
-                self.cancel_animation_frame(frame_id);
+                wapi::cancel_animation_frame!(frame_id);
             }
         }
+        performance::begin_measure!("render");
+        performance::begin_measure!("start_render_loop");
+        let scale = self.get_scale();
         self.reset_canvas();
         self.surfaces.apply_mut(
-            &[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::DropShadows],
+            &[
+                SurfaceId::Fills,
+                SurfaceId::Strokes,
+                SurfaceId::DropShadows,
+                SurfaceId::InnerShadows,
+            ],
             |s| {
-                s.canvas().scale((
-                    self.viewbox.zoom * self.options.dpr(),
-                    self.viewbox.zoom * self.options.dpr(),
-                ));
-                s.canvas()
-                    .translate((self.viewbox.pan_x, self.viewbox.pan_y));
+                s.canvas().scale((scale, scale));
             },
         );
 
-        self.pending_nodes = vec![NodeRenderState {
-            id: Uuid::nil(),
-            visited_children: false,
-            clip_bounds: None,
-            visited_mask: false,
-            mask: false,
-        }];
-        self.render_in_progress = true;
-        self.process_animation_frame(tree, modifiers, timestamp)?;
-        self.render_complete = true;
-        Ok(())
-    }
+        // First we retrieve the extended area of the viewport that we could render.
+        let (isx, isy, iex, iey) = tiles::get_tiles_for_viewbox_with_interest(
+            self.viewbox,
+            VIEWPORT_INTEREST_AREA_THRESHOLD,
+        );
+        // Then we get the real amount of tiles rendered for the current viewbox.
+        let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox);
+        debug::render_debug_tiles_for_viewbox(self, isx, isy, iex, iey);
+        let tile_center = ((iex - isx) / 2, (iey - isy) / 2);
 
-    pub fn request_animation_frame(&mut self) -> i32 {
-        let script =
-            std::ffi::CString::new("requestAnimationFrame(_process_animation_frame)").unwrap();
-        unsafe { emscripten_run_script_int(script.as_ptr()) }
-    }
-
-    pub fn cancel_animation_frame(&mut self, frame_id: i32) {
-        let cancel_script = format!("cancelAnimationFrame({})", frame_id);
-        let c_cancel_script = std::ffi::CString::new(cancel_script).unwrap();
-        unsafe {
-            emscripten_run_script(c_cancel_script.as_ptr());
+        performance::begin_measure!("tile_cache");
+        self.pending_tiles = vec![];
+        self.surfaces.cache_clear_visited();
+        for y in isy..=iey {
+            for x in isx..=iex {
+                let tile = (x, y);
+                let distance = tiles::manhattan_distance(tile, tile_center);
+                self.pending_tiles.push((x, y, distance));
+                // We only need to mark! as visited the visible
+                // tiles, the ones that are outside the viewport
+                // should not be rendered.
+                if x >= sx && x <= ex && y >= sy && y <= ey {
+                    self.surfaces.cache_visit(tile);
+                }
+            }
         }
+        performance::end_measure!("tile_cache");
+
+        self.pending_nodes = VecDeque::new();
+        // reorder by distance to the center.
+        self.pending_tiles.sort_by(|a, b| b.2.cmp(&a.2));
+        self.current_tile = None;
+        self.render_in_progress = true;
+        self.apply_drawing_to_render_canvas(None);
+        self.process_animation_frame(tree, modifiers, structure, timestamp)?;
+        performance::end_measure!("start_render_loop");
+        Ok(())
     }
 
     pub fn process_animation_frame(
         &mut self,
         tree: &mut HashMap<Uuid, Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         timestamp: i32,
     ) -> Result<(), String> {
+        performance::begin_measure!("process_animation_frame");
         if self.render_in_progress {
-            self.render_shape_tree(tree, modifiers, timestamp)?;
+            self.render_shape_tree(tree, modifiers, structure, timestamp)?;
+            self.flush();
+
             if self.render_in_progress {
                 if let Some(frame_id) = self.render_request_id {
-                    self.cancel_animation_frame(frame_id);
+                    wapi::cancel_animation_frame!(frame_id);
                 }
-                self.render_request_id = Some(self.request_animation_frame());
+                self.render_request_id = Some(wapi::request_animation_frame!());
+            } else {
+                performance::end_measure!("render");
             }
         }
-
-        // self.render_in_progress can have changed
-        if self.render_in_progress {
-            if self.cached_surface_image.is_some() {
-                self.render_from_cache()?;
-            }
-            return Ok(());
-        }
-
-        // Chech if cached_surface_image is not set or is invalid
-        if self
-            .cached_surface_image
-            .as_ref()
-            .is_none_or(|img| img.invalid)
-        {
-            self.cached_surface_image = Some(CachedSurfaceImage {
-                image: self.surfaces.snapshot(SurfaceId::Current),
-                viewbox: self.viewbox,
-                invalid: false,
-                has_all_shapes: self.render_complete,
-            });
-        }
-
-        if self.options.is_debug_visible() {
-            self.render_debug();
-        }
-
-        debug::render_wasm_label(self);
-        self.apply_render_to_final_canvas();
-        self.flush();
+        performance::end_measure!("process_animation_frame");
         Ok(())
-    }
-
-    pub fn clear_cache(&mut self) {
-        self.cached_surface_image = None;
-    }
-
-    pub fn render_from_cache(&mut self) -> Result<(), String> {
-        let cached = self
-            .cached_surface_image
-            .as_ref()
-            .ok_or("Uninitialized cached surface image")?;
-
-        let image = &cached.image;
-        let paint = skia::Paint::default();
-        self.surfaces.canvas(SurfaceId::Target).save();
-        self.surfaces.canvas(SurfaceId::Fills).save();
-        self.surfaces.canvas(SurfaceId::Strokes).save();
-        self.surfaces.canvas(SurfaceId::DropShadows).save();
-
-        let navigate_zoom = self.viewbox.zoom / cached.viewbox.zoom;
-        let navigate_x = cached.viewbox.zoom * (self.viewbox.pan_x - cached.viewbox.pan_x);
-        let navigate_y = cached.viewbox.zoom * (self.viewbox.pan_y - cached.viewbox.pan_y);
-
-        self.surfaces
-            .canvas(SurfaceId::Target)
-            .scale((navigate_zoom, navigate_zoom));
-        self.surfaces.canvas(SurfaceId::Target).translate((
-            navigate_x * self.options.dpr(),
-            navigate_y * self.options.dpr(),
-        ));
-        self.surfaces
-            .canvas(SurfaceId::Target)
-            .clear(self.background_color);
-        self.surfaces
-            .canvas(SurfaceId::Target)
-            .draw_image(image, (0, 0), Some(&paint));
-
-        self.surfaces.canvas(SurfaceId::Target).restore();
-        self.surfaces.canvas(SurfaceId::Fills).restore();
-        self.surfaces.canvas(SurfaceId::Strokes).restore();
-        self.surfaces.canvas(SurfaceId::DropShadows).restore();
-
-        self.flush();
-
-        Ok(())
-    }
-
-    fn render_debug(&mut self) {
-        debug::render(self);
     }
 
     pub fn render_shape_enter(&mut self, element: &mut Shape, mask: bool) {
         // Masked groups needs two rendering passes, the first one rendering
         // the content and the second one rendering the mask so we need to do
-        // an extra save_layer to keep all the masked group separate from other
-        // already drawn elements.
+        // an extra save_layer to keep all the masked group separate from
+        // other already drawn elements.
         match element.shape_type {
             Type::Group(group) => {
                 if group.masked {
@@ -594,7 +553,7 @@ impl RenderState {
                 .save_layer(&mask_rec);
         }
 
-        if let Some(image_filter) = element.image_filter(self.viewbox.zoom * self.options.dpr()) {
+        if let Some(image_filter) = element.image_filter(self.get_scale()) {
             paint.set_image_filter(image_filter);
         }
 
@@ -621,118 +580,349 @@ impl RenderState {
         self.surfaces.canvas(SurfaceId::Current).restore();
     }
 
+    pub fn get_current_tile_bounds(&mut self) -> Rect {
+        let (tile_x, tile_y) = self.current_tile.unwrap();
+        let scale = self.get_scale();
+        let offset_x = self.viewbox.area.left * scale;
+        let offset_y = self.viewbox.area.top * scale;
+        Rect::from_xywh(
+            (tile_x as f32 * tiles::TILE_SIZE) - offset_x,
+            (tile_y as f32 * tiles::TILE_SIZE) - offset_y,
+            tiles::TILE_SIZE,
+            tiles::TILE_SIZE,
+        )
+    }
+
     pub fn render_shape_tree(
         &mut self,
         tree: &mut HashMap<Uuid, Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         timestamp: i32,
     ) -> Result<(), String> {
         if !self.render_in_progress {
             return Ok(());
         }
 
-        let mut i = 0;
-        while let Some(node_render_state) = self.pending_nodes.pop() {
-            let NodeRenderState {
-                id: node_id,
-                visited_children,
-                clip_bounds,
-                visited_mask,
-                mask,
-            } = node_render_state;
-            let element = tree.get_mut(&node_id).ok_or(
-                "Error: Element with root_id {node_render_state.id} not found in the tree."
-                    .to_string(),
-            )?;
+        let scale = self.get_scale();
+        let mut should_stop = false;
 
-            let render_complete = self.viewbox.area.contains(element.selrect());
-            if visited_children {
-                if !visited_mask {
-                    match element.shape_type {
-                        Type::Group(group) => {
-                            // When we're dealing with masked groups we need to
-                            // do a separate extra step to draw the mask (the last
-                            // element of a masked group) and blend (using
-                            // the blend mode 'destination-in') the content
-                            // of the group and the mask.
-                            if group.masked {
-                                self.pending_nodes.push(NodeRenderState {
-                                    id: node_id,
-                                    visited_children: true,
-                                    clip_bounds: None,
-                                    visited_mask: true,
-                                    mask: false,
-                                });
-                                if let Some(&mask_id) = element.mask_id() {
-                                    self.pending_nodes.push(NodeRenderState {
-                                        id: mask_id,
-                                        visited_children: false,
-                                        clip_bounds: None,
-                                        visited_mask: false,
-                                        mask: true,
-                                    });
+        while !should_stop {
+            if let Some(current_tile) = self.current_tile {
+                if self.surfaces.has_cached_tile_surface(current_tile) {
+                    performance::begin_measure!("render_shape_tree::cached");
+                    let tile_rect = self.get_current_tile_bounds();
+                    self.surfaces
+                        .draw_cached_tile_surface(current_tile, tile_rect);
+                    performance::end_measure!("render_shape_tree::cached");
+
+                    if self.options.is_debug_visible() {
+                        debug::render_workspace_current_tile(
+                            self,
+                            "Cached".to_string(),
+                            current_tile,
+                            tile_rect,
+                        );
+                    }
+                } else {
+                    performance::begin_measure!("render_shape_tree::uncached");
+                    let mut i = 0;
+                    let mut is_empty = true;
+                    while let Some(node_render_state) = self.pending_nodes.pop_front() {
+                        let NodeRenderState {
+                            id: node_id,
+                            visited_children,
+                            clip_bounds,
+                            visited_mask,
+                            mask,
+                        } = node_render_state;
+
+                        is_empty = false;
+                        let element = tree.get_mut(&node_id).ok_or(
+                            "Error: Element with root_id {node_render_state.id} not found in the tree."
+                                .to_string(),
+                        )?;
+
+                        // If the shape is not in the tile set, then we update
+                        // it.
+                        if let None = self.tiles.get_tiles_of(node_id) {
+                            self.update_tile_for(element);
+                        }
+
+                        if visited_children {
+                            if !visited_mask {
+                                match element.shape_type {
+                                    Type::Group(group) => {
+                                        // When we're dealing with masked groups we need to
+                                        // do a separate extra step to draw the mask (the last
+                                        // element of a masked group) and blend (using
+                                        // the blend mode 'destination-in') the content
+                                        // of the group and the mask.
+                                        if group.masked {
+                                            self.pending_nodes.push_back(NodeRenderState {
+                                                id: node_id,
+                                                visited_children: true,
+                                                clip_bounds: None,
+                                                visited_mask: true,
+                                                mask: false,
+                                            });
+                                            if let Some(&mask_id) = element.mask_id() {
+                                                self.pending_nodes.push_back(NodeRenderState {
+                                                    id: mask_id,
+                                                    visited_children: false,
+                                                    clip_bounds: None,
+                                                    visited_mask: false,
+                                                    mask: true,
+                                                });
+                                            }
+                                        }
+                                    }
+                                    _ => {}
                                 }
                             }
+                            self.render_shape_exit(element, visited_mask);
+                            continue;
                         }
-                        _ => {}
+
+                        if !node_render_state.id.is_nil() {
+                            // If we didn't visited_children this shape, then we need to do
+                            let mut transformed_element = element.clone();
+                            if let Some(modifier) = modifiers.get(&node_id) {
+                                transformed_element.apply_transform(modifier);
+                            }
+                            if !transformed_element.extrect().intersects(self.render_area)
+                                || transformed_element.hidden()
+                                || transformed_element.visually_insignificant(scale)
+                            {
+                                debug::render_debug_shape(self, &transformed_element, false);
+                                continue;
+                            } else {
+                                debug::render_debug_shape(self, &transformed_element, true);
+                            }
+                        }
+
+                        self.render_shape_enter(element, mask);
+                        if !node_render_state.id.is_nil() {
+                            self.render_shape(element, modifiers.get(&element.id), clip_bounds);
+                        } else {
+                            self.apply_drawing_to_render_canvas(Some(&element));
+                        }
+
+                        // Set the node as visited_children before processing children
+                        self.pending_nodes.push_back(NodeRenderState {
+                            id: node_id,
+                            visited_children: true,
+                            clip_bounds: None,
+                            visited_mask: false,
+                            mask: mask,
+                        });
+
+                        if element.is_recursive() {
+                            let children_clip_bounds = node_render_state
+                                .get_children_clip_bounds(element, modifiers.get(&element.id));
+
+                            let mut children_ids =
+                                modified_children_ids(element, structure.get(&element.id));
+
+                            // Z-index ordering on Layouts
+                            if element.has_layout() {
+                                children_ids.sort_by(|id1, id2| {
+                                    let z1 = tree.get(id1).map_or_else(|| 0, |s| s.z_index());
+                                    let z2 = tree.get(id2).map_or_else(|| 0, |s| s.z_index());
+                                    z1.cmp(&z2)
+                                });
+                            }
+
+                            for child_id in children_ids.iter().rev() {
+                                self.pending_nodes.push_back(NodeRenderState {
+                                    id: *child_id,
+                                    visited_children: false,
+                                    clip_bounds: children_clip_bounds,
+                                    visited_mask: false,
+                                    mask: false,
+                                });
+                            }
+                        }
+
+                        // We try to avoid doing too many calls to get_time
+                        if i % NODE_BATCH_THRESHOLD == 0
+                            && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS
+                        {
+                            return Ok(());
+                        }
+                        i += 1;
+                    }
+                    performance::end_measure!("render_shape_tree::uncached");
+                    let tile_rect = self.get_current_tile_bounds();
+                    if !is_empty {
+                        self.apply_render_to_final_canvas(tile_rect);
+                    } else {
+                        self.surfaces.apply_mut(&[SurfaceId::Target], |s| {
+                            let mut paint = skia::Paint::default();
+                            paint.set_color(self.background_color);
+                            s.canvas().draw_rect(tile_rect, &paint);
+                        });
                     }
                 }
-                self.render_shape_exit(element, visited_mask);
-                continue;
             }
 
-            // If we didn't visited_children this shape, then we need to do
-            if !node_render_state.id.is_nil() {
-                if !element.selrect().intersects(self.viewbox.area) || element.hidden() {
-                    debug::render_debug_shape(self, element, false);
-                    self.render_complete = render_complete;
-                    continue;
-                } else {
-                    debug::render_debug_shape(self, element, true);
+            self.surfaces
+                .canvas(SurfaceId::Current)
+                .clear(self.background_color);
+
+            let Some(root) = tree.get(&Uuid::nil()) else {
+                return Err(String::from("Root shape not found"));
+            };
+            let root_ids = modified_children_ids(&root, structure.get(&root.id));
+
+            // If we finish processing every node rendering is complete
+            // let's check if there are more pending nodes
+            if let Some(next_tile_with_distance) = self.pending_tiles.pop() {
+                let (x, y, _) = next_tile_with_distance;
+                let next_tile = (x, y);
+                self.update_render_context(next_tile);
+
+                if !self.surfaces.has_cached_tile_surface(next_tile) {
+                    if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
+                        // We only need first level shapes
+                        let mut valid_ids: Vec<Uuid> = ids
+                            .iter()
+                            .filter_map(|id| root_ids.get(id).map(|_| *id))
+                            .collect();
+
+                        // These shapes for the tile should be ordered as they are in the parent node
+                        valid_ids.sort_by_key(|id| root_ids.get_index_of(id));
+
+                        self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
+                            NodeRenderState {
+                                id,
+                                visited_children: false,
+                                clip_bounds: None,
+                                visited_mask: false,
+                                mask: false,
+                            }
+                        }));
+                    }
                 }
-            }
-
-            self.render_shape_enter(element, mask);
-            if !node_render_state.id.is_nil() {
-                self.render_shape(element, modifiers.get(&element.id), clip_bounds);
             } else {
-                self.apply_drawing_to_render_canvas(&element);
+                should_stop = true;
             }
-
-            // Set the node as visited_children before processing children
-            self.pending_nodes.push(NodeRenderState {
-                id: node_id,
-                visited_children: true,
-                clip_bounds: None,
-                visited_mask: false,
-                mask: mask,
-            });
-
-            if element.is_recursive() {
-                let children_clip_bounds =
-                    node_render_state.get_children_clip_bounds(element, &modifiers);
-
-                for child_id in element.children_ids().iter().rev() {
-                    self.pending_nodes.push(NodeRenderState {
-                        id: *child_id,
-                        visited_children: false,
-                        clip_bounds: children_clip_bounds,
-                        visited_mask: false,
-                        mask: false,
-                    });
-                }
-            }
-
-            // We try to avoid doing too many calls to get_time
-            if i % NODE_BATCH_THRESHOLD == 0 && get_time() - timestamp > MAX_BLOCKING_TIME_MS {
-                return Ok(());
-            }
-
-            i += 1;
+        }
+        self.render_in_progress = false;
+        if self.options.is_debug_visible() {
+            debug::render(self);
         }
 
-        // If we finish processing every node rendering is complete
-        self.render_in_progress = false;
+        debug::render_wasm_label(self);
+        self.flush();
+
         Ok(())
+    }
+
+    pub fn get_tiles_for_shape(&mut self, shape: &Shape) -> (i32, i32, i32, i32) {
+        let tile_size = tiles::get_tile_size(self.viewbox);
+        tiles::get_tiles_for_rect(shape.extrect(), tile_size)
+    }
+
+    pub fn update_tile_for(&mut self, shape: &Shape) {
+        let (rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape);
+        let new_tiles: HashSet<(i32, i32)> = (rsx..=rex)
+            .flat_map(|x| (rsy..=rey).map(move |y| (x, y)))
+            .collect();
+
+        // Update tiles where the shape was
+        if let Some(tiles) = self.tiles.get_tiles_of(shape.id) {
+            for tile in tiles.iter() {
+                self.surfaces.remove_cached_tile_surface(*tile);
+            }
+            // Remove shape from tiles not used
+            let diff: HashSet<_> = tiles.difference(&new_tiles).cloned().collect();
+            for tile in diff.iter() {
+                self.tiles.remove_shape_at(*tile, shape.id);
+            }
+        }
+
+        // Update tiles matching the actual selrect
+        for tile in new_tiles {
+            self.tiles.add_shape_at(tile, shape.id);
+            self.surfaces.remove_cached_tile_surface(tile);
+        }
+    }
+
+    pub fn rebuild_tiles_shallow(
+        &mut self,
+        tree: &mut HashMap<Uuid, Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
+    ) {
+        performance::begin_measure!("rebuild_tiles_shallow");
+        self.tiles.invalidate();
+        self.surfaces.remove_cached_tiles();
+        let mut nodes = vec![Uuid::nil()];
+        while let Some(shape_id) = nodes.pop() {
+            if let Some(shape) = tree.get(&shape_id) {
+                let mut shape = shape.clone();
+                if shape_id != Uuid::nil() {
+                    if let Some(modifier) = modifiers.get(&shape_id) {
+                        shape.apply_transform(modifier);
+                    }
+                    self.update_tile_for(&shape);
+                } else {
+                    // We only need to rebuild tiles from the first level.
+                    let children = modified_children_ids(&shape, structure.get(&shape.id));
+                    for child_id in children.iter() {
+                        nodes.push(*child_id);
+                    }
+                }
+            }
+        }
+        performance::end_measure!("rebuild_tiles_shallow");
+    }
+
+    pub fn rebuild_tiles(
+        &mut self,
+        tree: &mut HashMap<Uuid, Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
+    ) {
+        performance::begin_measure!("rebuild_tiles");
+        self.tiles.invalidate();
+        self.surfaces.remove_cached_tiles();
+        let mut nodes = vec![Uuid::nil()];
+        while let Some(shape_id) = nodes.pop() {
+            if let Some(shape) = tree.get(&shape_id) {
+                let mut shape = shape.clone();
+                if shape_id != Uuid::nil() {
+                    if let Some(modifier) = modifiers.get(&shape_id) {
+                        shape.apply_transform(modifier);
+                    }
+                    self.update_tile_for(&shape);
+                }
+
+                let children = modified_children_ids(&shape, structure.get(&shape.id));
+                for child_id in children.iter() {
+                    nodes.push(*child_id);
+                }
+            }
+        }
+        performance::end_measure!("rebuild_tiles");
+    }
+
+    pub fn rebuild_modifier_tiles(
+        &mut self,
+        tree: &mut HashMap<Uuid, Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) {
+        for (uuid, matrix) in modifiers {
+            if let Some(shape) = tree.get(uuid) {
+                let mut shape: Shape = shape.clone();
+                shape.apply_transform(matrix);
+                self.update_tile_for(&shape);
+            }
+        }
+    }
+
+    pub fn get_scale(&self) -> f32 {
+        self.viewbox.zoom() * self.options.dpr()
     }
 }

@@ -132,7 +132,7 @@
             :saved i/status-tick
             :error i/status-wrong
             nil)]
-         file-name])]
+         [:div {:class (stl/css :file-name-label)} file-name]])]
      (when ^boolean shared?
        [:span {:class (stl/css :shared-badge)} i/library])
      [:div {:class (stl/css :menu-section)}

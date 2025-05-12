@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.frame
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.component :as ctk]
    [app.common.types.shape.layout :as ctl]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -72,7 +73,7 @@
         is-grid-layout?           (ctl/grid-layout? shape)
         is-layout-child-absolute? (ctl/item-absolute? shape)
         variants?                 (features/use-feature "variants/v1")
-        is-variant?               (when variants? (:is-variant-container shape))]
+        is-variant?               (when variants? (ctk/is-variant-container? shape))]
 
     [:*
      [:& layer-menu {:ids ids

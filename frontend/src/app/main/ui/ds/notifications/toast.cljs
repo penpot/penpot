@@ -21,12 +21,14 @@
    [:level {:optional true} [:maybe [:enum :default :info :warning :error :success]]]
    [:appearance {:optional true} [:enum :neutral :ghost]]
    [:is-html {:optional true} :boolean]
-   [:on-close {:optional true} fn?]])
+   [:show-detail {:optional true} [:maybe :boolean]]
+   [:on-close {:optional true} fn?]
+   [:on-toggle-detail {:optional true} [:maybe fn?]]])
 
 (mf/defc toast*
   {::mf/props :obj
    ::mf/schema schema:toast}
-  [{:keys [class level appearance type is-html children on-close] :rest props}]
+  [{:keys [class level appearance type is-html children detail show-detail on-close on-toggle-detail] :rest props}]
   (let [class (dm/str class " " (stl/css :toast))
         level (if (string? level)
                 (keyword level)
@@ -45,9 +47,14 @@
      [:> notification-pill* {:level level
                              :type type
                              :is-html is-html
-                             :appearance appearance} children]
-      ;; TODO: this should be a buttom from the DS, but this variant is not designed yet.
-      ;; https://tree.taiga.io/project/penpot/task/8492
+                             :appearance appearance
+                             :detail detail
+                             :show-detail show-detail
+                             :on-toggle-detail on-toggle-detail} children]
+
+
+     ;; TODO: this should be a buttom from the DS, but this variant is not designed yet.
+     ;; https://tree.taiga.io/project/penpot/task/8492
      [:> "button" {:on-click on-close
                    :aria-label "Close"
                    :class (stl/css-case :close-button true

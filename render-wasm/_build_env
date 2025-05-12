@@ -7,7 +7,7 @@ else
 fi
 
 EMCC_CFLAGS="--no-entry \
-    -Os \
+    --js-library src/js/wapi.js \
     -sASSERTIONS=1 \
     -sALLOW_TABLE_GROWTH=1 \
     -sALLOW_MEMORY_GROWTH=1 \
@@ -24,16 +24,19 @@ EMSDK_QUIET=1 . /usr/local/emsdk/emsdk_env.sh;
 
 export EM_CACHE="/tmp/emsdk_cache";
 
-_CARGO_PARAMS="--target=wasm32-unknown-emscripten";
+_CARGO_PARAMS="${@:2}";
 
 if [ "$_BUILD_MODE" = "release" ]; then
     _CARGO_PARAMS="--release $_CARGO_PARAMS"
     EMCC_CFLAGS="-Os $EMCC_CFLAGS"
 else
-    EMCC_CFLAGS="$EMCC_CFLAGS -sMALLOC=emmalloc-debug"
+    # TODO: Extra parameters that could be good to look into:
+    #        -gseparate-dwarf
+    #        -gsplit-dwarf
+    #        -gsource-map
+    EMCC_CFLAGS="-g $EMCC_CFLAGS -sVERBOSE=1 -sMALLOC=emmalloc-debug"
 fi
 
 export EMCC_CFLAGS;
 export _CARGO_PARAMS;
 
-export SKIA_BINARIES_URL="https://github.com/penpot/skia-binaries/releases/download/0.81.0-1/skia-binaries-24dee32a277b6c7b5357-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache.tar.gz"

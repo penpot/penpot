@@ -208,7 +208,7 @@
    [:project-id {:optional true} ::sm/uuid]])
 
 (defn- migrate-file
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
+  [{:keys [::db/conn] :as cfg} {:keys [id] :as file} {:keys [read-only?]}]
   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
             pmap/*tracked* (pmap/create-tracked)]
     (let [;; For avoid unnecesary overhead of creating multiple pointers and
@@ -219,43 +219,45 @@
           file (-> file
                    (update :data feat.fdata/process-pointers deref)
                    (update :data feat.fdata/process-objects (partial into {}))
-                   (fmg/migrate-file))
+                   (fmg/migrate-file))]
 
-          ;; When file is migrated, we break the rule of no perform
-          ;; mutations on get operations and update the file with all
-          ;; migrations applied
-          ;;
-          ;; WARN: he following code will not work on read-only mode,
-          ;; it is a known issue; we keep is not implemented until we
-          ;; really need this.
-          file (if (contains? (:features file) "fdata/objects-map")
-                 (feat.fdata/enable-objects-map file)
-                 file)
-          file (if (contains? (:features file) "fdata/pointer-map")
-                 (feat.fdata/enable-pointer-map file)
-                 file)]
+      (if (or read-only? (db/read-only? conn))
+        file
+        (let [;; When file is migrated, we break the rule of no perform
+              ;; mutations on get operations and update the file with all
+              ;; migrations applied
+              file (if (contains? (:features file) "fdata/objects-map")
+                     (feat.fdata/enable-objects-map file)
+                     file)
+              file (if (contains? (:features file) "fdata/pointer-map")
+                     (feat.fdata/enable-pointer-map file)
+                     file)]
 
-      (db/update! conn :file
-                  {:data (blob/encode (:data file))
-                   :version (:version file)
-                   :features (db/create-array conn "text" (:features file))}
-                  {:id id})
+          (db/update! conn :file
+                      {:data (blob/encode (:data file))
+                       :version (:version file)
+                       :features (db/create-array conn "text" (:features file))}
+                      {:id id}
+                      {::db/return-keys false})
 
-      (when (contains? (:features file) "fdata/pointer-map")
-        (feat.fdata/persist-pointers! cfg id))
+          (when (contains? (:features file) "fdata/pointer-map")
+            (feat.fdata/persist-pointers! cfg id))
 
-      (feat.fmigr/upsert-migrations! conn file)
-      (feat.fmigr/resolve-applied-migrations cfg file))))
+          (feat.fmigr/upsert-migrations! conn file)
+          (feat.fmigr/resolve-applied-migrations cfg file))))))
 
 (defn get-file
   [{:keys [::db/conn ::wrk/executor] :as cfg} id
    & {:keys [project-id
              migrate?
              include-deleted?
-             lock-for-update?]
+             lock-for-update?
+             preload-pointers?]
       :or {include-deleted? false
            lock-for-update? false
-           migrate? true}}]
+           migrate? true
+           preload-pointers? false}
+      :as options}]
 
   (assert (db/connection? conn) "expected cfg with valid connection")
 
@@ -273,10 +275,16 @@
         ;; because it has heavy and synchronous operations for
         ;; decoding file body that are not very friendly with virtual
         ;; threads.
-        file   (px/invoke! executor #(decode-row file))]
+        file   (px/invoke! executor #(decode-row file))
 
-    (if (and migrate? (fmg/need-migration? file))
-      (migrate-file cfg file)
+        file   (if (and migrate? (fmg/need-migration? file))
+                 (migrate-file cfg file options)
+                 file)]
+
+    (if preload-pointers?
+      (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
+        (update file :data feat.fdata/process-pointers deref))
+
       file)))
 
 (defn get-minimal-file
@@ -474,7 +482,7 @@
   (update page :objects update-vals #(dissoc % :thumbnail)))
 
 (defn get-page
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id page-id object-id] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id page-id object-id share-id] :as params}]
 
   (when (and (uuid? object-id)
              (not (uuid? page-id)))
@@ -482,22 +490,30 @@
               :code :params-validation
               :hint "page-id is required when object-id is provided"))
 
-  (let [team (teams/get-team conn
-                             :profile-id profile-id
-                             :file-id file-id)
+  (let [perms (get-permissions conn profile-id file-id share-id)
 
-        file (get-file cfg file-id)
+        file  (get-file cfg file-id :read-only? true)
 
-        _    (-> (cfeat/get-team-enabled-features cf/flags team)
-                 (cfeat/check-client-features! (:features params))
-                 (cfeat/check-file-features! (:features file)))
+        proj  (db/get conn :project {:id (:project-id file)})
 
-        page (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
-               (let [page-id (or page-id (-> file :data :pages first))
-                     page    (dm/get-in file [:data :pages-index page-id])]
-                 (if (pmap/pointer-map? page)
-                   (deref page)
-                   page)))]
+        team  (-> (db/get conn :team {:id (:team-id proj)})
+                  (teams/decode-row))
+
+        _     (-> (cfeat/get-team-enabled-features cf/flags team)
+                  (cfeat/check-client-features! (:features params))
+                  (cfeat/check-file-features! (:features file)))
+
+        page  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+                (let [page-id (or page-id (-> file :data :pages first))
+                      page    (dm/get-in file [:data :pages-index page-id])]
+                  (if (pmap/pointer-map? page)
+                    (deref page)
+                    page)))]
+
+    (when-not perms
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "object not found"))
 
     (cond-> (prune-thumbnails page)
       (some? object-id)
@@ -733,7 +749,9 @@
                              :project-id project-id
                              :file-id id)
 
-        file (get-file cfg id :project-id project-id)]
+        file (get-file cfg id
+                       :project-id project-id
+                       :read-only? true)]
 
     (-> (cfeat/get-team-enabled-features cf/flags team)
         (cfeat/check-client-features! (:features params))

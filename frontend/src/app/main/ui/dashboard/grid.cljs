@@ -161,7 +161,7 @@
             [:span {:class (stl/css :num-assets)} (str "\u00A0(") (:count components) ")"]] ;; Unicode 00A0 is non-breaking space
            [:div {:class (stl/css :asset-list)}
             (for [component (:sample components)]
-              (let [root-id (or (:main-instance-id component) (:id component))] ;; Check for components-v2 in library
+              (let [root-id (:main-instance-id component)]
                 [:div {:class (stl/css :asset-list-item)
                        :key (str "assets-component-" (:id component))}
                  [:& render/component-svg {:root-shape (get-in component [:objects root-id])

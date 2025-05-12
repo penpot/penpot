@@ -192,3 +192,20 @@
     }
   }
 }
+
+.context-notification-error {
+  --context-notification-bg-color: var(--modal-background-color);
+}
+
+.import-error-disclaimer {
+  color: var(--color-foreground-secondary);
+}
+
+.import-error-list {
+  padding: 0 var(--sp-l);
+  list-style: disc;
+}
+
+.import-error-list-enry {
+  padding: var(--sp-xs) 0;
+}

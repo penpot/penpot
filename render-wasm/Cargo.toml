@@ -6,12 +6,20 @@ repository = "https://github.com/penpot/penpot"
 license-file = "../LICENSE"
 description = "Wasm-based canvas renderer for Penpot"
 
+[features]
+default = []
+profile = ["profile-macros", "profile-raf"]
+profile-macros = []
+profile-raf = []
+
 [[bin]]
 name = "render_wasm"
 path = "src/main.rs"
 
 [dependencies]
+base64 = "0.22.1"
 gl = "0.14.0"
+indexmap = "2.7.1"
 skia-safe = { version = "0.81.0", default-features = false, features = ["gl", "svg", "textlayout", "binary-cache"]}
 uuid = { version = "1.11.0", features = ["v4"] }
 

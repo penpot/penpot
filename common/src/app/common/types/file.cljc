@@ -130,7 +130,7 @@
        (some? page-id)
        (ctpl/add-page page)
 
-       (contains? cfeat/*current* "components/v2")
+       :always
        (assoc-in [:options :components-v2] true)))))
 
 (defn make-file
@@ -221,48 +221,45 @@
   (ctpl/get-page file-data (:main-instance-page component)))
 
 (defn get-component-container
-  "Retrieve the container that holds the component shapes (the page in components-v2
-   or the component itself in v1 or deleted component)."
+  "Retrieve the container that holds the component shapes (the page
+   or the component itself on deleted component)."
   [file-data component]
-  (let [components-v2 (dm/get-in file-data [:options :components-v2])]
-    (if (and components-v2 (not (:deleted component)))
-      (let [component-page (get-component-page file-data component)]
-        (cfh/make-container component-page :page))
-      (cfh/make-container component :component))))
+  (if (not (:deleted component))
+    (let [component-page (get-component-page file-data component)]
+      (cfh/make-container component-page :page))
+    (cfh/make-container component :component)))
 
 (defn get-component-root
   "Retrieve the root shape of the component."
   [file-data component]
-  (let [components-v2 (dm/get-in file-data [:options :components-v2])]
-    (if (and components-v2 (not (:deleted component)))
-      (-> file-data
-          (get-component-page component)
-          (ctn/get-shape (:main-instance-id component)))
-      (ctk/get-component-root component))))
+  (if (not (:deleted component))
+    (-> file-data
+        (get-component-page component)
+        (ctn/get-shape (:main-instance-id component)))
+    (ctk/get-component-root component)))
 
 (defn get-component-shape
   "Retrieve one shape in the component by id. If with-context? is true, add the
    file and container where the shape resides in its metadata."
   [file-data component shape-id & {:keys [with-context?] :or {with-context? false}}]
-  (let [components-v2 (dm/get-in file-data [:options :components-v2])]
-    (if (and components-v2 (not (:deleted component)))
-      (let [component-page (get-component-page file-data component)]
-        (when component-page
-          (let [child (cfh/get-child (:objects component-page)
-                                     (:main-instance-id component)
-                                     shape-id)]
-            (cond-> child
-              (and child with-context?)
-              (with-meta {:file {:id (:id file-data)
-                                 :data file-data}
-                          :container (ctn/make-container component-page :page)})))))
+  (if (not (:deleted component))
+    (let [component-page (get-component-page file-data component)]
+      (when component-page
+        (let [child (cfh/get-child (:objects component-page)
+                                   (:main-instance-id component)
+                                   shape-id)]
+          (cond-> child
+            (and child with-context?)
+            (with-meta {:file {:id (:id file-data)
+                               :data file-data}
+                        :container (ctn/make-container component-page :page)})))))
 
-      (let [shape (dm/get-in component [:objects shape-id])]
-        (cond-> shape
-          (and shape with-context?)
-          (with-meta {:file {:id (:id file-data)
-                             :data file-data}
-                      :container (ctn/make-container component :component)}))))))
+    (let [shape (dm/get-in component [:objects shape-id])]
+      (cond-> shape
+        (and shape with-context?)
+        (with-meta {:file {:id (:id file-data)
+                           :data file-data}
+                    :container (ctn/make-container component :component)})))))
 
 (defn get-ref-shape
   "Retrieve the shape in the component that is referenced by the instance shape."
@@ -384,12 +381,11 @@
 (defn get-component-shapes
   "Retrieve all shapes of the component"
   [file-data component]
-  (let [components-v2 (dm/get-in file-data [:options :components-v2])]
-    (if (and components-v2
-             (not (:deleted component))) ;; the deleted components have its children in the :objects property
-      (let [instance-page (get-component-page file-data component)]
-        (cfh/get-children-with-self (:objects instance-page) (:main-instance-id component)))
-      (vals (:objects component)))))
+
+  (if (not (:deleted component)) ;; the deleted components have its children in the :objects property
+    (let [instance-page (get-component-page file-data component)]
+      (cfh/get-children-with-self (:objects instance-page) (:main-instance-id component)))
+    (vals (:objects component))))
 
 ;; Return true if the object is a component that exists on the file or its libraries (even a deleted one)
 (defn is-main-of-known-component?
@@ -403,44 +399,52 @@
 
 (defn load-component-objects
   "Add an :objects property to the component, with only the shapes that belong to it"
-  [file-data component]
-  (let [components-v2 (dm/get-in file-data [:options :components-v2])]
-    (if (and components-v2 component (empty? (:objects component))) ;; This operation may be called twice, e.g. in an idempotent change
-      (let [component-page (get-component-page file-data component)
-            page-objects   (:objects component-page)
-            objects        (->> (cons (:main-instance-id component)
-                                      (cfh/get-children-ids page-objects (:main-instance-id component)))
-                                (map #(get page-objects %))
-                                (d/index-by :id))]
-        (assoc component :objects objects))
-      component)))
+  ([file-data component]
+   (load-component-objects file-data component (gpt/point 0 0)))
+  ([file-data component delta]
+   (if (and component (empty? (:objects component))) ;; This operation may be called twice, e.g. in an idempotent change
+     (let [component-page (get-component-page file-data component)
+           page-objects   (:objects component-page)
+           objects        (->> (cons (:main-instance-id component)
+                                     (cfh/get-children-ids page-objects (:main-instance-id component)))
+                               (map #(get page-objects %))
+                               ;; when it is an undo of a cut-paste, we need to undo the movement
+                               ;; of the shapes so we need to move them delta
+                               (map #(gsh/move % delta))
+                               (d/index-by :id))]
+       (assoc component :objects objects))
+     component)))
 
 (defn delete-component
   "Mark a component as deleted and store the main instance shapes iside it, to
   be able to be recovered later."
-  [file-data component-id skip-undelete? main-instance]
-  (let [components-v2 (dm/get-in file-data [:options :components-v2])]
-    (if (or (not components-v2) skip-undelete?)
+  [file-data component-id skip-undelete? delta]
+  (let [delta         (or delta (gpt/point 0 0))]
+    (if skip-undelete?
       (ctkl/delete-component file-data component-id)
-      (let [set-main-instance ;; If there is a saved main-instance, restore it. This happens on the restore-component action
-            #(if main-instance
-               (assoc-in % [:objects (:main-instance-id %)] main-instance)
-               %)]
-        (-> file-data
-            (ctkl/update-component component-id (partial load-component-objects file-data))
-            (ctkl/update-component component-id set-main-instance)
-            (ctkl/mark-component-deleted component-id))))))
+      (-> file-data
+          (ctkl/update-component component-id #(load-component-objects file-data % delta))
+          (ctkl/mark-component-deleted component-id)))))
 
 (defn restore-component
   "Recover a deleted component and all its shapes and put all this again in place."
   [file-data component-id page-id]
-  (let [components-v2 (dm/get-in file-data [:options :components-v2])
-        update-page? (and components-v2 (not (nil? page-id)))]
-    (-> file-data
-        (ctkl/update-component component-id #(dissoc % :objects))
-        (ctkl/mark-component-undeleted component-id)
-        (cond-> update-page?
-          (ctkl/update-component component-id #(assoc % :main-instance-page page-id))))))
+  (let [update-page?       (not (nil? page-id))
+        component          (ctkl/get-component file-data component-id true)
+        main-instance-page (or page-id (:main-instance-page component))
+        main-instance      (dm/get-in file-data [:pages-index main-instance-page
+                                                 :objects (:main-instance-id component)])]
+    (cond-> file-data
+      :always
+      (->
+       (ctkl/update-component component-id #(dissoc % :objects))
+       (ctkl/mark-component-undeleted component-id))
+
+      update-page?
+      (ctkl/update-component component-id #(assoc % :main-instance-page page-id))
+
+      (ctk/is-variant? component)
+      (ctkl/update-component component-id #(assoc % :variant-id (:variant-id main-instance))))))
 
 (defn purge-component
   "Remove permanently a component."
@@ -557,7 +561,6 @@
                                              component
                                              library-data
                                              position
-                                             (dm/get-in file-data [:options :components-v2])
                                              {:main-instance? true
                                               :keep-ids? true})
 
@@ -589,8 +592,7 @@
                                        :name (:name component)
                                        :path (:path component)
                                        :main-instance-id (:id main-instance-shape)
-                                       :main-instance-page page-id
-                                       :shapes (get-component-shapes library-data component)}))
+                                       :main-instance-page page-id}))
 
                 ; Change all existing instances to point to the local file
                 remap-instances

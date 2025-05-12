@@ -42,7 +42,6 @@
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.zoom :as dwz]
-   [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
@@ -395,9 +394,9 @@
 
 (defn- add-component2
   "This is the second step of the component creation."
-  ([selected components-v2]
-   (add-component2 nil selected components-v2))
-  ([id-ref selected components-v2]
+  ([selected]
+   (add-component2 nil selected))
+  ([id-ref selected]
    (ptk/reify ::add-component2
      ev/Event
      (-data [_]
@@ -413,8 +412,7 @@
              parents  (into #{} (map :parent-id) shapes)]
          (when-not (empty? shapes)
            (let [[root component-id changes]
-                 (cll/generate-add-component (pcb/empty-changes it) shapes objects page-id file-id components-v2
-                                             dwg/prepare-create-group
+                 (cll/generate-add-component (pcb/empty-changes it) shapes objects page-id file-id
                                              cfsh/prepare-create-artboard-from-selection)]
              (when id-ref
                (reset! id-ref component-id))
@@ -439,12 +437,11 @@
              selected           (->> (d/nilv ids (dsh/lookup-selected state))
                                      (cfh/clean-loops objects))
              selected-objects   (map #(get objects %) selected)
-             components-v2      (features/active-feature? state "components/v2")
              ;; We don't want to change the structure of component copies
              can-make-component (every? true? (map #(ctn/valid-shape-for-component? objects %) selected-objects))]
 
          (when can-make-component
-           (rx/of (add-component2 id-ref selected components-v2))))))))
+           (rx/of (add-component2 id-ref selected))))))))
 
 (defn add-multiple-components
   "Add several new components to current file library, from the currently selected shapes."
@@ -452,15 +449,14 @@
   (ptk/reify ::add-multiple-components
     ptk/WatchEvent
     (watch [_ state _]
-      (let [components-v2      (features/active-feature? state "components/v2")
-            objects            (dsh/lookup-page-objects state)
+      (let [objects            (dsh/lookup-page-objects state)
             selected           (->> (dsh/lookup-selected state)
                                     (cfh/clean-loops objects))
             selected-objects   (map #(get objects %) selected)
             ;; We don't want to change the structure of component copies
             can-make-component (every? true? (map #(ctn/valid-shape-for-component? objects %) selected-objects))
             added-components   (map (fn [id]
-                                      (with-meta (add-component2 [id] components-v2)
+                                      (with-meta (add-component2 [id])
                                         {:multiple true}))
                                     selected)
             undo-id (js/Symbol)]
@@ -489,7 +485,7 @@
           (rx/empty)
           (let [data    (dsh/lookup-file-data state)
                 changes (-> (pcb/empty-changes it)
-                            (cll/generate-rename-component id new-name data true))]
+                            (cll/generate-rename-component id new-name data))]
             (rx/of (dch/commit-changes changes))))))))
 
 (defn rename-component-and-main-instance
@@ -512,7 +508,6 @@
             (rx/concat
              (rx/of (rename-component component-id clean-name))
 
-             ;; NOTE: only when components-v2 is enabled
              (when (and shape-id page-id)
                (rx/of (dwsh/update-shapes [shape-id] #(assoc % :name clean-name) {:page-id page-id :stack-undo? true}))))))))))
 
@@ -526,11 +521,10 @@
      (watch [it state _]
        (let [libraries          (dsh/lookup-libraries state)
              library            (get libraries library-id)
-             components-v2      (features/active-feature? state "components/v2")
 
              [main-instance changes]
              (-> (pcb/empty-changes it nil)
-                 (cll/generate-duplicate-component library component-id new-component-id components-v2))]
+                 (cll/generate-duplicate-component library component-id new-component-id))]
          (rx/of
           (ptk/data-event :layout/update {:ids [(:id main-instance)]})
           (dch/commit-changes changes)))))))
@@ -560,8 +554,7 @@
             [all-parents changes]
             (-> (pcb/empty-changes it page-id)
                 ;; Deleting main root triggers component delete
-                (cls/generate-delete-shapes fdata page objects #{root-id} {:components-v2 true
-                                                                           :undo-group undo-group
+                (cls/generate-delete-shapes fdata page objects #{root-id} {:undo-group undo-group
                                                                            :undo-id undo-id}))]
         (rx/of
          (dwu/start-undo-transaction undo-id)
@@ -588,11 +581,14 @@
             changes (-> (pcb/empty-changes it)
                         (cll/generate-restore-component ldata component-id library-id page objects))
 
+            page-id
+            (->> changes :redo-changes (keep :page-id) first)
+
             frames
             (->> changes :redo-changes (keep :frame-id))]
 
         (rx/of (dch/commit-changes changes)
-               (ptk/data-event :layout/update {:ids frames}))))))
+               (ptk/data-event :layout/update {:page-id page-id :ids frames}))))))
 
 
 (defn restore-components
@@ -832,7 +828,7 @@
 
             changes
             (-> (pcb/empty-changes it)
-                (cll/generate-reset-component file libraries container id true))]
+                (cll/generate-reset-component file libraries container id))]
 
         (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
                                                                  (:redo-changes changes)
@@ -884,7 +880,7 @@
                  (-> (pcb/empty-changes it)
                      (pcb/set-undo-group undo-group)
                      (pcb/with-container container)
-                     (cll/generate-sync-shape-inverse fdata libraries container id true))
+                     (cll/generate-sync-shape-inverse fdata libraries container id))
 
                  ldata     (->> (:component-file shape)
                                 (dsh/lookup-file-data state))
@@ -1274,10 +1270,8 @@
   []
   (ptk/reify ::watch-component-changes
     ptk/WatchEvent
-    (watch [_ state stream]
-      (let [components-v2? (features/active-feature? state "components/v2")
-
-            stopper-s
+    (watch [_ _ stream]
+      (let [stopper-s
             (->> stream
                  (rx/filter #(or (= ::dw/finalize-page (ptk/type %))
                                  (= ::watch-component-changes (ptk/type %)))))
@@ -1340,7 +1334,7 @@
                  (rx/debounce 5000)
                  (rx/tap #(log/trc :hint "buffer initialized")))]
 
-        (when (and components-v2? (contains? cf/flags :component-thumbnails))
+        (when (contains? cf/flags :component-thumbnails)
           (->> (rx/merge
                 changes-s
 

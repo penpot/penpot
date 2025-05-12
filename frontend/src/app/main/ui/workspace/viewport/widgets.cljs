@@ -92,7 +92,7 @@
         objects (deref refs/workspace-page-objects)
 
         color (if selected?
-                (if (ctn/in-any-component? objects frame)
+                (if (or (ctn/in-any-component? objects frame) (ctk/is-variant-container? frame))
                   "var(--assets-component-hightlight)"
                   "var(--color-accent-tertiary)")
                 "#8f9da3") ;; TODO: Set this color on the DS
@@ -251,8 +251,7 @@
         on-frame-enter       (unchecked-get props "on-frame-enter")
         on-frame-leave       (unchecked-get props "on-frame-leave")
         on-frame-select      (unchecked-get props "on-frame-select")
-        components-v2        (mf/use-ctx ctx/components-v2)
-        shapes               (ctt/get-frames objects {:skip-copies? components-v2})
+        shapes               (ctt/get-frames objects {:skip-copies? true})
         shapes               (if (dbg/enabled? :shape-titles)
                                (into (set shapes)
                                      (map (d/getf objects))
