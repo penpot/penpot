@@ -97,7 +97,7 @@ jobs:
           path: zips/penpot-exporter.zip
 
       # S3 UPLOAD - INDIVIDUAL ZIPs
-      - name: Upload bundles to S3 with date prefix
+      - name: Upload individual ZIPs to S3
         if: ${{ github.event.inputs.zip_mode != 'all' }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -105,13 +105,14 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
           FECHA=$(date +%F)
+          MODO="individual"
           for file in penpot-frontend.zip penpot-backend.zip penpot-exporter.zip; do
-            echo "📤 Subiendo $file a s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/$file"
-            aws s3 cp zips/$file s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/$file
+            echo "📤 Subiendo $file a s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/$MODO/$file"
+            aws s3 cp zips/$file s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/$MODO/$file
           done
 
       # S3 UPLOAD - ZIP UNIFICADO
-      - name: Upload unified zip to S3 with date prefix
+      - name: Upload unified ZIP to S3
         if: ${{ github.event.inputs.zip_mode == 'all' }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -119,11 +120,12 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
           FECHA=$(date +%F)
-          echo "📤 Subiendo penpot-all-bundles.zip a s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/penpot-all-bundles.zip"
-          aws s3 cp zips/penpot-all-bundles.zip s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/penpot-all-bundles.zip
+          MODO="all"
+          echo "📤 Subiendo penpot-all-bundles.zip a s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/$MODO/penpot-all-bundles.zip"
+          aws s3 cp zips/penpot-all-bundles.zip s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/$MODO/penpot-all-bundles.zip
 
       # PRESIGNED LINKS - INDIVIDUAL ZIPs
-      - name: Generate presigned URLs (24h)
+      - name: Generate presigned URLs (24h) for individual ZIPs
         if: ${{ github.event.inputs.zip_mode != 'all' }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -131,14 +133,15 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
           FECHA=$(date +%F)
+          MODO="individual"
           echo "📥 Enlaces de descarga válidos por 24h:"
           for file in penpot-frontend.zip penpot-backend.zip penpot-exporter.zip; do
-            url=$(aws s3 presign s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/$file --expires-in 86400)
+            url=$(aws s3 presign s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/$MODO/$file --expires-in 86400)
             echo "$file: $url"
           done
 
       # PRESIGNED LINK - UNIFICADO
-      - name: Generate presigned URL for all bundle (24h)
+      - name: Generate presigned URL for unified ZIP (24h)
         if: ${{ github.event.inputs.zip_mode == 'all' }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -146,8 +149,9 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
           FECHA=$(date +%F)
+          MODO="all"
           echo "📥 Enlace de descarga válido por 24h:"
-          aws s3 presign s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/penpot-all-bundles.zip --expires-in 86400
+          aws s3 presign s3://${{ secrets.S3_DEV_BUCKET }}/$FECHA/$MODO/penpot-all-bundles.zip --expires-in 86400
 
       - name: Print artifact summary URL
         run: |
