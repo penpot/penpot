@@ -5,14 +5,9 @@
    [app.render-wasm.serializers.color :as clr]))
 
 (def ^:private GRADIENT-STOP-SIZE 8)
-(def ^:private GRADIENT-BASE-SIZE 28)
 
-;; (def GRADIENT-BYTE-SIZE
-;;   (+ GRADIENT-BASE-SIZE (* shp/MAX-GRADIENT-STOPS GRADIENT-STOP-SIZE)))
 
 (def GRADIENT-BYTE-SIZE 156)
-
-
 (def SOLID-BYTE-SIZE 4)
 (def IMAGE-BYTE-SIZE 28)
 

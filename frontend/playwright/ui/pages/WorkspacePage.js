@@ -49,6 +49,12 @@ export class WorkspacePage extends BaseWebSocketPage {
       "get-profiles-for-file-comments?file-id=*",
       "workspace/get-profile-for-file-comments.json",
     );
+
+    await BaseWebSocketPage.mockRPC(
+      page,
+      "update-profile-props",
+      "workspace/update-profile-empty.json",
+    );
   }
 
   static anyTeamId = "c7ce0794-0992-8105-8004-38e630f7920a";
