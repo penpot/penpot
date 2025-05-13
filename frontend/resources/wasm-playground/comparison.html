@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>WebAssembly - Comparison</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+  <body>
+    <script type="module">
+      function prepare(Module, canvas) {
+        const glModule = Module.GL;
+        const context = canvas.getContext("webgl2", {
+          antialias: true,
+          depth: true,
+          alpha: false,
+          stencil: true,
+          preserveDrawingBuffer: true,
+        });
+
+        const handle = glModule.registerContext(context, { majorVersion: 2 });
+        glModule.makeContextCurrent(handle);
+        context.getExtension("WEBGL_debug_renderer_info");
+
+        Module._init(canvas.width, canvas.height);
+      }
+
+      function createElement(tag, attribs, children) {
+        const e = document.createElement(tag)
+        if (attribs) {
+          for (const [name, value] of Object.entries(attribs)) {
+            if (name === 'style') {
+              for (const [styleName, styleValue] of Object.entries(value)) {
+                e.style.setPropertyValue(styleName, styleValue)
+              }
+            } else if (name === 'class') {
+              if (typeof value === 'string') {
+                e.className = value
+              } else if (Array.isArray(value)) {
+                e.classList.add(...value)
+              }
+            } else {
+              e.setAttribute(name, value)
+            }
+          }
+        }
+        if (children) {
+          if (typeof children === 'string'
+           || typeof children === 'number'
+           || typeof children === 'boolean'
+          ) {
+            e.textContent = children
+          } else if (Array.isArray(children)) {
+            e.append(...children)
+          } else {
+            e.append(children)
+          }
+        }
+        return e
+      }
+
+      function createError(title, description) {
+        document.body.append(
+          createElement('div', { class: ['error'] }, [
+            createElement('h1', { class: ['title'] }, title),
+            createElement('p', { class: ['description'] }, description)
+          ])
+        )
+      }
+
+      const url = new URL(location)
+      const files = url.searchParams.getAll('files')
+      if (!files) {
+        createError('URL param "files" not specified', 'You need to specify a file list using "files" like: ?files=/js/a.js&files=/js/b.js')
+      }
+
+      const fn = url.searchParams.get('fn')
+      if (!fn) {
+        createError('URL param "fn" not specified', 'You need to specify the module function to call')
+      }
+
+      const width = url.searchParams.get('width') ?? 320
+      const height = url.searchParams.get('height') ?? 200
+      for (const file of files) {
+        try {
+          const module = await import(file)
+          const instance = await module()
+          const canvas = document.createElement('canvas')
+          canvas.width = width
+          canvas.height = height
+          prepare(instance, canvas)
+          performance.mark(`${file}:begin`)
+          instance[fn]()
+          performance.mark(`${file}:end`)
+
+          const { duration } = performance.measure(file, `${file}:begin`, `${file}:end`)
+          console.log(file, duration)
+
+          document.body.append(canvas)
+        } catch (error) {
+          createError('Error', error.toString())
+        }
+      }
+    </script>
+  </body>
+</html>
