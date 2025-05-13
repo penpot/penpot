@@ -1485,12 +1485,13 @@ Will return a value that matches this schema:
   (-> (make-tokens-lib)
       (decode-dtcg-json encoded-json)))
 
-(def type:tokens-lib
-  {:type ::tokens-lib
-   :pred valid-tokens-lib?
-   :type-properties
-   {:encode/json encode-dtcg
-    :decode/json decode-dtcg}})
+(def schema:tokens-lib
+  (sm/register!
+   {:type ::tokens-lib
+    :pred valid-tokens-lib?
+    :type-properties
+    {:encode/json encode-dtcg
+     :decode/json decode-dtcg}}))
 
 (defn duplicate-set [set-name lib & {:keys [suffix]}]
   (let [sets (get-sets lib)
@@ -1499,8 +1500,6 @@ Will return a value that matches this schema:
     (some-> (get-set lib set-name)
             (assoc :name copy-name)
             (assoc :modified-at (dt/now)))))
-
-(sm/register! type:tokens-lib)
 
 ;; === Serialization handlers for RPC API (transit) and database (fressian)
 
