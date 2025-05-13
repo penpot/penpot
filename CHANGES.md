@@ -47,6 +47,7 @@
 - Fix cannot rename Design Token Sets when group of same name exists [Taiga Issue #10773](https://tree.taiga.io/project/penpot/issue/10773)
 - Fix problem when duplicating grid layout [Github #6391](https://github.com/penpot/penpot/issues/6391)
 - Fix issue that makes workspace shortcuts stop working [Taiga #11062](https://tree.taiga.io/project/penpot/issue/11062)
+- Fix problem while syncing library colors and typographies [Taiga #11068](https://tree.taiga.io/project/penpot/issue/11068)
 
 ## 2.6.2
 
