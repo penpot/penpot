@@ -208,6 +208,7 @@
 (def ^:icon row-reverse (icon-xref :row-reverse))
 (def ^:icon search (icon-xref :search))
 (def ^:icon separate-nodes (icon-xref :separate-nodes))
+(def ^:icon settings (icon-xref :settings))
 (def ^:icon share (icon-xref :share))
 (def ^:icon shown (icon-xref :shown))
 (def ^:icon size-horizontal (icon-xref :size-horizontal))

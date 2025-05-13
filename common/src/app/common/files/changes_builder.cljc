@@ -1135,3 +1135,16 @@
 (defn get-page-id
   [changes]
   (::page-id (meta changes)))
+
+(defn set-base-font-size
+  [changes new-base-font-size]
+
+  (let [file-data  (::file-data (meta changes))
+        previous-font-size (ctf/get-base-font-size file-data)]
+    (-> changes
+        (update :redo-changes conj {:type :mod-base-font-size
+                                    :base-font-size new-base-font-size})
+
+        (update :undo-changes conj {:type :mod-base-font-size
+                                    :base-font-size previous-font-size})
+        (apply-changes-local))))

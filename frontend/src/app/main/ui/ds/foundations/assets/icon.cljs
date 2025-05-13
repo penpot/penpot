@@ -231,6 +231,7 @@
 (def ^:icon-id row-reverse "row-reverse")
 (def ^:icon-id search "search")
 (def ^:icon-id separate-nodes "separate-nodes")
+(def ^:icon-id settings "settings")
 (def ^:icon-id shown "shown")
 (def ^:icon-id size-horizontal "size-horizontal")
 (def ^:icon-id size-vertical "size-vertical")

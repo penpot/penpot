@@ -7103,6 +7103,22 @@ msgstr "El valor no es válido"
 msgid "workspace.token.warning-name-change"
 msgstr "Al renombrar este token se romperán las referencias al nombre anterior"
 
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs
+msgid "workspace.token.settings"
+msgstr "Configuración de tokens"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs
+msgid "workspace.token.base-font-size"
+msgstr "Tamaño de fuente base"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs
+msgid "workspace.token.setting-description"
+msgstr "Aquí puedes configurar el tamaño de fuente base, que define el tamaño de 1rem:"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs
+msgid "workspace.token.base-font-size.error"
+msgstr "El tamaño de fuente base debe estar en px o sin unidad."
+
 #: src/app/main/ui/workspace/sidebar.cljs:135, src/app/main/ui/workspace/sidebar.cljs:144
 msgid "workspace.toolbar.assets"
 msgstr "Recursos"
