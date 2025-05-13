@@ -84,7 +84,7 @@ export function clearShapeFills() {
 }
 
 export function addShapeSolidFill(argb) {
-  const ptr = allocBytes(176);
+  const ptr = allocBytes(160);
   const heap = getHeapU32();
   const dv = new DataView(heap.buffer);
   dv.setUint8(ptr, 0x00, true);
