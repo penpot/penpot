@@ -43,48 +43,44 @@ test("Create a LINEAR gradient", async ({ page }) => {
   await workspacePage.clickLeafLayer("Rectangle");
 
   const swatch = workspacePage.page.getByRole("button", { name: "#B1B2B5" });
-  const swatchBox = await swatch.boundingBox();
   await swatch.click();
 
-  const select = await workspacePage.page.getByText("Solid");
+  const select = workspacePage.page.getByText("Solid");
   await select.click();
 
-  const gradOption = await workspacePage.page.getByText("Gradient");
+  const gradOption = workspacePage.page.getByText("Gradient");
   await gradOption.click();
 
-  const addStopBtn = await workspacePage.page.getByRole("button", {
+  const addStopBtn = workspacePage.page.getByRole("button", {
     name: "Add stop",
   });
   await addStopBtn.click();
   await addStopBtn.click();
   await addStopBtn.click();
 
-  const removeBtn = await workspacePage.page
-    .getByTestId("colorpicker")
+  const removeBtn = workspacePage.colorpicker
     .getByRole("button", { name: "Remove color" })
     .nth(2);
   await removeBtn.click();
   await removeBtn.click();
 
-  const inputColor1 = await workspacePage.page.getByPlaceholder("Mixed").nth(1);
+  const inputColor1 = workspacePage.colorpicker
+    .getByPlaceholder("Mixed")
+    .nth(1);
   await inputColor1.fill("fabada");
 
-  const inputOpacity1 = await workspacePage.page
-    .getByTestId("colorpicker")
-    .getByPlaceholder("--")
-    .nth(1);
+  const inputOpacity1 = workspacePage.colorpicker.getByPlaceholder("--").nth(1);
   await inputOpacity1.fill("100");
 
-  const inputColor2 = await workspacePage.page.getByPlaceholder("Mixed").nth(2);
+  const inputColor2 = workspacePage.colorpicker
+    .getByPlaceholder("Mixed")
+    .nth(1);
   await inputColor2.fill("red");
 
-  const inputOpacity2 = await workspacePage.page
-    .getByTestId("colorpicker")
-    .getByPlaceholder("--")
-    .nth(2);
+  const inputOpacity2 = workspacePage.colorpicker.getByPlaceholder("--").nth(1);
   await inputOpacity2.fill("100");
 
-  const inputOpacityGlobal = await workspacePage.page
+  const inputOpacityGlobal = workspacePage.page
     .locator("div")
     .filter({ hasText: /^FillLinear gradient%$/ })
     .getByPlaceholder("--");
@@ -110,58 +106,73 @@ test("Create a RADIAL gradient", async ({ page }) => {
   await workspacePage.clickLeafLayer("Rectangle");
 
   const swatch = workspacePage.page.getByRole("button", { name: "#B1B2B5" });
-  const swatchBox = await swatch.boundingBox();
   await swatch.click();
 
-  const select = await workspacePage.page.getByText("Solid");
+  const select = workspacePage.page.getByText("Solid");
   await select.click();
 
-  const gradOption = await workspacePage.page.getByText("Gradient");
+  const gradOption = workspacePage.page.getByText("Gradient");
   await gradOption.click();
 
-  const gradTypeOptions = await workspacePage.page
-    .getByTestId("colorpicker")
+  const gradTypeOptions = workspacePage.colorpicker
     .locator("div")
     .filter({ hasText: "Linear" })
     .nth(3);
   await gradTypeOptions.click();
 
-  const gradRadialOption = await workspacePage.page
+  const gradRadialOption = workspacePage.page
     .locator("li")
     .filter({ hasText: "Radial" });
   await gradRadialOption.click();
 
-  const addStopBtn = await workspacePage.page.getByRole("button", {
+  const addStopBtn = workspacePage.page.getByRole("button", {
     name: "Add stop",
   });
   await addStopBtn.click();
   await addStopBtn.click();
   await addStopBtn.click();
 
-  const removeBtn = await workspacePage.page
-    .getByTestId("colorpicker")
+  const removeBtn = workspacePage.colorpicker
     .getByRole("button", { name: "Remove color" })
     .nth(2);
   await removeBtn.click();
   await removeBtn.click();
 
-  const inputColor1 = await workspacePage.page.getByPlaceholder("Mixed").nth(1);
+  const inputColor1 = workspacePage.page.getByPlaceholder("Mixed").nth(1);
   await inputColor1.fill("fabada");
 
-  const inputOpacity1 = await workspacePage.page
-    .getByTestId("colorpicker")
-    .getByPlaceholder("--")
-    .nth(1);
+  const inputOpacity1 = workspacePage.colorpicker.getByPlaceholder("--").nth(1);
   await inputOpacity1.fill("100");
 
-  const inputColor2 = await workspacePage.page.getByPlaceholder("Mixed").nth(2);
+  const inputColor2 = workspacePage.page.getByPlaceholder("Mixed").nth(2);
   await inputColor2.fill("red");
 
-  const inputOpacity2 = await workspacePage.page
-    .getByTestId("colorpicker")
-    .getByPlaceholder("--")
-    .nth(2);
+  const inputOpacity2 = workspacePage.colorpicker.getByPlaceholder("--").nth(1);
   await inputOpacity2.fill("100");
+});
+
+test("Gradient stops limit", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.mockConfigFlags(["enable-binary-fills"]);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-fragment-gradient-limits.json",
+  );
+
+  await workspacePage.goToWorkspace();
+  await workspacePage.clickLeafLayer("Rectangle");
+
+  const swatch = workspacePage.page.getByRole("button", {
+    name: "Linear gradient",
+  });
+  await swatch.click();
+
+  await expect(workspacePage.colorpicker).toBeVisible();
+
+  await expect(
+    workspacePage.colorpicker.getByRole("button", { name: "Add stop" }),
+  ).toBeDisabled();
 });
 
 // Fix for https://tree.taiga.io/project/penpot/issue/9900
@@ -203,7 +214,6 @@ test("Bug 10089 - Cannot change alpha", async ({ page }) => {
   await workspacePage.clickLeafLayer("Rectangle");
 
   const swatch = workspacePage.page.getByRole("button", { name: "#B1B2B5" });
-  const swatchBox = await swatch.boundingBox();
   await swatch.click();
 
   const alpha = workspacePage.page.getByLabel("A", { exact: true });

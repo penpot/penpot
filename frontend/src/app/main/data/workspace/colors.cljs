@@ -13,8 +13,9 @@
    [app.common.schema :as sm]
    [app.common.text :as txt]
    [app.common.types.color :as ctc]
-   [app.common.types.shape :refer [check-stroke]]
+   [app.common.types.shape :as shp]
    [app.common.types.shape.shadow :refer [check-shadow]]
+   [app.config :as cfg]
    [app.main.broadcast :as mbc]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
@@ -24,6 +25,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -421,7 +423,7 @@
   [ids stroke]
 
   (assert
-   (check-stroke stroke)
+   (shp/check-stroke stroke)
    "expected a valid stroke struct")
 
   (assert
@@ -821,39 +823,43 @@
     (update [_ state]
       (update state :colorpicker
               (fn [{:keys [stops editing-stop] :as state}]
-                (if (cc/uniform-spread? stops)
-                  ;; Add to uniform
-                  (let [stops (->> (cc/uniform-spread (first stops) (last stops) (inc (count stops)))
-                                   (mapv split-color-components))]
-                    (-> state
-                        (assoc :current-color (get stops editing-stop))
-                        (assoc :stops stops)))
+                (let [cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :binary-fills))
+                      can-add-stop? (or (not cap-stops?) (< (count stops) shp/MAX-GRADIENT-STOPS))]
+                  (if can-add-stop?
+                    (if (cc/uniform-spread? stops)
+                      ;; Add to uniform
+                      (let [stops (->> (cc/uniform-spread (first stops) (last stops) (inc (count stops)))
+                                       (mapv split-color-components))]
+                        (-> state
+                            (assoc :current-color (get stops editing-stop))
+                            (assoc :stops stops)))
 
-                  ;; We add the stop to the middle point between the selected
-                  ;; and the next one.
-                  ;; If the last stop is selected then it's added between the
-                  ;; last two stops.
-                  (let [index
-                        (if (= editing-stop (dec (count stops)))
-                          (dec editing-stop)
-                          editing-stop)
+                      ;; We add the stop to the middle point between the selected
+                      ;; and the next one.
+                      ;; If the last stop is selected then it's added between the
+                      ;; last two stops.
+                      (let [index
+                            (if (= editing-stop (dec (count stops)))
+                              (dec editing-stop)
+                              editing-stop)
 
-                        {from-offset :offset} (get stops index)
-                        {to-offset :offset}   (get stops (inc index))
+                            {from-offset :offset} (get stops index)
+                            {to-offset :offset}   (get stops (inc index))
 
-                        half-point-offset
-                        (+ from-offset (/ (- to-offset from-offset) 2))
+                            half-point-offset
+                            (+ from-offset (/ (- to-offset from-offset) 2))
 
-                        new-stop (-> (cc/interpolate-gradient stops half-point-offset)
-                                     (split-color-components))
+                            new-stop (-> (cc/interpolate-gradient stops half-point-offset)
+                                         (split-color-components))
 
-                        stops (conj stops new-stop)
-                        stops (into [] (sort-by :offset stops))
-                        editing-stop (d/index-of-pred stops #(= new-stop %))]
-                    (-> state
-                        (assoc :editing-stop editing-stop)
-                        (assoc :current-color (get stops editing-stop))
-                        (assoc :stops stops)))))))))
+                            stops (conj stops new-stop)
+                            stops (into [] (sort-by :offset stops))
+                            editing-stop (d/index-of-pred stops #(= new-stop %))]
+                        (-> state
+                            (assoc :editing-stop editing-stop)
+                            (assoc :current-color (get stops editing-stop))
+                            (assoc :stops stops))))
+                    state)))))))
 
 (defn update-colorpicker-add-stop
   [offset]
@@ -863,15 +869,18 @@
       (update state :colorpicker
               (fn [state]
                 (let [stops (:stops state)
-                      new-stop (-> (cc/interpolate-gradient stops offset)
-                                   (split-color-components))
-                      stops (conj stops new-stop)
-                      stops (into [] (sort-by :offset stops))
-                      editing-stop (d/index-of-pred stops #(= new-stop %))]
-                  (-> state
-                      (assoc :editing-stop editing-stop)
-                      (assoc :current-color (get stops editing-stop))
-                      (assoc :stops stops))))))))
+                      cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :binary-fills))
+                      can-add-stop? (or (not cap-stops?) (< (count stops) shp/MAX-GRADIENT-STOPS))]
+                  (if can-add-stop? (let [new-stop (-> (cc/interpolate-gradient stops offset)
+                                                       (split-color-components))
+                                          stops (conj stops new-stop)
+                                          stops (into [] (sort-by :offset stops))
+                                          editing-stop (d/index-of-pred stops #(= new-stop %))]
+                                      (-> state
+                                          (assoc :editing-stop editing-stop)
+                                          (assoc :current-color (get stops editing-stop))
+                                          (assoc :stops stops)))
+                      state)))))))
 
 (defn update-colorpicker-stops
   [stops]
@@ -881,7 +890,8 @@
       (update state :colorpicker
               (fn [state]
                 (let [stop  (or (:editing-stop state) 0)
-                      stops (mapv split-color-components stops)]
+                      cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :binary-fills))
+                      stops (mapv split-color-components (if cap-stops? (take shp/MAX-GRADIENT-STOPS stops) stops))]
                   (-> state
                       (assoc :current-color (get stops stop))
                       (assoc :stops stops))))))))

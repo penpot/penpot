@@ -12,6 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.types.shape :as shp]
    [app.config :as cfg]
    [app.main.data.event :as-alias ev]
    [app.main.data.modal :as modal]
@@ -20,6 +21,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
@@ -336,6 +338,8 @@
          (fn [value]
            (st/emit! (dc/update-colorpicker-gradient-opacity (/ value 100)))))
 
+        cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :binary-fills))
+
         tabs
         #js [#js {:aria-label (tr "workspace.libraries.colors.rgba")
                   :icon ic/rgba
@@ -435,7 +439,7 @@
       (when (= selected-mode :gradient)
         [:> gradients*
          {:type (:type state)
-          :stops (:stops state)
+          :stops (if cap-stops? (vec (take shp/MAX-GRADIENT-STOPS (:stops state))) (:stops state))
           :editing-stop (:editing-stop state)
           :on-stop-edit-start handle-stop-edit-start
           :on-stop-edit-finish handle-stop-edit-finish
