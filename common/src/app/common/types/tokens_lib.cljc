@@ -826,6 +826,27 @@
          (map-indexed (fn [index item]
                         (assoc item :index index))))))
 
+(defn get-tokens-of-unknown-type
+  "Recursively search the tokens for unknown types"
+  [tokens token-path dctg?]
+  (let [type-key (if dctg? "$type" "type")]
+    (reduce-kv
+     (fn [unknown-tokens k v]
+       (let [child-path (if (empty? token-path)
+                          (name k)
+                          (str token-path "." k))]
+         (if (and (map? v)
+                  (not (contains? v type-key)))
+           (let [nested-unknown-tokens (get-tokens-of-unknown-type v child-path dctg?)]
+             (merge unknown-tokens nested-unknown-tokens))
+           (let [token-type-str (get v type-key)
+                 token-type (cto/dtcg-token-type->token-type token-type-str)]
+             (if (and (not (some? token-type)) (some? token-type-str))
+               (assoc unknown-tokens child-path token-type-str)
+               unknown-tokens)))))
+     {}
+     tokens)))
+
 (defn flatten-nested-tokens-json
   "Recursively flatten the dtcg token structure, joining keys with '.'."
   [tokens token-path]
