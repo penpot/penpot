@@ -32,6 +32,13 @@
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CONSTANTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce BASE-FONT-SIZE "16px")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -65,7 +72,8 @@
 
 (def schema:options
   [:map {:title "FileOptions"}
-   [:components-v2 {:optional true} ::sm/boolean]])
+   [:components-v2 {:optional true} ::sm/boolean]
+   [:base-font-size {:optional true} :string]])
 
 (def schema:data
   [:map {:title "FileData"}
@@ -134,7 +142,8 @@
        (ctpl/add-page page)
 
        :always
-       (update :options assoc :components-v2 true)))))
+       (update :options merge {:components-v2 true
+                               :base-font-size BASE-FONT-SIZE})))))
 
 (defn make-file
   [{:keys [id project-id name revn is-shared features migrations
@@ -243,6 +252,11 @@
         (get-component-page component)
         (ctn/get-shape (:main-instance-id component)))
     (ctk/get-component-root component)))
+
+(defn get-base-font-size
+  "Retrieve the base font size value or token reference."
+  [file-data]
+  (get-in file-data [:options :base-font-size] BASE-FONT-SIZE))
 
 (defn get-component-shape
   "Retrieve one shape in the component by id. If with-context? is true, add the
