@@ -108,6 +108,11 @@ export function useShape(id) {
   Module._use_shape(...buffer);
 }
 
+export function set_parent(id) {
+  const buffer = getU32(id);
+  Module._set_parent(...buffer);
+}
+
 export function setupInteraction(canvas) {
   canvas.addEventListener("wheel", (e) => {
     e.preventDefault();
