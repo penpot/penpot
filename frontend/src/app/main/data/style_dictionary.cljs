@@ -13,9 +13,12 @@
    [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.data.notifications :as ntf]
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.warnings :as wtw]
+   [app.main.store :as st]
+   [app.util.i18n :refer [tr]]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -81,21 +84,20 @@
   (let [parsed-value (cft/parse-token-value value)
         out-of-scope (not (<= 0 (:value parsed-value) 1))
         references (seq (ctob/find-token-value-references value))]
-    (cond
-      (and parsed-value (not out-of-scope))
-      parsed-value
+    (cond (and parsed-value (not out-of-scope))
+          parsed-value
 
-      references
-      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
-       :references references}
+          references
+          {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+           :references references}
 
-      (and (not has-references?) out-of-scope)
-      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-opacity value)]}
+          (and (not has-references?) out-of-scope)
+          {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-opacity value)]}
 
-      (and has-references? out-of-scope parsed-value)
-      (assoc parsed-value :warnings [(wtw/warning-with-value :warning.style-dictionary/invalid-referenced-token-value-opacity value)])
+          (and has-references? out-of-scope parsed-value)
+          (assoc parsed-value :warnings [(wtw/warning-with-value :warning.style-dictionary/invalid-referenced-token-value-opacity value)])
 
-      :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
+          :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
 
 
 (defn- parse-sd-token-stroke-width-value
@@ -167,11 +169,13 @@
                                 (parse-sd-token-numeric-value value))
            output-token (cond (:errors parsed-token-value)
                               (merge origin-token parsed-token-value)
+
                               (:warnings parsed-token-value)
                               (assoc origin-token
                                      :resolved-value (:value parsed-token-value)
                                      :warnings (:warnings parsed-token-value)
                                      :unit (:unit parsed-token-value))
+
                               :else
                               (assoc origin-token
                                      :resolved-value (:value parsed-token-value)
@@ -280,6 +284,19 @@
     (when name-error?
       (wte/error-ex-info :error.import/invalid-token-name (:value schema-error) err))))
 
+(defn- group-by-value [m]
+  (reduce (fn [acc [k v]]
+            (update acc v conj k)) {} m))
+
+(defn- tokens-of-unknown-type-warning [unknown-tokens]
+  (let [type->tokens (group-by-value unknown-tokens)]
+    (ntf/show {:content (tr "workspace.token.unknown-token-type")
+               :detail (->> (for [[token-type tokens] type->tokens]
+                              (tr "workspace.token.unknown-token-type-section" token-type (count tokens)))
+                            (str/join "\n"))
+               :type :toast
+               :level :info})))
+
 (defn process-json-stream
   ([data-stream]
    (process-json-stream nil data-stream))
@@ -293,28 +310,36 @@
                         (throw (wte/error-ex-info :error.import/json-parse-error data e))))))
           (rx/map (fn [json-data]
                     (let [single-set? (ctob/single-set? json-data)
-                          json-format (ctob/get-json-format json-data)]
-                      (try
-                        (cond
-                          (and single-set?
-                               (= :json-format/legacy json-format))
-                          (decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) file-name json-data)
+                          json-format (ctob/get-json-format json-data)
+                          unknown-tokens (ctob/get-tokens-of-unknown-type
+                                          json-data
+                                          ""
+                                          (= json-format :json-format/dtcg))]
+                      {:tokens-lib
+                       (try
+                         (cond
+                           (and single-set?
+                                (= :json-format/legacy json-format))
+                           (decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) file-name json-data)
 
-                          (and single-set?
-                               (= :json-format/dtcg json-format))
-                          (decode-single-set-json (ctob/ensure-tokens-lib nil) file-name json-data)
+                           (and single-set?
+                                (= :json-format/dtcg json-format))
+                           (decode-single-set-json (ctob/ensure-tokens-lib nil) file-name json-data)
 
-                          (= :json-format/legacy json-format)
-                          (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data)
+                           (= :json-format/legacy json-format)
+                           (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data)
 
-                          :else
-                          (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data))
+                           :else
+                           (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data))
 
-                        (catch js/Error e
-                          (let [err (or (name-error e)
-                                        (wte/error-ex-info :error.import/invalid-json-data json-data e))]
-                            (throw err)))))))
-          (rx/mapcat (fn [tokens-lib]
+                         (catch js/Error e
+                           (let [err (or (name-error e)
+                                         (wte/error-ex-info :error.import/invalid-json-data json-data e))]
+                             (throw err))))
+                       :unknown-tokens unknown-tokens})))
+          (rx/mapcat (fn [{:keys [tokens-lib unknown-tokens]}]
+                       (when unknown-tokens
+                         (st/emit! (tokens-of-unknown-type-warning unknown-tokens)))
                        (try
                          (-> (ctob/get-all-tokens tokens-lib)
                              (resolve-tokens-with-errors+)

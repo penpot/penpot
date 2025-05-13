@@ -7433,3 +7433,9 @@ msgstr "The following files have errors:"
 
 msgid "dashboard.import.import-error.message2"
 msgstr "Files with errors will not be uploaded."
+
+msgid "workspace.token.unknown-token-type"
+msgstr "Skipped tokens"
+
+msgid "workspace.token.unknown-token-type-section"
+msgstr "Type '%s' is not supported (%s)\n"
