@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns lib.file-builder
+(ns lib.builder
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]

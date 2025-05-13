@@ -14,8 +14,8 @@
     "url": "https://github.com/penpot/penpot"
   },
   "resolutions": {
-    "@vitejs/plugin-react": "^4.2.0",
-    "@zip.js/zip.js@npm:^2.7.44": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch"
+    "@zip.js/zip.js@npm:^2.7.44": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch",
+    "@vitejs/plugin-react": "^4.2.0"
   },
   "scripts": {
     "build:app:assets": "node ./scripts/build-app-assets.js",
@@ -26,7 +26,6 @@
     "build:app:libs": "node ./scripts/build-libs.js",
     "build:app:main": "clojure -M:dev:shadow-cljs release main worker",
     "build:app": "yarn run clear:shadow-cache && yarn run build:app:main && yarn run build:app:libs",
-    "build:library": "yarn run clear:shadow-cache && clojure -M:dev:shadow-cljs release library",
     "e2e:server": "node ./scripts/e2e-server.js",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",
     "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
@@ -46,7 +45,6 @@
     "watch:app:main": "clojure -M:dev:shadow-cljs watch main worker storybook",
     "clear:shadow-cache": "rm -rf .shadow-cljs",
     "watch:app": "yarn run clear:shadow-cache && concurrently \"yarn run watch:app:main\" \"yarn run watch:app:libs\"",
-    "watch:library": "yarn run clear:shadow-cache && clojure -M:dev:shadow-cljs watch library",
     "watch": "yarn run watch:app:assets",
     "watch:storybook": "concurrently \"storybook dev -p 6006 --no-open\" \"yarn run watch:storybook:assets\"",
     "watch:storybook:assets": "node ./scripts/watch-storybook.js"
