@@ -307,10 +307,7 @@
          (mf/deps on-create-clicked)
          (fn [event]
            (when (kbd/enter? event)
-             (on-create-clicked event))))
-
-        subscription          (:subscription team)
-        subscription-name     (:type subscription)]
+             (on-create-clicked event))))]
 
     [:*
      [:> dropdown-menu-item* {:on-click    team-selected
@@ -334,12 +331,12 @@
         [:img {:src (cf/resolve-team-photo-url team-item)
                :class (stl/css :team-picture)
                :alt (:name team-item)}]
-        ;; TODO complete this condition with the case that a user belongs to a team with a subscription
+
         (if (and (contains? cf/flags :subscriptions)
-                 (or (= "unlimited" subscription-name) (= "enterprise" subscription-name)))
+                 (or (= "unlimited" (:type (:subscription team-item))) (= "enterprise" (:type (:subscription team-item)))))
           [:div  {:class (stl/css :team-text-with-icon)}
            [:span {:class (stl/css :team-text) :title (:name team-item)} (:name team-item)]
-           [:> menu-team-icon* {:subscription-name subscription-name}]]
+           [:> menu-team-icon* {:subscription-name (:type (:subscription team-item))}]]
           [:span {:class (stl/css :team-text)
                   :title (:name team-item)} (:name team-item)])
         (when (= (:id team-item) (:id team))
@@ -664,16 +661,6 @@
       [:button {:class (stl/css :current-team)
                 :on-click handle-show-team-click
                 :on-key-down handle-show-team-keydown}
-
-       (println "1" (and (:is-default team)
-              (not (contains? cf/flags :subscriptions))))
-
-       (println "2" (and (contains? cf/flags :subscriptions)
-              (not (:is-default team))
-              (or (= "unlimited" subscription-name) (= "enterprise" subscription-name))))
-
-       (println "3" (and (not (:is-default team))
-              (not (contains? cf/flags :subscriptions))))
        (cond
          (:is-default team)
          [:div {:class (stl/css :team-name)}

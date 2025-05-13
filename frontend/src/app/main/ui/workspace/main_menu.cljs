@@ -787,6 +787,7 @@
         on-power-up-click
         (mf/use-fn
          (fn []
+           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "workspace-menu"}))
            (dom/open-new-window "https://penpot.app/pricing")))
 
         toggle-flag
@@ -818,8 +819,10 @@
             (ptk/event ::ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:menu"})
             (modal/show :plugin-management {}))))
 
-        ;; TODO subscription cases professional/unlimited/enterprise
-        subscription-name :unlimited]
+        subscription           (:subscription (:props profile))
+        subscription-name      (if subscription
+                                 (:type subscription)
+                                 "professional")]
 
     (mf/with-effect []
       (let [disposable (->> st/stream
@@ -906,7 +909,7 @@
        [:span {:class (stl/css :open-arrow)} i/arrow]]
 
 
-      (when (and (contains? cf/flags :subscriptions) (not= :enterprise subscription-name))
+      (when (and (contains? cf/flags :subscriptions) (not= "enterprise" subscription-name))
         [:> main-menu-power-up* {:close-sub-menu close-sub-menu}])
 
       (when (contains? cf/flags :subscriptions-old)

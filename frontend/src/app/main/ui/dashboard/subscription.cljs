@@ -3,8 +3,6 @@
 (ns app.main.ui.dashboard.subscription
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.uri :as u]
-   [app.config :as cf]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu-item*]]
@@ -85,7 +83,10 @@
         go-to-manage-subscription (mf/use-fn
          (fn []
            ;; TODO add event tracking
-           (dom/open-new-window (u/join cf/public-uri (str "payments/subscriptions/show?returnUrl=" js/window.location.href)))))]
+           (let [current-href (rt/get-current-href)
+                 returnUrl (js/encodeURIComponent current-href)
+                 href (str "payments/subscriptions/show?returnUrl=" returnUrl)]
+             (st/emit! (rt/nav-raw :href href)))))]
 
     [:div {:class (stl/css :team)}
      [:div {:class (stl/css :team-label)}
@@ -107,16 +108,12 @@
 
 (mf/defc main-menu-power-up*
   [{:keys [close-sub-menu]}]
-  (let [on-power-up-click
-        (mf/use-fn
-         (fn []
-           ;; TODO update url to penpot payments
-           (dom/open-new-window "https://penpot.app/pricing")))]
+  (let [go-to-subscription    (mf/use-fn #(st/emit! (rt/nav :settings-subscription)))]
     [:> dropdown-menu-item* {:class (stl/css-case :menu-item true)
-                             :on-click    on-power-up-click
+                             :on-click    go-to-subscription
                              :on-key-down (fn [event]
                                             (when (kbd/enter? event)
-                                              (on-power-up-click)))
+                                              (go-to-subscription)))
                              :on-pointer-enter close-sub-menu
                              :id          "file-menu-power-up"}
      [:span {:class (stl/css :item-name)} (tr "subscription.workspace.header.menu.option.power-up")]]))

@@ -1,12 +1,17 @@
 (ns app.main.ui.settings.subscription
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.uri :as u]
-   [app.config :as cf]
+   [app.main.data.event :as ev]
+   [app.main.data.modal :as modal]
+   [app.main.data.team :as dtm]
+   [app.main.router :as rt]
+   [app.main.store :as st]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.time :as dt]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc plan-card*
@@ -30,6 +35,66 @@
    (when (and cta-link cta-text) [:button {:class (stl/css :cta-button)
                                       :on-click cta-link} cta-text])])
 
+(defn random-team []
+  {:name (rand-nth ["Equipo Fénix"
+                    "Los Innovadores"
+                    "Código Salvaje"
+                    "Fuerza Lambda"
+                    "Beta Squad"
+                    "Los Asíncronos"])
+   :members (+ 2 (rand-int 9))})
+
+(mf/defc subscribe-management-dialog
+  {::mf/register modal/components
+   ::mf/register-as :subscribe-management}
+  [{:keys [subscription-name]}]
+
+  (let [teams                (repeatedly 4 random-team)
+        max-members          (apply max-key :members teams)
+        handle-accept-dialog  (mf/use-callback
+                              (fn []
+                                ;; TODO add event tracking send trial subscription
+                                (println "send subscription")
+                                (modal/hide!)))
+        handle-close-dialog  (mf/use-callback
+                              (fn []
+                                ;; TODO add event tracking close modal/cancel subscription
+                                (modal/hide!)))]
+
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-dialog :subscribe-management)}
+      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} i/close]
+      [:div {:class (stl/css :modal-title)} "Subscribe for your teams!"]
+
+      [:div {:class (stl/css :modal-content)}
+       [:div {:class (stl/css :modal-text)}
+        (str "You are subscribing to the Professional plan for your teams:" subscription-name)]
+       [:ul {:class (stl/css :teams-list)}
+        (for [team teams]
+          [:li {:key (str team) :class (stl/css :team-name)} (:name team)])]
+       [:> select*
+        {:id "team-select"
+         :options [{:label "Code"
+                    :id "option-code"}
+                   {:label "Design"
+                    :id "option-design"}
+                   {:label "Menu"
+                    :id "option-menu"}]}]
+       [:span {:class (stl/css :max-members)} (:members max-members)]
+       [:div {:class (stl/css :modal-footer)}
+        [:div {:class (stl/css :action-buttons)}
+         [:input
+          {:class (stl/css :cancel-button)
+           :type "button"
+           :value (tr "ds.confirm-cancel")
+           :on-click handle-close-dialog}]
+
+         [:input
+          {:class (stl/css :primary-button)
+           :type "button"
+           :value (tr "labels.continue")
+           :on-click handle-accept-dialog}]]]]]]))
+
 (mf/defc subscription-page*
   [{:keys [profile]}]
   (let [subscription           (:subscription (:props profile))
@@ -40,16 +105,23 @@
         locale                 (mf/deref i18n/locale)
         penpot-member          (dt/format-date-locale-short (:created-at profile) {:locale locale})
         subscription-member    (:start-date subscription)
-        ;; TODO encode URL
-        ;; u/query-encode
         go-to-pricing-page     (mf/use-fn
-         (fn []
-           ;; TODO add event tracking
-           (dom/open-new-window "https://penpot.app/pricing")))
-        go-to-payments         (mf/use-fn
-         (fn []
-           ;; TODO add event tracking
-           (dom/open-new-window (u/join cf/public-uri (str "payments/subscriptions/show?returnUrl=" js/window.location.href)))))]
+                                (fn []
+                                  (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "settings" :section "subscription"}))
+                                  (dom/open-new-window "https://penpot.app/pricing")))
+        go-to-payments          (mf/use-fn
+                                 (fn []
+                                 ;; TODO add event tracking manage subscription in stripe
+                                   (let [current-href (rt/get-current-href)
+                                         returnUrl (js/encodeURIComponent current-href)
+                                         href (str "payments/subscriptions/show?returnUrl=" returnUrl)]
+                                     (st/emit! (rt/nav-raw :href href)))))
+        open-subscription-modal (mf/use-fn
+                                 (fn [subscription-name]
+                                   ;; TODO add event tracking open modal to try trial
+                                   (st/emit! 
+                                    (st/emit! (dtm/fetch-teams))
+                                    (modal/show :subscribe-management {:subscription-name subscription-name}))))]
 
     (mf/with-effect []
       (dom/set-html-title (tr "subscription.labels")))
@@ -108,7 +180,7 @@
 
       [:div {:class (stl/css :other-subscriptions)}
        [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.other-plans")]
-       (when (not= subscription-name :professional)
+       (when (not= subscription-name "professional")
          [:> plan-card* {:card-title (tr "subscription.settings.professional")
                          :price-value "$0"
                          :price-period (tr "subscription.settings.price-editor-month")
@@ -118,7 +190,7 @@
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page}])
 
-       (when (not= subscription-name :unlimited)
+       (when (not= subscription-name "unlimited")
          [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
                          :card-title-icon i/character-u
                          :price-value "$7"
@@ -128,11 +200,11 @@
                                     (tr "subscription.settings.unlimited.bill"),
                                     (tr "subscription.settings.unlimited.storage")]
                          :cta-text (tr "subscription.settings.ulimited.try-it-free")
-                         :cta-link go-to-payments
+                         :cta-link #(open-subscription-modal "Unlimited")
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page}])
 
-       (when (not= subscription-name :enterprise)
+       (when (not= subscription-name "enterprise")
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                          :card-title-icon i/character-e
                          :price-value "$950"
@@ -142,6 +214,6 @@
                                     (tr "subscription.settings.enterprise.security"),
                                     (tr "subscription.settings.enterprise.logs")]
                          :cta-text (tr "subscription.settings.try-it-free")
-                         :cta-link go-to-payments
+                         :cta-link #(open-subscription-modal "Enterprise")
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page}])]]]))

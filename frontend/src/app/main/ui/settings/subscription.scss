@@ -138,3 +138,45 @@
   stroke: var(--color-accent-tertiary);
   margin-inline-start: $s-4;
 }
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  max-height: initial;
+}
+
+.close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.modal-title {
+  @include t.use-typography("title-large");
+  margin-block-end: $s-32;
+  color: var(--modal-title-foreground-color);
+  display: flex;
+  gap: $s-12;
+}
+
+.modal-content {
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-secondary);
+  display: flex;
+  flex-direction: column;
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+}
+
+.primary-button {
+  @extend .modal-accept-btn;
+}
+
+.cancel-button {
+  @extend .modal-cancel-btn;
+}
