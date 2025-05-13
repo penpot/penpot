@@ -824,7 +824,7 @@
       (update state :colorpicker
               (fn [{:keys [stops editing-stop] :as state}]
                 (let [cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :binary-fills))
-                      can-add-stop? (if cap-stops? (< (count stops) shp/MAX-GRADIENT-STOPS) true)]
+                      can-add-stop? (or (not cap-stops?) (< (count stops) shp/MAX-GRADIENT-STOPS))]
                   (if can-add-stop?
                     (if (cc/uniform-spread? stops)
                       ;; Add to uniform
@@ -870,7 +870,7 @@
               (fn [state]
                 (let [stops (:stops state)
                       cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :binary-fills))
-                      can-add-stop? (if cap-stops? (< (count stops) shp/MAX-GRADIENT-STOPS) true)]
+                      can-add-stop? (or (not cap-stops?) (< (count stops) shp/MAX-GRADIENT-STOPS))]
                   (if can-add-stop? (let [new-stop (-> (cc/interpolate-gradient stops offset)
                                                        (split-color-components))
                                           stops (conj stops new-stop)
