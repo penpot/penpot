@@ -1,6 +1,7 @@
 ---
 layout: layouts/plugins.njk
 title: 5. Examples and templates
+desc: Learn to create shapes, text, layouts, components, themes, and interactive prototypes. Start building now! See Penpot plugins with examples & templates!
 ---
 
 # Examples and templates
@@ -116,7 +117,6 @@ Just a friendly reminder that it's important to have the <b>comment permissions<
 </p>
 
 <a target="_blank" href="https://github.com/penpot/penpot-plugins-samples/tree/main/create-comments">Comments example</a>
-
 
 ## 5.2. Templates
 

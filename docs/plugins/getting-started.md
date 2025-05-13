@@ -1,6 +1,7 @@
 ---
 layout: layouts/plugins.njk
 title: 1. Getting started
+desc: Dive into Penpot plugins! Extend Penpot's functionality by automating tasks and adding new features using JavaScript, HTML, & CSS. Get started now!
 ---
 
 # Getting started

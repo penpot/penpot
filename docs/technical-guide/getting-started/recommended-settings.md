@@ -1,5 +1,6 @@
 ---
 title: 1.1 Recommended storage
+desc: Learn recommended self-hosting settings, Docker & Kubernetes installs, configuration, and troubleshooting tips in Penpot's technical guide.
 ---
 
 # Recommended storage

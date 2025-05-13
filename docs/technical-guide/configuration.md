@@ -1,5 +1,6 @@
 ---
 title: 2. Penpot Configuration
+desc: Learn about self-hosting, configuration via environment variables, and authentication providers. Try Penpot - It's free! See Penpot's technical guide.
 ---
 
 # Penpot Configuration
