@@ -1,0 +1,39 @@
+{
+  "name": "@penpotapp/library",
+  "version": "1.0.0",
+  "license": "MPL-2.0",
+  "author": "Kaleidos INC",
+  "private": true,
+  "packageManager": "yarn@4.9.1+sha512.f95ce356460e05be48d66401c1ae64ef84d163dd689964962c6888a9810865e39097a5e9de748876c2e0bf89b232d583c33982773e9903ae7a76257270986538",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/penpot/penpot"
+  },
+  "resolutions": {
+    "@zip.js/zip.js@npm:^2.7.44": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch"
+  },
+  "scripts": {
+    "clear:shadow-cache": "rm -rf .shadow-cljs",
+    "build": "yarn run clear:shadow-cache && clojure -M:dev:shadow-cljs release library",
+    "fmt:clj": "cljfmt fix --parallel=true src/ test/",
+    "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
+    "lint:clj": "clj-kondo --parallel --lint src/",
+    "build:test": "clojure -M:dev:shadow-cljs compile test",
+    "test": "yarn run build:test && node target/tests/test.js",
+    "watch:test": "mkdir -p target/tests && concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w target/tests --exec 'node target/tests/test.js'\"",
+    "watch": "yarn run clear:shadow-cache && clojure -M:dev:shadow-cljs watch library"
+  },
+  "devDependencies": {
+    "@types/node": "^22.12.0",
+    "concurrently": "^9.1.2",
+    "nodemon": "^3.1.9",
+    "shadow-cljs": "3.0.5"
+  },
+  "dependencies": {
+    "@zip.js/zip.js": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch",
+    "luxon": "^3.6.1",
+    "sax": "^1.4.1",
+    "source-map-support": "^0.5.21"
+  }
+}
