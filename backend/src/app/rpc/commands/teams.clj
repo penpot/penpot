@@ -114,18 +114,6 @@
 
 ;; --- Query: Teams
 
-(declare get-teams)
-
-(def ^:private schema:get-teams
-  [:map {:title "get-teams"}])
-
-(sv/defmethod ::get-teams
-  {::doc/added "1.17"
-   ::sm/params schema:get-teams}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (dm/with-open [conn (db/open pool)]
-    (get-teams conn profile-id)))
-
 (def sql:get-teams-with-permissions
   "SELECT t.*,
           tp.is_owner,
@@ -190,6 +178,37 @@
 
     (->> (db/exec! conn [sql (:default-team-id profile) profile-id])
          (into [] xform:process-teams))))
+
+(def ^:private schema:get-teams
+  [:map {:title "get-teams"}])
+
+(sv/defmethod ::get-teams
+  {::doc/added "1.17"
+   ::sm/params schema:get-teams}
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  (dm/with-open [conn (db/open pool)]
+    (get-teams conn profile-id)))
+
+(def ^:private sql:get-owned-teams
+  "SELECT t.id, t.name,
+          (SELECT count(*) FROM team_profile_rel WHERE team_id=t.id) AS total_members
+     FROM team AS t
+     JOIN team_profile_rel AS tpr ON (tpr.team_id = t.id)
+    WHERE t.is_default IS false
+      AND tpr.is_owner IS true
+      AND tpr.profile_id = ?
+      AND t.deleted_at IS NULL")
+
+(defn- get-owned-teams
+  [cfg profile-id]
+  (->> (db/exec! cfg [sql:get-owned-teams profile-id])
+       (into [] (map decode-row))))
+
+(sv/defmethod ::get-owned-teams
+  {::doc/added "2.8.0"
+   ::sm/params schema:get-teams}
+  [cfg {:keys [::rpc/profile-id]}]
+  (get-owned-teams cfg profile-id))
 
 ;; --- Query: Team (by ID)
 
