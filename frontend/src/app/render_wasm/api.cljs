@@ -10,6 +10,8 @@
    ["react-dom/server" :as rds]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
    [app.common.types.path :as path]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -808,8 +810,29 @@
             (sr/heapu32-set-uuid id heapu32 current-offset)
             (sr/heapf32-set-matrix transform heapf32 (+ current-offset (mem/ptr8->ptr32 MODIFIER-ENTRY-TRANSFORM-OFFSET)))
             (recur (rest entries) (+ current-offset (mem/ptr8->ptr32 MODIFIER-ENTRY-SIZE))))))
-      (h/call wasm/internal-module "_propagate_apply")
-      (request-render "set-modifiers"))))
+
+      (let [offset (h/call wasm/internal-module "_propagate_apply")
+            heapf32 (mem/get-heap-f32)
+            width (aget heapf32 (mem/ptr8->ptr32 (+ offset 0)))
+            height (aget heapf32 (mem/ptr8->ptr32 (+ offset 4)))
+            cx (aget heapf32 (mem/ptr8->ptr32 (+ offset 8)))
+            cy (aget heapf32 (mem/ptr8->ptr32 (+ offset 12)))
+
+            a (aget heapf32 (mem/ptr8->ptr32 (+ offset 16)))
+            b (aget heapf32 (mem/ptr8->ptr32 (+ offset 20)))
+            c (aget heapf32 (mem/ptr8->ptr32 (+ offset 24)))
+            d (aget heapf32 (mem/ptr8->ptr32 (+ offset 28)))
+            e (aget heapf32 (mem/ptr8->ptr32 (+ offset 32)))
+            f (aget heapf32 (mem/ptr8->ptr32 (+ offset 36)))
+            transform (gmt/matrix a b c d e f)]
+
+        (h/call wasm/internal-module "_free_bytes")
+        (request-render "set-modifiers")
+
+        {:width width
+         :height height
+         :center (gpt/point cx cy)
+         :transform transform}))))
 
 (defn set-canvas-background
   [background]

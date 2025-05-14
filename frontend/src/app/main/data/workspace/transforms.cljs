@@ -136,7 +136,7 @@
     (update [_ state]
       (-> state
           (update :workspace-local dissoc :transform :duplicate-move-started?)
-          (dissoc :workspace-selrect-transform)))))
+          (dissoc :workspace-selrect)))))
 
 ;; -- Resize --------------------------------------------------------
 
@@ -296,7 +296,6 @@
                        (fn [modifiers]
                          (let [modif-tree (dwm/create-modif-tree ids modifiers)]
                            (rx/of
-                            (dwm/set-selrect-transform modifiers)
                             (dwm/set-wasm-modifiers
                              modif-tree
                              :ignore-constraints (contains? layout :scale-text))))))

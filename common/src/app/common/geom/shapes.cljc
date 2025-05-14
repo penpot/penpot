@@ -195,6 +195,7 @@
 
 ;; Rect
 (dm/export grc/rect->points)
+(dm/export grc/center->rect)
 
 ;;
 (dm/export gsff/fit-frame-modifiers)

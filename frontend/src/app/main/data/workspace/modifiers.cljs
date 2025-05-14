@@ -504,6 +504,13 @@
        (filter (fn [[_ {:keys [type]}]]
                  (= type :change-property)))))
 
+(defn set-temporary-selrect
+  [selrect]
+  (ptk/reify ::set-temporary-selrect
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :workspace-selrect selrect))))
+
 #_:clj-kondo/ignore
 (defn set-wasm-modifiers
   [modif-tree & {:keys [ignore-constraints ignore-snap-pixel]
@@ -519,8 +526,8 @@
             (assoc :prev-wasm-props (:wasm-props state))
             (assoc :wasm-props property-changes))))
 
-    ptk/EffectEvent
-    (effect [_ state _]
+    ptk/WatchEvent
+    (watch [_ state _]
       (wasm.api/clean-modifiers)
 
       (let [prev-wasm-props (:prev-wasm-props state)
@@ -531,8 +538,9 @@
 
         (let [structure-entries (parse-structure-modifiers modif-tree)]
           (wasm.api/set-structure-modifiers structure-entries)
-          (let [geometry-entries (parse-geometry-modifiers modif-tree)]
-            (wasm.api/propagate-apply geometry-entries)))))))
+          (let [geometry-entries (parse-geometry-modifiers modif-tree)
+                selrect (wasm.api/propagate-apply geometry-entries)]
+            (rx/of (set-temporary-selrect selrect))))))))
 
 #_:clj-kondo/ignore
 (defn apply-wasm-modifiers
@@ -566,14 +574,6 @@
         (rx/of
          (clear-local-transform)
          (dwsh/update-shapes ids update-shape))))))
-
-
-(defn set-selrect-transform
-  [modifiers]
-  (ptk/reify ::set-selrect-transform
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :workspace-selrect-transform (ctm/modifiers->transform modifiers)))))
 
 (def ^:private
   xf-rotation-shape

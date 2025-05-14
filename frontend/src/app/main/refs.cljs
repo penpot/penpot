@@ -147,9 +147,6 @@
 (def workspace-drawing
   (l/derived :workspace-drawing st/state))
 
-(def workspace-selrect-transform
-  (l/derived :workspace-selrect-transform st/state))
-
 (def workspace-tokens
   "All tokens related ephimeral state"
   (l/derived :workspace-tokens st/state))
