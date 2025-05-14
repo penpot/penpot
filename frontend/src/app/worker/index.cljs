@@ -14,7 +14,6 @@
 
 (defonce state (l/atom {:pages-index {}}))
 
-
 (defmethod impl/handler :index/initialize-page-index
   [{:keys [page] :as message}]
   (swap! state update :pages-index assoc (:id page) page)

@@ -53,7 +53,7 @@
         (->> (rx/from changes)
              (rx/merge-map (fn [[page-id changes]]
                              (log/debug :hint "update-indexes" :page-id page-id :changes (count changes))
-                             (mw/ask! {:cmd     :index/update-page-index
+                             (mw/ask! {:cmd :index/update-page-index
                                        :page-id page-id
                                        :changes changes})))
              (rx/catch (fn [cause]
