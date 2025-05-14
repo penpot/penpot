@@ -48,7 +48,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :workspace-local dissoc :edition)
+          (update :workspace-local dissoc :edition :edit-path)
           (update :workspace-drawing dissoc :tool :object :lock)
           (dissoc :workspace-grid-edition)))
 
