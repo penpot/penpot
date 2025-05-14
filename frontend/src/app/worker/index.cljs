@@ -7,10 +7,10 @@
 (ns app.worker.index
   "Page index management within the worker."
   (:require
-    [app.common.data.macros :as dm]
-    [app.common.files.changes :as ch]
-    [app.worker.impl :as impl]
-    [okulary.core :as l]))
+   [app.common.data.macros :as dm]
+   [app.common.files.changes :as ch]
+   [app.worker.impl :as impl]
+   [okulary.core :as l]))
 
 (defonce state (l/atom {:pages-index {}}))
 
@@ -28,7 +28,7 @@
                      (swap! ch/process-changes changes false)
                      (dm/get-in [:pages-index page-id]))
         message (assoc message
-                  :old-page old-page
-                  :new-page new-page)]
+                       :old-page old-page
+                       :new-page new-page)]
     (impl/handler (assoc message :cmd :selection/update-page-index))
     (impl/handler (assoc message :cmd :snaps/update-page-index))))
