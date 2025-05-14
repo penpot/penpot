@@ -92,9 +92,9 @@
      [:string {:max 250}]
      [::sm/one-of {:format "string"} valid-event-types]]]
    [:props
-    [:map-of :keyword :any]]
+    [:map-of :keyword ::sm/any]]
    [:context {:optional true}
-    [:map-of :keyword :any]]])
+    [:map-of :keyword ::sm/any]]])
 
 (def schema:push-audit-events
   [:map {:title "push-audit-events"}

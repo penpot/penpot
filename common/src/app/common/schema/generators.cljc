@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.schema.generators
-  (:refer-clojure :exclude [set subseq uuid filter map let boolean])
+  (:refer-clojure :exclude [set subseq uuid filter map let boolean vector keyword int double])
   #?(:cljs (:require-macros [app.common.schema.generators]))
   (:require
    [app.common.schema.registry :as sr]
@@ -38,10 +38,6 @@
   ([s opts]
    (mg/generator s (assoc opts :registry sr/default-registry))))
 
-(defn filter
-  [pred gen]
-  (tg/such-that pred gen 100))
-
 (defn small-double
   [& {:keys [min max] :or {min -100 max 100}}]
   (tg/double* {:min min, :max max, :infinite? false, :NaN? false}))
@@ -61,7 +57,7 @@
 (defn word-keyword
   []
   (->> (word-string)
-       (tg/fmap keyword)))
+       (tg/fmap c/keyword)))
 
 (defn email
   []
@@ -100,12 +96,11 @@
                           (c/map second))
                          (c/map list bools elements)))))))
 
-(def any tg/any)
-(def boolean tg/boolean)
-
-(defn set
-  [g]
-  (tg/set g))
+(defn map-of
+  ([kg vg]
+   (tg/map kg vg {:min-elements 1 :max-elements 3}))
+  ([kg vg opts]
+   (tg/map kg vg opts)))
 
 (defn elements
   [s]
@@ -119,6 +114,10 @@
   [f g]
   (tg/fmap f g))
 
+(defn filter
+  [pred gen]
+  (tg/such-that pred gen 100))
+
 (defn mcat
   [f g]
   (tg/bind g f))
@@ -126,3 +125,22 @@
 (defn tuple
   [& opts]
   (apply tg/tuple opts))
+
+(defn vector
+  [& opts]
+  (apply tg/vector opts))
+
+(defn set
+  [g]
+  (tg/set g))
+
+;; Static Generators
+
+(def boolean tg/boolean)
+(def text (word-string))
+(def double (small-double))
+(def int (small-int))
+(def keyword (word-keyword))
+
+(def any
+  (tg/one-of [text boolean double int keyword]))
