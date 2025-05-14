@@ -1,5 +1,4 @@
 use crate::shapes::Shape;
-use crate::view::Viewbox;
 use skia_safe::{self as skia, IRect, Paint, RRect};
 
 use super::{gpu_state::GpuState, tiles::Tile, tiles::TILE_SIZE};
@@ -145,10 +144,10 @@ impl Surfaces {
         }
     }
 
-    pub fn update_render_context(&mut self, render_area: skia::Rect, viewbox: Viewbox) {
+    pub fn update_render_context(&mut self, render_area: skia::Rect, scale: f32) {
         let translation = (
-            -render_area.left() + self.margins.width as f32 / viewbox.zoom,
-            -render_area.top() + self.margins.height as f32 / viewbox.zoom,
+            -render_area.left() + self.margins.width as f32 / scale,
+            -render_area.top() + self.margins.height as f32 / scale,
         );
         self.apply_mut(
             &[
