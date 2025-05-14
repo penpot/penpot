@@ -47,14 +47,14 @@
      [:type [:= :assign]]
      ;; NOTE: the full decoding is happening on the handler because it
      ;; needs a proper context of the current shape and its type
-     [:value [:map-of :keyword :any]]
+     [:value [:map-of :keyword ::sm/any]]
      [:ignore-touched {:optional true} :boolean]
      [:ignore-geometry {:optional true} :boolean]]]
    [:set
     [:map {:title "SetOperation"}
      [:type [:= :set]]
      [:attr :keyword]
-     [:val :any]
+     [:val ::sm/any]
      [:ignore-touched {:optional true} :boolean]
      [:ignore-geometry {:optional true} :boolean]]]
    [:set-touched
@@ -238,9 +238,9 @@
       [:component-id {:optional true} ::sm/uuid]
       [:ignore-touched {:optional true} :boolean]
       [:parent-id ::sm/uuid]
-      [:shapes :any]
+      [:shapes ::sm/any]
       [:index {:optional true} [:maybe :int]]
-      [:after-shape {:optional true} :any]
+      [:after-shape {:optional true} ::sm/any]
       [:component-swap {:optional true} :boolean]]]
 
     [:reorder-children
@@ -250,14 +250,14 @@
       [:component-id {:optional true} ::sm/uuid]
       [:ignore-touched {:optional true} :boolean]
       [:parent-id ::sm/uuid]
-      [:shapes :any]]]
+      [:shapes ::sm/any]]]
 
     [:add-page
      [:map {:title "AddPageChange"}
       [:type [:= :add-page]]
       [:id {:optional true} ::sm/uuid]
       [:name {:optional true} :string]
-      [:page {:optional true} :any]]]
+      [:page {:optional true} ::sm/any]]]
 
     [:mod-page
      [:map {:title "ModPageChange"}
@@ -327,14 +327,14 @@
       [:type [:= :add-component]]
       [:id ::sm/uuid]
       [:name :string]
-      [:shapes {:optional true} [:vector {:gen/max 3} :any]]
+      [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
       [:path {:optional true} :string]]]
 
     [:mod-component
      [:map {:title "ModCompoenentChange"}
       [:type [:= :mod-component]]
       [:id ::sm/uuid]
-      [:shapes {:optional true} [:vector {:gen/max 3} :any]]
+      [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
       [:name {:optional true} :string]
       [:variant-id {:optional true} ::sm/uuid]
       [:variant-properties {:optional true} [:vector ::ctv/variant-property]]]]
@@ -411,7 +411,7 @@
     [:set-tokens-lib
      [:map {:title "SetTokensLib"}
       [:type [:= :set-tokens-lib]]
-      [:tokens-lib :any]]]
+      [:tokens-lib ::sm/any]]]
 
     [:set-token-set
      [:map {:title "SetTokenSetChange"}
