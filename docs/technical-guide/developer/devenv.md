@@ -1,5 +1,5 @@
 ---
-title: 3.3. Dev environment
+title: 3.03. Dev environment
 desc: Dive into Penpot's development environment. Learn about self-hosting, configuration, developer tools, architecture, and more. See the Penpot Technical Guide!
 ---
 

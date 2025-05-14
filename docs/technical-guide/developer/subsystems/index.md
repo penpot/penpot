@@ -1,5 +1,5 @@
 ---
-title: 3.8. Penpot subsystems
+title: 3.09. Penpot subsystems
 desc: Learn about architecture, data models, and subsystems. View Penpot's technical guide for self-hosting, configuration, and development insights. Free!
 ---
 
