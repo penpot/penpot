@@ -5,18 +5,14 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.worker.impl
+  "Dispatcher for messages received from the main thread."
   (:require
-   [app.common.data.macros :as dm]
-   [app.common.files.changes :as ch]
    [app.common.logging :as log]
-   [app.config :as cf]
-   [okulary.core :as l]))
+   [app.config :as cf]))
 
 (log/set-level! :info)
 
 (enable-console-print!)
-
-(defonce state (l/atom {:pages-index {}}))
 
 ;; --- Handler
 
@@ -29,25 +25,6 @@
 (defmethod handler :echo
   [message]
   message)
-
-(defmethod handler :initialize-page-index
-  [{:keys [page] :as message}]
-  (swap! state update :pages-index assoc (:id page) page)
-  (handler (assoc message :cmd :selection/initialize-page-index))
-  (handler (assoc message :cmd :snaps/initialize-page-index)))
-
-(defmethod handler :update-page-index
-  [{:keys [page-id changes] :as message}]
-
-  (let [old-page (dm/get-in @state [:pages-index page-id])
-        new-page (-> state
-                     (swap! ch/process-changes changes false)
-                     (dm/get-in [:pages-index page-id]))
-        message (assoc message
-                       :old-page old-page
-                       :new-page new-page)]
-    (handler (assoc message :cmd :selection/update-page-index))
-    (handler (assoc message :cmd :snaps/update-page-index))))
 
 (defmethod handler :configure
   [{:keys [config]}]
