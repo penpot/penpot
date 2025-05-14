@@ -1,3 +1,9 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
 (ns app.main.ui.workspace.tokens.modals.import
   (:require-macros [app.main.style :as stl])
   (:require
@@ -23,23 +29,23 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(defn drop-parent-directory [path]
+(defn- drop-parent-directory [path]
   (->> (cfh/split-path path)
        (rest)
        (str/join "/")))
 
-(defn remove-path-extension [path]
+(defn- remove-path-extension [path]
   (-> (str/split path ".")
       (butlast)
       (str/join)))
 
-(defn file-path->set-name
+(defn- file-path->set-name
   [path]
   (-> path
       (drop-parent-directory)
       (remove-path-extension)))
 
-(defn on-import-stream [tokens-lib-stream]
+(defn- on-import-stream [tokens-lib-stream]
   (rx/sub!
    tokens-lib-stream
    (fn [lib]
@@ -70,6 +76,12 @@
          (fn [event]
            (let [files (->> (dom/get-target event)
                             (dom/get-files)
+                            (filter (fn [file]
+                                      (let [name (.-name file)
+                                            type (.-type file)]
+                                        (or
+                                         (= type "application/json")
+                                         (str/ends-with? name ".json")))))
                             ;; Read files as text, ignore files with json parse errors
                             (map (fn [file]
                                    (->> (wapi/read-file-as-text file)
@@ -151,9 +163,8 @@
                    :on-click on-display-dir-explorer}
        (tr "workspace.token.choose-folder")]]]))
 
-(mf/defc import-modal
-  {::mf/wrap-props false
-   ::mf/register modal/components
+(mf/defc import-modal*
+  {::mf/register modal/components
    ::mf/register-as :tokens/import}
   []
   [:div {:class (stl/css :modal-overlay)}
