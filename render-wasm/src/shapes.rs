@@ -635,12 +635,17 @@ impl Shape {
             IndexSet::<Uuid>::new()
         } else if let Type::Group(group) = self.shape_type {
             if group.masked {
-                self.children.iter().skip(1).cloned().collect()
+                self.children
+                    .iter()
+                    .rev()
+                    .take(self.children.len() - 1)
+                    .cloned()
+                    .collect()
             } else {
-                self.children.clone().into_iter().collect()
+                self.children.clone().into_iter().rev().collect()
             }
         } else {
-            self.children.clone().into_iter().collect()
+            self.children.clone().into_iter().rev().collect()
         }
     }
 

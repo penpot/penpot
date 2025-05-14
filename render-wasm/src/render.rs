@@ -1,7 +1,7 @@
 use skia_safe::{self as skia, image, Matrix, RRect, Rect};
 
 use crate::uuid::Uuid;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet};
 
 use crate::performance;
 use crate::view::Viewbox;
@@ -90,7 +90,7 @@ pub(crate) struct RenderState {
     // Indicates whether the rendering process has pending frames.
     pub render_in_progress: bool,
     // Stack of nodes pending to be rendered.
-    pub pending_nodes: VecDeque<NodeRenderState>,
+    pub pending_nodes: Vec<NodeRenderState>,
     pub current_tile: Option<tiles::Tile>,
     pub sampling_options: skia::SamplingOptions,
     pub render_area: Rect,
@@ -146,7 +146,7 @@ impl RenderState {
             background_color: skia::Color::TRANSPARENT,
             render_request_id: None,
             render_in_progress: false,
-            pending_nodes: VecDeque::new(),
+            pending_nodes: vec![],
             current_tile: None,
             sampling_options,
             render_area: Rect::new_empty(),
@@ -552,7 +552,7 @@ impl RenderState {
         }
         performance::end_measure!("tile_cache");
 
-        self.pending_nodes = VecDeque::new();
+        self.pending_nodes = vec![];
         // reorder by distance to the center.
         self.pending_tiles.sort_by(|a, b| b.2.cmp(&a.2));
         self.current_tile = None;
@@ -720,7 +720,7 @@ impl RenderState {
                     performance::begin_measure!("render_shape_tree::uncached");
                     let mut i = 0;
                     let mut is_empty = true;
-                    while let Some(node_render_state) = self.pending_nodes.pop_front() {
+                    while let Some(node_render_state) = self.pending_nodes.pop() {
                         let NodeRenderState {
                             id: node_id,
                             visited_children,
@@ -751,7 +751,7 @@ impl RenderState {
                                         // the blend mode 'destination-in') the content
                                         // of the group and the mask.
                                         if group.masked {
-                                            self.pending_nodes.push_back(NodeRenderState {
+                                            self.pending_nodes.push(NodeRenderState {
                                                 id: node_id,
                                                 visited_children: true,
                                                 clip_bounds: None,
@@ -759,7 +759,7 @@ impl RenderState {
                                                 mask: false,
                                             });
                                             if let Some(&mask_id) = element.mask_id() {
-                                                self.pending_nodes.push_back(NodeRenderState {
+                                                self.pending_nodes.push(NodeRenderState {
                                                     id: mask_id,
                                                     visited_children: false,
                                                     clip_bounds: None,
@@ -801,7 +801,7 @@ impl RenderState {
                         }
 
                         // Set the node as visited_children before processing children
-                        self.pending_nodes.push_back(NodeRenderState {
+                        self.pending_nodes.push(NodeRenderState {
                             id: node_id,
                             visited_children: true,
                             clip_bounds: None,
@@ -825,8 +825,8 @@ impl RenderState {
                                 });
                             }
 
-                            for child_id in children_ids.iter().rev() {
-                                self.pending_nodes.push_front(NodeRenderState {
+                            for child_id in children_ids.iter() {
+                                self.pending_nodes.push(NodeRenderState {
                                     id: *child_id,
                                     visited_children: false,
                                     clip_bounds: children_clip_bounds,
