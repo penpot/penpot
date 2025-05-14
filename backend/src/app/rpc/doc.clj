@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.json :as json]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as smdj]
@@ -19,7 +20,6 @@
    [app.http.sse :as-alias sse]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
-   [app.util.json :as json]
    [app.util.services :as sv]
    [app.util.template :as tmpl]
    [clojure.java.io :as io]
@@ -179,7 +179,6 @@
       {::yres/status 200
        ::yres/headers {"content-type" "application/json; charset=utf-8"}
        ::yres/body (json/encode context)})
-
     (fn [_]
       {::yres/status 404})))
 
