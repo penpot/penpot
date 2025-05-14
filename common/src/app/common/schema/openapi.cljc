@@ -97,7 +97,8 @@
 (defmethod visit :enum [_ _ children options] (merge (some-> (m/-infer children) (transform* options)) {:enum children}))
 (defmethod visit :maybe [_ _ children _] {:oneOf (conj children {:type "null"})})
 (defmethod visit :tuple [_ _ children _] {:type "array", :items children, :additionalItems false})
-(defmethod visit :re [_ schema _ options] {:type "string", :pattern (first (m/children schema options))})
+(defmethod visit :re [_ schema _ options]
+  {:type "string", :pattern (str (first (m/children schema options)))})
 (defmethod visit :nil [_ _ _ _] {:type "null"})
 
 (defmethod visit :string [_ schema _ _]
