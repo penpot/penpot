@@ -5224,6 +5224,26 @@ msgstr "Swap component"
 msgid "workspace.options.component.swap.empty"
 msgstr "There are no assets in this library yet"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:742
+msgid "workspace.options.component.variant"
+msgstr "Variant"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:942
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "Locate invalid variations"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:940
+msgid "workspace.options.component.variant.malformed.multi"
+msgstr "Some variations have invalid names"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:307
+msgid "workspace.options.component.variant.malformed.single"
+msgstr "This variant has an invalid name. Try using the following structure:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:308
+msgid "workspace.options.component.variant.malformed.structure"
+msgstr "[property]=[value], [property]=[value]"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
 msgid "workspace.options.constraints"
 msgstr "Constraints"

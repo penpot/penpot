@@ -5250,6 +5250,26 @@ msgstr "Intercambiar componente"
 msgid "workspace.options.component.swap.empty"
 msgstr "Aún no hay recursos en esta biblioteca"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:742
+msgid "workspace.options.component.variant"
+msgstr "Variante"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:942
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "Localizar variantes no válidas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:940
+msgid "workspace.options.component.variant.malformed.multi"
+msgstr "Algunas variantes tienen nombres no válidos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:307
+msgid "workspace.options.component.variant.malformed.single"
+msgstr "Esta variante tiene un nombre no válido. Prueba a utilizar la siguiente estructura:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:308
+msgid "workspace.options.component.variant.malformed.structure"
+msgstr "[propiedad]=[valor], [propiedad]=[valor]"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
 msgid "workspace.options.constraints"
 msgstr "Restricciones"
