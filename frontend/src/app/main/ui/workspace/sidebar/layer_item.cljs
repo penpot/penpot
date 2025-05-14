@@ -61,6 +61,7 @@
         is-variant-container? (when variants? (ctk/is-variant-container? item))
         variant-id            (when is-variant? (:variant-id item))
         variant-name          (when is-variant? (:variant-name item))
+        variant-error         (when is-variant? (:variant-error item))
 
         data                  (deref refs/workspace-data)
         component             (ctkl/get-component data (:component-id item))
@@ -144,6 +145,7 @@
                         :variant-id variant-id
                         :variant-name variant-name
                         :variant-properties variant-properties
+                        :variant-error variant-error
                         :component-id (:id component)
                         :is-hidden hidden?}]
 

@@ -10,6 +10,8 @@
   @include textEllipsis;
   @include bodySmallTypography;
   flex-grow: 1;
+  height: 100%;
+  align-content: center;
   color: var(--context-hover-color, var(--layer-row-foreground-color));
 
   &.selected {
