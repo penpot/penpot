@@ -449,6 +449,23 @@
       (t/is (nil? res)))))
 
 
+(t/deftest get-owned-teams
+  (let [profile1 (th/create-profile* 1 {:is-active true})
+        profile2 (th/create-profile* 2 {:is-active true})
+        team1    (th/create-team* 1 {:profile-id (:id profile1)})
+        team2    (th/create-team* 2 {:profile-id (:id profile2)})
+
+        params   {::th/type :get-owned-teams
+                  ::rpc/profile-id (:id profile1)}
+        out      (th/command! params)]
+
+    (t/is (th/success? out))
+    (let [result (:result out)]
+      (t/is (= 1 (count result)))
+      (t/is (= (:id team1) (-> result first :id)))
+      (t/is (not= (:default-team-id profile1) (-> result first :id))))))
+
+
 (t/deftest team-deletion-1
   (let [profile1 (th/create-profile* 1 {:is-active true})
         team     (th/create-team* 1 {:profile-id (:id profile1)})
