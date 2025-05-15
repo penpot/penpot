@@ -22,7 +22,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
-   [app.features.components-v2 :as feat.comp-v2]
    [app.features.fdata :as feat.fdata]
    [app.loggers.audit :as audit]
    [app.main :as main]
@@ -439,7 +438,7 @@
 
                   (binding [h/*system* system
                             db/*conn* (db/get-connection system)]
-                    (->> (feat.comp-v2/get-and-lock-team-files conn team-id)
+                    (->> (h/get-and-lock-team-files conn team-id)
                          (reduce (fn [result file-id]
                                    (if (h/process-file! system file-id update-fn opts)
                                      (inc result)
