@@ -1,5 +1,6 @@
 ---
 title: Backend app
+desc: Dive into self-hosting, configuration, developer insights (architecture, data model), integration, and troubleshooting. See Penpot's Technical Guide.
 ---
 
 # Backend app

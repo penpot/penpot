@@ -34,6 +34,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.shape.text :as types.text]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -2191,27 +2192,27 @@
   (ptk/reify ::paste-html-text
     ptk/WatchEvent
     (watch [_ state  _]
-      (let [root (dwtxt/create-root-from-html html)
-            content (tc/dom->cljs root)
+      (let [root    (dwtxt/create-root-from-html html)
+            content (tc/dom->cljs root)]
+        (when (types.text/valid-content? content)
+          (let [id     (uuid/next)
+                width (max 8 (min (* 7 (count text)) 700))
+                height 16
+                {:keys [x y]} (calculate-paste-position state)
 
-            id (uuid/next)
-            width (max 8 (min (* 7 (count text)) 700))
-            height 16
-            {:keys [x y]} (calculate-paste-position state)
-
-            shape {:id id
-                   :type :text
-                   :name (txt/generate-shape-name text)
-                   :x x
-                   :y y
-                   :width width
-                   :height height
-                   :grow-type (if (> (count text) 100) :auto-height :auto-width)
-                   :content content}
-            undo-id (js/Symbol)]
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dwsh/create-and-add-shape :text x y shape)
-               (dwu/commit-undo-transaction undo-id))))))
+                shape {:id id
+                       :type :text
+                       :name (txt/generate-shape-name text)
+                       :x x
+                       :y y
+                       :width width
+                       :height height
+                       :grow-type (if (> (count text) 100) :auto-height :auto-width)
+                       :content content}
+                undo-id (js/Symbol)]
+            (rx/of (dwu/start-undo-transaction undo-id)
+                   (dwsh/create-and-add-shape :text x y shape)
+                   (dwu/commit-undo-transaction undo-id))))))))
 
 (defn- paste-text
   [text]

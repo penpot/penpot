@@ -1,5 +1,6 @@
 ---
 title: Technical Guide
+desc: Get self-hosting instructions, integration details, and developer resources. Troubleshoot issues easily. Try Penpot free! See Penpot's technical guide.
 eleventyNavigation:
   key: Technical Guide
   order: 4

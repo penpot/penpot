@@ -1,5 +1,6 @@
 ---
 title: 5. Troubleshooting Penpot
+desc: Troubleshoot Penpot like a pro! Our technical guide offers tips and tricks for diagnosing issues, reading logs, and resolving problems. Get started now!
 ---
 
 # Troubleshooting Penpot

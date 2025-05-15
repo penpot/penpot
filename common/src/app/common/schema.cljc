@@ -211,8 +211,7 @@
 
 (defn lazy-validator
   [s]
-  (let [s   (schema s)
-        vfn (delay (validator s))]
+  (let [vfn (delay (validator s))]
     (fn [v] (@vfn v))))
 
 (defn lazy-explainer

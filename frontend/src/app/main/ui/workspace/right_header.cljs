@@ -129,6 +129,12 @@
         input-ref         (mf/use-ref nil)
 
         team              (mf/deref refs/team)
+        permissions       (get team :permissions)
+
+        display-share-button?
+        (and (not (:is-default team))
+             (or (:is-admin permissions)
+                 (:is-owner permissions)))
 
         nav-to-viewer
         (mf/use-fn
@@ -216,7 +222,7 @@
           :on-click toggle-history}
          i/history]])
 
-     (when  (not (:is-default team))
+     (when display-share-button?
        [:a {:class (stl/css :viewer-btn)
             :title (tr "workspace.header.share")
             :on-click open-share-dialog}

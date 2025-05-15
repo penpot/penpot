@@ -1,5 +1,6 @@
 ---
 title: Assets storage
+desc: Learn about assets storage, API, object buckets, sharing, and garbage collection. See Penpot's technical guide for developers. Try Penpot - It's free.
 ---
 
 # Assets storage

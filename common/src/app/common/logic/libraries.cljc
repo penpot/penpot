@@ -596,7 +596,7 @@
     (generate-sync-shape-direct changes file libraries container shape-id false)))
 
 (defmethod generate-sync-shape :colors
-  [_ changes library-id _ shape _ libraries _]
+  [_ changes library-id _ shape libraries _]
   (shape-log :debug (:id shape) nil :msg "Sync colors of shape" :shape (:name shape))
 
   ;; Synchronize a shape that uses some colors of the library. The value of the
@@ -607,7 +607,7 @@
                        #(ctc/sync-shape-colors % library-id library-colors))))
 
 (defmethod generate-sync-shape :typographies
-  [_ changes library-id container shape _ libraries _]
+  [_ changes library-id container shape libraries _]
   (shape-log :debug (:id shape) nil :msg "Sync typographies of shape" :shape (:name shape))
 
   ;; Synchronize a shape that uses some typographies of the library. The attributes
