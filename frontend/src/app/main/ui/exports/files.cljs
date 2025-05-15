@@ -16,7 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as i]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer  [tr]]
    [beicon.v2.core :as rx]
@@ -91,7 +91,7 @@
          (mf/deps team-id selected files features)
          (fn []
            (swap! state* assoc :status :exporting)
-           (->> (uw/ask-many!
+           (->> (mw/ask-many!
                  {:cmd :export-files
                   :format format
                   :team-id team-id

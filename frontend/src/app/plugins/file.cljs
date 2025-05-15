@@ -15,7 +15,7 @@
    [app.main.data.workspace.versions :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [app.plugins.format :as format]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
@@ -244,7 +244,7 @@
                                 (if (contains? cf/flags :export-file-v3)
                                   :binfile-v3
                                   :binfile-v1))]
-               (->> (uw/ask-many!
+               (->> (mw/ask-many!
                      {:cmd :export-files
                       :format format
                       :type type

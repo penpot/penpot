@@ -5,9 +5,10 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.worker
+  "Interface to communicate with the web worker"
   (:require
    [app.config :as cf]
-   [app.main.errors :as err]
+   [app.main.errors :as errors]
    [app.util.worker :as uw]
    [beicon.v2.core :as rx]))
 
@@ -15,7 +16,7 @@
 
 (defn init!
   []
-  (let [worker (uw/init cf/worker-uri err/on-error)]
+  (let [worker (uw/init cf/worker-uri errors/on-error)]
     (uw/ask! worker {:cmd :configure
                      :config {:public-uri cf/public-uri
                               :build-data cf/build-date

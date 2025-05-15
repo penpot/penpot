@@ -20,7 +20,7 @@
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -162,7 +162,7 @@
 (defn- analyze-entries
   [state entries]
   (let [features (get @st/state :features)]
-    (->> (uw/ask-many!
+    (->> (mw/ask-many!
           {:cmd :analyze-import
            :files entries
            :features features})
@@ -178,7 +178,7 @@
                                         :num-files (count entries)}))
 
   (let [features (get @st/state :features)]
-    (->> (uw/ask-many!
+    (->> (mw/ask-many!
           {:cmd :import-files
            :project-id project-id
            :files entries

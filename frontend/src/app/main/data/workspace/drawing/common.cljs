@@ -16,7 +16,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -82,7 +82,7 @@
               (rx/of (dwsh/add-shape shape {:no-select? (= tool :curve)}))
               (if (cfh/frame-shape? shape)
                 (rx/concat
-                 (->> (uw/ask! {:cmd :selection/query
+                 (->> (mw/ask! {:cmd :selection/query
                                 :page-id page-id
                                 :rect (:selrect shape)
                                 :include-frames? true

@@ -32,7 +32,7 @@
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
-   [app.main.worker :as wrk]
+   [app.main.worker :as mw]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
@@ -56,9 +56,9 @@
 
 (defn render-thumbnail
   [file-id revn]
-  (->> (wrk/ask! {:cmd :thumbnails/generate-for-file
-                  :revn revn
-                  :file-id file-id})
+  (->> (mw/ask! {:cmd :thumbnails/generate-for-file
+                 :revn revn
+                 :file-id file-id})
        (rx/mapcat (fn [{:keys [fonts] :as result}]
                     (->> (fonts/render-font-styles fonts)
                          (rx/map (fn [styles]
