@@ -115,7 +115,8 @@
 
     (db/update! pool :project
                 {:modified-at (dt/now)}
-                {:id project-id})
+                {:id project-id}
+                {::db/return-keys false})
 
     result))
 
