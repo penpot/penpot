@@ -55,201 +55,235 @@
 (defn- decode-params
   [params]
   (if (obj/plain-object? params)
-    (json/->js params)
+    (json/->clj params)
     params))
 
-(defn- create-file-api
-  [file]
-  (let [state* (volatile! file)
-        api    (obj/reify {:name "File"}
-                 :id
-                 {:get #(dm/str (:id @state*))}
+(defn- get-current-page-id
+  [state]
+  (dm/str (get state ::fb/current-page-id)))
 
-                 :currentFrameId
-                 {:get #(dm/str (::fb/current-frame-id @state*))}
+(defn- get-last-id
+  [state]
+  (dm/str (get state ::fb/last-id)))
 
-                 :currentPageId
-                 {:get #(dm/str (::fb/current-page-id @state*))}
+(defn- create-builder-api
+  [state]
+  (obj/reify {:name "File"}
+    :currentFileId
+    {:get #(dm/str (get @state ::fb/current-file-id))}
 
-                 :lastId
-                 {:get #(dm/str (::fb/last-id @state*))}
+    :currentFrameId
+    {:get #(dm/str (get @state ::fb/current-frame-id))}
 
-                 :addPage
-                 (fn [params]
-                   (try
-                     (let [params (-> params
-                                      (decode-params)
-                                      (fb/decode-page))]
-                       (vswap! state* fb/add-page params)
-                       (dm/str (::fb/current-page-id @state*)))
-                     (catch :default cause
-                       (handle-exception cause))))
+    :currentPageId
+    {:get #(get-current-page-id @state)}
 
-                 :closePage
-                 (fn []
-                   (vswap! state* fb/close-page))
+    :lastId
+    {:get #(get-last-id @state)}
 
-                 :addArtboard
-                 (fn [params]
-                   (try
-                     (let [params (-> params
-                                      (json/->clj)
-                                      (assoc :type :frame)
-                                      (fb/decode-shape))]
-                       (vswap! state* fb/add-artboard params)
-                       (dm/str (::fb/last-id @state*)))
-                     (catch :default cause
-                       (handle-exception cause))))
+    :addFile
+    (fn [params]
+      (try
+        (let [params (-> params decode-params fb/decode-file)]
+          (-> (swap! state fb/add-file params)
+              (get ::fb/current-file-id)))
+        (catch :default cause
+          (handle-exception cause))))
 
-                 :closeArtboard
-                 (fn []
-                   (vswap! state* fb/close-artboard))
+    :closeFile
+    (fn []
+      (swap! state fb/close-file)
+      nil)
 
-                 :addGroup
-                 (fn [params]
-                   (try
-                     (let [params (-> params
-                                      (json/->clj)
-                                      (assoc :type :group)
-                                      (fb/decode-shape))]
-                       (vswap! state* fb/add-group params)
-                       (dm/str (::fb/last-id @state*)))
-                     (catch :default cause
-                       (handle-exception cause))))
+    :addPage
+    (fn [params]
+      (try
+        (let [params (-> (decode-params params)
+                         (fb/decode-page))]
 
-                 :closeGroup
-                 (fn []
-                   (vswap! state* fb/close-group))
+          (-> (swap! state fb/add-page params)
+              (get-current-page-id)))
 
-                 :addBool
-                 (fn [params]
-                   (try
-                     (let [params (-> params
-                                      (json/->clj)
-                                      (fb/decode-add-bool))]
-                       (vswap! state* fb/add-bool params)
-                       (dm/str (::fb/last-id @state*)))
-                     (catch :default cause
-                       (handle-exception cause))))
+        (catch :default cause
+          (handle-exception cause))))
 
-                 :addRect
-                 (fn [params]
-                   (try
-                     (let [params (-> params
-                                      (json/->clj)
-                                      (assoc :type :rect)
-                                      (fb/decode-shape))]
-                       (vswap! state* fb/add-shape params)
-                       (dm/str (::fb/last-id @state*)))
-                     (catch :default cause
-                       (handle-exception cause))))
+    :closePage
+    (fn []
+      (swap! state fb/close-page)
+      nil)
 
-                 :addCircle
-                 (fn [params]
-                   (try
-                     (let [params (-> params
-                                      (json/->clj)
-                                      (assoc :type :circle)
-                                      (fb/decode-shape))]
-                       (vswap! state* fb/add-shape params)
-                       (dm/str (::fb/last-id @state*)))
-                     (catch :default cause
-                       (handle-exception cause))))
+    :addBoard
+    (fn [params]
+      (try
+        (let [params (-> (decode-params params)
+                         (assoc :type :frame)
+                         (fb/decode-shape))]
+          (-> (swap! state fb/add-board params)
+              (get-last-id)))
+        (catch :default cause
+          (handle-exception cause))))
 
-                 :addPath
-                 (fn [params]
-                   (try
-                     (let [params (-> params
-                                      (json/->clj)
-                                      (assoc :type :path)
-                                      (fb/decode-shape))]
-                       (vswap! state* fb/add-shape params)
-                       (dm/str (::fb/last-id @state*)))
-                     (catch :default cause
-                       (handle-exception cause))))
+    :closeBoard
+    (fn []
+      (swap! state fb/close-board)
+      nil)
 
-                 :addText
-                 (fn [params]
-                   (try
-                     (let [params (-> params
-                                      (json/->clj)
-                                      (assoc :type :text)
-                                      (fb/decode-shape))]
-                       (vswap! state* fb/add-shape params)
-                       (dm/str (::fb/last-id @state*)))
-                     (catch :default cause
-                       (handle-exception cause))))
+    :addGroup
+    (fn [params]
+      (try
+        (let [params (-> (decode-params params)
+                         (assoc :type :group)
+                         (fb/decode-shape))]
+          (-> (swap! state fb/add-group params)
+              (get-last-id)))
+        (catch :default cause
+          (handle-exception cause))))
 
-                 :addLibraryColor
-                 (fn [params]
-                   (try
-                     (let [params (-> params
-                                      (json/->clj)
-                                      (fb/decode-library-color)
-                                      (d/without-nils))]
-                       (vswap! state* fb/add-library-color params)
-                       (dm/str (::fb/last-id @state*)))
-                     (catch :default cause
-                       (handle-exception cause))))
+    :closeGroup
+    (fn []
+      (swap! state fb/close-group)
+      nil)
 
-                 :addLibraryTypography
-                 (fn [params]
-                   (try
-                     (let [params (-> params
-                                      (json/->clj)
-                                      (fb/decode-library-typography)
-                                      (d/without-nils))]
-                       (vswap! state* fb/add-library-typography params)
-                       (dm/str (::fb/last-id @state*)))
-                     (catch :default cause
-                       (handle-exception cause))))
+    :addBool
+    (fn [params]
+      (try
+        (let [params (-> (decode-params params)
+                         (fb/decode-add-bool))]
+          (-> (swap! state fb/add-bool params)
+              (get-last-id)))
+        (catch :default cause
+          (handle-exception cause))))
 
-                 :addComponent
-                 (fn [params]
-                   (try
-                     (let [params (-> params
-                                      (json/->clj)
-                                      (fb/decode-component)
-                                      (d/without-nils))]
-                       (vswap! state* fb/add-component params)
-                       (dm/str (::fb/last-id @state*)))
-                     (catch :default cause
-                       (handle-exception cause))))
+    :addRect
+    (fn [params]
+      (try
+        (let [params (-> (decode-params params)
+                         (assoc :type :rect)
+                         (fb/decode-shape))]
+          (-> (swap! state fb/add-shape params)
+              (get-last-id)))
+        (catch :default cause
+          (handle-exception cause))))
 
-                 :addComponentInstance
-                 (fn [params]
-                   (try
-                     (let [params (-> params
-                                      (json/->clj)
-                                      (fb/decode-add-component-instance)
-                                      (d/without-nils))]
-                       (vswap! state* fb/add-component-instance params)
-                       (dm/str (::fb/last-id @state*)))
-                     (catch :default cause
-                       (handle-exception cause))))
+    :addCircle
+    (fn [params]
+      (try
+        (let [params (-> (decode-params params)
+                         (assoc :type :circle)
+                         (fb/decode-shape))]
+          (-> (swap! state fb/add-shape params)
+              (get-last-id)))
+        (catch :default cause
+          (handle-exception cause))))
 
-                 :getShape
-                 (fn [shape-id]
-                   (let [shape-id (uuid/parse shape-id)]
-                     (some-> (fb/lookup-shape @state* shape-id)
-                             (json/->js))))
+    :addPath
+    (fn [params]
+      (try
+        (let [params (-> (decode-params params)
+                         (assoc :type :path)
+                         (fb/decode-shape))]
+          (-> (swap! state fb/add-shape params)
+              (get-last-id)))
+        (catch :default cause
+          (handle-exception cause))))
 
-                 :toMap
-                 (fn []
-                   (-> @state*
-                       (d/without-qualified)
-                       (json/->js))))]
+    :addText
+    (fn [params]
+      (try
+        (let [params (-> (decode-params params)
+                         (assoc :type :text)
+                         (fb/decode-shape))]
+          (-> (swap! state fb/add-shape params)
+              (get-last-id)))
+        (catch :default cause
+          (handle-exception cause))))
+
+    :addLibraryColor
+    (fn [params]
+      (try
+        (let [params (-> (decode-params params)
+                         (fb/decode-library-color)
+                         (d/without-nils))]
+          (-> (swap! state fb/add-library-color params)
+              (get-last-id)))
+        (catch :default cause
+          (handle-exception cause))))
+
+    :addLibraryTypography
+    (fn [params]
+      (try
+        (let [params (-> (decode-params params)
+                         (fb/decode-library-typography)
+                         (d/without-nils))]
+          (-> (swap! state fb/add-library-typography params)
+              (get-last-id)))
+        (catch :default cause
+          (handle-exception cause))))
+
+    :addComponent
+    (fn [params]
+      (try
+        (let [params (-> (decode-params params)
+                         (fb/decode-add-component))]
+          (-> (swap! state fb/add-component params)
+              (get-last-id)))
+        (catch :default cause
+          (handle-exception cause))))
+
+    :addComponentInstance
+    (fn [params]
+      (try
+        (let [params (-> (decode-params params)
+                         (fb/decode-add-component-instance))]
+          (-> (swap! state fb/add-component-instance params)
+              (get-last-id)))
+        (catch :default cause
+          (handle-exception cause))))
+
+    :addFileMedia
+    (fn [params blob]
+
+      (when-not (instance? js/Blob blob)
+        (throw (BuilderError. "validation"
+                              "invalid-media"
+                              "only Blob instance are soported")))
+      (try
+        (let [blob (fb/map->BlobWrapper
+                    {:size (.-size ^js blob)
+                     :mtype (.-type ^js blob)
+                     :blob blob})
+              params
+              (-> (decode-params params)
+                  (fb/decode-add-file-media))]
+
+          (-> (swap! state fb/add-file-media params blob)
+              (get-last-id)))
+
+        (catch :default cause
+          (handle-exception cause))))
+
+    :getMediaAsImage
+    (fn [id]
+      (let [id (uuid/parse id)]
+        (when-let [fmedia (get-in @state [::fb/file-media id])]
+          (let [image {:id (get fmedia :id)
+                       :width (get fmedia :width)
+                       :height (get fmedia :height)
+                       :name (get fmedia :name)
+                       :mtype (get fmedia :mtype)}]
+            (json/->js (d/without-nils image))))))
+
+    :genId
+    (fn []
+      (dm/str (uuid/next)))))
+
+
+(defn create-build-context
+  "Create an empty builder state context."
+  []
+  (let [state (atom {})
+        api   (create-builder-api state)]
 
     (specify! api
       cljs.core/IDeref
-      (-deref [_]
-        (d/without-qualified @state*)))))
-
-(defn create-file
-  [params]
-  (try
-    (let [params (-> params json/->clj fb/decode-file)
-          file   (fb/create-file params)]
-      (create-file-api file))
-    (catch :default cause
-      (handle-exception cause))))
+      (-deref [_] @state))))

@@ -8,12 +8,10 @@
   "A .penpot export implementation"
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.files.builder :as fb]
    [app.common.json :as json]
+   [app.common.media :as media]
    [app.common.schema :as sm]
-   [app.common.uuid :as uuid]
-   [app.util.object :as obj]
    [app.common.types.color :as types.color]
    [app.common.types.component :as types.component]
    [app.common.types.file :as types.file]
@@ -22,8 +20,8 @@
    [app.common.types.shape :as types.shape]
    [app.common.types.tokens-lib :as types.tokens-lib]
    [app.common.types.typography :as types.typography]
-   [cuerdas.core :as str]
    [app.util.zip :as zip]
+   [cuerdas.core :as str]
    [promesa.core :as p]))
 
 (def ^:private schema:file
@@ -42,9 +40,6 @@
 
 (def ^:private encode-component
   (sm/encoder types.component/schema:component sm/json-transformer))
-
-;; (def encode-media
-;;   (sm/encoder ::ctf/media sm/json-transformer))
 
 (def encode-color
   (sm/encoder types.color/schema:color sm/json-transformer))
@@ -68,7 +63,6 @@
     "file-data-fragment"
     "file-change"})
 
-;; FIXME: move to types
 (def ^:private schema:storage-object
   [:map {:title "StorageObject"}
    [:id ::sm/uuid]
@@ -80,12 +74,6 @@
 (def encode-storage-object
   (sm/encoder schema:storage-object sm/json-transformer))
 
-;; (def encode-file-thumbnail
-;;   (sm/encoder schema:file-thumbnail sm/json-transformer))
-
-
-;; FIXME: naming
-
 (def ^:private file-attrs
   #{:id
     :name
@@ -96,8 +84,6 @@
 
 (defn- generate-file-export-procs
   [{:keys [id data] :as file}]
-  ;; (prn "generate-file-export-procs")
-  ;; (app.common.pprint/pprint file)
   (cons
    (let [file (cond-> (select-keys file file-attrs)
                 (:options data)
@@ -108,11 +94,11 @@
    (concat
     (let [pages       (get data :pages)
           pages-index (get data :pages-index)]
+
       (->> (d/enumerate pages)
            (mapcat
             (fn [[index page-id]]
-              (let [path    (str "files/" id "/pages/" page-id ".json")
-                    page    (get pages-index page-id)
+              (let [page    (get pages-index page-id)
                     objects (:objects page)
                     page    (-> page
                                 (dissoc :objects)
@@ -155,45 +141,74 @@
     (when-let [tokens-lib (get data :tokens-lib)]
       (list [(str "files/" id "/tokens.json")
              (delay (-> tokens-lib
-                        (encode-tokens-lib tokens-lib)
+                        encode-tokens-lib
                         json/encode))])))))
 
-(defn generate-manifest-procs
-  [file]
-  (let [mdata  {:id (:id file)
-                :name (:name file)
-                :features (:features file)}
+(defn- generate-files-export-procs
+  [state]
+  (->> (vals (get state ::fb/files))
+       (mapcat generate-file-export-procs)))
+
+(defn- generate-media-export-procs
+  [state]
+  (->> (get state ::fb/file-media)
+       (mapcat (fn [[file-media-id file-media]]
+                 (let [media-id (get file-media :media-id)
+                       media    (get-in state [::fb/media media-id])
+                       blob     (get-in state [::fb/blobs media-id])]
+                   (list
+                    [(str "objects/" media-id (media/mtype->extension (:content-type media)))
+                     (delay (get blob :blob))]
+
+                    [(str "objects/" media-id ".json")
+                     (delay (-> media
+                                ;; FIXME: proper encode?
+                                (json/encode)))]
+                    [(str "files/" (:file-id file-media) "/media/" file-media-id ".json")
+                     (delay (-> file-media
+                                (dissoc :file-id)
+                                (json/encode)))]))))))
+
+(defn- generate-manifest-procs
+  [state]
+  (let [files (->> (get state ::fb/files)
+                   (mapv (fn [[file-id file]]
+                           {:id file-id
+                            :name (:name file)
+                            :features (:features file)})))
         params {:type "penpot/export-files"
                 :version 1
+                ;; FIXME: set proper placeholder for replacement on build
                 :generated-by "penpot-lib/develop"
-                :files [mdata]
+                :files files
                 :relations []}]
-    (list
-     ["manifest.json" (delay (json/encode params))])))
+    ["manifest.json" (delay (json/encode params))]))
 
 (defn- export
-  [file writer]
-  (->> (p/reduce (fn [writer [path proc]]
-                   (let [data (deref proc)]
+  [state writer]
+  (->> (p/reduce (fn [writer [path data]]
+                   (let [data (if (delay? data) (deref data) data)]
                      (js/console.log "export" path)
                      (->> (zip/add writer path data)
                           (p/fmap (constantly writer)))))
 
                  writer
-                 (concat
-                  (generate-manifest-procs @file)
-                  (generate-file-export-procs @file)))
+                 (cons (generate-manifest-procs @state)
+                       (concat
+                        (generate-files-export-procs @state)
+                        (generate-media-export-procs @state))))
+
        (p/mcat (fn [writer]
                  (zip/close writer)))))
 
 (defn export-bytes
-  [file]
-  (export file (zip/writer (zip/bytes-writer))))
+  [state]
+  (export state (zip/writer (zip/bytes-writer))))
 
 (defn export-blob
-  [file]
-  (export file (zip/writer (zip/blob-writer))))
+  [state]
+  (export state (zip/writer (zip/blob-writer))))
 
 (defn export-stream
-  [file stream]
-  (export file (zip/writer stream)))
+  [state stream]
+  (export state (zip/writer stream)))

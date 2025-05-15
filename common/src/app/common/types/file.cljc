@@ -38,18 +38,18 @@
 
 (def schema:media
   "A schema that represents the file media object"
-  [:map {:title "FileMediaObject"}
+  [:map {:title "FileMedia"}
    [:id ::sm/uuid]
-   [:created-at ::sm/inst]
+   [:created-at {:optional true} ::sm/inst]
    [:deleted-at {:optional true} ::sm/inst]
    [:name :string]
    [:width ::sm/safe-int]
    [:height ::sm/safe-int]
    [:mtype :string]
-   [:file-id {:optional true} ::sm/uuid]
    [:media-id ::sm/uuid]
+   [:file-id {:optional true} ::sm/uuid]
    [:thumbnail-id {:optional true} ::sm/uuid]
-   [:is-local :boolean]])
+   [:is-local {:optional true} :boolean]])
 
 (def schema:colors
   [:map-of {:gen/max 5} ::sm/uuid ::ctc/color])
@@ -102,7 +102,6 @@
 (sm/register! ::media schema:media)
 (sm/register! ::colors schema:colors)
 (sm/register! ::typographies schema:typographies)
-(sm/register! ::media-object schema:media)
 
 (def check-file
   (sm/check-fn schema:file :hint "check error on validating file"))
@@ -110,7 +109,7 @@
 (def check-file-data
   (sm/check-fn schema:data))
 
-(def check-media-object
+(def check-file-media
   (sm/check-fn schema:media))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
