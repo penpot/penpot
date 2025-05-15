@@ -29,7 +29,7 @@
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.streams :as ms]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
    [beicon.v2.operators :as rxo]
@@ -340,7 +340,7 @@
              selrect     (dm/get-in state [:workspace-local :selrect])
              blocked?    (fn [id] (dm/get-in objects [id :blocked] false))
 
-             ask-worker (if buffered? uw/ask-buffered! uw/ask!)]
+             ask-worker (if buffered? mw/ask-buffered! mw/ask!)]
 
          (if (some? selrect)
            (->> (ask-worker

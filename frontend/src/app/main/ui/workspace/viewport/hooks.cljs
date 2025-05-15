@@ -28,7 +28,7 @@
    [app.main.ui.workspace.shapes.frame.dynamic-modifiers :as sfd]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.utils :as utils]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -206,7 +206,7 @@
 
              (if (mf/ref-val hover-disabled-ref)
                (rx/of nil)
-               (->> (uw/ask-buffered!
+               (->> (mw/ask-buffered!
                      {:cmd :selection/query
                       :page-id page-id
                       :rect rect
