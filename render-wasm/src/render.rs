@@ -34,16 +34,16 @@ const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
 
-pub struct NodeRenderState {
-    pub id: Uuid,
+struct NodeRenderState {
+    id: Uuid,
     // We use this bool to keep that we've traversed all the children inside this node.
-    pub visited_children: bool,
+    visited_children: bool,
     // This is used to clip the content of frames.
-    pub clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
+    clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
     // This is a flag to indicate that we've already drawn the mask of a masked group.
-    pub visited_mask: bool,
+    visited_mask: bool,
     // This bool indicates that we're drawing the mask shape.
-    pub mask: bool,
+    mask: bool,
 }
 
 impl NodeRenderState {
@@ -90,7 +90,7 @@ pub(crate) struct RenderState {
     // Indicates whether the rendering process has pending frames.
     pub render_in_progress: bool,
     // Stack of nodes pending to be rendered.
-    pub pending_nodes: Vec<NodeRenderState>,
+    pending_nodes: Vec<NodeRenderState>,
     pub current_tile: Option<tiles::Tile>,
     pub sampling_options: skia::SamplingOptions,
     pub render_area: Rect,
@@ -98,10 +98,10 @@ pub(crate) struct RenderState {
     pub pending_tiles: Vec<tiles::TileWithDistance>,
 }
 
-pub fn get_cache_size(viewbox: Viewbox) -> skia::ISize {
+pub fn get_cache_size(viewbox: Viewbox, dpr: f32) -> skia::ISize {
     // First we retrieve the extended area of the viewport that we could render.
     let (isx, isy, iex, iey) =
-        tiles::get_tiles_for_viewbox_with_interest(viewbox, VIEWPORT_INTEREST_AREA_THRESHOLD);
+        tiles::get_tiles_for_viewbox_with_interest(viewbox, VIEWPORT_INTEREST_AREA_THRESHOLD, dpr);
 
     let dx = if isx.signum() != iex.signum() { 1 } else { 0 };
     let dy = if isy.signum() != iey.signum() { 1 } else { 0 };
@@ -447,9 +447,9 @@ impl RenderState {
 
     pub fn update_render_context(&mut self, tile: tiles::Tile) {
         self.current_tile = Some(tile);
-        self.render_area = tiles::get_tile_rect(self.viewbox, tile);
+        self.render_area = tiles::get_tile_rect(tile, self.get_scale());
         self.surfaces
-            .update_render_context(self.render_area, self.viewbox);
+            .update_render_context(self.render_area, self.get_scale());
     }
 
     fn render_from_cache(&mut self) {
@@ -460,11 +460,15 @@ impl RenderState {
             // Scale and translate the target according to the cached data
             let navigate_zoom = self.viewbox.zoom / self.cached_viewbox.zoom;
 
-            canvas.scale((navigate_zoom, navigate_zoom));
+            canvas.scale((
+                navigate_zoom * self.options.dpr(),
+                navigate_zoom * self.options.dpr(),
+            ));
 
             let (start_tile_x, start_tile_y, _, _) = tiles::get_tiles_for_viewbox_with_interest(
                 self.cached_viewbox,
                 VIEWPORT_INTEREST_AREA_THRESHOLD,
+                self.options.dpr(),
             );
             let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom;
             let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom;
@@ -475,7 +479,7 @@ impl RenderState {
             ));
 
             canvas.clear(self.background_color);
-            canvas.draw_image(&snapshot.clone(), (0, 0), Some(&skia::Paint::default()));
+            canvas.draw_image(snapshot.clone(), (0, 0), Some(&skia::Paint::default()));
             canvas.restore();
         }
     }
@@ -517,10 +521,11 @@ impl RenderState {
         let (isx, isy, iex, iey) = tiles::get_tiles_for_viewbox_with_interest(
             self.viewbox,
             VIEWPORT_INTEREST_AREA_THRESHOLD,
+            self.options.dpr(),
         );
 
-        let viewbox_cache_size = get_cache_size(self.viewbox);
-        let cached_viewbox_cache_size = get_cache_size(self.cached_viewbox);
+        let viewbox_cache_size = get_cache_size(self.viewbox, self.options.dpr());
+        let cached_viewbox_cache_size = get_cache_size(self.cached_viewbox, self.options.dpr());
         if viewbox_cache_size != cached_viewbox_cache_size {
             self.surfaces.resize_cache(
                 &mut self.gpu_state,
@@ -530,7 +535,7 @@ impl RenderState {
         }
 
         // Then we get the real amount of tiles rendered for the current viewbox.
-        let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox);
+        let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox, self.options.dpr());
         debug::render_debug_tiles_for_viewbox(self, isx, isy, iex, iey);
         let tile_center = ((iex - isx) / 2, (iey - isy) / 2);
 
@@ -650,6 +655,7 @@ impl RenderState {
     }
 
     pub fn get_current_tile_bounds(&mut self) -> Rect {
+        // TODO: check if we need to add dpr to something else here
         let (tile_x, tile_y) = self.current_tile.unwrap();
         let scale = self.get_scale();
         let offset_x = self.viewbox.area.left * scale;
@@ -696,7 +702,6 @@ impl RenderState {
             return Ok(());
         }
 
-        let scale = self.get_scale();
         let mut should_stop = false;
 
         while !should_stop {
@@ -784,7 +789,7 @@ impl RenderState {
                             }
                             if !transformed_element.extrect().intersects(self.render_area)
                                 || transformed_element.hidden()
-                                || transformed_element.visually_insignificant(scale)
+                                || transformed_element.visually_insignificant(self.get_scale())
                             {
                                 debug::render_debug_shape(self, &transformed_element, false);
                                 continue;
@@ -916,7 +921,7 @@ impl RenderState {
     }
 
     pub fn get_tiles_for_shape(&mut self, shape: &Shape) -> (i32, i32, i32, i32) {
-        let tile_size = tiles::get_tile_size(self.viewbox);
+        let tile_size = tiles::get_tile_size(self.get_scale());
         tiles::get_tiles_for_rect(shape.extrect(), tile_size)
     }
 
