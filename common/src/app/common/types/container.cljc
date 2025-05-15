@@ -41,7 +41,7 @@
    [:map-of {:gen/max 10} ::sm/uuid :map]]
   [:plugin-data {:optional true} ::ctpg/plugin-data]])
 
-(def check-container!
+(def check-container
   (sm/check-fn ::container))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -74,13 +74,9 @@
 (defn get-shape
   [container shape-id]
 
-  (dm/assert!
-   "expected valid container"
-   (check-container! container))
-
-  (dm/assert!
-   "expected valid uuid for `shape-id`"
-   (uuid? shape-id))
+  (assert (check-container container))
+  (assert (uuid? shape-id)
+          "expected valid uuid for `shape-id`")
 
   (-> container
       (get :objects)

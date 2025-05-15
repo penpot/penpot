@@ -5,6 +5,7 @@
 set -ex
 
 export INCLUDE_STORYBOOK=${BUILD_STORYBOOK:-no};
+export INCLUDE_WASM=${BUILD_WASM:-yes};
 
 export CURRENT_VERSION=$1;
 export BUILD_DATE=$(date -R);
@@ -17,14 +18,18 @@ export TS=$(date +%s);
 export NODE_ENV=production;
 
 corepack enable;
-corepack up || exit 1;
+corepack install || exit 1;
 yarn install || exit 1;
 
 rm -rf resources/public;
 rm -rf target/dist;
 
 yarn run build:app:main --config-merge "{:release-version \"${CURRENT_HASH}-${TS}\"}" $EXTRA_PARAMS || exit 1
-yarn run build:wasm || exit 1;
+
+if [ "$INCLUDE_WASM" = "yes" ];  then
+    yarn run build:wasm || exit 1;
+fi
+
 yarn run build:app:libs || exit 1;
 yarn run build:app:assets || exit 1;
 
@@ -36,7 +41,10 @@ sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/render.html;
 sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/rasterizer.html;
 sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./target/dist/index.html;
 sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./target/dist/rasterizer.html;
-sed -i "s/version=develop/version=$CURRENT_VERSION/g" ./target/dist/js/render_wasm.js;
+
+if [ "$INCLUDE_WASM" = "yes" ];  then
+    sed -i "s/version=develop/version=$CURRENT_VERSION/g" ./target/dist/js/render_wasm.js;
+fi
 
 if [ "$INCLUDE_STORYBOOK" = "yes" ];  then
     # build storybook
