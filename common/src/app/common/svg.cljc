@@ -6,8 +6,6 @@
 
 (ns app.common.svg
   (:require
-   #?(:clj  [clojure.xml :as xml]
-      :cljs [tubax.core :as tubax])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
@@ -15,15 +13,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
-   [cuerdas.core :as str])
-  #?(:clj
-     (:import
-      clojure.lang.XMLHandler
-      java.io.InputStream
-      javax.xml.XMLConstants
-      javax.xml.parsers.SAXParserFactory
-      org.apache.commons.io.IOUtils)))
-
+   [cuerdas.core :as str]))
 
 ;; Regex for XML ids per Spec
 ;; https://www.w3.org/TR/2008/REC-xml-20081126/#sec-common-syn
@@ -1030,24 +1020,3 @@
                          :height (d/parse-integer (:height attrs) 0)})))]
     (reduce-nodes redfn [] svg-data)))
 
-#?(:clj
-   (defn- secure-parser-factory
-     [^InputStream input ^XMLHandler handler]
-     (.. (doto (SAXParserFactory/newInstance)
-           (.setFeature XMLConstants/FEATURE_SECURE_PROCESSING true)
-           (.setFeature "http://apache.org/xml/features/disallow-doctype-decl" true))
-         (newSAXParser)
-         (parse input handler))))
-
-(defn strip-doctype
-  [data]
-  (cond-> data
-    (str/includes? data "<!DOCTYPE")
-    (str/replace #"<\!DOCTYPE[^>]*>" "")))
-
-(defn parse
-  [text]
-  #?(:cljs (tubax/xml->clj text)
-     :clj  (let [text (strip-doctype text)]
-             (dm/with-open [istream (IOUtils/toInputStream text "UTF-8")]
-               (xml/parse istream secure-parser-factory)))))

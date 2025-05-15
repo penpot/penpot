@@ -260,7 +260,6 @@ __metadata:
     concurrently: "npm:^9.0.1"
     luxon: "npm:^3.4.4"
     nodemon: "npm:^3.1.7"
-    sax: "npm:^1.4.1"
     shadow-cljs: "npm:3.0.5"
     source-map-support: "npm:^0.5.21"
     ws: "npm:^8.17.0"
@@ -978,13 +977,6 @@ __metadata:
   version: 2.1.2
   resolution: "safer-buffer@npm:2.1.2"
   checksum: 10c0/7e3c8b2e88a1841c9671094bbaeebd94448111dd90a81a1f606f3f67708a6ec57763b3b47f06da09fc6054193e0e6709e77325415dc8422b04497a8070fa02d4
-  languageName: node
-  linkType: hard
-
-"sax@npm:^1.4.1":
-  version: 1.4.1
-  resolution: "sax@npm:1.4.1"
-  checksum: 10c0/6bf86318a254c5d898ede6bd3ded15daf68ae08a5495a2739564eb265cd13bcc64a07ab466fb204f67ce472bb534eb8612dac587435515169593f4fffa11de7c
   languageName: node
   linkType: hard
 
