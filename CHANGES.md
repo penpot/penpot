@@ -50,6 +50,7 @@
 - Fix problem while syncing library colors and typographies [Taiga #11068](https://tree.taiga.io/project/penpot/issue/11068)
 - Fix problem with path edition of shapes [Taiga #9496](https://tree.taiga.io/project/penpot/issue/9496)
 - Fix exception on paste invalid html [Taiga #11047](https://tree.taiga.io/project/penpot/issue/11047)
+- Fix share button being displayed with no permissions [Taiga #11086](https://tree.taiga.io/project/penpot/issue/11086)
 
 ## 2.6.2
 
