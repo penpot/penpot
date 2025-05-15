@@ -25,7 +25,7 @@
    :modules
    {:penpot
     {:exports {BuilderError lib.builder/BuilderError
-               createFile lib.builder/create-file
+               createBuildContext lib.builder/create-build-context
                exportAsBytes lib.export/export-bytes
                exportAsBlob lib.export/export-blob
                exportStream lib.export/export-stream
@@ -34,7 +34,7 @@
    :js-options
    {:entry-keys ["module" "browser" "main"]
     :export-conditions ["module" "import", "browser" "require" "default"]
-    :js-provider :import
+    ;; :js-provider :import
     ;; :external-index "target/library/dependencies.js"
     ;; :external-index-format :esm
     }

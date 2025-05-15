@@ -33,7 +33,6 @@
   "dependencies": {
     "@zip.js/zip.js": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch",
     "luxon": "^3.6.1",
-    "sax": "^1.4.1",
     "source-map-support": "^0.5.21"
   }
 }

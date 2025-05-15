@@ -10,10 +10,10 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.common.files.builder :as fb]
    [app.common.files.changes-builder :as pcb]
    [app.common.logging :as log]
    [app.common.math :as mth]
+   [app.common.media :as media]
    [app.common.schema :as sm]
    [app.common.svg.shapes-builder :as csvg.shapes-builder]
    [app.common.types.container :as ctn]
@@ -137,7 +137,7 @@
                  (= (.-type blob) "image/svg+xml")))
 
           (prepare-blob [blob]
-            (let [name (or name (if (dmm/file? blob) (fb/strip-image-extension (.-name blob)) "blob"))]
+            (let [name (or name (if (dmm/file? blob) (media/strip-image-extension (.-name blob)) "blob"))]
               {:file-id file-id
                :name name
                :is-local local?
