@@ -13,7 +13,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.helpers :as dsh]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -53,7 +53,7 @@
         (->> (rx/from changes)
              (rx/merge-map (fn [[page-id changes]]
                              (log/debug :hint "update-indexes" :page-id page-id :changes (count changes))
-                             (uw/ask! {:cmd :update-page-index
+                             (mw/ask! {:cmd :index/update-page-index
                                        :page-id page-id
                                        :changes changes})))
              (rx/catch (fn [cause]

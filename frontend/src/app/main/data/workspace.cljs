@@ -85,7 +85,7 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.streams :as ms]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as api]
    [app.util.code-gen.style-css :as css]
@@ -165,7 +165,7 @@
                (rx/mapcat
                 (fn [[id page]]
                   (let [page (update page :objects ctst/start-page-index)]
-                    (->> (uw/ask! {:cmd :initialize-page-index :page page})
+                    (->> (mw/ask! {:cmd :index/initialize-page-index :page page})
                          (rx/map (fn [_] [id page]))))))
                (rx/reduce conj {})
                (rx/map (fn [pages-index]
