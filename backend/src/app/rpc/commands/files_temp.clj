@@ -118,7 +118,6 @@
       (ex/raise :type :validation
                 :code :cant-persist-already-persisted-file))
 
-
     (let [changes (->> (db/cursor conn
                                   (sql/select :file-change {:file-id id}
                                               {:order-by [[:revn :asc]]})
