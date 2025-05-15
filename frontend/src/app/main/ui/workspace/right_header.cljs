@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.right-header
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -129,20 +128,13 @@
 
         input-ref         (mf/use-ref nil)
 
-        profile           (mf/deref refs/profile)
         team              (mf/deref refs/team)
-
-        team-profile
-        (mf/use-memo
-         (mf/deps profile team)
-         #(->> (:members team)
-               (d/seek (fn [{:keys [id]}] (= id (:id profile))))))
+        permissions       (get team :permissions)
 
         display-share-button?
         (and (not (:is-default team))
-             (some? team-profile)
-             (or (:is-admin team-profile)
-                 (:is-owner team-profile)))
+             (or (:is-admin permissions)
+                 (:is-owner permissions)))
 
         nav-to-viewer
         (mf/use-fn
