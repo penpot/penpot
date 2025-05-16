@@ -529,17 +529,15 @@
     ptk/WatchEvent
     (watch [_ state _]
       (wasm.api/clean-modifiers)
-
       (let [prev-wasm-props (:prev-wasm-props state)
             wasm-props (:wasm-props state)
-            objects (dsh/lookup-page-objects state)]
-
+            objects (dsh/lookup-page-objects state)
+            pixel-precision false]
         (set-wasm-props! objects prev-wasm-props wasm-props)
-
         (let [structure-entries (parse-structure-modifiers modif-tree)]
           (wasm.api/set-structure-modifiers structure-entries)
           (let [geometry-entries (parse-geometry-modifiers modif-tree)
-                selrect (wasm.api/propagate-apply geometry-entries)]
+                selrect (wasm.api/propagate-apply geometry-entries pixel-precision)]
             (rx/of (set-temporary-selrect selrect))))))))
 
 #_:clj-kondo/ignore
@@ -549,15 +547,18 @@
                  :as params}]
   (ptk/reify ::apply-wasm-modifiesr
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (let [geometry-entries
             (parse-geometry-modifiers modif-tree)
+
+            snap-pixel?
+            (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
             transforms
             (into
              {}
              (map (fn [{:keys [id transform]}] [id transform]))
-             (wasm.api/propagate-modifiers geometry-entries))
+             (wasm.api/propagate-modifiers geometry-entries snap-pixel?))
 
             ids
             (into (set (keys modif-tree)) (keys transforms))
