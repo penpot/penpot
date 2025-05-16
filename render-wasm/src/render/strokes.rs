@@ -246,7 +246,7 @@ fn draw_square_cap(
         Point::new(rect.left(), rect.bottom()),
     ];
 
-    let mut transformed_points = points.clone();
+    let mut transformed_points = points;
     matrix.map_points(&mut transformed_points, &points);
 
     let mut path = skia::Path::new();
@@ -280,7 +280,7 @@ fn draw_arrow_cap(
         Point::new(center.x + size, center.y + half_height),
     ];
 
-    let mut transformed_points = points.clone();
+    let mut transformed_points = points;
     matrix.map_points(&mut transformed_points, &points);
 
     let mut path = skia::Path::new();
@@ -314,7 +314,7 @@ fn draw_triangle_cap(
         Point::new(center.x + size, center.y + half_height),
     ];
 
-    let mut transformed_points = points.clone();
+    let mut transformed_points = points;
     matrix.map_points(&mut transformed_points, &points);
 
     let mut path = skia::Path::new();

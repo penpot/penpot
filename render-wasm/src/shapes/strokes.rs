@@ -143,7 +143,7 @@ impl Stroke {
             StrokeKind::Outer => self.width / 2.0,
         };
 
-        let mut outer = corners.clone();
+        let mut outer = *corners;
         for corner in outer.iter_mut() {
             corner.offset((offset, offset))
         }

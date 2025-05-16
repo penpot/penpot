@@ -318,7 +318,7 @@ impl TileTextureCache {
                 .iter_mut()
                 .filter_map(|(tile, _)| {
                     if !self.visited.contains_key(tile) {
-                        Some(tile.clone())
+                        Some(*tile)
                     } else {
                         None
                     }

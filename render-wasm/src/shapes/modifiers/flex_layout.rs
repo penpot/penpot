@@ -141,7 +141,7 @@ impl ChildAxis {
                 is_fill_main: child.is_layout_horizontal_fill(),
                 is_fill_across: child.is_layout_vertical_fill(),
                 z_index: layout_item.map(|i| i.z_index).unwrap_or(0),
-                bounds: child_bounds.clone(),
+                bounds: *child_bounds,
             }
         } else {
             Self {
@@ -159,7 +159,7 @@ impl ChildAxis {
                 is_fill_main: child.is_layout_vertical_fill(),
                 is_fill_across: child.is_layout_horizontal_fill(),
                 z_index: layout_item.map(|i| i.z_index).unwrap_or(0),
-                bounds: child_bounds.clone(),
+                bounds: *child_bounds,
             }
         };
 
