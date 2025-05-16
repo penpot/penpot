@@ -737,7 +737,7 @@ impl Shape {
         let mut center = self.selrect.center();
         center = transform.map_point(center);
 
-        let bounds = self.bounds().transform(&transform);
+        let bounds = self.bounds().transform(transform);
         self.transform = bounds.transform_matrix().unwrap_or_default();
 
         let width = bounds.width();
@@ -753,10 +753,10 @@ impl Shape {
     }
 
     pub fn apply_transform(&mut self, transform: &Matrix) {
-        self.transform_selrect(&transform);
+        self.transform_selrect(transform);
         if let shape_type @ (Type::Path(_) | Type::Bool(_)) = &mut self.shape_type {
             if let Some(path) = shape_type.path_mut() {
-                path.transform(&transform);
+                path.transform(transform);
             }
         }
     }

@@ -127,7 +127,7 @@ pub fn draw_stroke_on_path(
     handle_stroke_caps(
         &mut skia_path,
         stroke,
-        &selrect,
+        selrect,
         canvas,
         is_open,
         svg_attrs,
@@ -150,27 +150,27 @@ fn handle_stroke_cap(
         StrokeCap::None => {}
         StrokeCap::Line => {
             // We also draw this square cap to fill the gap between the path and the arrow
-            draw_square_cap(canvas, &paint, p1, p2, width, 0.);
+            draw_square_cap(canvas, paint, p1, p2, width, 0.);
             paint.set_style(skia::PaintStyle::Stroke);
-            draw_arrow_cap(canvas, &paint, p1, p2, width * 4.);
+            draw_arrow_cap(canvas, paint, p1, p2, width * 4.);
         }
         StrokeCap::Triangle => {
-            draw_triangle_cap(canvas, &paint, p1, p2, width * 4.);
+            draw_triangle_cap(canvas, paint, p1, p2, width * 4.);
         }
         StrokeCap::Rectangle => {
-            draw_square_cap(canvas, &paint, p1, p2, width * 4., 0.);
+            draw_square_cap(canvas, paint, p1, p2, width * 4., 0.);
         }
         StrokeCap::Circle => {
-            canvas.draw_circle((p1.x, p1.y), width * 2., &paint);
+            canvas.draw_circle((p1.x, p1.y), width * 2., paint);
         }
         StrokeCap::Diamond => {
-            draw_square_cap(canvas, &paint, p1, p2, width * 4., 45.);
+            draw_square_cap(canvas, paint, p1, p2, width * 4., 45.);
         }
         StrokeCap::Round => {
-            canvas.draw_circle((p1.x, p1.y), width / 2.0, &paint);
+            canvas.draw_circle((p1.x, p1.y), width / 2.0, paint);
         }
         StrokeCap::Square => {
-            draw_square_cap(canvas, &paint, p1, p2, width, 0.);
+            draw_square_cap(canvas, paint, p1, p2, width, 0.);
         }
     }
 }

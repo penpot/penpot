@@ -63,7 +63,7 @@ fn calculate_tracks(
     set_flex_multi_span(is_column, &mut tracks, cells, shapes, bounds);
     set_fr_value(is_column, shape, layout_data, &mut tracks, layout_size);
     stretch_tracks(is_column, shape, layout_data, &mut tracks, layout_size);
-    assign_anchors(is_column, layout_data, &layout_bounds, &mut tracks);
+    assign_anchors(is_column, layout_data, layout_bounds, &mut tracks);
 
     tracks
 }
@@ -696,9 +696,9 @@ pub fn reflow_grid_layout(
         }
 
         let position = child_position(
-            &child,
+            child,
             &layout_bounds,
-            &layout_data,
+            layout_data,
             &child_bounds,
             child.layout_item,
             cell,
@@ -745,7 +745,7 @@ pub fn reflow_grid_layout(
         scale.post_translate(origin);
         scale.post_concat(&parent_transform);
         scale.pre_translate(-origin);
-        scale.pre_concat(&parent_transform_inv);
+        scale.pre_concat(parent_transform_inv);
 
         let layout_bounds_after = layout_bounds.transform(&scale);
         result.push_back(Modifier::parent(shape.id, scale));

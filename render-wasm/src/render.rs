@@ -343,7 +343,7 @@ impl RenderState {
         let mut shape = shape.clone();
 
         if let Some(modifiers) = modifiers {
-            shape.apply_transform(&modifiers);
+            shape.apply_transform(modifiers);
         }
 
         let center = shape.center();
@@ -354,7 +354,7 @@ impl RenderState {
         match &shape.shape_type {
             Type::SVGRaw(sr) => {
                 if let Some(modifiers) = modifiers {
-                    self.surfaces.canvas(SurfaceId::Fills).concat(&modifiers);
+                    self.surfaces.canvas(SurfaceId::Fills).concat(modifiers);
                 }
                 self.surfaces.canvas(SurfaceId::Fills).concat(&matrix);
                 if let Some(svg) = shape.svg.as_ref() {
@@ -380,7 +380,7 @@ impl RenderState {
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let paragraphs = text_content.get_skia_paragraphs(&self.fonts.font_collection());
+                let paragraphs = text_content.get_skia_paragraphs(self.fonts.font_collection());
 
                 shadows::render_text_drop_shadows(self, &shape, &paragraphs, antialias);
                 text::render(self, &shape, &paragraphs, None, None);
@@ -390,9 +390,9 @@ impl RenderState {
                     if let Fill::Image(image_fill) = &stroke.fill {
                         image = self.images.get(&image_fill.id()).cloned();
                     }
-                    let stroke_paints = shape.get_text_stroke_paint(&stroke, image.as_ref());
+                    let stroke_paints = shape.get_text_stroke_paint(stroke, image.as_ref());
                     let stroke_paragraphs = text_content
-                        .get_skia_stroke_paragraphs(&self.fonts.font_collection(), &stroke_paints);
+                        .get_skia_stroke_paragraphs(self.fonts.font_collection(), &stroke_paints);
                     shadows::render_text_drop_shadows(self, &shape, &stroke_paragraphs, antialias);
                     text::render(
                         self,
@@ -797,7 +797,7 @@ impl RenderState {
                         if !node_render_state.id.is_nil() {
                             self.render_shape(element, modifiers.get(&element.id), clip_bounds);
                         } else {
-                            self.apply_drawing_to_render_canvas(Some(&element));
+                            self.apply_drawing_to_render_canvas(Some(element));
                         }
 
                         // Set the node as visited_children before processing children
@@ -865,7 +865,7 @@ impl RenderState {
             let Some(root) = tree.get(&Uuid::nil()) else {
                 return Err(String::from("Root shape not found"));
             };
-            let root_ids = modified_children_ids(&root, structure.get(&root.id));
+            let root_ids = modified_children_ids(root, structure.get(&root.id));
 
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes

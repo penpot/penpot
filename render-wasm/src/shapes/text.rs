@@ -125,7 +125,7 @@ impl TextContent {
                 let paragraph_style = paragraph.paragraph_to_style();
                 let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
                 for leaf in &paragraph.children {
-                    let stroke_style = leaf.to_stroke_style(paragraph, &stroke_paint);
+                    let stroke_style = leaf.to_stroke_style(paragraph, stroke_paint);
                     let text: String = leaf.apply_text_transform(paragraph.text_transform);
                     builder.push_style(&stroke_style);
                     builder.add_text(&text);

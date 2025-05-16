@@ -450,7 +450,7 @@ fn calculate_track_data(
     }
 
     calculate_track_positions(
-        &layout_data,
+        layout_data,
         &layout_axis,
         layout_bounds,
         &mut tracks,
@@ -556,7 +556,7 @@ pub fn reflow_flex_layout(
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> VecDeque<Modifier> {
     let mut result = VecDeque::new();
-    let layout_bounds = &bounds.find(&shape);
+    let layout_bounds = &bounds.find(shape);
     let layout_axis = LayoutAxis::new(shape, layout_bounds, layout_data, flex_data);
     let tracks = calculate_track_data(
         shape,
@@ -570,7 +570,7 @@ pub fn reflow_flex_layout(
 
     for track in tracks.iter() {
         let total_shapes_size = track.shapes.iter().map(|s| s.main_size).sum::<f32>();
-        let mut shape_anchor = first_anchor(&layout_data, &layout_axis, track, total_shapes_size);
+        let mut shape_anchor = first_anchor(layout_data, &layout_axis, track, total_shapes_size);
 
         for child_axis in track.shapes.iter() {
             let child_id = child_axis.id;
@@ -602,7 +602,7 @@ pub fn reflow_flex_layout(
             {
                 transform.post_concat(&math::resize_matrix(
                     layout_bounds,
-                    &child_bounds,
+                    child_bounds,
                     new_width,
                     new_height,
                 ));
@@ -615,10 +615,10 @@ pub fn reflow_flex_layout(
             result.push_back(Modifier::transform(child.id, transform));
 
             shape_anchor = next_anchor(
-                &layout_data,
+                layout_data,
                 &layout_axis,
-                &child_axis,
-                &track,
+                child_axis,
+                track,
                 shape_anchor,
                 total_shapes_size,
             );
@@ -690,7 +690,7 @@ pub fn reflow_flex_layout(
         scale.post_translate(origin);
         scale.post_concat(&parent_transform);
         scale.pre_translate(-origin);
-        scale.pre_concat(&parent_transform_inv);
+        scale.pre_concat(parent_transform_inv);
 
         let layout_bounds_after = layout_bounds.transform(&scale);
         result.push_back(Modifier::parent(shape.id, scale));
