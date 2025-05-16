@@ -290,7 +290,7 @@ pub extern "C" fn set_shape_svg_raw_content() {
             .to_string();
         shape
             .set_svg_raw_content(svg_raw_content)
-            .expect("Failed to set svg raw content");
+            .expect("Failed to set svg raw content");  
     });
 }
 

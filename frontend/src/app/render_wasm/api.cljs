@@ -307,6 +307,7 @@
   [content]
   (let [size (get-string-length content)
         offset (mem/alloc-bytes size)]
+    (println "set_shape_svg_raw_content")
     (h/call wasm/internal-module "stringToUTF8" content offset size)
     (h/call wasm/internal-module "_set_shape_svg_raw_content")))
 
