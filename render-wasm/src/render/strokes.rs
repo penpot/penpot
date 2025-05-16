@@ -7,6 +7,8 @@ use skia_safe::{self as skia, ImageFilter, RRect};
 
 use super::{RenderState, SurfaceId};
 
+// FIXME: See if we can simplify these arguments
+#[allow(clippy::too_many_arguments)]
 fn draw_stroke_on_rect(
     canvas: &skia::Canvas,
     stroke: &Stroke,
@@ -41,6 +43,8 @@ fn draw_stroke_on_rect(
     }
 }
 
+// FIXME: See if we can simplify these arguments
+#[allow(clippy::too_many_arguments)]
 fn draw_stroke_on_circle(
     canvas: &skia::Canvas,
     stroke: &Stroke,
@@ -65,6 +69,8 @@ fn draw_stroke_on_circle(
     canvas.draw_oval(&stroke_rect, &paint);
 }
 
+// FIXME: See if we can simplify these arguments
+#[allow(clippy::too_many_arguments)]
 pub fn draw_stroke_on_path(
     canvas: &skia::Canvas,
     stroke: &Stroke,
@@ -169,6 +175,8 @@ fn handle_stroke_cap(
     }
 }
 
+// FIXME: See if we can simplify these arguments
+#[allow(clippy::too_many_arguments)]
 fn handle_stroke_caps(
     path: &mut skia::Path,
     stroke: &Stroke,

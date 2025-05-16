@@ -217,6 +217,8 @@ impl Default for Paragraph {
 }
 
 impl Paragraph {
+    // FIXME: These arguments could be grouped or simplified
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         text_align: u8,
         text_decoration: u8,
