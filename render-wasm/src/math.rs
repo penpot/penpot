@@ -133,11 +133,13 @@ impl Bounds {
         self.sw = mtx.map_point(self.sw);
     }
 
+    // FIXME: this looks like this should be a try_from static method or similar
     pub fn box_bounds(&self, other: &Self) -> Option<Self> {
-        self.from_points(other.points())
+        self.with_points(other.points())
     }
 
-    pub fn from_points(&self, points: Vec<Point>) -> Option<Self> {
+    // FIXME: this looks like this should be a try_from static method or similar
+    pub fn with_points(&self, points: Vec<Point>) -> Option<Self> {
         let hv = self.horizontal_vec();
         let vv = self.vertical_vec();
 
@@ -322,7 +324,7 @@ impl Bounds {
         m.scale_y() < 0.0
     }
 
-    pub fn to_rect(&self) -> Rect {
+    pub fn to_rect(self) -> Rect {
         Rect::from_ltrb(self.min_x(), self.min_y(), self.max_x(), self.max_y())
     }
 
