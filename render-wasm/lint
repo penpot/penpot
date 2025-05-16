@@ -38,7 +38,6 @@ ALLOWED_RULES="
         -A clippy::unnecessary_to_owned \
         -A clippy::unused_unit \
         -A clippy::unwrap_or_default \
-        -A clippy::useless_format \
         -D static_mut_refs"
 
 # ./lint --fix
