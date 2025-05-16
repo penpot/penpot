@@ -50,7 +50,6 @@ ALLOWED_RULES="
         -A clippy::assign_op_pattern \
         -A clippy::redundant_pattern_matching \
         -A clippy::nonminimal_bool \
-        -A clippy::unnecessary_cast \
         -D static_mut_refs"
 
 # ./lint --fix

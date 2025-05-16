@@ -289,7 +289,7 @@ fn set_flex_multi_span(
             continue;
         }
 
-        let rest = dist / num_flex as f32;
+        let rest = dist / num_flex;
 
         // Distribute the space between flex tracks in proportion to the division
         for i in start..end {

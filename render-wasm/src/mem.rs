@@ -16,7 +16,7 @@ pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
 
     unsafe {
         let layout = Layout::from_size_align_unchecked(len, LAYOUT_ALIGN);
-        let ptr = alloc(layout) as *mut u8;
+        let ptr = alloc(layout);
         if ptr.is_null() {
             panic!("Allocation failed");
         }
