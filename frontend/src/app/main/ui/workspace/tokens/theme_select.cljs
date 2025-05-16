@@ -111,7 +111,6 @@
                         :is-open? true
                         :rect rect))))))]
 
-    ;; TODO: This element should be accessible by keyboard
     [:div {:on-click on-open-dropdown
            :disabled (not can-edit?)
            :aria-expanded is-open?

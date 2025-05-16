@@ -41,7 +41,6 @@
 .themes-header,
 .sets-header-container {
   @include use-typography("headline-small");
-  display: block;
   padding: $s-8;
   color: var(--title-foreground-color);
   word-break: break-word;
