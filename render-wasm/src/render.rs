@@ -806,7 +806,7 @@ impl RenderState {
                             visited_children: true,
                             clip_bounds: None,
                             visited_mask: false,
-                            mask: mask,
+                            mask,
                         });
 
                         if element.is_recursive() {
