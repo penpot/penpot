@@ -19,7 +19,6 @@ ALLOWED_RULES="
         -A clippy::clone_on_copy \
         -A clippy::derivable_impls \
         -A clippy::enum_variant_names \
-        -A clippy::field_reassign_with_default \
         -D static_mut_refs"
 
 # ./lint --fix
