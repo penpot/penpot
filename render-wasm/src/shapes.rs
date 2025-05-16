@@ -224,30 +224,25 @@ impl Shape {
     }
 
     pub fn has_layout(&self) -> bool {
-        match self.shape_type {
+        matches!(
+            self.shape_type,
             Type::Frame(Frame {
-                layout: Some(_), ..
-            }) => true,
-            _ => false,
-        }
+                layout: Some(_),
+                ..
+            })
+        )
     }
 
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
         self.selrect.set_ltrb(left, top, right, bottom);
-        match self.shape_type {
-            Type::Text(ref mut text) => {
-                text.set_xywh(left, top, right - left, bottom - top);
-            }
-            _ => {}
+        if let Type::Text(ref mut text) = self.shape_type {
+            text.set_xywh(left, top, right - left, bottom - top);
         }
     }
 
     pub fn set_masked(&mut self, masked: bool) {
-        match &mut self.shape_type {
-            Type::Group(data) => {
-                data.masked = masked;
-            }
-            _ => {}
+        if let Type::Group(data) = &mut self.shape_type {
+            data.masked = masked;
         }
     }
 
@@ -272,7 +267,7 @@ impl Shape {
     }
 
     pub fn constraint_h(&self, default: ConstraintH) -> ConstraintH {
-        self.constraint_h.clone().unwrap_or(default)
+        self.constraint_h.unwrap_or(default)
     }
 
     pub fn set_constraint_v(&mut self, constraint: Option<ConstraintV>) {
@@ -280,13 +275,15 @@ impl Shape {
     }
 
     pub fn constraint_v(&self, default: ConstraintV) -> ConstraintV {
-        self.constraint_v.clone().unwrap_or(default)
+        self.constraint_v.unwrap_or(default)
     }
 
     pub fn set_hidden(&mut self, value: bool) {
         self.hidden = value;
     }
 
+    // FIXME: These arguments could be grouped or simplified
+    #[allow(clippy::too_many_arguments)]
     pub fn set_flex_layout_child_data(
         &mut self,
         margin_top: f32,
@@ -320,6 +317,8 @@ impl Shape {
         });
     }
 
+    // FIXME: These arguments could be grouped or simplified
+    #[allow(clippy::too_many_arguments)]
     pub fn set_flex_layout_data(
         &mut self,
         direction: FlexDirection,
@@ -335,32 +334,31 @@ impl Shape {
         padding_bottom: f32,
         padding_left: f32,
     ) {
-        match &mut self.shape_type {
-            Type::Frame(data) => {
-                let layout_data = LayoutData {
-                    align_items,
-                    align_content,
-                    justify_items,
-                    justify_content,
-                    padding_top,
-                    padding_right,
-                    padding_bottom,
-                    padding_left,
-                    row_gap,
-                    column_gap,
-                };
+        if let Type::Frame(data) = &mut self.shape_type {
+            let layout_data = LayoutData {
+                align_items,
+                align_content,
+                justify_items,
+                justify_content,
+                padding_top,
+                padding_right,
+                padding_bottom,
+                padding_left,
+                row_gap,
+                column_gap,
+            };
 
-                let flex_data = FlexData {
-                    direction,
-                    wrap_type,
-                };
+            let flex_data = FlexData {
+                direction,
+                wrap_type,
+            };
 
-                data.layout = Some(Layout::FlexLayout(layout_data, flex_data));
-            }
-            _ => {}
+            data.layout = Some(Layout::FlexLayout(layout_data, flex_data));
         }
     }
 
+    // FIXME: These arguments could be grouped or simplified
+    #[allow(clippy::too_many_arguments)]
     pub fn set_grid_layout_data(
         &mut self,
         direction: GridDirection,
@@ -375,26 +373,23 @@ impl Shape {
         padding_bottom: f32,
         padding_left: f32,
     ) {
-        match &mut self.shape_type {
-            Type::Frame(data) => {
-                let layout_data = LayoutData {
-                    align_items,
-                    align_content,
-                    justify_items,
-                    justify_content,
-                    padding_top,
-                    padding_right,
-                    padding_bottom,
-                    padding_left,
-                    row_gap,
-                    column_gap,
-                };
+        if let Type::Frame(data) = &mut self.shape_type {
+            let layout_data = LayoutData {
+                align_items,
+                align_content,
+                justify_items,
+                justify_content,
+                padding_top,
+                padding_right,
+                padding_bottom,
+                padding_left,
+                row_gap,
+                column_gap,
+            };
 
-                let mut grid_data = GridData::default();
-                grid_data.direction = direction;
-                data.layout = Some(Layout::GridLayout(layout_data, grid_data));
-            }
-            _ => {}
+            let mut grid_data = GridData::default();
+            grid_data.direction = direction;
+            data.layout = Some(Layout::GridLayout(layout_data, grid_data));
         }
     }
 
@@ -578,7 +573,7 @@ impl Shape {
         );
 
         let center = self.center();
-        let mut matrix = self.transform.clone();
+        let mut matrix = self.transform;
         matrix.post_translate(center);
         matrix.pre_translate(-center);
 
@@ -595,7 +590,7 @@ impl Shape {
         let mut rect = self.bounds().to_rect();
         for shadow in self.shadows.iter() {
             let (x, y) = shadow.offset;
-            let mut shadow_rect = rect.clone();
+            let mut shadow_rect = rect;
             shadow_rect.left += x;
             shadow_rect.right += x;
             shadow_rect.top += y;
@@ -717,12 +712,9 @@ impl Shape {
     }
 
     pub fn clear_text(&mut self) {
-        match &self.shape_type {
-            Type::Text(old_text_content) => {
-                let new_text_content = TextContent::new(self.selrect, old_text_content.grow_type());
-                self.shape_type = Type::Text(new_text_content);
-            }
-            _ => {}
+        if let Type::Text(old_text_content) = &self.shape_type {
+            let new_text_content = TextContent::new(self.selrect, old_text_content.grow_type());
+            self.shape_type = Type::Text(new_text_content);
         }
     }
 
@@ -745,8 +737,8 @@ impl Shape {
         let mut center = self.selrect.center();
         center = transform.map_point(center);
 
-        let bounds = self.bounds().transform(&transform);
-        self.transform = bounds.transform_matrix().unwrap_or(Matrix::default());
+        let bounds = self.bounds().transform(transform);
+        self.transform = bounds.transform_matrix().unwrap_or_default();
 
         let width = bounds.width();
         let height = bounds.height();
@@ -761,14 +753,11 @@ impl Shape {
     }
 
     pub fn apply_transform(&mut self, transform: &Matrix) {
-        self.transform_selrect(&transform);
-        match &mut self.shape_type {
-            shape_type @ (Type::Path(_) | Type::Bool(_)) => {
-                if let Some(path) = shape_type.path_mut() {
-                    path.transform(&transform);
-                }
+        self.transform_selrect(transform);
+        if let shape_type @ (Type::Path(_) | Type::Bool(_)) = &mut self.shape_type {
+            if let Some(path) = shape_type.path_mut() {
+                path.transform(transform);
             }
-            _ => {}
         }
     }
 
@@ -852,7 +841,7 @@ impl Shape {
         let mut paints = Vec::new();
 
         match stroke.kind {
-            StrokeKind::InnerStroke => {
+            StrokeKind::Inner => {
                 let mut paint = skia::Paint::default();
                 paint.set_blend_mode(skia::BlendMode::DstOver);
                 paint.set_anti_alias(true);
@@ -868,7 +857,7 @@ impl Shape {
 
                 paints.push(paint);
             }
-            StrokeKind::CenterStroke => {
+            StrokeKind::Center => {
                 let mut paint = skia::Paint::default();
                 paint.set_style(skia::PaintStyle::Stroke);
                 paint.set_anti_alias(true);
@@ -878,7 +867,7 @@ impl Shape {
 
                 paints.push(paint);
             }
-            StrokeKind::OuterStroke => {
+            StrokeKind::Outer => {
                 let mut paint = skia::Paint::default();
                 paint.set_style(skia::PaintStyle::Stroke);
                 paint.set_blend_mode(skia::BlendMode::DstOver);
@@ -908,7 +897,7 @@ pub fn modified_children_ids(
     structure: Option<&Vec<StructureEntry>>,
 ) -> IndexSet<Uuid> {
     if let Some(structure) = structure {
-        let mut result: Vec<Uuid> = Vec::from_iter(element.children_ids().iter().map(|id| *id));
+        let mut result: Vec<Uuid> = Vec::from_iter(element.children_ids().iter().copied());
         let mut to_remove = HashSet::<&Uuid>::new();
 
         for st in structure {
@@ -925,7 +914,7 @@ pub fn modified_children_ids(
         let ret: IndexSet<Uuid> = result
             .iter()
             .filter(|id| !to_remove.contains(id))
-            .map(|id| *id)
+            .copied()
             .collect();
 
         ret
@@ -949,7 +938,7 @@ mod tests {
 
         shape.add_fill(Fill::Solid(SolidColor(Color::TRANSPARENT)));
         assert_eq!(
-            shape.fills.get(0),
+            shape.fills.first(),
             Some(&Fill::Solid(SolidColor(Color::TRANSPARENT)))
         )
     }
@@ -969,7 +958,7 @@ mod tests {
                 ])
             );
         } else {
-            assert!(false);
+            unreachable!();
         }
     }
 
@@ -980,9 +969,9 @@ mod tests {
         shape.set_masked(true);
 
         if let Type::Group(Group { masked, .. }) = shape.shape_type {
-            assert_eq!(masked, true);
+            assert!(masked);
         } else {
-            assert!(false);
+            unreachable!()
         }
     }
 

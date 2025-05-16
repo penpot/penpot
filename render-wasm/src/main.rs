@@ -435,8 +435,7 @@ pub extern "C" fn propagate_apply() -> *mut u8 {
         let center = result_bound.center();
         let transform = result_bound.transform_matrix().unwrap_or(Matrix::default());
 
-        let mut bytes = Vec::<u8>::with_capacity(40);
-        bytes.resize(40, 0);
+        let mut bytes = vec![0; 40];
         bytes[0..4].clone_from_slice(&width.to_le_bytes());
         bytes[4..8].clone_from_slice(&height.to_le_bytes());
         bytes[8..12].clone_from_slice(&center.x.to_le_bytes());
@@ -447,8 +446,9 @@ pub extern "C" fn propagate_apply() -> *mut u8 {
         bytes[28..32].clone_from_slice(&transform[4].to_le_bytes());
         bytes[32..36].clone_from_slice(&transform[2].to_le_bytes());
         bytes[36..40].clone_from_slice(&transform[5].to_le_bytes());
-        return mem::write_bytes(bytes);
-    });
+
+        mem::write_bytes(bytes)
+    })
 }
 
 #[no_mangle]

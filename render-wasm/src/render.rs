@@ -343,7 +343,7 @@ impl RenderState {
         let mut shape = shape.clone();
 
         if let Some(modifiers) = modifiers {
-            shape.apply_transform(&modifiers);
+            shape.apply_transform(modifiers);
         }
 
         let center = shape.center();
@@ -354,14 +354,14 @@ impl RenderState {
         match &shape.shape_type {
             Type::SVGRaw(sr) => {
                 if let Some(modifiers) = modifiers {
-                    self.surfaces.canvas(SurfaceId::Fills).concat(&modifiers);
+                    self.surfaces.canvas(SurfaceId::Fills).concat(modifiers);
                 }
                 self.surfaces.canvas(SurfaceId::Fills).concat(&matrix);
                 if let Some(svg) = shape.svg.as_ref() {
                     svg.render(self.surfaces.canvas(SurfaceId::Fills))
                 } else {
                     let font_manager = skia::FontMgr::from(self.fonts().font_provider().clone());
-                    let dom_result = skia::svg::Dom::from_str(sr.content.to_string(), font_manager);
+                    let dom_result = skia::svg::Dom::from_str(&sr.content, font_manager);
                     match dom_result {
                         Ok(dom) => {
                             dom.render(self.surfaces.canvas(SurfaceId::Fills));
@@ -380,7 +380,7 @@ impl RenderState {
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let paragraphs = text_content.get_skia_paragraphs(&self.fonts.font_collection());
+                let paragraphs = text_content.get_skia_paragraphs(self.fonts.font_collection());
 
                 shadows::render_text_drop_shadows(self, &shape, &paragraphs, antialias);
                 text::render(self, &shape, &paragraphs, None, None);
@@ -390,9 +390,9 @@ impl RenderState {
                     if let Fill::Image(image_fill) = &stroke.fill {
                         image = self.images.get(&image_fill.id()).cloned();
                     }
-                    let stroke_paints = shape.get_text_stroke_paint(&stroke, image.as_ref());
+                    let stroke_paints = shape.get_text_stroke_paint(stroke, image.as_ref());
                     let stroke_paragraphs = text_content
-                        .get_skia_stroke_paragraphs(&self.fonts.font_collection(), &stroke_paints);
+                        .get_skia_stroke_paragraphs(self.fonts.font_collection(), &stroke_paints);
                     shadows::render_text_drop_shadows(self, &shape, &stroke_paragraphs, antialias);
                     text::render(
                         self,
@@ -602,17 +602,14 @@ impl RenderState {
         // the content and the second one rendering the mask so we need to do
         // an extra save_layer to keep all the masked group separate from
         // other already drawn elements.
-        match element.shape_type {
-            Type::Group(group) => {
-                if group.masked {
-                    let paint = skia::Paint::default();
-                    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-                    self.surfaces
-                        .canvas(SurfaceId::Current)
-                        .save_layer(&layer_rec);
-                }
+        if let Type::Group(group) = element.shape_type {
+            if group.masked {
+                let paint = skia::Paint::default();
+                let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+                self.surfaces
+                    .canvas(SurfaceId::Current)
+                    .save_layer(&layer_rec);
             }
-            _ => {}
         }
 
         let mut paint = skia::Paint::default();
@@ -646,13 +643,10 @@ impl RenderState {
             // Because masked groups needs two rendering passes (first drawing
             // the content and then drawing the mask), we need to do an
             // extra restore.
-            match element.shape_type {
-                Type::Group(group) => {
-                    if group.masked {
-                        self.surfaces.canvas(SurfaceId::Current).restore();
-                    }
+            if let Type::Group(group) = element.shape_type {
+                if group.masked {
+                    self.surfaces.canvas(SurfaceId::Current).restore();
                 }
-                _ => {}
             }
         }
         self.surfaces.canvas(SurfaceId::Current).restore();
@@ -746,39 +740,36 @@ impl RenderState {
 
                         // If the shape is not in the tile set, then we update
                         // it.
-                        if let None = self.tiles.get_tiles_of(node_id) {
+                        if self.tiles.get_tiles_of(node_id).is_none() {
                             self.update_tile_for(element);
                         }
 
                         if visited_children {
                             if !visited_mask {
-                                match element.shape_type {
-                                    Type::Group(group) => {
-                                        // When we're dealing with masked groups we need to
-                                        // do a separate extra step to draw the mask (the last
-                                        // element of a masked group) and blend (using
-                                        // the blend mode 'destination-in') the content
-                                        // of the group and the mask.
-                                        if group.masked {
+                                if let Type::Group(group) = element.shape_type {
+                                    // When we're dealing with masked groups we need to
+                                    // do a separate extra step to draw the mask (the last
+                                    // element of a masked group) and blend (using
+                                    // the blend mode 'destination-in') the content
+                                    // of the group and the mask.
+                                    if group.masked {
+                                        self.pending_nodes.push(NodeRenderState {
+                                            id: node_id,
+                                            visited_children: true,
+                                            clip_bounds: None,
+                                            visited_mask: true,
+                                            mask: false,
+                                        });
+                                        if let Some(&mask_id) = element.mask_id() {
                                             self.pending_nodes.push(NodeRenderState {
-                                                id: node_id,
-                                                visited_children: true,
+                                                id: mask_id,
+                                                visited_children: false,
                                                 clip_bounds: None,
-                                                visited_mask: true,
-                                                mask: false,
+                                                visited_mask: false,
+                                                mask: true,
                                             });
-                                            if let Some(&mask_id) = element.mask_id() {
-                                                self.pending_nodes.push(NodeRenderState {
-                                                    id: mask_id,
-                                                    visited_children: false,
-                                                    clip_bounds: None,
-                                                    visited_mask: false,
-                                                    mask: true,
-                                                });
-                                            }
                                         }
                                     }
-                                    _ => {}
                                 }
                             }
                             self.render_shape_exit(element, visited_mask);
@@ -806,7 +797,7 @@ impl RenderState {
                         if !node_render_state.id.is_nil() {
                             self.render_shape(element, modifiers.get(&element.id), clip_bounds);
                         } else {
-                            self.apply_drawing_to_render_canvas(Some(&element));
+                            self.apply_drawing_to_render_canvas(Some(element));
                         }
 
                         // Set the node as visited_children before processing children
@@ -815,7 +806,7 @@ impl RenderState {
                             visited_children: true,
                             clip_bounds: None,
                             visited_mask: false,
-                            mask: mask,
+                            mask,
                         });
 
                         if element.is_recursive() {
@@ -874,7 +865,7 @@ impl RenderState {
             let Some(root) = tree.get(&Uuid::nil()) else {
                 return Err(String::from("Root shape not found"));
             };
-            let root_ids = modified_children_ids(&root, structure.get(&root.id));
+            let root_ids = modified_children_ids(root, structure.get(&root.id));
 
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
@@ -912,7 +903,7 @@ impl RenderState {
         self.render_in_progress = false;
 
         // Cache target surface in a texture
-        self.cached_viewbox = self.viewbox.clone();
+        self.cached_viewbox = self.viewbox;
         self.cached_target_snapshot = Some(self.surfaces.snapshot(SurfaceId::Cache));
 
         if self.options.is_debug_visible() {

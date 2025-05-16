@@ -3,7 +3,7 @@ use skia_safe::{self as skia, textlayout, Font, FontMgr};
 use crate::shapes::{FontFamily, FontStyle};
 use crate::uuid::Uuid;
 
-pub static DEFAULT_EMOJI_FONT: &'static str = "noto-color-emoji";
+pub static DEFAULT_EMOJI_FONT: &str = "noto-color-emoji";
 
 const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../fonts/sourcesanspro-regular.ttf");
 

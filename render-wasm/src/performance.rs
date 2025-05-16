@@ -20,7 +20,7 @@ macro_rules! mark {
     ($name:expr) => {
         #[cfg(all(feature = "profile-macros", target_arch = "wasm32"))]
         {
-            use crate::run_script;
+            use $crate::run_script;
             run_script!(format!("performance.mark('{}')", $name));
         }
     };
@@ -31,14 +31,14 @@ macro_rules! measure {
     ($name:expr) => {
         #[cfg(all(feature = "profile-macros", target_arch = "wasm32"))]
         {
-            use crate::run_script;
+            use $crate::run_script;
             run_script!(format!("performance.measure('{}')", $name));
         }
     };
     ($name:expr, $mark_begin:expr) => {
         #[cfg(all(feature = "profile-macros", target_arch = "wasm32"))]
         {
-            use crate::run_script;
+            use $crate::run_script;
             run_script!(format!(
                 "performance.measure('{}','{}')",
                 $name, $mark_begin
@@ -48,7 +48,7 @@ macro_rules! measure {
     ($name:expr, $mark_begin:expr, $mark_end:expr) => {
         #[cfg(all(feature = "profile-macros", target_arch = "wasm32"))]
         {
-            use crate::run_script;
+            use $crate::run_script;
             run_script!(format!(
                 "performance.measure('{}','{}','{}')",
                 $name, $mark_begin, $mark_end
@@ -76,7 +76,7 @@ macro_rules! measure_marks {
     ($name:expr) => {
         #[cfg(all(feature = "profile-macros", target_arch = "wasm32"))]
         {
-            use crate::{begin_mark_name, end_mark_name, measure};
+            use $crate::{begin_mark_name, end_mark_name, measure};
             measure!($name, begin_mark_name!($name), end_mark_name!($name));
         }
     };
@@ -85,7 +85,7 @@ macro_rules! measure_marks {
 #[macro_export]
 macro_rules! clear_marks {
     () => {
-        use crate::run_script;
+        use $crate::run_script;
         run_script!("performance.clearMarks()");
     };
     ($($name:expr),*) => {
@@ -96,7 +96,7 @@ macro_rules! clear_marks {
 #[macro_export]
 macro_rules! clear_measures {
     () => {
-        use crate::run_script;
+        use $crate::run_script;
         run_script!("performance.clearMeasures()");
     };
     ($($name:expr),*) => {
@@ -109,14 +109,14 @@ macro_rules! begin_measure {
     ($name:expr) => {
         #[cfg(all(feature = "profile-macros", target_arch = "wasm32"))]
         {
-            use crate::{begin_mark_name, mark};
+            use $crate::{begin_mark_name, mark};
             mark!(begin_mark_name!($name));
         }
     };
     ($name:expr, $clear_marks:expr) => {
         #[cfg(all(feature = "profile-macros", target_arch = "wasm32"))]
         {
-            use crate::{begin_mark_name, clear_marks, end_mark_name, mark};
+            use $crate::{begin_mark_name, clear_marks, end_mark_name, mark};
             if $clear_marks {
                 clear_marks!(begin_mark_name!($name), end_mark_name($name));
             }
@@ -130,7 +130,7 @@ macro_rules! end_measure {
     ($name:expr) => {
         #[cfg(all(feature = "profile-macros", target_arch = "wasm32"))]
         {
-            use crate::{end_mark_name, mark, measure_marks};
+            use $crate::{end_mark_name, mark, measure_marks};
             mark!(end_mark_name!($name));
             measure_marks!($name);
         }
@@ -138,7 +138,7 @@ macro_rules! end_measure {
     ($name:expr, $clear_marks:expr) => {
         #[cfg(all(feature = "profile-macros", target_arch = "wasm32"))]
         {
-            use crate::{begin_mark_name, clear_marks, end_mark_name, mark, measure_marks};
+            use $crate::{begin_mark_name, clear_marks, end_mark_name, mark, measure_marks};
             mark!(end_mark_name!($name));
             measure_marks!($name);
             if $clear_marks {

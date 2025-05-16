@@ -62,7 +62,7 @@ fn draw_image_fill(
             corners: Some(corners),
             ..
         }) => {
-            let rrect: RRect = RRect::new_rect_radii(container, &corners);
+            let rrect: RRect = RRect::new_rect_radii(container, corners);
             canvas.clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
         }
         Type::Rect(_) | Type::Frame(_) => {
@@ -77,7 +77,7 @@ fn draw_image_fill(
             if let Some(path) = shape_type.path() {
                 if let Some(path_transform) = path_transform {
                     canvas.clip_path(
-                        &path.to_skia_path().transform(&path_transform),
+                        path.to_skia_path().transform(&path_transform),
                         skia::ClipOp::Intersect,
                         antialias,
                     );
@@ -98,7 +98,7 @@ fn draw_image_fill(
             None,
             dest_rect,
             render_state.sampling_options,
-            &paint,
+            paint,
         );
     }
 

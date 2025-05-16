@@ -10,8 +10,6 @@ pub trait GetBounds {
 
 impl GetBounds for HashMap<Uuid, Bounds> {
     fn find(&self, shape: &Shape) -> Bounds {
-        self.get(&shape.id)
-            .map(|b| b.clone())
-            .unwrap_or(shape.bounds())
+        self.get(&shape.id).copied().unwrap_or(shape.bounds())
     }
 }

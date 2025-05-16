@@ -51,10 +51,11 @@ pub fn set_paragraphs_width(width: f32, paragraphs: &mut Vec<Vec<skia::textlayou
 
 impl TextContent {
     pub fn new(bounds: Rect, grow_type: GrowType) -> Self {
-        let mut res = Self::default();
-        res.bounds = bounds;
-        res.grow_type = grow_type;
-        res
+        Self {
+            bounds,
+            grow_type,
+            ..Self::default()
+        }
     }
 
     pub fn new_bounds(&self, bounds: Rect) -> Self {
@@ -125,7 +126,7 @@ impl TextContent {
                 let paragraph_style = paragraph.paragraph_to_style();
                 let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
                 for leaf in &paragraph.children {
-                    let stroke_style = leaf.to_stroke_style(paragraph, &stroke_paint);
+                    let stroke_style = leaf.to_stroke_style(paragraph, stroke_paint);
                     let text: String = leaf.apply_text_transform(paragraph.text_transform);
                     builder.push_style(&stroke_style);
                     builder.add_text(&text);
@@ -217,6 +218,8 @@ impl Default for Paragraph {
 }
 
 impl Paragraph {
+    // FIXME: These arguments could be grouped or simplified
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         text_align: u8,
         text_decoration: u8,
@@ -542,13 +545,13 @@ impl From<&Vec<u8>> for RawTextData {
     }
 }
 
-pub fn auto_width(paragraphs: &Vec<Vec<skia::textlayout::Paragraph>>) -> f32 {
+pub fn auto_width(paragraphs: &[Vec<skia::textlayout::Paragraph>]) -> f32 {
     paragraphs.iter().flatten().fold(0.0, |auto_width, p| {
         f32::max(p.max_intrinsic_width(), auto_width)
     })
 }
 
-pub fn auto_height(paragraphs: &Vec<Vec<skia::textlayout::Paragraph>>) -> f32 {
+pub fn auto_height(paragraphs: &[Vec<skia::textlayout::Paragraph>]) -> f32 {
     paragraphs
         .iter()
         .flatten()
