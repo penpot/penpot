@@ -137,7 +137,7 @@ impl Surfaces {
             .draw(self.canvas(to), (0.0, 0.0), sampling_options, paint);
     }
 
-    pub fn apply_mut(&mut self, ids: &[SurfaceId], mut f: impl FnMut(&mut skia::Surface) -> ()) {
+    pub fn apply_mut(&mut self, ids: &[SurfaceId], mut f: impl FnMut(&mut skia::Surface)) {
         for id in ids {
             let surface = self.get_mut(*id);
             f(surface);

@@ -36,7 +36,6 @@ ALLOWED_RULES="
         -A clippy::slow_vector_initialization \
         -A clippy::too_many_arguments \
         -A clippy::unnecessary_to_owned \
-        -A clippy::unused_unit \
         -D static_mut_refs"
 
 # ./lint --fix
