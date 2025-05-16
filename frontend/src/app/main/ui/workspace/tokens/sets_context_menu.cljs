@@ -12,6 +12,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
@@ -30,7 +31,7 @@
   [:li {:class (stl/css :context-menu-item)
         :data-value value
         :on-click on-click}
-   [:span {:class (stl/css :title)} title]])
+   title])
 
 (mf/defc menu*
   {::mf/private true}
