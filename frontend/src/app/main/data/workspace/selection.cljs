@@ -54,7 +54,7 @@
       (assoc-in state [:workspace-local :selrect] selrect))))
 
 (defn handle-area-selection
-  [preserve?]
+  [preserve? remove?]
   (ptk/reify ::handle-area-selection
     ptk/WatchEvent
     (watch [_ state stream]
@@ -103,20 +103,22 @@
                (rx/buffer-time 100)
                (rx/map last)
                (rx/pipe (rxo/distinct-contiguous))
-               (rx/with-latest-from ms/keyboard-mod ms/keyboard-shift)
+               ; Why are we reading from the keyboard stream again instead of
+               ; using args from the caller, where preserve? is set from ms/keyboard-shift?
+               (rx/with-latest-from ms/keyboard-shift ms/keyboard-mod)
                (rx/map
-                (fn [[_ mod? shift?]]
-                  (select-shapes-by-current-selrect shift? mod?))))
+                (fn [[_ shift? mod?]]
+                  (select-shapes-by-current-selrect shift? mod? remove?))))
 
           ;; The last "tick" from the mouse cannot be buffered so we are sure
           ;; a selection is returned. Without this we can have empty selections on
           ;; very fast movement
           (->> selrect-stream
                (rx/last)
-               (rx/with-latest-from ms/keyboard-mod ms/keyboard-shift)
+               (rx/with-latest-from ms/keyboard-shift ms/keyboard-mod)
                (rx/map
-                (fn [[_ mod? shift?]]
-                  (select-shapes-by-current-selrect shift? mod? false)))))
+                (fn [[_ shift? mod?]]
+                  (select-shapes-by-current-selrect shift? mod? remove? false)))))
 
          (->> (rx/of (update-selrect nil))
               ;; We need the async so the current event finishes before updating the selrect
@@ -325,9 +327,10 @@
 ;; --- Select Shapes (By selrect)
 
 (defn select-shapes-by-current-selrect
-  ([preserve? ignore-groups?]
-   (select-shapes-by-current-selrect preserve? ignore-groups? true))
-  ([preserve? ignore-groups? buffered?]
+  ([preserve? ignore-groups? remove?]
+   (select-shapes-by-current-selrect preserve? ignore-groups? remove? true))
+
+  ([preserve? ignore-groups? remove? buffered?]
    (ptk/reify ::select-shapes-by-current-selrect
      ptk/WatchEvent
      (watch [_ state _]
@@ -339,8 +342,10 @@
                            lks/empty-linked-set)
              selrect     (dm/get-in state [:workspace-local :selrect])
              blocked?    (fn [id] (dm/get-in objects [id :blocked] false))
-
-             ask-worker (if buffered? mw/ask-buffered! mw/ask!)]
+             ask-worker (if buffered? mw/ask-buffered! mw/ask!)
+             filter-objs (comp
+                          (filter (complement blocked?))
+                          (remove (partial cfh/hidden-parent? objects)))]
 
          (if (some? selrect)
            (->> (ask-worker
@@ -353,9 +358,9 @@
                   :using-selrect? true})
                 (rx/filter some?)
                 (rx/map #(cfh/clean-loops objects %))
-                (rx/map #(into initial-set (comp
-                                            (filter (complement blocked?))
-                                            (remove (partial cfh/hidden-parent? objects))) %))
+                (rx/map (if remove?
+                          #(apply disj initial-set %)
+                          #(into initial-set filter-objs %)))
                 (rx/map select-shapes))
            (rx/empty)))))))
 
