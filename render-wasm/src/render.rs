@@ -746,7 +746,7 @@ impl RenderState {
 
                         // If the shape is not in the tile set, then we update
                         // it.
-                        if let None = self.tiles.get_tiles_of(node_id) {
+                        if self.tiles.get_tiles_of(node_id).is_none() {
                             self.update_tile_for(element);
                         }
 
