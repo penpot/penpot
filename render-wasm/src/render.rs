@@ -361,7 +361,7 @@ impl RenderState {
                     svg.render(self.surfaces.canvas(SurfaceId::Fills))
                 } else {
                     let font_manager = skia::FontMgr::from(self.fonts().font_provider().clone());
-                    let dom_result = skia::svg::Dom::from_str(sr.content.to_string(), font_manager);
+                    let dom_result = skia::svg::Dom::from_str(&sr.content, font_manager);
                     match dom_result {
                         Ok(dom) => {
                             dom.render(self.surfaces.canvas(SurfaceId::Fills));
