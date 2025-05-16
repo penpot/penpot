@@ -9,7 +9,9 @@ use skia_safe::{
 };
 
 use super::FontFamily;
+use crate::shapes::{self, merge_fills, set_paint_fill, Fill, Stroke, StrokeKind};
 use crate::utils::uuid_from_u32;
+use crate::wasm::fills::parse_fills_from_bytes;
 use crate::Uuid;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -99,7 +101,7 @@ impl TextContent {
                 let paragraph_style = p.paragraph_to_style();
                 let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
                 for leaf in &p.children {
-                    let text_style = leaf.to_style(p);
+                    let text_style = leaf.to_style(p, &self.bounds); // FIXME
                     let text = leaf.apply_text_transform(p.text_transform);
                     builder.push_style(&text_style);
                     builder.add_text(&text);
@@ -114,10 +116,12 @@ impl TextContent {
 
     pub fn to_stroke_paragraphs(
         &self,
+        stroke: &Stroke,
+        bounds: &Rect,
         fonts: &FontCollection,
-        stroke_paints: &Vec<Paint>,
     ) -> Vec<Vec<skia::textlayout::Paragraph>> {
         let mut paragraph_group = Vec::new();
+        let stroke_paints = get_text_stroke_paints(&stroke, &bounds);
 
         for stroke_paint in stroke_paints {
             let mut stroke_paragraphs = Vec::new();
@@ -162,10 +166,11 @@ impl TextContent {
 
     pub fn get_skia_stroke_paragraphs(
         &self,
+        stroke: &Stroke,
+        bounds: &Rect,
         fonts: &FontCollection,
-        paints: &Vec<Paint>,
     ) -> Vec<Vec<skia::textlayout::Paragraph>> {
-        self.collect_paragraphs(self.to_stroke_paragraphs(fonts, paints))
+        self.collect_paragraphs(self.to_stroke_paragraphs(stroke, bounds, fonts))
     }
 
     pub fn grow_type(&self) -> GrowType {
@@ -283,6 +288,7 @@ pub struct TextLeaf {
     font_style: u8,
     font_weight: i32,
     font_variant_id: Uuid,
+    fills: Vec<shapes::Fill>,
 }
 
 impl TextLeaf {
@@ -293,6 +299,7 @@ impl TextLeaf {
         font_style: u8,
         font_weight: i32,
         font_variant_id: Uuid,
+        fills: Vec<shapes::Fill>,
     ) -> Self {
         Self {
             text,
@@ -301,12 +308,26 @@ impl TextLeaf {
             font_style,
             font_weight,
             font_variant_id,
+            fills,
         }
     }
 
-    pub fn to_style(&self, paragraph: &Paragraph) -> skia::textlayout::TextStyle {
+    pub fn to_style(
+        &self,
+        paragraph: &Paragraph,
+        content_bounds: &Rect,
+    ) -> skia::textlayout::TextStyle {
         let mut style = skia::textlayout::TextStyle::default();
-        style.set_color(skia::Color::BLACK);
+
+        let bounding_box = Rect::from_xywh(
+            content_bounds.x(),
+            content_bounds.y(),
+            self.font_size * self.text.len() as f32,
+            self.font_size,
+        );
+
+        let paint = merge_fills(&self.fills, bounding_box);
+        style.set_foreground_paint(&paint);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(paragraph.letter_spacing);
         style.set_height(paragraph.line_height);
@@ -333,7 +354,7 @@ impl TextLeaf {
         paragraph: &Paragraph,
         stroke_paint: &Paint,
     ) -> skia::textlayout::TextStyle {
-        let mut style = self.to_style(paragraph);
+        let mut style = self.to_style(paragraph, &Rect::default());
         style.set_foreground_paint(stroke_paint);
         style
     }
@@ -363,8 +384,10 @@ impl TextLeaf {
     }
 }
 
+// FIXME
 pub const RAW_PARAGRAPH_DATA_SIZE: usize = 48;
-pub const RAW_LEAF_DATA_SIZE: usize = 52;
+pub const RAW_LEAF_DATA_SIZE: usize = 56;
+pub const RAW_LEAF_FILLS_SIZE: usize = 160;
 
 #[repr(C)]
 #[derive(Debug)]
@@ -376,6 +399,8 @@ pub struct RawTextLeafData {
     font_family: [u8; 4],
     font_variant_id: [u32; 4],
     text_length: u32,
+    total_fills: u32,
+    fills: Vec<shapes::Fill>,
 }
 
 #[repr(C)]
@@ -416,6 +441,43 @@ impl From<[u8; RAW_PARAGRAPH_DATA_SIZE]> for RawParagraphData {
     }
 }
 
+impl RawTextLeafData {
+    pub fn from(bytes: &[u8]) -> Self {
+        let total_fills = u32::from_be_bytes([bytes[52], bytes[53], bytes[54], bytes[55]]) as usize;
+        let fills_size = total_fills * RAW_LEAF_FILLS_SIZE;
+        let start = RAW_LEAF_DATA_SIZE;
+        let end = RAW_LEAF_DATA_SIZE + fills_size;
+
+        let fills: Vec<Fill> = if total_fills > 0 {
+            parse_fills_from_bytes(&bytes[start..end], total_fills)
+        } else {
+            Vec::new()
+        };
+
+        Self {
+            font_style: bytes[0],
+            font_size: f32::from_be_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
+            font_weight: i32::from_be_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+            font_id: [
+                u32::from_be_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
+                u32::from_be_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]),
+                u32::from_be_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]),
+                u32::from_be_bytes([bytes[24], bytes[25], bytes[26], bytes[27]]),
+            ],
+            font_family: [bytes[28], bytes[29], bytes[30], bytes[31]],
+            font_variant_id: [
+                u32::from_be_bytes([bytes[32], bytes[33], bytes[34], bytes[35]]),
+                u32::from_be_bytes([bytes[36], bytes[37], bytes[38], bytes[39]]),
+                u32::from_be_bytes([bytes[40], bytes[41], bytes[42], bytes[43]]),
+                u32::from_be_bytes([bytes[44], bytes[45], bytes[46], bytes[47]]),
+            ],
+            text_length: u32::from_be_bytes([bytes[48], bytes[49], bytes[50], bytes[51]]),
+            total_fills: total_fills as u32,
+            fills,
+        }
+    }
+}
+
 pub struct RawTextData {
     pub paragraph: Paragraph,
 }
@@ -423,14 +485,28 @@ pub struct RawTextData {
 impl RawTextData {
     fn leaves_attrs_from_bytes(buffer: &[u8], num_leaves: usize) -> Vec<RawTextLeafData> {
         let mut attrs = Vec::new();
-        for i in 0..num_leaves {
-            let start = i * RAW_LEAF_DATA_SIZE;
-            let end = start + RAW_LEAF_DATA_SIZE;
-            let bytes = &buffer[start..end];
-            let array: [u8; RAW_LEAF_DATA_SIZE] = bytes.try_into().expect("Slice length mismatch");
-            let leaf_attrs = RawTextLeafData::from(array);
+        let mut offset = 0;
+        for _ in 0..num_leaves {
+            let start = offset;
+            let leaf_end = start + RAW_LEAF_DATA_SIZE;
+            let total_fills = u32::from_be_bytes([
+                buffer[leaf_end - 4],
+                buffer[leaf_end - 3],
+                buffer[leaf_end - 2],
+                buffer[leaf_end - 1],
+            ]);
+            let fill_size = total_fills as usize * RAW_LEAF_FILLS_SIZE;
+            let leaf_size: usize = RAW_LEAF_DATA_SIZE + fill_size;
+            let end = start + leaf_size;
+
+            let bytes: &[u8] = &buffer[start..end];
+            let leaf_attrs = RawTextLeafData::from(&bytes);
+
+            offset = end;
+
             attrs.push(leaf_attrs);
         }
+
         attrs
     }
 
@@ -464,30 +540,6 @@ impl RawTextData {
     }
 }
 
-impl From<[u8; RAW_LEAF_DATA_SIZE]> for RawTextLeafData {
-    fn from(bytes: [u8; RAW_LEAF_DATA_SIZE]) -> Self {
-        Self {
-            font_style: bytes[0],
-            font_size: f32::from_be_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
-            font_weight: i32::from_be_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
-            font_id: [
-                u32::from_be_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
-                u32::from_be_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]),
-                u32::from_be_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]),
-                u32::from_be_bytes([bytes[24], bytes[25], bytes[26], bytes[27]]),
-            ],
-            font_family: [bytes[28], bytes[29], bytes[30], bytes[31]],
-            font_variant_id: [
-                u32::from_be_bytes([bytes[32], bytes[33], bytes[34], bytes[35]]),
-                u32::from_be_bytes([bytes[36], bytes[37], bytes[38], bytes[39]]),
-                u32::from_be_bytes([bytes[40], bytes[41], bytes[42], bytes[43]]),
-                u32::from_be_bytes([bytes[44], bytes[45], bytes[46], bytes[47]]),
-            ],
-            text_length: u32::from_be_bytes([bytes[48], bytes[49], bytes[50], bytes[51]]),
-        }
-    }
-}
-
 impl From<&Vec<u8>> for RawTextData {
     fn from(bytes: &Vec<u8>) -> Self {
         let num_leaves = u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as usize;
@@ -498,9 +550,12 @@ impl From<&Vec<u8>> for RawTextData {
             RawTextData::leaves_attrs_from_bytes(&bytes[1 + RAW_PARAGRAPH_DATA_SIZE..], num_leaves);
 
         let metadata_size = 1 + RAW_PARAGRAPH_DATA_SIZE + num_leaves * RAW_LEAF_DATA_SIZE;
-        let text_start = metadata_size;
-        let mut offset = text_start;
         let mut text_leaves: Vec<TextLeaf> = Vec::new();
+        let total_fills = leaves_attrs
+            .iter()
+            .map(|attrs| attrs.total_fills as usize * RAW_LEAF_FILLS_SIZE)
+            .sum::<usize>();
+        let mut offset = metadata_size + total_fills;
 
         for attrs in leaves_attrs {
             let (text, new_offset) = RawTextData::text_from_bytes(bytes, offset, attrs.text_length);
@@ -519,6 +574,7 @@ impl From<&Vec<u8>> for RawTextData {
                 attrs.font_style,
                 attrs.font_weight,
                 font_variant_id,
+                attrs.fills,
             );
             text_leaves.push(text_leaf);
         }
@@ -553,4 +609,55 @@ pub fn auto_height(paragraphs: &Vec<Vec<skia::textlayout::Paragraph>>) -> f32 {
         .iter()
         .flatten()
         .fold(0.0, |auto_height, p| auto_height + p.height())
+}
+
+fn get_text_stroke_paints(stroke: &Stroke, bounds: &Rect) -> Vec<Paint> {
+    let mut paints = Vec::new();
+
+    match stroke.kind {
+        StrokeKind::InnerStroke => {
+            let mut paint = skia::Paint::default();
+            paint.set_blend_mode(skia::BlendMode::DstOver);
+            paint.set_anti_alias(true);
+            paints.push(paint);
+
+            let mut paint = skia::Paint::default();
+            paint.set_style(skia::PaintStyle::Stroke);
+            paint.set_blend_mode(skia::BlendMode::SrcATop);
+            paint.set_anti_alias(true);
+            paint.set_stroke_width(stroke.width * 2.0);
+
+            set_paint_fill(&mut paint, &stroke.fill, bounds);
+
+            paints.push(paint);
+        }
+        StrokeKind::CenterStroke => {
+            let mut paint = skia::Paint::default();
+            paint.set_style(skia::PaintStyle::Stroke);
+            paint.set_anti_alias(true);
+            paint.set_stroke_width(stroke.width);
+
+            set_paint_fill(&mut paint, &stroke.fill, bounds);
+
+            paints.push(paint);
+        }
+        StrokeKind::OuterStroke => {
+            let mut paint = skia::Paint::default();
+            paint.set_style(skia::PaintStyle::Stroke);
+            paint.set_blend_mode(skia::BlendMode::DstOver);
+            paint.set_anti_alias(true);
+            paint.set_stroke_width(stroke.width * 2.0);
+
+            set_paint_fill(&mut paint, &stroke.fill, bounds);
+
+            paints.push(paint);
+
+            let mut paint = skia::Paint::default();
+            paint.set_blend_mode(skia::BlendMode::Clear);
+            paint.set_anti_alias(true);
+            paints.push(paint);
+        }
+    }
+
+    paints
 }

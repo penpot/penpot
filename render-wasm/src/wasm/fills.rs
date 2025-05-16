@@ -53,6 +53,19 @@ impl TryFrom<&[u8]> for RawFillData {
     }
 }
 
+pub fn parse_fills_from_bytes(buffer: &[u8], num_fills: usize) -> Vec<shapes::Fill> {
+    let mut fills = Vec::new();
+
+    for i in 0..num_fills {
+        let start = i * RAW_FILL_DATA_SIZE;
+        let end = start + RAW_FILL_DATA_SIZE;
+        let bytes = &buffer[start..end];
+        let raw_fill = RawFillData::try_from(bytes).expect("Invalid fill data");
+        fills.push(raw_fill.into());
+    }
+    fills
+}
+
 #[no_mangle]
 pub extern "C" fn add_shape_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
