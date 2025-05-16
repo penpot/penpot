@@ -560,7 +560,7 @@
        [:> input-tokens-value*
         {:placeholder (tr "workspace.token.token-value-enter")
          :label (tr "workspace.token.token-value")
-         :value (mf/ref-val value-ref)
+         :default-value (mf/ref-val value-ref)
          :ref value-input-ref
          :color color
          :on-change on-update-value
