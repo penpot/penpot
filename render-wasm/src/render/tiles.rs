@@ -29,16 +29,16 @@ pub fn get_tiles_for_rect(rect: skia::Rect, tile_size: f32) -> (i32, i32, i32, i
 }
 
 pub fn get_tiles_for_viewbox(viewbox: Viewbox, scale: f32) -> (i32, i32, i32, i32) {
-    let tile_size = get_tile_size(scale);
+    let tile_size = get_tile_size(viewbox.zoom);
     get_tiles_for_rect(viewbox.area, tile_size)
 }
 
 pub fn get_tiles_for_viewbox_with_interest(
     viewbox: Viewbox,
     interest: i32,
-    dpr: f32,
+    scale: f32,
 ) -> (i32, i32, i32, i32) {
-    let (sx, sy, ex, ey) = get_tiles_for_viewbox(viewbox, dpr);
+    let (sx, sy, ex, ey) = get_tiles_for_viewbox(viewbox, scale);
     (sx - interest, sy - interest, ex + interest, ey + interest)
 }
 
