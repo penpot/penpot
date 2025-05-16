@@ -100,7 +100,7 @@ fn calculate_group_bounds(
         result.append(&mut child_bounds.points());
     }
 
-    shape_bounds.from_points(result)
+    shape_bounds.with_points(result)
 }
 
 pub fn propagate_modifiers(
