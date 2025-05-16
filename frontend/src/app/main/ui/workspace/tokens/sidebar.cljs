@@ -12,14 +12,13 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
-   [app.main.data.notifications :as ntf]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.tokens.application :as dwta]
-   [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu
+                                                 dropdown-menu-item*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -38,8 +37,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.webapi :as wapi]
-   [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]
@@ -360,9 +357,7 @@
 
 (mf/defc import-export-button*
   []
-  (let [input-ref  (mf/use-ref)
-
-        show-menu* (mf/use-state false)
+  (let [show-menu* (mf/use-state false)
         show-menu? (deref show-menu*)
 
         can-edit?
@@ -380,30 +375,6 @@
            (dom/stop-propagation event)
            (reset! show-menu* false)))
 
-        on-display-file-explorer
-        (mf/use-fn #(dom/click (mf/ref-val input-ref)))
-
-        on-import
-        (mf/use-fn
-         (fn [event]
-           (let [file (-> (dom/get-target event)
-                          (dom/get-files)
-                          (first))
-                 file-name (str/replace (.-name file) ".json" "")]
-             (->> (wapi/read-file-as-text file)
-                  (sd/process-json-stream {:file-name file-name})
-                  (rx/subs! (fn [lib]
-                              (st/emit! (ptk/data-event ::ev/event {::ev/name "import-tokens"})
-                                        (dwtl/import-tokens-lib lib)))
-                            (fn [err]
-                              (js/console.error err)
-                              (st/emit! (ntf/show {:content (wte/humanize-errors [(ex-data err)])
-                                                   :detail (wte/detail-errors [(ex-data err)])
-                                                   :type :toast
-                                                   :level :error})))))
-             (-> (mf/ref-val input-ref)
-                 (dom/set-value! "")))))
-
         on-export
         (mf/use-fn
          (fn []
@@ -412,16 +383,13 @@
                                      (ctob/encode-dtcg)
                                      (json/encode :key-fn identity))]
              (->> (wapi/create-blob (or tokens-json "{}") "application/json")
-                  (dom/trigger-download "tokens.json")))))]
+                  (dom/trigger-download "tokens.json")))))
+        on-modal-show
+        (mf/use-fn
+         (fn []
+           (modal/show! :tokens/import {})))]
 
     [:div {:class (stl/css :import-export-button-wrapper)}
-     (when can-edit?
-       [:input {:type "file"
-                :ref input-ref
-                :style {:display "none"}
-                :id "file-input"
-                :accept ".json"
-                :on-change on-import}])
      [:> button* {:on-click open-menu
                   :icon "import-export"
                   :variant "secondary"}
@@ -431,11 +399,9 @@
                         :list-class (stl/css :import-export-menu)}
       (when can-edit?
         [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
-                                 :on-click on-display-file-explorer}
+                                 :on-click on-modal-show}
          [:div {:class (stl/css :import-menu-item)}
-          [:div (tr "labels.import")]
-          [:div {:class (stl/css :import-export-menu-item-icon) :title (tr "workspace.token.import-tooltip")}
-           [:> i/icon* {:icon-id i/info :aria-label (tr "workspace.token.import-tooltip")}]]]])
+          [:div (tr "labels.import")]]])
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                :on-click on-export}
        (tr "labels.export")]]]))

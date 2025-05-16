@@ -1,0 +1,50 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../../ds/typography.scss" as t;
+@use "../../../ds/_sizes.scss" as *;
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+  user-select: none;
+}
+
+.import-modal-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxl);
+}
+
+.import-modal-title {
+  color: var(--color-foreground-primary);
+}
+
+.import-description {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  padding-inline-start: var(--sp-m);
+  margin: 0;
+  color: var(--color-foreground-secondary);
+  list-style: disc;
+}
+
+.import-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-s);
+}
+
+.close-btn {
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-s);
+}
