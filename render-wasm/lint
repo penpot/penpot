@@ -28,7 +28,6 @@ ALLOWED_RULES="
         -A clippy::missing_transmute_annotations \
         -A clippy::needless_borrow \
         -A clippy::needless_borrows_for_generic_args \
-        -A clippy::needless_range_loop \
         -D static_mut_refs"
 
 # ./lint --fix
