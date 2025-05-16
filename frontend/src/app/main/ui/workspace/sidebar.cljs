@@ -277,22 +277,21 @@
                 [:> icon-button* {:variant "ghost"
                                   :aria-label (tr "labels.close")
                                   :on-click on-close-history
-                                  :icon "close"}])]
+                                  :icon "close"}])
+               tabs (mf/object
+                     [{:label (tr "workspace.versions.tab.history")
+                       :id "history"
+                       :content versions-tab}
+                      {:label (tr "workspace.versions.tab.actions")
+                       :id "actions"
+                       :content history-tab}])]
 
-
-           (let [tabs (mf/object
-                       [{:label (tr "workspace.versions.tab.history")
-                         :id "history"
-                         :content versions-tab}
-                        {:label (tr "workspace.versions.tab.actions")
-                         :id "actions"
-                         :content history-tab}])]
-             [:> tab-switcher*
-              {:tabs tabs
-               :default-selected "history"
-               :class (stl/css :left-sidebar-tabs)
-               :action-button-position "end"
-               :action-button button}]))
+           [:> tab-switcher*
+            {:tabs tabs
+             :default-selected "history"
+             :class (stl/css :left-sidebar-tabs)
+             :action-button-position "end"
+             :action-button button}])
 
          :else
          [:> options-toolbox* props])]]]))

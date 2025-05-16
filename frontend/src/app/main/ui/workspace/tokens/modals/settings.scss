@@ -1,0 +1,55 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../../ds/spacing.scss" as *;
+
+@import "refactor/common-refactor.scss";
+
+.setting-modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.setting-modal {
+  @extend .modal-container-base;
+}
+
+.close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.settings-modal-layout {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--sp-xxl);
+}
+
+.settings-modal-title {
+  color: var(--color-foreground-primary);
+}
+
+.settings-modal-content {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--sp-m);
+}
+
+.settings-modal-subtitle-wrapper {
+  color: var(--color-foreground-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.settings-modal-description,
+.settings-modal-resume {
+  color: var(--color-foreground-secondary);
+}
+
+.settings-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-s);
+}

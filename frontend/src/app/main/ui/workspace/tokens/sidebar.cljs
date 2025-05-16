@@ -26,6 +26,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
@@ -412,7 +413,13 @@
                                      (ctob/encode-dtcg)
                                      (json/encode :key-fn identity))]
              (->> (wapi/create-blob (or tokens-json "{}") "application/json")
-                  (dom/trigger-download "tokens.json")))))]
+                  (dom/trigger-download "tokens.json")))))
+
+        open-settings-modal
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (modal/show! :tokens/base-font-size {})))]
 
     [:div {:class (stl/css :import-export-button-wrapper)}
      (when can-edit?
@@ -438,7 +445,15 @@
            [:> i/icon* {:icon-id i/info :aria-label (tr "workspace.token.import-tooltip")}]]]])
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                :on-click on-export}
-       (tr "labels.export")]]]))
+       (tr "labels.export")]]
+
+     [:> tooltip* {:tooltip-content "Tokens settings"
+                   :id "button-setting"}
+
+      [:> icon-button* {:variant "secondary"
+                        :icon "settings"
+                        :aria-label "Tokens settings"
+                        :on-click open-settings-modal}]]]))
 
 (mf/defc tokens-sidebar-tab*
   {::mf/wrap [mf/memo]}
