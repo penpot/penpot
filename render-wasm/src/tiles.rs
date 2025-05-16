@@ -4,13 +4,56 @@ use indexmap::IndexSet;
 use skia_safe as skia;
 use std::collections::{HashMap, HashSet};
 
-pub type Tile = (i32, i32);
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+pub struct Tile(pub i32, pub i32);
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+pub struct TileRect(pub i32, pub i32, pub i32, pub i32);
+
+impl TileRect {
+    pub fn contains(&self, tile: &Tile) -> bool {
+        tile.0 >= self.0 && tile.1 >= self.1 && tile.0 <= self.2 && tile.1 <= self.3
+    }
+}
+
+pub struct TileViewbox {
+    pub visible_rect: TileRect,
+    pub interest_rect: TileRect,
+    pub interest: i32,
+    pub center: Tile,
+}
+
+impl TileViewbox {
+    pub fn new_with_interest(viewbox: Viewbox, interest: i32) -> Self {
+        Self {
+            visible_rect: get_tiles_for_viewbox(viewbox),
+            interest_rect: get_tiles_for_viewbox_with_interest(viewbox, interest),
+            interest,
+            center: get_tile_center_for_viewbox(viewbox),
+        }
+    }
+
+    pub fn update(&mut self, viewbox: Viewbox) {
+        self.visible_rect = get_tiles_for_viewbox(viewbox);
+        self.interest_rect = get_tiles_for_viewbox_with_interest(viewbox, self.interest);
+        self.center = get_tile_center_for_viewbox(viewbox);
+    }
+
+    pub fn is_visible(&self, tile: &Tile) -> bool {
+        self.visible_rect.contains(tile)
+    }
+
+    pub fn is_interesting(&self, tile: &Tile) -> bool {
+        self.interest_rect.contains(tile)
+    }
+}
+
 pub type TileWithDistance = (i32, i32, i32);
 
 pub const TILE_SIZE: f32 = 512.;
 
 // @see https://en.wikipedia.org/wiki/Taxicab_geometry
-pub fn manhattan_distance(a: (i32, i32), b: (i32, i32)) -> i32 {
+pub fn manhattan_distance(a: Tile, b: Tile) -> i32 {
     (a.0 - b.0).abs() + (a.1 - b.1).abs()
 }
 
@@ -18,31 +61,32 @@ pub fn get_tile_dimensions() -> skia::ISize {
     (TILE_SIZE as i32, TILE_SIZE as i32).into()
 }
 
-pub fn get_tiles_for_rect(rect: skia::Rect, tile_size: f32) -> (i32, i32, i32, i32) {
+pub fn get_tiles_for_rect(rect: skia::Rect, tile_size: f32) -> TileRect {
     // start
     let sx = (rect.left / tile_size).floor() as i32;
     let sy = (rect.top / tile_size).floor() as i32;
     // end
     let ex = (rect.right / tile_size).floor() as i32;
     let ey = (rect.bottom / tile_size).floor() as i32;
-    (sx, sy, ex, ey)
+    TileRect(sx, sy, ex, ey)
 }
 
-pub fn get_tiles_for_viewbox(viewbox: Viewbox, scale: f32) -> (i32, i32, i32, i32) {
-    let tile_size = get_tile_size(scale);
+pub fn get_tiles_for_viewbox(viewbox: Viewbox) -> TileRect {
+    let tile_size = get_tile_size(viewbox.zoom);
     get_tiles_for_rect(viewbox.area, tile_size)
 }
 
-pub fn get_tiles_for_viewbox_with_interest(
-    viewbox: Viewbox,
-    interest: i32,
-    scale: f32,
-) -> (i32, i32, i32, i32) {
-    let (sx, sy, ex, ey) = get_tiles_for_viewbox(viewbox, scale);
-    (sx - interest, sy - interest, ex + interest, ey + interest)
+pub fn get_tiles_for_viewbox_with_interest(viewbox: Viewbox, interest: i32) -> TileRect {
+    let TileRect(sx, sy, ex, ey) = get_tiles_for_viewbox(viewbox);
+    TileRect(sx - interest, sy - interest, ex + interest, ey + interest)
 }
 
-pub fn get_tile_pos((x, y): Tile, scale: f32) -> (f32, f32) {
+pub fn get_tile_center_for_viewbox(viewbox: Viewbox) -> Tile {
+    let TileRect(sx, sy, ex, ey) = get_tiles_for_viewbox(viewbox);
+    Tile((ex - sx) / 2, (ey - sy) / 2)
+}
+
+pub fn get_tile_pos(Tile(x, y): Tile, scale: f32) -> (f32, f32) {
     (
         x as f32 * get_tile_size(scale),
         y as f32 * get_tile_size(scale),
@@ -92,13 +136,8 @@ impl TileHashMap {
     }
 
     pub fn add_shape_at(&mut self, tile: Tile, shape_id: Uuid) {
-        if !self.grid.contains_key(&tile) {
-            self.grid.insert(tile, IndexSet::new());
-        }
-
-        if !self.index.contains_key(&shape_id) {
-            self.index.insert(shape_id, HashSet::new());
-        }
+        self.grid.entry(tile).or_default();
+        self.index.entry(shape_id).or_default();
 
         let tile_set = self.grid.get_mut(&tile).unwrap();
         tile_set.insert(shape_id);
