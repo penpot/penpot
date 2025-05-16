@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.tokens.components.controls.input-tokens-value
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
    [app.main.ui.ds.controls.utilities.label :refer [label*]]
@@ -43,7 +42,7 @@
                                       :type "text"
                                       :class (stl/css :input)
                                       :placeholder placeholder
-                                      :value (d/nilv value "")
+                                      :value value
                                       :variant "comfortable"
                                       :hint-type (when error "error")
                                       :slot-start swatch
