@@ -194,10 +194,10 @@ fn set_auto_multi_span(
 
         // Distribute the size between the tracks that already have a set value
         for i in start..end {
-            dist = dist - tracks[i].size;
+            dist -= tracks[i].size;
 
             if tracks[i].track_type == GridTrackType::Auto {
-                num_auto = num_auto + 1;
+                num_auto += 1;
             }
         }
 
@@ -212,13 +212,13 @@ fn set_auto_multi_span(
                     let new_size = if tracks[i].size + rest < tracks[i].max_size {
                         tracks[i].size + rest
                     } else {
-                        num_auto = num_auto - 1;
+                        num_auto -= 1;
                         tracks[i].max_size
                     };
 
                     let aloc = new_size - tracks[i].size;
-                    dist = dist - aloc;
-                    tracks[i].size = tracks[i].size + aloc;
+                    dist -= aloc;
+                    tracks[i].size += aloc;
                 }
             }
         }
@@ -270,15 +270,15 @@ fn set_flex_multi_span(
 
         // Distribute the size between the tracks that already have a set value
         for i in start..end {
-            dist = dist - tracks[i].size;
+            dist -= tracks[i].size;
 
             match tracks[i].track_type {
                 GridTrackType::Flex => {
-                    num_flex = num_flex + tracks[i].value;
-                    num_auto = num_auto + 1;
+                    num_flex += tracks[i].value;
+                    num_auto += 1;
                 }
                 GridTrackType::Auto => {
-                    num_auto = num_auto + 1;
+                    num_auto += 1;
                 }
                 _ => {}
             }
@@ -296,8 +296,8 @@ fn set_flex_multi_span(
             if tracks[i].track_type == GridTrackType::Flex {
                 let new_size = f32::min(tracks[i].size + rest, tracks[i].max_size);
                 let aloc = new_size - tracks[i].size;
-                dist = dist - aloc;
-                tracks[i].size = tracks[i].size + aloc;
+                dist -= aloc;
+                tracks[i].size += aloc;
             }
         }
 
@@ -312,13 +312,13 @@ fn set_flex_multi_span(
                     let new_size = if tracks[i].size + rest < tracks[i].max_size {
                         tracks[i].size + rest
                     } else {
-                        num_auto = num_auto - 1;
+                        num_auto -= 1;
                         tracks[i].max_size
                     };
 
                     let aloc = new_size - tracks[i].size;
-                    dist = dist - aloc;
-                    tracks[i].size = tracks[i].size + aloc;
+                    dist -= aloc;
+                    tracks[i].size += aloc;
                 }
             }
         }
@@ -481,7 +481,7 @@ fn assign_anchors(
         _ => (padding_start + 0.0, gap),
     };
 
-    cursor = cursor + (v * real_margin);
+    cursor += v * real_margin;
 
     for track in tracks {
         track.anchor_start = cursor;

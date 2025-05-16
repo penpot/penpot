@@ -284,9 +284,9 @@ fn distribute_fill_main_space(layout_axis: &LayoutAxis, tracks: &mut Vec<TrackDa
                 let child = &mut to_resize_children[i];
                 let delta =
                     f32::min(child.max_main_size, child.main_size + current) - child.main_size;
-                child.main_size = child.main_size + delta;
-                left_space = left_space - delta;
-                track.main_size = track.main_size + delta;
+                child.main_size += delta;
+                left_space -= delta;
+                track.main_size += delta;
 
                 if (child.main_size - child.max_main_size).abs() < MIN_SIZE {
                     to_resize_children.remove(i);
@@ -314,8 +314,8 @@ fn distribute_fill_across_space(layout_axis: &LayoutAxis, tracks: &mut Vec<Track
             let track = &mut to_resize_tracks[i];
             let delta =
                 f32::min(track.max_across_size, track.across_size + current) - track.across_size;
-            track.across_size = track.across_size + delta;
-            left_space = left_space - delta;
+            track.across_size += delta;
+            left_space -= delta;
 
             if (track.across_size - track.max_across_size).abs() < MIN_SIZE {
                 to_resize_tracks.remove(i);
@@ -350,7 +350,7 @@ fn stretch_tracks_sizes(
     let delta = left_space / tracks.len() as f32;
 
     for track in tracks.iter_mut() {
-        track.across_size = track.across_size + delta;
+        track.across_size += delta;
     }
 }
 
@@ -411,7 +411,7 @@ fn calculate_track_positions(
 
     for track in tracks.iter_mut() {
         track.anchor = next_anchor;
-        next_anchor = next_anchor + layout_axis.across_v * real_gap;
+        next_anchor += layout_axis.across_v * real_gap;
     }
 }
 
