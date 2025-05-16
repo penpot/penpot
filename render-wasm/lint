@@ -17,7 +17,6 @@ export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-bi
 ALLOWED_RULES="
         -A clippy::box_collection \
         -A clippy::clone_on_copy \
-        -A clippy::derivable_impls \
         -D static_mut_refs"
 
 # ./lint --fix
