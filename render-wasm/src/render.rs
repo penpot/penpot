@@ -98,10 +98,13 @@ pub(crate) struct RenderState {
     pub pending_tiles: Vec<tiles::TileWithDistance>,
 }
 
-pub fn get_cache_size(viewbox: Viewbox, dpr: f32) -> skia::ISize {
+pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
     // First we retrieve the extended area of the viewport that we could render.
-    let (isx, isy, iex, iey) =
-        tiles::get_tiles_for_viewbox_with_interest(viewbox, VIEWPORT_INTEREST_AREA_THRESHOLD, dpr);
+    let (isx, isy, iex, iey) = tiles::get_tiles_for_viewbox_with_interest(
+        viewbox,
+        VIEWPORT_INTEREST_AREA_THRESHOLD,
+        scale,
+    );
 
     let dx = if isx.signum() != iex.signum() { 1 } else { 0 };
     let dy = if isy.signum() != iey.signum() { 1 } else { 0 };
@@ -453,6 +456,7 @@ impl RenderState {
     }
 
     fn render_from_cache(&mut self) {
+        let scale = self.get_scale();
         if let Some(snapshot) = &self.cached_target_snapshot {
             let canvas = self.surfaces.canvas(SurfaceId::Target);
             canvas.save();
@@ -468,7 +472,7 @@ impl RenderState {
             let (start_tile_x, start_tile_y, _, _) = tiles::get_tiles_for_viewbox_with_interest(
                 self.cached_viewbox,
                 VIEWPORT_INTEREST_AREA_THRESHOLD,
-                self.options.dpr(),
+                scale,
             );
             let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom;
             let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom;
@@ -521,11 +525,11 @@ impl RenderState {
         let (isx, isy, iex, iey) = tiles::get_tiles_for_viewbox_with_interest(
             self.viewbox,
             VIEWPORT_INTEREST_AREA_THRESHOLD,
-            self.options.dpr(),
+            scale,
         );
 
-        let viewbox_cache_size = get_cache_size(self.viewbox, self.options.dpr());
-        let cached_viewbox_cache_size = get_cache_size(self.cached_viewbox, self.options.dpr());
+        let viewbox_cache_size = get_cache_size(self.viewbox, scale);
+        let cached_viewbox_cache_size = get_cache_size(self.cached_viewbox, scale);
         if viewbox_cache_size != cached_viewbox_cache_size {
             self.surfaces.resize_cache(
                 &mut self.gpu_state,
