@@ -22,7 +22,6 @@ ALLOWED_RULES="
         -A clippy::field_reassign_with_default \
         -A clippy::from_over_into \
         -A clippy::len_zero \
-        -A clippy::manual_map \
         -D static_mut_refs"
 
 # ./lint --fix

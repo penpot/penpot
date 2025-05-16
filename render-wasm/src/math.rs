@@ -389,11 +389,7 @@ pub fn intersect_rays_t(ray1: &Ray, ray2: &Ray) -> Option<f32> {
 }
 
 pub fn intersect_rays(ray1: &Ray, ray2: &Ray) -> Option<Point> {
-    if let Some(t) = intersect_rays_t(ray1, ray2) {
-        Some(ray1.t(t))
-    } else {
-        None
-    }
+    intersect_rays_t(ray1, ray2).map(|t| ray1.t(t))
 }
 
 /*
