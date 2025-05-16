@@ -5,8 +5,8 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.media
+  "Media assets helpers (images, fonts, etc)"
   (:require
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
 ;; We have added ".ttf" as string to solve a problem with chrome input selector
@@ -48,38 +48,28 @@
 (defn mtype->extension [mtype]
   ;; https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
   (case mtype
-    "image/apng"         ".apng"
-    "image/avif"         ".avif"
-    "image/gif"          ".gif"
-    "image/jpeg"         ".jpg"
-    "image/png"          ".png"
-    "image/svg+xml"      ".svg"
-    "image/webp"         ".webp"
-    "application/zip"    ".zip"
-    "application/penpot" ".penpot"
-    "application/pdf"    ".pdf"
-    "text/plain"         ".txt"
+    "image/apng"               ".apng"
+    "image/avif"               ".avif"
+    "image/gif"                ".gif"
+    "image/jpeg"               ".jpg"
+    "image/png"                ".png"
+    "image/svg+xml"            ".svg"
+    "image/webp"               ".webp"
+    "application/zip"          ".zip"
+    "application/penpot"       ".penpot"
+    "application/pdf"          ".pdf"
+    "text/plain"               ".txt"
+    "font/woff"                ".woff"
+    "font/woff2"               ".woff2"
+    "font/ttf"                 ".ttf"
+    "font/otf"                 ".otf"
+    "application/octet-stream" ".bin"
     nil))
 
-(s/def ::id uuid?)
-(s/def ::name string?)
-(s/def ::width number?)
-(s/def ::height number?)
-(s/def ::created-at inst?)
-(s/def ::modified-at inst?)
-(s/def ::mtype string?)
-(s/def ::uri string?)
-
-(s/def ::media-object
-  (s/keys :req-un [::id
-                   ::name
-                   ::width
-                   ::height
-                   ::mtype
-                   ::created-at
-                   ::modified-at
-                   ::uri]))
-
+(defn strip-image-extension
+  [filename]
+  (let [image-extensions-re #"(\.png)|(\.jpg)|(\.jpeg)|(\.webp)|(\.gif)|(\.svg)$"]
+    (str/replace filename image-extensions-re "")))
 
 (defn parse-font-weight
   [variant]

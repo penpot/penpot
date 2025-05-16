@@ -8,7 +8,6 @@
   "The file exportation API and events"
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -35,41 +34,35 @@
 
 (defn export-files
   [files format]
-  (dm/assert!
-   "expected valid files param"
-   (check-export-files files))
+  (assert (contains? valid-formats format)
+          "expected valid export format")
 
-  (dm/assert!
-   "expected valid format"
-   (contains? valid-formats format))
+  (let [files (check-export-files files)]
 
-  (ptk/reify ::export-files
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [features (get state :features)
-            team-id  (:current-team-id state)
-            evname   (if (= format :legacy-zip)
-                       "export-standard-files"
-                       "export-binary-files")]
-
-        (rx/merge
-         (rx/of (ptk/event ::ev/event {::ev/name evname
-                                       ::ev/origin "dashboard"
-                                       :format format
-                                       :num-files (count files)}))
-         (->> (rx/from files)
-              (rx/mapcat
-               (fn [file]
-                 (->> (rp/cmd! :has-file-libraries {:file-id (:id file)})
-                      (rx/map #(assoc file :has-libraries %)))))
-              (rx/reduce conj [])
-              (rx/map (fn [files]
-                        (modal/show
-                         {:type ::export-files
-                          :features features
-                          :team-id team-id
-                          :files files
-                          :format format})))))))))
+    (ptk/reify ::export-files
+      ptk/WatchEvent
+      (watch [_ state _]
+        (let [team-id  (get state :current-team-id)
+              evname   (if (= format :legacy-zip)
+                         "export-standard-files"
+                         "export-binary-files")]
+          (rx/merge
+           (rx/of (ptk/event ::ev/event {::ev/name evname
+                                         ::ev/origin "dashboard"
+                                         :format format
+                                         :num-files (count files)}))
+           (->> (rx/from files)
+                (rx/mapcat
+                 (fn [file]
+                   (->> (rp/cmd! :has-file-libraries {:file-id (:id file)})
+                        (rx/map #(assoc file :has-libraries %)))))
+                (rx/reduce conj [])
+                (rx/map (fn [files]
+                          (modal/show
+                           {:type ::export-files
+                            :team-id team-id
+                            :files files
+                            :format format}))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Team Request
