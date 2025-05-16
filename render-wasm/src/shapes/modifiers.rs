@@ -103,9 +103,35 @@ fn calculate_group_bounds(
     shape_bounds.with_points(result)
 }
 
+fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds) {
+    let tr = bounds.transform_matrix().unwrap_or_default();
+    let tr_inv = tr.invert().unwrap_or_default();
+
+    let x = bounds.min_x().round();
+    let y = bounds.min_y().round();
+
+    let mut round_transform = Matrix::scale((
+        bounds.width().round() / bounds.width(),
+        bounds.height().round() / bounds.height(),
+    ));
+    round_transform.post_concat(&tr);
+    round_transform.pre_concat(&tr_inv);
+
+    transform.post_concat(&round_transform);
+    bounds.transform_mut(&round_transform);
+
+    let dx = x - bounds.min_x();
+    let dy = y - bounds.min_y();
+
+    let round_transform = Matrix::translate((dx, dy));
+    transform.post_concat(&round_transform);
+    bounds.transform_mut(&round_transform);
+}
+
 pub fn propagate_modifiers(
     state: &State,
     modifiers: &[TransformEntry],
+    pixel_precision: bool,
 ) -> (Vec<TransformEntry>, HashMap<Uuid, Bounds>) {
     let shapes = &state.shapes;
 
@@ -159,6 +185,10 @@ pub fn propagate_modifiers(
                             shape_bounds_after = shape_bounds_after.transform(&resize_transform);
                             transform.post_concat(&resize_transform);
                         }
+                    }
+
+                    if pixel_precision {
+                        set_pixel_precision(&mut transform, &mut shape_bounds_after);
                     }
 
                     if entry.propagate {
