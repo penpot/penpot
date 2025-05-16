@@ -19,10 +19,10 @@ impl From<i32> for BlendMode {
     }
 }
 
-impl Into<skia::BlendMode> for BlendMode {
-    fn into(self) -> skia::BlendMode {
-        match self {
-            Self(skia_blend) => skia_blend,
+impl From<BlendMode> for skia::BlendMode {
+    fn from(val: BlendMode) -> Self {
+        match val {
+            BlendMode(skia_blend) => skia_blend,
         }
     }
 }
