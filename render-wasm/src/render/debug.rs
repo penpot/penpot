@@ -132,7 +132,7 @@ pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
             let str = format!("{}:{}", x, y);
             let debug_font = render_state.fonts.debug_font();
             canvas.draw_str(str, p, &debug_font, &paint);
-            canvas.draw_rect(&debug_rect, &paint);
+            canvas.draw_rect(debug_rect, &paint);
         }
     }
 }
@@ -167,7 +167,7 @@ pub fn render_debug_tiles(render_state: &mut RenderState) {
 
             let debug_font = render_state.fonts.debug_font();
             canvas.draw_str(str, p, &debug_font, &paint);
-            canvas.draw_rect(&debug_rect, &paint);
+            canvas.draw_rect(debug_rect, &paint);
         }
     }
 }
@@ -219,7 +219,7 @@ pub fn render_workspace_current_tile(
     let mut p = skia::Paint::default();
     p.set_stroke_width(1.);
     p.set_style(skia::PaintStyle::Stroke);
-    canvas.draw_rect(&rect, &p);
+    canvas.draw_rect(rect, &p);
 
     let point = skia::Point::new(rect.x() + 10., rect.y() + 20.);
     p.set_stroke_width(1.);

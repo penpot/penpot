@@ -38,7 +38,7 @@ fn draw_stroke_on_rect(
             canvas.draw_rrect(rrect, &paint);
         }
         None => {
-            canvas.draw_rect(&stroke_rect, &paint);
+            canvas.draw_rect(stroke_rect, &paint);
         }
     }
 }
@@ -66,7 +66,7 @@ fn draw_stroke_on_circle(
         paint.set_image_filter(filter.clone());
     }
 
-    canvas.draw_oval(&stroke_rect, &paint);
+    canvas.draw_oval(stroke_rect, &paint);
 }
 
 // FIXME: See if we can simplify these arguments
