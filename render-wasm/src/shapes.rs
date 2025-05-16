@@ -224,12 +224,13 @@ impl Shape {
     }
 
     pub fn has_layout(&self) -> bool {
-        match self.shape_type {
+        matches!(
+            self.shape_type,
             Type::Frame(Frame {
-                layout: Some(_), ..
-            }) => true,
-            _ => false,
-        }
+                layout: Some(_),
+                ..
+            })
+        )
     }
 
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {

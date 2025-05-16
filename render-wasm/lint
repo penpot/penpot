@@ -43,7 +43,6 @@ ALLOWED_RULES="
         -A clippy::vec_box \
         -A clippy::map_clone \
         -A clippy::macro-metavars-in-unsafe \
-        -A clippy::match_like_matches_macro \
         -D static_mut_refs"
 
 # ./lint --fix
