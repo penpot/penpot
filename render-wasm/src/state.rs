@@ -129,7 +129,7 @@ impl<'a> State<'a> {
     pub fn delete_shape(&mut self, id: Uuid) {
         // We don't really do a self.shapes.remove so that redo/undo keep working
         if let Some(shape) = self.shapes.get(&id) {
-            let (rsx, rsy, rex, rey) = self.render_state.get_tiles_for_shape(&shape);
+            let (rsx, rsy, rex, rey) = self.render_state.get_tiles_for_shape(shape);
             for x in rsx..=rex {
                 for y in rsy..=rey {
                     let tile = (x, y);
@@ -154,7 +154,7 @@ impl<'a> State<'a> {
                 shape.set_selrect(left, top, right, bottom);
                 // We don't need to update the tile for the root shape.
                 if !shape.id.is_nil() {
-                    self.render_state.update_tile_for(&shape);
+                    self.render_state.update_tile_for(shape);
                 }
             }
             None => panic!("Invalid current shape"),
@@ -167,7 +167,7 @@ impl<'a> State<'a> {
                 // We don't need to update the tile for the root shape.
                 // We can also have deleted the selected shape
                 if !shape.id.is_nil() && self.shapes.contains_key(&shape.id) {
-                    self.render_state.update_tile_for(&shape);
+                    self.render_state.update_tile_for(shape);
                 }
             }
             None => panic!("Invalid current shape"),

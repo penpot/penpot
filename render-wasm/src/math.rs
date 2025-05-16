@@ -423,7 +423,7 @@ pub fn resize_matrix(
     scale.post_translate(origin);
     scale.post_concat(&parent_transform);
     scale.pre_translate(-origin);
-    scale.pre_concat(&parent_transform_inv);
+    scale.pre_concat(parent_transform_inv);
     result.post_concat(&scale);
     result
 }
