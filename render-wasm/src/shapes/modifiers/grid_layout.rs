@@ -33,6 +33,8 @@ struct TrackData {
     anchor_end: Point,
 }
 
+// FIXME: We might be able to simplify these arguments
+#[allow(clippy::too_many_arguments)]
 fn calculate_tracks(
     is_column: bool,
     shape: &Shape,

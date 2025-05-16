@@ -288,6 +288,8 @@ impl Shape {
         self.hidden = value;
     }
 
+    // FIXME: These arguments could be grouped or simplified
+    #[allow(clippy::too_many_arguments)]
     pub fn set_flex_layout_child_data(
         &mut self,
         margin_top: f32,
@@ -321,6 +323,8 @@ impl Shape {
         });
     }
 
+    // FIXME: These arguments could be grouped or simplified
+    #[allow(clippy::too_many_arguments)]
     pub fn set_flex_layout_data(
         &mut self,
         direction: FlexDirection,
@@ -362,6 +366,8 @@ impl Shape {
         }
     }
 
+    // FIXME: These arguments could be grouped or simplified
+    #[allow(clippy::too_many_arguments)]
     pub fn set_grid_layout_data(
         &mut self,
         direction: GridDirection,
