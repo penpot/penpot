@@ -24,6 +24,8 @@ use crate::uuid::Uuid;
 /// state shapes attribute
 pub(crate) struct ShapesPool {
     // We need a box so that pushing here doesn't invalidate state.shapes references
+    // FIXME: See if we can avoid this
+    #[allow(clippy::vec_box)]
     shapes: Vec<Box<Shape>>,
     counter: usize,
 }
