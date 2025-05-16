@@ -52,7 +52,6 @@ ALLOWED_RULES="
         -A clippy::nonminimal_bool \
         -A clippy::unnecessary_cast \
         -A clippy::redundant-static-lifetimes \
-        -A clippy::crate_in_macro_def \
         -D static_mut_refs"
 
 # ./lint --fix
