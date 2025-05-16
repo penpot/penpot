@@ -909,7 +909,7 @@ pub fn modified_children_ids(
     structure: Option<&Vec<StructureEntry>>,
 ) -> IndexSet<Uuid> {
     if let Some(structure) = structure {
-        let mut result: Vec<Uuid> = Vec::from_iter(element.children_ids().iter().map(|id| *id));
+        let mut result: Vec<Uuid> = Vec::from_iter(element.children_ids().iter().copied());
         let mut to_remove = HashSet::<&Uuid>::new();
 
         for st in structure {
@@ -926,7 +926,7 @@ pub fn modified_children_ids(
         let ret: IndexSet<Uuid> = result
             .iter()
             .filter(|id| !to_remove.contains(id))
-            .map(|id| *id)
+            .copied()
             .collect();
 
         ret
