@@ -41,7 +41,6 @@ ALLOWED_RULES="
         -A clippy::useless_format \
         -A clippy::wrong_self_convention \
         -A clippy::vec_box \
-        -A clippy::map_clone \
         -D static_mut_refs"
 
 # ./lint --fix
