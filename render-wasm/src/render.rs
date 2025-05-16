@@ -1,6 +1,7 @@
 use skia_safe::{self as skia, image, Matrix, RRect, Rect};
 
 use crate::uuid::Uuid;
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
 use crate::performance;
@@ -339,11 +340,11 @@ impl RenderState {
             });
         }
 
-        // Clone so we don't change the value in the global state
-        let mut shape = shape.clone();
+        // We don't want to change the value in the global state
+        let mut shape: Cow<Shape> = Cow::Borrowed(shape);
 
         if let Some(modifiers) = modifiers {
-            shape.apply_transform(modifiers);
+            shape.to_mut().apply_transform(modifiers);
         }
 
         let center = shape.center();
@@ -365,7 +366,7 @@ impl RenderState {
                     match dom_result {
                         Ok(dom) => {
                             dom.render(self.surfaces.canvas(SurfaceId::Fills));
-                            shape.set_svg(dom);
+                            shape.to_mut().set_svg(dom);
                         }
                         Err(e) => {
                             eprintln!("Error parsing SVG. Error: {}", e);
@@ -777,19 +778,24 @@ impl RenderState {
                         }
 
                         if !node_render_state.id.is_nil() {
-                            // If we didn't visited_children this shape, then we need to do
-                            let mut transformed_element = element.clone();
+                            let mut transformed_element: Cow<Shape> = Cow::Borrowed(element);
+
                             if let Some(modifier) = modifiers.get(&node_id) {
-                                transformed_element.apply_transform(modifier);
+                                transformed_element.to_mut().apply_transform(modifier);
                             }
-                            if !transformed_element.extrect().intersects(self.render_area)
-                                || transformed_element.hidden()
-                                || transformed_element.visually_insignificant(self.get_scale())
-                            {
-                                debug::render_debug_shape(self, &transformed_element, false);
+
+                            let is_visible = transformed_element
+                                .extrect()
+                                .intersects(self.render_area)
+                                && !transformed_element.hidden
+                                && !transformed_element.visually_insignificant(self.get_scale());
+
+                            if self.options.is_debug_visible() {
+                                debug::render_debug_shape(self, &transformed_element, is_visible);
+                            }
+
+                            if !is_visible {
                                 continue;
-                            } else {
-                                debug::render_debug_shape(self, &transformed_element, true);
                             }
                         }
 
@@ -957,10 +963,10 @@ impl RenderState {
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get_mut(&shape_id) {
-                let mut shape = shape.clone();
+                let mut shape: Cow<Shape> = Cow::Borrowed(shape);
                 if shape_id != Uuid::nil() {
                     if let Some(modifier) = modifiers.get(&shape_id) {
-                        shape.apply_transform(modifier);
+                        shape.to_mut().apply_transform(modifier);
                     }
                     self.update_tile_for(&shape);
                 } else {
@@ -987,10 +993,10 @@ impl RenderState {
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get_mut(&shape_id) {
-                let mut shape = shape.clone();
+                let mut shape: Cow<Shape> = Cow::Borrowed(shape);
                 if shape_id != Uuid::nil() {
                     if let Some(modifier) = modifiers.get(&shape_id) {
-                        shape.apply_transform(modifier);
+                        shape.to_mut().apply_transform(modifier);
                     }
                     self.update_tile_for(&shape);
                 }
@@ -1011,8 +1017,8 @@ impl RenderState {
     ) {
         for (uuid, matrix) in modifiers {
             if let Some(shape) = tree.get_mut(uuid) {
-                let mut shape: Shape = shape.clone();
-                shape.apply_transform(matrix);
+                let mut shape: Cow<Shape> = Cow::Borrowed(shape);
+                shape.to_mut().apply_transform(matrix);
                 self.update_tile_for(&shape);
             }
         }
