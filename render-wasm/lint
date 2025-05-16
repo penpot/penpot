@@ -25,7 +25,6 @@ ALLOWED_RULES="
         -A clippy::manual_map \
         -A clippy::map_entry \
         -A clippy::missing_safety_doc \
-        -A clippy::missing_transmute_annotations \
         -D static_mut_refs"
 
 # ./lint --fix
