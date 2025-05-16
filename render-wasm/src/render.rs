@@ -602,17 +602,14 @@ impl RenderState {
         // the content and the second one rendering the mask so we need to do
         // an extra save_layer to keep all the masked group separate from
         // other already drawn elements.
-        match element.shape_type {
-            Type::Group(group) => {
-                if group.masked {
-                    let paint = skia::Paint::default();
-                    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-                    self.surfaces
-                        .canvas(SurfaceId::Current)
-                        .save_layer(&layer_rec);
-                }
+        if let Type::Group(group) = element.shape_type {
+            if group.masked {
+                let paint = skia::Paint::default();
+                let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+                self.surfaces
+                    .canvas(SurfaceId::Current)
+                    .save_layer(&layer_rec);
             }
-            _ => {}
         }
 
         let mut paint = skia::Paint::default();
@@ -646,13 +643,10 @@ impl RenderState {
             // Because masked groups needs two rendering passes (first drawing
             // the content and then drawing the mask), we need to do an
             // extra restore.
-            match element.shape_type {
-                Type::Group(group) => {
-                    if group.masked {
-                        self.surfaces.canvas(SurfaceId::Current).restore();
-                    }
+            if let Type::Group(group) = element.shape_type {
+                if group.masked {
+                    self.surfaces.canvas(SurfaceId::Current).restore();
                 }
-                _ => {}
             }
         }
         self.surfaces.canvas(SurfaceId::Current).restore();
@@ -752,33 +746,30 @@ impl RenderState {
 
                         if visited_children {
                             if !visited_mask {
-                                match element.shape_type {
-                                    Type::Group(group) => {
-                                        // When we're dealing with masked groups we need to
-                                        // do a separate extra step to draw the mask (the last
-                                        // element of a masked group) and blend (using
-                                        // the blend mode 'destination-in') the content
-                                        // of the group and the mask.
-                                        if group.masked {
+                                if let Type::Group(group) = element.shape_type {
+                                    // When we're dealing with masked groups we need to
+                                    // do a separate extra step to draw the mask (the last
+                                    // element of a masked group) and blend (using
+                                    // the blend mode 'destination-in') the content
+                                    // of the group and the mask.
+                                    if group.masked {
+                                        self.pending_nodes.push(NodeRenderState {
+                                            id: node_id,
+                                            visited_children: true,
+                                            clip_bounds: None,
+                                            visited_mask: true,
+                                            mask: false,
+                                        });
+                                        if let Some(&mask_id) = element.mask_id() {
                                             self.pending_nodes.push(NodeRenderState {
-                                                id: node_id,
-                                                visited_children: true,
+                                                id: mask_id,
+                                                visited_children: false,
                                                 clip_bounds: None,
-                                                visited_mask: true,
-                                                mask: false,
+                                                visited_mask: false,
+                                                mask: true,
                                             });
-                                            if let Some(&mask_id) = element.mask_id() {
-                                                self.pending_nodes.push(NodeRenderState {
-                                                    id: mask_id,
-                                                    visited_children: false,
-                                                    clip_bounds: None,
-                                                    visited_mask: false,
-                                                    mask: true,
-                                                });
-                                            }
                                         }
                                     }
-                                    _ => {}
                                 }
                             }
                             self.render_shape_exit(element, visited_mask);

@@ -235,20 +235,14 @@ impl Shape {
 
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
         self.selrect.set_ltrb(left, top, right, bottom);
-        match self.shape_type {
-            Type::Text(ref mut text) => {
-                text.set_xywh(left, top, right - left, bottom - top);
-            }
-            _ => {}
+        if let Type::Text(ref mut text) = self.shape_type {
+            text.set_xywh(left, top, right - left, bottom - top);
         }
     }
 
     pub fn set_masked(&mut self, masked: bool) {
-        match &mut self.shape_type {
-            Type::Group(data) => {
-                data.masked = masked;
-            }
-            _ => {}
+        if let Type::Group(data) = &mut self.shape_type {
+            data.masked = masked;
         }
     }
 
@@ -340,29 +334,26 @@ impl Shape {
         padding_bottom: f32,
         padding_left: f32,
     ) {
-        match &mut self.shape_type {
-            Type::Frame(data) => {
-                let layout_data = LayoutData {
-                    align_items,
-                    align_content,
-                    justify_items,
-                    justify_content,
-                    padding_top,
-                    padding_right,
-                    padding_bottom,
-                    padding_left,
-                    row_gap,
-                    column_gap,
-                };
+        if let Type::Frame(data) = &mut self.shape_type {
+            let layout_data = LayoutData {
+                align_items,
+                align_content,
+                justify_items,
+                justify_content,
+                padding_top,
+                padding_right,
+                padding_bottom,
+                padding_left,
+                row_gap,
+                column_gap,
+            };
 
-                let flex_data = FlexData {
-                    direction,
-                    wrap_type,
-                };
+            let flex_data = FlexData {
+                direction,
+                wrap_type,
+            };
 
-                data.layout = Some(Layout::FlexLayout(layout_data, flex_data));
-            }
-            _ => {}
+            data.layout = Some(Layout::FlexLayout(layout_data, flex_data));
         }
     }
 
@@ -382,26 +373,23 @@ impl Shape {
         padding_bottom: f32,
         padding_left: f32,
     ) {
-        match &mut self.shape_type {
-            Type::Frame(data) => {
-                let layout_data = LayoutData {
-                    align_items,
-                    align_content,
-                    justify_items,
-                    justify_content,
-                    padding_top,
-                    padding_right,
-                    padding_bottom,
-                    padding_left,
-                    row_gap,
-                    column_gap,
-                };
+        if let Type::Frame(data) = &mut self.shape_type {
+            let layout_data = LayoutData {
+                align_items,
+                align_content,
+                justify_items,
+                justify_content,
+                padding_top,
+                padding_right,
+                padding_bottom,
+                padding_left,
+                row_gap,
+                column_gap,
+            };
 
-                let mut grid_data = GridData::default();
-                grid_data.direction = direction;
-                data.layout = Some(Layout::GridLayout(layout_data, grid_data));
-            }
-            _ => {}
+            let mut grid_data = GridData::default();
+            grid_data.direction = direction;
+            data.layout = Some(Layout::GridLayout(layout_data, grid_data));
         }
     }
 
@@ -724,12 +712,9 @@ impl Shape {
     }
 
     pub fn clear_text(&mut self) {
-        match &self.shape_type {
-            Type::Text(old_text_content) => {
-                let new_text_content = TextContent::new(self.selrect, old_text_content.grow_type());
-                self.shape_type = Type::Text(new_text_content);
-            }
-            _ => {}
+        if let Type::Text(old_text_content) = &self.shape_type {
+            let new_text_content = TextContent::new(self.selrect, old_text_content.grow_type());
+            self.shape_type = Type::Text(new_text_content);
         }
     }
 
@@ -769,13 +754,10 @@ impl Shape {
 
     pub fn apply_transform(&mut self, transform: &Matrix) {
         self.transform_selrect(&transform);
-        match &mut self.shape_type {
-            shape_type @ (Type::Path(_) | Type::Bool(_)) => {
-                if let Some(path) = shape_type.path_mut() {
-                    path.transform(&transform);
-                }
+        if let shape_type @ (Type::Path(_) | Type::Bool(_)) = &mut self.shape_type {
+            if let Some(path) = shape_type.path_mut() {
+                path.transform(&transform);
             }
-            _ => {}
         }
     }
 

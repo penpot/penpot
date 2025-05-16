@@ -32,7 +32,6 @@ ALLOWED_RULES="
         -A clippy::needless_return \
         -A clippy::redundant_closure \
         -A clippy::redundant_field_names \
-        -A clippy::single_match \
         -D static_mut_refs"
 
 # ./lint --fix

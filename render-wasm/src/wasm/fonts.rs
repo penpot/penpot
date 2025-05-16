@@ -24,11 +24,8 @@ pub extern "C" fn store_font(
             .fonts_mut()
             .add(family, &font_bytes, is_emoji);
 
-        match res {
-            Err(msg) => {
-                eprintln!("{}", msg);
-            }
-            _ => {}
+        if let Err(msg) = res {
+            eprintln!("{}", msg);
         }
     });
 }
