@@ -227,7 +227,7 @@
   flex-direction: column;
   height: calc(100vh - var(--calculated-height));
   width: calc(var(--width) + var(--depth) * var(--layer-indentation-size));
-  overflow-x: scroll;
+  overflow-x: auto;
   overflow-y: overlay;
   scrollbar-gutter: stable;
 

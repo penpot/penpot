@@ -39,7 +39,7 @@
   flex-direction: column;
   height: calc(-38px + var(--height, $s-200));
   width: var(--width);
-  overflow-x: scroll;
+  overflow-x: hidden;
   overflow-y: overlay;
   scrollbar-gutter: stable;
 
