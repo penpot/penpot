@@ -4,8 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
 @use "../../../ds/spacing.scss" as *;
+
+@import "refactor/common-refactor.scss";
 
 .setting-modal-overlay {
   @extend .modal-overlay-base;
@@ -45,4 +46,10 @@
 .settings-modal-description,
 .settings-modal-resume {
   color: var(--color-foreground-secondary);
+}
+
+.settings-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-s);
 }
