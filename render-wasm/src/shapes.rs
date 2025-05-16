@@ -267,7 +267,7 @@ impl Shape {
     }
 
     pub fn constraint_h(&self, default: ConstraintH) -> ConstraintH {
-        self.constraint_h.clone().unwrap_or(default)
+        self.constraint_h.unwrap_or(default)
     }
 
     pub fn set_constraint_v(&mut self, constraint: Option<ConstraintV>) {
@@ -275,7 +275,7 @@ impl Shape {
     }
 
     pub fn constraint_v(&self, default: ConstraintV) -> ConstraintV {
-        self.constraint_v.clone().unwrap_or(default)
+        self.constraint_v.unwrap_or(default)
     }
 
     pub fn set_hidden(&mut self, value: bool) {
@@ -573,7 +573,7 @@ impl Shape {
         );
 
         let center = self.center();
-        let mut matrix = self.transform.clone();
+        let mut matrix = self.transform;
         matrix.post_translate(center);
         matrix.pre_translate(-center);
 
@@ -590,7 +590,7 @@ impl Shape {
         let mut rect = self.bounds().to_rect();
         for shadow in self.shadows.iter() {
             let (x, y) = shadow.offset;
-            let mut shadow_rect = rect.clone();
+            let mut shadow_rect = rect;
             shadow_rect.left += x;
             shadow_rect.right += x;
             shadow_rect.top += y;

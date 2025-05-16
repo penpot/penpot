@@ -23,7 +23,7 @@ fn render_debug_view(render_state: &mut RenderState) {
     paint.set_color(skia::Color::from_rgb(255, 0, 255));
     paint.set_stroke_width(1.);
 
-    let rect = get_debug_rect(render_state.viewbox.area.clone());
+    let rect = get_debug_rect(render_state.viewbox.area);
     render_state
         .surfaces
         .canvas(SurfaceId::Debug)
