@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 const LAYOUT_ALIGN: usize = 4;
 
-static BUFFERU8: Mutex<Option<Box<Vec<u8>>>> = Mutex::new(None);
+static BUFFERU8: Mutex<Option<Vec<u8>>> = Mutex::new(None);
 
 #[no_mangle]
 pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
@@ -22,22 +22,21 @@ pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
         }
         // TODO: Maybe this could be removed.
         ptr::write_bytes(ptr, 0, len);
-        *guard = Some(Box::new(Vec::from_raw_parts(ptr, len, len)));
+        *guard = Some(Vec::from_raw_parts(ptr, len, len));
         ptr
     }
 }
 
-pub fn write_bytes(bytes: Vec<u8>) -> *mut u8 {
+pub fn write_bytes(mut bytes: Vec<u8>) -> *mut u8 {
     let mut guard = BUFFERU8.lock().unwrap();
 
     if guard.is_some() {
         panic!("Bytes already allocated");
     }
 
-    let mut new_buffer = Box::new(bytes);
-    let ptr = new_buffer.as_mut_ptr();
+    let ptr = bytes.as_mut_ptr();
 
-    *guard = Some(new_buffer);
+    *guard = Some(bytes);
     ptr
 }
 
@@ -50,16 +49,12 @@ pub extern "C" fn free_bytes() {
 
 pub fn bytes() -> Vec<u8> {
     let mut guard = BUFFERU8.lock().unwrap();
-
-    guard
-        .take()
-        .map_or_else(|| panic!("Buffer is not initialized"), |buffer| *buffer)
+    guard.take().expect("Buffer is not initialized")
 }
 
 pub fn bytes_or_empty() -> Vec<u8> {
     let mut guard = BUFFERU8.lock().unwrap();
-
-    guard.take().map_or_else(Vec::new, |buffer| *buffer)
+    guard.take().unwrap_or_default()
 }
 
 pub trait SerializableResult {
