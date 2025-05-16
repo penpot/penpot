@@ -18,7 +18,6 @@ ALLOWED_RULES="
         -A clippy::box_collection \
         -A clippy::clone_on_copy \
         -A clippy::derivable_impls \
-        -A clippy::enum_variant_names \
         -D static_mut_refs"
 
 # ./lint --fix

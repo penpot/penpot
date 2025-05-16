@@ -841,7 +841,7 @@ impl Shape {
         let mut paints = Vec::new();
 
         match stroke.kind {
-            StrokeKind::InnerStroke => {
+            StrokeKind::Inner => {
                 let mut paint = skia::Paint::default();
                 paint.set_blend_mode(skia::BlendMode::DstOver);
                 paint.set_anti_alias(true);
@@ -857,7 +857,7 @@ impl Shape {
 
                 paints.push(paint);
             }
-            StrokeKind::CenterStroke => {
+            StrokeKind::Center => {
                 let mut paint = skia::Paint::default();
                 paint.set_style(skia::PaintStyle::Stroke);
                 paint.set_anti_alias(true);
@@ -867,7 +867,7 @@ impl Shape {
 
                 paints.push(paint);
             }
-            StrokeKind::OuterStroke => {
+            StrokeKind::Outer => {
                 let mut paint = skia::Paint::default();
                 paint.set_style(skia::PaintStyle::Stroke);
                 paint.set_blend_mode(skia::BlendMode::DstOver);
