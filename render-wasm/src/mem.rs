@@ -81,9 +81,9 @@ pub fn write_vec<T: SerializableResult>(result: Vec<T>) -> *mut u8 {
 
     result_bytes[0..4].clone_from_slice(&result.len().to_le_bytes());
 
-    for i in 0..result.len() {
+    for (i, item) in result.iter().enumerate() {
         let base = 4 + i * elem_size;
-        result[i].clone_to_slice(&mut result_bytes[base..base + elem_size]);
+        item.clone_to_slice(&mut result_bytes[base..base + elem_size]);
     }
 
     write_bytes(result_bytes)

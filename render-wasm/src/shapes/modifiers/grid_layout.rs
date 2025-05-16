@@ -196,10 +196,10 @@ fn set_auto_multi_span(
         let (start, end) = track_index(column, cell);
 
         // Distribute the size between the tracks that already have a set value
-        for i in start..end {
-            dist -= tracks[i].size;
+        for track in tracks[start..end].iter() {
+            dist -= track.size;
 
-            if tracks[i].track_type == GridTrackType::Auto {
+            if track.track_type == GridTrackType::Auto {
                 num_auto += 1;
             }
         }
@@ -209,19 +209,19 @@ fn set_auto_multi_span(
             let rest = dist / num_auto as f32;
 
             // Distribute the space between auto tracks
-            for i in start..end {
-                if tracks[i].track_type == GridTrackType::Auto {
+            for track in tracks[start..end].iter_mut() {
+                if track.track_type == GridTrackType::Auto {
                     // dist = dist - track[i].size;
-                    let new_size = if tracks[i].size + rest < tracks[i].max_size {
-                        tracks[i].size + rest
+                    let new_size = if track.size + rest < track.max_size {
+                        track.size + rest
                     } else {
                         num_auto -= 1;
-                        tracks[i].max_size
+                        track.max_size
                     };
 
-                    let aloc = new_size - tracks[i].size;
+                    let aloc = new_size - track.size;
                     dist -= aloc;
-                    tracks[i].size += aloc;
+                    track.size += aloc;
                 }
             }
         }
@@ -272,12 +272,12 @@ fn set_flex_multi_span(
         let (start, end) = track_index(column, cell);
 
         // Distribute the size between the tracks that already have a set value
-        for i in start..end {
-            dist -= tracks[i].size;
+        for track in tracks[start..end].iter() {
+            dist -= track.size;
 
-            match tracks[i].track_type {
+            match track.track_type {
                 GridTrackType::Flex => {
-                    num_flex += tracks[i].value;
+                    num_flex += track.value;
                     num_auto += 1;
                 }
                 GridTrackType::Auto => {
@@ -295,12 +295,12 @@ fn set_flex_multi_span(
         let rest = dist / num_flex;
 
         // Distribute the space between flex tracks in proportion to the division
-        for i in start..end {
-            if tracks[i].track_type == GridTrackType::Flex {
-                let new_size = f32::min(tracks[i].size + rest, tracks[i].max_size);
-                let aloc = new_size - tracks[i].size;
+        for track in tracks[start..end].iter_mut() {
+            if track.track_type == GridTrackType::Flex {
+                let new_size = f32::min(track.size + rest, track.max_size);
+                let aloc = new_size - track.size;
                 dist -= aloc;
-                tracks[i].size += aloc;
+                track.size += aloc;
             }
         }
 
@@ -308,20 +308,20 @@ fn set_flex_multi_span(
         while dist > MIN_SIZE && num_auto > 0 {
             let rest = dist / num_auto as f32;
 
-            for i in start..end {
-                if tracks[i].track_type == GridTrackType::Auto
-                    || tracks[i].track_type == GridTrackType::Flex
+            for track in tracks[start..end].iter_mut() {
+                if track.track_type == GridTrackType::Auto
+                    || track.track_type == GridTrackType::Flex
                 {
-                    let new_size = if tracks[i].size + rest < tracks[i].max_size {
-                        tracks[i].size + rest
+                    let new_size = if track.size + rest < track.max_size {
+                        track.size + rest
                     } else {
                         num_auto -= 1;
-                        tracks[i].max_size
+                        track.max_size
                     };
 
-                    let aloc = new_size - tracks[i].size;
+                    let aloc = new_size - track.size;
                     dist -= aloc;
-                    tracks[i].size += aloc;
+                    track.size += aloc;
                 }
             }
         }
