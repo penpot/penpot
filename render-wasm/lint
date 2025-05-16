@@ -33,7 +33,6 @@ ALLOWED_RULES="
         -A clippy::redundant_closure \
         -A clippy::redundant_field_names \
         -A clippy::single_match \
-        -A clippy::slow_vector_initialization \
         -D static_mut_refs"
 
 # ./lint --fix

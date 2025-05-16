@@ -77,9 +77,8 @@ pub trait SerializableResult {
 pub fn write_vec<T: SerializableResult>(result: Vec<T>) -> *mut u8 {
     let elem_size = size_of::<T::BytesType>();
     let bytes_len = 4 + result.len() * elem_size;
-    let mut result_bytes = Vec::<u8>::with_capacity(bytes_len);
+    let mut result_bytes = vec![0; bytes_len];
 
-    result_bytes.resize(bytes_len, 0);
     result_bytes[0..4].clone_from_slice(&result.len().to_le_bytes());
 
     for i in 0..result.len() {
