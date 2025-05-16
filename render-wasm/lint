@@ -46,7 +46,6 @@ ALLOWED_RULES="
         -A clippy::match_like_matches_macro \
         -A clippy::ptr_arg \
         -A clippy::for_kv_map \
-        -A clippy::needless-lifetimes \
         -D static_mut_refs"
 
 # ./lint --fix

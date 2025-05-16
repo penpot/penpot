@@ -614,11 +614,11 @@ fn child_position(
     cell.anchor + vv * vpos + hv * hpos
 }
 
-pub fn reflow_grid_layout<'a>(
+pub fn reflow_grid_layout(
     shape: &Shape,
     layout_data: &LayoutData,
     grid_data: &GridData,
-    shapes: &'a HashMap<Uuid, &mut Shape>,
+    shapes: &HashMap<Uuid, &mut Shape>,
     bounds: &mut HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> VecDeque<Modifier> {
