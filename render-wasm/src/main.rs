@@ -1,5 +1,3 @@
-use skia_safe as skia;
-
 #[cfg(target_arch = "wasm32")]
 mod emscripten;
 mod math;
@@ -9,19 +7,21 @@ mod performance;
 mod render;
 mod shapes;
 mod state;
+mod tiles;
 mod utils;
 mod uuid;
 mod view;
 mod wapi;
 mod wasm;
 
-use crate::mem::SerializableResult;
-use crate::shapes::{BoolType, ConstraintH, ConstraintV, StructureEntry, TransformEntry, Type};
-use crate::utils::uuid_from_u32_quartet;
-use crate::uuid::Uuid;
 use indexmap::IndexSet;
 use math::{Bounds, Matrix};
+use mem::SerializableResult;
+use shapes::{BoolType, ConstraintH, ConstraintV, StructureEntry, TransformEntry, Type};
+use skia_safe as skia;
 use state::State;
+use utils::uuid_from_u32_quartet;
+use uuid::Uuid;
 
 pub(crate) static mut STATE: Option<Box<State>> = None;
 

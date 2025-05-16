@@ -1,12 +1,3 @@
-use skia_safe::{self as skia, image, Matrix, RRect, Rect};
-
-use crate::uuid::Uuid;
-use std::collections::{HashMap, HashSet};
-
-use crate::performance;
-use crate::view::Viewbox;
-use crate::wapi;
-
 mod blend;
 mod debug;
 mod fills;
@@ -18,12 +9,20 @@ mod shadows;
 mod strokes;
 mod surfaces;
 mod text;
-mod tiles;
 
-use crate::shapes::{modified_children_ids, Corners, Fill, Shape, StructureEntry, Type};
+use skia_safe::{self as skia, image, Matrix, RRect, Rect};
+use std::collections::{HashMap, HashSet};
+
 use gpu_state::GpuState;
 use options::RenderOptions;
 use surfaces::{SurfaceId, Surfaces};
+
+use crate::performance;
+use crate::shapes::{modified_children_ids, Corners, Fill, Shape, StructureEntry, Type};
+use crate::tiles::{self, TileRect, TileViewbox, TileWithDistance};
+use crate::uuid::Uuid;
+use crate::view::Viewbox;
+use crate::wapi;
 
 pub use blend::BlendMode;
 pub use fonts::*;
@@ -31,11 +30,43 @@ pub use images::*;
 
 // This is the extra are used for tile rendering.
 const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
+const VIEWPORT_DEFAULT_CAPACITY: usize = 24 * 12;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
 
-struct NodeRenderState {
-    id: Uuid,
+pub struct PendingTiles {
+    pub list: Vec<tiles::TileWithDistance>,
+}
+
+impl PendingTiles {
+    pub fn new_empty() -> Self {
+        Self {
+            list: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
+        }
+    }
+
+    pub fn update(&mut self, tile_viewbox: &TileViewbox) {
+        self.list.clear();
+        for y in tile_viewbox.interest_rect.1..=tile_viewbox.interest_rect.3 {
+            for x in tile_viewbox.interest_rect.0..=tile_viewbox.interest_rect.2 {
+                let tile = tiles::Tile(x, y);
+                let distance = tiles::manhattan_distance(tile, tile_viewbox.center);
+                self.list.push((x, y, distance));
+            }
+        }
+    }
+
+    pub fn pop(&mut self) -> Option<TileWithDistance> {
+        self.list.pop()
+    }
+
+    pub fn sort(&mut self) {
+        self.list.sort_by(|a, b| b.2.cmp(&a.2));
+    }
+}
+
+pub struct NodeRenderState {
+    pub id: Uuid,
     // We use this bool to keep that we've traversed all the children inside this node.
     visited_children: bool,
     // This is used to clip the content of frames.
@@ -94,17 +125,15 @@ pub(crate) struct RenderState {
     pub current_tile: Option<tiles::Tile>,
     pub sampling_options: skia::SamplingOptions,
     pub render_area: Rect,
+    pub tile_viewbox: tiles::TileViewbox,
     pub tiles: tiles::TileHashMap,
-    pub pending_tiles: Vec<tiles::TileWithDistance>,
+    pub pending_tiles: PendingTiles,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
     // First we retrieve the extended area of the viewport that we could render.
-    let (isx, isy, iex, iey) = tiles::get_tiles_for_viewbox_with_interest(
-        viewbox,
-        VIEWPORT_INTEREST_AREA_THRESHOLD,
-        scale,
-    );
+    let TileRect(isx, isy, iex, iey) =
+        tiles::get_tiles_for_viewbox_with_interest(viewbox, VIEWPORT_INTEREST_AREA_THRESHOLD);
 
     let dx = if isx.signum() != iex.signum() { 1 } else { 0 };
     let dy = if isy.signum() != iey.signum() { 1 } else { 0 };
@@ -135,6 +164,7 @@ impl RenderState {
         // This is used multiple times everywhere so instead of creating new instances every
         // time we reuse this one.
 
+        let viewbox = Viewbox::new(width as f32, height as f32);
         let tiles = tiles::TileHashMap::new();
 
         RenderState {
@@ -142,7 +172,7 @@ impl RenderState {
             options: RenderOptions::default(),
             surfaces,
             fonts,
-            viewbox: Viewbox::new(width as f32, height as f32),
+            viewbox,
             cached_viewbox: Viewbox::new(0., 0.),
             cached_target_snapshot: None,
             images: ImageStore::new(),
@@ -154,7 +184,11 @@ impl RenderState {
             sampling_options,
             render_area: Rect::new_empty(),
             tiles,
-            pending_tiles: vec![],
+            tile_viewbox: tiles::TileViewbox::new_with_interest(
+                viewbox,
+                VIEWPORT_INTEREST_AREA_THRESHOLD,
+            ),
+            pending_tiles: PendingTiles::new_empty(),
         }
     }
 
@@ -198,6 +232,7 @@ impl RenderState {
         self.surfaces
             .resize(&mut self.gpu_state, dpr_width, dpr_height);
         self.viewbox.set_wh(width as f32, height as f32);
+        self.tile_viewbox.update(self.viewbox);
     }
 
     pub fn flush_and_submit(&mut self) {
@@ -210,11 +245,12 @@ impl RenderState {
     }
 
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect) {
-        let x = self.current_tile.unwrap().0;
-        let y = self.current_tile.unwrap().1;
-
         let tile_rect = self.get_current_aligned_tile_bounds();
-        self.surfaces.cache_current_tile_texture((x, y), tile_rect);
+        self.surfaces.cache_current_tile_texture(
+            &self.tile_viewbox,
+            &self.current_tile.unwrap(),
+            &tile_rect,
+        );
 
         self.surfaces
             .draw_cached_tile_surface(self.current_tile.unwrap(), rect);
@@ -469,11 +505,11 @@ impl RenderState {
                 navigate_zoom * self.options.dpr(),
             ));
 
-            let (start_tile_x, start_tile_y, _, _) = tiles::get_tiles_for_viewbox_with_interest(
-                self.cached_viewbox,
-                VIEWPORT_INTEREST_AREA_THRESHOLD,
-                scale,
-            );
+            let TileRect(start_tile_x, start_tile_y, _, _) =
+                tiles::get_tiles_for_viewbox_with_interest(
+                    self.cached_viewbox,
+                    VIEWPORT_INTEREST_AREA_THRESHOLD,
+                );
             let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom;
             let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom;
 
@@ -521,13 +557,6 @@ impl RenderState {
             },
         );
 
-        // First we retrieve the extended area of the viewport that we could render.
-        let (isx, isy, iex, iey) = tiles::get_tiles_for_viewbox_with_interest(
-            self.viewbox,
-            VIEWPORT_INTEREST_AREA_THRESHOLD,
-            scale,
-        );
-
         let viewbox_cache_size = get_cache_size(self.viewbox, scale);
         let cached_viewbox_cache_size = get_cache_size(self.cached_viewbox, scale);
         if viewbox_cache_size != cached_viewbox_cache_size {
@@ -538,32 +567,15 @@ impl RenderState {
             );
         }
 
-        // Then we get the real amount of tiles rendered for the current viewbox.
-        let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox, self.options.dpr());
-        debug::render_debug_tiles_for_viewbox(self, isx, isy, iex, iey);
-        let tile_center = ((iex - isx) / 2, (iey - isy) / 2);
+        debug::render_debug_tiles_for_viewbox(self);
 
         performance::begin_measure!("tile_cache");
-        self.pending_tiles = vec![];
-        self.surfaces.cache_clear_visited();
-        for y in isy..=iey {
-            for x in isx..=iex {
-                let tile = (x, y);
-                let distance = tiles::manhattan_distance(tile, tile_center);
-                self.pending_tiles.push((x, y, distance));
-                // We only need to mark! as visited the visible
-                // tiles, the ones that are outside the viewport
-                // should not be rendered.
-                if x >= sx && x <= ex && y >= sy && y <= ey {
-                    self.surfaces.cache_visit(tile);
-                }
-            }
-        }
+        self.pending_tiles.update(&self.tile_viewbox);
         performance::end_measure!("tile_cache");
 
         self.pending_nodes = vec![];
         // reorder by distance to the center.
-        self.pending_tiles.sort_by(|a, b| b.2.cmp(&a.2));
+        self.pending_tiles.sort();
         self.current_tile = None;
         self.render_in_progress = true;
         self.apply_drawing_to_render_canvas(None);
@@ -659,8 +671,7 @@ impl RenderState {
     }
 
     pub fn get_current_tile_bounds(&mut self) -> Rect {
-        // TODO: check if we need to add dpr to something else here
-        let (tile_x, tile_y) = self.current_tile.unwrap();
+        let tiles::Tile(tile_x, tile_y) = self.current_tile.unwrap();
         let scale = self.get_scale();
         let offset_x = self.viewbox.area.left * scale;
         let offset_y = self.viewbox.area.top * scale;
@@ -681,7 +692,7 @@ impl RenderState {
     // with the global tile grid, which is useful for rendering tiles in a
     /// consistent and predictable layout.
     pub fn get_current_aligned_tile_bounds(&mut self) -> Rect {
-        let (tile_x, tile_y) = self.current_tile.unwrap();
+        let tiles::Tile(tile_x, tile_y) = self.current_tile.unwrap();
         let scale = self.get_scale();
         let start_tile_x =
             (self.viewbox.area.left * scale / tiles::TILE_SIZE).floor() * tiles::TILE_SIZE;
@@ -746,7 +757,7 @@ impl RenderState {
 
                         // If the shape is not in the tile set, then we update
                         // it.
-                        if let None = self.tiles.get_tiles_of(node_id) {
+                        if self.tiles.get_tiles_of(node_id).is_none() {
                             self.update_tile_for(element);
                         }
 
@@ -815,7 +826,7 @@ impl RenderState {
                             visited_children: true,
                             clip_bounds: None,
                             visited_mask: false,
-                            mask: mask,
+                            mask,
                         });
 
                         if element.is_recursive() {
@@ -874,13 +885,13 @@ impl RenderState {
             let Some(root) = tree.get(&Uuid::nil()) else {
                 return Err(String::from("Root shape not found"));
             };
-            let root_ids = modified_children_ids(&root, structure.get(&root.id));
+            let root_ids = modified_children_ids(root, structure.get(&root.id));
 
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
             if let Some(next_tile_with_distance) = self.pending_tiles.pop() {
                 let (x, y, _) = next_tile_with_distance;
-                let next_tile = (x, y);
+                let next_tile = tiles::Tile(x, y);
                 self.update_render_context(next_tile);
 
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
@@ -912,7 +923,7 @@ impl RenderState {
         self.render_in_progress = false;
 
         // Cache target surface in a texture
-        self.cached_viewbox = self.viewbox.clone();
+        self.cached_viewbox = self.viewbox;
         self.cached_target_snapshot = Some(self.surfaces.snapshot(SurfaceId::Cache));
 
         if self.options.is_debug_visible() {
@@ -924,15 +935,15 @@ impl RenderState {
         Ok(())
     }
 
-    pub fn get_tiles_for_shape(&mut self, shape: &Shape) -> (i32, i32, i32, i32) {
-        let tile_size = tiles::get_tile_size(self.get_scale());
+    pub fn get_tiles_for_shape(&mut self, shape: &Shape) -> TileRect {
+        let tile_size = tiles::get_tile_size(self.viewbox.zoom);
         tiles::get_tiles_for_rect(shape.extrect(), tile_size)
     }
 
     pub fn update_tile_for(&mut self, shape: &Shape) {
-        let (rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape);
-        let new_tiles: HashSet<(i32, i32)> = (rsx..=rex)
-            .flat_map(|x| (rsy..=rey).map(move |y| (x, y)))
+        let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape);
+        let new_tiles: HashSet<tiles::Tile> = (rsx..=rex)
+            .flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile(x, y)))
             .collect();
 
         // Update tiles where the shape was
