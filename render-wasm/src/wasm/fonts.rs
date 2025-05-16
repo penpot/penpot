@@ -37,6 +37,6 @@ pub extern "C" fn is_font_uploaded(a: u32, b: u32, c: u32, d: u32, weight: u32, 
         let family = FontFamily::new(id, weight, style.into());
         let res = state.render_state().fonts().has_family(&family);
 
-        return res;
-    });
+        res
+    })
 }

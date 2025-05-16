@@ -74,7 +74,7 @@ impl TileHashMap {
     }
 
     pub fn get_shapes_at(&mut self, tile: Tile) -> Option<&IndexSet<Uuid>> {
-        return self.grid.get(&tile);
+        self.grid.get(&tile)
     }
 
     pub fn remove_shape_at(&mut self, tile: Tile, id: Uuid) {
