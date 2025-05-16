@@ -210,8 +210,6 @@
          :draggable? is-draggable)]
 
     [:div {:ref dref
-           :role "button"
-           :aria-labelledby label-id
            :data-testid "tokens-set-group-item"
            :style {"--tree-depth" tree-depth}
            :class (stl/css-case :set-item-container true
@@ -234,7 +232,9 @@
          :on-submit on-edit-submit'}]
        [:*
         [:div {:class (stl/css :set-name)
+               :role "button"
                :title label
+               :tab-index 0
                :on-double-click on-double-click
                :id label-id}
          label]
@@ -328,6 +328,7 @@
                                 :dnd-over-top (= drop-over :top)
                                 :dnd-over-bot (= drop-over :bot))
            :on-click on-click
+           :on-double-click on-double-click
            :on-context-menu on-context-menu
            :aria-checked is-active}
 
@@ -341,8 +342,7 @@
          :on-cancel on-reset-edition
          :on-submit on-edit-submit'}]
        [:*
-        [:div {:class (stl/css :set-name)
-               :on-double-click on-double-click}
+        [:div {:class (stl/css :set-name)}
          label]
         [:> checkbox*
          {:on-click on-checkbox-click

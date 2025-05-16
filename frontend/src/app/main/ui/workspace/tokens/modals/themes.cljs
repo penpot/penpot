@@ -21,6 +21,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.utilities.label :refer [label*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as ic]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
@@ -186,9 +187,7 @@
 
     [:div {:class (stl/css :edit-theme-inputs-wrapper)}
      [:div {:class (stl/css :group-input-wrapper)}
-      [:label {:for "groups-dropdown" :class (stl/css :label)}
-       [:span {:class (stl/css :main-label)} (tr "workspace.token.label.group")]
-       [:span {:class (stl/css :label-optional)} (dm/str "(" "" (tr "workspace.token.label.group-optional") "" ")")]]
+      [:> label* {:for "groups-dropdown" :is-optional true} (tr "workspace.token.label.group")]
       [:> combobox* {:id (dm/str "groups-dropdown")
                      :placeholder (tr "workspace.token.label.group-placeholder")
                      :default-selected (:group theme)
