@@ -92,13 +92,8 @@ impl TileHashMap {
     }
 
     pub fn add_shape_at(&mut self, tile: Tile, shape_id: Uuid) {
-        if !self.grid.contains_key(&tile) {
-            self.grid.insert(tile, IndexSet::new());
-        }
-
-        if !self.index.contains_key(&shape_id) {
-            self.index.insert(shape_id, HashSet::new());
-        }
+        self.grid.entry(tile).or_default();
+        self.index.entry(shape_id).or_default();
 
         let tile_set = self.grid.get_mut(&tile).unwrap();
         tile_set.insert(shape_id);

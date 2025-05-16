@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{hash_map::Entry, HashMap};
 
 use skia_safe as skia;
 
@@ -118,9 +118,9 @@ impl<'a> State<'a> {
     }
 
     pub fn use_shape(&'a mut self, id: Uuid) {
-        if !self.shapes.contains_key(&id) {
+        if let Entry::Vacant(e) = self.shapes.entry(id) {
             let new_shape = self.shapes_pool.add_shape(id);
-            self.shapes.insert(id, new_shape);
+            e.insert(new_shape);
         }
         self.current_id = Some(id);
         self.current_shape = self.shapes.get_mut(&id).map(|r| &mut **r);
