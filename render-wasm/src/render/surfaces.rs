@@ -1,7 +1,7 @@
 use crate::shapes::Shape;
 use skia_safe::{self as skia, IRect, Paint, RRect};
 
-use super::{gpu_state::GpuState, tiles::Tile, tiles::TILE_SIZE};
+use super::{gpu_state::GpuState, tiles::Tile, tiles::TileViewbox, tiles::TILE_SIZE};
 
 use base64::{engine::general_purpose, Engine as _};
 use std::collections::HashMap;
@@ -241,15 +241,12 @@ impl Surfaces {
             .reset_matrix();
     }
 
-    pub fn cache_clear_visited(&mut self) {
-        self.tiles.clear_visited();
-    }
-
-    pub fn cache_visit(&mut self, tile: Tile) {
-        self.tiles.visit(tile);
-    }
-
-    pub fn cache_current_tile_texture(&mut self, tile: Tile, tile_rect: skia::Rect) {
+    pub fn cache_current_tile_texture(
+        &mut self,
+        tile_viewbox: &TileViewbox,
+        tile: &Tile,
+        tile_rect: &skia::Rect,
+    ) {
         let rect = IRect::from_xywh(
             self.margins.width,
             self.margins.height,
@@ -258,7 +255,7 @@ impl Surfaces {
         );
 
         if let Some(snapshot) = self.current.image_snapshot_with_bounds(rect) {
-            self.tiles.add(tile, snapshot.clone());
+            self.tiles.add(tile_viewbox, tile, snapshot.clone());
             self.cache.canvas().draw_image_rect(
                 snapshot.clone(),
                 None,
@@ -290,14 +287,12 @@ impl Surfaces {
 
 pub struct TileTextureCache {
     grid: HashMap<Tile, skia::Image>,
-    visited: HashMap<Tile, bool>,
 }
 
 impl TileTextureCache {
     pub fn new() -> Self {
         Self {
             grid: HashMap::new(),
-            visited: HashMap::new(),
         }
     }
 
@@ -311,13 +306,13 @@ impl TileTextureCache {
         }
     }
 
-    pub fn add(&mut self, tile: Tile, image: skia::Image) {
+    pub fn add(&mut self, tile_viewbox: &TileViewbox, tile: &Tile, image: skia::Image) {
         if self.grid.len() > TEXTURES_CACHE_CAPACITY {
             let marked: Vec<_> = self
                 .grid
                 .iter_mut()
                 .filter_map(|(tile, _)| {
-                    if !self.visited.contains_key(tile) {
+                    if !tile_viewbox.is_visible(tile) {
                         Some(*tile)
                     } else {
                         None
@@ -327,7 +322,7 @@ impl TileTextureCache {
                 .collect();
             self.remove_list(marked);
         }
-        self.grid.insert(tile, image);
+        self.grid.insert(*tile, image);
     }
 
     pub fn get(&mut self, tile: Tile) -> Result<&mut skia::Image, String> {
@@ -345,13 +340,5 @@ impl TileTextureCache {
 
     pub fn clear(&mut self) {
         self.grid.clear();
-    }
-
-    pub fn clear_visited(&mut self) {
-        self.visited.clear();
-    }
-
-    pub fn visit(&mut self, tile: Tile) {
-        self.visited.insert(tile, true);
     }
 }
