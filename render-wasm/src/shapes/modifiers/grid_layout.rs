@@ -64,7 +64,8 @@ fn calculate_tracks(
     set_fr_value(is_column, shape, layout_data, &mut tracks, layout_size);
     stretch_tracks(is_column, shape, layout_data, &mut tracks, layout_size);
     assign_anchors(is_column, layout_data, &layout_bounds, &mut tracks);
-    return tracks;
+
+    tracks
 }
 
 fn init_tracks(track: &[GridTrack], size: f32) -> Vec<TrackData> {

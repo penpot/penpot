@@ -446,8 +446,9 @@ pub extern "C" fn propagate_apply() -> *mut u8 {
         bytes[28..32].clone_from_slice(&transform[4].to_le_bytes());
         bytes[32..36].clone_from_slice(&transform[2].to_le_bytes());
         bytes[36..40].clone_from_slice(&transform[5].to_le_bytes());
-        return mem::write_bytes(bytes);
-    });
+
+        mem::write_bytes(bytes)
+    })
 }
 
 #[no_mangle]

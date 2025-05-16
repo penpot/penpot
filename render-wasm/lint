@@ -29,7 +29,6 @@ ALLOWED_RULES="
         -A clippy::needless_borrow \
         -A clippy::needless_borrows_for_generic_args \
         -A clippy::needless_range_loop \
-        -A clippy::needless_return \
         -D static_mut_refs"
 
 # ./lint --fix

@@ -302,7 +302,7 @@ impl TileTextureCache {
     }
 
     pub fn has(&mut self, tile: Tile) -> bool {
-        return self.grid.contains_key(&tile);
+        self.grid.contains_key(&tile)
     }
 
     fn remove_list(&mut self, marked: Vec<Tile>) {
