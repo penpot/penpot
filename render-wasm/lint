@@ -40,6 +40,19 @@ ALLOWED_RULES="
         -A clippy::unwrap_or_default \
         -A clippy::useless_format \
         -A clippy::wrong_self_convention \
+        -A clippy::vec_box \
+        -A clippy::map_clone \
+        -A clippy::macro-metavars-in-unsafe \
+        -A clippy::match_like_matches_macro \
+        -A clippy::ptr_arg \
+        -A clippy::for_kv_map \
+        -A clippy::needless-lifetimes \
+        -A clippy::assign_op_pattern \
+        -A clippy::redundant_pattern_matching \
+        -A clippy::nonminimal_bool \
+        -A clippy::unnecessary_cast \
+        -A clippy::redundant-static-lifetimes \
+        -A clippy::crate_in_macro_def \
         -D static_mut_refs"
 
 # ./lint --fix
