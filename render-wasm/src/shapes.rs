@@ -747,7 +747,7 @@ impl Shape {
         center = transform.map_point(center);
 
         let bounds = self.bounds().transform(&transform);
-        self.transform = bounds.transform_matrix().unwrap_or(Matrix::default());
+        self.transform = bounds.transform_matrix().unwrap_or_default();
 
         let width = bounds.width();
         let height = bounds.height();
