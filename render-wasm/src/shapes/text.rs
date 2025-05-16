@@ -51,10 +51,11 @@ pub fn set_paragraphs_width(width: f32, paragraphs: &mut Vec<Vec<skia::textlayou
 
 impl TextContent {
     pub fn new(bounds: Rect, grow_type: GrowType) -> Self {
-        let mut res = Self::default();
-        res.bounds = bounds;
-        res.grow_type = grow_type;
-        res
+        Self {
+            bounds,
+            grow_type,
+            ..Self::default()
+        }
     }
 
     pub fn new_bounds(&self, bounds: Rect) -> Self {
