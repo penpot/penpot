@@ -89,7 +89,7 @@ impl TryFrom<Vec<RawPathData>> for Path {
         let mut open = true;
         let segments = value
             .into_iter()
-            .map(|raw| Segment::try_from(raw))
+            .map(Segment::try_from)
             .collect::<Result<Vec<Segment>, String>>()?;
 
         let mut skia_path = skia::Path::new();

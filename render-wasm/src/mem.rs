@@ -59,7 +59,7 @@ pub fn bytes() -> Vec<u8> {
 pub fn bytes_or_empty() -> Vec<u8> {
     let mut guard = BUFFERU8.lock().unwrap();
 
-    guard.take().map_or_else(|| Vec::new(), |buffer| *buffer)
+    guard.take().map_or_else(Vec::new, |buffer| *buffer)
 }
 
 pub trait SerializableResult {
