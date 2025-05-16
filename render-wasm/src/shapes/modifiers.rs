@@ -115,7 +115,7 @@ pub fn propagate_modifiers(
         .map(|entry| Modifier::Transform(entry.clone()))
         .collect();
 
-    for (id, _) in &state.structure {
+    for id in state.structure.keys() {
         if id != &Uuid::nil() {
             entries.push_back(Modifier::Reflow(*id));
         }
