@@ -127,9 +127,7 @@ pub fn propagate_shape_constraints(
     ) {
         let center = child_bounds_before.center();
 
-        let mut parent_transform = parent_bounds_after
-            .transform_matrix()
-            .unwrap_or(Matrix::default());
+        let mut parent_transform = parent_bounds_after.transform_matrix().unwrap_or_default();
         parent_transform.post_translate(center);
         parent_transform.pre_translate(-center);
 

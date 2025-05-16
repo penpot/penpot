@@ -314,13 +314,13 @@ impl Bounds {
 
     // TODO: Probably we can improve performance here removing the access
     pub fn flip_x(&self) -> bool {
-        let m = self.transform_matrix().unwrap_or(Matrix::default());
+        let m = self.transform_matrix().unwrap_or_default();
         m.scale_x() < 0.0
     }
 
     // TODO: Probably we can improve performance here removing the access
     pub fn flip_y(&self) -> bool {
-        let m = self.transform_matrix().unwrap_or(Matrix::default());
+        let m = self.transform_matrix().unwrap_or_default();
         m.scale_y() < 0.0
     }
 
@@ -411,9 +411,7 @@ pub fn resize_matrix(
     let scale_height = new_height / child_bounds.height();
 
     let center = child_bounds.center();
-    let mut parent_transform = parent_bounds
-        .transform_matrix()
-        .unwrap_or(Matrix::default());
+    let mut parent_transform = parent_bounds.transform_matrix().unwrap_or_default();
 
     parent_transform.post_translate(center);
     parent_transform.pre_translate(-center);

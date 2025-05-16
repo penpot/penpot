@@ -733,9 +733,7 @@ pub fn reflow_grid_layout(
             scale_height = auto_height / height;
         }
 
-        let parent_transform = layout_bounds
-            .transform_matrix()
-            .unwrap_or(Matrix::default());
+        let parent_transform = layout_bounds.transform_matrix().unwrap_or_default();
 
         let parent_transform_inv = &parent_transform.invert().unwrap();
         let origin = parent_transform_inv.map_point(layout_bounds.nw);
