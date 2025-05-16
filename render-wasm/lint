@@ -51,7 +51,6 @@ ALLOWED_RULES="
         -A clippy::redundant_pattern_matching \
         -A clippy::nonminimal_bool \
         -A clippy::unnecessary_cast \
-        -A clippy::redundant-static-lifetimes \
         -D static_mut_refs"
 
 # ./lint --fix
