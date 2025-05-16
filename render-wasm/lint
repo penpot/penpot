@@ -21,7 +21,6 @@ ALLOWED_RULES="
         -A clippy::enum_variant_names \
         -A clippy::field_reassign_with_default \
         -A clippy::from_over_into \
-        -A clippy::len_zero \
         -D static_mut_refs"
 
 # ./lint --fix

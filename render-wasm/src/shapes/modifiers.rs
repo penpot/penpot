@@ -25,7 +25,7 @@ fn propagate_children(
 ) -> VecDeque<Modifier> {
     let children_ids = modified_children_ids(shape, structure.get(&shape.id));
 
-    if children_ids.len() == 0 || identitish(transform) {
+    if children_ids.is_empty() || identitish(transform) {
         return VecDeque::new();
     }
 
