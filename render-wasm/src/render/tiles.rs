@@ -29,7 +29,7 @@ pub fn get_tiles_for_rect(rect: skia::Rect, tile_size: f32) -> (i32, i32, i32, i
 }
 
 pub fn get_tiles_for_viewbox(viewbox: Viewbox, scale: f32) -> (i32, i32, i32, i32) {
-    let tile_size = get_tile_size(viewbox.zoom);
+    let tile_size = get_tile_size(scale);
     get_tiles_for_rect(viewbox.area, tile_size)
 }
 
