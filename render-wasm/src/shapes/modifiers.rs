@@ -105,7 +105,7 @@ fn calculate_group_bounds(
 
 pub fn propagate_modifiers(
     state: &State,
-    modifiers: &Vec<TransformEntry>,
+    modifiers: &[TransformEntry],
 ) -> (Vec<TransformEntry>, HashMap<Uuid, Bounds>) {
     let shapes = &state.shapes;
 

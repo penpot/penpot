@@ -542,13 +542,13 @@ impl From<&Vec<u8>> for RawTextData {
     }
 }
 
-pub fn auto_width(paragraphs: &Vec<Vec<skia::textlayout::Paragraph>>) -> f32 {
+pub fn auto_width(paragraphs: &[Vec<skia::textlayout::Paragraph>]) -> f32 {
     paragraphs.iter().flatten().fold(0.0, |auto_width, p| {
         f32::max(p.max_intrinsic_width(), auto_width)
     })
 }
 
-pub fn auto_height(paragraphs: &Vec<Vec<skia::textlayout::Paragraph>>) -> f32 {
+pub fn auto_height(paragraphs: &[Vec<skia::textlayout::Paragraph>]) -> f32 {
     paragraphs
         .iter()
         .flatten()

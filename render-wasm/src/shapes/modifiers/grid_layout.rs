@@ -65,7 +65,7 @@ fn calculate_tracks(
     return tracks;
 }
 
-fn init_tracks(track: &Vec<GridTrack>, size: f32) -> Vec<TrackData> {
+fn init_tracks(track: &[GridTrack], size: f32) -> Vec<TrackData> {
     track
         .iter()
         .map(|t| {
@@ -103,7 +103,7 @@ fn min_size(column: bool, shape: &Shape, bounds: &HashMap<Uuid, Bounds>) -> f32 
 // Go through cells to adjust auto sizes for span=1. Base is the max of its children
 fn set_auto_base_size(
     column: bool,
-    tracks: &mut Vec<TrackData>,
+    tracks: &mut [TrackData],
     cells: &Vec<GridCell>,
     shapes: &HashMap<Uuid, &mut Shape>,
     bounds: &HashMap<Uuid, Bounds>,
@@ -146,7 +146,7 @@ fn track_index(is_column: bool, c: &GridCell) -> (usize, usize) {
     }
 }
 
-fn has_flex(is_column: bool, cell: &GridCell, tracks: &mut Vec<TrackData>) -> bool {
+fn has_flex(is_column: bool, cell: &GridCell, tracks: &mut [TrackData]) -> bool {
     let (start, end) = track_index(is_column, cell);
     (start..end).any(|i| tracks[i].track_type == GridTrackType::Flex)
 }
@@ -154,8 +154,8 @@ fn has_flex(is_column: bool, cell: &GridCell, tracks: &mut Vec<TrackData>) -> bo
 // Adjust multi-spaned cells with no flex columns
 fn set_auto_multi_span(
     column: bool,
-    tracks: &mut Vec<TrackData>,
-    cells: &Vec<GridCell>,
+    tracks: &mut [TrackData],
+    cells: &[GridCell],
     shapes: &HashMap<Uuid, &mut Shape>,
     bounds: &HashMap<Uuid, Bounds>,
 ) {
@@ -228,8 +228,8 @@ fn set_auto_multi_span(
 // Adjust multi-spaned cells with flex columns
 fn set_flex_multi_span(
     column: bool,
-    tracks: &mut Vec<TrackData>,
-    cells: &Vec<GridCell>,
+    tracks: &mut [TrackData],
+    cells: &[GridCell],
     shapes: &HashMap<Uuid, &mut Shape>,
     bounds: &HashMap<Uuid, Bounds>,
 ) {
@@ -330,7 +330,7 @@ fn set_fr_value(
     column: bool,
     shape: &Shape,
     layout_data: &LayoutData,
-    tracks: &mut Vec<TrackData>,
+    tracks: &mut [TrackData],
     layout_size: f32,
 ) {
     let tot_gap: f32 = if column {
@@ -380,7 +380,7 @@ fn stretch_tracks(
     column: bool,
     shape: &Shape,
     layout_data: &LayoutData,
-    tracks: &mut Vec<TrackData>,
+    tracks: &mut [TrackData],
     layout_size: f32,
 ) {
     if (column
@@ -511,8 +511,8 @@ fn create_cell_data<'a>(
     children: &IndexSet<Uuid>,
     shapes: &'a HashMap<Uuid, &mut Shape>,
     cells: &Vec<GridCell>,
-    column_tracks: &Vec<TrackData>,
-    row_tracks: &Vec<TrackData>,
+    column_tracks: &[TrackData],
+    row_tracks: &[TrackData],
 ) -> Vec<CellData<'a>> {
     let mut result = Vec::<CellData<'a>>::new();
 
