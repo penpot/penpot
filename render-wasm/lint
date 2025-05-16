@@ -48,7 +48,6 @@ ALLOWED_RULES="
         -A clippy::for_kv_map \
         -A clippy::needless-lifetimes \
         -A clippy::assign_op_pattern \
-        -A clippy::redundant_pattern_matching \
         -D static_mut_refs"
 
 # ./lint --fix
