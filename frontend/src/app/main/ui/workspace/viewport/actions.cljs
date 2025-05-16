@@ -102,14 +102,14 @@
                    node-editing?
                    ;; Handle path node area selection
                    (when-not read-only?
-                     (st/emit! (dwdp/handle-area-selection shift?)))
+                     (st/emit! (dwdp/handle-area-selection shift? (and shift? mod?))))
 
                    drawing-tool
                    (when-not read-only?
                      (st/emit! (dd/start-drawing drawing-tool)))
 
                    (or (not id) mod?)
-                   (st/emit! (dw/handle-area-selection shift?))
+                   (st/emit! (dw/handle-area-selection shift? (and shift? mod?)))
 
                    (not drawing-tool)
                    (when-not read-only?

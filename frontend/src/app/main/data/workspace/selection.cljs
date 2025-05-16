@@ -54,7 +54,7 @@
       (assoc-in state [:workspace-local :selrect] selrect))))
 
 (defn handle-area-selection
-  [preserve?]
+  [preserve? remove?]
   (ptk/reify ::handle-area-selection
     ptk/WatchEvent
     (watch [_ state stream]
@@ -103,10 +103,12 @@
                (rx/buffer-time 100)
                (rx/map last)
                (rx/pipe (rxo/distinct-contiguous))
+               ; Why are we reading from the keyboard stream again instead of
+               ; using args from the caller, where preserve? is set from ms/keyboard-shift?
                (rx/with-latest-from ms/keyboard-shift ms/keyboard-mod)
                (rx/map
                 (fn [[_ shift? mod?]]
-                  (select-shapes-by-current-selrect shift? mod? (and shift? mod?)))))
+                  (select-shapes-by-current-selrect shift? mod? remove?))))
 
           ;; The last "tick" from the mouse cannot be buffered so we are sure
           ;; a selection is returned. Without this we can have empty selections on
@@ -116,7 +118,7 @@
                (rx/with-latest-from ms/keyboard-shift ms/keyboard-mod)
                (rx/map
                 (fn [[_ shift? mod?]]
-                  (select-shapes-by-current-selrect shift? mod? (and shift? mod?) false)))))
+                  (select-shapes-by-current-selrect shift? mod? remove? false)))))
 
          (->> (rx/of (update-selrect nil))
               ;; We need the async so the current event finishes before updating the selrect

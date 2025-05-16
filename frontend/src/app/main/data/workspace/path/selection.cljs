@@ -45,7 +45,7 @@
         (update-in state [:workspace-local :edit-path id :hover-handlers] disj [index prefix])))))
 
 (defn select-node-area
-  [shift?]
+  [preserve? remove?]
   (ptk/reify ::select-node-area
     ptk/UpdateEvent
     (update [_ state]
@@ -63,7 +63,10 @@
             xform           (comp (filter #(not (= (:command %) :close-path)))
                                   (map (comp gpt/point :params))
                                   (filter selected-point?))
-            positions       (into (if shift? selected-points #{}) xform content)]
+            initial-set     (if preserve? selected-points #{})
+            positions       (if remove?
+                              (apply disj initial-set (into #{} xform content))
+                              (into initial-set xform content))]
 
         (cond-> state
           (some? id)
@@ -111,7 +114,7 @@
       (update state :workspace-local dissoc :selrect))))
 
 (defn handle-area-selection
-  [shift?]
+  [preserve? remove?]
   (letfn [(valid-rect? [zoom {width :width height :height}]
             (or (> width (/ 10 zoom)) (> height (/ 10 zoom))))]
 
@@ -128,7 +131,7 @@
                 (rx/map update-area-selection)
                 (rx/take-until stopper))
 
-           (rx/of (select-node-area shift?)
+           (rx/of (select-node-area preserve? remove?)
                   (clear-area-selection))))))))
 
 (defn update-selection
