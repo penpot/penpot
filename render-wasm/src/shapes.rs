@@ -938,7 +938,7 @@ mod tests {
 
         shape.add_fill(Fill::Solid(SolidColor(Color::TRANSPARENT)));
         assert_eq!(
-            shape.fills.get(0),
+            shape.fills.first(),
             Some(&Fill::Solid(SolidColor(Color::TRANSPARENT)))
         )
     }
@@ -958,7 +958,7 @@ mod tests {
                 ])
             );
         } else {
-            assert!(false);
+            unreachable!();
         }
     }
 
@@ -969,9 +969,9 @@ mod tests {
         shape.set_masked(true);
 
         if let Type::Group(Group { masked, .. }) = shape.shape_type {
-            assert_eq!(masked, true);
+            assert!(masked);
         } else {
-            assert!(false);
+            unreachable!()
         }
     }
 

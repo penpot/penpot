@@ -21,11 +21,13 @@ if [[ "$1" == "--fix" ]]; then
     cargo clippy \
         --fix --allow-dirty \
         --target=wasm32-unknown-emscripten \
+        --all-targets \
         -- -D warnings \
         $ALLOWED_RULES
 else
     cargo clippy \
         --target=wasm32-unknown-emscripten \
+        --all-targets \
         -- -D warnings \
         $ALLOWED_RULES
 fi
