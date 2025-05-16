@@ -267,7 +267,7 @@ fn initialize_tracks(
 }
 
 // Resize main axis fill
-fn distribute_fill_main_space(layout_axis: &LayoutAxis, tracks: &mut Vec<TrackData>) {
+fn distribute_fill_main_space(layout_axis: &LayoutAxis, tracks: &mut [TrackData]) {
     for track in tracks.iter_mut() {
         let mut left_space = layout_axis.main_space() - track.main_size;
         let mut to_resize_children: Vec<&mut ChildAxis> = Vec::new();
@@ -296,7 +296,7 @@ fn distribute_fill_main_space(layout_axis: &LayoutAxis, tracks: &mut Vec<TrackDa
     }
 }
 
-fn distribute_fill_across_space(layout_axis: &LayoutAxis, tracks: &mut Vec<TrackData>) {
+fn distribute_fill_across_space(layout_axis: &LayoutAxis, tracks: &mut [TrackData]) {
     let total_across_size = tracks.iter().map(|t| t.across_size).sum::<f32>()
         + (tracks.len() - 1) as f32 * layout_axis.gap_across;
     let mut left_space = layout_axis.across_space() - total_across_size;
@@ -342,7 +342,7 @@ fn distribute_fill_across_space(layout_axis: &LayoutAxis, tracks: &mut Vec<Track
 
 fn stretch_tracks_sizes(
     layout_axis: &LayoutAxis,
-    tracks: &mut Vec<TrackData>,
+    tracks: &mut [TrackData],
     total_across_size: f32,
 ) {
     let total_across_size = total_across_size + (tracks.len() - 1) as f32 * layout_axis.gap_across;
@@ -358,7 +358,7 @@ fn calculate_track_positions(
     layout_data: &LayoutData,
     layout_axis: &LayoutAxis,
     layout_bounds: &Bounds,
-    tracks: &mut Vec<TrackData>,
+    tracks: &mut [TrackData],
     total_across_size: f32,
 ) {
     let mut align_content = &layout_data.align_content;

@@ -44,7 +44,6 @@ ALLOWED_RULES="
         -A clippy::map_clone \
         -A clippy::macro-metavars-in-unsafe \
         -A clippy::match_like_matches_macro \
-        -A clippy::ptr_arg \
         -D static_mut_refs"
 
 # ./lint --fix
