@@ -109,7 +109,7 @@
                      (st/emit! (dd/start-drawing drawing-tool)))
 
                    (or (not id) mod?)
-                   (st/emit! (dw/handle-area-selection shift? (and shift? mod?)))
+                   (st/emit! (dw/handle-area-selection shift? (and shift? mod?) mod?))
 
                    (not drawing-tool)
                    (when-not read-only?
