@@ -14,6 +14,7 @@
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
+   [beicon.v2.operators :as rxo]
    [potok.v2.core :as ptk]))
 
 (defn path-pointer-enter [position]
@@ -125,16 +126,27 @@
               initial-set
               (if (or append? remove?)
                 (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
-                #{})]
-          (rx/concat
-           (->> ms/mouse-position
-                (rx/map #(grc/points->rect [from-p %]))
-                (rx/filter (partial valid-rect? zoom))
-                (rx/map update-area-selection)
-                (rx/take-until stopper))
+                #{})
 
-           (rx/of (select-node-area initial-set remove?)
-                  (clear-area-selection))))))))
+              selrect-stream
+              (->> ms/mouse-position
+                   (rx/map #(grc/points->rect [from-p %]))
+                   (rx/filter (partial valid-rect? zoom))
+                   (rx/take-until stopper))]
+
+          (rx/concat
+           (if (or append? remove?)
+             (rx/empty)
+             (rx/of (deselect-all)))
+           (rx/merge
+            (->> selrect-stream
+                 (rx/map update-area-selection))
+            (->> selrect-stream
+                 (rx/buffer-time 100)
+                 (rx/map last)
+                 (rx/pipe (rxo/distinct-contiguous))
+                 (rx/map #(select-node-area initial-set remove?))))
+           (rx/of (clear-area-selection))))))))
 
 (defn update-selection
   [point-change]
