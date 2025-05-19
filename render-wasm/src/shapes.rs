@@ -469,11 +469,8 @@ impl Shape {
         self.strokes.clear();
     }
 
-    pub fn set_path_segments(
-        &mut self,
-        buffer: Vec<crate::wasm::paths::RawPathData>,
-    ) -> Result<(), String> {
-        let path = Path::try_from(buffer)?;
+    pub fn set_path_segments(&mut self, segments: Vec<Segment>) {
+        let path = Path::new(segments);
 
         match &mut self.shape_type {
             Type::Bool(Bool { bool_type, .. }) => {
@@ -487,7 +484,6 @@ impl Shape {
             }
             _ => {}
         };
-        Ok(())
     }
 
     pub fn set_path_attr(&mut self, name: String, value: String) {

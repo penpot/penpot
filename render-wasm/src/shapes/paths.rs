@@ -19,7 +19,7 @@ pub struct Path {
 
 impl Default for Path {
     fn default() -> Self {
-        Path::try_from(Vec::new()).unwrap()
+        Self::new(vec![])
     }
 }
 
