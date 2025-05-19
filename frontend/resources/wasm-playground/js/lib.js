@@ -92,6 +92,74 @@ export function addShapeSolidFill(argb) {
   Module._add_shape_fill();
 }
 
+export function addShapeSolidStroleFill(argb) {
+  const ptr = allocBytes(160);
+  const heap = getHeapU32();
+  const dv = new DataView(heap.buffer);
+  dv.setUint8(ptr, 0x00, true);
+  dv.setUint32(ptr + 4, argb, true);
+  Module._add_shape_stroke_fill();
+}
+
+function serializePathAttrs(svgAttrs) {
+  return Object.entries(svgAttrs).reduce((acc, [key, value]) => {
+    return acc + key + '\0' + value + '\0';
+  }, '');
+}
+
+export function draw_star(x, y, width, height) {
+  const len = 11; // 1 MOVE + 9 LINE + 1 CLOSE 
+  const ptr = allocBytes(len * 28);
+  const heap = getHeapU32();
+  const dv = new DataView(heap.buffer);
+
+  const cx = x + width / 2;
+  const cy = y + height / 2;
+  const outerRadius = Math.min(width, height) / 2;
+  const innerRadius = outerRadius * 0.4;
+
+  const star = [];
+  for (let i = 0; i < 10; i++) {
+    const angle = Math.PI / 5 * i - Math.PI / 2;
+    const r = i % 2 === 0 ? outerRadius : innerRadius;
+    const px = cx + r * Math.cos(angle);
+    const py = cy + r * Math.sin(angle);
+    star.push([px, py]);
+  }
+
+  let offset = 0;
+
+  // MOVE to first point
+  dv.setUint16(ptr + offset + 0, 1, true); // MOVE
+  dv.setFloat32(ptr + offset + 20, star[0][0], true);
+  dv.setFloat32(ptr + offset + 24, star[0][1], true);
+  offset += 28;
+
+  // LINE to remaining points
+  for (let i = 1; i < star.length; i++) {
+    dv.setUint16(ptr + offset + 0, 2, true); // LINE
+    dv.setFloat32(ptr + offset + 20, star[i][0], true);
+    dv.setFloat32(ptr + offset + 24, star[i][1], true);
+    offset += 28;
+  }
+
+  // CLOSE the path
+  dv.setUint16(ptr + offset + 0, 4, true); // CLOSE
+
+  Module._set_shape_path_content();
+
+  const str = serializePathAttrs({
+    "fill": "none",
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+  });
+  const size = str.length;
+  offset = allocBytes(size);
+  Module.stringToUTF8(str, offset, size);
+  Module._set_shape_path_attrs(3);
+}
+  
+
 export function setShapeChildren(shapeIds) {
   const offset = allocBytes(shapeIds.length * 16);
   const heap = getHeapU32();

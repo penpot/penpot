@@ -26,7 +26,8 @@
     import initWasmModule from '/js/render_wasm.js';
     import {
       init, addShapeSolidFill, assignCanvas, hexToU32ARGB, getRandomInt, getRandomColor,
-      getRandomFloat, useShape, setShapeChildren, setupInteraction, addShapeSolidStroleFill
+      getRandomFloat, useShape, setShapeChildren, setupInteraction, set_parent, draw_star,
+      addShapeSolidStroleFill
     } from './js/lib.js';
 
     const canvas = document.getElementById("canvas");
@@ -49,12 +50,13 @@
 
         useShape(uuid);
         Module._set_parent(0, 0, 0, 0);
-        Module._set_shape_type(3);
+        Module._set_shape_type(4);
         const x1 = getRandomInt(0, canvas.width);
         const y1 = getRandomInt(0, canvas.height);
-        const width = getRandomInt(20, 100);
-        const height = getRandomInt(20, 100);
+        const width = getRandomInt(20, 200);
+        const height = getRandomInt(20, 200);
         Module._set_shape_selrect(x1, y1, x1 + width, y1 + height);
+        draw_star(x1, y1, width, height);
 
         const color = getRandomColor();
         const argb = hexToU32ARGB(color, getRandomFloat(0.1, 1.0));
@@ -62,7 +64,8 @@
 
         Module._add_shape_center_stroke(10, 0,  0, 0);
         const argb2 = hexToU32ARGB(color, getRandomFloat(0.1, 1.0));
-        addShapeSolidStroleFill(argb2);        
+        addShapeSolidStroleFill(argb2);
+
       }
 
       useShape("00000000-0000-0000-0000-000000000000");
