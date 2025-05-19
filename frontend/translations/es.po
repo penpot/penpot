@@ -2092,6 +2092,30 @@ msgstr "Ocultar comentarios resueltos"
 msgid "labels.import"
 msgstr "Importar"
 
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:116
+msgid "workspace.token.import-tokens"
+msgstr "Import tokens"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:121
+msgid "workspace.token.import-single-file"
+msgstr "En un archivo JSON único, las claves de primer nivel deben ser los nombres de los sets de tokens."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:122
+msgid "workspace.token.import-multiple-files"
+msgstr "En multiples archivos, el nombre o la ruta del archivo serán los nombres de los sets."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:127
+msgid "workspace.token.import-warning"
+msgstr "Al importar tokens sobreescribirás todos tus tokens, sets y themes."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:149
+msgid "workspace.token.choose-file"
+msgstr "Elige archivo"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:155
+msgid "workspace.token.choose-folder"
+msgstr "Elige carpeta"
+
 #: src/app/main/ui/dashboard/team.cljs:1018
 msgid "labels.inactive"
 msgstr "Inactivo"

@@ -284,6 +284,7 @@
     (when name-error?
       (wte/error-ex-info :error.import/invalid-token-name (:value schema-error) err))))
 
+
 (defn- group-by-value [m]
   (reduce (fn [acc [k v]]
             (update acc v conj k)) {} m))
@@ -297,46 +298,50 @@
                :type :toast
                :level :info})))
 
+(defn parse-json [data]
+  (try
+    (t/decode-str data)
+    (catch js/Error e
+      (throw (wte/error-ex-info :error.import/json-parse-error data e)))))
+
+(defn decode-json-data [data file-name]
+  (let [single-set? (ctob/single-set? data)
+        json-format (ctob/get-json-format data)
+        unknown-tokens (ctob/get-tokens-of-unknown-type
+                        data
+                        ""
+                        (= json-format :json-format/dtcg))]
+    {:tokens-lib
+     (try
+       (cond
+         (and single-set?
+              (= :json-format/legacy json-format))
+         (decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) file-name data)
+
+         (and single-set?
+              (= :json-format/dtcg json-format))
+         (decode-single-set-json (ctob/ensure-tokens-lib nil) file-name data)
+
+         (= :json-format/legacy json-format)
+         (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) data)
+
+         :else
+         (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) data))
+
+       (catch js/Error e
+         (let [err (or (name-error e)
+                       (wte/error-ex-info :error.import/invalid-json-data data e))]
+           (throw err))))
+     :unknown-tokens unknown-tokens}))
+
 (defn process-json-stream
   ([data-stream]
    (process-json-stream nil data-stream))
   ([params data-stream]
    (let [{:keys [file-name]} params]
      (->> data-stream
-          (rx/map (fn [data]
-                    (try
-                      (t/decode-str data)
-                      (catch js/Error e
-                        (throw (wte/error-ex-info :error.import/json-parse-error data e))))))
-          (rx/map (fn [json-data]
-                    (let [single-set? (ctob/single-set? json-data)
-                          json-format (ctob/get-json-format json-data)
-                          unknown-tokens (ctob/get-tokens-of-unknown-type
-                                          json-data
-                                          ""
-                                          (= json-format :json-format/dtcg))]
-                      {:tokens-lib
-                       (try
-                         (cond
-                           (and single-set?
-                                (= :json-format/legacy json-format))
-                           (decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) file-name json-data)
-
-                           (and single-set?
-                                (= :json-format/dtcg json-format))
-                           (decode-single-set-json (ctob/ensure-tokens-lib nil) file-name json-data)
-
-                           (= :json-format/legacy json-format)
-                           (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data)
-
-                           :else
-                           (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data))
-
-                         (catch js/Error e
-                           (let [err (or (name-error e)
-                                         (wte/error-ex-info :error.import/invalid-json-data json-data e))]
-                             (throw err))))
-                       :unknown-tokens unknown-tokens})))
+          (rx/map parse-json)
+          (rx/map #(decode-json-data % file-name))
           (rx/mapcat (fn [{:keys [tokens-lib unknown-tokens]}]
                        (when unknown-tokens
                          (st/emit! (tokens-of-unknown-type-warning unknown-tokens)))
