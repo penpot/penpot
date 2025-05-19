@@ -31,4 +31,9 @@ else
         -- -D warnings \
         $ALLOWED_RULES
 fi
+
+RESULT=$?
+
 popd
+
+exit $RESULT
