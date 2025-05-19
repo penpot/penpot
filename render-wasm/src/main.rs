@@ -345,20 +345,6 @@ pub extern "C" fn set_shape_blur(blur_type: u8, hidden: bool, value: f32) {
     });
 }
 
-#[no_mangle]
-pub extern "C" fn set_shape_path_content() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let bytes = mem::bytes();
-        let raw_segments = bytes
-            .chunks(size_of::<shapes::RawPathData>())
-            .map(|data| shapes::RawPathData {
-                data: data.try_into().unwrap(),
-            })
-            .collect();
-        shape.set_path_segments(raw_segments).unwrap();
-    });
-}
-
 // Extracts a string from the bytes slice until the next null byte (0) and returns the result as a `String`.
 // Updates the `start` index to the end of the extracted string.
 fn extract_string(start: &mut usize, bytes: &[u8]) -> String {

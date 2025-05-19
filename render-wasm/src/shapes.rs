@@ -469,7 +469,10 @@ impl Shape {
         self.strokes.clear();
     }
 
-    pub fn set_path_segments(&mut self, buffer: Vec<RawPathData>) -> Result<(), String> {
+    pub fn set_path_segments(
+        &mut self,
+        buffer: Vec<crate::wasm::paths::RawPathData>,
+    ) -> Result<(), String> {
         let path = Path::try_from(buffer)?;
 
         match &mut self.shape_type {
