@@ -127,6 +127,12 @@ You will find the following categories:
 </p>
 <br />
 
+### Code of Conduct ###
+
+Anyone who contributes to Penpot, whether through code, in the community, or at an event, must adhere to the
+[code of conduct](https://help.penpot.app/contributing-guide/coc/) and foster a positive and safe environment.
+
+
 ## Contributing ##
 
 Any contribution will make a difference to improve Penpot. How can you get involved?
