@@ -107,7 +107,7 @@
   [font-id font-variant-id]
   (let [variant (font-db-data font-id font-variant-id)]
     (if-let [ttf-url (:ttf-url variant)]
-      (str/replace ttf-url "http://fonts.gstatic.com/s/" (u/join cf/public-uri "/internal/gfonts/font/"))
+      (str/replace ttf-url "https://fonts.gstatic.com/s/" (u/join cf/public-uri "/internal/gfonts/font/"))
       nil)))
 
 (defn- font-id->ttf-url
