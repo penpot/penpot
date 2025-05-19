@@ -1,4 +1,4 @@
-import * as penpot from "../target/library/penpot.js";
+import * as penpot from "#self";
 import { writeFile, readFile } from 'fs/promises';
 import { createWriteStream } from 'fs';
 import { Writable } from "stream";

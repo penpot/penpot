@@ -35,7 +35,7 @@
        :enumerable true
        :this false
        :get (fn [] cause)}
-      {:name "data"
+      {:name "explain"
        :enumerable true
        :this false
        :get (fn []
@@ -68,7 +68,7 @@
 
 (defn- create-builder-api
   [state]
-  (obj/reify {:name "File"}
+  (obj/reify {:name "BuildContext"}
     :currentFileId
     {:get #(dm/str (get @state ::fb/current-file-id))}
 
@@ -275,8 +275,11 @@
 
     :genId
     (fn []
-      (dm/str (uuid/next)))))
+      (dm/str (uuid/next)))
 
+    :getInternalState
+    (fn []
+      (json/->js @state))))
 
 (defn create-build-context
   "Create an empty builder state context."

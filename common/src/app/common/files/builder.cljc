@@ -125,7 +125,8 @@
    [:path {:optional true} ::sm/text]])
 
 (def ^:private check-add-component
-  (sm/check-fn schema:add-component))
+  (sm/check-fn schema:add-component
+               :hint "invalid arguments passed for add-component"))
 
 (def decode-add-component
   (sm/decode-fn schema:add-component sm/json-transformer))
@@ -136,7 +137,8 @@
    [:file-id {:optional true} ::sm/uuid]])
 
 (def ^:private check-add-component-instance
-  (sm/check-fn schema:add-component-instance))
+  (sm/check-fn schema:add-component-instance
+               :hint "invalid arguments passed for add-component-instance"))
 
 (def decode-add-component-instance
   (sm/decode-fn schema:add-component-instance sm/json-transformer))
@@ -196,7 +198,8 @@
   [state params]
   (let [params (-> params
                    (assoc :features cfeat/default-features)
-                   (assoc :migrations fmig/available-migrations))
+                   (assoc :migrations fmig/available-migrations)
+                   (update :id default-uuid))
         file   (types.file/make-file params :create-page false)]
     (-> state
         (update ::files assoc (:id file) file)
@@ -390,16 +393,14 @@
 (defn add-component
   [state params]
   (let [{:keys [component-id file-id name path]}
-        (check-add-component params)
+        (-> (check-add-component params)
+            (update :component-id default-uuid))
 
         frame-id
         (get state ::current-frame-id)
 
         page-id
         (get state ::current-page-id)
-
-        component-id
-        (or component-id (uuid/next))
 
         change1
         (d/without-nils
@@ -485,7 +486,7 @@
   [state guide]
   (let [guide (cond-> guide
                 (nil? (:id guide))
-                (assoc :id (uuid/next)))
+                (update :id default-uuid))
         page-id (::current-page-id state)]
     (-> state
         (commit-change
