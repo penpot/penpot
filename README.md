@@ -93,10 +93,9 @@ With Penpot’s standardized [design tokens](https://penpot.dev/collaboration/de
 
 ## Getting started ##
 
-### Install with Elestio ###
-Penpot is the only design & prototype platform that is deployment agnostic. You can use it or deploy it anywhere.
+Penpot is the only design & prototype platform that is deployment agnostic. You can use it in our [SAAS](https://design.penpot.app) or deploy it anywhere.
 
-Learn how to install it with Elestio and Docker, or other options on [our website](https://penpot.app/self-host).
+Learn how to install it with Docker, Kubernetes, Elestio or other options on [our website](https://penpot.app/self-host).
 <br />
 
 <p align="center">
