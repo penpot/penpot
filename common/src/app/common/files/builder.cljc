@@ -122,7 +122,9 @@
    [:component-id ::sm/uuid]
    [:file-id {:optional true} ::sm/uuid]
    [:name {:optional true} ::sm/text]
-   [:path {:optional true} ::sm/text]])
+   [:path {:optional true} ::sm/text]
+   [:frame-id {:optional true} ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]])
 
 (def ^:private check-add-component
   (sm/check-fn schema:add-component
@@ -134,7 +136,9 @@
 (def schema:add-component-instance
   [:map
    [:component-id ::sm/uuid]
-   [:file-id {:optional true} ::sm/uuid]])
+   [:file-id {:optional true} ::sm/uuid]
+   [:frame-id {:optional true} ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]])
 
 (def ^:private check-add-component-instance
   (sm/check-fn schema:add-component-instance
@@ -392,15 +396,18 @@
 
 (defn add-component
   [state params]
-  (let [{:keys [component-id file-id name path]}
+  (let [{:keys [component-id file-id page-id frame-id name path]}
         (-> (check-add-component params)
             (update :component-id default-uuid))
 
-        frame-id
-        (get state ::current-frame-id)
+        file-id
+        (or file-id (::current-file-id state))
 
         page-id
-        (get state ::current-page-id)
+        (or page-id (get state ::current-page-id))
+
+        frame-id
+        (or frame-id (get state ::current-frame-id))
 
         change1
         (d/without-nils
@@ -414,8 +421,10 @@
         change2
         {:type :mod-obj
          :id frame-id
+         :page-id page-id
          :operations
          [{:type :set :attr :component-root :val true}
+          {:type :set :attr :main-instance :val true}
           {:type :set :attr :component-id :val component-id}
           {:type :set :attr :component-file :val file-id}]}]
 
@@ -423,23 +432,28 @@
         (commit-change change1)
         (commit-change change2))))
 
+
 (defn add-component-instance
   [state params]
 
-  (let [{:keys [component-id file-id]}
+  (let [{:keys [component-id file-id frame-id page-id]}
         (check-add-component-instance params)
 
         file-id
         (or file-id (get state ::current-file-id))
 
         frame-id
-        (get state ::current-frame-id)
+        (or frame-id (get state ::current-frame-id))
+
+        page-id
+        (or page-id (get state ::current-page-id))
 
         change
         {:type :mod-obj
          :id frame-id
+         :page-id page-id
          :operations
-         [{:type :set :attr :component-root :val false}
+         [{:type :set :attr :component-root :val true}
           {:type :set :attr :component-id :val component-id}
           {:type :set :attr :component-file :val file-id}]}]
 
