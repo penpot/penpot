@@ -144,7 +144,7 @@
             changes    (-> (pcb/empty-changes it page-id)
                            (pcb/with-library-data data)
                            (pcb/with-objects objects)
-                           (clvp/generate-error component-id value))
+                           (clvp/generate-set-variant-error component-id value))
             undo-id    (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)

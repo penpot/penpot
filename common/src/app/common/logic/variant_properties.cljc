@@ -60,7 +60,7 @@
         (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
 
 
-(defn generate-error
+(defn generate-set-variant-error
   [changes component-id value]
   (let [data      (pcb/get-library-data changes)
         component (ctcl/get-component data component-id true)
