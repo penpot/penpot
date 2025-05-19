@@ -312,26 +312,23 @@ pub struct FlexData {
 
 impl FlexData {
     pub fn is_reverse(&self) -> bool {
-        match &self.direction {
-            FlexDirection::RowReverse | FlexDirection::ColumnReverse => true,
-            _ => false,
-        }
+        matches!(
+            &self.direction,
+            FlexDirection::RowReverse | FlexDirection::ColumnReverse
+        )
     }
 
     pub fn is_row(&self) -> bool {
-        match &self.direction {
-            FlexDirection::RowReverse | FlexDirection::Row => true,
-            _ => false,
-        }
+        matches!(
+            &self.direction,
+            FlexDirection::RowReverse | FlexDirection::Row
+        )
     }
 }
 
 impl FlexData {
     pub fn is_wrap(&self) -> bool {
-        match self.wrap_type {
-            WrapType::Wrap => true,
-            _ => false,
-        }
+        matches!(self.wrap_type, WrapType::Wrap)
     }
 }
 

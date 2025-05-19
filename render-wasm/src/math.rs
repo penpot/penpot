@@ -64,7 +64,7 @@ impl Bounds {
         Self { nw, ne, se, sw }
     }
 
-    pub fn join_bounds(bounds: &Vec<&Bounds>) -> Self {
+    pub fn join_bounds(bounds: &[&Bounds]) -> Self {
         let (min_x, min_y, max_x, max_y) =
             bounds
                 .iter()
@@ -133,11 +133,13 @@ impl Bounds {
         self.sw = mtx.map_point(self.sw);
     }
 
+    // FIXME: this looks like this should be a try_from static method or similar
     pub fn box_bounds(&self, other: &Self) -> Option<Self> {
-        self.from_points(other.points())
+        self.with_points(other.points())
     }
 
-    pub fn from_points(&self, points: Vec<Point>) -> Option<Self> {
+    // FIXME: this looks like this should be a try_from static method or similar
+    pub fn with_points(&self, points: Vec<Point>) -> Option<Self> {
         let hv = self.horizontal_vec();
         let vv = self.vertical_vec();
 
@@ -312,17 +314,17 @@ impl Bounds {
 
     // TODO: Probably we can improve performance here removing the access
     pub fn flip_x(&self) -> bool {
-        let m = self.transform_matrix().unwrap_or(Matrix::default());
+        let m = self.transform_matrix().unwrap_or_default();
         m.scale_x() < 0.0
     }
 
     // TODO: Probably we can improve performance here removing the access
     pub fn flip_y(&self) -> bool {
-        let m = self.transform_matrix().unwrap_or(Matrix::default());
+        let m = self.transform_matrix().unwrap_or_default();
         m.scale_y() < 0.0
     }
 
-    pub fn to_rect(&self) -> Rect {
+    pub fn to_rect(self) -> Rect {
         Rect::from_ltrb(self.min_x(), self.min_y(), self.max_x(), self.max_y())
     }
 
@@ -387,11 +389,7 @@ pub fn intersect_rays_t(ray1: &Ray, ray2: &Ray) -> Option<f32> {
 }
 
 pub fn intersect_rays(ray1: &Ray, ray2: &Ray) -> Option<Point> {
-    if let Some(t) = intersect_rays_t(ray1, ray2) {
-        Some(ray1.t(t))
-    } else {
-        None
-    }
+    intersect_rays_t(ray1, ray2).map(|t| ray1.t(t))
 }
 
 /*
@@ -409,9 +407,7 @@ pub fn resize_matrix(
     let scale_height = new_height / child_bounds.height();
 
     let center = child_bounds.center();
-    let mut parent_transform = parent_bounds
-        .transform_matrix()
-        .unwrap_or(Matrix::default());
+    let mut parent_transform = parent_bounds.transform_matrix().unwrap_or_default();
 
     parent_transform.post_translate(center);
     parent_transform.pre_translate(-center);
@@ -423,7 +419,7 @@ pub fn resize_matrix(
     scale.post_translate(origin);
     scale.post_concat(&parent_transform);
     scale.pre_translate(-origin);
-    scale.pre_concat(&parent_transform_inv);
+    scale.pre_concat(parent_transform_inv);
     result.post_concat(&scale);
     result
 }

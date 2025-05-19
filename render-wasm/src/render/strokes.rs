@@ -7,6 +7,8 @@ use skia_safe::{self as skia, ImageFilter, RRect};
 
 use super::{RenderState, SurfaceId};
 
+// FIXME: See if we can simplify these arguments
+#[allow(clippy::too_many_arguments)]
 fn draw_stroke_on_rect(
     canvas: &skia::Canvas,
     stroke: &Stroke,
@@ -36,11 +38,13 @@ fn draw_stroke_on_rect(
             canvas.draw_rrect(rrect, &paint);
         }
         None => {
-            canvas.draw_rect(&stroke_rect, &paint);
+            canvas.draw_rect(stroke_rect, &paint);
         }
     }
 }
 
+// FIXME: See if we can simplify these arguments
+#[allow(clippy::too_many_arguments)]
 fn draw_stroke_on_circle(
     canvas: &skia::Canvas,
     stroke: &Stroke,
@@ -62,9 +66,11 @@ fn draw_stroke_on_circle(
         paint.set_image_filter(filter.clone());
     }
 
-    canvas.draw_oval(&stroke_rect, &paint);
+    canvas.draw_oval(stroke_rect, &paint);
 }
 
+// FIXME: See if we can simplify these arguments
+#[allow(clippy::too_many_arguments)]
 pub fn draw_stroke_on_path(
     canvas: &skia::Canvas,
     stroke: &Stroke,
@@ -90,18 +96,18 @@ pub fn draw_stroke_on_path(
     // Draw the different kind of strokes for a path requires different strategies:
     match stroke.render_kind(is_open) {
         // For inner stroke we draw a center stroke (with double width) and clip to the original path (that way the extra outer stroke is removed)
-        StrokeKind::InnerStroke => {
+        StrokeKind::Inner => {
             canvas.save(); // As we are using clear for surfaces we use save and restore here to still be able to clean the full surface
             canvas.clip_path(&skia_path, skia::ClipOp::Intersect, antialias);
             canvas.draw_path(&skia_path, &paint);
             canvas.restore();
         }
         // For center stroke we don't need to do anything extra
-        StrokeKind::CenterStroke => {
+        StrokeKind::Center => {
             canvas.draw_path(&skia_path, &paint);
         }
         // For outer stroke we draw a center stroke (with double width) and use another path with blend mode clear to remove the inner stroke added
-        StrokeKind::OuterStroke => {
+        StrokeKind::Outer => {
             let mut outer_paint = skia::Paint::default();
             outer_paint.set_blend_mode(skia::BlendMode::SrcOver);
             outer_paint.set_anti_alias(antialias);
@@ -121,7 +127,7 @@ pub fn draw_stroke_on_path(
     handle_stroke_caps(
         &mut skia_path,
         stroke,
-        &selrect,
+        selrect,
         canvas,
         is_open,
         svg_attrs,
@@ -144,31 +150,33 @@ fn handle_stroke_cap(
         StrokeCap::None => {}
         StrokeCap::Line => {
             // We also draw this square cap to fill the gap between the path and the arrow
-            draw_square_cap(canvas, &paint, p1, p2, width, 0.);
+            draw_square_cap(canvas, paint, p1, p2, width, 0.);
             paint.set_style(skia::PaintStyle::Stroke);
-            draw_arrow_cap(canvas, &paint, p1, p2, width * 4.);
+            draw_arrow_cap(canvas, paint, p1, p2, width * 4.);
         }
         StrokeCap::Triangle => {
-            draw_triangle_cap(canvas, &paint, p1, p2, width * 4.);
+            draw_triangle_cap(canvas, paint, p1, p2, width * 4.);
         }
         StrokeCap::Rectangle => {
-            draw_square_cap(canvas, &paint, p1, p2, width * 4., 0.);
+            draw_square_cap(canvas, paint, p1, p2, width * 4., 0.);
         }
         StrokeCap::Circle => {
-            canvas.draw_circle((p1.x, p1.y), width * 2., &paint);
+            canvas.draw_circle((p1.x, p1.y), width * 2., paint);
         }
         StrokeCap::Diamond => {
-            draw_square_cap(canvas, &paint, p1, p2, width * 4., 45.);
+            draw_square_cap(canvas, paint, p1, p2, width * 4., 45.);
         }
         StrokeCap::Round => {
-            canvas.draw_circle((p1.x, p1.y), width / 2.0, &paint);
+            canvas.draw_circle((p1.x, p1.y), width / 2.0, paint);
         }
         StrokeCap::Square => {
-            draw_square_cap(canvas, &paint, p1, p2, width, 0.);
+            draw_square_cap(canvas, paint, p1, p2, width, 0.);
         }
     }
 }
 
+// FIXME: See if we can simplify these arguments
+#[allow(clippy::too_many_arguments)]
 fn handle_stroke_caps(
     path: &mut skia::Path,
     stroke: &Stroke,
@@ -238,7 +246,7 @@ fn draw_square_cap(
         Point::new(rect.left(), rect.bottom()),
     ];
 
-    let mut transformed_points = points.clone();
+    let mut transformed_points = points;
     matrix.map_points(&mut transformed_points, &points);
 
     let mut path = skia::Path::new();
@@ -272,7 +280,7 @@ fn draw_arrow_cap(
         Point::new(center.x + size, center.y + half_height),
     ];
 
-    let mut transformed_points = points.clone();
+    let mut transformed_points = points;
     matrix.map_points(&mut transformed_points, &points);
 
     let mut path = skia::Path::new();
@@ -306,7 +314,7 @@ fn draw_triangle_cap(
         Point::new(center.x + size, center.y + half_height),
     ];
 
-    let mut transformed_points = points.clone();
+    let mut transformed_points = points;
     matrix.map_points(&mut transformed_points, &points);
 
     let mut path = skia::Path::new();
@@ -406,11 +414,11 @@ fn draw_image_stroke_in_container(
                 path.transform(&path_transform.unwrap());
                 let stroke_kind = stroke.render_kind(p.is_open());
                 match stroke_kind {
-                    StrokeKind::InnerStroke => {
+                    StrokeKind::Inner => {
                         canvas.clip_path(&path, skia::ClipOp::Intersect, antialias);
                     }
-                    StrokeKind::CenterStroke => {}
-                    StrokeKind::OuterStroke => {
+                    StrokeKind::Center => {}
+                    StrokeKind::Outer => {
                         canvas.clip_path(&path, skia::ClipOp::Difference, antialias);
                     }
                 }
@@ -418,7 +426,7 @@ fn draw_image_stroke_in_container(
                 let mut paint =
                     stroke.to_stroked_paint(is_open, &outer_rect, svg_attrs, scale, antialias);
                 canvas.draw_path(&path, &paint);
-                if stroke.render_kind(is_open) == StrokeKind::OuterStroke {
+                if stroke.render_kind(is_open) == StrokeKind::Outer {
                     // Small extra inner stroke to overlap with the fill
                     // and avoid unnecesary artifacts.
                     paint.set_stroke_width(1. / scale);
@@ -461,7 +469,7 @@ fn draw_image_stroke_in_container(
 
     // Clear outer stroke for paths if necessary. When adding an outer stroke we need to empty the stroke added too in the inner area.
     if let Type::Path(p) = &shape.shape_type {
-        if stroke.render_kind(p.is_open()) == StrokeKind::OuterStroke {
+        if stroke.render_kind(p.is_open()) == StrokeKind::Outer {
             let mut path = p.to_skia_path();
             path.transform(&path_transform.unwrap());
             let mut clear_paint = skia::Paint::default();
@@ -494,7 +502,7 @@ pub fn render(
     let path_transform = shape.to_path_transform();
     let svg_attrs = &shape.svg_attrs;
 
-    if !shadow.is_some() && matches!(stroke.fill, Fill::Image(_)) {
+    if shadow.is_none() && matches!(stroke.fill, Fill::Image(_)) {
         if let Fill::Image(image_fill) = &stroke.fill {
             draw_image_stroke_in_container(render_state, shape, stroke, image_fill, antialias);
         }

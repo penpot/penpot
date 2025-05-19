@@ -120,16 +120,14 @@ pub fn propagate_shape_constraints(
     if let Some((scale_width, scale_height)) = calculate_resize(
         constraint_h,
         constraint_v,
-        &parent_bounds_before,
-        &parent_bounds_after,
-        &child_bounds_before,
+        parent_bounds_before,
+        parent_bounds_after,
+        child_bounds_before,
         &child_bounds_after,
     ) {
         let center = child_bounds_before.center();
 
-        let mut parent_transform = parent_bounds_after
-            .transform_matrix()
-            .unwrap_or(Matrix::default());
+        let mut parent_transform = parent_bounds_after.transform_matrix().unwrap_or_default();
         parent_transform.post_translate(center);
         parent_transform.pre_translate(-center);
 
@@ -140,7 +138,7 @@ pub fn propagate_shape_constraints(
         scale.post_translate(origin);
         scale.post_concat(&parent_transform);
         scale.pre_translate(-origin);
-        scale.pre_concat(&parent_transform_inv);
+        scale.pre_concat(parent_transform_inv);
 
         child_bounds_after.transform_mut(&scale);
         transform.post_concat(&scale);
@@ -150,9 +148,9 @@ pub fn propagate_shape_constraints(
     if let Some((delta_x, delta_y)) = calculate_displacement(
         constraint_h,
         constraint_v,
-        &parent_bounds_before,
-        &parent_bounds_after,
-        &child_bounds_before,
+        parent_bounds_before,
+        parent_bounds_after,
+        child_bounds_before,
         &child_bounds_after,
     ) {
         let th = parent_bounds_after.hv(delta_x);

@@ -1,18 +1,9 @@
 use crate::options;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub struct RenderOptions {
     pub flags: u32,
     pub dpr: Option<f32>,
-}
-
-impl Default for RenderOptions {
-    fn default() -> Self {
-        Self {
-            flags: 0x00,
-            dpr: None,
-        }
-    }
 }
 
 impl RenderOptions {

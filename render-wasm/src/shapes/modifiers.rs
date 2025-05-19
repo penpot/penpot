@@ -25,7 +25,7 @@ fn propagate_children(
 ) -> VecDeque<Modifier> {
     let children_ids = modified_children_ids(shape, structure.get(&shape.id));
 
-    if children_ids.len() == 0 || identitish(transform) {
+    if children_ids.is_empty() || identitish(transform) {
         return VecDeque::new();
     }
 
@@ -67,8 +67,8 @@ fn propagate_children(
         };
 
         let transform = constraints::propagate_shape_constraints(
-            &parent_bounds_before,
-            &parent_bounds_after,
+            parent_bounds_before,
+            parent_bounds_after,
             &child_bounds,
             constraint_h,
             constraint_v,
@@ -87,7 +87,7 @@ fn calculate_group_bounds(
     bounds: &HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Option<Bounds> {
-    let shape_bounds = bounds.find(&shape);
+    let shape_bounds = bounds.find(shape);
     let mut result = Vec::<Point>::new();
 
     let children_ids = modified_children_ids(shape, structure.get(&shape.id));
@@ -100,12 +100,12 @@ fn calculate_group_bounds(
         result.append(&mut child_bounds.points());
     }
 
-    shape_bounds.from_points(result)
+    shape_bounds.with_points(result)
 }
 
 pub fn propagate_modifiers(
     state: &State,
-    modifiers: &Vec<TransformEntry>,
+    modifiers: &[TransformEntry],
 ) -> (Vec<TransformEntry>, HashMap<Uuid, Bounds>) {
     let shapes = &state.shapes;
 
@@ -115,7 +115,7 @@ pub fn propagate_modifiers(
         .map(|entry| Modifier::Transform(entry.clone()))
         .collect();
 
-    for (id, _) in &state.structure {
+    for id in state.structure.keys() {
         if id != &Uuid::nil() {
             entries.push_back(Modifier::Reflow(*id));
         }
@@ -140,7 +140,7 @@ pub fn propagate_modifiers(
                         continue;
                     };
 
-                    let shape_bounds_before = bounds.find(&shape);
+                    let shape_bounds_before = bounds.find(shape);
                     let mut shape_bounds_after = shape_bounds_before.transform(&entry.transform);
 
                     let mut transform = entry.transform;
@@ -176,9 +176,7 @@ pub fn propagate_modifiers(
 
                     bounds.insert(shape.id, shape_bounds_after);
 
-                    let default_matrix = Matrix::default();
-                    let mut shape_modif =
-                        modifiers.get(&shape.id).unwrap_or(&default_matrix).clone();
+                    let mut shape_modif = modifiers.get(&shape.id).copied().unwrap_or_default();
                     shape_modif.post_concat(&transform);
                     modifiers.insert(shape.id, shape_modif);
 
@@ -230,7 +228,7 @@ pub fn propagate_modifiers(
                             let children_ids =
                                 modified_children_ids(shape, state.structure.get(&shape.id));
                             if let Some(child) = shapes.get(&children_ids[0]) {
-                                let child_bounds = bounds.find(&child);
+                                let child_bounds = bounds.find(child);
                                 bounds.insert(shape.id, child_bounds);
                                 reflow_parent = true;
                             }
@@ -269,11 +267,11 @@ pub fn propagate_modifiers(
         }
 
         for id in layout_reflows.iter() {
-            if reflown.contains(&id) {
+            if reflown.contains(id) {
                 continue;
             }
 
-            let Some(shape) = state.shapes.get(&id) else {
+            let Some(shape) = state.shapes.get(id) else {
                 continue;
             };
 

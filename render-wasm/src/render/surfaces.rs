@@ -105,7 +105,7 @@ impl Surfaces {
         let encoded_image = image
             .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
             .unwrap();
-        general_purpose::STANDARD.encode(&encoded_image.as_bytes())
+        general_purpose::STANDARD.encode(encoded_image.as_bytes())
     }
 
     pub fn base64_snapshot_rect(&mut self, id: SurfaceId, irect: skia::IRect) -> Option<String> {
@@ -115,7 +115,7 @@ impl Surfaces {
             let encoded_image = image
                 .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
                 .unwrap();
-            return Some(general_purpose::STANDARD.encode(&encoded_image.as_bytes()));
+            return Some(general_purpose::STANDARD.encode(encoded_image.as_bytes()));
         }
         None
     }
@@ -137,7 +137,7 @@ impl Surfaces {
             .draw(self.canvas(to), (0.0, 0.0), sampling_options, paint);
     }
 
-    pub fn apply_mut(&mut self, ids: &[SurfaceId], mut f: impl FnMut(&mut skia::Surface) -> ()) {
+    pub fn apply_mut(&mut self, ids: &[SurfaceId], mut f: impl FnMut(&mut skia::Surface)) {
         for id in ids {
             let surface = self.get_mut(*id);
             f(surface);
@@ -257,10 +257,10 @@ impl Surfaces {
             self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
         );
 
-        if let Some(snapshot) = self.current.image_snapshot_with_bounds(&rect) {
+        if let Some(snapshot) = self.current.image_snapshot_with_bounds(rect) {
             self.tiles.add(tile, snapshot.clone());
             self.cache.canvas().draw_image_rect(
-                &snapshot.clone(),
+                snapshot.clone(),
                 None,
                 tile_rect,
                 &skia::Paint::default(),
@@ -302,7 +302,7 @@ impl TileTextureCache {
     }
 
     pub fn has(&mut self, tile: Tile) -> bool {
-        return self.grid.contains_key(&tile);
+        self.grid.contains_key(&tile)
     }
 
     fn remove_list(&mut self, marked: Vec<Tile>) {
@@ -318,7 +318,7 @@ impl TileTextureCache {
                 .iter_mut()
                 .filter_map(|(tile, _)| {
                     if !self.visited.contains_key(tile) {
-                        Some(tile.clone())
+                        Some(*tile)
                     } else {
                         None
                     }

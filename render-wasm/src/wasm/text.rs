@@ -49,17 +49,13 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
         if let Type::Text(content) = &shape.shape_type {
             let paragraphs = content.get_skia_paragraphs(font_col);
             height = auto_height(&paragraphs).ceil();
-            match content.grow_type() {
-                GrowType::AutoWidth => {
-                    width = auto_width(&paragraphs).ceil();
-                }
-                _ => {}
+            if content.grow_type() == GrowType::AutoWidth {
+                width = auto_width(&paragraphs).ceil();
             }
         }
     });
 
-    let mut bytes = Vec::<u8>::with_capacity(8);
-    bytes.resize(8, 0);
+    let mut bytes = vec![0; 8];
     bytes[0..4].clone_from_slice(&width.to_le_bytes());
     bytes[4..8].clone_from_slice(&height.to_le_bytes());
     mem::write_bytes(bytes)

@@ -25,12 +25,13 @@ impl Default for Viewbox {
 
 impl Viewbox {
     pub fn new(width: f32, height: f32) -> Self {
-        let mut res = Self::default();
-        res.width = width;
-        res.height = height;
-        res.area.set_xywh(0., 0., width, height);
-
-        res
+        let area = Rect::from_xywh(0., 0., width, height);
+        Self {
+            width,
+            height,
+            area,
+            ..Self::default()
+        }
     }
 
     pub fn set_all(&mut self, zoom: f32, pan_x: f32, pan_y: f32) {
