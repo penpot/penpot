@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.tokens.typography
   (:require
+   [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.main.data.changes :as dch]
    [beicon.v2.core :as rx]
@@ -14,8 +15,11 @@
 (defn set-base-font-size [base-font-size]
   (ptk/reify ::set-base-font-size
     ptk/WatchEvent
-    (watch [it _state _]
-      (let [changes (-> (pcb/empty-changes it)
+    (watch [it state _]
+      (let [file-id (dm/get-in state [:workspace :current-file-id])
+            file-data (dm/get-in state [:files file-id :data])
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-file-data file-data)
                         (pcb/set-base-font-size base-font-size))]
         (rx/of
          (dch/commit-changes changes))))))
