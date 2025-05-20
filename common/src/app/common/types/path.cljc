@@ -36,6 +36,10 @@
   [data]
   (impl/from-bytes data))
 
+(defn from-string
+  [data]
+  (impl/from-string data))
+
 (defn check-path-content
   [content]
   (impl/check-content-like content))

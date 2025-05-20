@@ -11,8 +11,7 @@
     "url": "https://github.com/penpot/penpot"
   },
   "dependencies": {
-    "luxon": "^3.4.4",
-    "sax": "^1.4.1"
+    "luxon": "^3.4.4"
   },
   "devDependencies": {
     "concurrently": "^9.0.1",

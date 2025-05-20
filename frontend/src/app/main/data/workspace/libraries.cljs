@@ -254,7 +254,7 @@
 
 (defn add-media
   [media]
-  (let [media (ctf/check-media-object media)]
+  (let [media (ctf/check-file-media media)]
     (ptk/reify ::add-media
       ev/Event
       (-data [_] media)

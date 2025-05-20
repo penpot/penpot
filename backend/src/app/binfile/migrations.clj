@@ -10,7 +10,6 @@
    [app.binfile.common :as bfc]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
-   [app.features.components-v2 :as feat.compv2]
    [clojure.set :as set]
    [cuerdas.core :as str]))
 
@@ -28,13 +27,11 @@
 
 (defn apply-pending-migrations!
   "Apply alredy registered pending migrations to files"
-  [cfg]
-  (doseq [[feature file-id] (-> bfc/*state* deref :pending-to-migrate)]
+  [_cfg]
+  (doseq [[feature _file-id] (-> bfc/*state* deref :pending-to-migrate)]
     (case feature
       "components/v2"
-      (feat.compv2/migrate-file! cfg file-id
-                                 :validate? (::validate cfg true)
-                                 :skip-on-graphic-error? true)
+      nil
 
       "fdata/shape-data-type"
       nil

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.svg.shapes-builder
+(ns app.common.files.shapes-builder
   "A SVG to Shapes builder."
   (:require
    [app.common.colors :as clr]
@@ -21,7 +21,7 @@
    [app.common.math :as mth]
    [app.common.schema :as sm :refer [max-safe-int min-safe-int]]
    [app.common.svg :as csvg]
-   [app.common.svg.path :as path]
+   [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segm]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -219,7 +219,7 @@
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (when (and (contains? attrs :d) (seq (:d attrs)))
     (let [transform (csvg/parse-transform (:transform attrs))
-          content   (cond-> (path/parse (:d attrs))
+          content   (cond-> (path/from-string (:d attrs))
                       (some? transform)
                       (path.segm/transform-content transform))
 

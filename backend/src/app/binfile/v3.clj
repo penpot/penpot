@@ -18,6 +18,7 @@
    [app.common.files.migrations :as-alias fmg]
    [app.common.json :as json]
    [app.common.logging :as l]
+   [app.common.media :as cmedia]
    [app.common.schema :as sm]
    [app.common.thumbnails :as cth]
    [app.common.types.color :as ctcl]
@@ -73,7 +74,7 @@
    [:size ::sm/int]
    [:content-type :string]
    [:bucket [::sm/one-of {:format :string} sto/valid-buckets]]
-   [:hash :string]])
+   [:hash {:optional true} :string]])
 
 (def ^:private schema:file-thumbnail
   [:map {:title "FileThumbnail"}
@@ -88,13 +89,19 @@
    ctf/schema:file
    [:map [:options {:optional true} ctf/schema:options]]])
 
+;; --- HELPERS
+
+(defn- default-now
+  [o]
+  (or o (dt/now)))
+
 ;; --- ENCODERS
 
 (def encode-file
   (sm/encoder schema:file sm/json-transformer))
 
 (def encode-page
-  (sm/encoder ::ctp/page sm/json-transformer))
+  (sm/encoder ctp/schema:page sm/json-transformer))
 
 (def encode-shape
   (sm/encoder ::cts/shape sm/json-transformer))
@@ -129,7 +136,7 @@
   (sm/decoder schema:manifest sm/json-transformer))
 
 (def decode-media
-  (sm/decoder ::ctf/media sm/json-transformer))
+  (sm/decoder ctf/schema:media sm/json-transformer))
 
 (def decode-component
   (sm/decoder ::ctc/component sm/json-transformer))
@@ -229,27 +236,13 @@
                         :always
                         (bfc/clean-file-features))))))
 
-(defn- resolve-extension
-  [mtype]
-  (case mtype
-    "image/png"     ".png"
-    "image/jpeg"    ".jpg"
-    "image/gif"     ".gif"
-    "image/svg+xml" ".svg"
-    "image/webp"    ".webp"
-    "font/woff"     ".woff"
-    "font/woff2"    ".woff2"
-    "font/ttf"      ".ttf"
-    "font/otf"      ".otf"
-    "application/octet-stream" ".bin"))
-
 (defn- export-storage-objects
   [{:keys [::output] :as cfg}]
   (let [storage (sto/resolve cfg)]
     (doseq [id (-> bfc/*state* deref :storage-objects not-empty)]
       (let [sobject (sto/get-object storage id)
             smeta   (meta sobject)
-            ext     (resolve-extension (:content-type smeta))
+            ext     (cmedia/mtype->extension (:content-type smeta))
             path    (str "objects/" id ".json")
             params  (-> (meta sobject)
                         (assoc :id (:id sobject))
@@ -574,7 +567,14 @@
                  (let [object (->> (read-entry input entry)
                                    (decode-media)
                                    (validate-media))
-                       object (assoc object :file-id file-id)]
+                       object (-> object
+                                  (assoc :file-id file-id)
+                                  (update :created-at default-now)
+                                  (update :modified-at default-now)
+                                  ;; FIXME: this is set default to true for
+                                  ;; setting a value, this prop is no longer
+                                  ;; relevant;
+                                  (assoc :is-local true))]
                    (if (= id (:id object))
                      (conj result object)
                      result)))
@@ -800,7 +800,7 @@
                     :expected-id (str id)
                     :found-id (str (:id object))))
 
-        (let [ext     (resolve-extension (:content-type object))
+        (let [ext     (cmedia/mtype->extension (:content-type object))
               path    (str "objects/" id ext)
               content (->> path
                            (get-zip-entry input)
@@ -814,13 +814,14 @@
                       :expected-size (:size object)
                       :found-size (sto/get-size content)))
 
-          (when (not= (:hash object) (sto/get-hash content))
-            (ex/raise :type :validation
-                      :code :inconsistent-penpot-file
-                      :hint "found corrupted storage object: hash does not match"
-                      :path path
-                      :expected-hash (:hash object)
-                      :found-hash (sto/get-hash content)))
+          (when-let [hash (get object :hash)]
+            (when (not= hash (sto/get-hash content))
+              (ex/raise :type :validation
+                        :code :inconsistent-penpot-file
+                        :hint "found corrupted storage object: hash does not match"
+                        :path path
+                        :expected-hash (:hash object)
+                        :found-hash (sto/get-hash content))))
 
           (let [params  (-> object
                             (dissoc :id :size)

@@ -30,7 +30,7 @@
   [:li {:class (stl/css :context-menu-item)
         :data-value value
         :on-click on-click}
-   [:span {:class (stl/css :title)} title]])
+   title])
 
 (mf/defc menu*
   {::mf/private true}

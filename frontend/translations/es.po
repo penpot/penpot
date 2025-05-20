@@ -6954,10 +6954,6 @@ msgstr "Stroke width debe ser mayor o igual a 0."
 msgid "workspace.token.label.group"
 msgstr "Grupo"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:197
-msgid "workspace.token.label.group-optional"
-msgstr "Opcional"
-
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:199
 msgid "workspace.token.label.group-placeholder"
 msgstr "Añade un grupo (p. ej. Modo)"

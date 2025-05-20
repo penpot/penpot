@@ -1,0 +1,33 @@
+{:paths ["src" "vendor" "resources" "test"]
+ :deps
+ {penpot/common
+  {:local/root "../common"}
+
+  penpot/frontend
+  {:local/root "../frontend"}
+  }
+
+ :aliases
+ {:outdated
+  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
+   :main-opts ["-m" "antq.core"]}
+
+  :jvm-repl
+  {:extra-deps
+   {com.bhauman/rebel-readline {:mvn/version "RELEASE"}}
+   :main-opts ["-m" "rebel-readline.main"]
+   :jvm-opts ["--sun-misc-unsafe-memory-access=allow"]}
+
+  :dev
+  {:extra-paths ["dev"]
+   :extra-deps
+   {thheller/shadow-cljs {:mvn/version "3.0.5"}
+    com.bhauman/rebel-readline {:mvn/version "RELEASE"}
+    org.clojure/tools.namespace {:mvn/version "RELEASE"}
+    criterium/criterium {:mvn/version "RELEASE"}
+    cider/cider-nrepl {:mvn/version "0.48.0"}}}
+
+  :shadow-cljs
+  {:main-opts ["-m" "shadow.cljs.devtools.cli"]
+   :jvm-opts ["--sun-misc-unsafe-memory-access=allow"]}
+  }}
