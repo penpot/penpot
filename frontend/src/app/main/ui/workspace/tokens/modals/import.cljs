@@ -103,6 +103,7 @@
                                                   (val (first %))
                                                   %)
                                                 (ffirst %)))
+                  (rx/map :tokens-lib)
                   (on-import-stream))
 
              (-> (mf/ref-val dir-input-ref)

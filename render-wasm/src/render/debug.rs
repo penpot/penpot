@@ -75,13 +75,8 @@ pub fn render_debug_shape(render_state: &mut RenderState, element: &Shape, inter
         .draw_rect(rect, &paint);
 }
 
-pub fn render_debug_tiles_for_viewbox(
-    render_state: &mut RenderState,
-    sx: i32,
-    sy: i32,
-    ex: i32,
-    ey: i32,
-) {
+pub fn render_debug_tiles_for_viewbox(render_state: &mut RenderState) {
+    let tiles::TileRect(sx, sy, ex, ey) = render_state.tile_viewbox.interest_rect;
     let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
     let mut paint = skia::Paint::default();
     paint.set_style(skia::PaintStyle::Stroke);
@@ -102,7 +97,9 @@ pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
     paint.set_color(skia::Color::from_rgb(255, 0, 127));
     paint.set_stroke_width(1.);
 
-    let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(render_state.viewbox, scale);
+    let tile_size = tiles::get_tile_size(scale);
+    let tiles::TileRect(sx, sy, ex, ey) =
+        tiles::get_tiles_for_rect(render_state.viewbox.area, tile_size);
     let str_rect = format!("{} {} {} {}", sx, sy, ex, ey);
 
     let debug_font = render_state.fonts.debug_font();
@@ -135,11 +132,12 @@ pub fn render_debug_tiles(render_state: &mut RenderState) {
     paint.set_color(skia::Color::from_rgb(127, 0, 255));
     paint.set_stroke_width(1.);
 
-    let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(render_state.viewbox, scale);
     let tile_size = tiles::get_tile_size(scale);
+    let tiles::TileRect(sx, sy, ex, ey) =
+        tiles::get_tiles_for_rect(render_state.viewbox.area, tile_size);
     for y in sy..=ey {
         for x in sx..=ex {
-            let tile = (x, y);
+            let tile = tiles::Tile(x, y);
             let shape_count = render_state.tiles.get_shapes_at(tile).iter().len();
             if shape_count == 0 {
                 continue;

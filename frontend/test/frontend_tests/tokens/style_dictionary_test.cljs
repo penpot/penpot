@@ -10,8 +10,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [beicon.v2.core :as rx]
-   [cljs.test :as t :include-macros true]
-   [promesa.core :as p]))
+   [cljs.test :as t :include-macros true]))
 
 (t/deftest resolve-tokens-test
   (t/async
@@ -35,23 +34,23 @@
                                                                        :value "{borderRadius.sm} * 200000000"
                                                                        :type :border-radius}))
                        (ctob/get-all-tokens))]
-        (-> (sd/resolve-tokens+ tokens)
-            (p/finally
-              (fn [resolved-tokens]
-                (t/is (= 12 (get-in resolved-tokens ["borderRadius.sm" :resolved-value])))
-                (t/is (= "px" (get-in resolved-tokens ["borderRadius.sm" :unit])))
-                (t/is (= 24 (get-in resolved-tokens ["borderRadius.md-with-dashes" :resolved-value])))
-                (t/is (= "px" (get-in resolved-tokens ["borderRadius.md-with-dashes" :unit])))
-                (t/is (nil? (get-in resolved-tokens ["borderRadius.large" :resolved-value])))
-                (t/is (= :error.token/number-too-large
-                         (get-in resolved-tokens ["borderRadius.large" :errors 0 :error/code])))
-                (t/is (nil? (get-in resolved-tokens ["borderRadius.largePx" :resolved-value])))
-                (t/is (= :error.token/number-too-large
-                         (get-in resolved-tokens ["borderRadius.largePx" :errors 0 :error/code])))
-                (t/is (nil? (get-in resolved-tokens ["borderRadius.largeFn" :resolved-value])))
-                (t/is (= :error.token/number-too-large
-                         (get-in resolved-tokens ["borderRadius.largeFn" :errors 0 :error/code])))
-                (done))))))))
+        (-> (sd/resolve-tokens tokens)
+            (rx/sub!
+             (fn [resolved-tokens]
+               (t/is (= 12 (get-in resolved-tokens ["borderRadius.sm" :resolved-value])))
+               (t/is (= "px" (get-in resolved-tokens ["borderRadius.sm" :unit])))
+               (t/is (= 24 (get-in resolved-tokens ["borderRadius.md-with-dashes" :resolved-value])))
+               (t/is (= "px" (get-in resolved-tokens ["borderRadius.md-with-dashes" :unit])))
+               (t/is (nil? (get-in resolved-tokens ["borderRadius.large" :resolved-value])))
+               (t/is (= :error.token/number-too-large
+                        (get-in resolved-tokens ["borderRadius.large" :errors 0 :error/code])))
+               (t/is (nil? (get-in resolved-tokens ["borderRadius.largePx" :resolved-value])))
+               (t/is (= :error.token/number-too-large
+                        (get-in resolved-tokens ["borderRadius.largePx" :errors 0 :error/code])))
+               (t/is (nil? (get-in resolved-tokens ["borderRadius.largeFn" :resolved-value])))
+               (t/is (= :error.token/number-too-large
+                        (get-in resolved-tokens ["borderRadius.largeFn" :errors 0 :error/code])))
+               (done))))))))
 
 (t/deftest process-json-stream-test
   (t/async

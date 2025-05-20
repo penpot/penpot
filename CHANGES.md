@@ -8,33 +8,65 @@
 
 **Breaking changes on penpot library:**
 
+The library entrypoint API object has been changed. From now you start creating a new
+build context, from where you can add multiple files and attach media. This change add the
+ability to build more than one file at same time and export them in an unique .penpot
+file.
+
+```js
+const context = penpot.createBuildContext()
+
+context.addFile({name:"aa"})
+context.addPage({name:"aa"})
+context.closePage()
+context.closeFile()
+
+;; barray is instance of Uint8Array
+const barray = penpot.exportAsBytes(context);
+```
+
+The previous `file.export()` method has been removed and several alternatives are
+added as first level functions on penpot library API entrypoint:
+
+- `exportAsBytes(BuildContext context) -> Promise<Uint8Array>`
+- `exportAsBlob(BuildContext context) -> Promise<Blob>`
+- `exportStream(BuildContext context, WritableStream stream) -> Promise<Void>`
+
+The stream variant allows writting data as it is generated to the stream, without the need
+to store the generated output entirelly in the memory.
+
+There are also relevant semantic changes in how components should be created: this
+refactor removes all notions of the old components (v1). Since v2, the shapes that are
+part of a component live on a page. So, from now on, to create a component, you should
+first create a frame, then add shapes and/or groups to that frame, and then create a
+component by declaring that frame as the component root.
+
+A non exhaustive list of changes:
+
 - Change the signature of the `addPage` method: it now accepts an object (as a single argument) where you can pass `id`,
   `name`, and `background` props (instead of the previous positional arguments)
-- Rename the `file.createRect` method to `file.addRect`
-- Rename the `file.createCircle` method to `file.addCircle`
-- Rename the `file.createPath` method to `file.addPath`
-- Rename the `file.createText` method to `file.addText`
-- Rename `file.startComponent` to `file.addComponent` (to preserve the naming style)
-- Rename `file.createComponentInstance` to `file.addComponentInstance` (to preserve the naming style)
-- Rename `file.lookupShape` to `file.getShape`
-- Rename `file.asMap` to `file.toMap`
-- Remove `file.updateLibraryColor` (use `file.addLibraryColor` if you just need to replace a color)
-- Remove `file.deleteLibraryColor` (this library is intended to build files)
-- Remove `file.updateLibraryTypography` (use `file.addLibraryTypography` if you just need to replace a typography)
-- Remove `file.deleteLibraryTypography` (this library is intended to build files)
-- Remove `file.add/update/deleteLibraryMedia` (they are no longer supported by Penpot and have been replaced by components)
-- Remove `file.deleteObject` (this library is intended to build files)
-- Remove `file.updateObject` (this library is intended to build files)
-- Remove `file.finishComponent` (it is no longer necessary; see below for more details on component creation changes)
-- Change the `file.getCurrentPageId` function to a read-only `file.currentPageId` property
-- Add `file.currentFrameId` read-only property
-- Add `file.lastId` read-only property
+- Rename the `createRect` method to `addRect`
+- Rename the `createCircle` method to `addCircle`
+- Rename the `createPath` method to `addPath`
+- Rename the `createText` method to `addText`
+- Rename the `addArtboard` method to `addBoard`
+- Rename `startComponent` to `addComponent` (to preserve the naming style)
+- Rename `createComponentInstance` to `addComponentInstance` (to preserve the naming style)
+- Remove `lookupShape`
+- Remove `asMap`
+- Remove `updateLibraryColor` (use `addLibraryColor` if you just need to replace a color)
+- Remove `deleteLibraryColor` (this library is intended to build files)
+- Remove `updateLibraryTypography` (use `addLibraryTypography` if you just need to replace a typography)
+- Remove `deleteLibraryTypography` (this library is intended to build files)
+- Remove `add/update/deleteLibraryMedia` (they are no longer supported by Penpot and have been replaced by components)
+- Remove `deleteObject` (this library is intended to build files)
+- Remove `updateObject` (this library is intended to build files)
+- Remove `finishComponent` (it is no longer necessary; see below for more details on component creation changes)
 
-There are also relevant semantic changes in how components should be created: this refactor removes
-all notions of the old components (v1). Since v2, the shapes that are part of a component live on a
-page. So, from now on, to create a component, you should first create a frame, then add shapes
-and/or groups to that frame, and then create a component by declaring that frame as the component
-root.
+- Change the `getCurrentPageId` function to a read-only `currentPageId` property
+- Add `currentFileId` read-only property
+- Add `currentFrameId` read-only property
+- Add `lastId` read-only property
 
 ### :heart: Community contributions (Thank you!)
 
@@ -43,6 +75,10 @@ root.
 - Optimize profile setup flow for better user experience [Taiga #10028](https://tree.taiga.io/project/penpot/us/10028)
 - Update base image for Docker Backend and Exporter to Ubuntu 24.04
 - Update base image for Docker Frontend to Nginx 1.28.0
+- Allow multi file token import [Github #27](https://github.com/tokens-studio/penpot/issues/27)
+- Create `input*` wrapper component, and `label*`, `input-field*` and `hint-message*` components [Taiga #10713](https://tree.taiga.io/project/penpot/us/10713)
+- Add option for deselect layers with Ctrl+Shift+Drag [Github #2509](https://github.com/penpot/penpot/issues/2509)
+
 
 ### :bug: Bugs fixed
 
@@ -65,8 +101,6 @@ root.
 - Duplicate token sets [Taiga #10694](https://tree.taiga.io/project/penpot/issue/10694)
 - Add set selection in create Token themes flow [Taiga #10746](https://tree.taiga.io/project/penpot/issue/10746)
 - Display indicator on not active sets [Taiga #10668](https://tree.taiga.io/project/penpot/issue/10668)
-- Allow multi file token import [Github #27](https://github.com/tokens-studio/penpot/issues/27)
-- Create `input*` wrapper component, and `label*`, `input-field*` and `hint-message*` components [Taiga #10713](https://tree.taiga.io/project/penpot/us/10713)
 
 ### :bug: Bugs fixed
 

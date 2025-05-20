@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "../../ds/typography.scss" as *;
+@use "../../ds/spacing.scss" as *;
 @import "refactor/common-refactor.scss";
 
 .sidebar-wrapper {
@@ -28,21 +29,20 @@
 
 .tokens-section-wrapper {
   height: 100%;
-  padding-left: $s-12;
+  padding-left: var(--sp-m);
   overflow-y: auto;
   scrollbar-gutter: stable;
 }
 
 .sets-sidebar {
   position: relative;
-  padding-block-end: $s-16;
+  padding-block-end: var(--sp-l);
 }
 
 .themes-header,
 .sets-header-container {
   @include use-typography("headline-small");
-  display: block;
-  padding: $s-8;
+  padding: var(--sp-s);
   color: var(--title-foreground-color);
   word-break: break-word;
 }
@@ -51,8 +51,8 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: $s-4;
-  margin-block-start: $s-8;
+  gap: var(--sp-xs);
+  margin-block-start: var(--sp-s);
 }
 
 .sets-header {
@@ -65,7 +65,7 @@
   color: var(--color-foreground-secondary);
   display: flex;
   align-items: center;
-  gap: $s-4;
+  gap: var(--sp-xs);
 }
 
 .sets-header-status-text {
@@ -73,11 +73,11 @@
 }
 
 .themes-wrapper {
-  padding: $s-12 0 0 $s-12;
+  padding: var(--sp-m) 0 0 var(--sp-m);
 }
 
 .empty-theme-wrapper {
-  padding: $s-12;
+  padding: var(--sp-m);
   color: var(--color-foreground-secondary);
 }
 
@@ -85,8 +85,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-left: $s-12;
-  padding-top: $s-12;
+  margin-left: var(--sp-m);
+  padding-top: var(--sp-m);
   color: var(--layer-row-foreground-color);
 }
 
@@ -96,20 +96,20 @@
 
 .token-pills-wrapper {
   display: flex;
-  gap: $s-4;
+  gap: var(--sp-xs);
   flex-wrap: wrap;
 }
 
 .section-text-icon {
   font-size: $fs-12;
-  width: $s-16;
-  height: $s-16;
+  width: var(--sp-l);
+  height: var(--sp-l);
   display: flex;
   place-content: center;
 }
 
 .section-icon {
-  margin-right: $s-4;
+  margin-right: var(--sp-xs);
   // Align better with the label
   translate: 0px -1px;
 }
@@ -117,10 +117,11 @@
 .import-export-button-wrapper {
   position: relative;
   display: flex;
+  gap: var(--sp-s);
   flex-direction: row;
   align-items: end;
   justify-content: end;
-  padding: $s-8;
+  padding: var(--sp-s);
   background-color: var(--color-background-primary);
   box-shadow: var(--el-shadow-dark);
 }
@@ -130,9 +131,9 @@
   display: flex;
   align-items: center;
   justify-content: end;
-  padding: $s-6 $s-8;
+  padding: $s-6 var(--sp-s);
   text-transform: uppercase;
-  gap: $s-8;
+  gap: var(--sp-s);
   background-color: var(--color-background-primary);
 
   box-shadow: var(--el-shadow-dark);

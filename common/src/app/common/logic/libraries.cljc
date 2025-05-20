@@ -2190,7 +2190,9 @@
                               :starting-frame frame-id}]
 
                 (vswap! unames conj name)
-                (pcb/set-flow changes flow-id new-flow)))
+                (-> changes
+                    (pcb/with-page page)
+                    (pcb/set-flow flow-id new-flow))))
 
             changes
             (->> shapes

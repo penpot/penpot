@@ -149,32 +149,6 @@
    {:test {:init-fn frontend-tests.runner/init
            :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}}
 
-  :library
-  {:target :esm
-   :runtime :custom
-   :output-dir "target/library"
-   :devtools {:autoload false}
-
-   :modules
-   {:penpot
-    {:exports {BuilderError lib.file-builder/BuilderError
-               createFile lib.file-builder/create-file}}}
-
-   :compiler-options
-   {:output-feature-set :es2020
-    :output-wrapper false
-    :warnings {:fn-deprecated false}}
-
-   :release
-   {:compiler-options
-    {:fn-invoke-direct true
-     :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :advanced]
-     :pretty-print false
-     :source-map true
-     :elide-asserts true
-     :anon-fn-naming-policy :off
-     :source-map-detail-level :all}}}
-
   :bench
   {:target :node-script
    :output-to "target/bench.js"

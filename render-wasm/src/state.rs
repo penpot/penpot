@@ -5,6 +5,7 @@ use skia_safe as skia;
 use crate::render::RenderState;
 use crate::shapes::Shape;
 use crate::shapes::StructureEntry;
+use crate::tiles;
 use crate::uuid::Uuid;
 
 /// A pool allocator for `Shape` objects that attempts to minimize memory reallocations.
@@ -129,10 +130,10 @@ impl<'a> State<'a> {
     pub fn delete_shape(&mut self, id: Uuid) {
         // We don't really do a self.shapes.remove so that redo/undo keep working
         if let Some(shape) = self.shapes.get(&id) {
-            let (rsx, rsy, rex, rey) = self.render_state.get_tiles_for_shape(shape);
+            let tiles::TileRect(rsx, rsy, rex, rey) = self.render_state.get_tiles_for_shape(shape);
             for x in rsx..=rex {
                 for y in rsy..=rey {
-                    let tile = (x, y);
+                    let tile = tiles::Tile(x, y);
                     self.render_state.surfaces.remove_cached_tile_surface(tile);
                     self.render_state.tiles.remove_shape_at(tile, id);
                 }

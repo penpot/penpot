@@ -32,24 +32,31 @@
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CONSTANTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce BASE-FONT-SIZE "16px")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def schema:media
   "A schema that represents the file media object"
-  [:map {:title "FileMediaObject"}
+  [:map {:title "FileMedia"}
    [:id ::sm/uuid]
-   [:created-at ::sm/inst]
+   [:created-at {:optional true} ::sm/inst]
    [:deleted-at {:optional true} ::sm/inst]
    [:name :string]
    [:width ::sm/safe-int]
    [:height ::sm/safe-int]
    [:mtype :string]
-   [:file-id {:optional true} ::sm/uuid]
    [:media-id ::sm/uuid]
+   [:file-id {:optional true} ::sm/uuid]
    [:thumbnail-id {:optional true} ::sm/uuid]
-   [:is-local :boolean]])
+   [:is-local {:optional true} :boolean]])
 
 (def schema:colors
   [:map-of {:gen/max 5} ::sm/uuid ::ctc/color])
@@ -65,7 +72,8 @@
 
 (def schema:options
   [:map {:title "FileOptions"}
-   [:components-v2 {:optional true} ::sm/boolean]])
+   [:components-v2 {:optional true} ::sm/boolean]
+   [:base-font-size {:optional true} :string]])
 
 (def schema:data
   [:map {:title "FileData"}
@@ -102,7 +110,6 @@
 (sm/register! ::media schema:media)
 (sm/register! ::colors schema:colors)
 (sm/register! ::typographies schema:typographies)
-(sm/register! ::media-object schema:media)
 
 (def check-file
   (sm/check-fn schema:file :hint "check error on validating file"))
@@ -110,7 +117,7 @@
 (def check-file-data
   (sm/check-fn schema:data))
 
-(def check-media-object
+(def check-file-media
   (sm/check-fn schema:media))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -134,7 +141,8 @@
        (ctpl/add-page page)
 
        :always
-       (update :options assoc :components-v2 true)))))
+       (update :options merge {:components-v2 true
+                               :base-font-size BASE-FONT-SIZE})))))
 
 (defn make-file
   [{:keys [id project-id name revn is-shared features migrations
@@ -1029,3 +1037,14 @@
 
     (-> file
         (update-in [:data :pages-index] detach-pages))))
+
+;; Base font size
+
+(defn get-base-font-size
+  "Retrieve the base font size value or token reference."
+  [file-data]
+  (get-in file-data [:options :base-font-size] BASE-FONT-SIZE))
+
+(defn set-base-font-size
+  [file-data base-font-size]
+  (assoc-in file-data [:options :base-font-size] base-font-size))

@@ -277,11 +277,15 @@ test.describe("Tokens: Tokens Tab", () => {
 
     await tokenThemeUpdateCreateModal.getByLabel("Theme").fill("Changed");
 
-    const lightDarkSetGroup = tokenThemeUpdateCreateModal.getByRole("button", {
-      name: "LightDark",
-      exact: true,
-    });
+    const lightDarkSetGroup = tokenThemeUpdateCreateModal.getByTestId(
+      "tokens-set-group-item",
+      {
+        name: "LightDark",
+        exact: true,
+      },
+    );
     await expect(lightDarkSetGroup).toBeVisible();
+
     const lightSet = tokenThemeUpdateCreateModal.getByRole("button", {
       name: "light",
       exact: true,
@@ -667,7 +671,11 @@ test.describe("Tokens: Sets Tab", () => {
       .filter({ hasText: "LightDark" })
       .first();
 
-    await setGroup.getByRole("button").filter({ title: "Collapse" }).click();
+    const setCollapsable = await setGroup
+      .getByTestId("tokens-set-group-collapse")
+      .first();
+
+    await setCollapsable.click();
 
     await expect(darkSet).toHaveCount(0);
   });

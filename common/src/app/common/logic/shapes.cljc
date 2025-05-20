@@ -151,7 +151,9 @@
          changes
          (reduce (fn [changes {:keys [id] :as flow}]
                    (if (contains? ids-to-delete (:starting-frame flow))
-                     (pcb/set-flow changes id nil)
+                     (-> changes
+                         (pcb/with-page page)
+                         (pcb/set-flow id nil))
                      changes))
                  changes
                  (:flows page))
@@ -213,7 +215,9 @@
               (map :id))
 
          changes (reduce (fn [changes guide-id]
-                           (pcb/set-flow changes guide-id nil))
+                           (-> changes
+                               (pcb/with-page page)
+                               (pcb/set-flow guide-id nil)))
                          changes
                          guides-to-delete)
 

@@ -54,13 +54,13 @@
      ::oapi/type "integer"
      ::oapi/format "int64"}}))
 
-(def schema:image-color
+(def schema:image
   [:map {:title "ImageColor"}
-   [:name {:optional true} :string]
    [:width ::sm/int]
    [:height ::sm/int]
-   [:mtype {:optional true} [:maybe :string]]
+   [:mtype ::sm/text]
    [:id ::sm/uuid]
+   [:name {:optional true} ::sm/text]
    [:keep-aspect-ratio {:optional true} :boolean]])
 
 (def gradient-types
@@ -93,7 +93,7 @@
    [:ref-id {:optional true} ::sm/uuid]
    [:ref-file {:optional true} ::sm/uuid]
    [:gradient {:optional true} [:maybe schema:gradient]]
-   [:image {:optional true} [:maybe schema:image-color]]
+   [:image {:optional true} [:maybe schema:image]]
    [:plugin-data {:optional true} ::ctpg/plugin-data]])
 
 (def schema:color
@@ -106,7 +106,7 @@
     [:opacity {:optional true} [:maybe ::sm/safe-number]]
     [:color {:optional true} [:maybe schema:rgb-color]]
     [:gradient {:optional true} [:maybe schema:gradient]]
-    [:image {:optional true} [:maybe schema:image-color]]]
+    [:image {:optional true} [:maybe schema:image]]]
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
 ;; Same as color but with :id prop required
@@ -115,9 +115,10 @@
    (sm/required-keys schema:color-attrs [:id])
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
+;; FIXME: revisit if we really need this all registers
 (sm/register! ::color schema:color)
 (sm/register! ::gradient schema:gradient)
-(sm/register! ::image-color schema:image-color)
+(sm/register! ::image-color schema:image)
 (sm/register! ::recent-color schema:recent-color)
 (sm/register! ::color-attrs schema:color-attrs)
 

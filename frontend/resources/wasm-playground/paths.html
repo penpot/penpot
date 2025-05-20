@@ -33,7 +33,9 @@
     const canvas = document.getElementById("canvas");
     canvas.width =  window.innerWidth;
     canvas.height = window.innerHeight;
-    const shapes = 1000;
+
+    const params = new URLSearchParams(document.location.search);
+    const shapes = params.get("shapes") || 1000;
 
     initWasmModule().then(Module => {
       init(Module);

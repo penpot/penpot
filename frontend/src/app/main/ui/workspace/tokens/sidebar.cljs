@@ -25,6 +25,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
@@ -176,7 +177,7 @@
            (modal/show! :tokens/themes {})))]
 
     [:div {:class (stl/css :themes-wrapper)}
-     [:span {:class (stl/css :themes-header)} (tr "labels.themes")]
+     [:> text* {:as "div" :typography "headline-small" :class (stl/css :themes-header)} (tr "labels.themes")]
      (if (empty? ordered-themes)
        [:div {:class (stl/css :empty-theme-wrapper)}
         [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
@@ -327,7 +328,7 @@
     [:*
      [:& token-context-menu]
      [:div {:class (stl/css :sets-header-container)}
-      [:span {:class (stl/css :sets-header)} (tr "workspace.token.tokens-section-title" selected-token-set-name)]
+      [:> text* {:as "span" :typography "headline-small" :class (stl/css :sets-header)} (tr "workspace.token.tokens-section-title" selected-token-set-name)]
       [:div {:class (stl/css :sets-header-status) :title (tr "workspace.token.inactive-set-description")}
        ;; NOTE: when no set in tokens-lib, the selected-token-set-name
        ;; will be `nil`, so for properly hide the inactive message we
@@ -336,7 +337,7 @@
                   (not (token-set-active? selected-token-set-name)))
          [:*
           [:> i/icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
-          [:span {:class (stl/css :sets-header-status-text)}
+          [:> text* {:as "span" :typography "body-small" :class (stl/css :sets-header-status-text)}
            (tr "workspace.token.inactive-set")]])]]
 
      (for [type filled-group]
@@ -384,10 +385,17 @@
                                      (json/encode :key-fn identity))]
              (->> (wapi/create-blob (or tokens-json "{}") "application/json")
                   (dom/trigger-download "tokens.json")))))
+
         on-modal-show
         (mf/use-fn
          (fn []
-           (modal/show! :tokens/import {})))]
+           (modal/show! :tokens/import {})))
+
+        open-settings-modal
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (modal/show! :tokens/base-font-size {})))]
 
     [:div {:class (stl/css :import-export-button-wrapper)}
      [:> button* {:on-click open-menu
@@ -404,7 +412,15 @@
           [:div (tr "labels.import")]]])
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                :on-click on-export}
-       (tr "labels.export")]]]))
+       (tr "labels.export")]]
+
+     [:> tooltip* {:tooltip-content "Tokens settings"
+                   :id "button-setting"}
+      [:> icon-button* {:variant "secondary"
+                        :icon "settings"
+                        :tooltip-id "button-setting"
+                        :aria-label "Settings"
+                        :on-click open-settings-modal}]]]))
 
 (mf/defc tokens-sidebar-tab*
   {::mf/wrap [mf/memo]}
