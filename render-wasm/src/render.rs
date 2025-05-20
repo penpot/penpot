@@ -484,7 +484,7 @@ impl RenderState {
             ));
 
             canvas.clear(self.background_color);
-            canvas.draw_image(snapshot.clone(), (0, 0), Some(&skia::Paint::default()));
+            canvas.draw_image(snapshot, (0, 0), Some(&skia::Paint::default()));
             canvas.restore();
         }
     }
