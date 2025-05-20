@@ -25,18 +25,19 @@
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 
-(sm/register!
- ^{::sm/type ::changes}
- [:map {:title "changes"}
-  [:redo-changes vector?]
-  [:undo-changes seq?]
-  [:origin {:optional true} any?]
-  [:save-undo? {:optional true} boolean?]
-  [:stack-undo? {:optional true} boolean?]
-  [:undo-group {:optional true} any?]])
+(def schema:changes
+  (sm/register!
+   ^{::sm/type ::changes}
+   [:map {:title "changes"}
+    [:redo-changes vector?]
+    [:undo-changes seq?]
+    [:origin {:optional true} ::sm/any]
+    [:save-undo? {:optional true} boolean?]
+    [:stack-undo? {:optional true} boolean?]
+    [:undo-group {:optional true} ::sm/any]]))
 
 (def check-changes!
-  (sm/check-fn ::changes))
+  (sm/check-fn schema:changes))
 
 (defn empty-changes
   ([origin page-id]

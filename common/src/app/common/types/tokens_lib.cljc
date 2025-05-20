@@ -118,7 +118,7 @@
   [:map {:title "Token"}
    [:name cto/token-name-ref]
    [:type [::sm/one-of cto/token-types]]
-   [:value :any]
+   [:value ::sm/any]
    [:description {:optional true} :string]
    [:modified-at {:optional true} ::sm/inst]])
 
@@ -389,7 +389,8 @@
    [:description {:optional true} :string]
    [:modified-at {:optional true} ::sm/inst]
    [:tokens {:optional true
-             :gen/gen (->> (sg/generator [:map-of ::sm/text schema:token])
+             :gen/gen (->> (sg/map-of (sg/generator ::sm/text)
+                                      (sg/generator schema:token))
                            (sg/fmap #(into (d/ordered-map) %)))}
     [:and
      [:map-of {:gen/max 5
