@@ -7,6 +7,8 @@
 (ns app.main.data.plugins
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
+   [app.main.data.changes :as dch]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.store :as st]
@@ -178,3 +180,29 @@
                 (assoc-in [:plugins-permissions-peek :updated-at] now)))
 
           state)))))
+
+(defn set-plugin-data
+  ([file-id type namespace key value]
+   (set-plugin-data file-id type nil nil namespace key value))
+
+  ([file-id type id namespace key value]
+   (set-plugin-data file-id type id nil namespace key value))
+
+  ([file-id type id page-id namespace key value]
+   (dm/assert! (contains? #{:file :page :shape :color :typography :component} type))
+   (dm/assert! (or (nil? id) (uuid? id)))
+   (dm/assert! (or (nil? page-id) (uuid? page-id)))
+   (dm/assert! (uuid? file-id))
+   (dm/assert! (keyword? namespace))
+   (dm/assert! (string? key))
+   (dm/assert! (or (nil? value) (string? value)))
+
+   (ptk/reify ::set-file-plugin-data
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [file-data (dm/get-in state [:files file-id :data])
+             changes   (-> (pcb/empty-changes it)
+                           (pcb/with-file-data file-data)
+                           (assoc :file-id file-id)
+                           (pcb/set-plugin-data type id page-id namespace key value))]
+         (rx/of (dch/commit-changes changes)))))))
