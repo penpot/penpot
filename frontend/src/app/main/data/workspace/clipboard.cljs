@@ -45,6 +45,7 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.streams :as ms]
+   [app.util.code-gen.markup-svg :as svg]
    [app.util.code-gen.style-css :as css]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -328,6 +329,25 @@
 
               :else
               (rx/empty))))))))
+
+(defn copy-selected-svg
+  []
+  (ptk/reify ::copy-selected-svg
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [objects         (dsh/lookup-page-objects state)
+            selected        (->> (dsh/lookup-selected state)
+                                 (ctst/sort-z-index objects)
+                                 (mapv (d/getf objects)))
+            parent-frame-id (cfh/common-parent-frame objects selected)
+
+            maybe-translate
+            #(if (= parent-frame-id uuid/zero) %
+                 (gsh/translate-to-frame % (get objects parent-frame-id)))
+
+            shapes          (mapv maybe-translate selected)
+            svg             (svg/generate-markup objects shapes)]
+        (wapi/write-to-clipboard svg)))))
 
 (defn copy-selected-css
   []
