@@ -1371,4 +1371,3 @@
 (dm/export dwpg/duplicate-page)
 (dm/export dwpg/rename-page)
 (dm/export dwpg/delete-page)
-(dm/export dwpg/set-plugin-data)

@@ -11,6 +11,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.exports.files :as exports.files]
+   [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.versions :as dwv]
    [app.main.repo :as rp]
@@ -163,7 +164,7 @@
         (u/display-not-valid :setPluginData "Plugin doesn't have 'content:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data id :file (keyword "plugin" (str plugin-id)) key value))))
+        (st/emit! (dp/set-plugin-data id :file (keyword "plugin" (str plugin-id)) key value))))
 
     :getPluginDataKeys
     (fn []
@@ -199,7 +200,7 @@
         (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'content:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data id :file (keyword "shared" namespace) key value))))
+        (st/emit! (dp/set-plugin-data id :file (keyword "shared" namespace) key value))))
 
     :getSharedPluginDataKeys
     (fn [namespace]
