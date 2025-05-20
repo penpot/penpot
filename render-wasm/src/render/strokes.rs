@@ -136,6 +136,59 @@ pub fn draw_stroke_on_path(
     );
 }
 
+// FIXME reuse the same function
+#[allow(clippy::too_many_arguments)]
+pub fn draw_stroke_on_text_path(
+    canvas: &skia::Canvas,
+    stroke: &Stroke,
+    mut skia_path: skia::Path,
+    selrect: &Rect,
+    svg_attrs: &HashMap<String, String>,
+    scale: f32,
+    antialias: bool,
+) {
+    let paint: skia_safe::Handle<_> =
+        stroke.to_text_stroked_paint(false, selrect, svg_attrs, scale, antialias);
+
+    match stroke.render_kind(false) {
+        StrokeKind::Inner => {
+            canvas.save(); // As we are using clear for surfaces we use save and restore here to still be able to clean the full surface
+            canvas.clip_path(&skia_path, skia::ClipOp::Intersect, antialias);
+            canvas.draw_path(&skia_path, &paint);
+            canvas.restore();
+        }
+        StrokeKind::Center => {
+            canvas.draw_path(&skia_path, &paint);
+        }
+        StrokeKind::Outer => {
+            let mut outer_paint = skia::Paint::default();
+            outer_paint.set_blend_mode(skia::BlendMode::SrcOver);
+            outer_paint.set_anti_alias(antialias);
+            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&outer_paint);
+            canvas.save_layer(&layer_rec);
+            canvas.draw_path(&skia_path, &paint);
+
+            let mut clear_paint = skia::Paint::default();
+            clear_paint.set_blend_mode(skia::BlendMode::Clear);
+            clear_paint.set_anti_alias(antialias);
+            canvas.draw_path(&skia_path, &clear_paint);
+
+            canvas.restore();
+        }
+    }
+
+    handle_stroke_caps(
+        &mut skia_path,
+        stroke,
+        selrect,
+        canvas,
+        false,
+        svg_attrs,
+        scale,
+        antialias,
+    );
+}
+
 fn handle_stroke_cap(
     canvas: &skia::Canvas,
     cap: StrokeCap,

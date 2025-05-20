@@ -417,33 +417,41 @@ impl RenderState {
 
             Type::Text(text_content) => {
                 self.surfaces.apply_mut(&[SurfaceId::Fills], |s| {
-                    s.canvas().concat(&matrix);
+                    s.canvas().concat(&matrix); // Apply rotation matrix
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let paragraphs = text_content.get_skia_paragraphs(self.fonts.font_collection());
+                let mut paragraphs = text_content.get_skia_paragraphs(self.fonts.font_collection());
 
-                shadows::render_text_drop_shadows(self, &shape, &paragraphs, antialias);
-                text::render(self, &shape, &paragraphs, None, None);
+                shadows::render_text_drop_shadows(self, &shape, &mut paragraphs, None, antialias);
+                text::render(self, &shape, &mut paragraphs, None, None, None);
 
                 for stroke in shape.strokes().rev() {
-                    let stroke_paragraphs = text_content.get_skia_stroke_paragraphs(
-                        stroke,
-                        &shape.selrect(),
-                        self.fonts.font_collection(),
+                    shadows::render_text_drop_shadows(
+                        self,
+                        &shape,
+                        &mut paragraphs,
+                        Some(stroke),
+                        antialias,
                     );
-                    shadows::render_text_drop_shadows(self, &shape, &stroke_paragraphs, antialias);
                     text::render(
                         self,
                         &shape,
-                        &stroke_paragraphs,
+                        &mut paragraphs,
                         Some(SurfaceId::Strokes),
+                        Some(stroke),
                         None,
                     );
-                    shadows::render_text_inner_shadows(self, &shape, &stroke_paragraphs, antialias);
+                    shadows::render_text_inner_shadows(
+                        self,
+                        &shape,
+                        &mut paragraphs,
+                        Some(stroke),
+                        antialias,
+                    );
                 }
 
-                shadows::render_text_inner_shadows(self, &shape, &paragraphs, antialias);
+                shadows::render_text_inner_shadows(self, &shape, &mut paragraphs, None, antialias);
             }
             _ => {
                 self.surfaces.apply_mut(
@@ -688,7 +696,7 @@ impl RenderState {
     // scaled offset of the viewbox, this method snaps the origin to the nearest
     // lower multiple of `TILE_SIZE`. This ensures the tile bounds are aligned
     // with the global tile grid, which is useful for rendering tiles in a
-    /// consistent and predictable layout.
+    // consistent and predictable layout.
     pub fn get_current_aligned_tile_bounds(&mut self) -> Rect {
         let tiles::Tile(tile_x, tile_y) = self.current_tile.unwrap();
         let scale = self.get_scale();

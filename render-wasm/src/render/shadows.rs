@@ -86,11 +86,12 @@ pub fn render_stroke_inner_shadows(
 pub fn render_text_drop_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
-    paragraphs: &[Vec<Paragraph>],
+    paragraphs: &mut [Vec<Paragraph>],
+    stroke: Option<&Stroke>,
     antialias: bool,
 ) {
     for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
-        render_text_drop_shadow(render_state, shape, shadow, paragraphs, antialias);
+        render_text_drop_shadow(render_state, shape, shadow, paragraphs, stroke, antialias);
     }
 }
 
@@ -98,7 +99,8 @@ pub fn render_text_drop_shadow(
     render_state: &mut RenderState,
     shape: &Shape,
     shadow: &Shadow,
-    paragraphs: &[Vec<Paragraph>],
+    paragraphs: &mut [Vec<Paragraph>],
+    stroke: Option<&Stroke>,
     antialias: bool,
 ) {
     let paint = shadow.get_drop_shadow_paint(antialias);
@@ -108,6 +110,7 @@ pub fn render_text_drop_shadow(
         shape,
         paragraphs,
         Some(SurfaceId::DropShadows),
+        stroke,
         Some(paint),
     );
 }
@@ -115,11 +118,12 @@ pub fn render_text_drop_shadow(
 pub fn render_text_inner_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
-    paragraphs: &[Vec<Paragraph>],
+    paragraphs: &mut [Vec<Paragraph>],
+    stroke: Option<&Stroke>,
     antialias: bool,
 ) {
     for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
-        render_text_inner_shadow(render_state, shape, shadow, paragraphs, antialias);
+        render_text_inner_shadow(render_state, shape, shadow, paragraphs, stroke, antialias);
     }
 }
 
@@ -127,7 +131,8 @@ pub fn render_text_inner_shadow(
     render_state: &mut RenderState,
     shape: &Shape,
     shadow: &Shadow,
-    paragraphs: &[Vec<Paragraph>],
+    paragraphs: &mut [Vec<Paragraph>],
+    stroke: Option<&Stroke>,
     antialias: bool,
 ) {
     let paint = shadow.get_inner_shadow_paint(antialias);
@@ -137,6 +142,7 @@ pub fn render_text_inner_shadow(
         shape,
         paragraphs,
         Some(SurfaceId::InnerShadows),
+        stroke,
         Some(paint),
     );
 }
