@@ -115,6 +115,7 @@ function build {
            --mount source=`pwd`,type=bind,target=/home/penpot/penpot \
            -e EXTERNAL_UID=$CURRENT_USER_ID \
            -e BUILD_STORYBOOK=$BUILD_STORYBOOK \
+           -e BUILD_WASM=$BUILD_WASM \
            -e SHADOWCLJS_EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS \
            -e JAVA_OPTS="$JAVA_OPTS" \
            -w /home/penpot/penpot/$1 \
