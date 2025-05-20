@@ -1712,6 +1712,7 @@
         [{:fill-image
           {:id (:id fmedia)
            :name "test"
+           :mtype "image/jpeg"
            :width 200
            :height 200}}]]
 

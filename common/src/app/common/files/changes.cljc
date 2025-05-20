@@ -310,12 +310,12 @@
     [:add-media
      [:map {:title "AddMediaChange"}
       [:type [:= :add-media]]
-      [:object ::ctf/media-object]]]
+      [:object ctf/schema:media]]]
 
     [:mod-media
      [:map {:title "ModMediaChange"}
       [:type [:= :mod-media]]
-      [:object ::ctf/media-object]]]
+      [:object ctf/schema:media]]]
 
     [:del-media
      [:map {:title "DelMediaChange"}
