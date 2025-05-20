@@ -427,9 +427,9 @@
       [:token-name :string]
       [:token [:maybe ctob/schema:token-attrs]]]]
 
-    [:mod-base-font-size
+    [:set-base-font-size
      [:map {:title "ModBaseFontSize"}
-      [:type [:= :mod-base-font-size]]
+      [:type [:= :set-base-font-size]]
       [:base-font-size :string]]]]])
 
 (def schema:changes
@@ -1075,7 +1075,7 @@
 
 ;; === Base font size
 
-(defmethod process-change :mod-base-font-size
+(defmethod process-change :set-base-font-size
   [data {:keys [base-font-size]}]
   (ctf/set-base-font-size data base-font-size))
 
