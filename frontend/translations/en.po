@@ -1240,6 +1240,18 @@ msgstr "The email «%s» has many permanent bounce reports."
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "The email «%s» has been reported as spam or permanently bounce."
 
+msgid "errors.internal-assertion-error"
+msgstr "Internal Assertion Error"
+
+msgid "errors.internal-worker-error"
+msgstr "Something wrong has happened with the web worker."
+
+msgid "errors.svg-parser.invalid-svg"
+msgstr "SVG is invalid or malformed"
+
+msgid "errors.comment-error"
+msgstr "There was an error with the comment"
+
 #: src/app/main/errors.cljs:242
 msgid "errors.feature-mismatch"
 msgstr ""

@@ -154,7 +154,7 @@
 (defmethod ptk/handle-error :assertion
   [error]
   (ts/schedule
-   #(st/emit! (ntf/show {:content "Internal Assertion Error"
+   #(st/emit! (ntf/show {:content (tr "errors.internal-assertion-error")
                          :type :toast
                          :level :error
                          :timeout 3000})))
@@ -170,7 +170,7 @@
   [error]
   (ts/schedule
    #(st/emit!
-     (ntf/show {:content "Something wrong has happened (on worker)."
+     (ntf/show {:content (tr "errors.internal-worker-error")
                 :type :toast
                 :level :error
                 :timeout 3000})))
@@ -180,11 +180,10 @@
                   (print-data! error))))
 
 ;; Error on parsing an SVG
-;; TODO: looks unused and deprecated
 (defmethod ptk/handle-error :svg-parser
   [_]
   (ts/schedule
-   #(st/emit! (ntf/show {:content "SVG is invalid or malformed"
+   #(st/emit! (ntf/show {:content (tr "errors.svg-parser.invalid-svg")
                          :type :toast
                          :level :error
                          :timeout 3000}))))
@@ -193,7 +192,7 @@
 (defmethod ptk/handle-error :comment-error
   [_]
   (ts/schedule
-   #(st/emit! (ntf/show {:content "There was an error with the comment"
+   #(st/emit! (ntf/show {:content (tr "errors.comment-error")
                          :type :toast
                          :level :error
                          :timeout 3000}))))
