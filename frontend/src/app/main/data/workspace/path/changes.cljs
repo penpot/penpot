@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.path.changes
   (:require
+   [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.types.path :as path]
    [app.main.data.changes :as dch]
@@ -74,10 +75,10 @@
 
      ptk/WatchEvent
      (watch [it state _]
-       (let [objects     (dsh/lookup-page-objects state)
-             page-id     (:current-page-id state)
-             id          (get-in state [:workspace-local :edition])
-             old-content (get-in state [:workspace-local :edit-path id :old-content])
+       (let [page-id     (:current-page-id state)
+             objects     (dsh/lookup-page-objects state page-id)
+             id          (dm/get-in state [:workspace-local :edition])
+             old-content (dm/get-in state [:workspace-local :edit-path id :old-content])
              shape       (st/get-path state)]
 
          (if (and (some? old-content) (some? (:id shape)))
