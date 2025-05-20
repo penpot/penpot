@@ -20,6 +20,7 @@
    [app.db :as db]
    [app.features.fdata :as feat.fdata]
    [app.features.file-migrations :as feat.fmigr]
+   [app.features.logical-deletion :as ldel]
    [app.http.errors :as errors]
    [app.loggers.audit :as audit]
    [app.loggers.webhooks :as webhooks]
@@ -209,7 +210,7 @@
 
   Only intended for internal use on this module."
   [{:keys [::db/conn ::wrk/executor ::timestamp] :as cfg}
-   {:keys [profile-id file features changes session-id skip-validate] :as params}]
+   {:keys [profile-id file team features changes session-id skip-validate] :as params}]
 
   (let [;; Retrieve the file data
         file  (feat.fmigr/resolve-applied-migrations cfg file)
@@ -243,7 +244,7 @@
                    :created-at timestamp
                    :updated-at timestamp
                    :deleted-at (if (::snapshot-data file)
-                                 (dt/plus timestamp (cf/get-deletion-delay))
+                                 (dt/plus timestamp (ldel/get-deletion-delay team))
                                  (dt/plus timestamp (dt/duration {:hours 1})))
                    :file-id (:id file)
                    :revn (:revn file)
