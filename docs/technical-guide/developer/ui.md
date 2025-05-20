@@ -205,6 +205,150 @@ Remember that nesting selector increases specificity, and it's usually not neede
   fill: var(--icon-color);
 }
 ```
+Note: We are using css modules, thanks to that same class on different file don't crash.
+
+### Use CSS logical properties
+
+The [logical properties](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_logical_properties_and_values) define styles relative to the content’s writing mode (e.g., inline, block) instead of physical directions (left, right, etc). This improves support for right-to-left (RTL) languages and enhances layout flexibility.
+
+❌ **AVOID: Physical properties**
+
+```scss
+.btn {
+  padding-left: var(--sp-xs);
+}
+```
+
+✅ **DO: Use direction‐relative equivalents**
+
+```scss
+.btn {
+  padding-inline-start: var(--sp-xs);
+}
+```
+
+### Use named DS variables
+
+Avoid hardcoded values like `px`, `rem`, or raw SASS variables `($s-*)`. Use semantic, named variables provided by the Design System to ensure consistency and scalability.
+
+#### Spacing (margins, paddings, gaps...)
+Use variables from `frontend/src/app/main/ui/ds/spacing.scss`. These are predefined and approved by the design team — **do not add or modify values without design approval**.
+
+#### Fixed dimensions
+For fixed dimensions (e.g., modal widths) defined by design and not layout-driven, use or define variables in `frontend/src/app/main/ui/ds/_sizes.scss`. To use them:
+
+```scss
+@use "../_sizes.scss" as *;
+```
+Note: Since these values haven't been semantically defined, we’re temporarily using SASS variables instead of named CSS custom properties.
+
+#### Border Widths
+Use border thickness variables from `frontend/src/app/main/ui/ds/_borders.scss`. To import:
+
+```scss
+@use "../_borders.scss" as *;
+```
+
+Avoid using sass variables defined on `frontend/resources/styles/common/refactor/spacing.scss` that are deprecated.
+
+❌ **AVOID: Using sass unnamed variables**
+
+```scss
+.btn {
+  padding: $s-24;
+}
+
+.icon {
+  width: 16px;
+}
+```
+
+✅ **DO: Use DS variables**
+
+```scss
+.btn {
+  padding: var(--sp-xl);
+}
+
+.icon {
+  inline-size: var(--sp-l);
+}
+```
+
+### Use Proper Typography Components
+
+Replace plain text tags with `text*` or `heading*` components from the Design System to ensure visual consistency and accessibility.
+
+❌ **AVOID: Using text wrappers**
+
+```clojure
+  [:h2 {:class (stl/css :modal-title)} title]
+  [:div {:class (stl/css :modal-content)}
+  "Content"]
+```
+
+✅ **DO: Use spacing named variables**
+
+```clojure
+...
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]] 
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]
+...
+
+  [:> heading* {:level 2
+                :typography t/headline-medium
+                :class (stl/css :modal-title)} 
+    title]
+  [:> text* {:as "div" 
+             :typography t/body-medium  
+             :class (stl/css :modal-content)}
+    "Content"]
+```
+
+When applying typography in SCSS, use the proper mixin from the Design System.
+
+❌ **AVOID: Deprecated mixins**
+
+```scss
+.class {
+  @include headlineLargeTypography;
+}
+```
+
+✅ **DO: Use the DS mixin**
+```scss
+@use "../ds/typography.scss" as t;
+
+.class {
+  @include t.use-typography("body-small");
+}
+```
+You can find the full list of available typography tokens in [Storybook](https://design.penpot.app/storybook/?path=/docs/foundations-typography--docs).
+If your design doesn't match any of them, consult with the responsible designer.
+
+
+### Use custom properties within components
+
+Reduce the need for one-off SASS variables by leveraging [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascading_variables/Using_CSS_custom_properties) in your component styles. This keeps component theming flexible and composable.
+
+
+```scss
+.context-menu-item {
+  --context-menu-item-bg-color: none;
+  --context-menu-item-fg-color: var(--color-foreground-primary);
+  --context-menu-item-border-color: none;
+  ...
+  &:hover {
+    --context-menu-item-bg-color: var(--color-background-quaternary);
+  }
+
+  &:focus {
+    --context-menu-item-bg-color: var(--color-background-secondary);
+    --context-menu-item-border-color: var(--color-background-tertiary);
+  }
+}
+```
 
 ## Semantics and accessibility
 
