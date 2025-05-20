@@ -11,14 +11,10 @@
    [app.common.files.tokens :as cft]
    [app.common.logging :as l]
    [app.common.schema :as sm]
-   [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.data.notifications :as ntf]
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.warnings :as wtw]
-   [app.main.store :as st]
-   [app.util.i18n :refer [tr]]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -248,116 +244,6 @@
    (ctob/tokens-tree tokens)
    #(get tokens (sd-token-name %))
    (StyleDictionary. (assoc default-config :log {:verbosity "verbose"}))))
-
-;; === Import
-
-(defn- decode-single-set-json
-  "Decodes parsed json containing single token set and converts to library"
-  [this set-name tokens]
-  (assert (map? tokens) "expected a map data structure for `data`")
-
-  (ctob/add-set this (ctob/make-token-set :name (ctob/normalize-set-name set-name)
-                                          :tokens (ctob/flatten-nested-tokens-json tokens ""))))
-
-(defn- decode-single-set-legacy-json
-  "Decodes parsed legacy json containing single token set and converts to library"
-  [this set-name tokens]
-  (assert (map? tokens) "expected a map data structure for `data`")
-  (decode-single-set-json this set-name (ctob/legacy-nodes->dtcg-nodes tokens)))
-
-(defn- reference-errors
-  "Extracts reference errors from StyleDictionary."
-  [err]
-  (let [[header-1 header-2 & errors] (str/split err "\n")]
-    (when (and
-           (= header-1 "Error: ")
-           (= header-2 "Reference Errors:"))
-      errors)))
-
-(defn name-error
-  "Extracts name error out of malli schema error during import."
-  [err]
-  (let [schema-error (some-> (ex-data err)
-                             (get-in [:app.common.schema/explain :errors])
-                             (first))
-        name-error? (= (:in schema-error) [:name])]
-    (when name-error?
-      (wte/error-ex-info :error.import/invalid-token-name (:value schema-error) err))))
-
-
-(defn- group-by-value [m]
-  (reduce (fn [acc [k v]]
-            (update acc v conj k)) {} m))
-
-(defn- tokens-of-unknown-type-warning [unknown-tokens]
-  (let [type->tokens (group-by-value unknown-tokens)]
-    (ntf/show {:content (tr "workspace.tokens.unknown-token-type")
-               :detail (->> (for [[token-type tokens] type->tokens]
-                              (tr "workspace.tokens.unknown-token-type-section" token-type (count tokens)))
-                            (str/join "\n"))
-               :type :toast
-               :level :info})))
-
-(defn parse-json [data]
-  (try
-    (t/decode-str data)
-    (catch js/Error e
-      (throw (wte/error-ex-info :error.import/json-parse-error data e)))))
-
-(defn decode-json-data [data file-name]
-  (let [single-set? (ctob/single-set? data)
-        json-format (ctob/get-json-format data)
-        unknown-tokens (ctob/get-tokens-of-unknown-type
-                        data
-                        ""
-                        (= json-format :json-format/dtcg))]
-    {:tokens-lib
-     (try
-       (cond
-         (and single-set?
-              (= :json-format/legacy json-format))
-         (decode-single-set-legacy-json (ctob/ensure-tokens-lib nil) file-name data)
-
-         (and single-set?
-              (= :json-format/dtcg json-format))
-         (decode-single-set-json (ctob/ensure-tokens-lib nil) file-name data)
-
-         (= :json-format/legacy json-format)
-         (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) data)
-
-         :else
-         (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) data))
-
-       (catch js/Error e
-         (let [err (or (name-error e)
-                       (wte/error-ex-info :error.import/invalid-json-data data e))]
-           (throw err))))
-     :unknown-tokens unknown-tokens}))
-
-(defn process-json-stream
-  ([data-stream]
-   (process-json-stream nil data-stream))
-  ([params data-stream]
-   (let [{:keys [file-name]} params]
-     (->> data-stream
-          (rx/map parse-json)
-          (rx/map #(decode-json-data % file-name))
-          (rx/mapcat (fn [{:keys [tokens-lib unknown-tokens]}]
-                       (when unknown-tokens
-                         (st/emit! (tokens-of-unknown-type-warning unknown-tokens)))
-                       (try
-                         (->> (ctob/get-all-tokens tokens-lib)
-                              (resolve-tokens-with-errors)
-                              (rx/map (fn [_]
-                                        tokens-lib))
-                              (rx/catch (fn [sd-error]
-                                          (let [reference-errors (reference-errors sd-error)]
-                                            ;; We allow reference errors for the users to resolve in the ui and throw on any other errors
-                                            (if reference-errors
-                                              (rx/of tokens-lib)
-                                              (throw (wte/error-ex-info :error.import/style-dictionary-unknown-error sd-error sd-error)))))))
-                         (catch js/Error e
-                           (throw (wte/error-ex-info :error.import/style-dictionary-unknown-error "" e))))))))))
 
 ;; === Hooks
 
