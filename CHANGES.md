@@ -77,6 +77,8 @@ A non exhaustive list of changes:
 - Update base image for Docker Frontend to Nginx 1.28.0
 - Allow multi file token import [Github #27](https://github.com/tokens-studio/penpot/issues/27)
 - Create `input*` wrapper component, and `label*`, `input-field*` and `hint-message*` components [Taiga #10713](https://tree.taiga.io/project/penpot/us/10713)
+- Add option for deselect layers with Ctrl+Shift+Drag [Github #2509](https://github.com/penpot/penpot/issues/2509)
+
 
 ### :bug: Bugs fixed
 
