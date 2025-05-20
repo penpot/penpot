@@ -4,6 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../ds/spacing.scss" as *;
+@use "../ds/z-index.scss" as *;
+@use "../ds/_sizes.scss" as *;
+
 @import "refactor/common-refactor.scss";
 
 .palette-wrapper {
@@ -17,7 +21,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: $s-8;
+  gap: var(--sp-s);
 }
 
 .palettes {
@@ -173,25 +177,24 @@
 
 /** AI Chat button styles **/
 .help-btn {
-  z-index: $z-index-2;
+  z-index: var(--z-index-panels);
   flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
   @extend .button-secondary;
-  height: $s-40;
-  width: $s-40;
+  inline-size: $sz-40;
+  block-size: $sz-40;
   border-radius: $br-circle;
-  border: none !important;
-  svg {
-    @extend .button-icon;
-    position: absolute;
-    top: $s-8;
-    left: $s-8;
-    stroke: var(--icon-foreground);
-    height: $s-24;
-    width: $s-24;
-  }
+  border: none;
   &.selected {
     @extend .button-icon-selected;
   }
+  &:hover {
+    border: none;
+  }
+}
+
+.icon-help {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+  inline-size: var(--sp-xxl);
+  block-size: var(--sp-xxl);
 }
