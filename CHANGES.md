@@ -43,6 +43,9 @@ root.
 - Optimize profile setup flow for better user experience [Taiga #10028](https://tree.taiga.io/project/penpot/us/10028)
 - Update base image for Docker Backend and Exporter to Ubuntu 24.04
 - Update base image for Docker Frontend to Nginx 1.28.0
+- Copy to SVG from contextual menu [Github #838](https://github.com/penpot/penpot/issues/838)
+- Shift and drag to deselect layers [Github #2509](https://github.com/penpot/penpot/issues/2509)
+  and nodes in paths.
 
 ### :bug: Bugs fixed
 
