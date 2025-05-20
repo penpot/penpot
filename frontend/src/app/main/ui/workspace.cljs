@@ -34,6 +34,7 @@
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
    [app.main.ui.workspace.tokens.modals]
    [app.main.ui.workspace.tokens.modals.import]
+   [app.main.ui.workspace.tokens.modals.settings]
    [app.main.ui.workspace.tokens.modals.themes]
    [app.main.ui.workspace.viewport :refer [viewport*]]
    [app.util.debug :as dbg]

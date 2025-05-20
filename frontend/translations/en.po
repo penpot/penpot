@@ -7124,6 +7124,22 @@ msgstr "The value is not valid"
 msgid "workspace.token.warning-name-change"
 msgstr "Renaming this token will break any reference to its old name."
 
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs
+msgid "workspace.token.settings"
+msgstr "Tokens settings"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs
+msgid "workspace.token.base-font-size"
+msgstr "Base font size"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs
+msgid "workspace.token.setting-description"
+msgstr "Here you can configure the base font size, which defines the value of 1rem:"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs
+msgid "workspace.token.base-font-size.error"
+msgstr "Base font size must be a value in pixels or unitless."
+
 #: src/app/main/ui/workspace/sidebar.cljs:135, src/app/main/ui/workspace/sidebar.cljs:144
 msgid "workspace.toolbar.assets"
 msgstr "Assets"
