@@ -12,6 +12,12 @@
   left: 0;
   bottom: 0;
   padding-bottom: $s-4;
+
+  /** Aligns AI Chat button **/
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $s-8;
 }
 
 .palettes {
@@ -162,5 +168,30 @@
   }
   .handler {
     padding-bottom: $s-8;
+  }
+}
+
+/** AI Chat button styles **/
+.help-btn {
+  z-index: $z-index-2;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  @extend .button-secondary;
+  height: $s-40;
+  width: $s-40;
+  border-radius: $br-circle;
+  border: none !important;
+  svg {
+    @extend .button-icon;
+    position: absolute;
+    top: $s-8;
+    left: $s-8;
+    stroke: var(--icon-foreground);
+    height: $s-24;
+    width: $s-24;
+  }
+  &.selected {
+    @extend .button-icon-selected;
   }
 }
