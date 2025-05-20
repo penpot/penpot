@@ -236,9 +236,8 @@
           [:div {:class (stl/css  :counter)} (str size "/300")])]])))
 
 (mf/defc component-variant-main-instance*
-  [{:keys [components shapes data]}]
+  [{:keys [components shape data]}]
   (let [component      (first components)
-        shape          (first shapes)
 
         variant-id     (:variant-id component)
         variant-error? (:variant-error shape)
@@ -808,7 +807,7 @@
 
           (when (and is-variant? main-instance? same-variant? (not swap-opened?))
             [:> component-variant-main-instance* {:components components
-                                                  :shapes shapes
+                                                  :shape shape
                                                   :data data}])
 
           (when (dbg/enabled? :display-touched)
@@ -886,6 +885,7 @@
 
         select-shape-with-error
         (mf/use-fn
+         (mf/deps object-error-ids)
          #(st/emit! (dw/select-shape (first object-error-ids))))]
 
     (when (seq shapes)

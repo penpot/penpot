@@ -33,7 +33,8 @@
   ;; The root shape of the main instance of a variant component.
   [:map
    [:variant-id {:optional true} ::sm/uuid]
-   [:variant-name {:optional true} :string]])
+   [:variant-name {:optional true} :string]
+   [:variant-error {:optional true} :string]])
 
 (def schema:variant-container
   ;; is a board that contains all variant components of a variant set,

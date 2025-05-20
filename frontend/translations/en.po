@@ -5230,11 +5230,11 @@ msgstr "Variant"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:942
 msgid "workspace.options.component.variant.malformed.locate"
-msgstr "Locate invalid variations"
+msgstr "Locate invalid variants"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:940
 msgid "workspace.options.component.variant.malformed.multi"
-msgstr "Some variations have invalid names"
+msgstr "Some variants have invalid names"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:307
 msgid "workspace.options.component.variant.malformed.single"

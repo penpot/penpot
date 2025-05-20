@@ -46,9 +46,7 @@
                            shape-name)
 
         default-value    (if variant-id
-                           (if variant-error
-                             variant-error
-                             (ctv/properties-map->string variant-properties))
+                           (or variant-error (ctv/properties-map->string variant-properties))
                            shape-name)
 
         has-path?        (str/includes? shape-name "/")
