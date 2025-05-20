@@ -181,11 +181,11 @@
      (if (empty? ordered-themes)
        [:div {:class (stl/css :empty-theme-wrapper)}
         [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
-         (tr "workspace.token.no-themes")]
+         (tr "workspace.tokens.no-themes")]
         (when can-edit?
           [:button {:on-click open-modal
                     :class (stl/css :create-theme-button)}
-           (tr "workspace.token.create-one")])]
+           (tr "workspace.tokens.create-one")])]
        (if can-edit?
          [:div {:class (stl/css :theme-select-wrapper)}
           [:& theme-select]
@@ -194,7 +194,7 @@
                        :on-click open-modal}
            (tr "labels.edit")]]
          [:div {:title (when-not can-edit?
-                         (tr "workspace.token.no-permission-themes"))}
+                         (tr "workspace.tokens.no-permission-themes"))}
           [:& theme-select]]))]))
 
 (mf/defc token-sets-list*
@@ -328,8 +328,8 @@
     [:*
      [:& token-context-menu]
      [:div {:class (stl/css :sets-header-container)}
-      [:> text* {:as "span" :typography "headline-small" :class (stl/css :sets-header)} (tr "workspace.token.tokens-section-title" selected-token-set-name)]
-      [:div {:class (stl/css :sets-header-status) :title (tr "workspace.token.inactive-set-description")}
+      [:> text* {:as "span" :typography "headline-small" :class (stl/css :sets-header)} (tr "workspace.tokens.tokens-section-title" selected-token-set-name)]
+      [:div {:class (stl/css :sets-header-status) :title (tr "workspace.tokens.inactive-set-description")}
        ;; NOTE: when no set in tokens-lib, the selected-token-set-name
        ;; will be `nil`, so for properly hide the inactive message we
        ;; check that at least `selected-token-set-name` has a value
@@ -338,7 +338,7 @@
          [:*
           [:> i/icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
           [:> text* {:as "span" :typography "body-small" :class (stl/css :sets-header-status-text)}
-           (tr "workspace.token.inactive-set")]])]]
+           (tr "workspace.tokens.inactive-set")]])]]
 
      (for [type filled-group]
        (let [tokens (get tokens-by-type type)]
@@ -401,7 +401,7 @@
      [:> button* {:on-click open-menu
                   :icon "import-export"
                   :variant "secondary"}
-      (tr "workspace.token.tools")]
+      (tr "workspace.tokens.tools")]
      [:& dropdown-menu {:show show-menu?
                         :on-close close-menu
                         :list-class (stl/css :import-export-menu)}

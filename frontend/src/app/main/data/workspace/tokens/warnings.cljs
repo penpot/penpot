@@ -12,11 +12,11 @@
 (def warning-codes
   {:warning.style-dictionary/invalid-referenced-token-value-opacity
    {:warning/code :warning.style-dictionary/invalid-referenced-token-value-opacity
-    :warning/fn (fn [value] (str/join "\n" [(str (tr "workspace.token.resolved-value" value) ".") (tr "workspace.token.opacity-range")]))}
+    :warning/fn (fn [value] (str/join "\n" [(str (tr "workspace.tokens.resolved-value" value) ".") (tr "workspace.tokens.opacity-range")]))}
 
    :warning.style-dictionary/invalid-referenced-token-value-stroke-width
    {:warning/code :warning.style-dictionary/invalid-referenced-token-value-stroke-width
-    :warning/fn (fn [value] (str/join "\n" [(str (tr "workspace.token.resolved-value" value) ".") (tr "workspace.token.stroke-width-range")]))}
+    :warning/fn (fn [value] (str/join "\n" [(str (tr "workspace.tokens.resolved-value" value) ".") (tr "workspace.tokens.stroke-width-range")]))}
 
    :warning/unknown
    {:warning/code :warning/unknown

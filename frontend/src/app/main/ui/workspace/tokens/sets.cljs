@@ -101,7 +101,7 @@
       :on-key-down on-key-down
       :maxlength "256"
       :auto-focus true
-      :placeholder (tr "workspace.token.set-edit-placeholder")
+      :placeholder (tr "workspace.tokens.set-edit-placeholder")
       :default-value default-value}]))
 
 (mf/defc checkbox*
@@ -113,7 +113,7 @@
     [:div {:role "checkbox"
            :aria-checked (dm/str checked)
            :disabled disabled
-           :title (when disabled (tr "workspace.token.no-permisions-set"))
+           :title (when disabled (tr "workspace.tokens.no-permisions-set"))
            :tab-index 0
            :class (stl/css-case :checkbox-style true
                                 :checkbox-checked-style checked?
@@ -134,20 +134,20 @@
     (if can-edit?
       [:div {:class (stl/css :empty-sets-wrapper)}
        [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
-        (tr "workspace.token.no-sets-yet")]
+        (tr "workspace.tokens.no-sets-yet")]
        [:button {:on-click on-start-creation
                  :class (stl/css :create-set-button)}
-        (tr "workspace.token.create-one")]]
+        (tr "workspace.tokens.create-one")]]
       [:div {:class (stl/css :empty-sets-wrapper)}
        [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
-        (tr "workspace.token.no-sets-yet")]])))
+        (tr "workspace.tokens.no-sets-yet")]])))
 
 (mf/defc add-button*
   []
   [:> icon-button* {:variant "ghost"
                     :icon "add"
                     :on-click on-start-creation
-                    :aria-label (tr "workspace.token.add set")}])
+                    :aria-label (tr "workspace.tokens.add set")}])
 
 (mf/defc sets-tree-set-group*
   {::mf/private true}
@@ -246,7 +246,7 @@
                      :all true
                      :partial "mixed"
                      :none false)
-          :arial-label (tr "workspace.token.select-set")}]])]))
+          :arial-label (tr "workspace.tokens.select-set")}]])]))
 
 (mf/defc sets-tree-set*
   [{:keys [id set label tree-depth tree-path tree-index is-selected is-active is-draggable is-editing
@@ -348,7 +348,7 @@
         [:> checkbox*
          {:on-click on-checkbox-click
           :disabled (not can-edit?)
-          :arial-label (tr "workspace.token.select-set")
+          :arial-label (tr "workspace.tokens.select-set")
           :checked is-active}]])]))
 
 (mf/defc token-sets-tree*
@@ -512,7 +512,7 @@
     [:div {:class (stl/css :sets-list)}
      (if ^boolean empty-state?
        [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message-sets)}
-        (tr "workspace.token.no-sets-create")]
+        (tr "workspace.tokens.no-sets-create")]
 
        [:> token-sets-tree*
         {:is-draggable draggable?
