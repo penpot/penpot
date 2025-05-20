@@ -1180,6 +1180,18 @@ msgstr "Die E-Mail-Adresse «%s» hat viele permanente Unzustellbarkeitsberichte
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "Die E-Mail \"%s\" wurde als Spam oder dauerhaft abgelehnt gemeldet."
 
+msgid "errors.internal-assertion-error"
+msgstr "Interner Assertionsfehler"
+
+msgid "errors.internal-worker-error"
+msgstr "Mit dem Web Worker ist ein Fehler aufgetreten."
+
+msgid "errors.svg-parser.invalid-svg"
+msgstr "SVG ist ungültig oder fehlerhaft"
+
+msgid "errors.comment-error"
+msgstr "Beim Kommentar ist ein Fehler aufgetreten"
+
 #: src/app/main/errors.cljs:242
 msgid "errors.feature-mismatch"
 msgstr ""

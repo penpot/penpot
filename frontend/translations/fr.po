@@ -1004,6 +1004,18 @@ msgstr "L'adresse e-mail « %s » a un taux de rebond trop élevé."
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "L'e-mail \"%s\" a été signalé comme spam ou a été rejeté."
 
+msgid "errors.internal-assertion-error"
+msgstr "Erreur d'assertion interne"
+
+msgid "errors.internal-worker-error"
+msgstr "Un problème est survenu avec le web worker."
+
+msgid "errors.svg-parser.invalid-svg"
+msgstr "Le SVG est invalide ou mal formé"
+
+msgid "errors.comment-error"
+msgstr "Une erreur s'est produite avec le commentaire"
+
 #: src/app/main/errors.cljs:242
 msgid "errors.feature-mismatch"
 msgstr ""
