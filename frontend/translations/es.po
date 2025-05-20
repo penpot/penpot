@@ -6514,6 +6514,10 @@ msgstr "Enviar atrás"
 msgid "workspace.shape.menu.copy"
 msgstr "Copiar"
 
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.copy-svg"
+msgstr "Copiar como SVG"
+
 #: src/app/main/ui/workspace/context_menu.cljs:204
 msgid "workspace.shape.menu.copy-css"
 msgstr "Copiar como CSS"
