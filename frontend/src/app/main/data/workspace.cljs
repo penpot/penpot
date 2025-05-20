@@ -616,6 +616,7 @@
     (watch [it state _]
       (let [page    (dsh/lookup-page state id)
             changes (-> (pcb/empty-changes it)
+                        (pcb/with-page page)
                         (pcb/mod-page page {:name name}))]
         (rx/of (dch/commit-changes changes))))))
 

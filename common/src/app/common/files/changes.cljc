@@ -425,7 +425,12 @@
       [:type [:= :set-token]]
       [:set-name :string]
       [:token-name :string]
-      [:token [:maybe ctob/schema:token-attrs]]]]]])
+      [:token [:maybe ctob/schema:token-attrs]]]]
+
+    [:set-base-font-size
+     [:map {:title "ModBaseFontSize"}
+      [:type [:= :set-base-font-size]]
+      [:base-font-size :string]]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
@@ -1067,6 +1072,13 @@
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
                                 (ctob/move-set-group from-path to-path before-path before-group))))
+
+;; === Base font size
+
+(defmethod process-change :set-base-font-size
+  [data {:keys [base-font-size]}]
+  (ctf/set-base-font-size data base-font-size))
+
 
 ;; === Operations
 

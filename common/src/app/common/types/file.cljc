@@ -32,6 +32,13 @@
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CONSTANTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce BASE-FONT-SIZE "16px")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -65,7 +72,8 @@
 
 (def schema:options
   [:map {:title "FileOptions"}
-   [:components-v2 {:optional true} ::sm/boolean]])
+   [:components-v2 {:optional true} ::sm/boolean]
+   [:base-font-size {:optional true} :string]])
 
 (def schema:data
   [:map {:title "FileData"}
@@ -133,7 +141,8 @@
        (ctpl/add-page page)
 
        :always
-       (update :options assoc :components-v2 true)))))
+       (update :options merge {:components-v2 true
+                               :base-font-size BASE-FONT-SIZE})))))
 
 (defn make-file
   [{:keys [id project-id name revn is-shared features migrations
@@ -1028,3 +1037,14 @@
 
     (-> file
         (update-in [:data :pages-index] detach-pages))))
+
+;; Base font size
+
+(defn get-base-font-size
+  "Retrieve the base font size value or token reference."
+  [file-data]
+  (get-in file-data [:options :base-font-size] BASE-FONT-SIZE))
+
+(defn set-base-font-size
+  [file-data base-font-size]
+  (assoc-in file-data [:options :base-font-size] base-font-size))
