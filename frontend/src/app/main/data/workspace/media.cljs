@@ -274,20 +274,6 @@
 
 ;; --- Upload File Media objects
 
-(defn load-and-parse-svg
-  "Load the contents of a media-obj of type svg, and parse it
-  into a clojure structure."
-  [media-obj]
-  (let [path (cf/resolve-file-media media-obj)]
-    (->> (http/send! {:method :get :uri path :mode :no-cors})
-         (rx/map :body)
-         (rx/map #(vector (:name media-obj) %))
-         (rx/merge-map svg->clj)
-         (rx/catch  ; When error downloading media-obj, skip it and continue with next one
-          #(log/error :msg (str "Error downloading " (:name media-obj) " from " path)
-                      :hint (ex-message %)
-                      :error %)))))
-
 (defn create-shapes-svg
   "Convert svg elements into penpot shapes."
   [file-id objects pos svg-data]
