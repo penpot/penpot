@@ -395,7 +395,7 @@
      (watch [it state _]
        (let [file-id  (:current-file-id state)
              page-id  (:current-page-id state)
-             objects  (dsh/lookup-page-objects state page-id)
+             objects  (dsh/lookup-page-objects state file-id page-id)
              shapes   (dwg/shapes-for-grouping objects selected)
              parents  (into #{} (map :parent-id) shapes)]
          (when-not (empty? shapes)
