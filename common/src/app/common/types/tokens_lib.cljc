@@ -844,7 +844,7 @@
              (if (and (not (some? token-type)) (some? token-type-str))
                (assoc unknown-tokens child-path token-type-str)
                unknown-tokens)))))
-     {}
+     nil
      tokens)))
 
 (defn flatten-nested-tokens-json
