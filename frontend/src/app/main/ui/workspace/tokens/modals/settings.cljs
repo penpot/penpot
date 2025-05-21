@@ -15,7 +15,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
-   [app.main.ui.ds.foundations.assets.icon  :as i :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon  :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
@@ -87,8 +87,7 @@
        [:div {:class (stl/css :settings-modal-content)}
         [:div {:class (stl/css :settings-modal-subtitle-wrapper)}
          [:> text* {:as "span" :typography t/body-large :class (stl/css :settings-subtitle)}
-          (tr "workspace.tokens.base-font-size")]
-         [:> icon* {:icon-id "info"}]]
+          (tr "workspace.tokens.base-font-size")]]
         [:> text* {:as "span" :typography t/body-medium :class (stl/css :settings-modal-description)}
          (tr "workspace.tokens.setting-description")]
 
