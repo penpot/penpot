@@ -227,6 +227,8 @@ The [logical properties](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_lo
 }
 ```
 
+Note: Although `width` and `height` are physical properties, their use is allowed in CSS files. They remain more readable and intuitive than their logical counterparts (`inline-size`, `block-size`) in many contexts. Since our layouts are not direction-sensitive (i.e., they won't adapt based on writing mode), we don't gain practical benefits from using logical properties here.
+
 ### Use named DS variables
 
 Avoid hardcoded values like `px`, `rem`, or raw SASS variables `($s-*)`. Use semantic, named variables provided by the Design System to ensure consistency and scalability.
@@ -235,12 +237,12 @@ Avoid hardcoded values like `px`, `rem`, or raw SASS variables `($s-*)`. Use sem
 Use variables from `frontend/src/app/main/ui/ds/spacing.scss`. These are predefined and approved by the design team — **do not add or modify values without design approval**.
 
 #### Fixed dimensions
-For fixed dimensions (e.g., modal widths) defined by design and not layout-driven, use or define variables in `frontend/src/app/main/ui/ds/_sizes.scss`. To use them:
+For fixed dimensions (e.g., modals' widths) defined by design and not layout-driven, use or define variables in `frontend/src/app/main/ui/ds/_sizes.scss`. To use them:
 
 ```scss
 @use "../_sizes.scss" as *;
 ```
-Note: Since these values haven't been semantically defined, we’re temporarily using SASS variables instead of named CSS custom properties.
+Note: Since these values haven't been semantically defined yet, we’re temporarily using SASS variables instead of named CSS custom properties.
 
 #### Border Widths
 Use border thickness variables from `frontend/src/app/main/ui/ds/_borders.scss`. To import:
@@ -251,7 +253,7 @@ Use border thickness variables from `frontend/src/app/main/ui/ds/_borders.scss`.
 
 Avoid using sass variables defined on `frontend/resources/styles/common/refactor/spacing.scss` that are deprecated.
 
-❌ **AVOID: Using sass unnamed variables**
+❌ **AVOID: Using sass unnamed variables or hardcoded values**
 
 ```scss
 .btn {
@@ -325,29 +327,44 @@ When applying typography in SCSS, use the proper mixin from the Design System.
 }
 ```
 You can find the full list of available typography tokens in [Storybook](https://design.penpot.app/storybook/?path=/docs/foundations-typography--docs).
-If your design doesn't match any of them, consult with the responsible designer.
+If the design you are implementing doesn't match any of them, ask a designer.
 
 
 ### Use custom properties within components
 
 Reduce the need for one-off SASS variables by leveraging [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascading_variables/Using_CSS_custom_properties) in your component styles. This keeps component theming flexible and composable.
 
+For instance, this is how we handle the styles of <code class="language-clojure">\<Toast></code>, which have a different style depending on the level of the message (default, info, error, etc.)
 
 ```scss
-.context-menu-item {
-  --context-menu-item-bg-color: none;
-  --context-menu-item-fg-color: var(--color-foreground-primary);
-  --context-menu-item-border-color: none;
-  ...
-  &:hover {
-    --context-menu-item-bg-color: var(--color-background-quaternary);
-  }
+.toast {
+  // common styles for all toasts
+  // ...
 
-  &:focus {
-    --context-menu-item-bg-color: var(--color-background-secondary);
-    --context-menu-item-border-color: var(--color-background-tertiary);
-  }
+  --toast-bg-color: var(--color-background-primary);
+  --toast-icon-color: var(--color-foreground-secondary);
+  // ... more variables here
+
+  background-color: var(--toast-bg-color);
 }
+
+.toast-icon {
+  color: var(--toast-bg-color);
+}
+
+.toast-info {
+  --toast-bg-color: var(--color-background-info);
+  --toast-icon-color: var(--color-accent-info);
+  // ... override more variables here
+}
+
+.toast-error {
+  --toast-bg-color: var(--color-background-error);
+  --toast-icon-color: var(--color-accent-error);
+  // ... override more variables here
+}
+
+// ... more variants here
 ```
 
 ## Semantics and accessibility
@@ -660,40 +677,8 @@ We use three **levels of tokens**:
 
 ### Implementing variants
 
-We can leverage component tokens to easily implement variants, by overriding their values in each component variant.
+We can leverage component tokens to easily implement variants as explained [here](/technical-guide/developer/ui/#use-custom-properties-within-components).
 
-For instance, this is how we handle the styles of <code class="language-clojure">\<Toast></code>, which have a different style depending on the level of the message (default, info, error, etc.)
-
-```scss
-.toast {
-  // common styles for all toasts
-  // ...
-
-  --toast-bg-color: var(--color-background-primary);
-  --toast-icon-color: var(--color-foreground-secondary);
-  // ... more variables here
-
-  background-color: var(--toast-bg-color);
-}
-
-.toast-icon {
-  color: var(--toast-bg-color);
-}
-
-.toast-info {
-  --toast-bg-color: var(--color-background-info);
-  --toast-icon-color: var(--color-accent-info);
-  // ... override more variables here
-}
-
-.toast-error {
-  --toast-bg-color: var(--color-background-error);
-  --toast-icon-color: var(--color-accent-error);
-  // ... override more variables here
-}
-
-// ... more variants here
-```
 
 ### Using icons and SVG assets
 
