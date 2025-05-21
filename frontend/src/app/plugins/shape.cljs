@@ -31,6 +31,7 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
    [app.common.uuid :as uuid]
+   [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.guides :as dwgu]
@@ -848,7 +849,7 @@
                (u/display-not-valid :setPluginData "Plugin doesn't have 'content:write' permission")
 
                :else
-               (st/emit! (dw/set-plugin-data file-id :shape id page-id (keyword "plugin" (str plugin-id)) key value))))
+               (st/emit! (dp/set-plugin-data file-id :shape id page-id (keyword "plugin" (str plugin-id)) key value))))
 
            :getPluginDataKeys
            (fn []
@@ -884,7 +885,7 @@
                (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'content:write' permission")
 
                :else
-               (st/emit! (dw/set-plugin-data file-id :shape id page-id (keyword "shared" namespace) key value))))
+               (st/emit! (dp/set-plugin-data file-id :shape id page-id (keyword "shared" namespace) key value))))
 
            :getSharedPluginDataKeys
            (fn [namespace]

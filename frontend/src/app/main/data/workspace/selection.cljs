@@ -332,11 +332,11 @@
    (ptk/reify ::select-shapes-by-current-selrect
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id (:current-page-id state)
-             objects (dsh/lookup-page-objects state)
-             selrect (dm/get-in state [:workspace-local :selrect])
-             blocked? (fn [id] (dm/get-in objects [id :blocked] false))
-             ask-worker (if buffered? mw/ask-buffered! mw/ask!)
+       (let [page-id     (:current-page-id state)
+             objects     (dsh/lookup-page-objects state page-id)
+             selrect     (dm/get-in state [:workspace-local :selrect])
+             blocked?    (fn [id] (dm/get-in objects [id :blocked] false))
+             ask-worker  (if buffered? mw/ask-buffered! mw/ask!)
              filter-objs (comp
                           (filter (complement blocked?))
                           (remove (partial cfh/hidden-parent? objects)))]

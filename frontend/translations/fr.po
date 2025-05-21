@@ -5475,6 +5475,34 @@ msgstr "Éloigner"
 msgid "workspace.shape.menu.copy"
 msgstr "Copier"
 
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.copy-svg"
+msgstr "Copier comme SVG"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.copy-css"
+msgstr "Copier comme CSS"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "Copier comme CSS (calques imbriquées)"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.copy-link"
+msgstr "Copier le lien"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "Copier/Coller comme ..."
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.copy-props"
+msgstr "Copier les propriétés"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.copy-text"
+msgstr "Copier comme texte"
+
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:454
 msgid "workspace.shape.menu.create-annotation"
 msgstr "Créer une note"

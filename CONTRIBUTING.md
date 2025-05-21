@@ -83,6 +83,8 @@ Where type is:
 - :arrow_up: `:arrow_up:` a commit with dependency updates
 - :arrow_down: `:arrow_down:` a commit with dependency downgrades
 - :fire: `:fire:` a commit that removes files or code
+- :globe_with_meridians: `:globe_with_meridians:` a commit that adds or updates
+  translations
 
 More info:
 
