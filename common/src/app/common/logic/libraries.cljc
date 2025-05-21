@@ -2055,7 +2055,7 @@
                     (pcb/with-objects objects)
                     (pcb/resize-parents new-objects-ids)
                     ;; Fix the order of the children inside the parent
-                    (pcb/reorder-children parent-id (get-in objects [parent-id :shapes])))]
+                    (cond-> parent-id (pcb/reorder-children parent-id (get-in objects [parent-id :shapes]))))]
     (assoc changes :file-id library-id)))
 
 (defn generate-detach-component
