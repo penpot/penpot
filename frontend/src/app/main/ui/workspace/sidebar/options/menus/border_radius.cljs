@@ -1,6 +1,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.border-radius
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.types.shape.radius :as ctsr]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
@@ -17,10 +18,10 @@
   [shape]
   (= (:r1 shape) (:r2 shape) (:r3 shape) (:r4 shape)))
 
-(mf/defc border-radius-menu
-  {::mf/wrap-props false
+(mf/defc border-radius-menu*
+  {::mf/props :obj
    ::mf/wrap [mf/memo]}
-  [{:keys [ids ids-with-children values]}]
+  [{:keys [class ids ids-with-children values]}]
   (let [all-equal?       (all-equal? values)
         radius-expanded* (mf/use-state false)
         radius-expanded  (deref radius-expanded*)
@@ -75,7 +76,7 @@
     (mf/with-effect [ids]
       (reset! radius-expanded* false))
 
-    [:div {:class (stl/css :radius)}
+    [:div {:class (dm/str class " " (stl/css :radius))}
      (if (not radius-expanded)
        [:div {:class (stl/css :radius-1)
               :title (tr "workspace.options.radius")}

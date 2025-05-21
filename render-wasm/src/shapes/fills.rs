@@ -1,6 +1,7 @@
-use skia_safe::{self as skia, Rect};
+use skia_safe::{self as skia, Paint, Rect};
 
 pub use super::Color;
+use crate::utils::get_image;
 use crate::uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -174,5 +175,81 @@ impl Fill {
                 p
             }
         }
+    }
+}
+
+pub fn get_fill_shader(fill: &Fill, bounding_box: &Rect) -> Option<skia::Shader> {
+    match fill {
+        Fill::Solid(SolidColor(color)) => Some(skia::shaders::color(*color)),
+        Fill::LinearGradient(gradient) => gradient.to_linear_shader(bounding_box),
+        Fill::RadialGradient(gradient) => gradient.to_radial_shader(bounding_box),
+        Fill::Image(image_fill) => {
+            let mut image_shader = None;
+            let image = get_image(&image_fill.id);
+            if let Some(image) = image {
+                let sampling_options =
+                    skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
+
+                // FIXME no image ratio applied, centered to the current rect
+                let tile_modes = (skia::TileMode::Clamp, skia::TileMode::Clamp);
+                let image_width = image_fill.width as f32;
+                let image_height = image_fill.height as f32;
+                let scale_x = bounding_box.width() / image_width;
+                let scale_y = bounding_box.height() / image_height;
+                let scale = scale_x.max(scale_y);
+                let scaled_width = image_width * scale;
+                let scaled_height = image_height * scale;
+                let pos_x = bounding_box.left() - (scaled_width - bounding_box.width()) / 2.0;
+                let pos_y = bounding_box.top() - (scaled_height - bounding_box.height()) / 2.0;
+
+                let mut matrix = skia::Matrix::new_identity();
+                matrix.pre_translate((pos_x, pos_y));
+                matrix.pre_scale((scale, scale), None);
+
+                let opacity = image_fill.opacity();
+                let alpha_color = skia::Color4f::new(1.0, 1.0, 1.0, opacity as f32 / 255.0);
+                let alpha_shader = skia::shaders::color(alpha_color.to_color());
+
+                image_shader = image.to_shader(tile_modes, sampling_options, &matrix);
+                if let Some(shader) = image_shader {
+                    image_shader = Some(skia::shaders::blend(
+                        skia::Blender::mode(skia::BlendMode::DstIn),
+                        shader,
+                        alpha_shader,
+                    ));
+                }
+            }
+            image_shader
+        }
+    }
+}
+
+pub fn merge_fills(fills: &[Fill], bounding_box: Rect) -> skia::Paint {
+    let mut combined_shader: Option<skia::Shader> = None;
+    let mut fills_paint = skia::Paint::default();
+
+    for fill in fills {
+        let shader = get_fill_shader(fill, &bounding_box);
+
+        if let Some(shader) = shader {
+            combined_shader = match combined_shader {
+                Some(existing_shader) => Some(skia::shaders::blend(
+                    skia::Blender::mode(skia::BlendMode::Overlay),
+                    existing_shader,
+                    shader,
+                )),
+                None => Some(shader),
+            };
+        }
+    }
+
+    fills_paint.set_shader(combined_shader.clone());
+    fills_paint
+}
+
+pub fn set_paint_fill(paint: &mut Paint, fill: &Fill, bounding_box: &Rect) {
+    let shader = get_fill_shader(fill, bounding_box);
+    if let Some(shader) = shader {
+        paint.set_shader(shader);
     }
 }
