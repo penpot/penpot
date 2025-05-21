@@ -1958,11 +1958,6 @@ msgstr "עברת על הכול! התראות על הערות חדשות תופע
 msgid "labels.no-invitations"
 msgstr "אין הזמנות ממתינות."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "לחיצה על הכפתור **הזמנת אנשים** תאפשר להזמין אנשים לצוות."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"
@@ -6391,10 +6386,6 @@ msgstr "עריכת ערכות עיצוב"
 msgid "workspace.token.edit-token"
 msgstr "עריכת אסימון"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:544
-msgid "workspace.token.enter-token-description"
-msgstr "הוספת תיאור (רשות)"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:498
 msgid "workspace.token.enter-token-name"
 msgstr "נא למלא את שם האסימון %s"
@@ -7078,10 +7069,6 @@ msgstr "ספריות עיצוב"
 #: src/app/main/ui/workspace/tokens/errors.cljs:13
 msgid "workspace.token.invalid-json"
 msgstr "שגיאת ייבוא: נתוני אסימון שגויים ב־JSON."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:197
-msgid "workspace.token.label.group-optional"
-msgstr "רשות"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
 #, unused

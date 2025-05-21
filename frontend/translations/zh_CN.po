@@ -1663,11 +1663,6 @@ msgstr "你们都赶上了! 新的评论通知将出现在这里。"
 msgid "labels.no-invitations"
 msgstr "没有待处理的邀请。"
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "单击“**邀请他人**”按钮以邀请人员加入此团队。"
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"

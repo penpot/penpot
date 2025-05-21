@@ -2007,13 +2007,6 @@ msgstr "Non ci sono notifiche di commenti in attesa."
 msgid "labels.no-invitations"
 msgstr "Non ci sono inviti."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr ""
-"Premi il pulsante \"Invita nel team\" per invitare altri membri in questo "
-"team."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"
@@ -6454,10 +6447,6 @@ msgstr "Modifica temi"
 msgid "workspace.token.edit-token"
 msgstr "Modifica token"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:544
-msgid "workspace.token.enter-token-description"
-msgstr "Aggiungi una descrizione (opzionale)"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:498
 msgid "workspace.token.enter-token-name"
 msgstr "Inserisci il nome del token %s"
@@ -7184,10 +7173,6 @@ msgstr "Valore colore invalido: %s"
 #: src/app/main/ui/workspace/tokens/errors.cljs:13
 msgid "workspace.token.invalid-json"
 msgstr "Errore di importazione: Dati del token non validi nel JSON."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:197
-msgid "workspace.token.label.group-optional"
-msgstr "Opzionale"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:199
 msgid "workspace.token.label.group-placeholder"

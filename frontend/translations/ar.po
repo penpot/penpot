@@ -1466,11 +1466,6 @@ msgstr "ليس لديك أي إشعارات تعليق معلقة"
 msgid "labels.no-invitations"
 msgstr "لا توجد دعوات."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "اضغط على الزر \"دعوة إلى الفريق\" لدعوة المزيد من الأعضاء إلى هذا الفريق."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"

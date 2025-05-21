@@ -2009,11 +2009,6 @@ msgstr "Ви все наздогнали! Нові повідомлення пр
 msgid "labels.no-invitations"
 msgstr "У вас, поки що, немає запрошень."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "Натисніть на кнопку **Запросити людей** щоб запросити людей до цієї команди."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"
@@ -6477,10 +6472,6 @@ msgstr "Редагувати теми"
 msgid "workspace.token.edit-token"
 msgstr "Редагувати токен"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:544
-msgid "workspace.token.enter-token-description"
-msgstr "Додайте опис (необов'язково)"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:498
 msgid "workspace.token.enter-token-name"
 msgstr "Вкажіть %s ім'я токену"
@@ -7108,10 +7099,6 @@ msgstr "Помилка імпорту: Помилкові дани токену 
 #: src/app/main/ui/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/errors.cljs:45
 msgid "workspace.token.invalid-value"
 msgstr "Помилкове значення токену: %s"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:197
-msgid "workspace.token.label.group-optional"
-msgstr "Опціонально"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:199
 msgid "workspace.token.label.group-placeholder"

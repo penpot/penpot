@@ -1992,13 +1992,6 @@ msgstr "Vše je aktuální! Zde se zobrazí upozornění na nové komentáře."
 msgid "labels.no-invitations"
 msgstr "Nejsou žádné pozvánky."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr ""
-"Chcete-li do tohoto týmu pozvat další členy, stiskněte tlačítko „Pozvat do "
-"týmu“."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"
@@ -6420,10 +6413,6 @@ msgstr "Upravit motivy"
 #: src/app/main/ui/workspace/tokens/form.cljs:491
 msgid "workspace.token.edit-token"
 msgstr "Upravit token"
-
-#: src/app/main/ui/workspace/tokens/form.cljs:544
-msgid "workspace.token.enter-token-description"
-msgstr "Přidejte popis (volitelné)"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:498
 msgid "workspace.token.enter-token-name"

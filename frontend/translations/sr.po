@@ -1719,11 +1719,6 @@ msgstr "Све сте прегледали! Нова обавештења о к�
 msgid "labels.no-invitations"
 msgstr "Нема позивница на чекању."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "Кликните на дугме **Позови људе** да бисте позвали људе у овај тим."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"

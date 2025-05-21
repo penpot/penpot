@@ -1569,11 +1569,6 @@ msgstr "Nada de novo por aqui! Novas notificações de comentários irão aparec
 msgid "labels.no-invitations"
 msgstr "Não há convites pendentes."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "Clique no botão **Convidar pessoas** para convidar membros para esta equipe."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"

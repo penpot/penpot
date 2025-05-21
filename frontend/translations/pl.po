@@ -1489,11 +1489,6 @@ msgstr ""
 msgid "labels.no-invitations"
 msgstr "Brak oczekujących zaproszeń."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "Kliknij przycisk **Zaproś osoby**, aby zaprosić osoby do tego zespołu."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"

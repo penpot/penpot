@@ -1660,11 +1660,6 @@ msgstr ""
 msgid "labels.no-invitations"
 msgstr "Tiada jemputan tertunda."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "Klik butang **Jemput orang** untuk menjemput orang ke pasukan ini."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"

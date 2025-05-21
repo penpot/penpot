@@ -1769,13 +1769,6 @@ msgstr "Sunteți la zi! Notificările de comentarii noi vor apărea aici."
 msgid "labels.no-invitations"
 msgstr "Nu există invitații în așteptare."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr ""
-"Faceți clic pe butonul **Invitați persoane** pentru a invita persoane în "
-"această echipă."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"

@@ -2022,13 +2022,6 @@ msgstr ""
 msgid "labels.no-invitations"
 msgstr "Keine ausstehenden Einladungen."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr ""
-"Drücken Sie auf die Schaltfläche **Personen einladen**, um Personen zu "
-"diesem Team einzuladen."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"
@@ -6488,10 +6481,6 @@ msgstr "Themes bearbeiten"
 #: src/app/main/ui/workspace/tokens/form.cljs:491
 msgid "workspace.token.edit-token"
 msgstr "Token bearbeiten"
-
-#: src/app/main/ui/workspace/tokens/form.cljs:544
-msgid "workspace.token.enter-token-description"
-msgstr "Eine Beschreibung hinzufügen (optional)"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:498
 msgid "workspace.token.enter-token-name"

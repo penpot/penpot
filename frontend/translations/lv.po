@@ -1997,13 +1997,6 @@ msgstr "Jūs esat pieķerti! Šeit tiks parādīti jaunu komentāru paziņojumi.
 msgid "labels.no-invitations"
 msgstr "Nav gaidošu uzaicinājumu."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr ""
-"Jānoklikšķina uz pogas **Uzaicināt cilvēkus**, lai šajā komandā uzaicinātu "
-"cilvēkus."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"
@@ -6459,10 +6452,6 @@ msgstr "Labot izskatus"
 msgid "workspace.token.edit-token"
 msgstr "Labot tekstvienību"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:544
-msgid "workspace.token.enter-token-description"
-msgstr "Pievienot aprakstu (pēc izvēles)"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:498
 msgid "workspace.token.enter-token-name"
 msgstr "Jāievada %s tekstvienības nosaukums"
@@ -7229,10 +7218,6 @@ msgstr ""
 #: src/app/main/ui/workspace/tokens/errors.cljs:13
 msgid "workspace.token.invalid-json"
 msgstr "Ievietošanas kļūda: JSON satur nederīgus tekstvienību datus."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:197
-msgid "workspace.token.label.group-optional"
-msgstr "Izvēles"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:208
 msgid "workspace.token.label.theme-placeholder"

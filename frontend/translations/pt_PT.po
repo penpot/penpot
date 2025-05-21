@@ -1881,13 +1881,6 @@ msgstr "Não tens notificações de comentários pendentes."
 msgid "labels.no-invitations"
 msgstr "Não há convites."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr ""
-"Clica no botão \"Convidar para a equipa\" para convidar mais membros para "
-"esta equipa."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"
@@ -6156,10 +6149,6 @@ msgstr "Editar tema"
 msgid "workspace.token.edit-themes"
 msgstr "Editar temas"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:544
-msgid "workspace.token.enter-token-description"
-msgstr "Adicionar uma descrição (opcional)"
-
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:206
 msgid "workspace.token.label.theme"
 msgstr "Tema"
@@ -6675,10 +6664,6 @@ msgstr "Adicionar ao teu projeto"
 #: src/app/main/ui/dashboard/comments.cljs:95
 msgid "label.mark-all-as-read"
 msgstr "Marcar todas como lidas"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:197
-msgid "workspace.token.label.group-optional"
-msgstr "Opcional"
 
 #: src/app/main/ui/dashboard/placeholder.cljs:43
 msgid "dashboard.empty-project.go-to-libraries"

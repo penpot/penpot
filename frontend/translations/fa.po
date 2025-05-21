@@ -1451,11 +1451,6 @@ msgstr "هیچ اعلان نظر معلقی ندارید"
 msgid "labels.no-invitations"
 msgstr "هیچ دعوتنامه‌ای وجود ندارد."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "دکمه \"دعوت به تیم\" را فشار دهید تا اعضای بیشتری را به این تیم دعوت کنید."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"

@@ -1921,11 +1921,6 @@ msgstr "你都瞭解了！新的評論通知將顯示在這裡。"
 msgid "labels.no-invitations"
 msgstr "沒有待處理的邀請。"
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "點擊**邀請人員(Invite People)**按鈕，邀請人員加入團隊。"
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"
@@ -6257,10 +6252,6 @@ msgstr "編輯主題"
 #: src/app/main/ui/workspace/tokens/form.cljs:491
 msgid "workspace.token.edit-token"
 msgstr "編輯權杖(token)"
-
-#: src/app/main/ui/workspace/tokens/form.cljs:544
-msgid "workspace.token.enter-token-description"
-msgstr "新增描述（選填）"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:498
 msgid "workspace.token.enter-token-name"

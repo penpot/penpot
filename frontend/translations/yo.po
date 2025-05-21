@@ -1560,11 +1560,6 @@ msgstr "A ti gbé gbogbo yín dè!  Àwọn  ọ̀rọ̀ ìfitónilétí tuntun 
 msgid "labels.no-invitations"
 msgstr "kò si àwọn ìfìwépè kankan nílẹ̀."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "Tẹ̀ ẹ́ **Pe àwọn ènìyàn**  tẹ bọ́tìnnì láti pe àwọn ènìyàn sínú ẹgbẹ́."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"

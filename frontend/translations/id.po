@@ -1987,11 +1987,6 @@ msgstr "Anda telah melihat semuanya! Notifikasi komentar baru akan muncul di sin
 msgid "labels.no-invitations"
 msgstr "Tidak ada undangan yang menunggu."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "Tekan tombol **Undang orang** untuk mengundang orang-orang ke tim ini."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"
@@ -6416,10 +6411,6 @@ msgstr "Sunting tema"
 msgid "workspace.token.edit-token"
 msgstr "Sunting token"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:544
-msgid "workspace.token.enter-token-description"
-msgstr "Tambahkan deskripsi (opsional)"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:498
 msgid "workspace.token.enter-token-name"
 msgstr "Masukkan nama token %s"
@@ -7111,10 +7102,6 @@ msgstr "Nilai warna tidak valid: %s"
 #: src/app/main/ui/workspace/tokens/errors.cljs:13
 msgid "workspace.token.invalid-json"
 msgstr "Kesalahan pengimporan: Data token tidak valid dalam JSON."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:197
-msgid "workspace.token.label.group-optional"
-msgstr "Opsional"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:199
 msgid "workspace.token.label.group-placeholder"

@@ -1783,13 +1783,6 @@ msgstr "Vous n’avez aucune notification de commentaire en attente."
 msgid "labels.no-invitations"
 msgstr "Aucune invitation en attente."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr ""
-"Appuyez sur le bouton \"Inviter des personnes\" pour inviter d'autres "
-"membres à cette équipe."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"
@@ -6310,10 +6303,6 @@ msgstr "Ajouter un groupe (ex : Mode)"
 msgid "workspace.token.label.group"
 msgstr "Groupe"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:197
-msgid "workspace.token.label.group-optional"
-msgstr "Optionnel"
-
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:206
 msgid "workspace.token.label.theme"
 msgstr "Thème"
@@ -7154,10 +7143,6 @@ msgstr "Valeur"
 #: src/app/main/ui/workspace/tokens/form.cljs:545
 msgid "workspace.token.token-description"
 msgstr "Description"
-
-#: src/app/main/ui/workspace/tokens/form.cljs:544
-msgid "workspace.token.enter-token-description"
-msgstr "Ajouter une description (optionnel)"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
 msgid "workspace.token.tools"

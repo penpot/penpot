@@ -1399,13 +1399,6 @@ msgstr "No teniu notificacions de comentaris pendents"
 msgid "labels.no-invitations"
 msgstr "No hi ha invitacions."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr ""
-"Feu clic al botó «Convida a l'equip» per convidar més membres a aquest "
-"equip."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"

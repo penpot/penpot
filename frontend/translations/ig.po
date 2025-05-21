@@ -1422,11 +1422,6 @@ msgstr "E jidere unu niile! Ngosi nkwupụta ọhụrụ ga-apụta ebe a ."
 msgid "labels.no-invitations"
 msgstr "E nweghị ọkụ na-echere"
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "Pịa mpị**kpọọ ndị mmadụ ** ịkpọọ ndị mmadụ n'otu a."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"

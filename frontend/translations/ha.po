@@ -1604,11 +1604,6 @@ msgstr "an dakatar da kai duka! Alamar  sabon sharhi za ta fito nan."
 msgid "labels.no-invitations"
 msgstr "ba saqon da ba a buxa ba."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "danna **gayyato mutane** wurin da ake nemo mutane a wannan tawaga."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"

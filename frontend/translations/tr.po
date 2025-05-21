@@ -1764,13 +1764,6 @@ msgstr "Hepsini bitirdiniz! Yeni yorum bildirimleri burada görünecektir."
 msgid "labels.no-invitations"
 msgstr "Bekleyen davetiye yok."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr ""
-"Kişileri bu takıma davet etmek için **İnsanları davet et** düğmesine "
-"tıklayın."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"

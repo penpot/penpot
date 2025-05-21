@@ -1506,11 +1506,6 @@ msgstr "Ez duzu iruzkinen inguruko jakinarazpenik."
 msgid "labels.no-invitations"
 msgstr "Ez dago gonbidapenik."
 
-#: src/app/main/ui/dashboard/team.cljs:742
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "Sakatu 'Taldera gonbdiatu' taldekide gehiago izateko."
-
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"
