@@ -227,7 +227,7 @@ The [logical properties](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_lo
 }
 ```
 
-Note: Although `width` and `height` are physical properties, their use is allowed in CSS files. They remain more readable and intuitive than their logical counterparts (`inline-size`, `block-size`) in many contexts. Since our layouts are not direction-sensitive (i.e., they won't adapt based on writing mode), we don't gain practical benefits from using logical properties here.
+Note: Although `width` and `height` are physical properties, their use is allowed in CSS files. They remain more readable and intuitive than their logical counterparts (`inline-size`, `block-size`) in many contexts. Since our layouts are not vertically-sensitive, we don't gain practical benefits from using logical properties here.
 
 ### Use named DS variables
 
