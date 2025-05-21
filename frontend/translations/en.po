@@ -7285,6 +7285,10 @@ msgstr "The value is not valid"
 msgid "workspace.tokens.warning-name-change"
 msgstr "Renaming this token will break any reference to its old name."
 
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.tokens.add-token"
+msgstr "Add Token: %s"
+
 #: src/app/main/ui/workspace/sidebar.cljs:137, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Assets"
