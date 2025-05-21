@@ -494,8 +494,16 @@ impl RenderState {
             .update_render_context(self.render_area, self.get_scale());
     }
 
-    fn render_from_cache(&mut self) {
-        let scale = self.get_scale();
+    pub fn cancel_animation_frame(&mut self) {
+        if self.render_in_progress {
+            if let Some(frame_id) = self.render_request_id {
+                wapi::cancel_animation_frame!(frame_id);
+            }
+        }
+    }
+
+    pub fn render_from_cache(&mut self) {
+        let scale = self.get_cached_scale();
         if let Some(snapshot) = &self.cached_target_snapshot {
             let canvas = self.surfaces.canvas(SurfaceId::Target);
             canvas.save();
@@ -525,6 +533,7 @@ impl RenderState {
             canvas.clear(self.background_color);
             canvas.draw_image(snapshot, (0, 0), Some(&skia::Paint::default()));
             canvas.restore();
+            self.flush_and_submit();
         }
     }
 
@@ -535,19 +544,12 @@ impl RenderState {
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         timestamp: i32,
     ) -> Result<(), String> {
-        if self.render_in_progress {
-            if let Some(frame_id) = self.render_request_id {
-                wapi::cancel_animation_frame!(frame_id);
-            }
-        }
+        let scale = self.get_scale();
+        self.tile_viewbox.update(self.viewbox, scale);
 
         performance::begin_measure!("render");
         performance::begin_measure!("start_render_loop");
 
-        // If we have cached data let's do a fast render from it
-        self.render_from_cache();
-
-        let scale = self.get_scale();
         self.reset_canvas();
         self.surfaces.apply_mut(
             &[
@@ -601,9 +603,7 @@ impl RenderState {
             self.flush_and_submit();
 
             if self.render_in_progress {
-                if let Some(frame_id) = self.render_request_id {
-                    wapi::cancel_animation_frame!(frame_id);
-                }
+                self.cancel_animation_frame();
                 self.render_request_id = Some(wapi::request_animation_frame!());
             } else {
                 performance::end_measure!("render");
@@ -1040,5 +1040,9 @@ impl RenderState {
 
     pub fn get_scale(&self) -> f32 {
         self.viewbox.zoom() * self.options.dpr()
+    }
+
+    pub fn get_cached_scale(&self) -> f32 {
+        self.cached_viewbox.zoom() * self.options.dpr()
     }
 }
