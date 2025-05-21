@@ -177,8 +177,8 @@
 
 .clip-content-label {
   @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
+  height: var(--sp-xxxl);
+  width: var(--sp-xxxl);
   border-radius: $br-8;
 }
 

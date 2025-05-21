@@ -24,6 +24,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as ds-i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.border-radius :refer  [border-radius-menu*]]
@@ -65,9 +66,6 @@
     :rect    rect-options
     :svg-raw generic-options
     :text    generic-options))
-
-(def ^:private clip-content-icon (i/icon-xref :clip-content (stl/css :checkbox-button)))
-(def ^:private play-icon (i/icon-xref :play (stl/css :checkbox-button)))
 
 (defn select-measure-keys
   "Consider some shapes can be drawn from bottom to top or from left to right"
@@ -427,7 +425,8 @@
                     :title (tr "workspace.options.clip-content")
                     :class (stl/css-case  :clip-content-label true
                                           :selected (not (:show-content values)))}
-            clip-content-icon]])
+
+            [:> ds-i/icon* {:icon-id ds-i/clip-content}]]])
         (when (options :show-in-viewer)
           [:div {:class (stl/css :show-in-viewer)}
            [:input {:type "checkbox"
@@ -441,5 +440,4 @@
                     :title (tr "workspace.options.show-in-viewer")
                     :class (stl/css-case  :clip-content-label true
                                           :selected (not (:hide-in-viewer values)))}
-            [:span {:class (stl/css :icon)}
-             play-icon]]])])]))
+            [:> ds-i/icon* {:icon-id ds-i/play}]]])])]))
