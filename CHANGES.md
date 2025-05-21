@@ -79,6 +79,7 @@ A non exhaustive list of changes:
 - Create `input*` wrapper component, and `label*`, `input-field*` and `hint-message*` components [Taiga #10713](https://tree.taiga.io/project/penpot/us/10713)
 - Deselect layers (and path nodes) with Ctrl+Shift+Drag [Github #2509](https://github.com/penpot/penpot/issues/2509)
 - Copy to SVG from contextual menu [Github #838](https://github.com/penpot/penpot/issues/838)
+- Add styles for Inkeep Chat at workspace [Taiga #10708](https://tree.taiga.io/project/penpot/us/10708)
 
 ### :bug: Bugs fixed
 
