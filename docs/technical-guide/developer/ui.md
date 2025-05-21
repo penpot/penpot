@@ -273,7 +273,7 @@ Avoid using sass variables defined on `frontend/resources/styles/common/refactor
 }
 
 .icon {
-  inline-size: var(--sp-l);
+  width: var(--sp-l);
 }
 ```
 
