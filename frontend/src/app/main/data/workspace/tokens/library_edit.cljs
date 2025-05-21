@@ -197,7 +197,7 @@
       (let [data       (dsh/lookup-file-data state)
             name       (ctob/normalize-set-name id)
             tokens-lib (get data :tokens-lib)
-            suffix     (tr "workspace.token.duplicate-suffix")]
+            suffix     (tr "workspace.tokens.duplicate-suffix")]
 
         (when-let [set (ctob/duplicate-set name tokens-lib {:suffix suffix})]
           (let [changes (-> (pcb/empty-changes it)
@@ -399,7 +399,7 @@
         (when-let [token (ctob/get-token token-set token-name)]
           (let [tokens (ctob/get-tokens token-set)
                 unames (map :name tokens)
-                suffix (tr "workspace.token.duplicate-suffix")
+                suffix (tr "workspace.tokens.duplicate-suffix")
                 copy-name (cfh/generate-unique-name token-name unames :suffix suffix)]
 
             (rx/of (create-token (assoc token :name copy-name)))))))))

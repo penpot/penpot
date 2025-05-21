@@ -41,7 +41,7 @@
 
         hint-message (if is-valid
                        (str "1rem = " base-font-size)
-                       (tr "workspace.token.base-font-size.error"))
+                       (tr "workspace.tokens.base-font-size.error"))
 
         on-change-base-font-size
         (mf/use-fn
@@ -82,15 +82,15 @@
        [:> heading* {:level 2
                      :typography t/headline-medium
                      :class (stl/css :settings-modal-title)}
-        (tr "workspace.token.settings")]
+        (tr "workspace.tokens.settings")]
 
        [:div {:class (stl/css :settings-modal-content)}
         [:div {:class (stl/css :settings-modal-subtitle-wrapper)}
          [:> text* {:as "span" :typography t/body-large :class (stl/css :settings-subtitle)}
-          (tr "workspace.token.base-font-size")]
+          (tr "workspace.tokens.base-font-size")]
          [:> icon* {:icon-id "info"}]]
         [:> text* {:as "span" :typography t/body-medium :class (stl/css :settings-modal-description)}
-         (tr "workspace.token.setting-description")]
+         (tr "workspace.tokens.setting-description")]
 
         [:> input* {:type "text"
                     :placeholder "16"

@@ -121,21 +121,21 @@
         grouped-values (group-by dimensions-dictionary app-token-keys)
 
         base-title (dm/str "Token: " name "\n"
-                           (tr "workspace.token.original-value" value) "\n"
-                           (tr "workspace.token.resolved-value" resolved-value))]
+                           (tr "workspace.tokens.original-value" value) "\n"
+                           (tr "workspace.tokens.resolved-value" resolved-value))]
 
     (cond
       ;; If there are errors, show the appropriate message
       ref-not-in-active-set
-      (tr "workspace.token.ref-not-valid")
+      (tr "workspace.tokens.ref-not-valid")
 
       no-valid-value
-      (tr "workspace.token.value-not-valid")
+      (tr "workspace.tokens.value-not-valid")
 
       ;; If the token is applied and the user is a is-viewer, show the details
       (and is-applied? is-viewer)
       (->> [base-title
-            (tr "workspace.token.applied-to")
+            (tr "workspace.tokens.applied-to")
             (if (= :dimensions type)
               (translate-and-format grouped-values)
               (str "- " title ": " applied-to))]

@@ -174,7 +174,7 @@
                                                                :p2 "Padding right"
                                                                :p3 "Padding bottom"
                                                                :p4 "Padding left"}
-                                             :hint (tr "workspace.token.paddings")
+                                             :hint (tr "workspace.tokens.paddings")
                                              :horizontal-attr-labels {:p2 "Padding right"
                                                                       :p4 "Padding left"}
                                              :vertical-attr-labels {:p1 "Padding top"
@@ -186,7 +186,7 @@
                                                               :m2 "Margin right"
                                                               :m3 "Margin bottom"
                                                               :m4 "Margin left"}
-                                            :hint (tr "workspace.token.margins")
+                                            :hint (tr "workspace.tokens.margins")
                                             :horizontal-attr-labels {:m2 "Margin right"
                                                                      :m4 "Margin left"}
                                             :vertical-attr-labels {:m1 "Margin top"
@@ -194,7 +194,7 @@
                                             :on-update-shape update-shape-layout-margin})
         gap-items (all-or-separate-actions {:attribute-labels {:column-gap "Column Gap"
                                                                :row-gap "Row Gap"}
-                                            :hint (tr "workspace.token.gaps")
+                                            :hint (tr "workspace.tokens.gaps")
                                             :on-update-shape dwta/update-layout-spacing}
                                            context-data)]
     (concat gap-items
@@ -207,19 +207,19 @@
   (concat
    (all-or-separate-actions {:attribute-labels {:width "Width"
                                                 :height "Height"}
-                             :hint (tr "workspace.token.size")
+                             :hint (tr "workspace.tokens.size")
                              :on-update-shape dwta/update-shape-dimensions}
                             context-data)
    [:separator]
    (all-or-separate-actions {:attribute-labels {:layout-item-min-w "Min Width"
                                                 :layout-item-min-h "Min Height"}
-                             :hint (tr "workspace.token.min-size")
+                             :hint (tr "workspace.tokens.min-size")
                              :on-update-shape dwta/update-layout-sizing-limits}
                             context-data)
    [:separator]
    (all-or-separate-actions {:attribute-labels {:layout-item-max-w "Max Width"
                                                 :layout-item-max-h "Max Height"}
-                             :hint (tr "workspace.token.max-size")
+                             :hint (tr "workspace.tokens.max-size")
                              :on-update-shape dwta/update-layout-sizing-limits}
                             context-data)))
 
@@ -234,11 +234,11 @@
                                                                          :r2 "Top Right"
                                                                          :r4 "Bottom Left"
                                                                          :r3 "Bottom Right"}
-                                                      :hint (tr "workspace.token.radius")
+                                                      :hint (tr "workspace.tokens.radius")
                                                       :on-update-shape-all dwta/update-shape-radius-all
                                                       :on-update-shape update-shape-radius-for-corners})
      :color (fn [context-data]
-              [(generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape dwta/update-fill :hint (tr "workspace.token.color")))
+              [(generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape dwta/update-fill :hint (tr "workspace.tokens.color")))
                (generic-attribute-actions #{:stroke-color} "Stroke" (assoc context-data :on-update-shape dwta/update-stroke-color))])
      :spacing spacing-attribute-actions
      :sizing sizing-attribute-actions
@@ -254,12 +254,12 @@
                     [:separator]
                     (stroke-width (assoc context-data :on-update-shape dwta/update-stroke-width))
                     [:separator]
-                    (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape dwta/update-shape-position :hint (tr "workspace.token.axis")))
+                    (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape dwta/update-shape-position :hint (tr "workspace.tokens.axis")))
                     (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape dwta/update-shape-position))))}))
 
 (defn default-actions [{:keys [token selected-token-set-name]}]
   (let [{:keys [modal]} (dwta/get-token-properties token)]
-    [{:title (tr "workspace.token.edit")
+    [{:title (tr "workspace.tokens.edit")
       :no-selectable true
       :action (fn [event]
                 (let [{:keys [key fields]} modal]
@@ -272,10 +272,10 @@
                                              :action "edit"
                                              :selected-token-set-name selected-token-set-name
                                              :token token}))))}
-     {:title (tr "workspace.token.duplicate")
+     {:title (tr "workspace.tokens.duplicate")
       :no-selectable true
       :action #(st/emit! (dwtl/duplicate-token (:name token)))}
-     {:title (tr "workspace.token.delete")
+     {:title (tr "workspace.tokens.delete")
       :no-selectable true
       :action #(st/emit! (dwtl/delete-token
                           (ctob/prefixed-set-path-string->set-name-string selected-token-set-name)

@@ -57,7 +57,7 @@
   (m/-simple-schema
    {:type :token/invalid-token-name
     :pred #(re-matches valid-token-name-regexp %)
-    :type-properties {:error/fn #(str (:value %) (tr "workspace.token.token-name-validation-error"))}}))
+    :type-properties {:error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error"))}}))
 
 (defn token-name-schema
   "Generate a dynamic schema validation to check if a token path derived from the name already exists at `tokens-tree`."
@@ -216,11 +216,11 @@
         empty-message? (nil? result)
 
         message (cond
-                  empty-message? (tr "workspace.token.resolved-value" "-")
+                  empty-message? (tr "workspace.tokens.resolved-value" "-")
                   warnings (wtw/humanize-warnings warnings)
                   errors (->> (wte/humanize-errors errors)
                               (str/join "\n"))
-                  :else (tr "workspace.token.resolved-value" (or resolved-value result)))
+                  :else (tr "workspace.tokens.resolved-value" (or resolved-value result)))
         type (cond
                empty-message? "hint"
                errors "error"
@@ -522,14 +522,14 @@
      [:div {:class (stl/css :token-rows)}
       [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
        (if (= action "edit")
-         (tr "workspace.token.edit-token")
-         (tr "workspace.token.create-token" token-type))]
+         (tr "workspace.tokens.edit-token")
+         (tr "workspace.tokens.create-token" token-type))]
 
       [:div {:class (stl/css :input-row)}
        (let [token-title (str/lower (:title token-properties))]
          [:> input* {:id "token-name"
-                     :label (tr "workspace.token.token-name")
-                     :placeholder (tr "workspace.token.enter-token-name", token-title)
+                     :label (tr "workspace.tokens.token-name")
+                     :placeholder (tr "workspace.tokens.enter-token-name", token-title)
                      :max-length max-input-length
                      :variant "comfortable"
                      :auto-focus true
@@ -552,12 +552,12 @@
        (when (and warning-name-change? (= action "edit"))
          [:div {:class (stl/css :warning-name-change-notification-wrapper)}
           [:> context-notification*
-           {:level :warning :appearance :ghost} (tr "workspace.token.warning-name-change")]])]
+           {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
        [:> input-tokens-value*
-        {:placeholder (tr "workspace.token.token-value-enter")
-         :label (tr "workspace.token.token-value")
+        {:placeholder (tr "workspace.tokens.token-value-enter")
+         :label (tr "workspace.tokens.token-value")
          :default-value (mf/ref-val value-ref)
          :ref value-input-ref
          :color color
@@ -570,8 +570,8 @@
                     :on-change on-update-color}])
        [:& token-value-hint {:result token-resolve-result}]]
       [:div {:class (stl/css :input-row)}
-       [:> input* {:label (tr "workspace.token.token-description")
-                   :placeholder (tr "workspace.token.token-description")
+       [:> input* {:label (tr "workspace.tokens.token-description")
+                   :placeholder (tr "workspace.tokens.token-description")
                    :is-optional true
                    :max-length max-input-length
                    :variant "comfortable"

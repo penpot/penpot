@@ -125,17 +125,17 @@
 
     [:div {:class (stl/css :import-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :import-modal-title)}
-      (tr "workspace.token.import-tokens")]
+      (tr "workspace.tokens.import-tokens")]
 
      [:> text* {:as "ul" :typography "body-medium" :class (stl/css :import-description)}
-      [:li (tr "workspace.token.import-single-file")]
-      [:li (tr "workspace.token.import-multiple-files")]]
+      [:li (tr "workspace.tokens.import-single-file")]
+      [:li (tr "workspace.tokens.import-multiple-files")]]
 
      [:> context-notification* {:type :context
                                 :appearance "neutral"
                                 :level "default"
                                 :is-html true}
-      (tr "workspace.token.import-warning")]
+      (tr "workspace.tokens.import-warning")]
 
      [:div {:class (stl/css :import-actions)}
       [:input {:type "file"
@@ -157,12 +157,12 @@
                    :type "button"
                    :icon i/document
                    :on-click on-display-file-explorer}
-       (tr "workspace.token.choose-file")]
+       (tr "workspace.tokens.choose-file")]
       [:> button* {:variant "primary"
                    :type "button"
                    :icon i/folder
                    :on-click on-display-dir-explorer}
-       (tr "workspace.token.choose-folder")]]]))
+       (tr "workspace.tokens.choose-folder")]]]))
 
 (mf/defc import-modal*
   {::mf/register modal/components

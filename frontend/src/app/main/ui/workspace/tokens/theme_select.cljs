@@ -69,7 +69,7 @@
                                   :checked-element-button true)
              :role "option"
              :on-click on-edit-click}
-        [:> text* {:as "span" :typography "body-small"} (tr "workspace.token.edit-themes")]
+        [:> text* {:as "span" :typography "body-small"} (tr "workspace.tokens.edit-themes")]
         [:> icon* {:icon-id i/arrow-right :aria-hidden true}]]])))
 
 (mf/defc theme-select
@@ -81,12 +81,12 @@
         can-edit?  (:can-edit (deref refs/permissions))
         ;; Data
         current-label (cond
-                        (> active-themes-count 1) (tr "workspace.token.active-themes" active-themes-count)
+                        (> active-themes-count 1) (tr "workspace.tokens.active-themes" active-themes-count)
                         (= active-themes-count 1) (some->> (first active-theme-paths)
                                                            (ctob/split-token-theme-path)
                                                            (remove empty?)
                                                            (str/join " / "))
-                        :else (tr "workspace.token.no-active-theme"))
+                        :else (tr "workspace.tokens.no-active-theme"))
 
         ;; State
         state* (mf/use-state

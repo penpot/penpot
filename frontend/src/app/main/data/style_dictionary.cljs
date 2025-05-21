@@ -291,9 +291,9 @@
 
 (defn- tokens-of-unknown-type-warning [unknown-tokens]
   (let [type->tokens (group-by-value unknown-tokens)]
-    (ntf/show {:content (tr "workspace.token.unknown-token-type")
+    (ntf/show {:content (tr "workspace.tokens.unknown-token-type")
                :detail (->> (for [[token-type tokens] type->tokens]
-                              (tr "workspace.token.unknown-token-type-section" token-type (count tokens)))
+                              (tr "workspace.tokens.unknown-token-type-section" token-type (count tokens)))
                             (str/join "\n"))
                :type :toast
                :level :info})))
