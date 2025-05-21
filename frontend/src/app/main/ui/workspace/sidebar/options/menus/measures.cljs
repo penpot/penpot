@@ -326,7 +326,9 @@
 
         [:& radio-buttons {:selected (or (d/name orientation) "")
                            :on-change on-orientation-change
-                           :name "frame-otientation"}
+                           :name "frame-orientation"
+                           :wide true
+                           :class (stl/css :radio-buttons)}
          [:& radio-button {:icon i/size-vertical
                            :value "vert"
                            :id "size-vertical"}]
