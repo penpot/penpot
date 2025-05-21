@@ -205,7 +205,7 @@ Remember that nesting selector increases specificity, and it's usually not neede
   fill: var(--icon-color);
 }
 ```
-Note: We are using css modules, thanks to that same class on different file don't crash.
+Note: Thanks to CSS Modules, identical class names defined in different files are scoped locally and do not cause naming collisions.
 
 ### Use CSS logical properties
 
