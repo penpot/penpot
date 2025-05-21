@@ -997,6 +997,8 @@
      {:title "agent"
       :description "instance of clojure agent"}}))
 
+(register! ::any (mu/update-properties :any assoc :gen/gen sg/any))
+
 ;; ---- PREDICATES
 
 (def valid-safe-number?

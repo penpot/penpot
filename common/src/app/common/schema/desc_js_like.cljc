@@ -7,6 +7,7 @@
 (ns app.common.schema.desc-js-like
   (:require
    [app.common.data :as d]
+   [app.common.schema :as-alias sm]
    [cuerdas.core :as str]
    [malli.core :as m]
    [malli.util :as mu]))
@@ -90,7 +91,7 @@
 (defmethod visit :int [_ schema _ _] (str "integer" (-titled schema) (-min-max-suffix-number schema)))
 (defmethod visit :double [_ schema _ _] (str "double" (-titled schema) (-min-max-suffix-number schema)))
 (defmethod visit :select-keys [_ schema _ options] (describe* (m/deref schema) options))
-(defmethod visit :and [_ s children _] (str (str/join ", and " children) (-titled s)))
+(defmethod visit :and [_ s children _] (str (str/join " && " children) (-titled s)))
 (defmethod visit :enum [_ s children _options] (str "enum" (-titled s) " of " (str/join ", " children)))
 (defmethod visit :maybe [_ _ children _] (str (first children) " nullable"))
 (defmethod visit :tuple [_ _ children _] (str "(" (str/join ", " children) ")"))
@@ -106,7 +107,8 @@
 (defmethod visit :qualified-symbol [_ _ _ _] "qualified symbol")
 (defmethod visit :uuid [_ _ _ _] "uuid")
 (defmethod visit :boolean [_ _ _ _] "boolean")
-(defmethod visit :keyword [_ _ _ _] "keyword")
+(defmethod visit :keyword [_ _ _ _] "string")
+(defmethod visit :fn [_ _ _ _] "FN")
 
 (defmethod visit :vector [_ _ children _]
   (str "[" (last children) "]"))
@@ -123,8 +125,10 @@
 (defmethod visit :repeat [_ schema children _]
   (str "repeat " (-diamond (first children)) (-repeat-suffix schema)))
 
-
 (defmethod visit :set [_ schema children _]
+  (str "set[" (first children) "]" (minmax-suffix schema)))
+
+(defmethod visit ::sm/set [_ schema children _]
   (str "set[" (first children) "]" (minmax-suffix schema)))
 
 (defmethod visit ::m/val [_ schema children _]
@@ -152,7 +156,6 @@
     (or (:title props)
         "*")))
 
-
 (defmethod visit :map
   [_ schema children {:keys [::level ::max-level] :as options}]
   (let [props   (m/properties schema)
@@ -172,13 +175,11 @@
                                       ": " s)))
                           (str/join ",\n"))
 
-            header   (cond-> (if (zero? level)
-                               (str "type " title)
-                               (str title))
+            header   (cond-> (str "type " title)
                        closed?       (str "!")
                        (some? title) (str " "))]
 
-        (str header "{\n" entries "\n" (pad "}" level))))))
+        (str (pad header level) "{\n" entries "\n" (pad "}\n" level))))))
 
 (defmethod visit :multi
   [_ s children {:keys [::level ::max-level] :as options}]
@@ -205,18 +206,18 @@
 
 (defmethod visit :merge
   [_ schema children _]
-  (let [entries (str/join " , " children)
+  (let [entries (str/join ",\n" children)
         props   (m/properties schema)
         title   (or (some-> (:title props) str/camel str/capital)
                     "<untitled>")]
-    (str "merge object " title " { " entries " }")))
+    (str "merge type " title " { \n" entries "\n}\n")))
 
-(defmethod visit :app.common.schema/one-of
-  [_ _  children _]
+(defmethod visit ::sm/one-of
+  [_ _ children _]
   (let [elems (last children)]
-    (str "OneOf[" (->> elems
-                       (map d/name)
-                       (str/join ",")) "]")))
+    (str "string oneOf (" (->> elems
+                               (map d/name)
+                               (str/join "|")) ")")))
 
 (defmethod visit :schema [_ schema children options]
   (visit ::m/schema schema children options))
