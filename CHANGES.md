@@ -81,6 +81,7 @@ A non exhaustive list of changes:
 - Copy to SVG from contextual menu [Github #838](https://github.com/penpot/penpot/issues/838)
 
 ### :bug: Bugs fixed
+- Fix getCurrentUser for plugins api [Taiga #11057](https://tree.taiga.io/project/penpot/issue/11057)
 
 
 ## 2.7.0 (Unreleased)

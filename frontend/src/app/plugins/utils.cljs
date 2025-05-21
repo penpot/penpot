@@ -59,7 +59,7 @@
 (defn locate-profile
   [session-id]
   (let [{:keys [profile-id]} (locate-presence session-id)]
-    (dm/get-in @st/state [:users profile-id])))
+    (dm/get-in @st/state [:profiles profile-id])))
 
 ;; FIXME: the impl looks strange: objects is passed by parameters but
 ;; then the rest of the file is looked up directly from state.... (?)
