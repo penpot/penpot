@@ -64,7 +64,7 @@
         nitems    (if (array? children)
                     (alength children)
                     1)
-
+        ;; FIXME: we should handle this with CSS
         width     (mf/with-memo [nitems]
                     (if (= wide true)
                       "unset"
@@ -100,6 +100,6 @@
 
     [:& (mf/provider context) {:value context-value}
      [:div {:class (dm/str class " " (stl/css :radio-btn-wrapper))
-            :style {:width width}
+            :style {:width  width}
             :key (dm/str name "-" selected)}
       children]]))

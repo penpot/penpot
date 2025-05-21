@@ -6093,6 +6093,14 @@ msgstr "Colapsar radios individuales"
 msgid "workspace.options.radius.show-single-corners"
 msgstr "Mostrar radios individuales"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:371
+msgid "workspace.options.size.lock"
+msgstr "Bloquear proporción"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:371
+msgid "workspace.options.size.unlock"
+msgstr "Desbloquear proporción"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:190
 msgid "workspace.options.recent-fonts"
 msgstr "Recientes"

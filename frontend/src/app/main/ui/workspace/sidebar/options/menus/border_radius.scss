@@ -7,30 +7,25 @@
 @import "refactor/common-refactor.scss";
 
 .radius {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: $s-4;
+  display: grid;
+  grid-template-columns: subgrid;
+  gap: var(--sp-xs);
 }
 
 .radius-1 {
   @extend .input-element;
   @include bodySmallTypography;
-  width: $s-108;
-  position: relative;
 }
 
 .radius-4 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: $s-4;
+  gap: var(--sp-xs);
 }
 
 .small-input {
   @extend .input-element;
   @include bodySmallTypography;
-  width: $s-52;
-  margin-block-end: 0;
 }
 
 .selected {
