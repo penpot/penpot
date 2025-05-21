@@ -269,7 +269,8 @@
         (mf/use-fn
          (mf/deps component-ids)
          (fn [pos value]
-           (let [value (if (= value empty-indicator) "" value)]
+           (let [value (str/trim value)
+                 value (if (= value empty-indicator) "" value)]
              (doseq [id component-ids]
                (st/emit! (dwv/update-property-value id pos value))
                (st/emit! (dwv/update-error id nil))))))
@@ -278,11 +279,12 @@
         (mf/use-fn
          (mf/deps variant-id)
          (fn [event]
-           (let [value (dom/get-target-val event)
+           (let [value (str/trim (dom/get-target-val event))
                  pos   (-> (dom/get-current-target event)
                            (dom/get-data "position")
                            int)]
-             (st/emit! (dwv/update-property-name variant-id pos value)))))]
+             (when (seq value)
+               (st/emit! (dwv/update-property-name variant-id pos value))))))]
 
     [:*
      [:div {:class (stl/css :variant-property-list)}
