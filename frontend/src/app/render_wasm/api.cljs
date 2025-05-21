@@ -620,9 +620,10 @@
    (let [offset (h/call wasm/internal-module "_get_text_dimensions")
          heapf32 (mem/get-heap-f32)
          width (aget heapf32 (mem/ptr8->ptr32 offset))
-         height (aget heapf32 (mem/ptr8->ptr32 (+ offset 4)))]
+         height (aget heapf32 (mem/ptr8->ptr32 (+ offset 4)))
+         max-width (aget heapf32 (mem/ptr8->ptr32 (+ offset 8)))]
      (h/call wasm/internal-module "_free_bytes")
-     {:width width :height height})))
+     {:width width :height height :max-width max-width})))
 
 (defn set-view-box
   [zoom vbox]

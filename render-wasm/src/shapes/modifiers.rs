@@ -210,6 +210,10 @@ pub fn propagate_modifiers(
                     shape_modif.post_concat(&transform);
                     modifiers.insert(shape.id, shape_modif);
 
+                    if shape.has_layout() {
+                        entries.push_back(Modifier::reflow(shape.id));
+                    }
+
                     if let Some(parent) = shape.parent_id.and_then(|id| shapes.get(&id)) {
                         if parent.has_layout() || parent.is_group_like() {
                             entries.push_back(Modifier::reflow(parent.id));

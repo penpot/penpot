@@ -1,5 +1,5 @@
 use crate::mem;
-use crate::shapes::{auto_height, auto_width, GrowType, RawTextData, Type};
+use crate::shapes::{auto_height, auto_width, max_width, GrowType, RawTextData, Type};
 
 use crate::STATE;
 use crate::{with_current_shape, with_state};
@@ -42,6 +42,7 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
 
     let mut width = 0.01;
     let mut height = 0.01;
+    let mut m_width = 0.01;
     with_current_shape!(state, |shape: &mut Shape| {
         width = shape.selrect.width();
         height = shape.selrect.height();
@@ -49,14 +50,16 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
         if let Type::Text(content) = &shape.shape_type {
             let paragraphs = content.get_skia_paragraphs(font_col);
             height = auto_height(&paragraphs).ceil();
+            m_width = max_width(&paragraphs);
             if content.grow_type() == GrowType::AutoWidth {
                 width = auto_width(&paragraphs).ceil();
             }
         }
     });
 
-    let mut bytes = vec![0; 8];
+    let mut bytes = vec![0; 12];
     bytes[0..4].clone_from_slice(&width.to_le_bytes());
     bytes[4..8].clone_from_slice(&height.to_le_bytes());
+    bytes[8..12].clone_from_slice(&m_width.to_le_bytes());
     mem::write_bytes(bytes)
 }
