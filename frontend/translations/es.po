@@ -1248,6 +1248,18 @@ msgstr "El correo electrónico «%s» tiene varios reportes de rebote permanente
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "El email «%s» tiene reportes de spam o de rebote permanente."
 
+msgid "errors.internal-assertion-error"
+msgstr "Error interno de aserción"
+
+msgid "errors.internal-worker-error"
+msgstr "Ha ocurrido un problema con el web worker."
+
+msgid "errors.svg-parser.invalid-svg"
+msgstr "El SVG no es válido o está mal formado"
+
+msgid "errors.comment-error"
+msgstr "Ha habido un error con el comentario"
+
 #: src/app/main/errors.cljs:242
 msgid "errors.feature-mismatch"
 msgstr ""
