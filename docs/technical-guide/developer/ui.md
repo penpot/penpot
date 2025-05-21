@@ -160,7 +160,7 @@ Nested styles for DOM elements that are not instantiated by our component should
   [{:keys [icon children class] :rest props}]
   (let [props (mf/spread-props props {:class (stl/css :button)})]
     [:> "button" props
-     (when icon [:> icon* {:icon-id icon :size "m"}])
+     (when icon [:> icon* {:icon-id icon :size "m" :class (stl/css :icon)}])
      [:span {:class (stl/css :label-wrapper)} children]]))
 
 ;; later in code
