@@ -53,6 +53,7 @@
 - Fix share button being displayed with no permissions [Taiga #11086](https://tree.taiga.io/project/penpot/issue/11086)
 - Fix inline styles in code tab [Taiga Issue #7583](https://tree.taiga.io/project/penpot/issue/7583)
 - Fix exception on returning openapi.json
+- Fix json encoding of TokensLib [Taiga #10994](https://tree.taiga.io/project/penpot/issue/10994)
 
 ## 2.6.2
 
