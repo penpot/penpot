@@ -33,7 +33,8 @@
   ;; The root shape of the main instance of a variant component.
   [:map
    [:variant-id {:optional true} ::sm/uuid]
-   [:variant-name {:optional true} :string]])
+   [:variant-name {:optional true} :string]
+   [:variant-error {:optional true} :string]])
 
 (def schema:variant-container
   ;; is a board that contains all variant components of a variant set,
@@ -106,7 +107,7 @@
      (add-new-props assigned remaining))))
 
 
-(defn properties-map-to-string
+(defn properties-map->string
   "Transforms a map of properties to a string of properties omitting the empty ones"
   [properties]
   (->> properties
@@ -116,11 +117,12 @@
        (str/join ", ")))
 
 
-(defn properties-string-to-map
+(defn properties-string->map
   "Transforms a string of properties to a map of properties"
   [s]
   (->> (str/split s ",")
        (mapv #(str/split % "="))
+       (filter (fn [[_ v]] (not (str/blank? (str/trim v)))))
        (mapv (fn [[k v]]
                {:name (str/trim k)
                 :value (str/trim v)}))))
@@ -129,7 +131,7 @@
 (defn valid-properties-string?
   "Checks if a string of properties has a processable format or not"
   [s]
-  (let [pattern #"^([a-zA-Z0-9\s]+=[a-zA-Z0-9\s]+)(,\s*[a-zA-Z0-9\s]+=[a-zA-Z0-9\s]+)*$"]
+  (let [pattern #"^\s*([a-zA-Z0-9_ -]+=[^,]*)(,\s*[a-zA-Z0-9_ -]+=[^,]*)*\s*$"]
     (not (nil? (re-matches pattern s)))))
 
 

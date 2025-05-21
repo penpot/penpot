@@ -12,28 +12,37 @@
 (t/deftest convert-between-variant-properties-maps-and-strings
   (let [map-with-two-props           [{:name "border" :value "yes"} {:name "color" :value "gray"}]
         map-with-two-props-one-blank [{:name "border" :value "no"} {:name "color" :value ""}]
+        map-with-two-props-dashes    [{:name "border" :value "no"} {:name "color" :value "--"}]
         map-with-one-prop            [{:name "border" :value "no"}]
-        map-with-spaces              [{:name "border 1" :value "of course"} {:name "color 2" :value "dark gray"}]
+        map-with-spaces              [{:name "border 1" :value "of course"}
+                                      {:name "color 2" :value "dark gray"}
+                                      {:name "background 3" :value "anoth€r co-lor"}]
 
         string-valid-with-two-props  "border=yes, color=gray"
         string-valid-with-one-prop   "border=no"
-        string-valid-with-spaces     "border 1=of course, color 2=dark gray"
-        string-invalid               "border=yes, color="]
+        string-valid-with-spaces     "border 1=of course, color 2=dark gray, background 3=anoth€r co-lor"
+        string-valid-with-no-value   "border=no, color="
+        string-valid-with-dashes     "border=no, color=--"
+        string-invalid               "border=yes, color"]
 
     (t/testing "convert map to string"
-      (t/is (= (ctv/properties-map-to-string map-with-two-props) string-valid-with-two-props))
-      (t/is (= (ctv/properties-map-to-string map-with-two-props-one-blank) string-valid-with-one-prop))
-      (t/is (= (ctv/properties-map-to-string map-with-spaces) string-valid-with-spaces)))
+      (t/is (= (ctv/properties-map->string map-with-two-props) string-valid-with-two-props))
+      (t/is (= (ctv/properties-map->string map-with-two-props-one-blank) string-valid-with-one-prop))
+      (t/is (= (ctv/properties-map->string map-with-spaces) string-valid-with-spaces)))
 
     (t/testing "convert string to map"
-      (t/is (= (ctv/properties-string-to-map string-valid-with-two-props) map-with-two-props))
-      (t/is (= (ctv/properties-string-to-map string-valid-with-one-prop) map-with-one-prop))
-      (t/is (= (ctv/properties-string-to-map string-valid-with-spaces) map-with-spaces)))
+      (t/is (= (ctv/properties-string->map string-valid-with-two-props) map-with-two-props))
+      (t/is (= (ctv/properties-string->map string-valid-with-one-prop) map-with-one-prop))
+      (t/is (= (ctv/properties-string->map string-valid-with-no-value) map-with-one-prop))
+      (t/is (= (ctv/properties-string->map string-valid-with-dashes) map-with-two-props-dashes))
+      (t/is (= (ctv/properties-string->map string-valid-with-spaces) map-with-spaces)))
 
     (t/testing "check if a string is valid"
       (t/is (= (ctv/valid-properties-string? string-valid-with-two-props) true))
       (t/is (= (ctv/valid-properties-string? string-valid-with-one-prop) true))
       (t/is (= (ctv/valid-properties-string? string-valid-with-spaces) true))
+      (t/is (= (ctv/valid-properties-string? string-valid-with-no-value) true))
+      (t/is (= (ctv/valid-properties-string? string-valid-with-dashes) true))
       (t/is (= (ctv/valid-properties-string? string-invalid) false)))))
 
 

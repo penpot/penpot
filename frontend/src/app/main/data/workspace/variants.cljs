@@ -130,6 +130,28 @@
          (dwu/commit-undo-transaction undo-id))))))
 
 
+(defn update-error
+  "Updates the error in a component"
+  [component-id value]
+  (ptk/reify ::update-error
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id    (:current-page-id state)
+            data       (dsh/lookup-file-data state)
+            objects    (-> (dsh/get-page data page-id)
+                           (get :objects))
+
+            changes    (-> (pcb/empty-changes it page-id)
+                           (pcb/with-library-data data)
+                           (pcb/with-objects objects)
+                           (clvp/generate-set-variant-error component-id value))
+            undo-id    (js/Symbol)]
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dch/commit-changes changes)
+         (dwu/commit-undo-transaction undo-id))))))
+
+
 (defn remove-property
   "Remove the variant property on the position pos
    in all the components with this variant-id"

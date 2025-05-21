@@ -60,6 +60,17 @@
         (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
 
 
+(defn generate-set-variant-error
+  [changes component-id value]
+  (let [data      (pcb/get-library-data changes)
+        component (ctcl/get-component data component-id true)
+        main-id   (:main-instance-id component)]
+    (-> changes
+        (pcb/update-shapes [main-id] (if (str/blank? value)
+                                       #(dissoc % :variant-error)
+                                       #(assoc % :variant-error value))))))
+
+
 (defn generate-add-new-property
   [changes variant-id & {:keys [fill-values? property-name]}]
   (let [data               (pcb/get-library-data changes)
