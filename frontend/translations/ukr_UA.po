@@ -6412,175 +6412,175 @@ msgstr "Мапа сайту"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:47
 #, unused
-msgid "workspace.token-set.not-active"
+msgid "workspace.tokens.set.not-active"
 msgstr "Набір токенів не активний"
 
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:84
-msgid "workspace.token.active-themes"
+msgid "workspace.tokens.active-themes"
 msgstr "%s активних тем"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs
 #, unused
-msgid "workspace.token.add set"
+msgid "workspace.tokens.add set"
 msgstr "Додати набір"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:136
-msgid "workspace.token.applied-to"
+msgid "workspace.tokens.applied-to"
 msgstr "Застосовано до"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:391
-msgid "workspace.token.back-to-themes"
+msgid "workspace.tokens.back-to-themes"
 msgstr "Повернутись до списку тем"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:54
-msgid "workspace.token.create-new-theme"
+msgid "workspace.tokens.create-new-theme"
 msgstr "Створити свою першу тему зараз."
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:134, src/app/main/ui/workspace/tokens/sidebar.cljs:190
-msgid "workspace.token.create-one"
+msgid "workspace.tokens.create-one"
 msgstr "Створити."
 
 #: src/app/main/ui/workspace/tokens/form.cljs:492
-msgid "workspace.token.create-token"
+msgid "workspace.tokens.create-token"
 msgstr "Створити новий %s токен"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:278
-msgid "workspace.token.delete"
+msgid "workspace.tokens.delete"
 msgstr "Видалити токен"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:159
-msgid "workspace.token.delete-theme-title"
+msgid "workspace.tokens.delete-theme-title"
 msgstr "Видалити тему"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:275
-msgid "workspace.token.duplicate"
+msgid "workspace.tokens.duplicate"
 msgstr "Дублювати токен"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:262
-msgid "workspace.token.edit"
+msgid "workspace.tokens.edit"
 msgstr "Змінити токен"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:383
-msgid "workspace.token.edit-theme-title"
+msgid "workspace.tokens.edit-theme-title"
 msgstr "Редагувати тему"
 
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:72
-msgid "workspace.token.edit-themes"
+msgid "workspace.tokens.edit-themes"
 msgstr "Редагувати теми"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:491
-msgid "workspace.token.edit-token"
+msgid "workspace.tokens.edit-token"
 msgstr "Редагувати токен"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:498
-msgid "workspace.token.enter-token-name"
+msgid "workspace.tokens.enter-token-name"
 msgstr "Вкажіть %s ім'я токену"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
-msgid "workspace.token.grouping-set-alert"
+msgid "workspace.tokens.grouping-set-alert"
 msgstr "Групування наборів токенів поки не підтримується."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:196
-msgid "workspace.token.label.group"
+msgid "workspace.tokens.label.group"
 msgstr "Група"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:206
-msgid "workspace.token.label.theme"
+msgid "workspace.tokens.label.theme"
 msgstr "Тема"
 
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:89
-msgid "workspace.token.no-active-theme"
+msgid "workspace.tokens.no-active-theme"
 msgstr "Немає активної теми"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:110
-msgid "workspace.token.no-permisions-set"
+msgid "workspace.tokens.no-permisions-set"
 msgstr "Щоб активувати / деактивувати набір, Ви маєте бути редактором"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:199
-msgid "workspace.token.no-permission-themes"
+msgid "workspace.tokens.no-permission-themes"
 msgstr "Щоб використовувати ці теми Ви маєте бути редактором"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:504
-msgid "workspace.token.no-sets-create"
+msgid "workspace.tokens.no-sets-create"
 msgstr "Ще не оголошено жодного набору. Створіть перший."
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:131, src/app/main/ui/workspace/tokens/sets.cljs:137
-msgid "workspace.token.no-sets-yet"
+msgid "workspace.tokens.no-sets-yet"
 msgstr "Тут ще немає наборів."
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:186
-msgid "workspace.token.no-themes"
+msgid "workspace.tokens.no-themes"
 msgstr "Тут немає тем."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:50
-msgid "workspace.token.no-themes-currently"
+msgid "workspace.tokens.no-themes-currently"
 msgstr "Наразі у вас немає жодної теми."
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:122
-msgid "workspace.token.original-value"
+msgid "workspace.tokens.original-value"
 msgstr "Початкове значення: %s"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:128
-msgid "workspace.token.ref-not-valid"
+msgid "workspace.tokens.ref-not-valid"
 msgstr "Посилання помилкове або ні на одному із активних наборів"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:217, src/app/main/ui/workspace/tokens/form.cljs:221, src/app/main/ui/workspace/tokens/token_pill.cljs:123
-msgid "workspace.token.resolved-value"
+msgid "workspace.tokens.resolved-value"
 msgstr "Отримане значення: %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:240
-msgid "workspace.token.save-theme"
+msgid "workspace.tokens.save-theme"
 msgstr "Зберегти тему"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:239, src/app/main/ui/workspace/tokens/sets.cljs:340
-msgid "workspace.token.select-set"
+msgid "workspace.tokens.select-set"
 msgstr "Обрати набір."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:396
-msgid "workspace.token.set-selection-theme"
+msgid "workspace.tokens.set-selection-theme"
 msgstr ""
 "Визначити які набори токенів повинні бути використані як частину цього "
 "варіанту теми:"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:136
-msgid "workspace.token.theme-name"
+msgid "workspace.tokens.theme-name"
 msgstr "Тема %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:545
 #, fuzzy
-msgid "workspace.token.token-description"
+msgid "workspace.tokens.token-description"
 msgstr "Опис"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:501
-msgid "workspace.token.token-name"
+msgid "workspace.tokens.token-name"
 msgstr "Ім'я"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:59
-msgid "workspace.token.token-name-validation-error"
+msgid "workspace.tokens.token-name-validation-error"
 msgstr ""
 " помилкове імʼя токену.\n"
 "Імʼя має містити тільки літери та цифри, розділені крапкою та не мають "
 "починатись із символу \"$\"."
 
 #: src/app/main/ui/workspace/tokens/form.cljs:526
-msgid "workspace.token.token-value"
+msgid "workspace.tokens.token-value"
 msgstr "Значення"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:322
-msgid "workspace.token.tokens-section-title"
+msgid "workspace.tokens.tokens-section-title"
 msgstr "ТОКЕНИ -  %s"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
-msgid "workspace.token.tools"
+msgid "workspace.tokens.tools"
 msgstr "Інструменти"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:131
-msgid "workspace.token.value-not-valid"
+msgid "workspace.tokens.value-not-valid"
 msgstr "Значення не є дійсним"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:520
-msgid "workspace.token.warning-name-change"
+msgid "workspace.tokens.warning-name-change"
 msgstr "Якщо перейменувати токен, посилання на старе імʼя буде розірвано."
 
 #: src/app/main/ui/workspace/sidebar.cljs:135, src/app/main/ui/workspace/sidebar.cljs:144
@@ -7065,103 +7065,103 @@ msgid "workspace.shape.menu.add-variant"
 msgstr "Створити варіант"
 
 #: src/app/main/ui/workspace/tokens/sets_context_menu.cljs:54
-msgid "workspace.token.add-set-to-group"
+msgid "workspace.tokens.add-set-to-group"
 msgstr "Додати набір до цієї групи"
 
 #: src/app/main/data/tokens.cljs:386
-msgid "workspace.token.duplicate-suffix"
+msgid "workspace.tokens.duplicate-suffix"
 msgstr "копіювати"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:197
-msgid "workspace.token.gaps"
+msgid "workspace.tokens.gaps"
 msgstr "Проміжки"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
-msgid "workspace.token.generic-error"
+msgid "workspace.tokens.generic-error"
 msgstr "Помилка: "
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:109
-msgid "workspace.token.group-name"
+msgid "workspace.tokens.group-name"
 msgstr "Імʼя групи"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:17, src/app/main/ui/workspace/tokens/errors.cljs:21
-msgid "workspace.token.import-error"
+msgid "workspace.tokens.import-error"
 msgstr "Помилка імпорту:"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:29
-msgid "workspace.token.invalid-color"
+msgid "workspace.tokens.invalid-color"
 msgstr "Помилкове значення кольору: %s"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:13
-msgid "workspace.token.invalid-json"
+msgid "workspace.tokens.invalid-json"
 msgstr "Помилка імпорту: Помилкові дани токену в JSON."
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/errors.cljs:45
-msgid "workspace.token.invalid-value"
+msgid "workspace.tokens.invalid-value"
 msgstr "Помилкове значення токену: %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:199
-msgid "workspace.token.label.group-placeholder"
+msgid "workspace.tokens.label.group-placeholder"
 msgstr "Додати групу (приміром Режим)"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:189
-msgid "workspace.token.margins"
+msgid "workspace.tokens.margins"
 msgstr "Зовнішні відступи"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:216
-msgid "workspace.token.min-size"
+msgid "workspace.tokens.min-size"
 msgstr "Мін. розмір"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:37
-msgid "workspace.token.missing-references"
+msgid "workspace.tokens.missing-references"
 msgstr "Відсутні посилання на токен: "
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:154
-msgid "workspace.token.no-active-sets"
+msgid "workspace.tokens.no-active-sets"
 msgstr "Немає активних наборів"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:45
-msgid "workspace.token.opacity-range"
+msgid "workspace.tokens.opacity-range"
 msgstr "Непрозорість має бути між 0 та 100% або ж між 0 та 1 (де 0.5 - 50%)."
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:177
-msgid "workspace.token.paddings"
+msgid "workspace.tokens.paddings"
 msgstr "Внутрішні відступи"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:237
-msgid "workspace.token.radius"
+msgid "workspace.tokens.radius"
 msgstr "Радіус"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
-msgid "workspace.token.reference-error"
+msgid "workspace.tokens.reference-error"
 msgstr "Помилка посилання: "
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:25
-msgid "workspace.token.self-reference"
+msgid "workspace.tokens.self-reference"
 msgstr "Токен має самопосилання"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:98
-msgid "workspace.token.set-edit-placeholder"
+msgid "workspace.tokens.set-edit-placeholder"
 msgstr "Введіть імʼя (використовуйте '/' для груп)"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:148
-msgid "workspace.token.sets-hint"
+msgid "workspace.tokens.sets-hint"
 msgstr "Редагуйте тему та керуйте наборами"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:210
-msgid "workspace.token.size"
+msgid "workspace.tokens.size"
 msgstr "Розмір"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:101
-msgid "workspace.token.themes-description"
+msgid "workspace.tokens.themes-description"
 msgstr ""
 "Тут ви можете керувати своїми темами, активовувати / деактивовувати їх та "
 "налаштовувати їхні активні набори."
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
-msgid "workspace.token.import-tooltip"
+msgid "workspace.tokens.import-tooltip"
 msgstr "Імпортування файлу JSON перепише всі наявні токени, набори та теми"
 
 #: src/app/main/ui/dashboard/placeholder.cljs:36, src/app/main/ui/dashboard/placeholder.cljs:90
@@ -7194,7 +7194,7 @@ msgid "inspect.subtitle.main"
 msgstr "Головний компонент"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:241
-msgid "workspace.token.color"
+msgid "workspace.tokens.color"
 msgstr "Колір"
 
 #: src/app/main/ui/dashboard/templates.cljs:257
@@ -7206,11 +7206,11 @@ msgid "dashboard.empty-project.explore"
 msgstr "Перегляньте і додайте"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:9
-msgid "workspace.token.error-parse"
+msgid "workspace.tokens.error-parse"
 msgstr "Помилка імпорту: Неможливо обробити JSON."
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:222
-msgid "workspace.token.max-size"
+msgid "workspace.tokens.max-size"
 msgstr "Макс. розмір"
 
 #: src/app/main/ui/dashboard/placeholder.cljs:43
@@ -7222,7 +7222,7 @@ msgid "errors.token-set-exists-on-drop"
 msgstr "Не вдалось перекинути, набір з таким імʼям вже існує."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:153
-msgid "workspace.token.num-active-sets"
+msgid "workspace.tokens.num-active-sets"
 msgstr "%s активних наборів"
 
 #: src/app/main/data/tokens.cljs:246
@@ -7246,7 +7246,7 @@ msgid "workspace.layout_grid.editor.padding.right"
 msgstr "Правий внутрішній відступ"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
-msgid "workspace.token.token-not-resolved"
+msgid "workspace.tokens.token-not-resolved"
 msgstr "Неможливо отримати токен посилання з імʼям: %s"
 
 #: src/app/main/ui/ds/product/loader.cljs:26
@@ -7278,7 +7278,7 @@ msgid "shortcuts.paste-props"
 msgstr "Вставити параметри"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:63, src/app/main/ui/workspace/tokens/modals/themes.cljs:170, src/app/main/ui/workspace/tokens/modals/themes.cljs:279
-msgid "workspace.token.add-new-theme"
+msgid "workspace.tokens.add-new-theme"
 msgstr "Додати нову тему"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:769
@@ -7286,23 +7286,23 @@ msgid "workspace.shape.menu.add-variant-property"
 msgstr "Додати нову властивість"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:257
-msgid "workspace.token.axis"
+msgid "workspace.tokens.axis"
 msgstr "Вісь"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:33
-msgid "workspace.token.number-too-large"
+msgid "workspace.tokens.number-too-large"
 msgstr "Помилкове значення токену. Отримане значення завелике: %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:208
-msgid "workspace.token.label.theme-placeholder"
+msgid "workspace.tokens.label.theme-placeholder"
 msgstr "Додати тему (приміром Світла)"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:46, src/app/main/ui/workspace/tokens/modals/themes.cljs:99
-msgid "workspace.token.themes-list"
+msgid "workspace.tokens.themes-list"
 msgstr "Список тем"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:525
-msgid "workspace.token.token-value-enter"
+msgid "workspace.tokens.token-value-enter"
 msgstr "Ведіть значення або псевдо з {псевдо}"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:131

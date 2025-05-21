@@ -5829,7 +5829,7 @@ msgid "workspace.sitemap"
 msgstr "Карта сайта"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:240
-msgid "workspace.token.save-theme"
+msgid "workspace.tokens.save-theme"
 msgstr "Сохранить тему"
 
 #: src/app/main/ui/workspace/sidebar.cljs:135, src/app/main/ui/workspace/sidebar.cljs:144

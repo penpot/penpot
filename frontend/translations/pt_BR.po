@@ -4685,68 +4685,68 @@ msgid "workspace.sitemap"
 msgstr "Mapa do site"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:391
-msgid "workspace.token.back-to-themes"
+msgid "workspace.tokens.back-to-themes"
 msgstr "Voltar a listagem de temas"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:54
-msgid "workspace.token.create-new-theme"
+msgid "workspace.tokens.create-new-theme"
 msgstr "Crie seu primeiro tema agora."
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:134, src/app/main/ui/workspace/tokens/sidebar.cljs:190
-msgid "workspace.token.create-one"
+msgid "workspace.tokens.create-one"
 msgstr "Criar um."
 
 #: src/app/main/ui/workspace/tokens/form.cljs:492
-msgid "workspace.token.create-token"
+msgid "workspace.tokens.create-token"
 msgstr "Criar novo token %s"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:278
-msgid "workspace.token.delete"
+msgid "workspace.tokens.delete"
 msgstr "Remover token"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:159
-msgid "workspace.token.delete-theme-title"
+msgid "workspace.tokens.delete-theme-title"
 msgstr "Remover tema"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:275
-msgid "workspace.token.duplicate"
+msgid "workspace.tokens.duplicate"
 msgstr "Duplicar token"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:262
-msgid "workspace.token.edit"
+msgid "workspace.tokens.edit"
 msgstr "Editar token"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:136
-msgid "workspace.token.theme-name"
+msgid "workspace.tokens.theme-name"
 msgstr "Tema %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:545
 #, fuzzy
-msgid "workspace.token.token-description"
+msgid "workspace.tokens.token-description"
 msgstr "Descrição"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:501
-msgid "workspace.token.token-name"
+msgid "workspace.tokens.token-name"
 msgstr "Nome"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:526
-msgid "workspace.token.token-value"
+msgid "workspace.tokens.token-value"
 msgstr "Valor"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:322
-msgid "workspace.token.tokens-section-title"
+msgid "workspace.tokens.tokens-section-title"
 msgstr ""
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
-msgid "workspace.token.tools"
+msgid "workspace.tokens.tools"
 msgstr "Ferramentas"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:131
-msgid "workspace.token.value-not-valid"
+msgid "workspace.tokens.value-not-valid"
 msgstr "O valor não é válido"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:520
-msgid "workspace.token.warning-name-change"
+msgid "workspace.tokens.warning-name-change"
 msgstr "Renomear este token quebrará quaisquer referência para o nome antigo."
 
 #: src/app/main/ui/workspace/sidebar.cljs:135, src/app/main/ui/workspace/sidebar.cljs:144
@@ -5406,5 +5406,5 @@ msgstr "Produto ou UX Design"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
-msgid "workspace.token.grouping-set-alert"
+msgid "workspace.tokens.grouping-set-alert"
 msgstr "O conjunto de tokens ainda não é suportado."

@@ -6126,65 +6126,65 @@ msgid "workspace.sitemap"
 msgstr "Mapa do site"
 
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:84
-msgid "workspace.token.active-themes"
+msgid "workspace.tokens.active-themes"
 msgstr "%s temas ativos"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:136
-msgid "workspace.token.applied-to"
+msgid "workspace.tokens.applied-to"
 msgstr "Aplicado a"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:391
-msgid "workspace.token.back-to-themes"
+msgid "workspace.tokens.back-to-themes"
 msgstr "Voltar à lista de temas"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:159
-msgid "workspace.token.delete-theme-title"
+msgid "workspace.tokens.delete-theme-title"
 msgstr "Eliminar tema"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:383
-msgid "workspace.token.edit-theme-title"
+msgid "workspace.tokens.edit-theme-title"
 msgstr "Editar tema"
 
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:72
-msgid "workspace.token.edit-themes"
+msgid "workspace.tokens.edit-themes"
 msgstr "Editar temas"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:206
-msgid "workspace.token.label.theme"
+msgid "workspace.tokens.label.theme"
 msgstr "Tema"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:122
 #, fuzzy
-msgid "workspace.token.original-value"
+msgid "workspace.tokens.original-value"
 msgstr "Valor original: %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:240
-msgid "workspace.token.save-theme"
+msgid "workspace.tokens.save-theme"
 msgstr "Guardar tema"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:136
-msgid "workspace.token.theme-name"
+msgid "workspace.tokens.theme-name"
 msgstr "Tema %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:545
 #, fuzzy
-msgid "workspace.token.token-description"
+msgid "workspace.tokens.token-description"
 msgstr "Descrição"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:501
-msgid "workspace.token.token-name"
+msgid "workspace.tokens.token-name"
 msgstr "Nome"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:526
-msgid "workspace.token.token-value"
+msgid "workspace.tokens.token-value"
 msgstr "Valor"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
-msgid "workspace.token.tools"
+msgid "workspace.tokens.tools"
 msgstr "Ferramentas"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:131
-msgid "workspace.token.value-not-valid"
+msgid "workspace.tokens.value-not-valid"
 msgstr "O valor não é válido"
 
 #: src/app/main/ui/workspace/sidebar.cljs:135, src/app/main/ui/workspace/sidebar.cljs:144
@@ -6611,19 +6611,19 @@ msgid "loader.tips.10.title"
 msgstr "Suporte de Plugins"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:222
-msgid "workspace.token.max-size"
+msgid "workspace.tokens.max-size"
 msgstr "Tamanho máx."
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:189
-msgid "workspace.token.margins"
+msgid "workspace.tokens.margins"
 msgstr "Margens"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:237
-msgid "workspace.token.radius"
+msgid "workspace.tokens.radius"
 msgstr "Raio"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:210
-msgid "workspace.token.size"
+msgid "workspace.tokens.size"
 msgstr "Tamanho"
 
 #: src/app/main/ui/dashboard.cljs:206
@@ -6690,7 +6690,7 @@ msgstr ""
 "instantânea."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:46, src/app/main/ui/workspace/tokens/modals/themes.cljs:99
-msgid "workspace.token.themes-list"
+msgid "workspace.tokens.themes-list"
 msgstr "Lista de temas"
 
 #: src/app/main/ui/ds/product/loader.cljs:20
@@ -6707,7 +6707,7 @@ msgstr "Componente principal"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
-msgid "workspace.token.generic-error"
+msgid "workspace.tokens.generic-error"
 msgstr "Erro: "
 
 #: src/app/main/ui/ds/product/loader.cljs:28
@@ -6719,7 +6719,7 @@ msgid "loader.tips.06.message"
 msgstr "Dá vida às tuas ideias com animações e transições."
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:216
-msgid "workspace.token.min-size"
+msgid "workspace.tokens.min-size"
 msgstr "Tamanho mín."
 
 #: src/app/main/data/common.cljs:209
@@ -6759,5 +6759,5 @@ msgid "workspace.options.export.remove-export"
 msgstr "Eliminar exportação"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:241
-msgid "workspace.token.color"
+msgid "workspace.tokens.color"
 msgstr "Cor"

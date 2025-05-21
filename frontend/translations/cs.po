@@ -6354,177 +6354,177 @@ msgstr "Mapa stránek"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:47
 #, unused
-msgid "workspace.token-set.not-active"
+msgid "workspace.tokens.set.not-active"
 msgstr "Sada tokenů není aktivní"
 
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:84
-msgid "workspace.token.active-themes"
+msgid "workspace.tokens.active-themes"
 msgstr "%s aktivních motivů"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs
 #, unused
-msgid "workspace.token.add set"
+msgid "workspace.tokens.add set"
 msgstr "Přidat sadu"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:136
-msgid "workspace.token.applied-to"
+msgid "workspace.tokens.applied-to"
 msgstr "Aplikováno na"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:391
-msgid "workspace.token.back-to-themes"
+msgid "workspace.tokens.back-to-themes"
 msgstr "Zpět na seznam motivů"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:54
-msgid "workspace.token.create-new-theme"
+msgid "workspace.tokens.create-new-theme"
 msgstr "Vytvořte si svůj první motiv hned teď."
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:134, src/app/main/ui/workspace/tokens/sidebar.cljs:190
-msgid "workspace.token.create-one"
+msgid "workspace.tokens.create-one"
 msgstr "Vytvořte si."
 
 #: src/app/main/ui/workspace/tokens/form.cljs:492
-msgid "workspace.token.create-token"
+msgid "workspace.tokens.create-token"
 msgstr "Vytvořte nový %s token"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:278
-msgid "workspace.token.delete"
+msgid "workspace.tokens.delete"
 msgstr "Smazat token"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:159
-msgid "workspace.token.delete-theme-title"
+msgid "workspace.tokens.delete-theme-title"
 msgstr "Smazat motiv"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:275
-msgid "workspace.token.duplicate"
+msgid "workspace.tokens.duplicate"
 msgstr "Duplikovat token"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:262
-msgid "workspace.token.edit"
+msgid "workspace.tokens.edit"
 msgstr "Upravit token"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:383
-msgid "workspace.token.edit-theme-title"
+msgid "workspace.tokens.edit-theme-title"
 msgstr "Upravit motiv"
 
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:72
-msgid "workspace.token.edit-themes"
+msgid "workspace.tokens.edit-themes"
 msgstr "Upravit motivy"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:491
-msgid "workspace.token.edit-token"
+msgid "workspace.tokens.edit-token"
 msgstr "Upravit token"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:498
-msgid "workspace.token.enter-token-name"
+msgid "workspace.tokens.enter-token-name"
 msgstr "Zadejte název tokenu %s"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
-msgid "workspace.token.grouping-set-alert"
+msgid "workspace.tokens.grouping-set-alert"
 msgstr "Seskupení sady tokenů zatím není podporováno."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:196
-msgid "workspace.token.label.group"
+msgid "workspace.tokens.label.group"
 msgstr "Skupina"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:206
-msgid "workspace.token.label.theme"
+msgid "workspace.tokens.label.theme"
 msgstr "Téma"
 
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:89
-msgid "workspace.token.no-active-theme"
+msgid "workspace.tokens.no-active-theme"
 msgstr "Žádný motiv není aktivní"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:110
-msgid "workspace.token.no-permisions-set"
+msgid "workspace.tokens.no-permisions-set"
 msgstr "K aktivaci/deaktivaci sad musíte být editor"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:199
-msgid "workspace.token.no-permission-themes"
+msgid "workspace.tokens.no-permission-themes"
 msgstr "Abyste mohli používat témata, musíte být editor"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:504
-msgid "workspace.token.no-sets-create"
+msgid "workspace.tokens.no-sets-create"
 msgstr "Zatím nejsou definovány žádné sady. Nejprve si jednu vytvořte."
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:131, src/app/main/ui/workspace/tokens/sets.cljs:137
-msgid "workspace.token.no-sets-yet"
+msgid "workspace.tokens.no-sets-yet"
 msgstr "Zatím nejsou žádné sady."
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:186
-msgid "workspace.token.no-themes"
+msgid "workspace.tokens.no-themes"
 msgstr "Nejsou zde žádné motivy."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:50
-msgid "workspace.token.no-themes-currently"
+msgid "workspace.tokens.no-themes-currently"
 msgstr "Momentálně nemáte žádné motivy."
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:122
 #, fuzzy
-msgid "workspace.token.original-value"
+msgid "workspace.tokens.original-value"
 msgstr "Původní hodnota: %s"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:128
-msgid "workspace.token.ref-not-valid"
+msgid "workspace.tokens.ref-not-valid"
 msgstr "Reference není platná nebo není v žádné aktivní sadě"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:217, src/app/main/ui/workspace/tokens/form.cljs:221, src/app/main/ui/workspace/tokens/token_pill.cljs:123
 #, fuzzy
-msgid "workspace.token.resolved-value"
+msgid "workspace.tokens.resolved-value"
 msgstr "Vyřešená hodnota: %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:240
-msgid "workspace.token.save-theme"
+msgid "workspace.tokens.save-theme"
 msgstr "Uložit motiv"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:239, src/app/main/ui/workspace/tokens/sets.cljs:340
-msgid "workspace.token.select-set"
+msgid "workspace.tokens.select-set"
 msgstr "Vyberte sadu."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:396
-msgid "workspace.token.set-selection-theme"
+msgid "workspace.tokens.set-selection-theme"
 msgstr ""
 "Definujte, jaké sady tokenů by měly být použity jako součást této možnosti "
 "motivu:"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:136
-msgid "workspace.token.theme-name"
+msgid "workspace.tokens.theme-name"
 msgstr "Motiv %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:545
 #, fuzzy
-msgid "workspace.token.token-description"
+msgid "workspace.tokens.token-description"
 msgstr "Popis"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:501
-msgid "workspace.token.token-name"
+msgid "workspace.tokens.token-name"
 msgstr "Jméno"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:59
-msgid "workspace.token.token-name-validation-error"
+msgid "workspace.tokens.token-name-validation-error"
 msgstr ""
 " není platný název tokenu.\n"
 "Názvy tokenů by měly obsahovat pouze písmena a číslice oddělené znakem . a "
 "nesmí začínat znakem $."
 
 #: src/app/main/ui/workspace/tokens/form.cljs:526
-msgid "workspace.token.token-value"
+msgid "workspace.tokens.token-value"
 msgstr "Hodnota"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:322
-msgid "workspace.token.tokens-section-title"
+msgid "workspace.tokens.tokens-section-title"
 msgstr "TOKENY -  %s"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
-msgid "workspace.token.tools"
+msgid "workspace.tokens.tools"
 msgstr "Nástroje"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:131
-msgid "workspace.token.value-not-valid"
+msgid "workspace.tokens.value-not-valid"
 msgstr "Hodnota není platná"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:520
-msgid "workspace.token.warning-name-change"
+msgid "workspace.tokens.warning-name-change"
 msgstr "Přejmenováním tohoto tokenu se přeruší jakýkoli odkaz na jeho starý název."
 
 #: src/app/main/ui/workspace/sidebar.cljs:135, src/app/main/ui/workspace/sidebar.cljs:144

@@ -2093,27 +2093,27 @@ msgid "labels.import"
 msgstr "Importar"
 
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:116
-msgid "workspace.token.import-tokens"
+msgid "workspace.tokens.import-tokens"
 msgstr "Import tokens"
 
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:121
-msgid "workspace.token.import-single-file"
+msgid "workspace.tokens.import-single-file"
 msgstr "En un archivo JSON único, las claves de primer nivel deben ser los nombres de los sets de tokens."
 
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:122
-msgid "workspace.token.import-multiple-files"
+msgid "workspace.tokens.import-multiple-files"
 msgstr "En multiples archivos, el nombre o la ruta del archivo serán los nombres de los sets."
 
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:127
-msgid "workspace.token.import-warning"
+msgid "workspace.tokens.import-warning"
 msgstr "Al importar tokens sobreescribirás todos tus tokens, sets y themes."
 
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:149
-msgid "workspace.token.choose-file"
+msgid "workspace.tokens.choose-file"
 msgstr "Elige archivo"
 
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:155
-msgid "workspace.token.choose-folder"
+msgid "workspace.tokens.choose-folder"
 msgstr "Elige carpeta"
 
 #: src/app/main/ui/dashboard/team.cljs:1018
@@ -6829,319 +6829,319 @@ msgstr "Mapa del sitio"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:47
 #, unused
-msgid "workspace.token-set.not-active"
+msgid "workspace.tokens.set.not-active"
 msgstr "El set de tokens no está aplicado"
 
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:84
-msgid "workspace.token.active-themes"
+msgid "workspace.tokens.active-themes"
 msgstr "%s temas activos"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs
 #, unused
-msgid "workspace.token.add set"
+msgid "workspace.tokens.add set"
 msgstr "Añadir set"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:63, src/app/main/ui/workspace/tokens/modals/themes.cljs:170, src/app/main/ui/workspace/tokens/modals/themes.cljs:279
-msgid "workspace.token.add-new-theme"
+msgid "workspace.tokens.add-new-theme"
 msgstr "Añadir nuevo tema"
 
 #: src/app/main/ui/workspace/tokens/sets_context_menu.cljs:54
-msgid "workspace.token.add-set-to-group"
+msgid "workspace.tokens.add-set-to-group"
 msgstr "Añadir un set a este grupo"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:136
-msgid "workspace.token.applied-to"
+msgid "workspace.tokens.applied-to"
 msgstr "Aplicado a"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:391
-msgid "workspace.token.back-to-themes"
+msgid "workspace.tokens.back-to-themes"
 msgstr "Volver al listado de temas"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:54
-msgid "workspace.token.create-new-theme"
+msgid "workspace.tokens.create-new-theme"
 msgstr "Crea un nuevo tema ahora."
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:134, src/app/main/ui/workspace/tokens/sidebar.cljs:190
-msgid "workspace.token.create-one"
+msgid "workspace.tokens.create-one"
 msgstr "Crear uno."
 
 #: src/app/main/ui/workspace/tokens/form.cljs:492
-msgid "workspace.token.create-token"
+msgid "workspace.tokens.create-token"
 msgstr "Crear un token de %s"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:278
-msgid "workspace.token.delete"
+msgid "workspace.tokens.delete"
 msgstr "Eliminar token"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:159
-msgid "workspace.token.delete-theme-title"
+msgid "workspace.tokens.delete-theme-title"
 msgstr "Borrar theme"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:275
-msgid "workspace.token.duplicate"
+msgid "workspace.tokens.duplicate"
 msgstr "Duplicar token"
 
 #: src/app/main/data/tokens.cljs:386
-msgid "workspace.token.duplicate-suffix"
+msgid "workspace.tokens.duplicate-suffix"
 msgstr "copiar"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:262
-msgid "workspace.token.edit"
+msgid "workspace.tokens.edit"
 msgstr "Editar token"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:383
-msgid "workspace.token.edit-theme-title"
+msgid "workspace.tokens.edit-theme-title"
 msgstr "Editar tema"
 
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:72
-msgid "workspace.token.edit-themes"
+msgid "workspace.tokens.edit-themes"
 msgstr "Editar temas"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:491
-msgid "workspace.token.edit-token"
+msgid "workspace.tokens.edit-token"
 msgstr "Editar token"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:544
-msgid "workspace.token.token-description"
+msgid "workspace.tokens.token-description"
 msgstr "Añade una descripción"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:498
-msgid "workspace.token.enter-token-name"
+msgid "workspace.tokens.enter-token-name"
 msgstr "Introduce un nombre para el token %s"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:9
-msgid "workspace.token.error-parse"
+msgid "workspace.tokens.error-parse"
 msgstr "Error al importar: No se pudo procesar el JSON."
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
-msgid "workspace.token.generic-error"
+msgid "workspace.tokens.generic-error"
 msgstr "Error: "
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:109
-msgid "workspace.token.group-name"
+msgid "workspace.tokens.group-name"
 msgstr "Nombre del grupo"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
-msgid "workspace.token.grouping-set-alert"
+msgid "workspace.tokens.grouping-set-alert"
 msgstr "La agrupación de sets aun no está soportada."
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:17, src/app/main/ui/workspace/tokens/errors.cljs:21
-msgid "workspace.token.import-error"
+msgid "workspace.tokens.import-error"
 msgstr "Error al importar:"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
-msgid "workspace.token.import-tooltip"
+msgid "workspace.tokens.import-tooltip"
 msgstr "Al importar un fichero JSON sobreescribirás todos tus tokens, sets y themes"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:29
-msgid "workspace.token.empty-input"
+msgid "workspace.tokens.empty-input"
 msgstr "El valor del token no puede estar vacío"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:29
-msgid "workspace.token.invalid-color"
+msgid "workspace.tokens.invalid-color"
 msgstr "Valor de color inválido: %s"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:13
-msgid "workspace.token.invalid-json"
+msgid "workspace.tokens.invalid-json"
 msgstr "Error al importar: Datos de token no válidos en JSON."
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:16
-msgid "workspace.token.invalid-json-token-name"
+msgid "workspace.tokens.invalid-json-token-name"
 msgstr "Error al importar: Nombre de token no válido en JSON."
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:18
-msgid "workspace.token.invalid-json-token-name-detail"
+msgid "workspace.tokens.invalid-json-token-name-detail"
 msgstr ""
 "\"%s\" no es un nombre de token válido.\n"
 "Los nombres de token solo pueden contener letras y dígitos separados por "
 "caracteres . y no pueden empezar con un signo $."
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/errors.cljs:45
-msgid "workspace.token.invalid-value"
+msgid "workspace.tokens.invalid-value"
 msgstr "Valor de token no válido: %s"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs
-msgid "workspace.token.opacity-range"
+msgid "workspace.tokens.opacity-range"
 msgstr "La opacidad debe estar entre 0 y 100% o 0 y 1 (p.e. 50% o 0.5)."
 
 #: src/app/main/ui/workspace/tokens/errors.cljs
-msgid "workspace.token.stroke-width-range"
+msgid "workspace.tokens.stroke-width-range"
 msgstr "Stroke width debe ser mayor o igual a 0."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:196
-msgid "workspace.token.label.group"
+msgid "workspace.tokens.label.group"
 msgstr "Grupo"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:199
-msgid "workspace.token.label.group-placeholder"
+msgid "workspace.tokens.label.group-placeholder"
 msgstr "Añade un grupo (p. ej. Modo)"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:206
-msgid "workspace.token.label.theme"
+msgid "workspace.tokens.label.theme"
 msgstr "Tema"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:208
-msgid "workspace.token.label.theme-placeholder"
+msgid "workspace.tokens.label.theme-placeholder"
 msgstr "Añade un Tema (p. ej. Claro)"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:37
-msgid "workspace.token.missing-references"
+msgid "workspace.tokens.missing-references"
 msgstr "Referéncias de tokens no encontradas:"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:154
-msgid "workspace.token.no-active-sets"
+msgid "workspace.tokens.no-active-sets"
 msgstr "No hay sets activos"
 
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:89
-msgid "workspace.token.no-active-theme"
+msgid "workspace.tokens.no-active-theme"
 msgstr "No hay temas activos"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:110
-msgid "workspace.token.no-permisions-set"
+msgid "workspace.tokens.no-permisions-set"
 msgstr "Debes ser editor para activar / desactivar sets"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:199
-msgid "workspace.token.no-permission-themes"
+msgid "workspace.tokens.no-permission-themes"
 msgstr "Debes ser editor para usar temas"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:504
-msgid "workspace.token.no-sets-create"
+msgid "workspace.tokens.no-sets-create"
 msgstr "Aun no hay sets definidos. Crea uno primero"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:186
-msgid "workspace.token.no-themes"
+msgid "workspace.tokens.no-themes"
 msgstr "No hay temas."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:50
-msgid "workspace.token.no-themes-currently"
+msgid "workspace.tokens.no-themes-currently"
 msgstr "Actualmente no existen temas."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:153
-msgid "workspace.token.num-active-sets"
+msgid "workspace.tokens.num-active-sets"
 msgstr "%s sets activos"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:33
-msgid "workspace.token.number-too-large"
+msgid "workspace.tokens.number-too-large"
 msgstr "Valor de token no valido. El valor resuelto es muy grande: %s"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:45
-msgid "workspace.token.opacity-range"
+msgid "workspace.tokens.opacity-range"
 msgstr "La opacidad debe estar entre 0 y 100% o 0 y 1 (p.e. 50% o 0.5)."
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:122
 #, fuzzy
-msgid "workspace.token.original-value"
+msgid "workspace.tokens.original-value"
 msgstr "Valor original: %s"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:128
-msgid "workspace.token.ref-not-valid"
+msgid "workspace.tokens.ref-not-valid"
 msgstr "La referencia no es válida o no se encuentra en ningún set activo."
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
-msgid "workspace.token.reference-error"
+msgid "workspace.tokens.reference-error"
 msgstr "Errores en referencias: "
 
 #: src/app/main/ui/workspace/tokens/form.cljs:217, src/app/main/ui/workspace/tokens/form.cljs:221, src/app/main/ui/workspace/tokens/token_pill.cljs:123
 #, fuzzy
-msgid "workspace.token.resolved-value"
+msgid "workspace.tokens.resolved-value"
 msgstr "Valor resuelto: %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:240
-msgid "workspace.token.save-theme"
+msgid "workspace.tokens.save-theme"
 msgstr "Guardar tema"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:239, src/app/main/ui/workspace/tokens/sets.cljs:340
-msgid "workspace.token.select-set"
+msgid "workspace.tokens.select-set"
 msgstr "Selecciona set"
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:25
-msgid "workspace.token.self-reference"
+msgid "workspace.tokens.self-reference"
 msgstr "El token tiene una autoreferencia"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:98
-msgid "workspace.token.set-edit-placeholder"
+msgid "workspace.tokens.set-edit-placeholder"
 msgstr "Añade un nombre - usa '/' para grupos"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:396
-msgid "workspace.token.set-selection-theme"
+msgid "workspace.tokens.set-selection-theme"
 msgstr "Define que sets de tokens deberian formar parte de este tema:"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:148
-msgid "workspace.token.sets-hint"
+msgid "workspace.tokens.sets-hint"
 msgstr "Editar tema y gestionar sets"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:136
-msgid "workspace.token.theme-name"
+msgid "workspace.tokens.theme-name"
 msgstr "Tema %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:101
-msgid "workspace.token.themes-description"
+msgid "workspace.tokens.themes-description"
 msgstr ""
 "Aquí puedes gestionar tus temas, activarlos / desactivarlos y configurar "
 "los sets activos en cada uno."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:46, src/app/main/ui/workspace/tokens/modals/themes.cljs:99
-msgid "workspace.token.themes-list"
+msgid "workspace.tokens.themes-list"
 msgstr "Lista de temas"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:545
 #, fuzzy
-msgid "workspace.token.token-description"
+msgid "workspace.tokens.token-description"
 msgstr "Descripción"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:501
-msgid "workspace.token.token-name"
+msgid "workspace.tokens.token-name"
 msgstr "Nombre"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
-msgid "workspace.token.token-not-resolved"
+msgid "workspace.tokens.token-not-resolved"
 msgstr "No se pudo resolver el token de referencia con el nombre: %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:526
-msgid "workspace.token.token-value"
+msgid "workspace.tokens.token-value"
 msgstr "Valor"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:525
-msgid "workspace.token.token-value-enter"
+msgid "workspace.tokens.token-value-enter"
 msgstr "Introduce un valor o un alias usando {alias}"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:345
-msgid "workspace.token.inactive-set"
+msgid "workspace.tokens.inactive-set"
 msgstr "Inactivo"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:340
-msgid "workspace.token.inactive-set-description"
+msgid "workspace.tokens.inactive-set-description"
 msgstr "Este set no está activo. Cambia el tema o activa este set para ver los cambios en el viewport"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
-msgid "workspace.token.tools"
+msgid "workspace.tokens.tools"
 msgstr "Herramientas"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:131
-msgid "workspace.token.value-not-valid"
+msgid "workspace.tokens.value-not-valid"
 msgstr "El valor no es válido"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:520
-msgid "workspace.token.warning-name-change"
+msgid "workspace.tokens.warning-name-change"
 msgstr "Al renombrar este token se romperán las referencias al nombre anterior"
 
 #: src/app/main/ui/workspace/tokens/modals/settings.cljs
-msgid "workspace.token.settings"
+msgid "workspace.tokens.settings"
 msgstr "Configuración de tokens"
 
 #: src/app/main/ui/workspace/tokens/modals/settings.cljs
-msgid "workspace.token.base-font-size"
+msgid "workspace.tokens.base-font-size"
 msgstr "Tamaño de fuente base"
 
 #: src/app/main/ui/workspace/tokens/modals/settings.cljs
-msgid "workspace.token.setting-description"
+msgid "workspace.tokens.setting-description"
 msgstr "Aquí puedes configurar el tamaño de fuente base, que define el tamaño de 1rem:"
 
 #: src/app/main/ui/workspace/tokens/modals/settings.cljs
-msgid "workspace.token.base-font-size.error"
+msgid "workspace.tokens.base-font-size.error"
 msgstr "El tamaño de fuente base debe estar en px o sin unidad."
 
 #: src/app/main/ui/workspace/sidebar.cljs:135, src/app/main/ui/workspace/sidebar.cljs:144
