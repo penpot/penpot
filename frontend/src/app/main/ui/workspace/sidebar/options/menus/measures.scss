@@ -7,8 +7,14 @@
 @import "refactor/common-refactor.scss";
 
 .element-set {
-  @include flexColumn;
-  margin-bottom: $s-8;
+  display: grid;
+  row-gap: var(--sp-xs);
+  margin-bottom: var(--sp-s);
+  // NOTE: this does not follow the 8-column grid and the size is not normalized,
+  // so we need to hardcode this width :(
+  --input-width: calc(var(--sp-xxxl) * 3.5);
+  grid-template-columns: var(--input-width) var(--input-width) var(--sp-xxxl);
+  column-gap: var(--sp-xs);
 }
 
 .presets {
@@ -108,22 +114,31 @@
   }
 }
 
-.size {
-  @include flexRow;
-  position: relative;
+.size,
+.position,
+.rotation-radius {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1/-1;
 }
 
 .height,
-.width {
+.width,
+.x-position,
+.y-position,
+.rotation {
   @extend .input-element;
   @include bodySmallTypography;
-  width: $s-108;
   .icon-text {
     padding-top: $s-1;
   }
   &.disabled {
     @extend .disabled-input;
   }
+}
+
+.border-radius {
+  grid-column: 2/-1;
 }
 
 .lock-size-btn {
@@ -139,39 +154,6 @@
 .lock-ratio-icon {
   @extend .button-icon;
   stroke: var(--icon-foreground);
-}
-
-.position {
-  @include flexRow;
-}
-
-.x-position,
-.y-position {
-  @extend .input-element;
-  @include bodySmallTypography;
-  width: $s-108;
-  .icon-text {
-    padding-top: $s-1;
-  }
-  &.disabled {
-    @extend .disabled-input;
-  }
-}
-
-.rotation-radius {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: $s-4;
-}
-
-.rotation {
-  @extend .input-element;
-  @include bodySmallTypography;
-  width: $s-108;
-  .icon-text {
-    padding-top: $s-1;
-  }
 }
 
 .clip-show {

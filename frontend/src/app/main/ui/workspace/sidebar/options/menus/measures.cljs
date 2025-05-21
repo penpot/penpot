@@ -26,7 +26,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.options.menus.border-radius :refer  [border-radius-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.border-radius :refer  [border-radius-menu*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [clojure.set :as set]
@@ -68,8 +68,6 @@
 
 (def ^:private clip-content-icon (i/icon-xref :clip-content (stl/css :checkbox-button)))
 (def ^:private play-icon (i/icon-xref :play (stl/css :checkbox-button)))
-(def ^:private locked-icon (i/icon-xref :detach (stl/css :lock-ratio-icon)))
-(def ^:private unlocked-icon (i/icon-xref :detached (stl/css :lock-ratio-icon)))
 
 (defn select-measure-keys
   "Consider some shapes can be drawn from bottom to top or from left to right"
@@ -365,14 +363,13 @@
                              :disabled disabled-height-sizing?
                              :class (stl/css :numeric-input)
                              :value (:height values)}]]
-        [:button {:class (stl/css-case
-                          :lock-size-btn true
-                          :selected (true? proportion-lock)
-                          :disabled (= proportion-lock :multiple))
-                  :on-click on-proportion-lock-change}
-         (if proportion-lock
-           locked-icon
-           unlocked-icon)]])
+
+        [:> icon-button* {:variant "ghost"
+                          :icon (if proportion-lock "lock" "unlock")
+                          :class (stl/css-case :selected (true? proportion-lock))
+                          :disabled (= proportion-lock :multiple)
+                          :aria-label (if proportion-lock (tr "workspace.options.size.unlock") (tr "workspace.options.size.lock"))
+                          :on-click on-proportion-lock-change}]])
      (when (options :position)
        [:div {:class (stl/css :position)}
         [:div {:class (stl/css-case :x-position true
@@ -412,7 +409,7 @@
              :class (stl/css :numeric-input)
              :value (:rotation values)}]])
         (when (options :radius)
-          [:& border-radius-menu {:ids ids :ids-with-children ids-with-children :values values :shape shape}])])
+          [:> border-radius-menu* {:class (stl/css :border-radius) :ids ids :ids-with-children ids-with-children :values values :shape shape}])])
      (when (or (options :clip-content) (options :show-in-viewer))
        [:div {:class (stl/css :clip-show)}
         (when (options :clip-content)

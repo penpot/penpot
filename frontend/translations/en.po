@@ -6066,6 +6066,14 @@ msgstr "Collapse independent radius"
 msgid "workspace.options.radius.show-single-corners"
 msgstr "Show independent radius"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:371
+msgid "workspace.options.size.lock"
+msgstr "Lock ratio"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:371
+msgid "workspace.options.size.unlock"
+msgstr "Unlock ratio"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:190
 msgid "workspace.options.recent-fonts"
 msgstr "Recent"
