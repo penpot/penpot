@@ -19,6 +19,7 @@
    [app.http.errors :as errors]
    [app.http.middleware :as mw]
    [app.http.session :as session]
+   [app.http.templates :as-alias templates]
    [app.http.websocket :as-alias ws]
    [app.main :as-alias main]
    [app.metrics :as mtx]
@@ -137,6 +138,7 @@
    [::rpc/routes schema:routes]
    [::rpc.doc/routes schema:routes]
    [::oidc/routes schema:routes]
+   [::templates/routes schema:routes]
    [::assets/routes schema:routes]
    [::debug/routes schema:routes]
    [::mtx/routes schema:routes]
@@ -173,4 +175,5 @@
      ["/api" {:middleware [[mw/cors]]}
       (::oidc/routes cfg)
       (::rpc.doc/routes cfg)
+      (::templates/routes cfg)
       (::rpc/routes cfg)]]]))

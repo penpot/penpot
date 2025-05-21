@@ -41,7 +41,8 @@
     "profile"
     "file-data"
     "file-data-fragment"
-    "file-change"})
+    "file-change"
+    "penpot-templates"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Storage Module State
