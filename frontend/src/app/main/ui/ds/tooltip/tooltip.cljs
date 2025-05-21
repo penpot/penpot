@@ -42,7 +42,7 @@
 
       "left"
       {:top (- (+ trigger-top (/ trigger-height 2) half-arrow-height) (/ tooltip-height 2))
-       :left (- trigger-left tooltip-width)
+       :left (- trigger-left tooltip-width arrow-height)
        :right (+ (- trigger-left tooltip-width) tooltip-width)
        :bottom (+ (- (+ trigger-top (/ trigger-height 2) half-arrow-height) (/ tooltip-height 2)) tooltip-height)
        :width tooltip-width
