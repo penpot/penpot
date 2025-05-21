@@ -336,7 +336,6 @@
         [:> icon-button*
          {:variant "ghost"
           :aria-label (tr "workspace.options.fit-content")
-          :title (tr "workspace.options.fit-content")
           :on-pointer-down handle-fit-content
           :icon "fit-content"}]])
      (when (options :size)
