@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-20 13:42+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Ukrainian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ukr_UA/>\n"
+"PO-Revision-Date: 2025-04-09 12:01+0000\n"
+"Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
+"Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
+"frontend/ukr_UA/>\n"
 "Language: ukr_UA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -675,7 +675,7 @@ msgstr[2] "%s файлів успішно імпортовано."
 
 #: src/app/main/ui/dashboard/import.cljs:463
 msgid "dashboard.import.import-warning"
-msgstr "Деякі файли містили недійсні об'єкти, які було вилучено."
+msgstr "Деякі файли містили помилкові об'єкти, які було вилучено."
 
 #: src/app/main/ui/dashboard.cljs:248
 msgid "dashboard.import.no-perms"
@@ -1259,7 +1259,7 @@ msgstr "Схоже, вміст зображення не відповідає р
 
 #: src/app/main/data/media.cljs:65, src/app/main/data/workspace/media.cljs:172, src/app/main/data/workspace/media.cljs:175, src/app/main/data/workspace/media.cljs:178, src/app/main/data/workspace/media.cljs:181
 msgid "errors.media-type-not-allowed"
-msgstr "Схоже, це зображення є недійсним."
+msgstr "Схоже, це зображення не є дійсним."
 
 #: src/app/main/ui/dashboard/team.cljs:615
 msgid "errors.member-is-muted"
@@ -1283,7 +1283,7 @@ msgstr "Пароль повинен мати, принаймні, 8 символ
 
 #: src/app/main/errors.cljs:137
 msgid "errors.paste-data-validation"
-msgstr "Недійсні дані в буфері обміну"
+msgstr "Помилкові дані в буфері обміну"
 
 #: src/app/main/data/auth.cljs:312, src/app/main/ui/auth/login.cljs:103, src/app/main/ui/auth/login.cljs:111
 msgid "errors.profile-blocked"
@@ -6443,7 +6443,7 @@ msgstr "Створити свою першу тему зараз."
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:134, src/app/main/ui/workspace/tokens/sidebar.cljs:190
 msgid "workspace.token.create-one"
-msgstr "Створити його."
+msgstr "Створити."
 
 #: src/app/main/ui/workspace/tokens/form.cljs:492
 msgid "workspace.token.create-token"
@@ -6527,16 +6527,14 @@ msgid "workspace.token.no-themes-currently"
 msgstr "Наразі у вас немає жодної теми."
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.token.original-value"
 msgstr "Початкове значення: %s"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:128
 msgid "workspace.token.ref-not-valid"
-msgstr "Посилання недійсне або ні на одному із активних наборів"
+msgstr "Посилання помилкове або ні на одному із активних наборів"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:217, src/app/main/ui/workspace/tokens/form.cljs:221, src/app/main/ui/workspace/tokens/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.token.resolved-value"
 msgstr "Отримане значення: %s"
 
@@ -6569,7 +6567,7 @@ msgstr "Ім'я"
 #: src/app/main/ui/workspace/tokens/form.cljs:59
 msgid "workspace.token.token-name-validation-error"
 msgstr ""
-" недійсне імʼя токену.\n"
+" помилкове імʼя токену.\n"
 "Імʼя має містити тільки літери та цифри, розділені крапкою та не мають "
 "починатись із символу \"$\"."
 
@@ -6587,7 +6585,7 @@ msgstr "Інструменти"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:131
 msgid "workspace.token.value-not-valid"
-msgstr "Значення недійсне"
+msgstr "Значення не є дійсним"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:520
 msgid "workspace.token.warning-name-change"
@@ -6906,3 +6904,419 @@ msgstr "Автозбережені версії зберігатимуться �
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Натисність щоб закінчити шлях"
+
+#: src/app/main/ui/dashboard/templates.cljs:90
+msgid "labels.hide"
+msgstr "Приховати"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:44
+msgid "dashboard.empty-project.add-library"
+msgstr "Додати Бібліотеку чи Шаблон"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:39, src/app/main/ui/dashboard/placeholder.cljs:40
+msgid "dashboard.empty-project.import"
+msgstr "Імпортувати файл"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:41
+msgid "dashboard.empty-project.import-penpot"
+msgstr "Імпортувати файл .penpot"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:37
+msgid "dashboard.empty-project.start"
+msgstr "Почніть робити чудові речі"
+
+#: src/app/main/data/comments.cljs:472
+msgid "dashboard.mark-all-as-read.success"
+msgstr "Позначити усі сповіщення як прочитані"
+
+#: src/app/main/ui/dashboard/templates.cljs:133
+msgid "dashboard.template.add-to-project"
+msgstr "Додати до проєкту"
+
+#: src/app/util/forms.cljs:61
+msgid "errors.field-missing"
+msgstr "Порожнє поле"
+
+#: src/app/util/forms.cljs:35, src/app/util/forms.cljs:84
+msgid "errors.invalid-data"
+msgstr "Помилкові дані"
+
+#: src/app/util/forms.cljs
+#, unused
+msgid "errors.invalid-text"
+msgstr "Помилковий текст"
+
+#: src/app/main/data/tokens.cljs:150, src/app/main/data/tokens.cljs:180
+msgid "errors.token-set-already-exists"
+msgstr "Набір з таким імʼям уже існує"
+
+#: src/app/main/data/tokens.cljs:79
+msgid "errors.token-theme-already-exists"
+msgstr "Параметри Теми з таким імʼям вже існують"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variant"
+msgstr "Параметри варіантів"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:61
+msgid "inspect.subtitle.copy"
+msgstr "Копіювати"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:59
+msgid "inspect.subtitle.variant"
+msgstr "Варіант"
+
+#: src/app/main/ui/dashboard/comments.cljs:95
+msgid "label.mark-all-as-read"
+msgstr "Позначити все як прочитане"
+
+#: src/app/main/ui/components/copy_button.cljs:41
+msgid "labels.copy"
+msgstr "Копіювати"
+
+#: src/app/main/ui/inspect/attributes/common.cljs:120
+msgid "labels.copy-color"
+msgstr "Копіювати колір"
+
+#: src/app/main/ui/comments.cljs:583
+msgid "labels.mention"
+msgstr "Згадка"
+
+#: src/app/main/ui/dashboard/templates.cljs:86
+msgid "labels.show"
+msgstr "Показати"
+
+#: src/app/main/ui/ds/product/loader.cljs:21
+msgid "loader.tips.01.message"
+msgstr "Зберігайте свої дизайни цілісними та легко оновлюваними між проєктами."
+
+#: src/app/main/ui/ds/product/loader.cljs:20
+msgid "loader.tips.01.title"
+msgstr "Багаторазові компоненти"
+
+#: src/app/main/ui/ds/product/loader.cljs:23
+msgid "loader.tips.02.message"
+msgstr "Працюйте із командою наживо та діліться відгуками наживо."
+
+#: src/app/main/ui/ds/product/loader.cljs:22
+msgid "loader.tips.02.title"
+msgstr "Спільна робота наживо"
+
+#: src/app/main/ui/ds/product/loader.cljs:25
+msgid "loader.tips.03.message"
+msgstr ""
+"Створюйте дизайн гнучко зі знайомими CSS-подібними елементами керування "
+"макетом."
+
+#: src/app/main/ui/ds/product/loader.cljs:24
+msgid "loader.tips.03.title"
+msgstr "Автомакет як у CSS"
+
+#: src/app/main/ui/ds/product/loader.cljs:27
+msgid "loader.tips.04.message"
+msgstr "Отримуйте CSS та SVG код прямо із Ваших дизайнів."
+
+#: src/app/main/ui/ds/product/loader.cljs:29
+msgid "loader.tips.05.message"
+msgstr "Розповсюджуйте ресурси і стилі для керування цілісністю."
+
+#: src/app/main/ui/ds/product/loader.cljs:31
+msgid "loader.tips.06.message"
+msgstr "Втілюйте свої ідеї у життя завдяки анімаціям та переходам."
+
+#: src/app/main/ui/ds/product/loader.cljs:33
+msgid "loader.tips.07.message"
+msgstr ""
+"Penpot використовує SVG та CSS щоб забезпечити безперебійну роботу над "
+"дизайном."
+
+#: src/app/main/ui/ds/product/loader.cljs:32
+msgid "loader.tips.07.title"
+msgstr "Формати за веб-стандартами"
+
+#: src/app/main/ui/ds/product/loader.cljs:34
+msgid "loader.tips.08.title"
+msgstr "Скорочення клавіш"
+
+#: src/app/main/ui/ds/product/loader.cljs:37
+msgid "loader.tips.09.message"
+msgstr "Обирайте тему яка личить вашому стилю."
+
+#: src/app/main/ui/ds/product/loader.cljs:39
+msgid "loader.tips.10.message"
+msgstr ""
+"Розширюйте Penpot за допомогою плагінами від спільноти для додаткового "
+"функціоналу."
+
+#: src/app/main/ui/ds/product/loader.cljs:38
+msgid "loader.tips.10.title"
+msgstr "Підтримка плагінів"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:426, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:432
+msgid "workspace.layout_grid.editor.padding.bottom"
+msgstr "Нижній внутрішній відступ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:441, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:447
+msgid "workspace.layout_grid.editor.padding.left"
+msgstr "Лівий внутрішній відступ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:396, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:402
+msgid "workspace.layout_grid.editor.padding.top"
+msgstr "Верхній внутрішній відступ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:337, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:343
+msgid "workspace.layout_grid.editor.padding.vertical"
+msgstr "Вертикальний внутрішній відступ"
+
+#: src/app/main/ui/workspace/context_menu.cljs:587, src/app/main/ui/workspace/sidebar/assets/common.cljs:475, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:771
+msgid "workspace.shape.menu.add-variant"
+msgstr "Створити варіант"
+
+#: src/app/main/ui/workspace/tokens/sets_context_menu.cljs:54
+msgid "workspace.token.add-set-to-group"
+msgstr "Додати набір до цієї групи"
+
+#: src/app/main/data/tokens.cljs:386
+msgid "workspace.token.duplicate-suffix"
+msgstr "копіювати"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:197
+msgid "workspace.token.gaps"
+msgstr "Проміжки"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.token.generic-error"
+msgstr "Помилка: "
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:109
+msgid "workspace.token.group-name"
+msgstr "Імʼя групи"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:17, src/app/main/ui/workspace/tokens/errors.cljs:21
+msgid "workspace.token.import-error"
+msgstr "Помилка імпорту:"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:29
+msgid "workspace.token.invalid-color"
+msgstr "Помилкове значення кольору: %s"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:13
+msgid "workspace.token.invalid-json"
+msgstr "Помилка імпорту: Помилкові дани токену в JSON."
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/errors.cljs:45
+msgid "workspace.token.invalid-value"
+msgstr "Помилкове значення токену: %s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:197
+msgid "workspace.token.label.group-optional"
+msgstr "Опціонально"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:199
+msgid "workspace.token.label.group-placeholder"
+msgstr "Додати групу (приміром Режим)"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:189
+msgid "workspace.token.margins"
+msgstr "Зовнішні відступи"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:216
+msgid "workspace.token.min-size"
+msgstr "Мін. розмір"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:37
+msgid "workspace.token.missing-references"
+msgstr "Відсутні посилання на токен: "
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:154
+msgid "workspace.token.no-active-sets"
+msgstr "Немає активних наборів"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:45
+msgid "workspace.token.opacity-range"
+msgstr "Непрозорість має бути між 0 та 100% або ж між 0 та 1 (де 0.5 - 50%)."
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:177
+msgid "workspace.token.paddings"
+msgstr "Внутрішні відступи"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:237
+msgid "workspace.token.radius"
+msgstr "Радіус"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.token.reference-error"
+msgstr "Помилка посилання: "
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:25
+msgid "workspace.token.self-reference"
+msgstr "Токен має самопосилання"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:98
+msgid "workspace.token.set-edit-placeholder"
+msgstr "Введіть імʼя (використовуйте '/' для груп)"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:148
+msgid "workspace.token.sets-hint"
+msgstr "Редагуйте тему та керуйте наборами"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:210
+msgid "workspace.token.size"
+msgstr "Розмір"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:101
+msgid "workspace.token.themes-description"
+msgstr ""
+"Тут ви можете керувати своїми темами, активовувати / деактивовувати їх та "
+"налаштовувати їхні активні набори."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
+msgid "workspace.token.import-tooltip"
+msgstr "Імпортування файлу JSON перепише всі наявні токени, набори та теми"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:36, src/app/main/ui/dashboard/placeholder.cljs:90
+msgid "dashboard.empty-project.create"
+msgstr "Створити новий файл"
+
+#: src/app/main/data/common.cljs:87
+msgid "labels.refresh"
+msgstr "Перезавантажити"
+
+#: src/app/main/ui/ds/product/loader.cljs:30
+msgid "loader.tips.06.title"
+msgstr "Прототипи із взаємодіями"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:604
+#, unused
+msgid "shortcuts.plugins"
+msgstr "Менеджер плагінів"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:176
+msgid "workspace.assets.manage-library"
+msgstr "Керувати бібліотекою"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:856
+msgid "workspace.shape.menu.remove-variant-property"
+msgstr "Видалити властивість"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:57
+msgid "inspect.subtitle.main"
+msgstr "Головний компонент"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:241
+msgid "workspace.token.color"
+msgstr "Колір"
+
+#: src/app/main/ui/dashboard/templates.cljs:257
+msgid "dashboard.libraries-and-templates.description"
+msgstr "Тут знаходяться Бібліотеки та Шаблони, які можна додати до проєкту"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:45
+msgid "dashboard.empty-project.explore"
+msgstr "Перегляньте і додайте"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:9
+msgid "workspace.token.error-parse"
+msgstr "Помилка імпорту: Неможливо обробити JSON."
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:222
+msgid "workspace.token.max-size"
+msgstr "Макс. розмір"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:43
+msgid "dashboard.empty-project.go-to-libraries"
+msgstr "До Бібліотек та Шаблонів"
+
+#: src/app/main/data/tokens.cljs:245
+msgid "errors.token-set-exists-on-drop"
+msgstr "Не вдалось перекинути, набір з таким імʼям вже існує."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:153
+msgid "workspace.token.num-active-sets"
+msgstr "%s активних наборів"
+
+#: src/app/main/data/tokens.cljs:246
+msgid "errors.drop-token-set-parent-to-child"
+msgstr "Не можна кинути батьківський набір на приналежний дочірній."
+
+#: src/app/main/ui/comments.cljs:729, src/app/main/ui/comments.cljs:760, src/app/main/ui/comments.cljs:826
+msgid "errors.character-limit-exceeded"
+msgstr "Забагато символів"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:351, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:358
+msgid "workspace.layout_grid.editor.padding.horizontal"
+msgstr "Горизонтальний внутрішній відступ"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:49
+msgid "labels.unknown-error"
+msgstr "Невідома помилка"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:411, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:417
+msgid "workspace.layout_grid.editor.padding.right"
+msgstr "Правий внутрішній відступ"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
+msgid "workspace.token.token-not-resolved"
+msgstr "Неможливо отримати токен посилання з імʼям: %s"
+
+#: src/app/main/ui/ds/product/loader.cljs:26
+msgid "loader.tips.04.title"
+msgstr "Експортувати у код"
+
+#: src/app/main/ui/ds/product/loader.cljs:28
+msgid "loader.tips.05.title"
+msgstr "Бібліотеки дизайну"
+
+#: src/app/main/ui/ds/product/loader.cljs:35
+msgid "loader.tips.08.message"
+msgstr ""
+"Прискорте свій робочий процес за допомогою скорочень штибу Shift + A для "
+"Автоматичного Макету."
+
+#: src/app/main/ui/ds/product/loader.cljs:36
+msgid "loader.tips.09.title"
+msgstr "Темний і світлий режими"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
+#, unused
+msgid "shortcuts.copy-props"
+msgstr "Копіювати параметри"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
+#, unused
+msgid "shortcuts.paste-props"
+msgstr "Вставити параметри"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:63, src/app/main/ui/workspace/tokens/modals/themes.cljs:170, src/app/main/ui/workspace/tokens/modals/themes.cljs:279
+msgid "workspace.token.add-new-theme"
+msgstr "Додати нову тему"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:769
+msgid "workspace.shape.menu.add-variant-property"
+msgstr "Додати нову властивість"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:257
+msgid "workspace.token.axis"
+msgstr "Вісь"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:33
+msgid "workspace.token.number-too-large"
+msgstr "Помилкове значення токену. Отримане значення завелике: %s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:208
+msgid "workspace.token.label.theme-placeholder"
+msgstr "Додати тему (приміром Світла)"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:46, src/app/main/ui/workspace/tokens/modals/themes.cljs:99
+msgid "workspace.token.themes-list"
+msgstr "Список тем"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:525
+msgid "workspace.token.token-value-enter"
+msgstr "Ведіть значення або псевдо з {псевдо}"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:131
+msgid "workspace.toolbar.frame-first-time"
+msgstr "Створіть дошку. Натисніть та потягніть щоб визначити розмір. (%s)"

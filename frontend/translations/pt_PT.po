@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-20 13:42+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Portuguese (Portugal) "
-"<https://hosted.weblate.org/projects/penpot/frontend/pt_PT/>\n"
+"PO-Revision-Date: 2025-04-13 18:18+0000\n"
+"Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
+"Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
+"penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -6532,3 +6532,246 @@ msgstr "Clica para fechar o caminho"
 
 #~ msgid "workspace.options.layout.direction.left"
 #~ msgstr "Linha"
+
+#: src/app/util/forms.cljs:35, src/app/util/forms.cljs:84
+msgid "errors.invalid-data"
+msgstr "Dados inválidos"
+
+#: src/app/util/forms.cljs:61
+msgid "errors.field-missing"
+msgstr "Campo vazio"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:49
+msgid "labels.unknown-error"
+msgstr "Erro desconhecido"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:44
+msgid "dashboard.empty-project.add-library"
+msgstr "Adiciona uma Biblioteca ou Template"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:36, src/app/main/ui/dashboard/placeholder.cljs:90
+msgid "dashboard.empty-project.create"
+msgstr "Criar novo ficheiro"
+
+#: src/app/main/data/comments.cljs:472
+msgid "dashboard.mark-all-as-read.success"
+msgstr "Todas as notificações foram marcadas como lidas"
+
+#: src/app/util/forms.cljs
+#, unused
+msgid "errors.invalid-text"
+msgstr "Texto inválido"
+
+#: src/app/main/ui/dashboard/templates.cljs:90
+msgid "labels.hide"
+msgstr "Ocultar"
+
+#: src/app/main/ui/ds/product/loader.cljs:22
+msgid "loader.tips.02.title"
+msgstr "Colaboração em tempo real"
+
+#: src/app/main/ui/ds/product/loader.cljs:25
+msgid "loader.tips.03.message"
+msgstr "Cria designs de forma flexível com controlos semelhantes a CSS."
+
+#: src/app/main/ui/ds/product/loader.cljs:24
+msgid "loader.tips.03.title"
+msgstr "Auto Layout como em CSS"
+
+#: src/app/main/ui/ds/product/loader.cljs:27
+msgid "loader.tips.04.message"
+msgstr "Obtém código CSS e SVG diretamente das tuas criações."
+
+#: src/app/main/ui/ds/product/loader.cljs:26
+msgid "loader.tips.04.title"
+msgstr "Exportar para Código"
+
+#: src/app/main/ui/ds/product/loader.cljs:29
+msgid "loader.tips.05.message"
+msgstr "Partilha estilos e recursos para manter a consistência."
+
+#: src/app/main/ui/ds/product/loader.cljs:30
+msgid "loader.tips.06.title"
+msgstr "Protótipos Interativos"
+
+#: src/app/main/ui/ds/product/loader.cljs:33
+msgid "loader.tips.07.message"
+msgstr "O Penpot usa SVG e CSS para um desenvolvimento fluido."
+
+#: src/app/main/ui/ds/product/loader.cljs:32
+msgid "loader.tips.07.title"
+msgstr "Formatos Web Padrão"
+
+#: src/app/main/ui/ds/product/loader.cljs:35
+msgid "loader.tips.08.message"
+msgstr ""
+"Acelera o teu fluxo de trabalho com atalhos úteis tais como Shift + A para "
+"Auto Layout."
+
+#: src/app/main/ui/ds/product/loader.cljs:34
+msgid "loader.tips.08.title"
+msgstr "Atalhos de Teclado"
+
+#: src/app/main/ui/ds/product/loader.cljs:36
+msgid "loader.tips.09.title"
+msgstr "Modo Claro/Escuro"
+
+#: src/app/main/ui/ds/product/loader.cljs:38
+msgid "loader.tips.10.title"
+msgstr "Suporte de Plugins"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:222
+msgid "workspace.token.max-size"
+msgstr "Tamanho máx."
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:189
+msgid "workspace.token.margins"
+msgstr "Margens"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:237
+msgid "workspace.token.radius"
+msgstr "Raio"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:210
+msgid "workspace.token.size"
+msgstr "Tamanho"
+
+#: src/app/main/ui/dashboard.cljs:206
+msgid "dashboard.plugins.parse-error"
+msgstr "Não foi possível analisar as definições do plugin"
+
+#: src/app/main/ui/dashboard.cljs:169
+msgid "dashboard.plugins.try-plugin"
+msgstr "Experimentar o plugin: "
+
+#: src/app/main/ui/inspect/attributes/common.cljs:120
+msgid "labels.copy-color"
+msgstr "Copiar cor"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:41
+msgid "dashboard.empty-project.import-penpot"
+msgstr "Importar um ficheiro .penpot"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:39, src/app/main/ui/dashboard/placeholder.cljs:40
+msgid "dashboard.empty-project.import"
+msgstr "Importar um ficheiro"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:77
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"As bibliotecas adicionadas ao projeto irão aparecer aqui. Tenta partilhar os "
+"teus ficheiros ou adiciona algumas das nossas [Bibliotecas e templates]"
+"(https://penpot.app/libraries-templates)."
+
+#: src/app/main/ui/settings/notifications.cljs:53
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Notificações no Painel"
+
+#: src/app/main/ui/dashboard/templates.cljs:133
+msgid "dashboard.template.add-to-project"
+msgstr "Adicionar ao teu projeto"
+
+#: src/app/main/ui/dashboard/comments.cljs:95
+msgid "label.mark-all-as-read"
+msgstr "Marcar todas como lidas"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:197
+msgid "workspace.token.label.group-optional"
+msgstr "Opcional"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:43
+msgid "dashboard.empty-project.go-to-libraries"
+msgstr "Ir para Bibliotecas e Templates"
+
+#: src/app/main/ui/ds/product/loader.cljs:37
+msgid "loader.tips.09.message"
+msgstr "Escolhe o tema que se adequa ao teu estilo."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:37
+msgid "dashboard.empty-project.start"
+msgstr "Começa a criar coisas incríveis"
+
+#: src/app/main/ui/dashboard/templates.cljs:257
+msgid "dashboard.libraries-and-templates.description"
+msgstr ""
+"Aqui estão algumas Bibliotecas e templates que podes adicionar ao teu projeto"
+
+#: src/app/main/ui/ds/product/loader.cljs:23
+msgid "loader.tips.02.message"
+msgstr ""
+"Trabalha com a tua equipa em tempo real, partilha feedback de forma "
+"instantânea."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:46, src/app/main/ui/workspace/tokens/modals/themes.cljs:99
+msgid "workspace.token.themes-list"
+msgstr "Lista de temas"
+
+#: src/app/main/ui/ds/product/loader.cljs:20
+msgid "loader.tips.01.title"
+msgstr "Componentes Reutilizáveis"
+
+#: src/app/main/ui/comments.cljs:729, src/app/main/ui/comments.cljs:760, src/app/main/ui/comments.cljs:826
+msgid "errors.character-limit-exceeded"
+msgstr "Limite de caracteres excedido"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:57
+msgid "inspect.subtitle.main"
+msgstr "Componente principal"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.token.generic-error"
+msgstr "Erro: "
+
+#: src/app/main/ui/ds/product/loader.cljs:28
+msgid "loader.tips.05.title"
+msgstr "Bibliotecas de Design"
+
+#: src/app/main/ui/ds/product/loader.cljs:31
+msgid "loader.tips.06.message"
+msgstr "Dá vida às tuas ideias com animações e transições."
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:216
+msgid "workspace.token.min-size"
+msgstr "Tamanho mín."
+
+#: src/app/main/data/common.cljs:209
+msgid "dashboard.permissions-change.admin"
+msgstr "Passaste a ser administrador(a) nesta equipa."
+
+#: src/app/main/data/common.cljs:208
+msgid "dashboard.permissions-change.editor"
+msgstr "Passaste a ser editor(a) nesta equipa."
+
+#: src/app/main/data/common.cljs:210
+msgid "dashboard.permissions-change.owner"
+msgstr "Passaste a ser dono(a) nesta equipa."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:972
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Melhorar"
+
+#: src/app/main/ui/settings/notifications.cljs:59
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Nenhuma"
+
+#: src/app/main/ui/dashboard.cljs:241
+msgid "dashboard.import.error"
+msgstr "A importação falhou. Por favor tenta novamente"
+
+#: src/app/main/ui/settings/notifications.cljs:69
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "Nenhuma"
+
+#: src/app/main/ui/dashboard.cljs:208
+msgid "dashboard.plugins.bad-url"
+msgstr "O URL do plugin está incorreto"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:200, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:235
+msgid "workspace.options.export.remove-export"
+msgstr "Eliminar exportação"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:241
+msgid "workspace.token.color"
+msgstr "Cor"

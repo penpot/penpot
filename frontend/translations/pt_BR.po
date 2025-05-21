@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-02-07 14:01+0000\n"
-"Last-Translator: Robson Cardoso dos Santos <cardoso.rcs@gmail.com>\n"
-"Language-Team: Portuguese (Brazil) "
-"<https://hosted.weblate.org/projects/penpot/frontend/pt_BR/>\n"
+"PO-Revision-Date: 2025-04-05 14:07+0000\n"
+"Last-Translator: Rick Benetti <rick@boz.solutions>\n"
+"Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
+"penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -17,7 +17,7 @@ msgstr "Já tem uma conta?"
 
 #: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:274
 msgid "auth.check-mail"
-msgstr "Confira seu email"
+msgstr "Confira seu e-mail"
 
 #: src/app/main/ui/auth/register.cljs:277
 msgid "auth.check-your-email"
@@ -41,7 +41,7 @@ msgstr "Quer apenas experimentar?"
 #: src/app/main/ui/auth/login.cljs:43
 msgid "auth.demo-warning"
 msgstr ""
-"Este é um serviço DEMONSTRATIVO, NÃO USE para trabalho real, os projetos "
+"Este é um serviço DEMONSTRATIVO, NÃO USE para trabalho real. Os projetos "
 "serão apagados periodicamente."
 
 #: src/app/main/ui/auth/login.cljs:189, src/app/main/ui/viewer/login.cljs:84
@@ -5033,3 +5033,382 @@ msgstr "Versões com salvamento automático serão mantidos por %s dias."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Clique para fechar o caminho"
+
+#: src/app/main/ui/settings/access_tokens.cljs:143
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "O token expirará em %s"
+
+#: src/app/main/ui/settings/access_tokens.cljs:144
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "O token não tem uma data de validade"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:35
+msgid "dashboard.add-file"
+msgstr "Adicionar arquivo"
+
+#: src/app/main/ui/dashboard/files.cljs:194, src/app/main/ui/dashboard/projects.cljs:281
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "Nenhum rascunho ainda."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:73
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "As bibliotecas adicionadas ao projeto aparecerão aqui."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:43
+msgid "dashboard.empty-project.go-to-libraries"
+msgstr "Ir para Bibliotecas e modelos"
+
+#: src/app/main/ui/dashboard/files.cljs:200, src/app/main/ui/dashboard/projects.cljs:287
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr "Quando um membro do projeto criar um arquivo, ele será exibido aqui."
+
+#: src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:286
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr "Quando um membro do projeto criar um rascunho, ele será exibido aqui."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:77
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"As bibliotecas adicionadas ao projeto aparecerão aqui. Tente compartilhar "
+"seus arquivos ou adicioná-los a partir da [Bibliotecas e modelos] (https://"
+"penpot.app/libraries-templates)."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:45
+msgid "dashboard.empty-project.explore"
+msgstr "Explore algo para adicionar"
+
+#: src/app/main/ui/auth/register.cljs:254
+msgid "auth.register-account-tagline"
+msgstr "Informe-nos sobre como devemos te chamar no painel e nos e-mails."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:36, src/app/main/ui/dashboard/placeholder.cljs:90
+msgid "dashboard.empty-project.create"
+msgstr "Criar novo arquivo"
+
+#: src/app/main/ui/settings/access_tokens.cljs:186
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Os tokens de acesso pessoal funcionam como uma alternativa ao nosso sistema "
+"de autenticação por login/senha e podem ser usados para permitir que um "
+"aplicativo acesse a API interna do Penpot"
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown, unused
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"As bibliotecas adicionadas ao projeto aparecerão aqui. Tente compartilhar "
+"seus arquivos ou adicioná-los a partir de [Bibliotecas e modelos] (https://"
+"penpot.app/libraries-templates)."
+
+#: src/app/main/ui/dashboard/files.cljs:195, src/app/main/ui/dashboard/projects.cljs:282
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "Não há arquivos ainda."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:44
+msgid "dashboard.empty-project.add-library"
+msgstr "Adicionar uma biblioteca ou modelo"
+
+#: src/app/main/ui/auth/register.cljs:124
+msgid "auth.register-tagline"
+msgstr ""
+"Com uma conta gratuita do Penpot, você pode criar times ilimitados e "
+"colaborar com outros designers e programadores em quantos projetos você "
+"quiser. "
+
+#: src/app/main/ui/settings/access_tokens.cljs:185
+msgid "dashboard.access-tokens.personal"
+msgstr "Tokens de acesso pessoais"
+
+#: src/app/main/ui/onboarding/questions.cljs
+#, unused
+msgid "branding-illustrations-marketing-pieces"
+msgstr "... marca, ilustrações, materiais de marketing, etc."
+
+#: src/app/main/ui/auth/register.cljs:157
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr ""
+"Concordo com os [termos de serviço](%s) e as [políticas de privacidade](%s)."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:70
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "Ainda não há bibliotecas."
+
+#: src/app/main/ui/auth/register.cljs:253
+msgid "auth.register-account-title"
+msgstr "Seu nome"
+
+#: src/app/main/ui/auth/login.cljs:172, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:88
+msgid "auth.work-email"
+msgstr "E-mail de trabalho"
+
+#: src/app/main/ui/comments.cljs:532
+msgid "comments.mentions.not-found"
+msgstr "Ninguém encontrado com @%s"
+
+#: src/app/main/ui/settings/notifications.cljs:54
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Comentários de arquivo"
+
+#: src/app/main/data/common.cljs:207
+msgid "dashboard.permissions-change.viewer"
+msgstr "Agora você é um espectador desta equipe."
+
+#: src/app/main/ui/dashboard.cljs:208
+msgid "dashboard.plugins.bad-url"
+msgstr "A URL do plugin está incorreta"
+
+#: src/app/main/ui/dashboard.cljs:206
+msgid "dashboard.plugins.parse-error"
+msgstr "Não é possível avaliar o manifesto do plugin"
+
+#: src/app/main/ui/dashboard.cljs:169
+msgid "dashboard.plugins.try-plugin"
+msgstr "Experimente o plugin: "
+
+#: src/app/main/data/common.cljs:242
+msgid "dashboard.removed-from-team"
+msgstr "Você não faz mais parte do time \"%s\"."
+
+#: src/app/main/ui/settings/notifications.cljs:57
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Todos os comentários, menções e respostas"
+
+#: src/app/main/ui/settings/notifications.cljs:59
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Nenhuma"
+
+#: src/app/main/ui/settings/notifications.cljs:58
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Somente menções e respostas"
+
+#: src/app/main/ui/settings/notifications.cljs:84
+msgid "dashboard.settings.notifications.submit"
+msgstr "Atualizar configurações"
+
+#: src/app/main/ui/onboarding/questions.cljs:51, src/app/main/ui/viewer.cljs:105
+msgid "labels.previous"
+msgstr "Anterior"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:92
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Seu arquivo foi duplicado com sucesso"
+msgstr[1] "Seus arquivos foram duplicados com sucesso"
+
+#: src/app/main/ui/dashboard/team.cljs:954
+msgid "dashboard.webhooks.cant-edit"
+msgstr "Você só pode excluir ou modificar os webhooks criados por você."
+
+#: src/app/main/ui/workspace/plugins.cljs:336, src/app/main/ui/workspace/plugins.cljs:390
+msgid "ds.confirm-allow"
+msgstr "Permissão"
+
+#: src/app/main/data/tokens.cljs:246
+msgid "errors.drop-token-set-parent-to-child"
+msgstr ""
+"Não é possível remover a definição principal dentro de um caminho filho."
+
+#: src/app/util/forms.cljs:61
+msgid "errors.field-missing"
+msgstr "Campo vazio"
+
+#: src/app/util/forms.cljs:35, src/app/util/forms.cljs:84
+msgid "errors.invalid-data"
+msgstr "Data inválida"
+
+#: src/app/main/data/tokens.cljs:245
+msgid "errors.token-set-exists-on-drop"
+msgstr ""
+"Não é possível concluir a remoção, uma definição com o mesmo nome já existe "
+"no caminho."
+
+#: src/app/main/data/tokens.cljs:79
+msgid "errors.token-theme-already-exists"
+msgstr "Existe uma opção de tema com o mesmo nome"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:118
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Peso da fonte"
+
+#: src/app/main/ui/comments.cljs:583
+msgid "labels.mention"
+msgstr "Menção"
+
+#: src/app/main/ui/onboarding/questions.cljs:250
+msgid "labels.product-management"
+msgstr "Gestão de Produtos"
+
+#: src/app/main/ui/workspace/main_menu.cljs:630
+msgid "dashboard.show-version-history"
+msgstr "Histórico de versões"
+
+#: src/app/main/data/auth.cljs:314
+msgid "errors.auth-provider-not-allowed"
+msgstr "Provedor de autenticação não permitido para este perfil"
+
+#: src/app/main/data/auth.cljs:316, src/app/main/ui/auth/register.cljs:54
+msgid "errors.email-domain-not-allowed"
+msgstr "Domínio não permitido"
+
+#: src/app/main/ui/settings/sidebar.cljs:99
+msgid "labels.notifications"
+msgstr "Notificações"
+
+#: src/app/main/ui/comments.cljs:678
+msgid "labels.post"
+msgstr "Publicar"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:133, src/app/main/ui/workspace/sidebar/versions.cljs:263
+msgid "labels.restore"
+msgstr "Restaurar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:506
+msgid "labels.search"
+msgstr "Buscar"
+
+#: src/app/main/ui/comments.cljs:646
+msgid "labels.replies.new"
+msgstr "novas respostas"
+
+#: src/app/main/ui/comments.cljs:640
+msgid "labels.reply"
+msgstr "resposta"
+
+#: src/app/main/ui/comments.cljs:645
+msgid "labels.reply.new"
+msgstr "nova resposta"
+
+#: src/app/main/ui/comments.cljs:721
+msgid "labels.reply.thread"
+msgstr "Resposta"
+
+#: src/app/main/ui/dashboard/templates.cljs:133
+msgid "dashboard.template.add-to-project"
+msgstr "Adicionar ao seu projeto"
+
+#: src/app/main/ui/comments.cljs:729, src/app/main/ui/comments.cljs:760, src/app/main/ui/comments.cljs:826
+msgid "errors.character-limit-exceeded"
+msgstr "Limite de caracteres excedido"
+
+#: src/app/util/forms.cljs
+#, unused
+msgid "errors.invalid-text"
+msgstr "Texto inválido"
+
+#: src/app/main/ui/dashboard/team.cljs:181, src/app/main/ui/onboarding/team_choice.cljs:100
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr ""
+"O número máximo (%s) de e-mails que podem ser convidados em uma única "
+"solicitação foi atingido"
+
+#, unused
+msgid "errors.validation"
+msgstr "Erro de validação"
+
+#: src/app/main/errors.cljs:233
+msgid "errors.team-feature-mismatch"
+msgstr "Recurso incompatível '%s' detectado"
+
+#: src/app/main/data/tokens.cljs:150, src/app/main/data/tokens.cljs:180
+msgid "errors.token-set-already-exists"
+msgstr "Já existe uma definição com o mesmo nome"
+
+#: src/app/main/ui/ds/product/loader.cljs:28
+msgid "loader.tips.05.title"
+msgstr "Bibliotecas de Design"
+
+#: src/app/main/data/workspace/media.cljs:198
+msgid "errors.cannot-upload"
+msgstr "Não é possível carregar o arquivo de mídia."
+
+#: src/app/main/ui/onboarding/questions.cljs:85, src/app/main/ui/onboarding/questions.cljs:244, src/app/main/ui/onboarding/questions.cljs:255, src/app/main/ui/onboarding/questions.cljs:265
+msgid "labels.select-option"
+msgstr "Selecione uma opção"
+
+#: src/app/main/ui/onboarding/questions.cljs:100, src/app/main/ui/onboarding/questions.cljs:175, src/app/main/ui/onboarding/questions.cljs:251, src/app/main/ui/onboarding/questions.cljs:261, src/app/main/ui/onboarding/questions.cljs:351, src/app/main/ui/onboarding/questions.cljs:408
+msgid "labels.other-short"
+msgstr "Outra"
+
+#: src/app/main/ui/dashboard/templates.cljs:289, src/app/main/ui/onboarding/questions.cljs:55, src/app/main/ui/viewer.cljs:112
+msgid "labels.next"
+msgstr "Próximo"
+
+#: src/app/main/ui/onboarding/questions.cljs:249
+msgid "labels.marketing"
+msgstr "Marketing"
+
+#: src/app/main/ui/comments.cljs:891, src/app/main/ui/comments.cljs:955, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:293, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:322
+msgid "labels.options"
+msgstr "Opções"
+
+#: src/app/main/ui/onboarding/questions.cljs:140, src/app/main/ui/onboarding/questions.cljs:209, src/app/main/ui/onboarding/questions.cljs:298, src/app/main/ui/onboarding/questions.cljs:312, src/app/main/ui/onboarding/questions.cljs:383, src/app/main/ui/onboarding/questions.cljs:439
+msgid "labels.other"
+msgstr "Outra (específica)"
+
+#: src/app/main/data/common.cljs:87
+msgid "labels.refresh"
+msgstr "Recarregar"
+
+#: src/app/main/ui/comments.cljs:641
+msgid "labels.replies"
+msgstr "respostas"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-not-all-whitespace"
+msgstr "O nome deve conter algum caractere diferente de espaço."
+
+#: src/app/main/errors.cljs:250
+msgid "errors.version-not-supported"
+msgstr "O arquivo tem um número de versão incompatível"
+
+#, unused
+msgid "labels.ok"
+msgstr "Ok"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:970
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Sem limites para criatividade"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:969
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot Grátis"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:972
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Melhorar"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-max-length"
+msgstr "Deve conter no máximo 1 caractere."
+
+#, unused
+msgid "errors.field-min-length"
+msgstr "Deve conter pelo menos 1 caractere."
+
+#: src/app/main/errors.cljs:238
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Parece que há uma incompatibilidade entre os recursos habilitados e os "
+"recursos do arquivo que você está tentando abrir. Migrações para '%s' "
+"precisam ser aplicadas antes que o arquivo possa ser aberto."
+
+#: src/app/main/errors.cljs:228
+msgid "errors.migration-in-progress"
+msgstr "Migração em progresso"
+
+#: src/app/main/errors.cljs:137
+msgid "errors.paste-data-validation"
+msgstr "Dados inválidos na área de transferência"
+
+#: src/app/main/ui/onboarding/questions.cljs:245
+msgid "labels.product-design"
+msgstr "Produto ou UX Design"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+#, unused
+msgid "workspace.token.grouping-set-alert"
+msgstr "O conjunto de tokens ainda não é suportado."

@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-20 13:42+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Latvian "
-"<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
+"PO-Revision-Date: 2025-03-29 12:01+0000\n"
+"Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
+"Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
+"lv/>\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 "
-"<= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
+"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
 "X-Generator: Weblate 5.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
@@ -4520,7 +4520,7 @@ msgstr "Padarīt savu plānu jaudīgāku"
 
 #: src/app/main/ui/workspace/main_menu.cljs:877
 msgid "workspace.header.menu.option.preferences"
-msgstr "Izvēles"
+msgstr "Pielāgojumi"
 
 #: src/app/main/ui/workspace/main_menu.cljs:866
 msgid "workspace.header.menu.option.view"
@@ -5519,7 +5519,7 @@ msgstr "kompakts"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
 msgid "workspace.options.layout.padding"
-msgstr "Papildināšana"
+msgstr "Atbīde"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
@@ -5529,7 +5529,7 @@ msgstr "Visas malas"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
 msgid "workspace.options.layout.padding-simple"
-msgstr "Vienkāršā papildināšana"
+msgstr "Vienkārša atbīde"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
@@ -6509,7 +6509,6 @@ msgid "workspace.token.no-themes-currently"
 msgstr "Pašlaik nav izskatu."
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.token.original-value"
 msgstr "Sākotnējā vērtība: %s"
 
@@ -6518,7 +6517,6 @@ msgid "workspace.token.ref-not-valid"
 msgstr "Atsauce nav derīga vai tā nav nevienā aktīvā kopā"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:217, src/app/main/ui/workspace/tokens/form.cljs:221, src/app/main/ui/workspace/tokens/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.token.resolved-value"
 msgstr "Atrisinātā vērtība: %s"
 
@@ -6890,3 +6888,419 @@ msgstr "Automātiski saglabātas versijas tiks paturētas %s dienas."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Jānoklikšķina, lai aizvērtu ceļu"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:36, src/app/main/ui/dashboard/placeholder.cljs:90
+msgid "dashboard.empty-project.create"
+msgstr "Izveidot jaunu datni"
+
+#: src/app/main/data/tokens.cljs:245
+msgid "errors.token-set-exists-on-drop"
+msgstr "Nevar pabeigt nomešanu, ceļā jau pastāv kopa ar tādu pašu nosaukumu."
+
+#: src/app/main/data/tokens.cljs:246
+msgid "errors.drop-token-set-parent-to-child"
+msgstr "Nevar nomest vecāka kopu paša bērna ceļā."
+
+#: src/app/util/forms.cljs:61
+msgid "errors.field-missing"
+msgstr "Tukšs lauks"
+
+#: src/app/util/forms.cljs:35, src/app/util/forms.cljs:84
+msgid "errors.invalid-data"
+msgstr "Nederīgi dati"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:61
+msgid "inspect.subtitle.copy"
+msgstr "Ievietot starpliktuvē"
+
+#: src/app/main/ui/dashboard/templates.cljs:90
+msgid "labels.hide"
+msgstr "Paslēpt"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:41
+msgid "dashboard.empty-project.import-penpot"
+msgstr "Ievietot .penpot datni"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:45
+msgid "dashboard.empty-project.explore"
+msgstr "Izpētīt, lai kaut ko pievienotu"
+
+#: src/app/main/ui/comments.cljs:729, src/app/main/ui/comments.cljs:760, src/app/main/ui/comments.cljs:826
+msgid "errors.character-limit-exceeded"
+msgstr "Pārsniegts rakstzīmju skaita ierobežojums"
+
+#: src/app/util/forms.cljs
+#, unused
+msgid "errors.invalid-text"
+msgstr "Nederīgs teksts"
+
+#: src/app/main/data/tokens.cljs:150, src/app/main/data/tokens.cljs:180
+msgid "errors.token-set-already-exists"
+msgstr "Jau pastāv kopa ar tādu pašu nosaukumu"
+
+#: src/app/main/data/tokens.cljs:79
+msgid "errors.token-theme-already-exists"
+msgstr "Pastāv izskata iespēja ar tādu pašu nosaukumu"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variant"
+msgstr "Varianta īpašības"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:59
+msgid "inspect.subtitle.variant"
+msgstr "Variants"
+
+#: src/app/main/ui/comments.cljs:583
+msgid "labels.mention"
+msgstr "Pieminēt"
+
+#: src/app/main/ui/dashboard/templates.cljs:86
+msgid "labels.show"
+msgstr "Parādīt"
+
+#: src/app/main/ui/ds/product/loader.cljs:21
+msgid "loader.tips.01.message"
+msgstr "Dizaini dažādos projektos ir jāuztur saskanīgi un viegli atjaunināmi."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:43
+msgid "dashboard.empty-project.go-to-libraries"
+msgstr "Doties uz bibliotēkām un sagatavēm"
+
+#: src/app/main/ui/workspace/context_menu.cljs:587, src/app/main/ui/workspace/sidebar/assets/common.cljs:475, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:771
+msgid "workspace.shape.menu.add-variant"
+msgstr "Izveidot variantu"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:37
+msgid "dashboard.empty-project.start"
+msgstr "Sākt veidot apbrīnojamas lietas"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:39, src/app/main/ui/dashboard/placeholder.cljs:40
+msgid "dashboard.empty-project.import"
+msgstr "Ievietot datni"
+
+#: src/app/main/ui/dashboard/templates.cljs:257
+msgid "dashboard.libraries-and-templates.description"
+msgstr ""
+"Šeit ir dažas bibliotēkas un sagataves, kuras var pievienot savam projektam"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:57
+msgid "inspect.subtitle.main"
+msgstr "Galvenā sastāvdaļa"
+
+#: src/app/main/ui/dashboard/comments.cljs:95
+msgid "label.mark-all-as-read"
+msgstr "Atzīmēt visu kā izlasītu"
+
+#: src/app/main/ui/inspect/attributes/common.cljs:120
+msgid "labels.copy-color"
+msgstr "Ievietot krāsu starpliktuvē"
+
+#: src/app/main/ui/ds/product/loader.cljs:20
+msgid "loader.tips.01.title"
+msgstr "Atkārtoti izmantojamas sastāvdaļas"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:44
+msgid "dashboard.empty-project.add-library"
+msgstr "Pievienot bibliotēku vai sagatavi"
+
+#: src/app/main/data/comments.cljs:472
+msgid "dashboard.mark-all-as-read.success"
+msgstr "Visi paziņojumi atzīmēti kā izlasīti"
+
+#: src/app/main/data/common.cljs:87
+msgid "labels.refresh"
+msgstr "Atsvaidzināt"
+
+#: src/app/main/ui/dashboard/templates.cljs:133
+msgid "dashboard.template.add-to-project"
+msgstr "Pievienot savam projektam"
+
+#: src/app/main/ui/ds/product/loader.cljs:23
+msgid "loader.tips.02.message"
+msgstr "Sadarbojies ar savu komandu dzīvajā, kopīgo atgriezenisko saiti uzreiz!"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:49
+msgid "labels.unknown-error"
+msgstr "Nezināma kļūda"
+
+#: src/app/main/ui/components/copy_button.cljs:41
+msgid "labels.copy"
+msgstr "Ievietot starpliktuvē"
+
+#: src/app/main/ui/ds/product/loader.cljs:22
+msgid "loader.tips.02.title"
+msgstr "Sadarbošanās reāllaikā"
+
+#: src/app/main/ui/ds/product/loader.cljs:25
+msgid "loader.tips.03.message"
+msgstr "Dizaina pielāgojamība ar pazīstamām CSS līdzīgām izkārtojuma vadīklām."
+
+#: src/app/main/ui/ds/product/loader.cljs:24
+msgid "loader.tips.03.title"
+msgstr "Automātisks izkārtojums kā CSS"
+
+#: src/app/main/ui/ds/product/loader.cljs:27
+msgid "loader.tips.04.message"
+msgstr "CSS un SVG koda iegūšana tieši no dizainiem."
+
+#: src/app/main/ui/ds/product/loader.cljs:29
+msgid "loader.tips.05.message"
+msgstr "Līdzekļu un stilu kopīgošana, lai uzturētu saskanīgumu."
+
+#: src/app/main/ui/ds/product/loader.cljs:28
+msgid "loader.tips.05.title"
+msgstr "Dizaina bibliotēkas"
+
+#: src/app/main/ui/ds/product/loader.cljs:31
+msgid "loader.tips.06.message"
+msgstr "Savu ideju atdzīvināšana ar animācijām un pārejām."
+
+#: src/app/main/ui/ds/product/loader.cljs:30
+msgid "loader.tips.06.title"
+msgstr "Mijiedarbīgi prototipi"
+
+#: src/app/main/ui/ds/product/loader.cljs:33
+msgid "loader.tips.07.message"
+msgstr "Penpot izmanto SVG un CSS plūdenai izstrādei."
+
+#: src/app/main/ui/ds/product/loader.cljs:35
+msgid "loader.tips.08.message"
+msgstr ""
+"Darbplūsmas paātrināšana ar īsinājumtaustiņiem, piemēram, Shift + A "
+"automātiskam izkārtojumam."
+
+#: src/app/main/ui/ds/product/loader.cljs:37
+msgid "loader.tips.09.message"
+msgstr "Izskata izvēle atbilstoši savai patikšanai."
+
+#: src/app/main/ui/ds/product/loader.cljs:38
+msgid "loader.tips.10.title"
+msgstr "Spraudņu atbalsts"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
+#, unused
+msgid "shortcuts.copy-props"
+msgstr "Ievietot īpašības starpliktuvē"
+
+#: src/app/main/ui/ds/product/loader.cljs:26
+msgid "loader.tips.04.title"
+msgstr "Izgūt kā kodu"
+
+#: src/app/main/ui/ds/product/loader.cljs:32
+msgid "loader.tips.07.title"
+msgstr "Tīmekļa standartu veidoli"
+
+#: src/app/main/ui/ds/product/loader.cljs:34
+msgid "loader.tips.08.title"
+msgstr "Tastatūras īsinājumtaustiņi"
+
+#: src/app/main/ui/ds/product/loader.cljs:39
+msgid "loader.tips.10.message"
+msgstr ""
+"Penpot paplašināšana ar kopienas veidotu spraudņu nodrošinātām papildu "
+"iespējām."
+
+#: src/app/main/ui/ds/product/loader.cljs:36
+msgid "loader.tips.09.title"
+msgstr "Tumšais un gaišais izskats"
+
+#: src/app/main/data/tokens.cljs:386
+msgid "workspace.token.duplicate-suffix"
+msgstr "dublējums"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:856
+msgid "workspace.shape.menu.remove-variant-property"
+msgstr "Noņemt īpašību"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:63, src/app/main/ui/workspace/tokens/modals/themes.cljs:170, src/app/main/ui/workspace/tokens/modals/themes.cljs:279
+msgid "workspace.token.add-new-theme"
+msgstr "Pievienot jaunu izskatu"
+
+#: src/app/main/ui/workspace/tokens/sets_context_menu.cljs:54
+msgid "workspace.token.add-set-to-group"
+msgstr "Pievienot kopu šai grupai"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:257
+msgid "workspace.token.axis"
+msgstr "Ass"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:241
+msgid "workspace.token.color"
+msgstr "Krāsa"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:9
+msgid "workspace.token.error-parse"
+msgstr "Ievietošanas kļūda: nevarēja apstrādāt JSON."
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:197
+msgid "workspace.token.gaps"
+msgstr "Spraugas"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.token.generic-error"
+msgstr "Kļūda: "
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:109
+msgid "workspace.token.group-name"
+msgstr "Kopas nosaukums"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:426, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:432
+msgid "workspace.layout_grid.editor.padding.bottom"
+msgstr "Apakšējā atbīde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:351, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:358
+msgid "workspace.layout_grid.editor.padding.horizontal"
+msgstr "Guleniskā atbīde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:441, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:447
+msgid "workspace.layout_grid.editor.padding.left"
+msgstr "Kreisā atbīde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:411, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:417
+msgid "workspace.layout_grid.editor.padding.right"
+msgstr "Labā atbīde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:337, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:343
+msgid "workspace.layout_grid.editor.padding.vertical"
+msgstr "Stateniskā atbīde"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:153
+msgid "workspace.token.num-active-sets"
+msgstr "%s spēkā esošas kopas"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:33
+msgid "workspace.token.number-too-large"
+msgstr "Nederīga tekstvienības vērtība. Aprēķinātā vērtība ir pārāk liela: %s"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:177
+msgid "workspace.token.paddings"
+msgstr "Atbīdes"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:37
+msgid "workspace.token.missing-references"
+msgstr "Trūkst tekstvienību atsauces: "
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:396, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:402
+msgid "workspace.layout_grid.editor.padding.top"
+msgstr "Augšējā atbīde"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:154
+msgid "workspace.token.no-active-sets"
+msgstr "Nav spēkā esošu kopu"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:216
+msgid "workspace.token.min-size"
+msgstr "Mazākais lielums"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:45
+msgid "workspace.token.opacity-range"
+msgstr ""
+"Necaurspīdīgumam ir jābūt starp 0 un 100 % vai 0 un 1 (piem., 50% jeb 0.5)."
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
+#, unused
+msgid "shortcuts.paste-props"
+msgstr "Ielīmēt īpašības"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:604
+#, unused
+msgid "shortcuts.plugins"
+msgstr "Spraudņu pārvaldnieks"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:176
+msgid "workspace.assets.manage-library"
+msgstr "Pārvaldīt bibliotēku"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:769
+msgid "workspace.shape.menu.add-variant-property"
+msgstr "Pievienot jaunu īpašību"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:17, src/app/main/ui/workspace/tokens/errors.cljs:21
+msgid "workspace.token.import-error"
+msgstr "Ievietošanas kļūda:"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
+msgid "workspace.token.import-tooltip"
+msgstr ""
+"JSON datnes ievietošana pārrakstīs visas pašreizējās tekstvienības, kopas un "
+"izskatus"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:13
+msgid "workspace.token.invalid-json"
+msgstr "Ievietošanas kļūda: JSON satur nederīgus tekstvienību datus."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:197
+msgid "workspace.token.label.group-optional"
+msgstr "Izvēles"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:208
+msgid "workspace.token.label.theme-placeholder"
+msgstr "Pievienot izskatu (piem., \"Gaišs\")"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:189
+msgid "workspace.token.margins"
+msgstr "Malas"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:222
+msgid "workspace.token.max-size"
+msgstr "Lielākais izmērs"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:237
+msgid "workspace.token.radius"
+msgstr "Rādiuss"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.token.reference-error"
+msgstr "Atsauču kļūdas: "
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:25
+msgid "workspace.token.self-reference"
+msgstr "Tekstvienībai ir atsauce uz sevi"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:98
+msgid "workspace.token.set-edit-placeholder"
+msgstr "Ievadīt nosaukumu (jāizmanto \"/\" kopām)"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:210
+msgid "workspace.token.size"
+msgstr "Izmērs"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:101
+msgid "workspace.token.themes-description"
+msgstr ""
+"Šeit var pārvaldīt savus izskatus, iespējot/atspējot tos un konfigurēt to "
+"spēkā esošās kopas."
+
+#: src/app/main/ui/workspace/tokens/form.cljs:525
+msgid "workspace.token.token-value-enter"
+msgstr "Jāievada vērtība vai aizstājvārds ar {aizstājvārds}"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:131
+msgid "workspace.toolbar.frame-first-time"
+msgstr "Izveidot dēli. Klikšķināt un pavilkt, lai norādītu tā izmēru. (%s)"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:46, src/app/main/ui/workspace/tokens/modals/themes.cljs:99
+msgid "workspace.token.themes-list"
+msgstr "Izskatu saraksts"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
+msgid "workspace.token.token-not-resolved"
+msgstr "Nevarēja atrisināt atsauces tekstvienību ar šādu nosaukumu: %s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:199
+msgid "workspace.token.label.group-placeholder"
+msgstr "Pievienot kopu (piem., \"Režīms\")"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:148
+msgid "workspace.token.sets-hint"
+msgstr "Labot izskatu un pārvaldīt kopas"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:29
+msgid "workspace.token.invalid-color"
+msgstr "Nederīga krāsas vērtība: %s"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/errors.cljs:45
+msgid "workspace.token.invalid-value"
+msgstr "Nederīga tekstvienības vērtība: %s"
