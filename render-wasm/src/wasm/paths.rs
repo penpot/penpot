@@ -3,9 +3,7 @@ use crate::{mem, with_current_shape, STATE};
 
 const RAW_SEGMENT_DATA_SIZE: usize = size_of::<RawSegmentData>();
 
-#[repr(u16)]
-#[repr(C)]
-#[repr(align(4))]
+#[repr(C, u16, align(4))]
 #[derive(Debug, PartialEq, Clone, Copy)]
 #[allow(dead_code)]
 enum RawSegmentData {
@@ -32,8 +30,7 @@ impl TryFrom<&[u8]> for RawSegmentData {
     }
 }
 
-#[repr(C)]
-#[repr(align(4))]
+#[repr(C, align(4))]
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct RawMoveCommand {
     _padding: [u32; 4],
@@ -41,8 +38,7 @@ struct RawMoveCommand {
     y: f32,
 }
 
-#[repr(C)]
-#[repr(align(4))]
+#[repr(C, align(4))]
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct RawLineCommand {
     _padding: [u32; 4],
@@ -50,8 +46,7 @@ struct RawLineCommand {
     y: f32,
 }
 
-#[repr(C)]
-#[repr(align(4))]
+#[repr(C, align(4))]
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct RawCurveCommand {
     c1_x: f32,
