@@ -423,13 +423,10 @@
 
 
      (when (contains? cf/flags :token-units)
-       [:> tooltip* {:tooltip-content "Tokens settings"
-                     :id "button-setting"}
-        [:> icon-button* {:variant "secondary"
-                          :icon "settings"
-                          :tooltip-id "button-setting"
-                          :aria-label "Settings"
-                          :on-click open-settings-modal}]])]))
+       [:> icon-button* {:variant "secondary"
+                         :icon "settings"
+                         :aria-label "Settings"
+                         :on-click open-settings-modal}])]))
 
 (mf/defc tokens-sidebar-tab*
   {::mf/wrap [mf/memo]}
