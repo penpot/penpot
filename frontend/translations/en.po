@@ -7271,7 +7271,7 @@ msgstr "Tools"
 
 #: src/app/main/data/style_dictionary.cljs:294
 msgid "workspace.tokens.unknown-token-type"
-msgstr "Skipped tokens"
+msgstr "The import was successful, but some tokens were skipped. "
 
 #: src/app/main/data/style_dictionary.cljs:296
 msgid "workspace.tokens.unknown-token-type-section"
