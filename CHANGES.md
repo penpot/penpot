@@ -82,6 +82,7 @@ A non exhaustive list of changes:
 - Add styles for Inkeep Chat at workspace [Taiga #10708](https://tree.taiga.io/project/penpot/us/10708)
 
 ### :bug: Bugs fixed
+- Fix getCurrentUser for plugins api [Taiga #11057](https://tree.taiga.io/project/penpot/issue/11057)
 
 - Fix spacing / sizes of different elements in the measurements section of the design tab [Taiga #11076](https://tree.taiga.io/project/penpot/issue/11076)
 - Fix selection of short paths [Github #4472](https://github.com/penpot/penpot/issues/4472)
