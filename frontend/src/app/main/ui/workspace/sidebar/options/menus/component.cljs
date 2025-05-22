@@ -235,12 +235,26 @@
         (when (or editing? creating?)
           [:div {:class (stl/css  :counter)} (str size "/300")])]])))
 
+
+(defn- get-variant-error-message [errors]
+  (cond
+    (and (= (count errors) 1) (not (nil? (first errors))))
+    (tr "workspace.options.component.variant.malformed.single.one")
+
+    (and (seq errors) (every? some? errors))
+    (tr "workspace.options.component.variant.malformed.single.all")
+
+    (and (seq errors) (some some? errors))
+    (tr "workspace.options.component.variant.malformed.single.some")
+
+    :else nil))
+
+
 (mf/defc component-variant-main-instance*
-  [{:keys [components shape data]}]
+  [{:keys [components shapes data]}]
   (let [component      (first components)
 
         variant-id     (:variant-id component)
-        variant-error? (:variant-error shape)
 
         objects        (-> (dsh/get-page data (:main-instance-page component))
                            (get :objects))
@@ -253,6 +267,9 @@
 
         prop-vals       (mf/with-memo [data objects variant-id]
                           (cfv/extract-properties-values data objects variant-id))
+
+        variant-errors     (mapv :variant-error shapes)
+        variant-error-msg  (get-variant-error-message variant-errors)
 
         empty-indicator "--"
 
@@ -301,14 +318,14 @@
                            :options (clj->js (get-options (:name prop)))
                            :on-change (partial update-property-value pos)}])]])]
 
-     (when variant-error?
+     (when variant-error-msg
        [:div {:class (stl/css :variant-error-wrapper)}
         [:> icon* {:icon-id "msg-neutral"
                    :class (stl/css :variant-error-darken)}]
         [:div {:class (stl/css :variant-error-highlight)}
-         (tr "workspace.options.component.variant.malformed.single")]
+         (str variant-error-msg " " (tr "workspace.options.component.variant.malformed.structure.title"))]
         [:div {:class (stl/css :variant-error-darken)}
-         (tr "workspace.options.component.variant.malformed.structure")]])]))
+         (tr "workspace.options.component.variant.malformed.structure.example")]])]))
 
 (mf/defc component-variant*
   [{:keys [component shape data]}]
@@ -807,7 +824,7 @@
 
           (when (and is-variant? main-instance? same-variant? (not swap-opened?))
             [:> component-variant-main-instance* {:components components
-                                                  :shape shape
+                                                  :shapes shapes
                                                   :data data}])
 
           (when (dbg/enabled? :display-touched)
@@ -951,7 +968,7 @@
            [:> icon* {:icon-id "msg-neutral"
                       :class (stl/css :variant-error-darken)}]
            [:div {:class (stl/css :variant-error-highlight)}
-            (tr "workspace.options.component.variant.malformed.multi")]
+            (tr "workspace.options.component.variant.malformed.group.title")]
            [:button {:class (stl/css :variant-error-button)
                      :on-click select-shape-with-error}
-            (tr "workspace.options.component.variant.malformed.locate")]])]])))
+            (tr "workspace.options.component.variant.malformed.group.locate")]])]])))
