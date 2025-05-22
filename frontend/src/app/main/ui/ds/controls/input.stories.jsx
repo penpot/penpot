@@ -8,6 +8,10 @@ import * as React from "react";
 import Components from "@target/components";
 
 const { Input } = Components;
+const { Label } = Components;
+const { InputField } = Components;
+const { HintMessage } = Components;
+const { IconButton } = Components;
 const { icons } = Components.meta;
 
 export default {
@@ -83,5 +87,79 @@ export const Comfortable = {
 export const Seamless = {
   args: {
     variant: "seamless",
+  },
+};
+
+export const Composable = {
+  argTypes: {
+    label: { control: "text" },
+    labelArgs: { control: "object" },
+    inputArgs: { control: "object" },
+    hintArgs: { control: "object" },
+  },
+  args: {
+    label: "Label",
+    labelArgs: {
+      htmlFor: "input",
+      isOptional: false,
+    },
+    inputArgs: {
+      id: "input",
+      variant: "comfortable",
+      type: "text",
+      placeholder: "Placeholder",
+    },
+    hintArgs: {
+      id: "input",
+      message: "This is a hint text to help user.",
+      type: "hint",
+    },
+  },
+  render: ({ ...args }) => {
+    return (
+      <>
+        <Label {...args.labelArgs}>{args.label}</Label>
+        <InputField {...args.inputArgs} />
+        <HintMessage {...args.hintArgs} />
+      </>
+    );
+  },
+};
+
+export const Slots = {
+  argTypes: {
+    label: { control: "text" },
+    labelArgs: { control: "object" },
+    inputArgs: { control: "object" },
+    hintArgs: { control: "object" },
+  },
+  args: {
+    inputArgs: {
+      id: "input",
+      variant: "comfortable",
+      type: "text",
+      placeholder: "Placeholder",
+      slotStart: (
+        <IconButton
+          icon="search"
+          variant="ghost"
+          aria-label="Slot Start component"
+        />
+      ),
+      slotEnd: (
+        <IconButton
+          icon="status-tick"
+          variant="ghost"
+          aria-label="Slot End component"
+        />
+      ),
+    },
+  },
+  render: ({ ...args }) => {
+    return (
+      <>
+        <InputField {...args.inputArgs} />
+      </>
+    );
   },
 };
