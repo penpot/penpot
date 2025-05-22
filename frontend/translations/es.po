@@ -7263,6 +7263,14 @@ msgstr "El valor no es válido"
 msgid "workspace.tokens.warning-name-change"
 msgstr "Al renombrar este token se romperán las referencias al nombre anterior"
 
+#: src/app/main/data/style_dictionary.cljs:294
+msgid "workspace.tokens.unknown-token-type"
+msgstr "La importación se ha realizado correctamente pero se omitieron algunos tokens."
+
+#: src/app/main/data/style_dictionary.cljs:296
+msgid "workspace.tokens.unknown-token-type-section"
+msgstr "El tipo '%s' no está soportado (%s)\n"
+
 #: src/app/main/ui/workspace/sidebar.cljs:137, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Recursos"
