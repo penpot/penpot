@@ -129,8 +129,28 @@
           (when (cfh/text-shape? shape)
             (->> (rx/of (dwe/start-edition-mode (:id shape)))
                  (rx/observe-on :async)))
-          (when (cfh/frame-shape? shape)
-            (rx/of (ptk/event ::ev/event {::ev/name "add-frame"})))))))))
+          (when (cfh/rect-shape? shape)
+            (->> (rx/of (dwe/start-edition-mode (:id shape)))
+                 (rx/observe-on :async)))
+
+          (let [parent (get objects (:parent-id shape))
+                parent-type (if (= (:name parent) "Root Frame")
+                              "Empty"
+                              (:type parent))
+                shape-event-pairs [[cfh/frame-shape?    "create-board"]
+                                   [cfh/image-shape?    "create-image"]
+                                   [cfh/path-shape?     "create-path"]
+                                   [cfh/circle-shape?   "create-circle"]
+                                   [cfh/rect-shape?     "create-rectangle"]
+                                   [cfh/text-shape?     "create-text"]]
+                [_ event-name] (some (fn [[pred event-name]]
+                                       (when (pred shape)
+                                         [pred event-name]))
+                                     shape-event-pairs)]
+            (when event-name
+              (rx/of (ptk/event ::ev/event
+                                {::ev/name event-name
+                                 :parent-type parent-type}))))))))))
 
 (defn move-shapes-into-frame
   [frame-id shapes]
@@ -266,12 +286,22 @@
              undo-id  (js/Symbol)]
 
          (when changes
-           (rx/of
-            (dwu/start-undo-transaction undo-id)
-            (dch/commit-changes changes)
-            (dws/select-shapes (d/ordered-set (:id frame-shape)))
-            (ptk/data-event :layout/update {:ids [(:id frame-shape)]})
-            (dwu/commit-undo-transaction undo-id))))))))
+           (let [parent           (get objects (:parent-id frame-shape))
+                 parent-type    (if (= (:name parent) "Root Frame") "Empty" (:type parent))
+                 converted-from (if (= 1 (count selected))
+                                  (let [shape (get objects (first selected))]
+                                    (:type shape))
+                                  "multiple")]
+             (rx/of
+              (dwu/start-undo-transaction undo-id)
+              (dch/commit-changes changes)
+              (dws/select-shapes (d/ordered-set (:id frame-shape)))
+              (ptk/data-event :layout/update {:ids [(:id frame-shape)]})
+              (ptk/event ::ev/event
+                         {::ev/name "create-board"
+                          :converted-from converted-from
+                          :parent-type parent-type})
+              (dwu/commit-undo-transaction undo-id)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shape Flags

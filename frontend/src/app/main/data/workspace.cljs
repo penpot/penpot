@@ -2150,7 +2150,32 @@
 
               undo-id      (js/Symbol)]
 
+          (println (:redo-changes changes))
+
           (rx/concat
+           (->> (:redo-changes changes)
+                (filter add-obj?)
+                (map :obj)
+                (map (fn [shape]
+                       (let [parent (get all-objects (:parent-id shape))
+                             parent-type (if (= (:name parent) "Root Frame")
+                                           "Empty"
+                                           (:type parent))
+                             shape-event-pairs [[cfh/frame-shape?  "create-board"]
+                                                [cfh/image-shape?  "create-image"]
+                                                [cfh/path-shape?   "create-path"]
+                                                [cfh/circle-shape? "create-circle"]
+                                                [cfh/rect-shape?   "create-rectangle"]
+                                                [cfh/text-shape?   "create-text"]]
+                             [_ event-name] (some (fn [[pred evt]]
+                                                    (when (pred shape)
+                                                      [pred evt]))
+                                                  shape-event-pairs)]
+                         (when event-name
+                           (ptk/event ::ev/event
+                                      {::ev/name event-name
+                                       :parent-type parent-type
+                                       :origin "paste"}))))))
            (->> (filter ctc/instance-head? orig-shapes)
                 (map (fn [{:keys [component-file]}]
                        (ptk/event ::ev/event

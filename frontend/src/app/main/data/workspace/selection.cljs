@@ -478,8 +478,35 @@
                 frames          (into #{}
                                       (map #(get-in objects [% :frame-id]))
                                       ids)
-                undo-id         (js/Symbol)]
+                undo-id         (js/Symbol)
+                new-shapes (->> changes
+                                :redo-changes
+                                (filter #(= (:type %) :add-obj))
+                                (filter #(ids (:old-id %))))]
             (rx/concat
+             (->> new-shapes
+                  (map :obj)
+                  (map (fn [shape]
+                         (let [parent (get objects (:parent-id shape))
+                               parent-type (if (= (:name parent) "Root Frame")
+                                             "Empty"
+                                             (:type parent))
+                               shape-event-pairs [[cfh/frame-shape?  "create-board"]
+                                                  [cfh/image-shape?  "create-image"]
+                                                  [cfh/path-shape?   "create-path"]
+                                                  [cfh/circle-shape? "create-circle"]
+                                                  [cfh/rect-shape?   "create-rectangle"]
+                                                  [cfh/text-shape?   "create-text"]]
+                               [_ event-name] (some (fn [[pred evt]]
+                                                      (when (pred shape)
+                                                        [pred evt]))
+                                                    shape-event-pairs)]
+                           (when event-name
+                             (ptk/event ::ev/event
+                                        {::ev/name event-name
+                                         :parent-type parent-type
+                                         :origin "duplicate"}))))))
+
              (->> (map (d/getf objects) ids)
                   (filter ctk/instance-head?)
                   (map (fn [{:keys [component-file]}]
