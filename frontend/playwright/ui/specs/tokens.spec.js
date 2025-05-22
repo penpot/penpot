@@ -92,7 +92,9 @@ test.describe("Tokens: Tokens Tab", () => {
       await setupEmptyTokensFile(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
-    await tokensTabPanel.getByTitle("Add token: Color").click();
+    await tokensTabPanel
+      .getByRole("button", { name: "Add Token: Color" })
+      .click();
 
     // Create color token with mouse
 
@@ -129,7 +131,9 @@ test.describe("Tokens: Tokens Tab", () => {
 
     // Create token referencing the previous one with keyboard
 
-    await tokensTabPanel.getByTitle("Add token: Color").click();
+    await tokensTabPanel
+      .getByRole("button", { name: "Add Token: Color" })
+      .click();
     await expect(tokensUpdateCreateModal).toBeVisible();
 
     await nameField.click();
@@ -171,7 +175,9 @@ test.describe("Tokens: Tokens Tab", () => {
       await setupEmptyTokensFile(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
-    await tokensTabPanel.getByTitle("Add token: Dimensions").click();
+    await tokensTabPanel
+      .getByRole("button", { name: "Add token: Dimensions" })
+      .click();
 
     await expect(tokensUpdateCreateModal).toBeVisible();
 
@@ -351,7 +357,9 @@ test.describe("Tokens: Tokens Tab", () => {
       await setupEmptyTokensFile(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
-    await tokensTabPanel.getByTitle("Add token: Color").click();
+    await tokensTabPanel
+      .getByRole("button", { name: "Add Token: Color" })
+      .click();
 
     // Create grouped color token with mouse
 
@@ -382,7 +390,9 @@ test.describe("Tokens: Tokens Tab", () => {
       await setupEmptyTokensFile(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
-    await tokensTabPanel.getByTitle("Add token: Color").click();
+    await tokensTabPanel
+      .getByRole("button", { name: "Add Token: Color" })
+      .click();
 
     await expect(tokensUpdateCreateModal).toBeVisible();
     const nameField = tokensUpdateCreateModal.getByLabel("Name");
