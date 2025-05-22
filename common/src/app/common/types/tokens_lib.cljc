@@ -7,6 +7,7 @@
 (ns app.common.types.tokens-lib
   (:require
    #?(:clj [app.common.fressian :as fres])
+   #?(:clj [clojure.data.json :as json])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -931,6 +932,12 @@ Will return a value that matches this schema:
              (-clj->js [_] (js-obj "sets" (clj->js sets)
                                    "themes" (clj->js themes)
                                    "active-themes" (clj->js active-themes)))])
+
+
+  #?@(:clj
+      [json/JSONWriter
+       (-write [this writter options] (json/-write (encode-dtcg this) writter options))])
+
 
   ITokenSets
   (add-set [_ token-set]
