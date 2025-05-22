@@ -84,7 +84,7 @@ A non exhaustive list of changes:
 ### :bug: Bugs fixed
 
 - Fix spacing / sizes of different elements in the measurements section of the design tab [Taiga #11076](https://tree.taiga.io/project/penpot/issue/11076)
-
+- Fix selection of short paths [Github #4472](https://github.com/penpot/penpot/issues/4472)
 
 ## 2.7.0 (Unreleased)
 
