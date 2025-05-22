@@ -196,7 +196,7 @@ test("[Bugfixing] User cut paste a variant container into a board, and undo twic
 
   //Create a board
   await workspacePage.boardButton.click();
-  await workspacePage.clickWithDragViewportAt(500, 500, 200, 200);
+  await workspacePage.clickWithDragViewportAt(500, 500, 100, 100);
   await workspacePage.clickAt(495, 495);
   const board = await workspacePage.rootShape.locator("Board");
 

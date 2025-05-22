@@ -62,7 +62,7 @@
   (let [encode-fn (d/nilv encode-fn identity)
         decode-fn (d/nilv decode-fn identity)
         nitems    (if (array? children)
-                    (alength children)
+                    (count (keep identity children))
                     1)
         ;; FIXME: we should handle this with CSS
         width     (mf/with-memo [nitems]
@@ -70,7 +70,7 @@
                       "unset"
                       (fmt/format-pixels
                        (+ (* 4 (- nitems 1))
-                          (* 28 nitems)))))
+                          (* 32 nitems)))))
 
         on-change'
         (mf/use-fn

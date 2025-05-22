@@ -85,6 +85,7 @@ A non exhaustive list of changes:
 
 - Fix spacing / sizes of different elements in the measurements section of the design tab [Taiga #11076](https://tree.taiga.io/project/penpot/issue/11076)
 - Fix selection of short paths [Github #4472](https://github.com/penpot/penpot/issues/4472)
+- Fix element positioning on the right side to adjust to grid [#11073](https://tree.taiga.io/project/penpot/issue/11073)
 
 ## 2.7.0 (Unreleased)
 

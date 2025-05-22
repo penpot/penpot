@@ -8,26 +8,24 @@
 
 .element-set {
   display: grid;
-  row-gap: var(--sp-xs);
   margin-bottom: var(--sp-s);
   // NOTE: this does not follow the 8-column grid and the size is not normalized,
-  // so we need to hardcode this width :(
-  --input-width: calc(var(--sp-xxxl) * 3.5 - 2 * var(--sp-xs));
+  --input-width: calc(var(--sp-xxxl) * 3.5 + 3 * var(--sp-xs) - var(--sp-xs) / 2);
   grid-template-columns: var(--input-width) var(--input-width) var(--sp-xxxl);
-  column-gap: var(--sp-xs);
+  gap: var(--sp-xs);
 }
 
 .presets {
   display: grid;
-  grid-column: 1 / -1;
   grid-template-columns: repeat(8, var(--sp-xxxl));
-  gap: $s-4;
+  gap: var(--sp-xs);
+  grid-column: 1 / -1;
 }
 
 .presets-wrapper {
   @extend .asset-element;
   position: relative;
-  grid-column: span 4;
+  grid-column: span 5;
   display: flex;
   height: $s-32;
   padding: $s-8;

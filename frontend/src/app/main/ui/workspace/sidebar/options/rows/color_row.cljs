@@ -45,7 +45,7 @@
   (if (= v :multiple) nil v))
 
 (mf/defc color-row*
-  [{:keys [index color disable-gradient disable-opacity disable-image disable-picker hidden
+  [{:keys [index color class disable-gradient disable-opacity disable-image disable-picker hidden
            on-change on-reorder on-detach on-open on-close on-remove
            disable-drag on-focus on-blur select-only select-on-focus]}]
   (let [libraries        (mf/deref refs/files)
@@ -67,6 +67,8 @@
 
         editing-text*    (mf/use-state false)
         editing-text?    (deref editing-text*)
+
+        class            (if (some? class) (dm/str class " ") "")
 
         opacity?
         (and (not multiple-colors?)
@@ -187,11 +189,13 @@
       (when (and (not disable-picker) (not= prev-color color))
         (modal/update-props! :colorpicker {:data (parse-color color)})))
 
-    [:div {:class (stl/css-case
-                   :color-data true
-                   :hidden hidden
-                   :dnd-over-top (= (:over dprops) :top)
-                   :dnd-over-bot (= (:over dprops) :bot))}
+    [:div {:class (dm/str
+                   class
+                   (stl/css-case
+                    :color-data true
+                    :hidden hidden
+                    :dnd-over-top (= (:over dprops) :top)
+                    :dnd-over-bot (= (:over dprops) :bot)))}
 
      ;; Drag handler
      (when (some? on-reorder)

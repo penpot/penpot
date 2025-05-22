@@ -160,53 +160,52 @@
                      preview-complete?))
         (swap! state* assoc :selected-blend-mode current-blend-mode)))
 
-    [:div {:class (stl/css :element-set)}
-     [:div {:class (stl/css-case :element-set-content true
-                                 :hidden hidden?)}
-      [:div {:class (stl/css :select)}
-       [:& select
-        {:default-value selected-blend-mode
-         :options options
-         :on-change handle-change-blend-mode
-         :is-open? option-highlighted?
-         :class (stl/css-case :hidden-select hidden?)
-         :on-pointer-enter-option handle-blend-mode-enter
-         :on-pointer-leave-option handle-blend-mode-leave}]]
-      [:div {:class (stl/css :input)
-             :title (tr "workspace.options.opacity")}
-       [:span {:class (stl/css :icon)} "%"]
-       [:> numeric-input*
-        {:value current-opacity
-         :placeholder "--"
-         :on-change handle-opacity-change
-         :min 0
-         :max 100
-         :className (stl/css :numeric-input)}]]
+    [:div {:class (stl/css-case :element-set-content true
+                                :hidden hidden?)}
+     [:div {:class (stl/css :select)}
+      [:& select
+       {:default-value selected-blend-mode
+        :options options
+        :on-change handle-change-blend-mode
+        :is-open? option-highlighted?
+        :class (stl/css-case :hidden-select hidden?)
+        :on-pointer-enter-option handle-blend-mode-enter
+        :on-pointer-leave-option handle-blend-mode-leave}]]
+     [:div {:class (stl/css :input)
+            :title (tr "workspace.options.opacity")}
+      [:span {:class (stl/css :icon)} "%"]
+      [:> numeric-input*
+       {:value current-opacity
+        :placeholder "--"
+        :on-change handle-opacity-change
+        :min 0
+        :max 100
+        :className (stl/css :numeric-input)}]]
 
 
-      [:div {:class (stl/css :actions)}
-       (cond
-         (or (= :multiple hidden?) (not hidden?))
-         [:> icon-button* {:variant "ghost"
-                           :aria-label (tr "workspace.options.layer-options.toggle-layer")
-                           :on-click handle-set-hidden
-                           :icon "shown"}]
+     [:div {:class (stl/css :actions)}
+      (cond
+        (or (= :multiple hidden?) (not hidden?))
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.options.layer-options.toggle-layer")
+                          :on-click handle-set-hidden
+                          :icon "shown"}]
 
-         :else
-         [:> icon-button* {:variant "ghost"
-                           :aria-label (tr "workspace.options.layer-options.toggle-layer")
-                           :on-click handle-set-visible
-                           :icon "hide"}])
+        :else
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.options.layer-options.toggle-layer")
+                          :on-click handle-set-visible
+                          :icon "hide"}])
 
-       (cond
-         (or (= :multiple blocked?) (not blocked?))
-         [:> icon-button* {:variant "ghost"
-                           :aria-label (tr "workspace.shape.menu.lock")
-                           :on-click handle-set-blocked
-                           :icon "unlock"}]
+      (cond
+        (or (= :multiple blocked?) (not blocked?))
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.shape.menu.lock")
+                          :on-click handle-set-blocked
+                          :icon "unlock"}]
 
-         :else
-         [:> icon-button* {:variant "ghost"
-                           :aria-label (tr "workspace.shape.menu.unlock")
-                           :on-click handle-set-unblocked
-                           :icon "lock"}])]]]))
+        :else
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.shape.menu.unlock")
+                          :on-click handle-set-unblocked
+                          :icon "lock"}])]]))

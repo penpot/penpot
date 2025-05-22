@@ -5,9 +5,10 @@
 // Copyright (c) KALEIDOS INC
 
 @import "refactor/common-refactor.scss";
+@import "../ds/_sizes.scss";
 
-$width-settings-bar: $s-276;
-$width-settings-bar-max: $s-500;
+$width-settings-bar: $sz-318;
+$width-settings-bar-max: $sz-500;
 
 .left-settings-bar {
   display: grid;
