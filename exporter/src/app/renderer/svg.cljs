@@ -340,7 +340,7 @@
               (bw/sleep page 1000) ; the good old fix with sleep
 
               ;; take the screnshot of requested objects, one by one
-              (p/run! (partial render-object page) objects)
+              (p/run (partial render-object page) objects)
               nil))]
     (p/let [params {:file-id file-id
                     :page-id page-id

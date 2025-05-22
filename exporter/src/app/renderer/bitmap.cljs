@@ -50,7 +50,7 @@
               (bw/eval! page (js* "() => document.body.style.background = 'transparent'"))
 
               ;; take the screnshot of requested objects, one by one
-              (p/run! (partial render-object page) objects)
+              (p/run (partial render-object page) objects)
               nil))]
     (p/let [params {:file-id file-id
                     :page-id page-id
