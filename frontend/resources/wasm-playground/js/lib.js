@@ -181,6 +181,18 @@ export function set_parent(id) {
   Module._set_parent(...buffer);
 }
 
+function debounce(fn, delay) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+}
+
+const debouncedRender = debounce(() => {
+  Module._render(Date.now());
+}, 100);
+
 export function setupInteraction(canvas) {
   canvas.addEventListener("wheel", (e) => {
     e.preventDefault();
@@ -191,7 +203,8 @@ export function setupInteraction(canvas) {
     offsetX -= (mouseX - offsetX) * (zoomFactor - 1);
     offsetY -= (mouseY - offsetY) * (zoomFactor - 1);
     Module._set_view(scale, offsetX, offsetY);
-    Module._render(Date.now());
+    Module._render_from_cache();
+    debouncedRender();
   });
 
   canvas.addEventListener("mousedown", (e) => {
@@ -209,7 +222,8 @@ export function setupInteraction(canvas) {
       lastX = e.offsetX;
       lastY = e.offsetY;
       Module._set_view(scale, offsetX, offsetY);
-      Module._render(Date.now());
+      Module._render_from_cache();
+      debouncedRender();
     }
   });
 

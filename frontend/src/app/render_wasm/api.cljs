@@ -30,8 +30,8 @@
    [app.render-wasm.serializers.fills :as sr-fills]
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
+   [app.util.functions :as fns]
    [app.util.http :as http]
-   [app.util.perf :as uperf]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
@@ -100,6 +100,8 @@
   [timestamp]
   (h/call wasm/internal-module "_render" timestamp)
   (set! wasm/internal-frame-id nil))
+
+(def debounce-render (fns/debounce render 100))
 
 (defn cancel-render
   [_]
@@ -662,7 +664,8 @@
 (defn set-view-box
   [zoom vbox]
   (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-  (render (uperf/now)))
+  (h/call wasm/internal-module "_render_from_cache")
+  (debounce-render))
 
 (defn clear-drawing-cache []
   (h/call wasm/internal-module "_clear_drawing_cache"))
