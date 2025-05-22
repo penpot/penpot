@@ -122,7 +122,10 @@
   :storybook
   {:target :esm
    :output-dir "target/storybook/"
-   :js-options {:js-provider :import}
+   :js-options
+   {:js-provider :import
+    :entry-keys ["module" "browser" "main"]
+    :export-conditions ["module" "import", "browser" "require" "default"]}
 
    :modules
    {:base

@@ -19,7 +19,7 @@
   criterium/criterium {:mvn/version "0.4.6"}
 
   metosin/jsonista {:mvn/version "0.3.13"}
-  metosin/malli {:mvn/version "0.17.0"}
+  metosin/malli {:mvn/version "0.18.0"}
 
   expound/expound {:mvn/version "0.9.0"}
   com.cognitect/transit-clj {:mvn/version "1.0.333"}
@@ -30,7 +30,7 @@
   funcool/tubax {:mvn/version "2021.05.20-0"}
   funcool/cuerdas {:mvn/version "2023.11.09-407"}
   funcool/promesa
-  {:git/sha "6c14b06d9d64fae6e43c1463ce313f2fdc0d989b"
+  {:git/sha "f52f58cfacf62f59eab717e2637f37729d0cc383"
    :git/url "https://github.com/funcool/promesa"}
 
   funcool/datoteka
@@ -68,7 +68,7 @@
 
   :build
   {:extra-deps
-   {io.github.clojure/tools.build {:git/tag "v0.10.8" :git/sha "2fdfd66"}}
+   {io.github.clojure/tools.build {:git/tag "v0.10.9" :git/sha "e405aac"}}
    :ns-default build}
 
   :test
