@@ -22,8 +22,7 @@
    [datoteka.fs :as fs]
    [integrant.core :as ig]
    [promesa.exec :as px]
-   [promesa.exec.bulkhead :as pbh]
-   [promesa.protocols :as pt])
+   [promesa.exec.bulkhead :as pbh])
   (:import
    clojure.lang.ExceptionInfo
    java.util.concurrent.atomic.AtomicLong))
@@ -179,13 +178,12 @@
         (measure metrics mlabels stats nil)
         (log "enqueued" req-id stats limit-id limit-label limit-params nil))
 
-      ;; WORKAROUND: this is a temporal change until the bug is fixed in funcool/promesa
-      @(pt/-submit! limiter (fn []
-                              (let [elapsed (tpoint)
-                                    stats   (pbh/get-stats limiter)]
-                                (measure metrics mlabels stats elapsed)
-                                (log "acquired" req-id stats limit-id limit-label limit-params elapsed)
-                                (handler))))
+      (px/invoke! limiter (fn []
+                            (let [elapsed (tpoint)
+                                  stats   (pbh/get-stats limiter)]
+                              (measure metrics mlabels stats elapsed)
+                              (log "acquired" req-id stats limit-id limit-label limit-params elapsed)
+                              (handler))))
 
       (catch ExceptionInfo cause
         (let [{:keys [type code]} (ex-data cause)]
