@@ -570,7 +570,6 @@
                        object (-> object
                                   (assoc :file-id file-id)
                                   (update :created-at default-now)
-                                  (update :modified-at default-now)
                                   ;; FIXME: this is set default to true for
                                   ;; setting a value, this prop is no longer
                                   ;; relevant;
