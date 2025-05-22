@@ -50,16 +50,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@penpotapp/library@workspace:.":
+"@penpot/library@workspace:.":
   version: 0.0.0-use.local
-  resolution: "@penpotapp/library@workspace:."
+  resolution: "@penpot/library@workspace:."
   dependencies:
     "@types/node": "npm:^22.12.0"
     "@zip.js/zip.js": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch"
     concurrently: "npm:^9.1.2"
     luxon: "npm:^3.6.1"
     nodemon: "npm:^3.1.9"
-    shadow-cljs: "npm:3.0.5"
+    shadow-cljs: "npm:3.1.4"
     source-map-support: "npm:^0.5.21"
   languageName: unknown
   linkType: soft
@@ -72,11 +72,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:^22.12.0":
-  version: 22.15.18
-  resolution: "@types/node@npm:22.15.18"
+  version: 22.15.21
+  resolution: "@types/node@npm:22.15.21"
   dependencies:
     undici-types: "npm:~6.21.0"
-  checksum: 10c0/e23178c568e2dc6b93b6aa3b8dfb45f9556e527918c947fe7406a4c92d2184c7396558912400c3b1b8d0fa952ec63819aca2b8e4d3545455fc6f1e9623e09ca6
+  checksum: 10c0/f092bbccda2131c2b2c8f720338080aa0ef1d928f5f1062c03954a4f7dafa7ee3ed29bc3e51bd4e2584473b3d943c637a2b39ad7174898970818270187cf10c1
   languageName: node
   linkType: hard
 
@@ -155,6 +155,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"base64-js@npm:^1.3.1":
+  version: 1.5.1
+  resolution: "base64-js@npm:1.5.1"
+  checksum: 10c0/f23823513b63173a001030fae4f2dabe283b99a9d324ade3ad3d148e218134676f1ee8568c877cd79ec1c53158dcf2d2ba527a97c606618928ba99dd930102bf
+  languageName: node
+  linkType: hard
+
 "binary-extensions@npm:^2.0.0":
   version: 2.3.0
   resolution: "binary-extensions@npm:2.3.0"
@@ -194,6 +201,16 @@ __metadata:
   version: 1.1.2
   resolution: "buffer-from@npm:1.1.2"
   checksum: 10c0/124fff9d66d691a86d3b062eff4663fe437a9d9ee4b47b1b9e97f5a5d14f6d5399345db80f796827be7c95e70a8e765dd404b7c3ff3b3324f98e9b0c8826cc34
+  languageName: node
+  linkType: hard
+
+"buffer@npm:^6.0.3":
+  version: 6.0.3
+  resolution: "buffer@npm:6.0.3"
+  dependencies:
+    base64-js: "npm:^1.3.1"
+    ieee754: "npm:^1.2.1"
+  checksum: 10c0/2a905fbbcde73cc5d8bd18d1caa23715d5f83a5935867c2329f0ac06104204ba7947be098fe1317fbd8830e26090ff8e764f08cd14fefc977bb248c3487bcbd0
   languageName: node
   linkType: hard
 
@@ -531,6 +548,13 @@ __metadata:
   dependencies:
     safer-buffer: "npm:>= 2.1.2 < 3.0.0"
   checksum: 10c0/98102bc66b33fcf5ac044099d1257ba0b7ad5e3ccd3221f34dd508ab4070edff183276221684e1e0555b145fce0850c9f7d2b60a9fcac50fbb4ea0d6e845a3b1
+  languageName: node
+  linkType: hard
+
+"ieee754@npm:^1.2.1":
+  version: 1.2.1
+  resolution: "ieee754@npm:1.2.1"
+  checksum: 10c0/b0782ef5e0935b9f12883a2e2aa37baa75da6e66ce6515c168697b42160807d9330de9a32ec1ed73149aea02e0d822e572bca6f1e22bdcbd2149e13b050b17bb
   languageName: node
   linkType: hard
 
@@ -898,6 +922,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"process@npm:^0.11.10":
+  version: 0.11.10
+  resolution: "process@npm:0.11.10"
+  checksum: 10c0/40c3ce4b7e6d4b8c3355479df77aeed46f81b279818ccdc500124e6a5ab882c0cc81ff7ea16384873a95a74c4570b01b120f287abbdd4c877931460eca6084b3
+  languageName: node
+  linkType: hard
+
 "promise-retry@npm:^2.0.1":
   version: 2.0.1
   resolution: "promise-retry@npm:2.0.1"
@@ -977,10 +1008,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"shadow-cljs@npm:3.0.5":
-  version: 3.0.5
-  resolution: "shadow-cljs@npm:3.0.5"
+"shadow-cljs@npm:3.1.4":
+  version: 3.1.4
+  resolution: "shadow-cljs@npm:3.1.4"
   dependencies:
+    buffer: "npm:^6.0.3"
+    process: "npm:^0.11.10"
     readline-sync: "npm:^1.4.10"
     shadow-cljs-jar: "npm:1.3.4"
     source-map-support: "npm:^0.5.21"
@@ -988,7 +1021,7 @@ __metadata:
     ws: "npm:^8.18.1"
   bin:
     shadow-cljs: cli/runner.js
-  checksum: 10c0/2c5f3976f7bec16b7fb9fbba5d4a7581e0d0157384a470ce0670120f02cfe6b9c7183102133e0e9b300cbe318e9a3b6001309f96840999ca2814d39fc83c23e8
+  checksum: 10c0/f80e088d73b645411171d58d7b7dc757bc6c4bbd7032292ddf6866f366ef2cd847c9518c18ecc393106b8906ff0570047ff0d5df5c513938e1b95a59f536eea4
   languageName: node
   linkType: hard
 
