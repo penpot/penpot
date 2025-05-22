@@ -1,3 +1,7 @@
+use skia_safe::{self as skia, Matrix, RRect, Rect};
+use std::borrow::Cow;
+use std::collections::{HashMap, HashSet};
+
 mod blend;
 mod debug;
 mod fills;
@@ -9,10 +13,6 @@ mod shadows;
 mod strokes;
 mod surfaces;
 mod text;
-
-use skia_safe::{self as skia, Matrix, RRect, Rect};
-use std::borrow::Cow;
-use std::collections::{HashMap, HashSet};
 
 use gpu_state::GpuState;
 use options::RenderOptions;
@@ -416,34 +416,28 @@ impl RenderState {
             }
 
             Type::Text(text_content) => {
-                self.surfaces.apply_mut(&[SurfaceId::Fills], |s| {
-                    s.canvas().concat(&matrix);
-                });
+                self.surfaces
+                    .apply_mut(&[SurfaceId::Fills, SurfaceId::Strokes], |s| {
+                        s.canvas().concat(&matrix);
+                    });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let paragraphs = text_content.get_skia_paragraphs(self.fonts.font_collection());
+                let paths = text_content.get_paths(antialias);
 
-                shadows::render_text_drop_shadows(self, &shape, &paragraphs, antialias);
-                text::render(self, &shape, &paragraphs, None, None);
+                shadows::render_text_drop_shadows(self, &shape, &paths, antialias);
+                text::render(self, &paths, None, None);
 
                 for stroke in shape.strokes().rev() {
-                    let stroke_paragraphs = text_content.get_skia_stroke_paragraphs(
-                        stroke,
-                        &shape.selrect(),
-                        self.fonts.font_collection(),
+                    shadows::render_text_stroke_drop_shadows(
+                        self, &shape, &paths, stroke, antialias,
                     );
-                    shadows::render_text_drop_shadows(self, &shape, &stroke_paragraphs, antialias);
-                    text::render(
-                        self,
-                        &shape,
-                        &stroke_paragraphs,
-                        Some(SurfaceId::Strokes),
-                        None,
+                    strokes::render_text_paths(self, &shape, stroke, &paths, None, None, antialias);
+                    shadows::render_text_stroke_inner_shadows(
+                        self, &shape, &paths, stroke, antialias,
                     );
-                    shadows::render_text_inner_shadows(self, &shape, &stroke_paragraphs, antialias);
                 }
 
-                shadows::render_text_inner_shadows(self, &shape, &paragraphs, antialias);
+                shadows::render_text_inner_shadows(self, &shape, &paths, antialias);
             }
             _ => {
                 self.surfaces.apply_mut(
@@ -688,7 +682,7 @@ impl RenderState {
     // scaled offset of the viewbox, this method snaps the origin to the nearest
     // lower multiple of `TILE_SIZE`. This ensures the tile bounds are aligned
     // with the global tile grid, which is useful for rendering tiles in a
-    /// consistent and predictable layout.
+    // consistent and predictable layout.
     pub fn get_current_aligned_tile_bounds(&mut self) -> Rect {
         let tiles::Tile(tile_x, tile_y) = self.current_tile.unwrap();
         let scale = self.get_scale();

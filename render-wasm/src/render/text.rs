@@ -1,10 +1,9 @@
-use super::{RenderState, Shape, SurfaceId};
-use skia_safe::{self as skia, canvas::SaveLayerRec, textlayout::Paragraph};
+use super::{RenderState, SurfaceId};
+use skia_safe::{self as skia, canvas::SaveLayerRec};
 
 pub fn render(
     render_state: &mut RenderState,
-    shape: &Shape,
-    paragraphs: &[Vec<Paragraph>],
+    paths: &Vec<(skia::Path, skia::Paint)>,
     surface_id: Option<SurfaceId>,
     paint: Option<skia::Paint>,
 ) {
@@ -15,13 +14,12 @@ pub fn render(
         .canvas(surface_id.unwrap_or(SurfaceId::Fills));
 
     canvas.save_layer(&mask);
-    for group in paragraphs {
-        let mut offset_y = 0.0;
-        for skia_paragraph in group {
-            let xy = (shape.selrect().x(), shape.selrect.y() + offset_y);
-            skia_paragraph.paint(canvas, xy);
-            offset_y += skia_paragraph.height();
+
+    for (path, paint) in paths {
+        if path.is_empty() {
+            eprintln!("Warning: Empty path detected");
         }
+        canvas.draw_path(path, paint);
     }
     canvas.restore();
 }
