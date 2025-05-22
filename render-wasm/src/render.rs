@@ -936,7 +936,7 @@ impl RenderState {
     }
 
     pub fn get_tiles_for_shape(&mut self, shape: &Shape) -> TileRect {
-        let tile_size = tiles::get_tile_size(self.viewbox.zoom);
+        let tile_size = tiles::get_tile_size(self.get_scale());
         tiles::get_tiles_for_rect(shape.extrect(), tile_size)
     }
 
