@@ -4,11 +4,12 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
- (ns app.common.types.text-content
+ (ns app.common.types.text
    (:require
+    [app.common.data.macros :as dm]
     [clojure.set :as set]))
 
-(defn text-content-diff
+(defn- compare-text-content
   "Given two content text structures, conformed by maps and vectors,
    compare them, and returns a set with the type of differences.
    The possibilities are :text :attribute and :structure."
@@ -37,7 +38,7 @@
                #{:structure}
                (into acc
                      (apply set/union
-                            (map #(text-content-diff %1 %2) v1 v2))))
+                            (map #(compare-text-content %1 %2) v1 v2))))
 
              ;; If the key is :text, and they are different, it is a text differece
              (= k :text)
@@ -56,6 +57,40 @@
     :else
     #{:structure}))
 
+
+(defn equal-attrs?
+  "Given a text structure, and a map of attrs, check that all the internal attrs in
+   paragraphs and sentences have the same attrs"
+  [item attrs]
+  (let [item-attrs (dissoc item :text :type :key :children)]
+    (and
+     (or (empty? item-attrs)
+         (= attrs (dissoc item :text :type :key :children)))
+     (every? #(equal-attrs? % attrs) (:children item)))))
+
+(defn get-first-paragraph-text-attrs
+  "Given a content text structure, extract it's first paragraph
+   text attrs"
+  [content]
+  (-> content
+      (dm/get-in [:children 0 :children 0])
+      (dissoc :text :type :key :children)))
+
+(defn get-diff-type
+  "Given two content text structures, conformed by maps and vectors,
+   compare them, and returns a set with the type of differences.
+   The possibilities are :text :attribute, :structure and :structure-same-attrs."
+  [a b]
+  (let [diff-type (compare-text-content a b)]
+    (if-not (contains? diff-type :structure)
+      diff-type
+      (let [;; get attrs of the first paragraph of the first paragraph-set
+            attrs (get-first-paragraph-text-attrs a)]
+        (if (and (equal-attrs? a attrs)
+                 (equal-attrs? b attrs))
+          (conj diff-type :structure-same-attrs)
+          diff-type)))))
+
 ;; TODO We know that there are cases that the blocks of texts are separated
 ;; differently: ["one" " " "two"], ["one " "two"], ["one" " two"]
 ;; so this won't work for 100% of the situations. But it's good enough for now,
@@ -66,7 +101,7 @@
    entries"
   [a b]
   (cond
-    (not= (:type a) (:type b))
+    (not= (type a) (type b))
     false
 
     (map? a)
@@ -96,5 +131,19 @@
               [k (:text origin)]
               :else
               [k (get destiny k)])))))
+
+(defn copy-attrs-keys
+  "Given a content text structure and a list of attrs, copy that
+   attrs values on all the content tree"
+  [content attrs]
+  (into {}
+        (for [[k v] content]
+          (if (= :children k)
+            [k (vec (map #(copy-attrs-keys %1 attrs) v))]
+            [k (get attrs k v)]))))
+
+
+
+
 
 

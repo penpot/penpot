@@ -18,7 +18,7 @@
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.text-content :as cttc]
+   [app.common.types.text :as cttx]
    [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]))
 
@@ -535,8 +535,9 @@
   indicating if shape is touched or not."
   [shape attr val & {:keys [ignore-touched ignore-geometry]}]
   (let [group        (get ctk/sync-attrs attr)
-        token-groups (when (= attr :applied-tokens)
-                       (get-token-groups shape val))
+        token-groups (into #{}
+                           (when (= attr :applied-tokens)
+                             (get-token-groups shape val)))
         shape-val    (get shape attr)
 
         ignore?
@@ -571,18 +572,20 @@
         touched?
         (and group-not-equal? (not (and ignore-geometry is-geometry?)))
 
-        content-diff (when (and (= (:type shape) :text) (= attr :content))
-                       (cttc/text-content-diff (:content shape) val))
-
-        groups (cond->> (d/nilv token-groups #{})
+        content-diff-type (when (and (= (:type shape) :text) (= attr :content))
+                            (cttx/get-diff-type (:content shape) val))
+        groups (cond->> token-groups
                  group-not-equal?
                  (cons group)
 
-                 (and group-not-equal? (contains? content-diff :text))
+                 (and group-not-equal? (contains? content-diff-type :text))
                  (cons :text-content-text)
 
-                 (and group-not-equal? (contains? content-diff :attribute))
-                 (cons :text-content-attribute))]
+                 (and group-not-equal? (contains? content-diff-type :attribute))
+                 (cons :text-content-attribute)
+
+                 (and group-not-equal? (contains? content-diff-type :structure-same-attrs))
+                 (cons :text-content-structure-same-attrs))]
     (cond-> shape
       ;; Depending on the origin of the attribute change, we need or not to
       ;; set the "touched" flag for the group the attribute belongs to.
