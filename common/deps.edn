@@ -19,7 +19,7 @@
   criterium/criterium {:mvn/version "0.4.6"}
 
   metosin/jsonista {:mvn/version "0.3.13"}
-  metosin/malli {:mvn/version "0.17.0"}
+  metosin/malli {:mvn/version "0.18.0"}
 
   expound/expound {:mvn/version "0.9.0"}
   com.cognitect/transit-clj {:mvn/version "1.0.333"}
@@ -68,7 +68,7 @@
 
   :build
   {:extra-deps
-   {io.github.clojure/tools.build {:git/tag "v0.10.8" :git/sha "2fdfd66"}}
+   {io.github.clojure/tools.build {:git/tag "v0.10.9" :git/sha "e405aac"}}
    :ns-default build}
 
   :test

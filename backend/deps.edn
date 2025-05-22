@@ -59,7 +59,7 @@
 
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
-  software.amazon.awssdk/s3 {:mvn/version "2.31.40"}}
+  software.amazon.awssdk/s3 {:mvn/version "2.31.48"}}
 
  :paths ["src" "resources" "target/classes"]
  :aliases
@@ -74,7 +74,7 @@
 
   :build
   {:extra-deps
-   {io.github.clojure/tools.build {:git/tag "v0.10.8" :git/sha "2fdfd66"}}
+   {io.github.clojure/tools.build {:git/tag "v0.10.9" :git/sha "e405aac"}}
    :ns-default build}
 
   :test
