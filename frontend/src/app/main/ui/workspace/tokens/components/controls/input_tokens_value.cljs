@@ -32,11 +32,10 @@
   (let [id (mf/use-id)
         input-ref (mf/use-ref)
         swatch
-        (when color
-          (mf/html [:> input-token-color-bullet*
-                    {:color color
-                     :class (stl/css :slot-start)
-                     :on-click display-colorpicker}]))
+        (mf/html [:> input-token-color-bullet*
+                  {:color color
+                   :class (stl/css :slot-start)
+                   :on-click display-colorpicker}])
 
         props (mf/spread-props props {:id id
                                       :type "text"

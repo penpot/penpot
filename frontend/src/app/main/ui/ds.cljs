@@ -12,6 +12,9 @@
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.select :refer [select*]]
+   [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
+   [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
+   [app.main.ui.ds.controls.utilities.label :refer [label*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg* raw-svg-list]]
    [app.main.ui.ds.foundations.typography :refer [typography-list]]
@@ -49,6 +52,9 @@
     :Icon icon*
     :IconButton icon-button*
     :Input input*
+    :Label label*
+    :InputField input-field*
+    :HintMessage hint-message*
     :InputWithMeta input-with-meta*
     :EmptyPlaceholder empty-placeholder*
     :Loader loader*

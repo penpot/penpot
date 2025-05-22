@@ -238,7 +238,7 @@
   (let [create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
         token-properties (dwta/get-token-properties token)
-        color? (cft/color-token? token)
+        is-color-token (cft/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
 
         active-theme-tokens (cond-> (mf/deref refs/workspace-active-theme-sets-tokens)
@@ -321,7 +321,7 @@
                            (valid-name? @token-name-ref))
 
         ;; Value
-        color* (mf/use-state (when color? (:value token)))
+        color* (mf/use-state (when is-color-token (:value token)))
         color (deref color*)
         color-ramp-open* (mf/use-state false)
         color-ramp-open? (deref color-ramp-open*)
@@ -345,7 +345,7 @@
 
                      :else
                      (:resolved-value token-or-err))]
-             (when color? (reset! color* (if error? nil v)))
+             (when is-color-token (reset! color* (if error? nil v)))
              (reset! token-resolve-result* v))))
 
         on-update-value-debounced (use-debonced-resolve-callback token-name-ref token active-theme-tokens set-resolve-value)
@@ -354,7 +354,7 @@
                          (fn [e]
                            (let [value (dom/get-target-val e)
                                  ;; Automatically add # for hex values
-                                 value' (if (and color? (tinycolor/hex-without-hash-prefix? value))
+                                 value' (if (and is-color-token (tinycolor/hex-without-hash-prefix? value))
                                           (let [hex (dm/str "#" value)]
                                             (dom/set-value! (mf/ref-val value-input-ref) hex)
                                             hex)
@@ -560,7 +560,7 @@
          :label (tr "workspace.tokens.token-value")
          :default-value (mf/ref-val value-ref)
          :ref value-input-ref
-         :color color
+         :color (when is-color-token color)
          :on-change on-update-value
          :error (not (nil? (:errors token-resolve-result)))
          :display-colorpicker on-display-colorpicker'
