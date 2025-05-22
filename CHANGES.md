@@ -21,6 +21,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix "at" icon to match all icons on app [Taiga #11136](https://tree.taiga.io/project/penpot/issue/11136)
 - Fix problem in viewer with the back button [Taiga #10907](https://tree.taiga.io/project/penpot/issue/10907)
 - Fix resize bar background on tokens panel [Taiga #10811](https://tree.taiga.io/project/penpot/issue/10811)
 - Fix shortcut for history version panel [Taiga #11006](https://tree.taiga.io/project/penpot/issue/11006)
