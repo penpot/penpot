@@ -389,7 +389,7 @@ pub extern "C" fn set_shape_path_attrs(num_attrs: u32) {
 }
 
 #[no_mangle]
-pub extern "C" fn propagate_modifiers() -> *mut u8 {
+pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> *mut u8 {
     let bytes = mem::bytes();
 
     let entries: Vec<_> = bytes
@@ -398,13 +398,13 @@ pub extern "C" fn propagate_modifiers() -> *mut u8 {
         .collect();
 
     with_state!(state, {
-        let (result, _) = shapes::propagate_modifiers(state, &entries);
+        let (result, _) = shapes::propagate_modifiers(state, &entries, pixel_precision);
         mem::write_vec(result)
     })
 }
 
 #[no_mangle]
-pub extern "C" fn propagate_apply() -> *mut u8 {
+pub extern "C" fn propagate_apply(pixel_precision: bool) -> *mut u8 {
     let bytes = mem::bytes();
 
     let entries: Vec<_> = bytes
@@ -413,7 +413,7 @@ pub extern "C" fn propagate_apply() -> *mut u8 {
         .collect();
 
     with_state!(state, {
-        let (result, bounds) = shapes::propagate_modifiers(state, &entries);
+        let (result, bounds) = shapes::propagate_modifiers(state, &entries, pixel_precision);
 
         for entry in result {
             state.modifiers.insert(entry.id, entry.transform);

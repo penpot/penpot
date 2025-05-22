@@ -187,7 +187,7 @@ fn initialize_tracks(
     let mut children = modified_children_ids(shape, structure.get(&shape.id));
     let mut first = true;
 
-    if !flex_data.is_reverse() {
+    if flex_data.is_reverse() {
         children.reverse();
     }
 
@@ -497,6 +497,14 @@ fn next_anchor(
     prev_anchor: Point,
     total_shapes_size: f32,
 ) -> Point {
+    if layout_axis.is_auto_main {
+        let delta = child_axis.margin_main_start
+            + child_axis.margin_main_end
+            + child_axis.main_size
+            + layout_axis.gap_main;
+        return prev_anchor + layout_axis.main_v * delta;
+    }
+
     let delta = child_axis.margin_main_start
         + child_axis.margin_main_end
         + match layout_data.justify_content {

@@ -262,10 +262,10 @@
 
         [x y width height]
         (if (features/active-feature? @st/state "render-wasm/v1")
-          (let [{:keys [width height]} (wasm.api/text-dimensions shape-id)
+          (let [{:keys [max-width height]} (wasm.api/text-dimensions shape-id)
                 {:keys [x y]} (:selrect shape)]
 
-            [x y width height])
+            [x y max-width height])
 
           (let [bounds (gst/shape->rect shape)
                 x      (mth/min (dm/get-prop bounds :x)

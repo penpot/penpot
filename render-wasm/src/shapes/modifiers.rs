@@ -103,9 +103,35 @@ fn calculate_group_bounds(
     shape_bounds.with_points(result)
 }
 
+fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds) {
+    let tr = bounds.transform_matrix().unwrap_or_default();
+    let tr_inv = tr.invert().unwrap_or_default();
+
+    let x = bounds.min_x().round();
+    let y = bounds.min_y().round();
+
+    let mut round_transform = Matrix::scale((
+        bounds.width().round() / bounds.width(),
+        bounds.height().round() / bounds.height(),
+    ));
+    round_transform.post_concat(&tr);
+    round_transform.pre_concat(&tr_inv);
+
+    transform.post_concat(&round_transform);
+    bounds.transform_mut(&round_transform);
+
+    let dx = x - bounds.min_x();
+    let dy = y - bounds.min_y();
+
+    let round_transform = Matrix::translate((dx, dy));
+    transform.post_concat(&round_transform);
+    bounds.transform_mut(&round_transform);
+}
+
 pub fn propagate_modifiers(
     state: &State,
     modifiers: &[TransformEntry],
+    pixel_precision: bool,
 ) -> (Vec<TransformEntry>, HashMap<Uuid, Bounds>) {
     let shapes = &state.shapes;
 
@@ -161,6 +187,10 @@ pub fn propagate_modifiers(
                         }
                     }
 
+                    if pixel_precision {
+                        set_pixel_precision(&mut transform, &mut shape_bounds_after);
+                    }
+
                     if entry.propagate {
                         let mut children = propagate_children(
                             shape,
@@ -179,6 +209,10 @@ pub fn propagate_modifiers(
                     let mut shape_modif = modifiers.get(&shape.id).copied().unwrap_or_default();
                     shape_modif.post_concat(&transform);
                     modifiers.insert(shape.id, shape_modif);
+
+                    if shape.has_layout() {
+                        entries.push_back(Modifier::reflow(shape.id));
+                    }
 
                     if let Some(parent) = shape.parent_id.and_then(|id| shapes.get(&id)) {
                         if parent.has_layout() || parent.is_group_like() {

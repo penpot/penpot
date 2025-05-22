@@ -594,6 +594,13 @@ pub fn auto_width(paragraphs: &[Vec<skia::textlayout::Paragraph>]) -> f32 {
     })
 }
 
+pub fn max_width(paragraphs: &[Vec<skia::textlayout::Paragraph>]) -> f32 {
+    paragraphs
+        .iter()
+        .flatten()
+        .fold(0.0, |max_width, p| f32::max(p.max_width(), max_width))
+}
+
 pub fn auto_height(paragraphs: &[Vec<skia::textlayout::Paragraph>]) -> f32 {
     paragraphs
         .iter()
