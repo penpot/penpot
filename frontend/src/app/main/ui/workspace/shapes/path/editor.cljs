@@ -348,7 +348,7 @@
      ms/mouse-position
      (mf/deps base-content zoom)
      (fn [position]
-       (when-let [point (path.segment/closest-point base-content position)]
+       (when-let [point (path.segment/closest-point base-content position (/ 0.01 zoom))]
          (reset! hover-point (when (< (gpt/distance position point) (/ 10 zoom)) point)))))
 
     [:g.path-editor {:ref editor-ref}

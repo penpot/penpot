@@ -182,11 +182,11 @@
 ;; FIXME: move to helpers?, this function need performance review, it
 ;; is executed so many times on path edition
 (defn- curve-closest-point
-  [position start end h1 h2]
+  [position start end h1 h2 precision]
   (let [d (memoize (fn [t] (gpt/distance position (helpers/curve-values start end h1 h2 t))))]
     (loop [t1 0.0
            t2 1.0]
-      (if (<= (mth/abs (- t1 t2)) path-closest-point-accuracy)
+      (if (<= (mth/abs (- t1 t2)) precision)
         (-> (helpers/curve-values start end h1 h2 t1)
             ;; store the segment info
             (with-meta {:t t1 :from-p start :to-p end}))
@@ -214,7 +214,7 @@
                  (double t2)))))))
 
 (defn- line-closest-point
-  "Point on line"
+  "Finds the closest point in the line segment defined by from-p and to-p"
   [position from-p to-p]
 
   (let [e1 (gpt/to-vec from-p to-p)
@@ -235,52 +235,13 @@
         from-p
         to-p))))
 
-;; FIXME: incorrect API, complete shape is not necessary here
-(defn path-closest-point
-  "Given a path and a position"
-  [shape position]
-
-  (let [point+distance
-        (fn [[cur-segment prev-segment]]
-          (let [from-p (helpers/segment->point prev-segment)
-                to-p   (helpers/segment->point cur-segment)
-                h1 (gpt/point (get-in cur-segment [:params :c1x])
-                              (get-in cur-segment [:params :c1y]))
-                h2 (gpt/point (get-in cur-segment [:params :c2x])
-                              (get-in cur-segment [:params :c2y]))
-                point
-                (case (:command cur-segment)
-                  :line-to
-                  (line-closest-point position from-p to-p)
-
-                  :curve-to
-                  (curve-closest-point position from-p to-p h1 h2)
-
-                  nil)]
-            (when point
-              [point (gpt/distance point position)])))
-
-        find-min-point
-        (fn [[min-p min-dist :as acc] [cur-p cur-dist :as cur]]
-          (if (and (some? acc) (or (not cur) (<= min-dist cur-dist)))
-            [min-p min-dist]
-            [cur-p cur-dist]))]
-
-    (->> (:content shape)
-         (d/with-prev)
-         (map point+distance)
-         (reduce find-min-point)
-         (first))))
-
-
 (defn closest-point
-  "Given a path and a position"
-  [content position]
-
+  "Returns the closest point in the path to the position, at a given precision"
+  [content position precision]
   (let [point+distance
         (fn [[cur-segment prev-segment]]
           (let [from-p (helpers/segment->point prev-segment)
-                to-p   (helpers/segment->point cur-segment)
+                to-p (helpers/segment->point cur-segment)
                 h1 (gpt/point (get-in cur-segment [:params :c1x])
                               (get-in cur-segment [:params :c1y]))
                 h2 (gpt/point (get-in cur-segment [:params :c2x])
@@ -291,7 +252,7 @@
                   (line-closest-point position from-p to-p)
 
                   :curve-to
-                  (curve-closest-point position from-p to-p h1 h2)
+                  (curve-closest-point position from-p to-p h1 h2 precision)
 
                   nil)]
             (when point
