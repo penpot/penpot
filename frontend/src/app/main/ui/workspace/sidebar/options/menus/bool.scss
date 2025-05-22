@@ -8,9 +8,9 @@
 
 .boolean-options {
   display: grid;
-  grid-template-columns: repeat(8, $s-28);
-  column-gap: $s-4;
-  height: $s-32;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
+  height: var(--sp-xxxl);
 }
 
 .bool-group {
@@ -45,4 +45,5 @@
 
 .boolean-radio-btn {
   background-color: transparent;
+  gap: var(--sp-xs);
 }

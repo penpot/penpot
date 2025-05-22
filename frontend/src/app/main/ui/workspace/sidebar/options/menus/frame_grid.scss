@@ -21,10 +21,13 @@
 }
 
 .grid-title {
-  @include flexRow;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  gap: $s-4;
 }
 
 .option-row {
+  grid-column: span 6;
   display: flex;
   align-items: center;
   gap: $s-1;
@@ -45,6 +48,7 @@
     }
   }
   .type-select-wrapper {
+    flex-grow: 1;
     width: $s-96;
     padding: 0;
     border-radius: 0;
@@ -143,6 +147,7 @@
 
 .actions {
   @include flexRow;
+  grid-column: span 2;
 }
 
 .grid-advanced-options {

@@ -19,68 +19,60 @@
 }
 
 .flex-element-menu {
-  @include flexColumn;
-  gap: $s-12;
-  margin-block-end: $s-8;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  gap: var(--sp-xs);
 }
 
 .behaviour-menu {
-  display: flex;
-  gap: $s-4;
-}
-
-.horizontal-behaviour {
-  &.one-element {
-    width: $s-28;
-  }
-  &.two-element {
-    width: $s-60;
-  }
-  &.three-element {
-    width: $s-92;
-  }
+  display: grid;
+  column-gap: var(--sp-xs);
+  grid-template-columns: auto auto;
 }
 
 .vertical-behaviour {
   .rotated {
     transform: rotate(90deg);
   }
-  &.one-element {
-    width: $s-28;
-  }
-  &.two-element {
-    width: $s-60;
-  }
-  &.three-element {
-    width: $s-92;
-  }
 }
 
 .z-index-wrapper {
   @extend .input-element;
   @include bodySmallTypography;
-  width: $s-60;
+  grid-column: 6 / span 3;
 }
 
 .row {
   display: flex;
-  gap: $s-4;
+  gap: var(--sp-xs);
+}
+
+.position-row,
+.behavior-row,
+.align-row,
+.margin-row {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
 }
 
 .position-options {
-  width: $s-188;
+  width: 100%;
+  grid-column: 1 / span 5;
 }
 
 .margin-row {
-  display: flex;
-  align-items: flex-start;
-  gap: $s-4;
+  display: grid;
+  // NOTE: this does not follow the 8-column grid and the size is not normalized,
+  --input-width: calc(var(--sp-xxxl) * 3.5 + 3 * var(--sp-xs) - var(--sp-xs) / 2);
+  grid-template-columns: var(--input-width) var(--input-width) var(--sp-xxxl);
+  gap: var(--sp-xs);
 }
 
 .margin-mode {
   @extend .button-tertiary;
+  grid-column: 3;
   height: $s-32;
-  width: $s-28;
   svg {
     @extend .button-icon;
   }
@@ -90,20 +82,26 @@
 }
 
 .margin-simple {
-  display: flex;
-  gap: $s-4;
+  display: grid;
+  gap: var(--sp-xs);
+  grid-template-columns: subgrid;
   .vertical-margin,
   .horizontal-margin {
     @extend .input-element;
     @include bodySmallTypography;
-    width: $s-108;
+  }
+  .vertical-margin {
+    grid-column: 1;
+  }
+  .horizontal-margin {
+    grid-column: 2;
   }
 }
 
 .margin-multiple {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: $s-4;
+  grid-template-columns: subgrid;
+  gap: var(--sp-xs);
 }
 
 .top-margin,
@@ -112,17 +110,40 @@
 .right-margin {
   @extend .input-element;
   @include bodySmallTypography;
-  width: $s-108;
+}
+
+.top-margin {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.bottom-margin {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.left-margin {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.right-margin {
+  grid-column: 2;
+  grid-row: 2;
 }
 
 .advanced-options {
-  @include flexColumn;
+  display: grid;
+  --input-width: calc(var(--sp-xxxl) * 3.5 + 3 * var(--sp-xs) - var(--sp-xs) / 2);
+  grid-template-columns: var(--input-width) var(--input-width) var(--sp-xxxl);
+  gap: var(--sp-xs);
 }
 
 .horizontal-fill,
 .vertical-fill {
-  display: flex;
-  gap: $s-4;
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
 }
 
 .layout-item-min-w,
@@ -131,10 +152,13 @@
 .layout-item-max-h {
   @extend .input-element;
   @include bodySmallTypography;
-  width: $s-108;
   .icon-text {
     justify-content: flex-start;
     width: $s-80;
     padding-top: $s-2;
   }
+}
+
+.inputs-wrapper {
+  grid-column: 1 / span 2;
 }

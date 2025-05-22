@@ -30,17 +30,31 @@
     }
   }
   .flex-layout-menu {
+    display: grid;
+    grid-template-columns: repeat(8, var(--sp-xxxl));
+    gap: var(--sp-xs);
     margin-bottom: $s-8;
+
     .first-row {
-      display: flex;
-      gap: $s-4;
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: subgrid;
       margin-bottom: $s-12;
       margin-top: $s-4;
+
+      .align-row {
+        grid-column: span 3;
+      }
+
+      .direction-row-flex {
+        grid-column: span 4;
+      }
+
       .wrap-button {
         @extend .button-tertiary;
         border-radius: $br-8;
         height: $s-32;
-        width: $s-28;
+        width: $s-32;
         svg {
           @extend .button-icon;
           stroke: var(--icon-foreground);
@@ -52,12 +66,25 @@
     }
     .second-row,
     .third-row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: subgrid;
       margin-bottom: $s-12;
+
+      .align-content-row,
+      .justify-content-row {
+        grid-column: span 6;
+      }
     }
     .forth-row {
-      @include flexColumn;
+      display: grid;
+      --input-width: calc(var(--sp-xxxl) * 3.5 + 3 * var(--sp-xs) - var(--sp-xs) / 2);
+      grid-template-columns: var(--input-width) var(--input-width) var(--sp-xxxl);
+      gap: var(--sp-xs);
+      grid-column: 1 / -1;
     }
     .help-button-wrapper {
+      grid-column: 1 / -1;
       display: flex;
       flex-direction: row;
       justify-content: space-between;
@@ -66,12 +93,12 @@
 }
 
 .gap-group {
-  display: flex;
-  gap: $s-4;
+  grid-column: span 3;
+  display: grid;
+  grid-template-columns: subgrid;
   .column-gap {
     @extend .input-element;
     @include bodySmallTypography;
-    width: $s-108;
     &.disabled {
       @extend .disabled-input;
     }
@@ -79,7 +106,6 @@
   .row-gap {
     @extend .input-element;
     @include bodySmallTypography;
-    width: $s-108;
     &.disabled {
       @extend .disabled-input;
     }
@@ -87,41 +113,43 @@
 }
 
 .padding-group {
-  display: flex;
-  gap: $s-4;
+  display: grid;
+  grid-column: span 3;
+  grid-template-columns: subgrid;
 
   .padding-inputs {
-    display: flex;
-    gap: $s-4;
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: subgrid;
   }
 
   .paddings-simple {
-    display: flex;
-    gap: $s-4;
+    display: grid;
+    grid-column: span 2;
+    grid-template-columns: subgrid;
 
     .padding-simple {
       @extend .input-element;
       @include bodySmallTypography;
-      max-width: $s-108;
     }
   }
 
   .paddings-multiple {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: $s-4;
+    grid-column: span 2;
+    grid-template-columns: subgrid;
+    gap: var(--sp-xs);
 
     .padding-multiple {
       @extend .input-element;
       @include bodySmallTypography;
-      max-width: $s-108;
     }
   }
 
   .padding-toggle {
     @extend .button-tertiary;
     height: $s-32;
-    width: $s-28;
+    width: $s-32;
     border-radius: $br-8;
     svg {
       @extend .button-icon;
@@ -134,22 +162,30 @@
 }
 
 .grid-layout-menu {
-  @include flexColumn;
-  gap: $s-8;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  gap: var(--sp-xs);
 
-  .row {
-    @include flexRow;
+  .edit-grid-wrapper,
+  .first-row,
+  .grid-layout-align,
+  .gap-row,
+  .padding-row {
+    grid-column: 1 / -1;
   }
 
   .first-row {
     margin-bottom: $s-8;
+    display: grid;
+    grid-template-columns: subgrid;
   }
 
   .grid-layout-align {
-    @include flexColumn;
-    gap: $s-4;
+    display: grid;
+    grid-template-columns: subgrid;
     align-items: flex-start;
     position: relative;
+    gap: var(--sp-xs);
 
     .locate-button {
       position: absolute;
@@ -169,6 +205,7 @@
     @include uppercaseTitleTipography;
     width: 100%;
     padding: $s-8;
+    grid-column: span 7;
   }
 
   .exit-btn {
@@ -193,7 +230,8 @@
   }
 
   .edit-grid-wrapper {
-    @include flexRow;
+    display: grid;
+    grid-template-columns: subgrid;
   }
 }
 
@@ -323,4 +361,24 @@
       background: var(--color-background-quaternary);
     }
   }
+}
+
+.direction-edit {
+  grid-column: span 2;
+}
+
+.align-grid-row {
+  grid-column: span 3;
+}
+
+.justify-grid-row {
+  grid-column: 1 / span 6;
+}
+
+.gap-row,
+.padding-row {
+  display: grid;
+  --input-width: calc(var(--sp-xxxl) * 3.5 + 3 * var(--sp-xs) - var(--sp-xs) / 2);
+  grid-template-columns: var(--input-width) var(--input-width) var(--sp-xxxl);
+  gap: var(--sp-xs);
 }

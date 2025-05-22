@@ -196,7 +196,8 @@
                                :on-change on-update-offset-y
                                :value (:offset-y shadow)}]]
 
-          [:> color-row* {:color (:color shadow)
+          [:> color-row* {:class (stl/css :shadow-color)
+                          :color (:color shadow)
                           :title (tr "workspace.options.shadow-options.color")
                           :disable-gradient true
                           :disable-image true

@@ -4,6 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@import "../../ds/_sizes.scss";
 @import "refactor/common-refactor.scss";
 
 .tool-window {
@@ -29,7 +30,7 @@
   flex-direction: column;
   gap: $s-8;
   width: 100%;
-  height: calc(100vh - $s-80);
+  height: calc(100vh - $sz-88);
   padding-top: $s-8;
 }
 
