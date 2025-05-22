@@ -18,9 +18,10 @@
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.text-content :as cttc]
+   [app.common.types.text :as cttx]
    [app.common.types.token :as ctt]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [clojure.set :as set]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
@@ -535,8 +536,6 @@
   indicating if shape is touched or not."
   [shape attr val & {:keys [ignore-touched ignore-geometry]}]
   (let [group        (get ctk/sync-attrs attr)
-        token-groups (when (= attr :applied-tokens)
-                       (get-token-groups shape val))
         shape-val    (get shape attr)
 
         ignore?
@@ -566,23 +565,21 @@
           (gsh/close-attrs? attr val shape-val 1)
           (gsh/close-attrs? attr val shape-val))
 
-        group-not-equal? (and group (not equal?))
-
         touched?
-        (and group-not-equal? (not (and ignore-geometry is-geometry?)))
+        (and group
+             (not equal?)
+             (not (and ignore-geometry is-geometry?)))
 
-        content-diff (when (and (= (:type shape) :text) (= attr :content))
-                       (cttc/text-content-diff (:content shape) val))
+        content-diff-type (when (and (= (:type shape) :text) (= attr :content))
+                            (cttx/get-diff-type (:content shape) val))
 
-        groups (cond->> (d/nilv token-groups #{})
-                 group-not-equal?
-                 (cons group)
+        token-groups (if (= attr :applied-tokens)
+                       (get-token-groups shape val)
+                       #{})
 
-                 (and group-not-equal? (contains? content-diff :text))
-                 (cons :text-content-text)
-
-                 (and group-not-equal? (contains? content-diff :attribute))
-                 (cons :text-content-attribute))]
+        groups (cond-> token-groups
+                 (and group (not equal?))
+                 (set/union #{group} content-diff-type))]
     (cond-> shape
       ;; Depending on the origin of the attribute change, we need or not to
       ;; set the "touched" flag for the group the attribute belongs to.

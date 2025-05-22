@@ -299,7 +299,6 @@
                                  (ctkl/get-component (:data component-file) (:component-id head-shape) include-deleted?))]
             (when (some? component)
               (get-ref-shape (:data component-file) component shape :with-context? with-context?))))]
-
     (some find-ref-shape-in-head (ctn/get-parent-heads (:objects container) shape))))
 
 (defn advance-shape-ref
