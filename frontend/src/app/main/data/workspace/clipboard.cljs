@@ -902,13 +902,27 @@
               undo-id      (js/Symbol)]
 
           (rx/concat
-           (->> (filter ctc/instance-head? orig-shapes)
-                (map (fn [{:keys [component-file]}]
-                       (ptk/event ::ev/event
-                                  {::ev/name "use-library-component"
-                                   ::ev/origin "paste"
-                                   :external-library (not= file-id component-file)})))
-                (rx/from))
+           (->> orig-shapes
+                (keep (fn [shape]
+
+                        (if (ctc/instance-head? shape)
+                          (ptk/event ::ev/event
+                                     {::ev/name "use-library-component"
+                                      ::ev/origin "paste"
+                                      :external-library (not= file-id (:component-file shape))
+                                      :parent-type (ev/get-shape-type all-objects (:parent-id shape))})
+                          (when (ev/get-shape-event-name shape)
+                            (if (ev/frame-has-layout all-objects (:parent-id shape))
+                              (ptk/event ::ev/event
+                                         {::ev/name "layout-add-element"
+                                          :element-type (:type shape)
+                                          :source "paste"
+                                          :parent-type (ev/get-shape-type all-objects (:parent-id shape))})
+                              (ptk/event ::ev/event
+                                         {::ev/name (ev/get-shape-event-name shape)
+                                          :parent-type (ev/get-shape-type all-objects (:parent-id shape))
+                                          :source "paste"})))))))
+
            (rx/of (dwu/start-undo-transaction undo-id)
                   (dch/commit-changes changes)
                   (dws/select-shapes selected)

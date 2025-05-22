@@ -28,6 +28,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.modifiers :as dwm]
@@ -1083,9 +1084,21 @@
                          ids
                          :cell cell))]
 
-        (when (and (some? frame-id) (d/not-empty? changes))
-          (rx/of (dch/commit-changes changes)
-                 (dwc/expand-collapse frame-id)))))))
+        (rx/concat
+         (let [shapes  (mapv #(get objects %) ids)
+               moved-count (count (filter #(not= (:parent-id %) frame-id) shapes))
+               emit-layout-event? (and (ev/frame-has-layout objects frame-id)
+                                       (pos? moved-count))]
+           (when emit-layout-event?
+             (rx/of (ptk/event ::ev/event
+                               {::ev/name "layout-add-element"
+                                :source "move-shapes-to-frame"
+                                :element-type (ev/get-selected-type objects ids)
+                                :moved moved-count}))))
+
+         (when (and (some? frame-id) (d/not-empty? changes))
+           (rx/of (dch/commit-changes changes)
+                  (dwc/expand-collapse frame-id))))))))
 
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the

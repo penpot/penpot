@@ -480,12 +480,23 @@
                 undo-id         (js/Symbol)]
             (rx/concat
              (->> (map (d/getf objects) ids)
-                  (filter ctk/instance-head?)
-                  (map (fn [{:keys [component-file]}]
-                         (ptk/event ::ev/event
-                                    {::ev/name "use-library-component"
-                                     ::ev/origin "duplicate"
-                                     :external-library (not= file-id component-file)})))
+                  (keep (fn [shape]
+                          (if (ctk/instance-head? shape)
+                            (ptk/event ::ev/event
+                                       {::ev/name "use-library-component"
+                                        ::ev/origin "duplicate"
+                                        :parent-type (ev/get-shape-type objects (:parent-id shape))
+                                        :external-library (not= file-id (:component-file shape))})
+                            (when-let [event-name (ev/get-shape-event-name shape)]
+                              (if (ev/frame-has-layout objects (:parent-id shape))
+                                (ptk/event ::ev/event
+                                           {::ev/name "layout-add-element"
+                                            :element-type (:type shape)
+                                            :source "duplicate"})
+                                (ptk/event ::ev/event
+                                           {::ev/name event-name
+                                            :parent-type (ev/get-shape-type objects (:parent-id shape))
+                                            :source "duplicate"}))))))
                   (rx/from))
             ;; Warning: This order is important for the focus mode.
              (->> (rx/of
