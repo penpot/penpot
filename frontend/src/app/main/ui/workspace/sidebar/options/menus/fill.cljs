@@ -44,7 +44,7 @@
 
 (mf/defc fill-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values"]))]}
-  [{:keys [ids type values disable-remove?] :as props}]
+  [{:keys [ids type values] :as props}]
   (let [label (case type
                 :multiple (tr "workspace.options.selection-fill")
                 :group (tr "workspace.options.group-fill")
@@ -146,7 +146,7 @@
                      :title        label
                      :class        (stl/css-case :title-spacing-fill (not has-fills?))}
 
-       (when (and (not disable-remove?) (not (= :multiple fills)))
+       (when (not (= :multiple fills))
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "workspace.options.fill.add-fill")
                            :on-click on-add

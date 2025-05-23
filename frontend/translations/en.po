@@ -5608,7 +5608,7 @@ msgstr "Fill"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:151
 msgid "workspace.options.fill.add-fill"
-msgstr "Add fill color"
+msgstr "Add fill"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:164
 msgid "workspace.options.fill.remove-fill"

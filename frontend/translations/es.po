@@ -5642,7 +5642,7 @@ msgstr "Relleno"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:151
 msgid "workspace.options.fill.add-fill"
-msgstr "Añadir color de relleno"
+msgstr "Añadir relleno"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:164
 msgid "workspace.options.fill.remove-fill"
