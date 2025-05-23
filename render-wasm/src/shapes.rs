@@ -549,8 +549,8 @@ impl Shape {
     }
 
     pub fn visually_insignificant(&self, scale: f32) -> bool {
-        self.selrect.width() * scale < MIN_VISIBLE_SIZE
-            || self.selrect.height() * scale < MIN_VISIBLE_SIZE
+        let extrect = self.extrect();
+        extrect.width() * scale < MIN_VISIBLE_SIZE || extrect.height() * scale < MIN_VISIBLE_SIZE
     }
 
     pub fn should_use_antialias(&self, scale: f32) -> bool {
@@ -585,7 +585,32 @@ impl Shape {
     }
 
     pub fn extrect(&self) -> math::Rect {
-        let mut rect = self.bounds().to_rect();
+        let mut max_stroke: f32 = 0.;
+        for stroke in self.strokes.iter() {
+            let width = match stroke.kind {
+                StrokeKind::Inner => 0.,
+                StrokeKind::Center => stroke.width / 2.,
+                StrokeKind::Outer => stroke.width,
+            };
+            max_stroke = max_stroke.max(width);
+        }
+
+        let mut rect = if let Some(path) = self.get_skia_path() {
+            path
+                .compute_tight_bounds()
+                .with_outset((max_stroke, max_stroke))
+        } else {
+            let mut bounds_rect = self.bounds().to_rect();
+            let mut stroke_rect = bounds_rect;
+            stroke_rect.left -= max_stroke;
+            stroke_rect.right += max_stroke;
+            stroke_rect.top -= max_stroke;
+            stroke_rect.bottom += max_stroke;
+
+            bounds_rect.join(stroke_rect);
+            bounds_rect
+        };
+
         for shadow in self.shadows.iter() {
             let (x, y) = shadow.offset;
             let mut shadow_rect = rect;
@@ -601,6 +626,7 @@ impl Shape {
 
             rect.join(shadow_rect);
         }
+
         if self.blur.blur_type != blurs::BlurType::None {
             rect.left -= self.blur.value;
             rect.top -= self.blur.value;
