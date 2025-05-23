@@ -107,8 +107,8 @@
      (add-new-props assigned remaining))))
 
 
-(defn properties-map->string
-  "Transforms a map of properties to a string of properties omitting the empty ones"
+(defn properties-map->formula
+  "Transforms a map of properties to a formula of properties omitting the empty ones"
   [properties]
   (->> properties
        (keep (fn [{:keys [name value]}]
@@ -117,22 +117,24 @@
        (str/join ", ")))
 
 
-(defn properties-string->map
-  "Transforms a string of properties to a map of properties"
+(defn properties-formula->map
+  "Transforms a formula of properties to a map of properties"
   [s]
   (->> (str/split s ",")
-       (mapv #(str/split % "="))
-       (filter (fn [[_ v]] (not (str/blank? (str/trim v)))))
+       (mapv #(str/split % "=" 2))
+       (filter (fn [[_ v]] (not (str/blank? v))))
        (mapv (fn [[k v]]
                {:name (str/trim k)
                 :value (str/trim v)}))))
 
 
-(defn valid-properties-string?
-  "Checks if a string of properties has a processable format or not"
+(defn valid-properties-formula?
+  "Checks if a formula is valid"
   [s]
-  (let [pattern #"^\s*([a-zA-Z0-9_ -]+=[^,]*)(,\s*[a-zA-Z0-9_ -]+=[^,]*)*\s*$"]
-    (not (nil? (re-matches pattern s)))))
+  (->> (str/split s ",")
+       (mapv #(str/split % "=" 2))
+       (every? #(and (= 2 (count %))
+                     (not (str/blank? (first %)))))))
 
 
 (defn find-properties-to-remove

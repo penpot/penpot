@@ -46,7 +46,7 @@
                            shape-name)
 
         default-value    (if variant-id
-                           (or variant-error (ctv/properties-map->string variant-properties))
+                           (or variant-error (ctv/properties-map->formula variant-properties))
                            shape-name)
 
         has-path?        (str/includes? shape-name "/")
@@ -70,8 +70,8 @@
              (on-stop-edit)
              (reset! edition* false)
              (if variant-name
-               (if (ctv/valid-properties-string? name)
-                 (st/emit! (dwv/update-properties-names-and-values component-id variant-id variant-properties (ctv/properties-string->map name))
+               (if (ctv/valid-properties-formula? name)
+                 (st/emit! (dwv/update-properties-names-and-values component-id variant-id variant-properties (ctv/properties-formula->map name))
                            (dwv/update-error component-id nil))
                  (st/emit! (dwv/update-properties-names-and-values component-id variant-id variant-properties {})
                            (dwv/update-error component-id name)))
