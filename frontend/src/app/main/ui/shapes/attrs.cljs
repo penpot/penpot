@@ -66,6 +66,8 @@
   ([attrs fill-data render-id index type]
    (add-fill! attrs fill-data render-id index type "none"))
   ([attrs fill-data render-id index type fill-default]
+   ;; TODO: check for MAX-FILLS
+   (js/console.log "add_fill!" (clj->js fill-data))
    (let [index (if (some? index) (dm/str "-" index) "")]
      (cond
        (contains? fill-data :fill-image)

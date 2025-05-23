@@ -10,6 +10,7 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.types.color :as ctc]
+   [app.common.types.shape :as shp]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
@@ -54,7 +55,7 @@
         values               (d/without-nils values)
         fills                (:fills values)
         has-fills?           (or (= :multiple fills) (some? (seq fills)))
-
+        can-add-fills?       (and (not (= :multiple fills)) (< (count fills) shp/MAX-FILLS))
 
         state*               (mf/use-state has-fills?)
         open?                (deref state*)
@@ -73,12 +74,12 @@
         (mf/use-fn
          (mf/deps ids fills)
          (fn [_]
-           (st/emit! (dc/add-fill ids {:color default-color
-                                       :opacity 1}))
-
-           (when (or (= :multiple fills)
-                     (not (some? (seq fills))))
-             (open-content))))
+           (when can-add-fills?
+             (st/emit! (dc/add-fill ids {:color default-color
+                                         :opacity 1}))
+             (when (or (= :multiple fills)
+                       (not (some? (seq fills))))
+               (open-content)))))
 
         on-change
         (fn [index]
@@ -151,6 +152,7 @@
                            :aria-label (tr "workspace.options.fill.add-fill")
                            :on-click on-add
                            :data-testid "add-fill"
+                           :disabled (not can-add-fills?)
                            :icon "add"}])]]
 
      (when open?

@@ -222,7 +222,6 @@
                    (update :fills #(into [attrs] %))))
              undo-id
              (js/Symbol)]
-
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id))
           (transform-fill state ids color change-fn options)

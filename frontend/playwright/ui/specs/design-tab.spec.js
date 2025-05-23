@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, describe } from "@playwright/test";
 import { WorkspacePage } from "../pages/WorkspacePage";
 
 test.beforeEach(async ({ page }) => {
@@ -38,7 +38,7 @@ const setupFileWithMultipeAttributes = async (workspace) => {
   );
 };
 
-test.describe("Constraints", () => {
+describe("Constraints", () => {
   test("Constraint dropdown shows 'Mixed' when multiple layers are selected with different constraints", async ({
     page,
   }) => {
@@ -66,7 +66,25 @@ test.describe("Constraints", () => {
   });
 });
 
-test.describe("Multiple shapes attributes", () => {
+describe("Shape attributes", () => {
+  test("Cannot add a new fill when the limit has been reached", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+
+    await workspace.goToWorkspace({
+      fileId: "b3e5731a-c295-801d-8006-3fc33c3b1b13",
+      pageId: "b3e5731a-c295-801d-8006-3fc33c3b1b14",
+    });
+
+    await workspace.clickLeafLayer("Rectangle");
+
+    expect(false);
+  });
+});
+
+describe("Multiple shapes attributes", () => {
   test("User selects multiple shapes with sames fills, strokes, shadows and blur", async ({
     page,
   }) => {
