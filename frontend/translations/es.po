@@ -7281,6 +7281,10 @@ msgstr "La importación se ha realizado correctamente pero se omitieron algunos 
 msgid "workspace.tokens.unknown-token-type-section"
 msgstr "El tipo '%s' no está soportado (%s)\n"
 
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.tokens.add-token"
+msgstr "Añadir Token: %s"
+
 #: src/app/main/ui/workspace/sidebar.cljs:137, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Recursos"

@@ -420,6 +420,7 @@
             {:value (-> data :opacity opacity->string)
              :on-change handle-change-gradient-opacity
              :default 100
+             :data-testid "opacity-global-input"
              :min 0
              :max 100}]])
 

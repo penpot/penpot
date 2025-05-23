@@ -18,7 +18,7 @@ test("User haven't toolbar", async ({ page }) => {
 });
 
 test("User haven't edition menu entries", async ({ page }) => {
-  await page.getByTitle("main menu").click();
+  await page.getByRole("button", { name: "Main menu" }).click();
   await page.getByText("file").last().click();
 
   await expect(page.getByText("Add as Shared Library")).toBeHidden();
