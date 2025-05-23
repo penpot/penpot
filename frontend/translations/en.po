@@ -5312,20 +5312,32 @@ msgid "workspace.options.component.variant"
 msgstr "Variant"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
-msgid "workspace.options.component.variant.malformed.locate"
+msgid "workspace.options.component.variant.malformed.group.locate"
 msgstr "Locate invalid variants"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
-msgid "workspace.options.component.variant.malformed.multi"
+msgid "workspace.options.component.variant.malformed.group.title"
 msgstr "Some variants have invalid names"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
-msgid "workspace.options.component.variant.malformed.single"
-msgstr "This variant has an invalid name. Try using the following structure:"
+msgid "workspace.options.component.variant.malformed.single.all"
+msgstr "These variants have invalid names."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.malformed.single.one"
+msgstr "This variant has an invalid name."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.malformed.single.some"
+msgstr "Some of these variants have invalid names."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:311
-msgid "workspace.options.component.variant.malformed.structure"
+msgid "workspace.options.component.variant.malformed.structure.example"
 msgstr "[property]=[value], [property]=[value]"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.malformed.structure.title"
+msgstr "Try using the following structure:"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
 msgid "workspace.options.constraints"
