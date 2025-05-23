@@ -13,8 +13,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc option*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [id label icon aria-label on-click selected set-ref focused] :rest props}]
 
   [:> :li {:value id

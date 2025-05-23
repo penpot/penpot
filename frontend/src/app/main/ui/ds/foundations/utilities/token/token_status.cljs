@@ -18,8 +18,7 @@
    [:icon-id [:and :string [:fn #(contains? token-status-list %)]]]])
 
 (mf/defc token-status-icon*
-  {::mf/props :obj
-   ::mf/schema schema:token-status-icon}
+  {::mf/schema schema:token-status-icon}
   [{:keys [icon-id class] :rest props}]
   (let [class (dm/str (or class "") " " (stl/css :token-icon))
         props (mf/spread-props props {:class class :width "14px" :height "14px"})

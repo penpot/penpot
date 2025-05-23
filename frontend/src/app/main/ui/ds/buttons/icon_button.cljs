@@ -24,8 +24,7 @@
     [:maybe [:enum "primary" "secondary" "ghost" "destructive" "action"]]]])
 
 (mf/defc icon-button*
-  {::mf/props :obj
-   ::mf/schema schema:icon-button}
+  {::mf/schema schema:icon-button}
   [{:keys [class icon icon-class variant aria-label children tooltip-id] :rest props}]
   (let [variant (or variant "primary")
         class (dm/str class " " (stl/css-case :icon-button true

@@ -33,8 +33,7 @@
    [:hint-type {:optional true} [:maybe [:enum "hint" "error" "warning"]]]])
 
 (mf/defc input*
-  {::mf/props :obj
-   ::mf/forward-ref true
+  {::mf/forward-ref true
    ::mf/schema schema:input}
   [{:keys [id class label is-optional type max-length variant hint-message hint-type] :rest props} ref]
   (let [id (or id (mf/use-id))

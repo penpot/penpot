@@ -17,8 +17,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc tab*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [selected icon label aria-label id on-ref] :rest props}]
   (let [class (stl/css-case :tab true
                             :selected selected)

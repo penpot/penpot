@@ -69,8 +69,7 @@
    [:on-change {:optional true} fn?]])
 
 (mf/defc select*
-  {::mf/props :obj
-   ::mf/schema schema:select}
+  {::mf/schema schema:select}
   [{:keys [options class disabled default-selected on-change] :rest props}]
   (let [open* (mf/use-state false)
         open  (deref open*)
