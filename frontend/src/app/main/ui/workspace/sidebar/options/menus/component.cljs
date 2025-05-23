@@ -886,7 +886,7 @@
         select-shape-with-error
         (mf/use-fn
          (mf/deps object-error-ids)
-         #(st/emit! (dw/select-shape (first object-error-ids))))]
+         #(st/emit! (dw/select-shapes (into (d/ordered-set) object-error-ids))))]
 
     (when (seq shapes)
       [:div {:class (stl/css :element-set)}
