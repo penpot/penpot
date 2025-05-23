@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-22 11:06+0000\n"
+"PO-Revision-Date: 2025-05-23 18:01+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -7375,3 +7375,31 @@ msgstr "Bija kļūda saistībā ar piebildi"
 #: src/app/main/errors.cljs:267
 msgid "errors.deprecated.contact.after"
 msgstr "lai mēs varētu palīdzēt."
+
+#: src/app/main/ui/settings/subscription.cljs:83, src/app/main/ui/settings/subscription.cljs:128
+msgid "subscription.settings.enterprise.support"
+msgstr "Mērķēts atbalsts"
+
+#: src/app/main/ui/settings/subscription.cljs:67, src/app/main/ui/settings/subscription.cljs:76, src/app/main/ui/settings/subscription.cljs:86
+msgid "subscription.settings.manage-your-subscription"
+msgstr "Pārvaldīt savu abonementu"
+
+#: src/app/main/ui/settings/subscription.cljs:96
+msgid "subscription.settings.member-since"
+msgstr "Penpot dalībnieks kopš %s"
+
+#: src/app/main/ui/settings/subscription.cljs:99
+msgid "subscription.settings.other-plans"
+msgstr "Citi Penpot plāni"
+
+#: src/app/main/ui/settings/subscription.cljs:103, src/app/main/ui/settings/subscription.cljs:114
+msgid "subscription.settings.price-editor-month"
+msgstr "redaktors mēnesī"
+
+#: src/app/main/ui/settings/subscription.cljs:126
+msgid "subscription.settings.price-organization-month"
+msgstr "apvienība mēnesī"
+
+#: src/app/main/ui/settings/subscription.cljs:84, src/app/main/ui/settings/subscription.cljs:129
+msgid "subscription.settings.enterprise.security"
+msgstr "Papildu drošība"
