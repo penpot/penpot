@@ -238,7 +238,7 @@
 
 (defn- get-variant-error-message [errors]
   (cond
-    (and (= (count errors) 1) (not (nil? (first errors))))
+    (and (= (count errors) 1) (some? (first errors)))
     (tr "workspace.options.component.variant.malformed.single.one")
 
     (and (seq errors) (every? some? errors))
