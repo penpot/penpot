@@ -71,11 +71,11 @@ function ptr8ToPtr32(ptr8) {
   return ptr8 >>> 2;
 }
 
-function allocBytes(size) {
+export function allocBytes(size) {
   return Module._alloc_bytes(size);
 }
 
-function getHeapU32() {
+export function getHeapU32() {
   return Module.HEAPU32;
 }
 
