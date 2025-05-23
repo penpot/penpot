@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-font-test
   (:require
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http :as http]
    [app.rpc :as-alias rpc]
@@ -144,7 +145,7 @@
       (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
-    (let [res (th/run-task! :objects-gc {:min-age 0})]
+    (let [res (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
       (t/is (= 2 (:processed res))))
 
     (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
@@ -204,7 +205,7 @@
       (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
-    (let [res (th/run-task! :objects-gc {:min-age 0})]
+    (let [res (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
       (t/is (= 1 (:processed res))))
 
     (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
@@ -263,7 +264,7 @@
       (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
-    (let [res (th/run-task! :objects-gc {:min-age 0})]
+    (let [res (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
       (t/is (= 1 (:processed res))))
 
     (let [res (th/run-task! :storage-gc-touched {:min-age 0})]

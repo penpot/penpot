@@ -12,7 +12,6 @@
    [app.common.exceptions :as ex]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.shapes-builder :as sb]
-   [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.media :as media]
    [app.common.schema :as sm]
@@ -273,20 +272,6 @@
              (rx/catch handle-media-error))))))
 
 ;; --- Upload File Media objects
-
-(defn load-and-parse-svg
-  "Load the contents of a media-obj of type svg, and parse it
-  into a clojure structure."
-  [media-obj]
-  (let [path (cf/resolve-file-media media-obj)]
-    (->> (http/send! {:method :get :uri path :mode :no-cors})
-         (rx/map :body)
-         (rx/map #(vector (:name media-obj) %))
-         (rx/merge-map svg->clj)
-         (rx/catch  ; When error downloading media-obj, skip it and continue with next one
-          #(log/error :msg (str "Error downloading " (:name media-obj) " from " path)
-                      :hint (ex-message %)
-                      :error %)))))
 
 (defn create-shapes-svg
   "Convert svg elements into penpot shapes."

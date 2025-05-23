@@ -222,7 +222,7 @@
   ([params]
    (mark-file-deleted* *system* params))
   ([conn {:keys [id] :as params}]
-   (#'files/mark-file-deleted conn id)))
+   (#'files/mark-file-deleted conn {} id)))
 
 (defn create-team*
   ([i params] (create-team* *system* i params))

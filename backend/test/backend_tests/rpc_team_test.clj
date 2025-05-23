@@ -8,6 +8,7 @@
   (:require
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http :as http]
    [app.rpc :as-alias rpc]
@@ -476,7 +477,7 @@
 
     ;; team is not deleted because it does not meet all
     ;; conditions to be deleted.
-    (let [result (th/run-task! :objects-gc {:min-age (dt/duration 0)})]
+    (let [result (th/run-task! :objects-gc {})]
       (t/is (= 0 (:processed result))))
 
     ;; query the list of teams
@@ -510,7 +511,7 @@
     (th/run-pending-tasks!)
 
     ;; run permanent deletion (should be noop)
-    (let [result (th/run-task! :objects-gc {:min-age (dt/duration {:minutes 1})})]
+    (let [result (th/run-task! :objects-gc {})]
       (t/is (= 0 (:processed result))))
 
     ;; query the list of projects after hard deletion
@@ -524,7 +525,7 @@
         (t/is (= :not-found (:type edata)))))
 
     ;; run permanent deletion
-    (let [result (th/run-task! :objects-gc {:min-age (dt/duration 0)})]
+    (let [result (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
       (t/is (= 2 (:processed result))))
 
     ;; query the list of projects of a after hard deletion
@@ -537,7 +538,6 @@
       (t/is (not (th/success? out)))
       (let [edata (-> out :error ex-data)]
         (t/is (= :not-found (:type edata)))))))
-
 
 (t/deftest team-deletion-2
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -581,7 +581,7 @@
       (t/is (= 1 (count rows)))
       (t/is (dt/instant? (:deleted-at (first rows)))))
 
-    (let [result (th/run-task! :objects-gc {:min-age 0})]
+    (let [result (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
       (t/is (= 5 (:processed result))))))
 
 (t/deftest create-team-access-request

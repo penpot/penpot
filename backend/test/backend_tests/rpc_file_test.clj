@@ -8,10 +8,10 @@
   (:require
    [app.common.features :as cfeat]
    [app.common.pprint :as pp]
-   [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.http :as http]
@@ -123,8 +123,27 @@
                   :components-v2 true}
             out (th/command! data)]
 
-        ;; (th/print-result! out)
 
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+
+        (let [result (:result out)]
+          (t/is (some? (:deleted-at result)))
+          (t/is (= file-id (:id result)))
+          (t/is (= "new name" (:name result)))
+          (t/is (= 1 (count (get-in result [:data :pages]))))
+          (t/is (nil? (:users result))))))
+
+    (th/db-update! :file
+                   {:deleted-at (dt/now)}
+                   {:id file-id})
+
+    (t/testing "query single file after delete and wait"
+      (let [data {::th/type :get-file
+                  ::rpc/profile-id (:id prof)
+                  :id file-id
+                  :components-v2 true}
+            out (th/command! data)]
         (let [error      (:error out)
               error-data (ex-data error)]
           (t/is (th/ex-info? error))
@@ -195,7 +214,7 @@
         (t/is (= 5 (count rows))))
 
       ;; The objects-gc should remove unused fragments
-      (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (let [res (th/run-task! :objects-gc {})]
         (t/is (= 3 (:processed res))))
 
       ;; Check the number of fragments
@@ -230,7 +249,7 @@
       (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
 
       ;; The objects-gc should remove unused fragments
-      (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (let [res (th/run-task! :objects-gc {})]
         (t/is (= 3 (:processed res))))
 
       ;; Check the number of fragments;
@@ -254,7 +273,7 @@
         (t/is (= 4 (count rows)))
         (t/is (= 2 (count (remove (comp some? :deleted-at) rows)))))
 
-      (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (let [res (th/run-task! :objects-gc {})]
         (t/is (= 2 (:processed res))))
 
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
@@ -355,7 +374,7 @@
         (t/is (= 2 (count rows)))
         (t/is (= 1 (count (remove (comp some? :deleted-at) rows)))))
 
-      (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (let [res (th/run-task! :objects-gc {})]
         (t/is (= 3 (:processed res))))
 
       ;; check file media objects
@@ -386,7 +405,7 @@
 
       ;; This only clears fragments, the file media objects still referenced because
       ;; snapshots are preserved
-      (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (let [res (th/run-task! :objects-gc {})]
         (t/is (= 2 (:processed res))))
 
       ;; Mark all snapshots to be a non-snapshot file change
@@ -395,7 +414,7 @@
 
       ;; Rerun the file-gc and objects-gc
       (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
-      (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (let [res (th/run-task! :objects-gc {})]
         (t/is (= 2 (:processed res))))
 
       ;; Now that file-gc have deleted the file-media-object usage,
@@ -508,7 +527,7 @@
       ;; run the task again
       (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
 
-      (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (let [res (th/run-task! :objects-gc {})]
         (t/is (= 2 (:processed res))))
 
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)
@@ -550,7 +569,7 @@
 
       ;; This only removes unused fragments, file media are still
       ;; referenced on snapshots.
-      (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (let [res (th/run-task! :objects-gc {})]
         (t/is (= 2 (:processed res))))
 
       ;; Mark all snapshots to be a non-snapshot file change
@@ -560,7 +579,7 @@
       ;; Rerun file-gc and objects-gc task for the same file once all snapshots are
       ;; "expired/deleted"
       (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
-      (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (let [res (th/run-task! :objects-gc {})]
         (t/is (= 6 (:processed res))))
 
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)
@@ -712,7 +731,7 @@
       ;; Now that file-gc have marked for deletion the object
       ;; thumbnail lets execute the objects-gc task which remove
       ;; the rows and mark as touched the storage object rows
-      (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (let [res (th/run-task! :objects-gc {})]
         (t/is (= 5 (:processed res))))
 
       ;; Now that objects-gc have deleted the object thumbnail lets
@@ -741,7 +760,7 @@
         (t/is (= 1 (count rows)))
         (t/is (= 0 (count (remove (comp some? :deleted-at) rows)))))
 
-      (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (let [res (th/run-task! :objects-gc {})]
         ;; (pp/pprint res)
         (t/is (= 3 (:processed res))))
 
@@ -876,7 +895,7 @@
                                      :profile-id (:id profile1)})]
     ;; file is not deleted because it does not meet all
     ;; conditions to be deleted.
-    (let [result (th/run-task! :objects-gc {:min-age 0})]
+    (let [result (th/run-task! :objects-gc {})]
       (t/is (= 0 (:processed result))))
 
     ;; query the list of files
@@ -907,7 +926,7 @@
         (t/is (= 0 (count result)))))
 
     ;; run permanent deletion (should be noop)
-    (let [result (th/run-task! :objects-gc {:min-age (dt/duration {:minutes 1})})]
+    (let [result (th/run-task! :objects-gc {})]
       (t/is (= 0 (:processed result))))
 
     ;; query the list of file libraries of a after hard deletion
@@ -921,7 +940,7 @@
         (t/is (= 0 (count result)))))
 
     ;; run permanent deletion
-    (let [result (th/run-task! :objects-gc {:min-age 0})]
+    (let [result (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
       (t/is (= 1 (:processed result))))
 
     ;; query the list of file libraries of a after hard deletion
@@ -1176,7 +1195,7 @@
         (t/is (= 2 (count rows)))
         (t/is (= 1 (count (remove :deleted-at rows)))))
 
-      (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (let [res (th/run-task! :objects-gc {})]
         (t/is (= 4 (:processed res))))
 
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
@@ -1232,7 +1251,7 @@
         (t/is (= 2 (count rows)))
         (t/is (= 1 (count (remove (comp some? :deleted-at) rows)))))
 
-      (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (let [res (th/run-task! :objects-gc {})]
         (t/is (= 2 (:processed res))))
 
       (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
@@ -1251,7 +1270,7 @@
     (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
 
       ;; Preventive objects-gc
-    (let [result (th/run-task! :objects-gc {:min-age 0})]
+    (let [result (th/run-task! :objects-gc {})]
       (t/is (= 1 (:processed result))))
 
       ;; Check the number of fragments before adding the page
@@ -1272,7 +1291,7 @@
       (th/run-pending-tasks!))
 
       ;; Clean objects after file-gc
-    (let [result (th/run-task! :objects-gc {:min-age 0})]
+    (let [result (th/run-task! :objects-gc {})]
       (t/is (= 1 (:processed result))))
 
       ;; Check the number of fragments before adding the page
@@ -1324,7 +1343,7 @@
     (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
 
       ;; The objects-gc should remove unused fragments
-    (let [res (th/run-task! :objects-gc {:min-age 0})]
+    (let [res (th/run-task! :objects-gc {})]
       (t/is (= 2 (:processed res))))
 
       ;; Check the number of fragments before adding the page
@@ -1821,8 +1840,7 @@
       (t/is (= (:id file-2) (:file-id (get rows 1))))
       (t/is (nil? (:deleted-at (get rows 1)))))
 
-    (th/run-task! :objects-gc
-                  {:min-age 0})
+    (th/run-task! :objects-gc {})
 
     (let [rows (th/db-exec! ["SELECT * FROM file_media_object ORDER BY created_at ASC"])]
       (t/is (= 1 (count rows)))

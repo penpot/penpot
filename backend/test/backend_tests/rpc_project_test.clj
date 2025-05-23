@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-project-test
   (:require
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http :as http]
    [app.rpc :as-alias rpc]
@@ -178,7 +179,7 @@
 
     ;; project is not deleted because it does not meet all
     ;; conditions to be deleted.
-    (let [result (th/run-task! :objects-gc {:min-age 0})]
+    (let [result (th/run-task! :objects-gc {})]
       (t/is (= 0 (:processed result))))
 
     ;; query the list of projects
@@ -210,7 +211,7 @@
         (t/is (= 1 (count result)))))
 
     ;; run permanent deletion (should be noop)
-    (let [result (th/run-task! :objects-gc {:min-age (dt/duration {:minutes 1})})]
+    (let [result (th/run-task! :objects-gc {})]
       (t/is (= 0 (:processed result))))
 
     ;; query the list of files of a after soft deletion
@@ -224,7 +225,7 @@
         (t/is (= 0 (count result)))))
 
     ;; run permanent deletion
-    (let [result (th/run-task! :objects-gc {:min-age 0})]
+    (let [result (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
       (t/is (= 1 (:processed result))))
 
     ;; query the list of files of a after hard deletion
