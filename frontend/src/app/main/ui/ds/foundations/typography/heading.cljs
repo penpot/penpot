@@ -26,8 +26,7 @@
    [:typography [:and :string [:fn #(valid-typography? (dm/str %))]]]])
 
 (mf/defc heading*
-  {::mf/props :obj
-   ::mf/schema schema:heading}
+  {::mf/schema schema:heading}
   [{:keys [level typography class children] :rest props}]
 
   (let [level (or level "1")

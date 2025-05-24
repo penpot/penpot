@@ -62,8 +62,7 @@
    [:has-error {:optional true} :boolean]])
 
 (mf/defc combobox*
-  {::mf/props :obj
-   ::mf/schema schema:combobox}
+  {::mf/schema schema:combobox}
   [{:keys [id options class placeholder disabled has-error default-selected max-length on-change] :rest props}]
   (let [is-open*        (mf/use-state false)
         is-open         (deref is-open*)

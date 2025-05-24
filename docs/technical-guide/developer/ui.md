@@ -36,7 +36,6 @@ We want to hold our UI code to the same quality standards of the rest of the cod
 
 ```clojure
 (mf/defc primary-button*
-  {::mf/props :obj}
   [{:keys [children] :rest props}]
   [:> "button" props children])
 ```
@@ -69,7 +68,6 @@ For instance, here the user would be in total control of the <code class="langua
 
 ```clojure
 (mf/defc button*
-  {::mf/props :obj}
   [{:keys [icon children] :rest props}]
   [:> "button" props
      icon
@@ -80,7 +78,6 @@ However, we might want to control the aspect of the icons, or limit which icons 
 
 ```clojure
 (mf/defc button*
-  {::mf/props :obj}
   [{:keys [icon children] :rest props}]
   (assert (or (nil? icon) (contains? valid-icon-list icon) "expected valid icon id"))
   [:> "button" props
@@ -116,7 +113,6 @@ This is achieved by accepting a <code class="language-clojure">class</code> prop
 
 ```clojure
 (mf/defc button*
-  {::mf/props :obj}
   [{:keys [children class] :rest props}]
   (let [class (dm/str class " " (stl/css :primary-button))
     props (mf/spread-props props {:class class})]
@@ -131,7 +127,6 @@ Nested styles for DOM elements that are not instantiated by our component should
 
 ```clojure
 (mf/defc button*
-  {::mf/props :obj}
   [{:keys [children] :rest props}]
   (let  [props (mf/spread-props props {:class (stl/css :primary-button)})]
     ;; note that we are NOT instantiating a <svg> here.
@@ -156,7 +151,6 @@ Nested styles for DOM elements that are not instantiated by our component should
 
 ```clojure
 (mf/defc button*
-  {::mf/props :obj}
   [{:keys [icon children class] :rest props}]
   (let [props (mf/spread-props props {:class (stl/css :button)})]
     [:> "button" props
@@ -404,7 +398,7 @@ Please refer to the [Rumext User Guide](https://funcool.github.io/rumext/latest/
 
 Some things to have in mind:
 
-- When you want to use JavaScript props, use the meta <code class="language-clojure">{::mf/props :obj}</code>. In this case, avoid using <code class="language-clojure">?</code> for boolean props, since they don't get a clean translation to JavaScript.
+- Avoid using <code class="language-clojure">?</code> for boolean props, since they don't get a clean translation to JavaScript.
 - You can use type hints such as <code class="language-clojure">^boolean</code> to get JS semantics.
 - Split big components into smaller ones. You can mark components as private with the <code class="language-clojure">::mf/private true</code> meta.
 
@@ -422,7 +416,6 @@ We just need to use `:rest ` when declaring the component props.
 
 ```clojure
 (mf/defc button*
-  {::mf/props :obj}
   [{:keys [children] :rest other}]
   [:> "button" other children])
 ```
@@ -431,7 +424,6 @@ If we need to augment this props object, we can use <code class="language-clojur
 
 ```clojure
 (mf/defc button*
-  {::mf/props :obj}
   [{:keys [children class] :rest props}]
   (let [class (dm/str class " " (stl/css :button))
         props (mf/spread-props props {:class class})]
@@ -456,7 +448,6 @@ It's faster to use a JS Object for props instead of a native Clojure map, becaus
 
 ```clojure
 (mf/defc icon*
-  {::mf/props :obj}
   [props]
   ;; ...
   )
@@ -488,7 +479,6 @@ This creates a brand new function every render. Instead, create the function on 
  )
 
 (mf/defc login-button
-  {::mf/props :obj}
   []
   [:button {:on-click login} "Login"])
 
@@ -502,7 +492,6 @@ When we do this inside of a component, a brand new function is created in every 
 
 ```clojure
 (mf/defc login-button
-  {::mf/props :obj}
   []
   (let [click-handler (fn []
                        ;; ...
@@ -518,7 +507,6 @@ When we do this inside of a component, a brand new function is created in every 
  )
 
 (mf/defc login-button
-  {::mf/props :obj}
   []
   [:button {:on-click login} "Login"])
 ```
@@ -585,7 +573,6 @@ Often we need to access values from props. It's best if we destructure them (bec
 
 ```clojure
 (defc icon
-  {::mf/props :obj}
   [{:keys [size img] :as props]
   [:svg {:width size
          :height size
@@ -598,7 +585,6 @@ Often we need to access values from props. It's best if we destructure them (bec
 
 ```clojure
 (defc icon
-  {::mf/props :obj}
   [props]
   [:svg {:width (unchecked-get props "size")
          :height (unchecked-get props "size")
@@ -615,7 +601,6 @@ We can avoid multiple calls to <code class="language-clojure">(deref)</code> if 
 
 ```clojure
 (defc accordion
-  {::mf/props :obj}
   [{:keys [^boolean default-open title children] :as props]
 
   (let [

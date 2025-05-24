@@ -34,8 +34,7 @@
    [:on-toggle-detail {:optional true} [:maybe fn?]]])
 
 (mf/defc notification-pill*
-  {::mf/props :obj
-   ::mf/schema schema:notification-pill}
+  {::mf/schema schema:notification-pill}
   [{:keys [level type is-html appearance detail children show-detail on-toggle-detail]}]
   (let [class (stl/css-case :appearance-neutral (= appearance :neutral)
                             :appearance-ghost (= appearance :ghost)

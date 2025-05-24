@@ -38,8 +38,7 @@
    [:onKeyDownInput {:optional true} [:maybe [:fn fn?]]]])
 
 (mf/defc user-milestone*
-  {::mf/props :obj
-   ::mf/schema schema:milestone}
+  {::mf/schema schema:milestone}
   [{:keys [class active editing user label date
            onOpenMenu onFocusInput onBlurInput onKeyDownInput] :rest props}]
   (let [class (d/append-class class (stl/css-case :milestone true :is-selected active))

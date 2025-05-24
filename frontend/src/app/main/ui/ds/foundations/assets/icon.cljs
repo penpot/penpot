@@ -300,8 +300,7 @@
     [:maybe [:enum "s" "m"]]]])
 
 (mf/defc icon*
-  {::mf/props :obj
-   ::mf/schema schema:icon}
+  {::mf/schema schema:icon}
   [{:keys [icon-id size class] :rest props}]
   (let [class (dm/str (or class "") " " (stl/css :icon))
         props (mf/spread-props props {:class class :width icon-size-m :height icon-size-m})

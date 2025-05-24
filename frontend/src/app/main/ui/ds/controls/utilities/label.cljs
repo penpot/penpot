@@ -17,8 +17,7 @@
    [:class {:optional true} :string]])
 
 (mf/defc label*
-  {::mf/props :obj
-   ::mf/schema schema::label}
+  {::mf/schema schema::label}
   [{:keys [class for is-optional children] :rest props}]
   (let [is-optional (or is-optional false)
         props (mf/spread-props props {:class (dm/str class " " (stl/css :label))

@@ -20,8 +20,7 @@
    [:on-blur {:optional true} fn?]])
 
 (mf/defc input-with-meta*
-  {::mf/props :obj
-   ::mf/schema schema:input-with-meta}
+  {::mf/schema schema:input-with-meta}
   [{:keys [value meta on-blur] :rest props}]
   (let [editing*  (mf/use-state false)
         editing?  (deref editing*)

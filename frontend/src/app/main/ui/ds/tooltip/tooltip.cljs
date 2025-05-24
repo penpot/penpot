@@ -116,8 +116,7 @@
     [:maybe [:enum "top" "bottom" "left" "right" "top-right" "bottom-right" "bottom-left" "top-left"]]]])
 
 (mf/defc tooltip*
-  {::mf/props :obj
-   ::mf/schema schema:tooltip}
+  {::mf/schema schema:tooltip}
   [{:keys [class id children tooltip-content placement offset delay] :rest props}]
   (let [placement* (mf/use-state #(d/nilv placement "top"))
         placement  (deref placement*)

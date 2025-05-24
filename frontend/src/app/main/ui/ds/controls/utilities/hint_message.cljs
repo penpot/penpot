@@ -19,8 +19,7 @@
    [:class {:optional true} :string]])
 
 (mf/defc hint-message*
-  {::mf/props :obj
-   ::mf/schema schema::hint-message}
+  {::mf/schema schema::hint-message}
   [{:keys [id class message type] :rest props}]
   (let [type (d/nilv type :hint)]
     [:> "div" {:class (dm/str class " " (stl/css-case

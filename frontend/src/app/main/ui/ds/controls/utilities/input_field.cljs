@@ -30,8 +30,7 @@
    [:slot-end {:optional true} [:maybe some?]]])
 
 (mf/defc input-field*
-  {::mf/props :obj
-   ::mf/forward-ref true
+  {::mf/forward-ref true
    ::mf/schema schema:input-field}
   [{:keys [id icon has-hint hint-type class type max-length variant slot-start slot-end] :rest props} ref]
   (let [input-ref (mf/use-ref)
