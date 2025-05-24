@@ -6,17 +6,7 @@
  :cache-dir #shadow/env ["CACHE" :default ".shadow-cljs"]
 
  :builds
- {:test
-  {:target :esm
-   :output-dir "target/tests"
-   :runtime :custom
-   :js-options {:js-provider :import}
-
-   :modules
-   {:test {:init-fn lib.tests.runner/init
-           :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}}
-
-  :library
+ {:library
   {:target :esm
    :runtime :custom
    :output-dir "target/library"

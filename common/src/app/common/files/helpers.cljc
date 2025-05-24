@@ -626,6 +626,9 @@
               (map? (:fill-image form))
               (update-in [:fill-image :id] lookup-index)
 
+              (map? (:stroke-image form))
+              (update-in [:stroke-image :id] lookup-index)
+
               ;; This covers old shapes and the new :fills.
               (uuid? (:fill-color-ref-file form))
               (update :fill-color-ref-file lookup-index)
