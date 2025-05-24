@@ -108,16 +108,15 @@
                           (filter valid-color?)
                           (map-indexed (fn [index color]
                                          (let [color (if (map? color) color {:color color})]
-                                           (assoc color ::id (dm/str index)))))
+                                           (vary-meta color assoc ::id (dm/str index)))))
                           (sort c/sort-colors))
                      (->> (dm/get-in libraries [file-id :data :colors])
                           (vals)
                           (filter valid-color?)
+                          (sort-by :name)
+                          (map #(ctc/library-color->color % file-id))
                           (map-indexed (fn [index color]
-                                         (-> color
-                                             (assoc :file-id file-id)
-                                             (assoc ::id (dm/str index)))))
-                          (sort-by :name)))]
+                                         (vary-meta color assoc ::id (dm/str index))))))]
 
         (reset! current-colors* colors)))
 
@@ -142,6 +141,6 @@
 
       (for [color current-colors]
         [:& cb/color-bullet
-         {:key (dm/str "color-" (::id color))
+         {:key (-> color meta ::id)
           :color color
           :on-click on-color-click}])]]))

@@ -50,7 +50,6 @@
    [app.main.store :as st]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
-   [app.util.storage :as storage]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -119,11 +118,8 @@
                    (assoc :name (or (get-in color [:image :name])
                                     (:color color)
                                     (uc/gradient-type->string (get-in color [:gradient :type]))))
-                   (d/without-nils))]
-
-     (dm/assert!
-      "expect valid color structure"
-      (ctc/check-color color))
+                   (d/without-nils)
+                   (ctc/check-library-color))]
 
      (ptk/reify ::add-color
        ev/Event
@@ -137,22 +133,6 @@
             (when rename?
               (fn [state] (assoc-in state [:workspace-local :color-for-rename] (:id color))))
             (dch/commit-changes changes))))))))
-
-(defn add-recent-color
-  [color]
-  (assert (ctc/check-recent-color color)
-          "expected valid recent color structure")
-
-  (ptk/reify ::add-recent-color
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [file-id (:current-file-id state)]
-        (update state :recent-colors ctc/add-recent-color file-id color)))
-
-    ptk/EffectEvent
-    (effect [_ state _]
-      (let [recent-colors (:recent-colors state)]
-        (swap! storage/user assoc :recent-colors recent-colors)))))
 
 (def clear-color-for-rename
   (ptk/reify ::clear-color-for-rename
@@ -176,16 +156,10 @@
 
 (defn update-color
   [color file-id]
-  (let [color (d/without-nils color)]
+  (assert (uuid? file-id) "expected a uuid instance for `file-id`")
 
-    (dm/assert!
-     "expected valid color data structure"
-     (ctc/check-color color))
-
-    (dm/assert!
-     "expected file-id"
-     (uuid? file-id))
-
+  (let [color (-> (d/without-nils color)
+                  (ctc/check-library-color))]
     (ptk/reify ::update-color
       ptk/WatchEvent
       (watch [it state _]
@@ -194,15 +168,10 @@
 (defn update-color-data
   "Update color data without affecting the path location"
   [color file-id]
-  (let [color (d/without-nils color)]
+  (assert (uuid? file-id) "expected a uuid instance for `file-id`")
 
-    (dm/assert!
-     "expected valid color data structure"
-     (ctc/check-color color))
-
-    (dm/assert!
-     "expected file-id"
-     (uuid? file-id))
+  (let [color (-> (d/without-nils color)
+                  (ctc/check-library-color))]
 
     (ptk/reify ::update-color-data
       ptk/WatchEvent
@@ -213,17 +182,10 @@
 ;; FIXME: revisit why file-id is passed on the event
 (defn rename-color
   [file-id id new-name]
-  (dm/assert!
-   "expected valid uuid for `id`"
-   (uuid? id))
 
-  (dm/assert!
-   "expected valid uuid for `file-id`"
-   (uuid? file-id))
-
-  (dm/assert!
-   "expected valid string for `new-name`"
-   (string? new-name))
+  (assert (uuid? id) "expected valid uuid instance for `id`")
+  (assert (uuid? file-id) "expected a uuid instance for `file-id`")
+  (assert (string? new-name) "expected a string instance for `new-name`")
 
   (ptk/reify ::rename-color
     ptk/WatchEvent
@@ -232,14 +194,16 @@
         (if (str/empty? new-name)
           (rx/empty)
           (let [data   (dsh/lookup-file-data state)
-                color  (get-in data [:colors id])
-                color  (assoc color :name new-name)
-                color  (d/without-nils color)]
+                color  (-> (ctc/get-color data id)
+                           (assoc :name new-name)
+                           (d/without-nils)
+                           (ctc/check-library-color))]
             (update-color* it state color file-id)))))))
 
 (defn delete-color
   [{:keys [id] :as params}]
-  (dm/assert! (uuid? id))
+  (assert (uuid? id) "expected valid uuid instance for `id`")
+
   (ptk/reify ::delete-color
     ev/Event
     (-data [_] {:id id})
@@ -252,6 +216,7 @@
                         (pcb/delete-color id))]
         (rx/of (dch/commit-changes changes))))))
 
+;; FIXME: this should be deleted
 (defn add-media
   [media]
   (let [media (ctf/check-file-media media)]

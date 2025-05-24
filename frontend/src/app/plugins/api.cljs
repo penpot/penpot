@@ -176,10 +176,10 @@
           (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
           (u/display-not-valid :replaceColor-shapes shapes)
 
-          (not (sm/validate ::ctc/color old-color))
+          (not (sm/validate ctc/schema:color old-color))
           (u/display-not-valid :replaceColor-oldColor old-color)
 
-          (not (sm/validate ::ctc/color new-color))
+          (not (sm/validate ctc/schema:color new-color))
           (u/display-not-valid :replaceColor-newColor new-color)
 
           :else

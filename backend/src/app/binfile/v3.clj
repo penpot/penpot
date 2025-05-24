@@ -113,7 +113,7 @@
   (sm/encoder ::ctc/component sm/json-transformer))
 
 (def encode-color
-  (sm/encoder ::ctcl/color sm/json-transformer))
+  (sm/encoder ctcl/schema:library-color sm/json-transformer))
 
 (def encode-typography
   (sm/encoder ::cty/typography sm/json-transformer))
@@ -142,7 +142,7 @@
   (sm/decoder ::ctc/component sm/json-transformer))
 
 (def decode-color
-  (sm/decoder ::ctcl/color sm/json-transformer))
+  (sm/decoder ctcl/schema:library-color sm/json-transformer))
 
 (def decode-file
   (sm/decoder schema:file sm/json-transformer))
@@ -186,7 +186,7 @@
   (sm/check-fn ::ctf/media))
 
 (def validate-color
-  (sm/check-fn ::ctcl/color))
+  (sm/check-fn ctcl/schema:library-color))
 
 (def validate-component
   (sm/check-fn ::ctc/component))
