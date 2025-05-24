@@ -1067,11 +1067,72 @@ msgstr "No limits on creativity"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Free"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:977, src/app/main/ui/dashboard/subscription.cljs:54
-msgid "dashboard.upgrade-plan.power-up"
+#: src/app/main/ui/dashboard/sidebar.cljs:972
+msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Power up"
 
-#: src/app/main/ui/dashboard/team.cljs:924
+#: src/app/main/ui/workspace/main_menu.cljs:910
+msgid "subscription.workspace.header.menu.option.power-up"
+msgstr "Power up your plan"
+
+msgid "subscription.dashboard.team-plan"
+msgstr "Team plan"
+
+msgid "subscription.dashboard.power-up.your-subscription"
+msgstr "Your subscription:"
+
+msgid "subscription.dashboard.power-up.professional.top-title"
+msgstr "Professional plan"
+
+msgid "subscription.dashboard.power-up.unlimited-plan"
+msgstr "Unlimited plan"
+
+msgid "subscription.dashboard.power-up.enterprise-plan"
+msgstr "Enterprise plan"
+
+msgid "subscription.dashboard.power-up.trial.top-title"
+msgstr "Unlimited plan (trial)"
+
+msgid "subscription.dashboard.cta.professional-plan-designed"
+msgstr "The Professional plan is designed for teams of up to 8 editors (owner, admin, and editor)."
+
+msgid "subscription.dashboard.cta.unlimited-many-editors"
+msgstr "Looks like your team has grown! Your plan includes %s seats, but you're now using more than that."
+
+msgid "subscription.dashboard.cta.trial-plan-designed"
+msgstr "The Unlimited (trial) plan is designed for teams of more than 8 editors (owner, admin, and editor)."
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
+msgstr ""
+"Get more editors, more storage, and more autosaved versions with the Unlimited or Enterprise plan. "
+"[Subscribe now.](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner-more-seats"
+msgstr ""
+"Please upgrade to match your usage. "
+"[Subscribe now.](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
+msgstr ""
+"Get more editors, more storage, and more autosaved versions with the Unlimited or Enterprise plan. Contact with the team owner: "
+"%s"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
+msgstr ""
+"Unlock full access forever. "
+"[Subscribe now.](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-full-access-member"
+msgstr ""
+"Unlock full access forever. Contact with the team owner: "
+"%s"
+
+#: src/app/main/ui/dashboard/team.cljs:909
 msgid "dashboard.webhooks.active"
 msgstr "Is active"
 
@@ -4267,13 +4328,6 @@ msgstr "Enterprise plan"
 msgid "subscription.dashboard.power-up.enterprise.description"
 msgstr "Advanced security, activity logs, dedicated support and more."
 
-#: src/app/main/ui/dashboard/subscription.cljs:53
-#, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-description"
-msgstr ""
-"Get extra editors and storage, file backup and more with the **Unlimited "
-"plan**"
-
 #: src/app/main/ui/dashboard/subscription.cljs:51
 msgid "subscription.dashboard.power-up.professional.top-title"
 msgstr "Professional plan"
@@ -4281,10 +4335,6 @@ msgstr "Professional plan"
 #: src/app/main/ui/dashboard/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:131
 msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Subscribe"
-
-#: src/app/main/ui/dashboard/subscription.cljs:63
-msgid "subscription.dashboard.power-up.trial.bottom-description"
-msgstr "Enjoying your trial? Unlock full access forever."
 
 #: src/app/main/ui/dashboard/subscription.cljs:62
 msgid "subscription.dashboard.power-up.trial.top-description"
@@ -4298,12 +4348,25 @@ msgstr "Unlimited plan (trial)"
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Unlimited plan"
 
+#: src/app/main/ui/dashboard/subscription.cljs:53
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr ""
+"Get extra editors and storage, file backup and more with the Unlimited plan"
+"[Power up](%s)"
+
 #: src/app/main/ui/dashboard/subscription.cljs:69
 #, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-description"
 msgstr ""
-"Get advanced security, activity logs, dedicated support and more with "
-"**Enterprise plan**"
+"Get advanced security, activity logs, dedicated support and more. Take a look to the"
+"[Enterprise plan.](%s)"
+
+#, markdown
+msgid "subscription.dashboard.power-up.trial.bottom-description"
+msgstr ""
+"Enjoying your trial? Unlock full access forever."
+"[Subscribe](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 msgid "subscription.dashboard.power-up.unlimited.cta"
@@ -4466,7 +4529,127 @@ msgstr "Password - Penpot"
 msgid "title.settings.profile"
 msgstr "Profile - Penpot"
 
-#: src/app/main/ui/dashboard/team.cljs:795
+msgid "subscription.settings.section-plan"
+msgstr "Your subscription"
+
+msgid "subscription.settings.other-plans"
+msgstr "Other penpot plans"
+
+msgid "subscription.settings.unlimited"
+msgstr "Unlimited"
+
+msgid "subscription.settings.unlimited-trial"
+msgstr "Unlimited (trial)"
+
+msgid "subscription.settings.unlimited-trial-modal"
+msgstr "Unlimited trial"
+
+msgid "subscription.settings.enterprise"
+msgstr "Enterprise"
+
+msgid "subscription.settings.enterprise-trial"
+msgstr "Enterprise (trial)"
+
+msgid "subscription.settings.enterprise-trial-modal"
+msgstr "Enterprise trial"
+
+msgid "subscription.settings.support-us-since"
+msgstr "You've been supporting us with this plan since %s"
+
+msgid "subscription.settings.member-since"
+msgstr "Penpot member since %s"
+
+msgid "subscription.settings.price-editor-month"
+msgstr "editor per month"
+
+msgid "subscription.settings.price-organization-month"
+msgstr "organization per month"
+
+msgid "subscription.settings.more-information"
+msgstr "More information"
+
+msgid "subscription.settings.try-it-free"
+msgstr "Try it free for 14 days"
+
+msgid "subscription.settings.subscribe"
+msgstr "Subscribe"
+
+msgid "subscription.settings.start-trial"
+msgstr "Start free trial"
+
+msgid "subscription.settings.professional.projects-files"
+msgstr "Unlimited projects, files and drafts"
+
+msgid "subscription.settings.professional.teams-editors"
+msgstr "Unlimited teams of up to 8 editors"
+
+msgid "subscription.settings.professional.storage"
+msgstr "10GB of storage and 7-day autosave versions"
+
+msgid "subscription.settings.benefits.all-professional-benefits"
+msgstr "All Professional plan benefits and:"
+
+msgid "subscription.settings.benefits.all-unlimited-benefits"
+msgstr "All Unlimited plan benefits and:"
+
+msgid "subscription.settings.unlimited.teams"
+msgstr "Unlimited teams, no matter your team size"
+
+msgid "subscription.settings.unlimited.bill"
+msgstr "Capped monthly bill"
+
+msgid "subscription.settings.unlimited.storage"
+msgstr "25GB of storage and 30-day autosave versions and file backup"
+
+msgid "subscription.settings.manage-your-subscription"
+msgstr "Manage your subscription"
+
+msgid "subscription.settings.add-payment-to-continue"
+msgstr "Add a payment method to continue after your trial"
+
+msgid "subscription.settings.enterprise.support"
+msgstr "Dedicated support"
+
+msgid "subscription.settings.enterprise.security"
+msgstr "Advanced security"
+
+msgid "subscription.settings.enterprise.logs"
+msgstr "Activity logs"
+
+msgid "subscription.settings.sucess.dialog.title"
+msgstr "You are %s!"
+
+msgid "subscription.settings.success.dialog.description"
+msgstr "You can edit your subscription at any time from the 'Subscription' page in your account details."
+
+msgid "subscription.settings.sucess.dialog.footer"
+msgstr "Enjoy your plan!"
+
+msgid "subscription.settings.management.dialog.title"
+msgstr "Apply %s to your teams"
+
+msgid "subscription.settings.management.dialog.choose-this-plan"
+msgstr "You are choosing this plan for:"
+
+msgid "subscription.settings.management.dialog.members"
+msgstr " (%s editors)"
+
+msgid "subscription.settings.management.dialog.no-teams"
+msgstr "This plan will apply to all future teams you create or own."
+
+msgid "subscription.settings.management.dialog.select-editors"
+msgstr "Select number of editors (seats) you need:"
+
+msgid "subscription.settings.management.dialog.price-month"
+msgstr "$7 per editor/month x %s"
+
+msgid "subscription.settings.management.dialog.payment-explanation"
+msgstr "(No payment will be made now)"
+
+msgid "subscription.settings.management.dialog.downgrade"
+msgstr "Heads up: switching to a lower plan means less storage and shorter backups and version history."
+
+#: src/app/main/ui/dashboard/team.cljs:779
 msgid "title.team-invitations"
 msgstr "Invitations - %s - Penpot"
 
@@ -4474,7 +4657,6 @@ msgstr "Invitations - %s - Penpot"
 msgid "title.team-members"
 msgstr "Members - %s - Penpot"
 
-#: src/app/main/ui/dashboard/team.cljs:1105
 msgid "title.team-settings"
 msgstr "Settings - %s - Penpot"
 
@@ -4932,12 +5114,6 @@ msgstr "Help & info"
 #: src/app/main/ui/workspace/main_menu.cljs:916
 msgid "workspace.header.menu.option.power-up"
 msgstr "Power up your plan"
-
-#: src/app/main/ui/workspace/main_menu.cljs:881
-msgid "workspace.header.menu.option.preferences"
-msgstr "Preferences"
-
-#: src/app/main/ui/workspace/main_menu.cljs:870
 msgid "workspace.header.menu.option.view"
 msgstr "View"
 

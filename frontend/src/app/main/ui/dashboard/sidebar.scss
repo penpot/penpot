@@ -84,9 +84,16 @@
 .team-text {
   @include textEllipsis;
   @include smallTitleTipography;
-  width: $s-144;
+  width: auto;
   text-align: left;
   color: var(--menu-foreground-color-hover);
+}
+
+.team-text-with-icon {
+  display: flex;
+  gap: $s-8;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 // This icon still use the old svg
