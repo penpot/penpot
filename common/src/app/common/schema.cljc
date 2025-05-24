@@ -702,7 +702,10 @@
                  (fn [v]
                    (and (pred v)
                         (>= max v)))
-                 pred)]
+                 pred)
+
+          gen (or (get props :gen/gen)
+                  (sg/small-int :max max :min min))]
 
       {:pred pred
        :type-properties
@@ -710,7 +713,7 @@
         :description "int"
         :error/message "expected to be int/long"
         :error/code "errors.invalid-integer"
-        :gen/gen (sg/small-int :max max :min min)
+        :gen/gen gen
         :decode/string parse-long
         :decode/json parse-long
         ::oapi/type "integer"
@@ -768,10 +771,11 @@
                         (>= max v)))
                  pred)
 
-          gen  (sg/one-of
-                (sg/small-int :max max :min min)
-                (->> (sg/small-double :max max :min min)
-                     (sg/fmap #(mth/precision % 2))))]
+          gen  (or (get props :gen/gen)
+                   (sg/one-of
+                    (sg/small-int :max max :min min)
+                    (->> (sg/small-double :max max :min min)
+                         (sg/fmap #(mth/precision % 2)))))]
 
       {:pred pred
        :type-properties
@@ -786,7 +790,9 @@
 
 (register! ::safe-int [::int {:max max-safe-int :min min-safe-int}])
 (register! ::safe-double [::double {:max max-safe-int :min min-safe-int}])
-(register! ::safe-number [::number {:max max-safe-int :min min-safe-int}])
+(register! ::safe-number [::number {:gen/gen (sg/small-double)
+                                    :max max-safe-int
+                                    :min min-safe-int}])
 
 (defn parse-boolean
   [v]
