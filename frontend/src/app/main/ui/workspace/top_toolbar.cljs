@@ -64,7 +64,7 @@
       i/img
       [:& file-uploader
        {:input-id "image-upload"
-        :accept cm/str-image-types
+        :accept dwm/accept-image-types
         :multi true
         :ref ref
         :on-selected on-selected}]]]))

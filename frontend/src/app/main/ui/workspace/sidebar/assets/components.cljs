@@ -525,7 +525,7 @@
                           :aria-label (tr "workspace.assets.components.add-component")
                           :on-click add-component
                           :icon "add"}
-         [:& file-uploader {:accept cm/str-image-types
+         [:& file-uploader {:accept dwm/accept-image-types
                             :multi true
                             :ref input-ref
                             :on-selected on-file-selected}]])]
