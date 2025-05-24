@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-22 11:06+0000\n"
+"PO-Revision-Date: 2025-05-25 04:01+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -7478,7 +7478,7 @@ msgstr "Penpot lid sinds %s"
 
 #: src/app/main/ui/settings/subscription.cljs:99
 msgid "subscription.settings.other-plans"
-msgstr "Overige penpot-abonnementen"
+msgstr "Overige Penpot-abonnementen"
 
 #: src/app/main/ui/settings/subscription.cljs:103, src/app/main/ui/settings/subscription.cljs:114
 msgid "subscription.settings.price-editor-month"
