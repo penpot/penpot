@@ -1004,14 +1004,11 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(def ^:private valid-color?
-  (sm/lazy-validator ::ctc/color))
-
 (defmethod migrate-data "legacy-51"
   [data _]
   (let [update-colors
         (fn [colors]
-          (into {} (filter #(-> % val valid-color?) colors)))]
+          (into {} (filter #(-> % val ctc/valid-color?) colors)))]
     (update data :colors update-colors)))
 
 (defmethod migrate-data "legacy-52"
@@ -1328,7 +1325,6 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-
 (defmethod migrate-data "0004-add-partial-text-touched-flags"
   [data _]
   (letfn [(update-object [page object]
@@ -1369,7 +1365,7 @@
               object))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
         (update :pages-index d/update-vals update-container)
@@ -1406,6 +1402,33 @@
     (-> data
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
+
+(defmethod migrate-data "0004-clean-shadow-and-colors"
+  [data _]
+  (letfn [(clean-shadow [shadow]
+            (update shadow :color (fn [color]
+                                    (let [ref-id   (get color :id)
+                                          ref-file (get color :file-id)]
+                                      (-> (d/without-qualified color)
+                                          (select-keys [:opacity :color :gradient :image :ref-id :ref-file])
+                                          (cond-> ref-id
+                                            (assoc :ref-id ref-id))
+                                          (cond-> ref-file
+                                            (assoc :ref-file ref-file)))))))
+
+          (update-object [object]
+            (d/update-when object :shadow #(mapv clean-shadow %)))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))
+
+          (clean-library-color [color]
+            (dissoc color :file-id))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container)
+        (d/update-when :colors d/update-vals clean-library-color))))
 
 (def available-migrations
   (into (d/ordered-set)
@@ -1467,5 +1490,6 @@
          "0003-fix-root-shape"
          "0003-convert-path-content"
          "0004-add-partial-text-touched-flags"
+         "0004-clean-shadow-and-colors"
          "0005-deprecate-image-type"
          "0006-fix-old-texts-fills"]))

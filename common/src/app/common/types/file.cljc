@@ -18,7 +18,6 @@
    [app.common.schema :as sm]
    [app.common.text :as ct]
    [app.common.types.color :as ctc]
-   [app.common.types.colors-list :as ctcl]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
@@ -59,7 +58,7 @@
    [:is-local {:optional true} :boolean]])
 
 (def schema:colors
-  [:map-of {:gen/max 5} ::sm/uuid ::ctc/color])
+  [:map-of {:gen/max 5} ::sm/uuid ctc/schema:library-color])
 
 (def schema:components
   [:map-of {:gen/max 5} ::sm/uuid ::ctn/container])
@@ -488,7 +487,7 @@
   [file-data library-data asset-type]
   (let [assets-seq (case asset-type
                      :component  (ctkl/components-seq library-data)
-                     :color      (ctcl/colors-seq library-data)
+                     :color      (ctc/colors-seq library-data)
                      :typography (ctyl/typographies-seq library-data))
 
         find-usages-in-container
@@ -527,7 +526,7 @@
   (letfn [(used-assets-shape [shape]
             (concat
              (ctkl/used-components-changed-since shape library since-date)
-             (ctcl/used-colors-changed-since shape library since-date)
+             (ctc/used-colors-changed-since shape library since-date)
              (ctyl/used-typographies-changed-since shape library since-date)))
 
           (used-assets-container [container]
@@ -663,7 +662,7 @@
                                              %
                                              shapes)))]
             (as-> file-data $
-              (ctcl/add-color $ color)
+              (ctc/add-color $ color)
               (reduce remap-shapes $ usages))))]
 
     (reduce absorb-color

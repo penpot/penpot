@@ -35,6 +35,9 @@
    [promesa.core :as p]
    [tubax.core :as tubax]))
 
+(def accept-image-types
+  (str/join "," media/image-types))
+
 (defn- optimize
   [input]
   (svgo/optimize input svgo/defaultOptions))

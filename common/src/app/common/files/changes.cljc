@@ -16,7 +16,6 @@
    [app.common.schema.desc-native :as smd]
    [app.common.schema.generators :as sg]
    [app.common.types.color :as ctc]
-   [app.common.types.colors-list :as ctcl]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
@@ -266,7 +265,7 @@
       [:id ::sm/uuid]
       ;; All props are optional, background can be nil because is the
       ;; way to remove already set background
-      [:background {:optional true} [:maybe ::ctc/rgb-color]]
+      [:background {:optional true} [:maybe ctc/schema:hex-color]]
       [:name {:optional true} :string]]]
 
     [:set-plugin-data schema:set-plugin-data-change]
@@ -292,12 +291,12 @@
     [:add-color
      [:map {:title "AddColorChange"}
       [:type [:= :add-color]]
-      [:color ::ctc/color]]]
+      [:color ctc/schema:library-color]]]
 
     [:mod-color
      [:map {:title "ModColorChange"}
       [:type [:= :mod-color]]
-      [:color ::ctc/color]]]
+      [:color ctc/schema:library-color]]]
 
     [:del-color
      [:map {:title "DelColorChange"}
@@ -926,15 +925,15 @@
 
 (defmethod process-change :add-color
   [data {:keys [color]}]
-  (ctcl/add-color data color))
+  (ctc/add-color data color))
 
 (defmethod process-change :mod-color
   [data {:keys [color]}]
-  (ctcl/set-color data color))
+  (ctc/set-color data color))
 
 (defmethod process-change :del-color
   [data {:keys [id]}]
-  (ctcl/delete-color data id))
+  (ctc/delete-color data id))
 
 ;; DEPRECATED: remove before 2.3
 (defmethod process-change :add-recent-color

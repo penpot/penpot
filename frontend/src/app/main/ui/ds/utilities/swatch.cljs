@@ -21,12 +21,16 @@
 
 (defn- color-title
   [color-item]
-  (let [name (:name color-item)
-        path (:path color-item)
-        path-and-name (if (and path (not (str/empty? path))) (str path " / " name) name)
+  (let [{:keys [name path]} (meta color-item)
+
+        path-and-name
+        (if (and path (not (str/empty? path)))
+          (str path " / " name)
+          name)
+
         gradient (:gradient color-item)
-        image (:image color-item)
-        color (:color color-item)]
+        image    (:image color-item)
+        color    (:color color-item)]
 
     (if (some? name)
       (cond
@@ -71,34 +75,38 @@
         ;; automatically convert them to clojure map (which is exactly
         ;; what this component expects). On normal usage of this
         ;; component this code should be always fallback to else case.
-        background (if (object? background)
-                     (json/->clj background)
-                     background)
-        read-only? (nil? on-click)
-        id? (some? (:id background))
-        element-type (if read-only? "div" "button")
-        button-type (if (not read-only?) "button" nil)
-        size (or size "small")
-        active (or active false)
-        gradient-type (-> background :gradient :type)
+        background     (if (object? background)
+                         (json/->clj background)
+                         background)
+        read-only?     (nil? on-click)
+        id?            (some? (:ref-id background))
+        element-type   (if read-only? "div" "button")
+        button-type    (if (not read-only?) "button" nil)
+        size           (or size "small")
+        active         (or active false)
+        gradient-type  (-> background :gradient :type)
         gradient-stops (-> background :gradient :stops)
-        gradient-data {:type gradient-type
-                       :stops gradient-stops}
-        image    (:image background)
-        format (if id? "rounded" "square")
-        class (dm/str class " " (stl/css-case
-                                 :swatch true
-                                 :small (= size "small")
-                                 :medium (= size "medium")
-                                 :large (= size "large")
-                                 :square (= format "square")
-                                 :active (= active true)
-                                 :interactive (= element-type "button")
-                                 :rounded (= format "rounded")))
-        props (mf/spread-props props {:class class
-                                      :on-click on-click
-                                      :type button-type
-                                      :title (color-title background)})]
+        gradient-data  {:type gradient-type
+                        :stops gradient-stops}
+        image          (:image background)
+        format         (if id? "rounded" "square")
+
+        class
+        (dm/str class " " (stl/css-case
+                           :swatch true
+                           :small (= size "small")
+                           :medium (= size "medium")
+                           :large (= size "large")
+                           :square (= format "square")
+                           :active (= active true)
+                           :interactive (= element-type "button")
+                           :rounded (= format "rounded")))
+
+        props
+        (mf/spread-props props {:class class
+                                :on-click on-click
+                                :type button-type
+                                :title (color-title background)})]
 
     [:> element-type props
      (cond

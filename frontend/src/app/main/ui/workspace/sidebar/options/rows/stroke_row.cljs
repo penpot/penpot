@@ -149,7 +149,7 @@
 
      ;; Stroke Color
      ;; FIXME: memorize stroke color
-     [:> color-row* {:color (ctc/stroke->shape-color stroke)
+     [:> color-row* {:color (ctc/stroke->color stroke)
                      :index index
                      :title title
                      :on-change on-color-change-refactor

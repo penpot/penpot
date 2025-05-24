@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.types.colors-list :as ctcl]
+   [app.common.types.color :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.typographies-list :as ctyl]
@@ -407,7 +407,7 @@
                           (sort-by #(str/lower (:name %)))
                           (truncate :components))
         colors       (->> color-ids
-                          (map #(ctcl/get-color (:data library) %))
+                          (map #(ctc/get-color (:data library) %))
                           (sort-by #(str/lower (:name %)))
                           (truncate :colors))
         typographies (->> typography-ids
