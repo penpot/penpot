@@ -7,6 +7,8 @@
 (ns app.common.buffer
   "A collection of helpers and macros for work with byte buffers"
   (:refer-clojure :exclude [clone])
+  (:require
+   [app.common.uuid :as uuid])
   #?(:cljs
      (:require-macros [app.common.buffer])
      :clj
@@ -18,6 +20,13 @@
     `(.getInt8 ~target ~offset true)
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(long (.get ~target ~offset)))))
+
+(defmacro read-bool
+  [target offset]
+  (if (:ns &env)
+    `(== 1 (.getInt8 ~target ~offset true))
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
+      `(== 1 (.get ~target ~offset)))))
 
 (defmacro read-short
   [target offset]
