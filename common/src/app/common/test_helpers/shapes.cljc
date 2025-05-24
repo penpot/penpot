@@ -11,7 +11,6 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.types.color :as ctc]
-   [app.common.types.colors-list :as ctcl]
    [app.common.types.container :as ctn]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
@@ -102,7 +101,7 @@
 (defn add-sample-library-color
   [file label & {:keys [] :as params}]
   (let [color (sample-color label params)]
-    (update file :data ctcl/add-color color)))
+    (update file :data ctc/add-color color)))
 
 (defn sample-typography
   [label & {:keys [] :as params}]

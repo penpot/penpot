@@ -8,10 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
    [app.common.text :as txt]
+   [app.common.time :as dt]
    [app.common.types.plugins :as ctpg]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
@@ -20,11 +22,10 @@
 ;; SCHEMAS & TYPES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def rgb-color-re
+(def ^:private hex-color-rx
   #"^#(?:[0-9a-fA-F]{3}){1,2}$")
 
-(defn- generate-rgb-color
-  []
+(def ^:private hex-color-generator
   (sg/fmap (fn [_]
              #?(:clj (format "#%06x" (rand-int 16rFFFFFF))
                 :cljs
@@ -37,28 +38,28 @@
                        (.. b (toString 16) (padStart 2 "0"))))))
            sg/int))
 
-(defn rgb-color-string?
+(defn hex-color-string?
   [o]
-  (and (string? o) (some? (re-matches rgb-color-re o))))
+  (and (string? o) (some? (re-matches hex-color-rx o))))
 
-(def schema:rgb-color
+(def schema:hex-color
   (sm/register!
-   {:type ::rgb-color
-    :pred rgb-color-string?
+   {:type ::hex-color
+    :pred hex-color-string?
     :type-properties
-    {:title "rgb-color"
-     :description "RGB Color String"
-     :error/message "expected a valid RGB color"
-     :error/code "errors.invalid-rgb-color"
-     :gen/gen (generate-rgb-color)
+    {:title "hex-color"
+     :description "HEX Color String"
+     :error/message "expected a valid HEX color"
+     :error/code "errors.invalid-hex-color"
+     :gen/gen hex-color-generator
      ::oapi/type "integer"
      ::oapi/format "int64"}}))
 
 (def schema:image
   [:map {:title "ImageColor"}
-   [:width ::sm/int]
-   [:height ::sm/int]
-   [:mtype ::sm/text]
+   [:width [::sm/int {:min 0 :gen/gen sg/int}]]
+   [:height [::sm/int {:min 0 :gen/gen sg/int}]]
+   [:mtype {:gen/gen (sg/elements cm/image-types)} ::sm/text]
    [:id ::sm/uuid]
    [:name {:optional true} ::sm/text]
    [:keep-aspect-ratio {:optional true} :boolean]])
@@ -68,7 +69,7 @@
 
 (def schema:gradient
   [:map {:title "Gradient"}
-   [:type [::sm/one-of #{:linear :radial}]]
+   [:type [::sm/one-of gradient-types]]
    [:start-x ::sm/safe-number]
    [:start-y ::sm/safe-number]
    [:end-x ::sm/safe-number]
@@ -77,34 +78,35 @@
    [:stops
     [:vector {:min 1 :gen/max 2}
      [:map {:title "GradientStop"}
-      [:color schema:rgb-color]
-      [:opacity {:optional true} [:maybe ::sm/safe-number]]
+      [:color schema:hex-color]
+      [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
       [:offset ::sm/safe-number]]]]])
 
 (def schema:color-attrs
   [:map {:title "ColorAttrs"}
    [:id {:optional true} ::sm/uuid]
    [:name {:optional true} :string]
-   [:path {:optional true} [:maybe :string]]
-   [:value {:optional true} [:maybe :string]]
-   [:color {:optional true} [:maybe schema:rgb-color]]
-   [:opacity {:optional true} [:maybe ::sm/safe-number]]
+   [:path {:optional true} :string]
+   [:value {:optional true} :string]
+   [:color {:optional true} schema:hex-color]
+   [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
    [:modified-at {:optional true} ::sm/inst]
    [:ref-id {:optional true} ::sm/uuid]
    [:ref-file {:optional true} ::sm/uuid]
-   [:gradient {:optional true} [:maybe schema:gradient]]
-   [:image {:optional true} [:maybe schema:image]]
+   [:gradient {:optional true} schema:gradient]
+   [:image {:optional true}  schema:image]
    [:plugin-data {:optional true} ::ctpg/plugin-data]])
 
 (def schema:color
   [:and schema:color-attrs
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
+;; FIXME: remove maybe
 (def schema:recent-color
   [:and
    [:map {:title "RecentColor"}
     [:opacity {:optional true} [:maybe ::sm/safe-number]]
-    [:color {:optional true} [:maybe schema:rgb-color]]
+    [:color {:optional true} [:maybe schema:hex-color]]
     [:gradient {:optional true} [:maybe schema:gradient]]
     [:image {:optional true} [:maybe schema:image]]]
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
@@ -414,6 +416,7 @@
            (some? (:color c2))
            (= (:color c1) (:color c2)))))
 
+;; FIXME: this should not be here
 (defn add-recent-color
   "Moves the color to the top of the list and then truncates up to 15"
   [state file-id color]
@@ -424,6 +427,7 @@
                               (> (count colors) 15)
                               (subvec 1))))))
 
+;; FIXME: libraries related not raw color
 (defn stroke->color-att
   [stroke file-id shared-libs]
   (let [color-file-id      (:stroke-color-ref-file stroke)
@@ -446,6 +450,7 @@
        :shape-id (:shape-id stroke)
        :index (:index stroke)})))
 
+;; FIXME: libraries related not raw color
 (defn shadow->color-att
   [shadow file-id shared-libs]
   (let [color-file-id      (dm/get-in shadow [:color :file-id])
@@ -468,6 +473,7 @@
      :shape-id (:shape-id shadow)
      :index (:index shadow)}))
 
+;; FIXME: libraries related not raw color
 (defn text->color-att
   [fill file-id shared-libs]
   (let [color-file-id      (:fill-color-ref-file fill)
@@ -540,3 +546,49 @@
              (into (map #(shadow->color-att % file-id shared-libs)) shadow-obj)))))
    []
    shapes))
+
+(defn colors-seq
+  [file-data]
+  (vals (:colors file-data)))
+
+(defn- touch
+  [color]
+  (assoc color :modified-at (dt/now)))
+
+(defn add-color
+  [file-data color]
+  (update file-data :colors assoc (:id color) (touch color)))
+
+(defn get-color
+  [file-data color-id]
+  (get-in file-data [:colors color-id]))
+
+(defn get-ref-color
+  [library-data color]
+  (when (= (:ref-file color) (:id library-data))
+    (get-color library-data (:ref-id color))))
+
+(defn set-color
+  [file-data color]
+  (d/assoc-in-when file-data [:colors (:id color)] (touch color)))
+
+(defn update-color
+  [file-data color-id f & args]
+  (d/update-in-when file-data [:colors color-id] #(-> (apply f % args)
+                                                      (touch))))
+
+(defn delete-color
+  [file-data color-id]
+  (update file-data :colors dissoc color-id))
+
+(defn used-colors-changed-since
+  "Find all usages of any color in the library by the given shape, of colors
+   that have ben modified after the date."
+  [shape library since-date]
+  (->> (get-all-colors shape)
+       (keep #(get-ref-color (:data library) %))
+       (remove #(< (:modified-at %) since-date))  ;; Note that :modified-at may be nil
+       (map (fn [color] {:shape-id (:id shape)
+                         :asset-id (:id color)
+                         :asset-type :color}))))
+

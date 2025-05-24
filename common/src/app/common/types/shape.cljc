@@ -20,7 +20,7 @@
    [app.common.schema.generators :as sg]
    [app.common.text :as txt]
    [app.common.transit :as t]
-   [app.common.types.color :as ctc]
+   [app.common.types.color :as types.color]
    [app.common.types.grid :as ctg]
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segment]
@@ -119,16 +119,35 @@
 (def schema:points
   [:vector {:gen/max 4 :gen/min 4} ::gpt/point])
 
+(def ^:private schema:fill-ref-attrs
+  [:map {:title "FillAttrs"}
+   [:fill-color-ref-file {:optional true} ::sm/uuid]
+   [:fill-color-ref-id {:optional true} ::sm/uuid]])
+
+(def ^:private schema:solid-fill-attrs
+  [:map {:title "FillAttrs"}
+   [:fill-color types.color/schema:hex-color]
+   [:fill-opacity {:optional true} [::sm/number {:min 0 :max 1}]]])
+
+(def ^:private schema:gradient-fill-attrs
+  [:map {:title "FillAttrs"}
+   [:fill-color-gradient types.color/schema:gradient]
+   [:fill-opacity {:optional true} [::sm/number {:min 0 :max 1}]]])
+
+(def ^:private schema:image-fill-attrs
+  [:map {:title "FillAttrs"}
+   [:fill-image types.color/schema:image]
+   [:fill-opacity {:optional true} [::sm/number {:min 0 :max 1}]]])
+
+;; FIXME: revisit if register is necessary
+
 (def schema:fill
   (sm/register!
    ^{::sm/type ::fill}
-   [:map {:title "Fill"}
-    [:fill-color {:optional true} ::ctc/rgb-color]
-    [:fill-opacity {:optional true} ::sm/safe-number]
-    [:fill-color-gradient {:optional true} [:maybe ::ctc/gradient]]
-    [:fill-color-ref-file {:optional true} [:maybe ::sm/uuid]]
-    [:fill-color-ref-id {:optional true} [:maybe ::sm/uuid]]
-    [:fill-image {:optional true} ::ctc/image-color]]))
+   [:or
+    [:merge schema:fill-ref-attrs schema:solid-fill-attrs]
+    [:merge schema:fill-ref-attrs schema:gradient-fill-attrs]
+    [:merge schema:fill-ref-attrs schema:image-fill-attrs]]))
 
 (def schema:stroke
   (sm/register!
@@ -147,8 +166,8 @@
      [::sm/one-of stroke-caps]]
     [:stroke-cap-end {:optional true}
      [::sm/one-of stroke-caps]]
-    [:stroke-color-gradient {:optional true} ::ctc/gradient]
-    [:stroke-image {:optional true} ::ctc/image-color]]))
+    [:stroke-color-gradient {:optional true} ::types.color/gradient]
+    [:stroke-image {:optional true} types.color/schema:image]]))
 
 (def check-stroke
   (sm/check-fn schema:stroke))

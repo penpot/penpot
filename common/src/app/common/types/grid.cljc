@@ -8,7 +8,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.schema :as sm]
-   [app.common.types.color :as ctc]))
+   [app.common.types.color :refer [schema:hex-color]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
@@ -16,7 +16,7 @@
 
 (def schema:grid-color
   [:map {:title "PageGridColor"}
-   [:color ::ctc/rgb-color]
+   [:color schema:hex-color]
    [:opacity ::sm/safe-number]])
 
 (def schema:column-params
