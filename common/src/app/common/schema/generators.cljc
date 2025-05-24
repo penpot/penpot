@@ -10,6 +10,7 @@
   (:require
    [app.common.schema.registry :as sr]
    [app.common.uri :as u]
+   [app.common.math :as mth]
    [app.common.uuid :as uuid]
    [clojure.core :as c]
    [clojure.test.check.generators :as tg]
@@ -40,7 +41,8 @@
 
 (defn small-double
   [& {:keys [min max] :or {min -100 max 100}}]
-  (tg/double* {:min min, :max max, :infinite? false, :NaN? false}))
+  (->> (tg/double* {:min min, :max max, :infinite? false, :NaN? false})
+       (tg/fmap #(mth/precision % 2))))
 
 (defn small-int
   [& {:keys [min max] :or {min -100 max 100}}]
