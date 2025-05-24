@@ -7,12 +7,11 @@
 (ns app.main.ui.workspace.tokens.modals.import
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.files.helpers :as cfh]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.data.style-dictionary :as sd]
-   [app.main.data.workspace.tokens.errors :as wte]
+   [app.main.data.workspace.tokens.errors :as dwte]
+   [app.main.data.workspace.tokens.import-export :as dwti]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -29,23 +28,8 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(defn- drop-parent-directory [path]
-  (->> (cfh/split-path path)
-       (rest)
-       (str/join "/")))
-
-(defn- remove-path-extension [path]
-  (-> (str/split path ".")
-      (butlast)
-      (str/join)))
-
-(defn- file-path->set-name
-  [path]
-  (-> path
-      (drop-parent-directory)
-      (remove-path-extension)))
-
-(defn- on-import-stream [tokens-lib-stream]
+(defn- on-stream-imported
+  [tokens-lib-stream]
   (rx/sub!
    tokens-lib-stream
    (fn [lib]
@@ -53,9 +37,8 @@
                (dwtl/import-tokens-lib lib))
      (modal/hide!))
    (fn [err]
-     (js/console.error err)
-     (st/emit! (ntf/show {:content (wte/humanize-errors [(ex-data err)])
-                          :detail (wte/detail-errors [(ex-data err)])
+     (st/emit! (ntf/show {:content (dwte/humanize-errors [(ex-data err)])
+                          :detail (dwte/detail-errors [(ex-data err)])
                           :type :toast
                           :level :error})))))
 
@@ -81,44 +64,28 @@
                                             type (.-type file)]
                                         (or
                                          (= type "application/json")
-                                         (str/ends-with? name ".json")))))
-                            ;; Read files as text, ignore files with json parse errors
-                            (map (fn [file]
-                                   (->> (wapi/read-file-as-text file)
-                                        (rx/mapcat (fn [json]
-                                                     (let [path (.-webkitRelativePath file)]
-                                                       (rx/of
-                                                        (try
-                                                          {(file-path->set-name path) (sd/parse-json json)}
-                                                          (catch js/Error e
-                                                            {:path path :error e}))))))))))]
-
-             (->> (apply rx/merge files)
-                  (rx/reduce (fn [acc cur]
-                               (if (:error cur)
-                                 acc
-                                 (conj acc cur)))
-                             {})
-                  (rx/map #(sd/decode-json-data (if (= 1 (count %))
-                                                  (val (first %))
-                                                  %)
-                                                (ffirst %)))
-                  (rx/map :tokens-lib)
-                  (on-import-stream))
+                                         (str/ends-with? name ".json"))))))]
+             (->> (rx/from files)
+                  (rx/mapcat (fn [file]
+                               (->> (wapi/read-file-as-text file)
+                                    (rx/map (fn [file-text]
+                                              [(.-webkitRelativePath file)
+                                               file-text])))))
+                  (dwti/import-directory-stream)
+                  (on-stream-imported))
 
              (-> (mf/ref-val dir-input-ref)
                  (dom/set-value! "")))))
 
-        on-import
+        on-import-file
         (mf/use-fn
          (fn [event]
            (let [file (-> (dom/get-target event)
                           (dom/get-files)
-                          (first))
-                 file-name (remove-path-extension (.-name file))]
+                          (first))]
              (->> (wapi/read-file-as-text file)
-                  (sd/process-json-stream {:file-name file-name})
-                  (on-import-stream))
+                  (dwti/import-file-stream (.-name file))
+                  (on-stream-imported))
 
              (-> (mf/ref-val file-input-ref)
                  (dom/set-value! "")))))]
@@ -142,7 +109,7 @@
                :ref file-input-ref
                :style {:display "none"}
                :accept ".json"
-               :on-change on-import}]
+               :on-change on-import-file}]
       [:input {:type "file"
                :ref dir-input-ref
                :style {:display "none"}

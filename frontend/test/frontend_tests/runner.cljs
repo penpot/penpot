@@ -9,6 +9,7 @@
    [frontend-tests.logic.frame-guides-test]
    [frontend-tests.logic.groups-test]
    [frontend-tests.plugins.context-shapes-test]
+   [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
    [frontend-tests.tokens.logic.token-data-test]
    [frontend-tests.tokens.style-dictionary-test]
@@ -40,5 +41,6 @@
    'frontend-tests.basic-shapes-test
    'frontend-tests.tokens.logic.token-actions-test
    'frontend-tests.tokens.logic.token-data-test
+   'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.style-dictionary-test
    'frontend-tests.tokens.token-form-test))

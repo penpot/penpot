@@ -662,63 +662,6 @@
 (def valid-active-token-themes?
   (sm/validator schema:active-themes))
 
-;; === Import / Export from DTCG format
-
-(def ^:private legacy-node?
-  (sm/validator
-   [:or
-    [:map
-     ["value" :string]
-     ["type" :string]]
-    [:map
-     ["value" [:sequential [:map ["type" :string]]]]
-     ["type" :string]]
-    [:map
-     ["value" :map]
-     ["type" :string]]]))
-
-(def ^:private dtcg-node?
-  (sm/validator
-   [:or
-    [:map
-     ["$value" :string]
-     ["$type" :string]]
-    [:map
-     ["$value" [:sequential [:map ["$type" :string]]]]
-     ["$type" :string]]
-    [:map
-     ["$value" :map]
-     ["$type" :string]]]))
-
-(defn get-json-format
-  "Searches through parsed token file and returns:
-   - `:json-format/legacy` when first node satisfies `legacy-node?` predicate
-   - `:json-format/dtcg` when first node satisfies `dtcg-node?` predicate
-   - `nil` if neither combination is found"
-  ([data]
-   (get-json-format data legacy-node? dtcg-node?))
-  ([data legacy-node? dtcg-node?]
-   (let [branch? map?
-         children (fn [node] (vals node))
-         check-node (fn [node]
-                      (cond
-                        (legacy-node? node) :json-format/legacy
-                        (dtcg-node? node) :json-format/dtcg
-                        :else nil))
-         walk (fn walk [node]
-                (lazy-seq
-                 (cons
-                  (check-node node)
-                  (when (branch? node)
-                    (mapcat walk (children node))))))]
-     (->> (walk data)
-          (filter some?)
-          first))))
-
-(defn single-set? [data]
-  (and (not (contains? data "$metadata"))
-       (not (contains? data "$themes"))))
-
 ;; DEPRECATED
 (defn walk-sets-tree-seq
   "Walk sets tree as a flat list.
@@ -828,71 +771,9 @@
          (map-indexed (fn [index item]
                         (assoc item :index index))))))
 
-(defn get-tokens-of-unknown-type
-  "Recursively search the tokens for unknown types"
-  [tokens token-path dctg?]
-  (let [type-key (if dctg? "$type" "type")]
-    (reduce-kv
-     (fn [unknown-tokens k v]
-       (let [child-path (if (empty? token-path)
-                          (name k)
-                          (str token-path "." k))]
-         (if (and (map? v)
-                  (not (contains? v type-key)))
-           (let [nested-unknown-tokens (get-tokens-of-unknown-type v child-path dctg?)]
-             (merge unknown-tokens nested-unknown-tokens))
-           (let [token-type-str (get v type-key)
-                 token-type (cto/dtcg-token-type->token-type token-type-str)]
-             (if (and (not (some? token-type)) (some? token-type-str))
-               (assoc unknown-tokens child-path token-type-str)
-               unknown-tokens)))))
-     nil
-     tokens)))
-
-(defn flatten-nested-tokens-json
-  "Recursively flatten the dtcg token structure, joining keys with '.'."
-  [tokens token-path]
-  (reduce-kv
-   (fn [acc k v]
-     (let [child-path (if (empty? token-path)
-                        (name k)
-                        (str token-path "." k))]
-       (if (and (map? v)
-                (not (contains? v "$type")))
-         (merge acc (flatten-nested-tokens-json v child-path))
-         (let [token-type (cto/dtcg-token-type->token-type (get v "$type"))]
-           (if token-type
-             (assoc acc child-path (make-token
-                                    :name child-path
-                                    :type token-type
-                                    :value (get v "$value")
-                                    :description (get v "$description")))
-             ;; Discard unknown tokens
-             acc)))))
-   {}
-   tokens))
-
 ;; === Tokens Lib
 
 (declare make-tokens-lib)
-
-(defn legacy-nodes->dtcg-nodes [sets-data]
-  (walk/postwalk
-   (fn [node]
-     (cond-> node
-       (and (map? node)
-            (contains? node "value")
-            (sequential? (get node "value")))
-       (update "value"
-               (fn [seq-value]
-                 (map #(set/rename-keys % {"type" "$type"}) seq-value)))
-
-       (and (map? node)
-            (and (contains? node "type")
-                 (contains? node "value")))
-       (set/rename-keys  {"value" "$value"
-                          "type" "$type"})))
-   sets-data))
 
 (defprotocol ITokensLib
   "A library of tokens, sets and themes."
@@ -910,12 +791,11 @@ Will return a value that matches this schema:
 `:all`     All of the nested sets are active
 `:partial` Mixed active state of nested sets")
   (get-active-themes-set-tokens [_] "set of set names that are active in the the active themes")
-  (encode-dtcg [_] "Encodes library to a dtcg compatible json string")
-  (decode-dtcg-json [_ parsed-json] "Decodes parsed json containing tokens and converts to library")
-  (decode-legacy-json [_ parsed-json] "Decodes parsed legacy json containing tokens and converts to library")
   (get-all-tokens [_] "all tokens in the lib")
   (validate [_]))
 
+(declare parse-multi-set-dtcg-json)
+(declare export-dtcg-json)
 (deftype TokensLib [sets themes active-themes]
   ;; NOTE: This is only for debug purposes, pending to properly
   ;; implement the toString and alternative printing.
@@ -932,12 +812,9 @@ Will return a value that matches this schema:
              (-clj->js [_] (js-obj "sets" (clj->js sets)
                                    "themes" (clj->js themes)
                                    "active-themes" (clj->js active-themes)))])
-
-
   #?@(:clj
       [json/JSONWriter
-       (-write [this writter options] (json/-write (encode-dtcg this) writter options))])
-
+       (-write [this writter options] (json/-write (export-dtcg-json this) writter options))])
 
   ITokenSets
   (add-set [_ token-set]
@@ -1312,142 +1189,6 @@ Will return a value that matches this schema:
                                    active-set-names)]
       tokens))
 
-  (encode-dtcg [this]
-    (let [themes-xform
-          (comp
-           (filter #(and (instance? TokenTheme %)
-                         (not (hidden-temporary-theme? %))))
-           (map (fn [token-theme]
-                  (let [theme-map (->> token-theme
-                                       (into {})
-                                       walk/stringify-keys)]
-                    (-> theme-map
-                        (set/rename-keys  {"sets" "selectedTokenSets"})
-                        (update "selectedTokenSets" (fn [sets]
-                                                      (->> (for [s sets] [s "enabled"])
-                                                           (into {})))))))))
-          themes
-          (->> (tree-seq d/ordered-map? vals themes)
-               (into [] themes-xform))
-
-          ;; Active themes without exposing hidden penpot theme
-          active-themes-clear
-          (disj active-themes hidden-token-theme-path)
-
-          update-token-fn
-          (fn [token]
-            (cond-> {"$value" (:value token)
-                     "$type" (cto/token-type->dtcg-token-type (:type token))}
-              (:description token) (assoc "$description" (:description token))))
-
-          name-set-tuples
-          (->> sets
-               (tree-seq d/ordered-map? vals)
-               (filter (partial instance? TokenSet))
-               (map (fn [{:keys [name tokens]}]
-                      [name (tokens-tree tokens :update-token-fn update-token-fn)])))
-
-          ordered-set-names
-          (mapv first name-set-tuples)
-
-          sets
-          (into {} name-set-tuples)
-
-          active-sets
-          (get-active-themes-set-names this)]
-
-      (-> sets
-          (assoc "$themes" themes)
-          (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names)
-          (assoc-in ["$metadata" "activeThemes"] active-themes-clear)
-          (assoc-in ["$metadata" "activeSets"] active-sets))))
-
-  (decode-dtcg-json [_ data]
-    (assert (map? data) "expected a map data structure for `data`")
-
-    (let [metadata (get data "$metadata")
-
-          xf-normalize-set-name
-          (map normalize-set-name)
-
-          sets
-          (dissoc data "$themes" "$metadata")
-
-          ordered-sets
-          (-> (d/ordered-set)
-              (into xf-normalize-set-name (get metadata "tokenSetOrder"))
-              (into xf-normalize-set-name (keys sets)))
-
-          active-sets
-          (or (->> (get metadata "activeSets")
-                   (into #{} xf-normalize-set-name)
-                   (not-empty))
-              #{})
-
-          active-themes
-          (or (->> (get metadata "activeThemes")
-                   (into #{})
-                   (not-empty))
-              #{hidden-token-theme-path})
-
-          themes
-          (->> (get data "$themes")
-               (map (fn [theme]
-                      (make-token-theme
-                       :name (get theme "name")
-                       :group (get theme "group")
-                       :is-source (get theme "is-source")
-                       :id (get theme "id")
-                       :modified-at (some-> (get theme "modified-at")
-                                            (dt/parse-instant))
-                       :sets (into #{}
-                                   (comp (map key)
-                                         xf-normalize-set-name
-                                         (filter #(contains? ordered-sets %)))
-                                   (get theme "selectedTokenSets")))))
-               (not-empty))
-
-          library
-          (make-tokens-lib)
-
-          sets
-          (reduce-kv (fn [result name tokens]
-                       (assoc result
-                              (normalize-set-name name)
-                              (flatten-nested-tokens-json tokens "")))
-                     {}
-                     sets)
-
-          library
-          (reduce (fn [library name]
-                    (if-let [tokens (get sets name)]
-                      (add-set library (make-token-set :name name :tokens tokens))
-                      library))
-                  library
-                  ordered-sets)
-
-          library
-          (update-theme library hidden-token-theme-group hidden-token-theme-name
-                        #(assoc % :sets active-sets))
-
-          library
-          (reduce add-theme library themes)
-
-          library
-          (reduce (fn [library theme-path]
-                    (let [[group name] (split-token-theme-path theme-path)]
-                      (activate-theme library group name)))
-                  library
-                  active-themes)]
-
-      library))
-
-  (decode-legacy-json [this parsed-legacy-json]
-    (let [other-data (select-keys parsed-legacy-json ["$themes" "$metadata"])
-          sets-data (dissoc parsed-legacy-json "$themes" "$metadata")
-          dtcg-sets-data (legacy-nodes->dtcg-nodes sets-data)]
-      (decode-dtcg-json this (merge other-data
-                                    dtcg-sets-data))))
   (get-all-tokens [this]
     (reduce
      (fn [tokens' set]
@@ -1509,18 +1250,13 @@ Will return a value that matches this schema:
   [tokens-lib]
   (or tokens-lib (make-tokens-lib)))
 
-(defn decode-dtcg
-  [encoded-json]
-  (-> (make-tokens-lib)
-      (decode-dtcg-json encoded-json)))
-
 (def schema:tokens-lib
   (sm/register!
    {:type ::tokens-lib
     :pred valid-tokens-lib?
     :type-properties
-    {:encode/json encode-dtcg
-     :decode/json decode-dtcg}}))
+    {:encode/json export-dtcg-json
+     :decode/json parse-multi-set-dtcg-json}}))
 
 (defn duplicate-set [set-name lib & {:keys [suffix]}]
   (let [sets (get-sets lib)
@@ -1529,6 +1265,336 @@ Will return a value that matches this schema:
     (some-> (get-set lib set-name)
             (assoc :name copy-name)
             (assoc :modified-at (dt/now)))))
+
+;; === Import / Export from JSON format
+
+;; Supported formats:
+;;  - Legacy: for tokens files prior to DTCG second draft
+;;  - DTCG: for tokens files conforming to the DTCG second draft (current for now)
+;;    https://www.w3.org/community/design-tokens/2022/06/14/call-to-implement-the-second-editors-draft-and-share-feedback/
+;;
+;;  - Single set: for files that comply with the base DTCG format, that contain a single tree of tokens.
+;;  - Multi sets: for files with the Tokens Studio extension, that may contain several sets, and also themes and other $metadata.
+;;
+;; Small glossary:
+;;  * json data: a json-encoded string
+;;  * decode: convert a json string into a plain clojure nested map
+;;  * parse: build a TokensLib (or a fragment) from a decoded json data
+;;  * export: generate from a TokensLib a plain clojure nested map, suitable to be encoded as a json string
+
+(def ^:private legacy-node?
+  (sm/validator
+   [:or
+    [:map
+     ["value" :string]
+     ["type" :string]]
+    [:map
+     ["value" [:sequential [:map ["type" :string]]]]
+     ["type" :string]]
+    [:map
+     ["value" :map]
+     ["type" :string]]]))
+
+(def ^:private dtcg-node?
+  (sm/validator
+   [:or
+    [:map
+     ["$value" :string]
+     ["$type" :string]]
+    [:map
+     ["$value" [:sequential [:map ["$type" :string]]]]
+     ["$type" :string]]
+    [:map
+     ["$value" :map]
+     ["$type" :string]]]))
+
+(defn- get-json-format
+  "Searches through decoded token file and returns:
+   - `:json-format/legacy` when first node satisfies `legacy-node?` predicate
+   - `:json-format/dtcg` when first node satisfies `dtcg-node?` predicate
+   - `nil` if neither combination is found"
+  ([decoded-json]
+   (get-json-format decoded-json legacy-node? dtcg-node?))
+  ([decoded-json legacy-node? dtcg-node?]
+   (assert (map? decoded-json) "expected a plain clojure map for `decoded-json`")
+   (let [branch? map?
+         children (fn [node] (vals node))
+         check-node (fn [node]
+                      (cond
+                        (legacy-node? node) :json-format/legacy
+                        (dtcg-node? node) :json-format/dtcg
+                        :else nil))
+         walk (fn walk [node]
+                (lazy-seq
+                 (cons
+                  (check-node node)
+                  (when (branch? node)
+                    (mapcat walk (children node))))))]
+     (->> (walk decoded-json)
+          (filter some?)
+          first)))) ;; TODO: throw error if format cannot be determined
+
+(defn- legacy-json->dtcg-json
+  "Converts a decoded json file in legacy format into DTCG format."
+  [decoded-json]
+  (assert (map? decoded-json) "expected a plain clojure map for `decoded-json`")
+  (walk/postwalk
+   (fn [node]
+     (cond-> node
+       (and (map? node)
+            (contains? node "value")
+            (sequential? (get node "value")))
+       (update "value"
+               (fn [seq-value]
+                 (map #(set/rename-keys % {"type" "$type"}) seq-value)))
+
+       (and (map? node)
+            (and (contains? node "type")
+                 (contains? node "value")))
+       (set/rename-keys  {"value" "$value"
+                          "type" "$type"})))
+   decoded-json))
+
+(defn- single-set?
+  "Check if the decoded json file conforms to basic DTCG format with a single set."
+  [decoded-json]
+  (assert (map? decoded-json) "expected a plain clojure map for `decoded-json`")
+  (and (not (contains? decoded-json "$metadata"))
+       (not (contains? decoded-json "$themes"))))
+
+(defn- flatten-nested-tokens-json
+  "Convert a tokens tree in the decoded json fragment into a flat map,
+   being the keys the token paths after joining the keys with '.'."
+  [decoded-json-tokens parent-path]
+  (reduce-kv
+   (fn [tokens k v]
+     (let [child-path (if (empty? parent-path)
+                        (name k)
+                        (str parent-path "." k))]
+       (if (and (map? v)
+                (not (contains? v "$type")))
+         (merge tokens (flatten-nested-tokens-json v child-path))
+         (let [token-type (cto/dtcg-token-type->token-type (get v "$type"))]
+           (if token-type
+             (assoc tokens child-path (make-token
+                                       :name child-path
+                                       :type token-type
+                                       :value (get v "$value")
+                                       :description (get v "$description")))
+             ;; Discard unknown type tokens
+             tokens)))))
+   {}
+   decoded-json-tokens))
+
+(defn- parse-single-set-dtcg-json
+  "Parse a decoded json file with a single set of tokens in DTCG format into a TokensLib."
+  [set-name decoded-json-tokens]
+  (assert (map? decoded-json-tokens) "expected a plain clojure map for `decoded-json-tokens`")
+  (assert (= (get-json-format decoded-json-tokens) :json-format/dtcg) "expected a dtcg format for `decoded-json-tokens`")
+  (-> (make-tokens-lib)
+      (add-set (make-token-set :name (normalize-set-name set-name)
+                               :tokens (flatten-nested-tokens-json decoded-json-tokens "")))))
+
+(defn- parse-single-set-legacy-json
+  "Parse a decoded json file with a single set of tokens in legacy format into a TokensLib."
+  [set-name decoded-json-tokens]
+  (assert (map? decoded-json-tokens) "expected a plain clojure map for `decoded-json-tokens`")
+  (assert (= (get-json-format decoded-json-tokens) :json-format/legacy) "expected a legacy format for `decoded-json-tokens`")
+  (parse-single-set-dtcg-json set-name (legacy-json->dtcg-json decoded-json-tokens)))
+
+(defn- parse-multi-set-dtcg-json
+  "Parse a decoded json file with multi sets in DTCG format into a TokensLib."
+  [decoded-json]
+  (assert (map? decoded-json) "expected a plain clojure map for `decoded-json`")
+  (assert (= (get-json-format decoded-json) :json-format/dtcg) "expected a dtcg format for `decoded-json`")
+
+  (let [metadata (get decoded-json "$metadata")
+
+        xf-normalize-set-name
+        (map normalize-set-name)
+
+        sets
+        (dissoc decoded-json "$themes" "$metadata")
+
+        ordered-set-names
+        (-> (d/ordered-set)
+            (into xf-normalize-set-name (get metadata "tokenSetOrder"))
+            (into xf-normalize-set-name (keys sets)))
+
+        active-set-names
+        (or (->> (get metadata "activeSets")
+                 (into #{} xf-normalize-set-name)
+                 (not-empty))
+            #{})
+
+        active-theme-names
+        (or (->> (get metadata "activeThemes")
+                 (into #{})
+                 (not-empty))
+            #{hidden-token-theme-path})
+
+        themes
+        (->> (get decoded-json "$themes")
+             (map (fn [theme]
+                    (make-token-theme
+                     :name (get theme "name")
+                     :group (get theme "group")
+                     :is-source (get theme "is-source")
+                     :id (get theme "id")
+                     :modified-at (some-> (get theme "modified-at")
+                                          (dt/parse-instant))
+                     :sets (into #{}
+                                 (comp (map key)
+                                       xf-normalize-set-name
+                                       (filter #(contains? ordered-set-names %)))
+                                 (get theme "selectedTokenSets")))))
+             (not-empty))
+
+        library
+        (make-tokens-lib)
+
+        sets
+        (reduce-kv (fn [result name tokens]
+                     (assoc result
+                            (normalize-set-name name)
+                            (flatten-nested-tokens-json tokens "")))
+                   {}
+                   sets)
+
+        library
+        (reduce (fn [library name]
+                  (if-let [tokens (get sets name)]
+                    (add-set library (make-token-set :name name :tokens tokens))
+                    library))
+                library
+                ordered-set-names)
+
+        library
+        (update-theme library hidden-token-theme-group hidden-token-theme-name
+                      #(assoc % :sets active-set-names))
+
+        library
+        (reduce add-theme library themes)
+
+        library
+        (reduce (fn [library theme-path]
+                  (let [[group name] (split-token-theme-path theme-path)]
+                    (activate-theme library group name)))
+                library
+                active-theme-names)]
+
+    library))
+
+(defn- parse-multi-set-legacy-json
+  "Parse a decoded json file with multi sets in legacy format into a TokensLib."
+  [decoded-json]
+  (assert (map? decoded-json) "expected a plain clojure map for `decoded-json`")
+  (assert (= (get-json-format decoded-json) :json-format/legacy) "expected a legacy format for `decoded-json`")
+
+  (let [sets-data      (dissoc decoded-json "$themes" "$metadata")
+        other-data     (select-keys decoded-json ["$themes" "$metadata"])
+        dtcg-sets-data (legacy-json->dtcg-json sets-data)]
+    (parse-multi-set-dtcg-json (merge other-data
+                                      dtcg-sets-data))))
+
+(defn parse-decoded-json
+  "Guess the format and content type of the decoded json file and parse it into a TokensLib.
+   The `file-name` is used to determine the set name when the json file contains a single set."
+  [decoded-json file-name]
+  (let [single-set? (single-set? decoded-json)
+        json-format (get-json-format decoded-json)]
+    (cond
+      (and single-set?
+           (= :json-format/legacy json-format))
+      (parse-single-set-legacy-json file-name decoded-json)
+
+      (and single-set?
+           (= :json-format/dtcg json-format))
+      (parse-single-set-dtcg-json file-name decoded-json)
+
+      (= :json-format/legacy json-format)
+      (parse-multi-set-legacy-json decoded-json)
+
+      :else
+      (parse-multi-set-dtcg-json decoded-json))))
+
+(defn export-dtcg-json
+  "Convert a TokensLib into a plain clojure map, suitable to be encoded as a multi sets json string in DTCG format."
+  [tokens-lib]
+  (let [themes-xform
+        (comp
+         (filter #(and (instance? TokenTheme %)
+                       (not (hidden-temporary-theme? %))))
+         (map (fn [token-theme]
+                (let [theme-map (->> token-theme
+                                     (into {})
+                                     walk/stringify-keys)]
+                  (-> theme-map
+                      (set/rename-keys  {"sets" "selectedTokenSets"})
+                      (update "selectedTokenSets" (fn [sets]
+                                                    (->> (for [s sets] [s "enabled"])
+                                                         (into {})))))))))
+        themes
+        (->> (get-theme-tree tokens-lib)
+             (tree-seq d/ordered-map? vals)
+             (into [] themes-xform))
+
+          ;; Active themes without exposing hidden penpot theme
+        active-themes-clear
+        (-> (get-active-theme-paths tokens-lib)
+            (disj hidden-token-theme-path))
+
+        update-token-fn
+        (fn [token]
+          (cond-> {"$value" (:value token)
+                   "$type" (cto/token-type->dtcg-token-type (:type token))}
+            (:description token) (assoc "$description" (:description token))))
+
+        name-set-tuples
+        (->> (get-set-tree tokens-lib)
+             (tree-seq d/ordered-map? vals)
+             (filter (partial instance? TokenSet))
+             (map (fn [{:keys [name tokens]}]
+                    [name (tokens-tree tokens :update-token-fn update-token-fn)])))
+
+        ordered-set-names
+        (mapv first name-set-tuples)
+
+        sets
+        (into {} name-set-tuples)
+
+        active-set-names
+        (get-active-themes-set-names tokens-lib)]
+
+    (-> sets
+        (assoc "$themes" themes)
+        (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names)
+        (assoc-in ["$metadata" "activeThemes"] active-themes-clear)
+        (assoc-in ["$metadata" "activeSets"] active-set-names))))
+
+(defn get-tokens-of-unknown-type
+  "Search for all tokens in the decoded json file that have a type that is not currently
+   supported by Penpot. Returns a map token-path -> token type."
+  ([decoded-json]
+   (get-tokens-of-unknown-type decoded-json "" (get-json-format decoded-json)))
+  ([decoded-json parent-path json-format]
+   (let [type-key (if (= json-format :json-format/dtcg) "$type" "type")]
+     (reduce-kv
+      (fn [unknown-tokens k v]
+        (let [child-path (if (empty? parent-path)
+                           (name k)
+                           (str parent-path "." k))]
+          (if (and (map? v)
+                   (not (contains? v type-key)))
+            (let [nested-unknown-tokens (get-tokens-of-unknown-type v child-path json-format)]
+              (merge unknown-tokens nested-unknown-tokens))
+            (let [token-type-str (get v type-key)
+                  token-type (cto/dtcg-token-type->token-type token-type-str)]
+              (if (and (not (some? token-type)) (some? token-type-str))
+                (assoc unknown-tokens child-path token-type-str)
+                unknown-tokens)))))
+      nil
+      decoded-json))))
 
 ;; === Serialization handlers for RPC API (transit) and database (fressian)
 

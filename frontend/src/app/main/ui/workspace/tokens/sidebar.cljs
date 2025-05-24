@@ -381,7 +381,7 @@
          (fn []
            (st/emit! (ptk/data-event ::ev/event {::ev/name "export-tokens"}))
            (let [tokens-json (some-> (deref refs/tokens-lib)
-                                     (ctob/encode-dtcg)
+                                     (ctob/export-dtcg-json)
                                      (json/encode :key-fn identity))]
              (->> (wapi/create-blob (or tokens-json "{}") "application/json")
                   (dom/trigger-download "tokens.json")))))
