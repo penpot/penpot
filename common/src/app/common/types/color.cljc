@@ -8,23 +8,36 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
    [app.common.text :as txt]
+   [app.common.time :as dt]
    [app.common.types.plugins :as ctpg]
-   [app.common.uuid :as uuid]
+   [clojure.set :as set]
    [cuerdas.core :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS & TYPES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def rgb-color-re
+(def valid-color-attrs
+  "A set used for proper check if color should contain only one of the
+  attrs listed in this set."
+  #{:image :gradient :color})
+
+(defn has-valid-color-attrs?
+  "Check if color has correct color attrs"
+  [color]
+  (let [attrs (set (keys color))
+        result (set/intersection attrs valid-color-attrs)]
+    (= 1 (count result))))
+
+(def ^:private hex-color-rx
   #"^#(?:[0-9a-fA-F]{3}){1,2}$")
 
-(defn- generate-rgb-color
-  []
+(def ^:private hex-color-generator
   (sg/fmap (fn [_]
              #?(:clj (format "#%06x" (rand-int 16rFFFFFF))
                 :cljs
@@ -37,38 +50,44 @@
                        (.. b (toString 16) (padStart 2 "0"))))))
            sg/int))
 
-(defn rgb-color-string?
+(defn hex-color-string?
   [o]
-  (and (string? o) (some? (re-matches rgb-color-re o))))
+  (and (string? o) (some? (re-matches hex-color-rx o))))
 
-(def schema:rgb-color
+(def schema:hex-color
   (sm/register!
-   {:type ::rgb-color
-    :pred rgb-color-string?
+   {:type ::hex-color
+    :pred hex-color-string?
     :type-properties
-    {:title "rgb-color"
-     :description "RGB Color String"
-     :error/message "expected a valid RGB color"
-     :error/code "errors.invalid-rgb-color"
-     :gen/gen (generate-rgb-color)
+    {:title "hex-color"
+     :description "HEX Color String"
+     :error/message "expected a valid HEX color"
+     :error/code "errors.invalid-hex-color"
+     :gen/gen hex-color-generator
      ::oapi/type "integer"
      ::oapi/format "int64"}}))
 
+(def schema:plain-color
+  [:map [:color schema:hex-color]])
+
 (def schema:image
-  [:map {:title "ImageColor"}
-   [:width ::sm/int]
-   [:height ::sm/int]
-   [:mtype ::sm/text]
+  [:map {:title "ImageColor" :closed true}
+   [:width [::sm/int {:min 0 :gen/gen sg/int}]]
+   [:height [::sm/int {:min 0 :gen/gen sg/int}]]
+   [:mtype {:gen/gen (sg/elements cm/image-types)} ::sm/text]
    [:id ::sm/uuid]
    [:name {:optional true} ::sm/text]
    [:keep-aspect-ratio {:optional true} :boolean]])
+
+(def schema:image-color
+  [:map [:image schema:image]])
 
 (def gradient-types
   #{:linear :radial})
 
 (def schema:gradient
-  [:map {:title "Gradient"}
-   [:type [::sm/one-of #{:linear :radial}]]
+  [:map {:title "Gradient" :closed true}
+   [:type [::sm/one-of gradient-types]]
    [:start-x ::sm/safe-number]
    [:start-y ::sm/safe-number]
    [:end-x ::sm/safe-number]
@@ -77,86 +96,79 @@
    [:stops
     [:vector {:min 1 :gen/max 2}
      [:map {:title "GradientStop"}
-      [:color schema:rgb-color]
-      [:opacity {:optional true} [:maybe ::sm/safe-number]]
+      [:color schema:hex-color]
+      [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
       [:offset ::sm/safe-number]]]]])
 
+(def schema:gradient-color
+  [:map [:gradient schema:gradient]])
+
 (def schema:color-attrs
-  [:map {:title "ColorAttrs"}
-   [:id {:optional true} ::sm/uuid]
-   [:name {:optional true} :string]
-   [:path {:optional true} [:maybe :string]]
-   [:value {:optional true} [:maybe :string]]
-   [:color {:optional true} [:maybe schema:rgb-color]]
-   [:opacity {:optional true} [:maybe ::sm/safe-number]]
-   [:modified-at {:optional true} ::sm/inst]
+  [:map {:title "ColorAttrs" :closed true}
+   [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
    [:ref-id {:optional true} ::sm/uuid]
-   [:ref-file {:optional true} ::sm/uuid]
-   [:gradient {:optional true} [:maybe schema:gradient]]
-   [:image {:optional true} [:maybe schema:image]]
-   [:plugin-data {:optional true} ::ctpg/plugin-data]])
+   [:ref-file {:optional true} ::sm/uuid]])
 
 (def schema:color
-  [:and schema:color-attrs
-   [::sm/contains-any {:strict true} [:color :gradient :image]]])
-
-(def schema:recent-color
   [:and
-   [:map {:title "RecentColor"}
-    [:opacity {:optional true} [:maybe ::sm/safe-number]]
-    [:color {:optional true} [:maybe schema:rgb-color]]
-    [:gradient {:optional true} [:maybe schema:gradient]]
-    [:image {:optional true} [:maybe schema:image]]]
-   [::sm/contains-any {:strict true} [:color :gradient :image]]])
+   [:merge {:title "Color"}
+    schema:color-attrs
+    (sm/optional-keys schema:plain-color)
+    (sm/optional-keys schema:gradient-color)
+    (sm/optional-keys schema:image-color)]
+   [:fn has-valid-color-attrs?]])
 
-;; Same as color but with :id prop required
+(def schema:library-color-attrs
+  [:map {:title "ColorAttrs" :closed true}
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:path {:optional true} :string]
+   [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
+   [:modified-at {:optional true} ::sm/inst]
+   [:plugin-data {:optional true} ::ctpg/plugin-data]])
+
 (def schema:library-color
+  "Used for in-transit representation of a color (per example when user
+  clicks a color on assets sidebar, the color should be properly identified with
+  the file-id where it belongs)"
   [:and
-   (sm/required-keys schema:color-attrs [:id])
-   [::sm/contains-any {:strict true} [:color :gradient :image]]])
-
-;; FIXME: revisit if we really need this all registers
-(sm/register! ::color schema:color)
-(sm/register! ::gradient schema:gradient)
-(sm/register! ::image-color schema:image)
-(sm/register! ::recent-color schema:recent-color)
-(sm/register! ::color-attrs schema:color-attrs)
+   [:merge
+    schema:library-color-attrs
+    (sm/optional-keys schema:plain-color)
+    (sm/optional-keys schema:gradient-color)
+    (sm/optional-keys schema:image-color)]
+   [:fn has-valid-color-attrs?]])
 
 (def valid-color?
   (sm/lazy-validator schema:color))
+
+(def valid-library-color?
+  (sm/lazy-validator schema:library-color))
 
 (def check-color
   (sm/check-fn schema:color :hint "expected valid color"))
 
 (def check-library-color
-  (sm/check-fn schema:library-color :hint "expected valid library color"))
-
-(def check-recent-color
-  (sm/check-fn schema:recent-color :hint "expected valid recent color"))
+  (sm/check-fn schema:library-color :hint "expected valid color"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; --- factory
-
-(defn make-color
-  [{:keys [id name path value color opacity ref-id ref-file gradient image]}]
-  (-> {:id (or id (uuid/next))
-       :name (or name color "Black")
-       :path path
-       :value value
-       :color (or color "#000000")
-       :opacity (or opacity 1)
-       :ref-id ref-id
-       :ref-file ref-file
-       :gradient gradient
-       :image image}
-      (d/without-nils)))
+(defn library-color->color
+  "Converts a library color data structure to a plain color data structure"
+  [lcolor file-id]
+  (-> lcolor
+      (select-keys [:image :gradient :color :opacity])
+      (assoc :ref-id (get lcolor :id))
+      (assoc :ref-file file-id)
+      (vary-meta assoc
+                 :path (get lcolor :path)
+                 :name (get lcolor :name))))
 
 ;; --- fill
 
-(defn fill->shape-color
+(defn fill->color
   [fill]
   (d/without-nils
    {:color (:fill-color fill)
@@ -178,126 +190,130 @@
 
 (defn attach-fill-color
   [shape position ref-id ref-file]
-  (-> shape
-      (assoc-in [:fills position :fill-color-ref-id] ref-id)
-      (assoc-in [:fills position :fill-color-ref-file] ref-file)))
+  (d/update-in-when shape [:fills position]
+                    (fn [fill]
+                      (-> fill
+                          (assoc :fill-color-ref-file ref-file)
+                          (assoc :fill-color-ref-id ref-id)))))
 
 (defn detach-fill-color
   [shape position]
-  (-> shape
-      (d/dissoc-in [:fills position :fill-color-ref-id])
-      (d/dissoc-in [:fills position :fill-color-ref-file])))
+  (d/update-in-when shape [:fills position] dissoc :fill-color-ref-id :fill-color-ref-file))
 
 ;; stroke
 
-(defn stroke->shape-color
+(defn stroke->color
   [stroke]
-  (d/without-nils {:color (:stroke-color stroke)
-                   :opacity (:stroke-opacity stroke)
-                   :gradient (:stroke-color-gradient stroke)
-                   :image (:stroke-image stroke)
-                   :ref-id (:stroke-color-ref-id stroke)
-                   :ref-file (:stroke-color-ref-file stroke)}))
+  (d/without-nils
+   {:color (str/lower (:stroke-color stroke))
+    :opacity (:stroke-opacity stroke)
+    :gradient (:stroke-color-gradient stroke)
+    :image (:stroke-image stroke)
+    :ref-id (:stroke-color-ref-id stroke)
+    :ref-file (:stroke-color-ref-file stroke)}))
 
 (defn set-stroke-color
   [shape position color opacity gradient image]
-  (update-in shape [:strokes position]
-             (fn [stroke]
-               (d/without-nils (assoc stroke
-                                      :stroke-color color
-                                      :stroke-opacity opacity
-                                      :stroke-color-gradient gradient
-                                      :stroke-image image)))))
+  (d/update-in-when shape [:strokes position]
+                    (fn [stroke]
+                      (-> stroke
+                          (assoc :stroke-color color)
+                          (assoc :stroke-opacity opacity)
+                          (assoc :stroke-color-gradient gradient)
+                          (assoc :stroke-image image)
+                          (d/without-nils)))))
 
 (defn attach-stroke-color
   [shape position ref-id ref-file]
-  (-> shape
-      (assoc-in [:strokes position :stroke-color-ref-id] ref-id)
-      (assoc-in [:strokes position :stroke-color-ref-file] ref-file)))
+  (d/update-in-when shape [:strokes position]
+                    (fn [stroke]
+                      (-> stroke
+                          (assoc :stroke-color-ref-id ref-id)
+                          (assoc :stroke-color-ref-file ref-file)))))
 
 (defn detach-stroke-color
   [shape position]
-  (-> shape
-      (d/dissoc-in [:strokes position :stroke-color-ref-id])
-      (d/dissoc-in [:strokes position :stroke-color-ref-file])))
+  (d/update-in-when shape [:strokes position] dissoc :stroke-color-ref-id :stroke-color-ref-file))
 
 ;; shadow
 
-(defn shadow->shape-color
+(defn shadow->color
   [shadow]
-  (d/without-nils {:color (-> shadow :color :color)
-                   :opacity (-> shadow :color :opacity)
-                   :gradient (-> shadow :color :gradient)
-                   :ref-id (-> shadow :color :id)
-                   :ref-file (-> shadow :color :file-id)}))
+  (:color shadow))
 
 (defn set-shadow-color
   [shape position color opacity gradient]
-  (update-in shape [:shadow position :color]
-             (fn [shadow-color]
-               (d/without-nils (assoc shadow-color
-                                      :color color
-                                      :opacity opacity
-                                      :gradient gradient)))))
+  (d/update-in-when shape [:shadow position :color]
+                    (fn [shadow-color]
+                      (-> shadow-color
+                          (assoc :color color)
+                          (assoc :opacity opacity)
+                          (assoc :gradient gradient)
+                          (d/without-nils)))))
 
 (defn attach-shadow-color
   [shape position ref-id ref-file]
-  (-> shape
-      (assoc-in [:shadow position :color :id] ref-id)
-      (assoc-in [:shadow position :color :file-id] ref-file)))
+  (d/update-in-when shape [:shadow position :color]
+                    (fn [color]
+                      (-> color
+                          (assoc :ref-id ref-id)
+                          (assoc :ref-file ref-file)))))
 
 (defn detach-shadow-color
   [shape position]
-  (-> shape
-      (d/dissoc-in [:shadow position :color :id])
-      (d/dissoc-in [:shadow position :color :file-id])))
+  (d/update-in-when shape [:shadow position :color] dissoc :ref-id :ref-file))
 
 ;; grid
 
-(defn grid->shape-color
+;: FIXME: revisit colors...... WTF
+(defn grid->color
   [grid]
-  (d/without-nils {:color (-> grid :params :color :color)
-                   :opacity (-> grid :params :color :opacity)
-                   :gradient (-> grid :params :color :gradient)
-                   :ref-id (-> grid :params :color :id)
-                   :ref-file (-> grid :params :color :file-id)}))
+  (let [color (-> grid :params :color)]
+    (d/without-nils
+     {:color (-> color :color)
+      :opacity (-> color :opacity)
+      :gradient (-> color :gradient)
+      :ref-id (-> color :id)
+      :ref-file (-> color :file-id)})))
 
 (defn set-grid-color
   [shape position color opacity gradient]
-  (update-in shape [:grids position :params :color]
-             (fn [grid-color]
-               (d/without-nils (assoc grid-color
-                                      :color color
-                                      :opacity opacity
-                                      :gradient gradient)))))
+  (d/update-in-when shape [:grids position :params :color]
+                    (fn [grid-color]
+                      (-> grid-color
+                          (assoc :color color)
+                          (assoc :opacity opacity)
+                          (assoc :gradient gradient)
+                          (d/without-nils)))))
+
 (defn attach-grid-color
   [shape position ref-id ref-file]
-  (-> shape
-      (assoc-in [:grids position :params :color :id] ref-id)
-      (assoc-in [:grids position :params :color :file-id] ref-file)))
+  (d/update-in-when shape [:grids position :params :color]
+                    (fn [color]
+                      (-> color
+                          (assoc :ref-id ref-id)
+                          (assoc :ref-file ref-file)))))
 
 (defn detach-grid-color
   [shape position]
-  (-> shape
-      (d/dissoc-in [:grids position :params :color :id])
-      (d/dissoc-in [:grids position :params :color :file-id])))
+  (d/update-in-when shape [:grids position :params :color] dissoc :ref-id :ref-file))
 
 ;; --- Helpers for all colors in a shape
 
 (defn get-text-node-colors
   "Get all colors used by a node of a text shape"
   [node]
-  (concat (map fill->shape-color (:fills node))
-          (map stroke->shape-color (:strokes node))))
+  (concat (map fill->color (:fills node))
+          (map stroke->color (:strokes node))))
 
 (defn get-all-colors
   "Get all colors used by a shape, in any section."
   [shape]
-  (concat (map fill->shape-color (:fills shape))
-          (map stroke->shape-color (:strokes shape))
-          (map shadow->shape-color (:shadow shape))
+  (concat (map fill->color (:fills shape))
+          (map stroke->color (:strokes shape))
+          (map shadow->color (:shadow shape))
           (when (= (:type shape) :frame)
-            (map grid->shape-color (:grids shape)))
+            (map grid->color (:grids shape)))
           (when (= (:type shape) :text)
             (reduce (fn [colors node]
                       (concat colors (get-text-node-colors node)))
@@ -326,7 +342,7 @@
   (let [process-fill (fn [shape [position fill]]
                        (process-fn shape
                                    position
-                                   (fill->shape-color fill)
+                                   (fill->color fill)
                                    set-fill-color
                                    attach-fill-color
                                    detach-fill-color))
@@ -334,7 +350,7 @@
         process-stroke (fn [shape [position stroke]]
                          (process-fn shape
                                      position
-                                     (stroke->shape-color stroke)
+                                     (stroke->color stroke)
                                      set-stroke-color
                                      attach-stroke-color
                                      detach-stroke-color))
@@ -342,7 +358,7 @@
         process-shadow (fn [shape [position shadow]]
                          (process-fn shape
                                      position
-                                     (shadow->shape-color shadow)
+                                     (shadow->color shadow)
                                      set-shadow-color
                                      attach-shadow-color
                                      detach-shadow-color))
@@ -350,7 +366,7 @@
         process-grid (fn [shape [position grid]]
                        (process-fn shape
                                    position
-                                   (grid->shape-color grid)
+                                   (grid->color grid)
                                    set-grid-color
                                    attach-grid-color
                                    detach-grid-color))
@@ -407,114 +423,76 @@
 
     (process-shape-colors shape sync-color)))
 
-(defn- eq-recent-color?
-  [c1 c2]
-  (or (= c1 c2)
-      (and (some? (:color c1))
-           (some? (:color c2))
-           (= (:color c1) (:color c2)))))
-
-(defn add-recent-color
-  "Moves the color to the top of the list and then truncates up to 15"
-  [state file-id color]
-  (update state file-id (fn [colors]
-                          (let [colors (d/removev (partial eq-recent-color? color) colors)
-                                colors (conj colors color)]
-                            (cond-> colors
-                              (> (count colors) 15)
-                              (subvec 1))))))
-
-(defn stroke->color-att
-  [stroke file-id shared-libs]
-  (let [color-file-id      (:stroke-color-ref-file stroke)
-        color-id           (:stroke-color-ref-id stroke)
-        shared-libs-colors (dm/get-in shared-libs [color-file-id :data :colors])
-        is-shared?         (contains? shared-libs-colors color-id)
-        has-color?         (or (not (nil? (:stroke-color stroke))) (not (nil? (:stroke-color-gradient stroke))))
-        attrs              (if (or is-shared? (= color-file-id file-id))
-                             (d/without-nils {:color    (str/lower (:stroke-color stroke))
-                                              :opacity  (:stroke-opacity stroke)
-                                              :id       color-id
-                                              :file-id  color-file-id
-                                              :gradient (:stroke-color-gradient stroke)})
-                             (d/without-nils {:color    (str/lower (:stroke-color stroke))
-                                              :opacity  (:stroke-opacity stroke)
-                                              :gradient (:stroke-color-gradient stroke)}))]
+(defn- stroke->color-att
+  [stroke file-id libraries]
+  (let [ref-file      (:stroke-color-ref-file stroke)
+        ref-id        (:stroke-color-ref-id stroke)
+        shared-colors (dm/get-in libraries [ref-file :data :colors])
+        is-shared?    (contains? shared-colors ref-id)
+        has-color?    (or (:stroke-color stroke)
+                          (:stroke-color-gradient stroke))
+        attrs         (cond-> (stroke->color stroke)
+                        (not (or is-shared? (= ref-file file-id)))
+                        (dissoc :ref-id :ref-file))]
     (when has-color?
       {:attrs attrs
        :prop :stroke
        :shape-id (:shape-id stroke)
        :index (:index stroke)})))
 
-(defn shadow->color-att
-  [shadow file-id shared-libs]
-  (let [color-file-id      (dm/get-in shadow [:color :file-id])
-        color-id           (dm/get-in shadow [:color :id])
-        shared-libs-colors (dm/get-in shared-libs [color-file-id :data :colors])
-        is-shared?         (contains? shared-libs-colors color-id)
-        attrs              (if (or is-shared? (= color-file-id file-id))
-                             (d/without-nils {:color    (str/lower (dm/get-in shadow [:color :color]))
-                                              :opacity  (dm/get-in shadow [:color :opacity])
-                                              :id       color-id
-                                              :file-id  (dm/get-in shadow [:color :file-id])
-                                              :gradient (dm/get-in shadow [:color :gradient])})
-                             (d/without-nils {:color    (str/lower (dm/get-in shadow [:color :color]))
-                                              :opacity  (dm/get-in shadow [:color :opacity])
-                                              :gradient (dm/get-in shadow [:color :gradient])}))]
-
-
+(defn- shadow->color-att
+  [shadow file-id libraries]
+  (let [color         (get shadow :color)
+        ref-file      (get color :ref-file)
+        ref-id        (get color :ref-id)
+        shared-colors (dm/get-in libraries [ref-file :data :colors])
+        is-shared?    (contains? shared-colors ref-id)
+        attrs         (cond-> (shadow->color shadow)
+                        (not (or is-shared? (= ref-file file-id)))
+                        (dissoc :ref-file :ref-id))]
     {:attrs attrs
      :prop :shadow
      :shape-id (:shape-id shadow)
      :index (:index shadow)}))
 
-(defn text->color-att
-  [fill file-id shared-libs]
-  (let [color-file-id      (:fill-color-ref-file fill)
-        color-id           (:fill-color-ref-id fill)
-        shared-libs-colors (dm/get-in shared-libs [color-file-id :data :colors])
-        is-shared?         (contains? shared-libs-colors color-id)
-        attrs              (if (or is-shared? (= color-file-id file-id))
-                             (d/without-nils {:color    (str/lower (:fill-color fill))
-                                              :opacity  (:fill-opacity fill)
-                                              :id       color-id
-                                              :file-id  color-file-id
-                                              :gradient (:fill-color-gradient fill)})
-                             (d/without-nils {:color    (str/lower (:fill-color fill))
-                                              :opacity  (:fill-opacity fill)
-                                              :gradient (:fill-color-gradient fill)}))]
+(defn- text->color-att
+  [fill file-id libraries]
+  (let [ref-file      (:fill-color-ref-file fill)
+        ref-id        (:fill-color-ref-id fill)
+        shared-colors (dm/get-in libraries [ref-file :data :colors])
+        is-shared?    (contains? shared-colors ref-id)
+        attrs         (cond-> (fill->color fill)
+                        (not (or is-shared? (= ref-file file-id)))
+                        (dissoc :ref-file :ref-id))]
+
     {:attrs attrs
      :prop :content
      :shape-id (:shape-id fill)
      :index (:index fill)}))
 
-(defn treat-node
+(defn- treat-node
   [node shape-id]
   (map-indexed #(assoc %2 :shape-id shape-id :index %1) node))
 
-(defn extract-text-colors
-  [text file-id shared-libs]
-  (let [content (txt/node-seq txt/is-text-node? (:content text))
-        content-filtered (map :fills content)
-        indexed (mapcat #(treat-node % (:id text)) content-filtered)]
-    (map #(text->color-att % file-id shared-libs) indexed)))
+(defn- extract-text-colors
+  [text file-id libraries]
+  (->> (txt/node-seq txt/is-text-node? (:content text))
+       (map :fills)
+       (mapcat #(treat-node % (:id text)))
+       (map #(text->color-att % file-id libraries))))
 
-(defn fill->color-att
-  [fill file-id shared-libs]
-  (let [color-file-id      (:fill-color-ref-file fill)
-        color-id           (:fill-color-ref-id fill)
-        shared-libs-colors (dm/get-in shared-libs [color-file-id :data :colors])
-        is-shared?         (contains? shared-libs-colors color-id)
-        has-color?         (or (not (nil? (:fill-color fill))) (not (nil? (:fill-color-gradient fill))))
-        attrs              (if (or is-shared? (= color-file-id file-id))
-                             (d/without-nils {:color    (str/lower (:fill-color fill))
-                                              :opacity  (:fill-opacity fill)
-                                              :id       color-id
-                                              :file-id  color-file-id
-                                              :gradient (:fill-color-gradient fill)})
-                             (d/without-nils {:color    (str/lower (:fill-color fill))
-                                              :opacity  (:fill-opacity fill)
-                                              :gradient (:fill-color-gradient fill)}))]
+(defn- fill->color-att
+  [fill file-id libraries]
+  (let [ref-file      (:fill-color-ref-file fill)
+        ref-id        (:fill-color-ref-id fill)
+        shared-colors (dm/get-in libraries [ref-file :data :colors])
+        is-shared?    (contains? shared-colors ref-id)
+        has-color?    (or (:fill-color fill)
+                          (:fill-color-gradient fill))
+        attrs         (cond-> (fill->color fill)
+                        (not (or is-shared? (= ref-file file-id)))
+                        (dissoc :ref-file :ref-id))]
+
     (when has-color?
       {:attrs attrs
        :prop :fill
@@ -522,21 +500,67 @@
        :index (:index fill)})))
 
 (defn extract-all-colors
-  [shapes file-id shared-libs]
+  [shapes file-id libraries]
   (reduce
-   (fn [list shape]
+   (fn [result shape]
      (let [fill-obj   (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:fills shape))
            stroke-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:strokes shape))
            shadow-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:shadow shape))]
        (if (= :text (:type shape))
-         (-> list
-             (into (map #(stroke->color-att % file-id shared-libs)) stroke-obj)
-             (into (map #(shadow->color-att % file-id shared-libs)) shadow-obj)
-             (into (extract-text-colors shape file-id shared-libs)))
+         (-> result
+             (into (map #(stroke->color-att % file-id libraries)) stroke-obj)
+             (into (map #(shadow->color-att % file-id libraries)) shadow-obj)
+             (into (extract-text-colors shape file-id libraries)))
 
-         (-> list
-             (into (map #(fill->color-att % file-id shared-libs))  fill-obj)
-             (into (map #(stroke->color-att % file-id shared-libs)) stroke-obj)
-             (into (map #(shadow->color-att % file-id shared-libs)) shadow-obj)))))
+         (-> result
+             (into (map #(fill->color-att % file-id libraries)) fill-obj)
+             (into (map #(stroke->color-att % file-id libraries)) stroke-obj)
+             (into (map #(shadow->color-att % file-id libraries)) shadow-obj)))))
    []
    shapes))
+
+(defn colors-seq
+  [file-data]
+  (vals (:colors file-data)))
+
+(defn- touch
+  [color]
+  (assoc color :modified-at (dt/now)))
+
+(defn add-color
+  [file-data color]
+  (update file-data :colors assoc (:id color) (touch color)))
+
+(defn get-color
+  [file-data color-id]
+  (get-in file-data [:colors color-id]))
+
+(defn get-ref-color
+  [library-data color]
+  (when (= (:ref-file color) (:id library-data))
+    (get-color library-data (:ref-id color))))
+
+(defn set-color
+  [file-data color]
+  (d/assoc-in-when file-data [:colors (:id color)] (touch color)))
+
+(defn update-color
+  [file-data color-id f & args]
+  (d/update-in-when file-data [:colors color-id] #(-> (apply f % args)
+                                                      (touch))))
+
+(defn delete-color
+  [file-data color-id]
+  (update file-data :colors dissoc color-id))
+
+(defn used-colors-changed-since
+  "Find all usages of any color in the library by the given shape, of colors
+   that have ben modified after the date."
+  [shape library since-date]
+  (->> (get-all-colors shape)
+       (keep #(get-ref-color (:data library) %))
+       (remove #(< (:modified-at %) since-date))  ;; Note that :modified-at may be nil
+       (map (fn [color] {:shape-id (:id shape)
+                         :asset-id (:id color)
+                         :asset-type :color}))))
+

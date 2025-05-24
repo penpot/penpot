@@ -176,7 +176,7 @@
           (seq fills)
           [:& h/sortable-container {}
            (for [[index value] (d/enumerate fills)]
-             [:> color-row* {:color (ctc/fill->shape-color value)
+             [:> color-row* {:color (ctc/fill->color value)
                              :key index
                              :index index
                              :title (tr "workspace.options.fill")

@@ -80,7 +80,7 @@
         (fn [key val]
           (when (some? backend)
             (if (some? val)
-              (.setItem ^js backend (encode-key prefix key) (t/encode-str val))
+              (.setItem ^js backend (encode-key prefix key) (t/encode-str val {:with-meta true}))
               (.removeItem ^js backend (encode-key prefix key)))))
 
         on-change*

@@ -93,7 +93,8 @@ export const RadialGradient = {
 export const Rounded = {
   args: {
     background: {
-      id: helpers.generateUuid(),
+      "ref-id": helpers.generateUuid(),
+      "ref-file": helpers.generateUuid(),
       color: "#2f226c",
       opacity: 0.5,
     },

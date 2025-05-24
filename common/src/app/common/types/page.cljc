@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.geom.point :as-alias gpt]
    [app.common.schema :as sm]
-   [app.common.types.color :as-alias ctc]
+   [app.common.types.color :as ctc]
    [app.common.types.grid :as ctg]
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape :as cts]
@@ -57,7 +57,7 @@
    [:flows {:optional true} schema:flows]
    [:guides {:optional true} schema:guides]
    [:plugin-data {:optional true} ::ctpg/plugin-data]
-   [:background {:optional true} ::ctc/rgb-color]
+   [:background {:optional true} ctc/schema:hex-color]
 
    [:comment-thread-positions {:optional true}
     [:map-of ::sm/uuid schema:comment-thread-position]]])

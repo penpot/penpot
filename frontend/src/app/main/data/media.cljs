@@ -15,8 +15,7 @@
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]))
 
-(def accept-image-types
-  (str/join "," cm/image-types))
+;; FIXME: revisit the need of this NS
 
 ;; --- Predicates
 

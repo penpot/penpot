@@ -20,7 +20,7 @@
    [app.common.schema.generators :as sg]
    [app.common.text :as txt]
    [app.common.transit :as t]
-   [app.common.types.color :as ctc]
+   [app.common.types.color :as types.color]
    [app.common.types.grid :as ctg]
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segment]
@@ -119,36 +119,80 @@
 (def schema:points
   [:vector {:gen/max 4 :gen/min 4} ::gpt/point])
 
+;; FIXME: generate from schema for make schema unique source of truth
+(def fill-attrs
+  "A set of attrs that corresponds to fill data type"
+  #{:fill-color :fill-opacity :fill-color-gradient :fill-color-ref-id :fill-color-ref-file})
+
+(def ^:private schema:fill-attrs
+  [:map {:title "FillAttrs"}
+   [:fill-color-ref-file {:optional true} ::sm/uuid]
+   [:fill-color-ref-id {:optional true} ::sm/uuid]
+   [:fill-opacity {:optional true} [::sm/number {:min 0 :max 1}]]
+   [:fill-color {:optional true} types.color/schema:hex-color]
+   [:fill-color-gradient {:optional true} types.color/schema:gradient]
+   [:fill-image {:optional true} types.color/schema:image]])
+
+;; FIXME: the register is necessary until this is moved to a separated
+;; ns because it is used on shapes.text
+(def valid-fill-attrs
+  "A set used for proper check if color should contain only one of the
+  attrs listed in this set."
+  #{:fill-image :fill-color :fill-color-gradient})
+
+(defn has-valid-fill-attrs?
+  "Check if color has correct color attrs"
+  [color]
+  (let [attrs  (set (keys color))
+        result (set/intersection attrs valid-fill-attrs)]
+    (= 1 (count result))))
+
 (def schema:fill
   (sm/register!
    ^{::sm/type ::fill}
-   [:map {:title "Fill"}
-    [:fill-color {:optional true} ::ctc/rgb-color]
-    [:fill-opacity {:optional true} ::sm/safe-number]
-    [:fill-color-gradient {:optional true} [:maybe ::ctc/gradient]]
-    [:fill-color-ref-file {:optional true} [:maybe ::sm/uuid]]
-    [:fill-color-ref-id {:optional true} [:maybe ::sm/uuid]]
-    [:fill-image {:optional true} ::ctc/image-color]]))
+   [:and schema:fill-attrs
+    [:fn has-valid-fill-attrs?]]))
+
+(def check-fill
+  (sm/check-fn schema:fill))
+
+;; FIXME: the register is necessary until this is moved to a separated
+;; ns because it is used on shapes.text
+(def valid-stroke-attrs
+  "A set used for proper check if color should contain only one of the
+  attrs listed in this set."
+  #{:stroke-image :stroke-color :stroke-color-gradient})
+
+(defn has-valid-stroke-attrs?
+  "Check if color has correct color attrs"
+  [color]
+  (let [attrs  (set (keys color))
+        result (set/intersection attrs valid-stroke-attrs)]
+    (= 1 (count result))))
+
+(def schema:stroke-attrs
+  [:map {:title "StrokeAttrs"}
+   [:stroke-color-ref-file {:optional true} ::sm/uuid]
+   [:stroke-color-ref-id {:optional true} ::sm/uuid]
+   [:stroke-opacity {:optional true} ::sm/safe-number]
+   [:stroke-style {:optional true}
+    [::sm/one-of #{:solid :dotted :dashed :mixed :none :svg}]]
+   [:stroke-width {:optional true} ::sm/safe-number]
+   [:stroke-alignment {:optional true}
+    [::sm/one-of #{:center :inner :outer}]]
+   [:stroke-cap-start {:optional true}
+    [::sm/one-of stroke-caps]]
+   [:stroke-cap-end {:optional true}
+    [::sm/one-of stroke-caps]]
+   [:stroke-color {:optional true} types.color/schema:hex-color]
+   [:stroke-color-gradient {:optional true} types.color/schema:gradient]
+   [:stroke-image {:optional true} types.color/schema:image]])
 
 (def schema:stroke
   (sm/register!
    ^{::sm/type ::stroke}
-   [:map {:title "Stroke"}
-    [:stroke-color {:optional true} :string]
-    [:stroke-color-ref-file {:optional true} ::sm/uuid]
-    [:stroke-color-ref-id {:optional true} ::sm/uuid]
-    [:stroke-opacity {:optional true} ::sm/safe-number]
-    [:stroke-style {:optional true}
-     [::sm/one-of #{:solid :dotted :dashed :mixed :none :svg}]]
-    [:stroke-width {:optional true} ::sm/safe-number]
-    [:stroke-alignment {:optional true}
-     [::sm/one-of #{:center :inner :outer}]]
-    [:stroke-cap-start {:optional true}
-     [::sm/one-of stroke-caps]]
-    [:stroke-cap-end {:optional true}
-     [::sm/one-of stroke-caps]]
-    [:stroke-color-gradient {:optional true} ::ctc/gradient]
-    [:stroke-image {:optional true} ::ctc/image-color]]))
+   [:and schema:stroke-attrs
+    [:fn has-valid-stroke-attrs?]]))
 
 (def check-stroke
   (sm/check-fn schema:stroke))

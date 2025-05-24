@@ -728,7 +728,7 @@
               (let [id (obj/get self "$id")
                     value (parser/parse-strokes value)]
                 (cond
-                  (not (sm/validate [:vector ::cts/stroke] value))
+                  (not (sm/validate [:vector cts/schema:stroke] value))
                   (u/display-not-valid :strokes value)
 
                   (not (r/check-permission plugin-id "content:write"))
