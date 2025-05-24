@@ -82,6 +82,24 @@
       [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
       [:offset ::sm/safe-number]]]]])
 
+(def ^:private schema:library-color-attrs
+  [:map {:title "ColorAttrs"}
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:path {:optional true} :string]
+   [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
+   [:modified-at {:optional true} ::sm/inst]
+   [:plugin-data {:optional true} ::ctpg/plugin-data]])
+
+(def schema:library-color
+  [:or {:title "LibraryColor"}
+   [:merge schema:library-color-attrs
+    [:map [:color schema:hex-color]]]
+   [:merge schema:library-color-attrs
+    [:map [:gradient schema:gradient]]]
+   [:merge schema:library-color-attrs
+    [:map [:image schema:image]]]])
+
 (def schema:color-attrs
   [:map {:title "ColorAttrs"}
    [:id {:optional true} ::sm/uuid]
@@ -109,12 +127,6 @@
     [:color {:optional true} [:maybe schema:hex-color]]
     [:gradient {:optional true} [:maybe schema:gradient]]
     [:image {:optional true} [:maybe schema:image]]]
-   [::sm/contains-any {:strict true} [:color :gradient :image]]])
-
-;; Same as color but with :id prop required
-(def schema:library-color
-  [:and
-   (sm/required-keys schema:color-attrs [:id])
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
 ;; FIXME: revisit if we really need this all registers
