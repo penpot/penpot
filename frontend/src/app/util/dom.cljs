@@ -76,9 +76,10 @@
 
 (defn set-html-theme-color
   [^string color]
-  (let [node (.querySelector js/document "body")]
+  (let [node (.querySelector js/document "body")
+        class (if (= color "dark") "default" "light")]
     (.removeAttribute node "class")
-    (.add ^js (.-classList ^js node) color)))
+    (.add ^js (.-classList ^js node) class)))
 
 (defn set-page-style!
   [styles]

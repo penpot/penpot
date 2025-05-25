@@ -280,9 +280,11 @@
                               :data-testid   "toggle-theme"
                               :id          "file-menu-toggle-theme"}
       [:span {:class (stl/css :item-name)}
-       (if (= (:theme profile) "default")
-         (tr "workspace.header.menu.toggle-light-theme")
-         (tr "workspace.header.menu.toggle-dark-theme"))]
+       (case (:theme profile)  ;; default = dark -> light -> system -> dark and so on
+         "default" (tr "workspace.header.menu.toggle-light-theme")
+         "light"   (tr "workspace.header.menu.toggle-system-theme")
+         "system" (tr "workspace.header.menu.toggle-dark-theme")
+         (tr "workspace.header.menu.toggle-light-theme"))]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :toggle-theme))]
          [:span {:class (stl/css :shortcut-key) :key sc} sc])]]]))

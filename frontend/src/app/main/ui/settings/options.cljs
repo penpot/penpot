@@ -59,8 +59,9 @@
       [:& fm/select {:label (tr "dashboard.select-ui-theme")
                      :name :theme
                      :default "default"
-                     :options [{:label "Penpot Dark (default)" :value "default"}
-                               {:label "Penpot Light" :value "light"}]
+                     :options [{:label (tr "dashboard.select-ui-theme.dark") :value "dark"}
+                               {:label (tr "dashboard.select-ui-theme.light") :value "light"}
+                               {:label (tr "dashboard.select-ui-theme.system") :value "system"}]
                      :data-testid "setting-theme"}]]
 
      [:> fm/submit-button*

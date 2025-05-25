@@ -358,7 +358,10 @@
   (let [route   (mf/deref refs/route)
         edata   (mf/deref refs/exception)
         profile (mf/deref refs/profile)
-        theme   (or (:theme profile) "default")]
+        theme   (case (:theme profile)
+                  "system" (dom/get-system-theme)
+                  "default" "dark"
+                  (:theme profile))]
 
     (mf/with-effect [theme]
       (dom/set-html-theme-color theme))
