@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.json :as json]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.style-dictionary :as sd]
@@ -414,13 +415,15 @@
                                :on-click on-export}
        (tr "labels.export")]]
 
-     [:> tooltip* {:tooltip-content "Tokens settings"
-                   :id "button-setting"}
-      [:> icon-button* {:variant "secondary"
-                        :icon "settings"
-                        :tooltip-id "button-setting"
-                        :aria-label "Settings"
-                        :on-click open-settings-modal}]]]))
+
+     (when (contains? cf/flags :token-units)
+       [:> tooltip* {:tooltip-content "Tokens settings"
+                     :id "button-setting"}
+        [:> icon-button* {:variant "secondary"
+                          :icon "settings"
+                          :tooltip-id "button-setting"
+                          :aria-label "Settings"
+                          :on-click open-settings-modal}]])]))
 
 (mf/defc tokens-sidebar-tab*
   {::mf/wrap [mf/memo]}
