@@ -1,6 +1,13 @@
 # CHANGELOG
 
-## 2.7.0 (Unreleased)
+## 2.7.1
+
+### :bug: Bugs fixed
+
+- Fix incorrect handling of strokes with images on importing files
+
+
+## 2.7.0 
 
 ### :rocket: Epics and highlights
 
