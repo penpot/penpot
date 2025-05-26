@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-22 11:05+0000\n"
+"PO-Revision-Date: 2025-05-27 09:01+0000\n"
 "Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -7489,3 +7489,7 @@ msgstr "La valeur du jeton doit être renseignée"
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:160
 msgid "workspace.tokens.choose-file"
 msgstr "Sélectionner un fichier"
+
+#: src/app/main/errors.cljs:266
+msgid "errors.deprecated.contact.text"
+msgstr "nous contacter"
