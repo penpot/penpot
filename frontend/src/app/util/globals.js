@@ -17,7 +17,7 @@
 
 goog.provide("app.util.globals");
 
-goog.scope(function() {
+goog.scope(function () {
   app.util.globals.global = goog.global;
 
   function createGlobalEventEmitter(k) {
@@ -25,22 +25,27 @@ goog.scope(function() {
      * may subscribe to them.
      */
     return {
-      addListener(...args) {
-      },
-      removeListener(...args) {
-      },
-      addEventListener(...args) {
-      },
-      removeEventListener(...args) {
-      }
-    }
+      addListener(...args) {},
+      removeListener(...args) {},
+      addEventListener(...args) {},
+      removeEventListener(...args) {},
+      dispatchEvent(...args) { return true; },
+    };
   }
 
-  app.util.globals.window = (function() {
+  app.util.globals.window = (function () {
     if (typeof goog.global.window !== "undefined") {
       return goog.global.window;
     } else {
-      return createGlobalEventEmitter();
+      const mockWindow = createGlobalEventEmitter();
+      mockWindow.matchMedia = function (query) {
+        const mediaObj = createGlobalEventEmitter();
+        mediaObj.matches = false;
+        mediaObj.media = query;
+        mediaObj.onchange = null;
+        return mediaObj;
+      };
+      return mockWindow;
     }
   })();
 

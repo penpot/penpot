@@ -81,6 +81,7 @@ A non exhaustive list of changes:
 - Copy to SVG from contextual menu [Github #838](https://github.com/penpot/penpot/issues/838)
 - Add styles for Inkeep Chat at workspace [Taiga #10708](https://tree.taiga.io/project/penpot/us/10708)
 - Add configuration for air gapped installations with Docker
+- Support system color scheme [Github #5030](https://github.com/penpot/penpot/issues/5030)
 
 ### :bug: Bugs fixed
 - Fix getCurrentUser for plugins api [Taiga #11057](https://tree.taiga.io/project/penpot/issue/11057)
