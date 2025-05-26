@@ -59,11 +59,12 @@
    [:disabled {:optional true} :boolean]
    [:default-selected {:optional true} :string]
    [:on-change {:optional true} fn?]
+   [:empty-to-end {:optional true} :boolean]
    [:has-error {:optional true} :boolean]])
 
 (mf/defc combobox*
   {::mf/schema schema:combobox}
-  [{:keys [id options class placeholder disabled has-error default-selected max-length on-change] :rest props}]
+  [{:keys [id options class placeholder disabled has-error default-selected max-length empty-to-end on-change] :rest props}]
   (let [is-open*        (mf/use-state false)
         is-open         (deref is-open*)
 
@@ -187,7 +188,6 @@
 
                    (kbd/enter? event)
                    (do
-                     #_(handle-selection focused-value* selected-value* is-open*)
                      (reset! selected-value* focused-value)
                      (reset! is-open* false)
                      (reset! focused-value* nil)
@@ -286,4 +286,5 @@
                               :focused focused-value
                               :set-ref set-option-ref
                               :id listbox-id
+                              :empty-to-end empty-to-end
                               :data-testid "combobox-options"}])]))

@@ -2088,6 +2088,10 @@ msgstr "Editar archivo"
 msgid "labels.editor"
 msgstr "Edición"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:263
+msgid "labels.empty"
+msgstr "Vacío"
+
 #: src/app/main/ui/dashboard/import.cljs:294
 msgid "labels.error"
 msgstr "Error"

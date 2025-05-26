@@ -13,6 +13,7 @@
   --options-dropdown-bg-color: var(--color-background-tertiary);
   --options-dropdown-outline-color: none;
   --options-dropdown-border-color: var(--color-background-quaternary);
+  --options-dropdown-empty: var(--color-canvas);
 
   position: absolute;
   right: 0;
@@ -66,6 +67,10 @@
   padding-inline-start: var(--sp-xxs);
 }
 
+.option-text-dimmed {
+  color: var(--options-dropdown-empty);
+}
+
 .option-icon {
   color: var(--options-dropdown-icon-fg-color);
 }
@@ -78,4 +83,10 @@
 .option-selected {
   --options-dropdown-fg-color: var(--color-accent-primary);
   --options-dropdown-icon-fg-color: var(--color-accent-primary);
+}
+
+.option-separator {
+  border: $b-1 solid var(--options-dropdown-border-color);
+  margin-top: var(--sp-xs);
+  margin-bottom: var(--sp-xs);
 }
