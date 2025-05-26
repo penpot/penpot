@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-22 11:05+0000\n"
+"PO-Revision-Date: 2025-05-27 09:01+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -7300,3 +7300,17 @@ msgstr "שכפול"
 #: src/app/main/ui/dashboard/subscription.cljs:76
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "תוכנית מסחרית"
+
+#: src/app/main/errors.cljs:173
+msgid "errors.internal-worker-error"
+msgstr "משהו השתבש עם מנגנון הדפדפן."
+
+#: src/app/main/errors.cljs:264
+msgid "errors.deprecated"
+msgstr ""
+"זה קובץ ישן שמשתמש בסוג של משאבי Penpot שאינם נתמכים עוד ואי אפשר לפתוח "
+"אותו, מתנצלים."
+
+#: src/app/main/errors.cljs:265
+msgid "errors.deprecated.contact.before"
+msgstr "למרות ש־Penpot לא תומך יותר בסוג המשאבים הזה, אפשר"
