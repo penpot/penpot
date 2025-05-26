@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-23 18:01+0000\n"
+"PO-Revision-Date: 2025-05-27 09:01+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -7403,3 +7403,94 @@ msgstr "apvienība mēnesī"
 #: src/app/main/ui/settings/subscription.cljs:84, src/app/main/ui/settings/subscription.cljs:129
 msgid "subscription.settings.enterprise.security"
 msgstr "Papildu drošība"
+
+#: src/app/main/data/style_dictionary.cljs:296
+msgid "workspace.tokens.unknown-token-type-section"
+msgstr "Veids \"%s\" nav atbalstīts (%s)\n"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:90
+msgid "workspace.tokens.base-font-size"
+msgstr "Pamata fonta izmērs"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:44
+msgid "workspace.tokens.base-font-size.error"
+msgstr "Pamata fonta izmēram jābūt vērtībai pikseļos vai bez mērvienības."
+
+#: src/app/main/data/style_dictionary.cljs:294
+msgid "workspace.tokens.unknown-token-type"
+msgstr "Izlaistās tekstvienības"
+
+#: src/app/main/ui/settings/subscription.cljs:70, src/app/main/ui/settings/subscription.cljs:111
+msgid "subscription.settings.unlimited"
+msgstr "Neierobežots"
+
+#: src/app/main/ui/settings/subscription.cljs:61
+msgid "subscription.settings.unlimited-trial"
+msgstr "Neierobežots (izmēģinājuma)"
+
+#: src/app/main/ui/settings/subscription.cljs:66, src/app/main/ui/settings/subscription.cljs:75, src/app/main/ui/settings/subscription.cljs:118
+msgid "subscription.settings.unlimited.storage"
+msgstr ""
+"25GB krātuves un 30 dienu automātiskās saglabāšanas versijas un datņu "
+"rezerves kopēšana"
+
+#: src/app/main/ui/settings/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:73, src/app/main/ui/settings/subscription.cljs:116
+msgid "subscription.settings.unlimited.teams"
+msgstr "Neierobežotas komandas, un nav svarīgi, cik liela ir komanda"
+
+#: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:68, src/app/main/ui/ds/notifications/shared/notification_pill.cljs:73
+msgid "workspace.notification-pill.detail"
+msgstr "Informācija"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:778
+msgid "workspace.options.component.unlinked"
+msgstr "Atsaistīta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:311
+msgid "workspace.options.component.variant.malformed.structure"
+msgstr "[īpašība]=[vērtība], [īpašība]=[vērtība]"
+
+#: src/app/main/ui/workspace/context_menu.cljs:207
+msgid "workspace.shape.menu.copy-svg"
+msgstr "Ievietot starpliktuvē kā SVG"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:160
+msgid "workspace.tokens.choose-file"
+msgstr "Izvēlēties datni"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:165
+msgid "workspace.tokens.choose-folder"
+msgstr "Izvēlēties mapi"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:37
+msgid "workspace.tokens.empty-input"
+msgstr "Tekstvienības vērtība nevar būt tukša"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:138
+msgid "workspace.tokens.import-warning"
+msgstr ""
+"Tekstvienību ievietošana aizvietos visas pašreizējāš tekstvienības, kopas un "
+"izskatus."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:23
+msgid "workspace.tokens.invalid-json-token-name"
+msgstr "Ievietošanas kļūda: nederīgs tekstvienības nosaukums JSON."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:24
+msgid "workspace.tokens.invalid-json-token-name-detail"
+msgstr ""
+"\"%s\" nav derīgs tekstvienības nosaukums.\n"
+"Tekstvienību nosaukumos var būt tikai burti un cipari, kas atdalīti ar "
+"rakstzīmi \".\", un tie nedrīkst sākties ar zīmi \"$\"."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:128
+msgid "workspace.tokens.import-tokens"
+msgstr "Ievietot tekstvienības"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:85
+msgid "workspace.tokens.settings"
+msgstr "Tekstvienību iestatījumi"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:93
+msgid "workspace.tokens.setting-description"
+msgstr "Šeit var konfigurēt pamata fonta izmēru, kas nosaka 1rem vērtību:"
