@@ -346,29 +346,32 @@
 
         center    (gco/points->center points)
         selrect   (calculate-selrect points center)
-        transform (calculate-transform points center selrect)
-        inverse   (when (some? transform) (gmt/inverse transform))]
 
-    (if-not (and (some? inverse) (some? transform))
-      shape
-      (let [type     (dm/get-prop shape :type)
-            rotation (mod (+ (d/nilv (:rotation shape) 0)
-                             (d/nilv (dm/get-in shape [:modifiers :rotation]) 0))
-                          360)
+        [transform inverse]
+        (let [transform (calculate-transform points center selrect)
+              inverse (when (some? transform) (gmt/inverse transform))]
+          (if (and (some? transform) (some? inverse))
+            [transform inverse]
+            [(:transform shape (gmt/matrix)) (:transform-inverse shape (gmt/matrix))]))
 
-            shape    (if (or (= type :path) (= type :bool))
-                       (update shape :content path/transform-content transform-mtx)
-                       (assoc shape
-                              :x (dm/get-prop selrect :x)
-                              :y (dm/get-prop selrect :y)
-                              :width (dm/get-prop selrect :width)
-                              :height (dm/get-prop selrect :height)))]
-        (-> shape
-            (assoc :transform transform)
-            (assoc :transform-inverse inverse)
-            (assoc :selrect selrect)
-            (assoc :points points)
-            (assoc :rotation rotation))))))
+        type     (dm/get-prop shape :type)
+        rotation (mod (+ (d/nilv (:rotation shape) 0)
+                         (d/nilv (dm/get-in shape [:modifiers :rotation]) 0))
+                      360)
+
+        shape    (if (or (= type :path) (= type :bool))
+                   (update shape :content path/transform-content transform-mtx)
+                   (assoc shape
+                          :x (dm/get-prop selrect :x)
+                          :y (dm/get-prop selrect :y)
+                          :width (dm/get-prop selrect :width)
+                          :height (dm/get-prop selrect :height)))]
+    (-> shape
+        (assoc :transform transform)
+        (assoc :transform-inverse inverse)
+        (assoc :selrect selrect)
+        (assoc :points points)
+        (assoc :rotation rotation))))
 
 (defn apply-transform
   "Given a new set of points transformed, set up the rectangle so it keeps

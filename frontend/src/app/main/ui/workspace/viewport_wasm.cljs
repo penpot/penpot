@@ -15,7 +15,6 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
-   [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -54,27 +53,23 @@
    [app.util.debug :as dbg]
    [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
+   [okulary.core :as l]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 ;; --- Viewport
 
+(def workspace-wasm-modifiers
+  (l/derived :workspace-wasm-modifiers st/state))
+
 (defn apply-modifiers-to-selected
-  [selected objects text-modifiers modifiers]
-  (reduce
-   (fn [objects id]
-     (update
-      objects id
-      (fn [shape]
-        (cond-> shape
-          (and (cfh/text-shape? shape) (contains? text-modifiers id))
-          (dwm/apply-text-modifier (get text-modifiers id))
-
-          (contains? modifiers id)
-          (gsh/transform-shape (dm/get-in modifiers [id :modifiers]))))))
-
-   objects
-   selected))
+  [selected objects modifiers]
+  (->> modifiers
+       (filter #(contains? selected (:id %)))
+       (reduce
+        (fn [objects {:keys [id transform]}]
+          (update objects id gsh/apply-transform transform))
+        objects)))
 
 (mf/defc viewport*
   [{:keys [selected wglobal wlocal layout file page palete-size]}]
@@ -113,12 +108,13 @@
 
         base-objects      (ui-hooks/with-focus-objects objects focus)
 
-        modifiers         (mf/deref refs/workspace-modifiers)
-        text-modifiers    (mf/deref refs/workspace-text-modifier)
+        wasm-modifiers    (mf/deref workspace-wasm-modifiers)
 
-        objects-modified  (mf/with-memo [base-objects text-modifiers modifiers]
-                            (binding [cts/*wasm-sync* false]
-                              (apply-modifiers-to-selected selected base-objects text-modifiers modifiers)))
+        objects-modified
+        (mf/with-memo
+          [base-objects wasm-modifiers]
+          (binding [cts/*wasm-sync* false]
+            (apply-modifiers-to-selected selected base-objects wasm-modifiers)))
 
         selected-shapes   (->> selected
                                (into [] (keep (d/getf objects-modified)))
@@ -409,11 +405,9 @@
        (when show-text-editor?
          (if (features/active-feature? @st/state "text-editor/v2")
            [:& editor-v2/text-editor {:shape editing-shape
-                                      :ref text-editor-ref
-                                      :modifiers modifiers}]
+                                      :ref text-editor-ref}]
            [:& editor-v1/text-editor-svg {:shape editing-shape
-                                          :ref text-editor-ref
-                                          :modifiers modifiers}]))
+                                          :ref text-editor-ref}]))
 
        (when show-frame-outline?
          (let [outlined-frame-id
@@ -426,8 +420,7 @@
             [:& outline/shape-outlines
              {:objects base-objects
               :hover #{outlined-frame-id}
-              :zoom zoom
-              :modifiers modifiers}]
+              :zoom zoom}]
 
             (when (ctl/any-layout? outlined-frame)
               [:g.ghost-outline
@@ -443,8 +436,7 @@
            :hover #{(:id @hover) @frame-hover}
            :highlighted highlighted
            :edition edition
-           :zoom zoom
-           :modifiers modifiers}])
+           :zoom zoom}])
 
        (when (and show-selection-handlers?
                   selected-shapes)
@@ -459,8 +451,7 @@
        (when show-text-editor?
          [:& text-edition-outline
           {:shape (get base-objects edition)
-           :zoom zoom
-           :modifiers modifiers}])
+           :zoom zoom}])
 
        (when show-measures?
          [:& msr/measurement
@@ -586,8 +577,7 @@
            :vbox vbox
            :guides (:guides page)
            :hover-frame guide-frame
-           :disabled-guides disabled-guides?
-           :modifiers modifiers}])
+           :disabled-guides disabled-guides?}])
 
        ;; DEBUG LAYOUT DROP-ZONES
        (when (dbg/enabled? :layout-drop-zones)
@@ -651,8 +641,7 @@
         (when (or show-grid-editor? hover-grid?)
           [:& grid-layout/editor
            {:zoom zoom
-            :objects base-objects
-            :modifiers modifiers
+            :objects objects-modified
             :shape (or (get base-objects edition)
                        (get base-objects @hover-top-frame-id))
             :view-only (not show-grid-editor?)}])
@@ -665,8 +654,7 @@
             [:& grid-layout/editor
              {:zoom zoom
               :key (dm/str (:id frame))
-              :objects base-objects
-              :modifiers modifiers
+              :objects objects-modified
               :shape frame
               :view-only true}]))]
        [:g.scrollbar-wrapper {:clipPath "url(#clip-handlers)"}

@@ -132,7 +132,7 @@ pub fn propagate_modifiers(
     state: &State,
     modifiers: &[TransformEntry],
     pixel_precision: bool,
-) -> (Vec<TransformEntry>, HashMap<Uuid, Bounds>) {
+) -> Vec<TransformEntry> {
     let shapes = &state.shapes;
 
     let font_col = state.render_state.fonts.font_collection();
@@ -341,13 +341,10 @@ pub fn propagate_modifiers(
         layout_reflows = Vec::new();
     }
 
-    (
-        modifiers
-            .iter()
-            .map(|(key, val)| TransformEntry::new(*key, *val))
-            .collect(),
-        bounds,
-    )
+    modifiers
+        .iter()
+        .map(|(key, val)| TransformEntry::new(*key, *val))
+        .collect()
 }
 
 #[cfg(test)]

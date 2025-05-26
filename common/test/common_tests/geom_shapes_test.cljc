@@ -114,11 +114,8 @@
     (let [modifiers    (ctm/resize-modifiers (gpt/point 0 0) (gpt/point 0 0))
           shape-before (create-test-shape :rect {:modifiers modifiers})
           shape-after  (gsh/transform-shape shape-before)]
-
-      (t/is (close? (get-in shape-before [:selrect :width])
-                    (get-in shape-after  [:selrect :width])))
-      (t/is (close? (get-in shape-before [:selrect :height])
-                    (get-in shape-after  [:selrect :height])))))
+      (t/is (close? 0.01 (get-in shape-after  [:selrect :width])))
+      (t/is (close? 0.01 (get-in shape-after  [:selrect :height])))))
 
   (t/testing "Transform shape with rotation modifiers"
     (t/are [type]

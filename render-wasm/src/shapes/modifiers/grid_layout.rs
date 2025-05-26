@@ -64,7 +64,6 @@ fn calculate_tracks(
     set_fr_value(is_column, shape, layout_data, &mut tracks, layout_size);
     stretch_tracks(is_column, shape, layout_data, &mut tracks, layout_size);
     assign_anchors(is_column, layout_data, layout_bounds, &mut tracks);
-
     tracks
 }
 
@@ -386,9 +385,10 @@ fn stretch_tracks(
     tracks: &mut [TrackData],
     layout_size: f32,
 ) {
-    if (column
-        && (layout_data.justify_content != JustifyContent::Stretch
-            || shape.is_layout_horizontal_auto()))
+    if (tracks.is_empty()
+        || column
+            && (layout_data.justify_content != JustifyContent::Stretch
+                || shape.is_layout_horizontal_auto()))
         || (!column
             && (layout_data.align_content != AlignContent::Stretch
                 || shape.is_layout_vertical_auto()))
@@ -462,7 +462,11 @@ fn assign_anchors(
         )
     };
 
-    let tot_gap = gap * (tracks.len() - 1) as f32;
+    let tot_gap = if tracks.is_empty() {
+        0.0
+    } else {
+        gap * (tracks.len() - 1) as f32
+    };
     let tot_size = tot_track_length + tot_gap;
     let padding = padding_start + padding_end;
     let pad_size = size - padding;
