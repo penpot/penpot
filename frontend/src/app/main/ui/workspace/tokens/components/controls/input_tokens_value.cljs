@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.components.controls.input-tokens-value
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
    [app.main.ui.ds.controls.utilities.label :refer [label*]]
@@ -19,6 +20,7 @@
    [:placeholder {:optional true} :string]
    [:value {:optional true} [:maybe :string]]
    [:class {:optional true} :string]
+   [:is-color-token {:optional true} :boolean]
    [:color {:optional true} [:maybe :string]]
    [:display-colorpicker {:optional true} fn?]
    [:error {:optional true} :boolean]])
@@ -28,9 +30,10 @@
   {::mf/props :obj
    ::mf/forward-ref true
    ::mf/schema schema::input-tokens-value}
-  [{:keys [class label placeholder error value color display-colorpicker] :rest props} ref]
+  [{:keys [class label is-color-token placeholder error value color display-colorpicker] :rest props} ref]
   (let [id (mf/use-id)
         input-ref (mf/use-ref)
+        is-color-token (d/nilv is-color-token false)
         swatch
         (mf/html [:> input-token-color-bullet*
                   {:color color
@@ -44,7 +47,7 @@
                                       :value value
                                       :variant "comfortable"
                                       :hint-type (when error "error")
-                                      :slot-start swatch
+                                      :slot-start (when is-color-token swatch)
                                       :ref (or ref input-ref)})]
     [:div {:class (dm/str class " " (stl/css-case :wrapper true
                                                   :input-error error))}

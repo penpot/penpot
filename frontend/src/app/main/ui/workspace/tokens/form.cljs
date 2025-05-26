@@ -560,7 +560,8 @@
          :label (tr "workspace.tokens.token-value")
          :default-value (mf/ref-val value-ref)
          :ref value-input-ref
-         :color (when is-color-token color)
+         :is-color-token is-color-token
+         :color color
          :on-change on-update-value
          :error (not (nil? (:errors token-resolve-result)))
          :display-colorpicker on-display-colorpicker'
