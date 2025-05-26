@@ -30,6 +30,7 @@
    [app.main.ui.static :as static]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.theme :as theme]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
@@ -358,13 +359,12 @@
   (let [route   (mf/deref refs/route)
         edata   (mf/deref refs/exception)
         profile (mf/deref refs/profile)
-        theme   (case (:theme profile)
-                  "system" (dom/get-system-theme)
-                  "default" "dark"
-                  (:theme profile))]
+        profile-theme (:theme profile)
+        system-theme (mf/deref theme/preferred-color-scheme)]
 
-    (mf/with-effect [theme]
-      (dom/set-html-theme-color theme))
+    (mf/with-effect [profile-theme system-theme]
+      (dom/set-html-theme-color
+       (if (= profile-theme "system") system-theme profile-theme)))
 
     [:& (mf/provider ctx/current-route) {:value route}
      [:& (mf/provider ctx/current-profile) {:value profile}
