@@ -28,7 +28,7 @@
   integrant/integrant {:mvn/version "0.13.1"}
 
   funcool/tubax {:mvn/version "2021.05.20-0"}
-  funcool/cuerdas {:mvn/version "2023.11.09-407"}
+  funcool/cuerdas {:mvn/version "2025.05.26-411"}
   funcool/promesa
   {:git/sha "0c5ed6ad033515a2df4b55addea044f60e9653d0"
    :git/url "https://github.com/funcool/promesa"}
