@@ -326,23 +326,33 @@ fn draw_triangle_cap(
     canvas.draw_path(&path, paint);
 }
 
-fn calculate_scaled_rect(size: (i32, i32), container: &Rect, delta: f32) -> Rect {
+fn calculate_scaled_rect(
+    size: (i32, i32),
+    container: &Rect,
+    delta: f32,
+    keep_aspect_ratio: bool,
+) -> Rect {
     let (width, height) = (size.0 as f32, size.1 as f32);
-    let image_aspect_ratio = width / height;
 
     // Container size
     let container_width = container.width();
     let container_height = container.height();
-    let container_aspect_ratio = container_width / container_height;
 
-    let scale = if image_aspect_ratio > container_aspect_ratio {
-        container_height / height
-    } else {
-        container_width / width
-    };
+    let mut scaled_width = container_width;
+    let mut scaled_height = container_height;
 
-    let scaled_width = width * scale;
-    let scaled_height = height * scale;
+    if keep_aspect_ratio {
+        let image_aspect_ratio = width / height;
+        let container_aspect_ratio = container_width / container_height;
+        let scale = if image_aspect_ratio > container_aspect_ratio {
+            container_height / height
+        } else {
+            container_width / width
+        };
+
+        scaled_width = width * scale;
+        scaled_height = height * scale;
+    }
 
     Rect::from_xywh(
         container.left - delta - (scaled_width - container_width) / 2.0,
@@ -457,7 +467,12 @@ fn draw_image_stroke_in_container(
     image_paint.set_anti_alias(antialias);
 
     // Compute scaled rect and clip to it
-    let dest_rect = calculate_scaled_rect(size, container, stroke.delta());
+    let dest_rect = calculate_scaled_rect(
+        size,
+        container,
+        stroke.delta(),
+        image_fill.keep_aspect_ratio(),
+    );
     canvas.clip_rect(dest_rect, skia::ClipOp::Intersect, antialias);
     canvas.draw_image_rect_with_sampling_options(
         image.unwrap(),

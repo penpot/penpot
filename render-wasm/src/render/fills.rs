@@ -23,25 +23,29 @@ fn draw_image_fill(
 
     let width = size.0 as f32;
     let height = size.1 as f32;
-    let image_aspect_ratio = width / height;
 
     // Container size
     let container_width = container.width();
     let container_height = container.height();
-    let container_aspect_ratio = container_width / container_height;
 
-    // Calculate scale to ensure the image covers the container
-    let scale = if image_aspect_ratio > container_aspect_ratio {
-        // Image is wider, scale based on height to cover container
-        container_height / height
-    } else {
-        // Image is taller, scale based on width to cover container
-        container_width / width
-    };
+    let mut scaled_width = container_width;
+    let mut scaled_height = container_height;
 
-    // Scaled size of the image
-    let scaled_width = width * scale;
-    let scaled_height = height * scale;
+    if image_fill.keep_aspect_ratio() {
+        // Calculate scale to ensure the image covers the container
+        let image_aspect_ratio = width / height;
+        let container_aspect_ratio = container_width / container_height;
+        let scale = if image_aspect_ratio > container_aspect_ratio {
+            // Image is wider, scale based on height to cover container
+            container_height / height
+        } else {
+            // Image is taller, scale based on width to cover container
+            container_width / width
+        };
+        // Scaled size of the image
+        scaled_width = width * scale;
+        scaled_height = height * scale;
+    }
 
     let dest_rect = MathRect::from_xywh(
         container.left - (scaled_width - container_width) / 2.0,

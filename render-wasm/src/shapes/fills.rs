@@ -101,15 +101,17 @@ pub struct ImageFill {
     opacity: u8,
     width: i32,
     height: i32,
+    keep_aspect_ratio: bool,
 }
 
 impl ImageFill {
-    pub fn new(id: Uuid, opacity: u8, width: i32, height: i32) -> Self {
+    pub fn new(id: Uuid, opacity: u8, width: i32, height: i32, keep_aspect_ratio: bool) -> Self {
         Self {
             id,
             opacity,
             width,
             height,
+            keep_aspect_ratio,
         }
     }
 
@@ -123,6 +125,10 @@ impl ImageFill {
 
     pub fn opacity(&self) -> u8 {
         self.opacity
+    }
+
+    pub fn keep_aspect_ratio(&self) -> bool {
+        self.keep_aspect_ratio
     }
 }
 
