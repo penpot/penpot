@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use crate::math::{Matrix, Point, Rect};
 
 use crate::shapes::{Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, Type};
-use skia_safe::{self as skia, textlayout::Paragraph as SkiaParagraph, ImageFilter, RRect};
+use skia_safe::{self as skia, ImageFilter, RRect};
 
+use super::text;
 use super::{RenderState, SurfaceId};
 
 // FIXME: See if we can simplify these arguments
@@ -78,55 +79,6 @@ fn draw_inner_stroke_path(
     canvas.save();
     canvas.clip_path(path, skia::ClipOp::Intersect, antialias);
     canvas.draw_path(path, paint);
-    canvas.restore();
-}
-
-fn draw_inner_stroke_text_blob(
-    canvas: &skia::Canvas,
-    text_blob: &skia::TextBlob,
-    origin: skia::Point,
-    paint: &skia::Paint,
-    antialias: bool,
-) {
-    let bounds = text_blob.bounds();
-    let mut blob = text_blob.clone();
-    let mut path = SkiaParagraph::get_path(&mut blob);
-    let mut path_transform = skia::Matrix::new_identity();
-    path_transform.pre_translate((origin.x + bounds.left, origin.y + bounds.top));
-
-    path.transform(&path_transform);
-    canvas.save();
-    canvas.clip_path(&path, skia::ClipOp::Intersect, antialias);
-    canvas.draw_path(&path, paint);
-    canvas.restore();
-}
-
-fn draw_outer_stroke_text_blob(
-    canvas: &skia::Canvas,
-    text_blob: &skia::TextBlob,
-    origin: skia::Point,
-    paint: &skia::Paint,
-    antialias: bool,
-) {
-    let bounds = text_blob.bounds();
-    let mut blob = text_blob.clone();
-    let mut path = SkiaParagraph::get_path(&mut blob);
-    let mut path_transform = skia::Matrix::new_identity();
-    path_transform.pre_translate((origin.x + bounds.left, origin.y + bounds.top));
-
-    path.transform(&path_transform);
-    let mut outer_paint = skia::Paint::default();
-    outer_paint.set_blend_mode(skia::BlendMode::SrcOver);
-    outer_paint.set_anti_alias(antialias);
-    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&outer_paint);
-    canvas.save_layer(&layer_rec);
-    canvas.draw_path(&path, paint);
-
-    let mut clear_paint = skia::Paint::default();
-    clear_paint.set_blend_mode(skia::BlendMode::Clear);
-    clear_paint.set_anti_alias(antialias);
-    canvas.draw_path(&path, &clear_paint);
-
     canvas.restore();
 }
 
@@ -607,19 +559,17 @@ pub fn render(
     }
 }
 
-pub fn render_text_blobs(
+pub fn render_text_paragraphs(
     render_state: &mut RenderState,
     shape: &Shape,
     stroke: &Stroke,
-    blobs: &Vec<(skia::TextBlob, skia::Point, skia::Paint)>,
+    paragraphs: &mut Vec<(skia::textlayout::ParagraphBuilder, skia::Point, f32)>,
     surface_id: Option<SurfaceId>,
     shadow: Option<&ImageFilter>,
     antialias: bool,
+    fonts: &skia::textlayout::FontCollection,
 ) {
     let scale = render_state.get_scale();
-    let canvas = render_state
-        .surfaces
-        .canvas(surface_id.unwrap_or(SurfaceId::Strokes));
     let selrect = &shape.selrect;
     let svg_attrs = &shape.svg_attrs;
     let mut paint: skia_safe::Handle<_> =
@@ -629,21 +579,6 @@ pub fn render_text_blobs(
         paint.set_image_filter(filter.clone());
     }
 
-    match stroke.render_kind(false) {
-        StrokeKind::Inner => {
-            for (text_blob, origin, _) in blobs {
-                draw_inner_stroke_text_blob(canvas, text_blob, *origin, &paint, antialias);
-            }
-        }
-        StrokeKind::Center => {
-            for (text_blob, origin, _) in blobs {
-                canvas.draw_text_blob(text_blob, *origin, &paint);
-            }
-        }
-        StrokeKind::Outer => {
-            for (text_blob, origin, _) in blobs {
-                draw_outer_stroke_text_blob(canvas, text_blob, *origin, &paint, antialias);
-            }
-        }
-    }
+    // Call text::render directly
+    text::render(render_state, paragraphs, surface_id, Some(paint), fonts);
 }

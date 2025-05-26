@@ -3,20 +3,29 @@ use skia_safe::{self as skia, canvas::SaveLayerRec};
 
 pub fn render(
     render_state: &mut RenderState,
-    paths: &Vec<(skia::TextBlob, skia::Point, skia::Paint)>,
+    paragraphs: &mut Vec<(skia::textlayout::ParagraphBuilder, skia::Point, f32)>,
     surface_id: Option<SurfaceId>,
     paint: Option<skia::Paint>,
+    _fonts: &skia::textlayout::FontCollection,
 ) {
-    let mask_paint = paint.unwrap_or_default();
-    let mask = SaveLayerRec::default().paint(&mask_paint);
     let canvas = render_state
         .surfaces
         .canvas(surface_id.unwrap_or(SurfaceId::Fills));
 
-    canvas.save_layer(&mask);
-
-    for (text_blob, origin, paint) in paths {
-        canvas.draw_text_blob(text_blob, *origin, paint);
+    if let Some(ref paint) = paint {
+        let mut blended_paint = paint.clone();
+        blended_paint.set_blend_mode(skia::BlendMode::SrcOver);
+        let mask = SaveLayerRec::default().paint(&blended_paint);
+        canvas.save_layer(&mask);
+    } else {
+        canvas.save_layer(&SaveLayerRec::default());
     }
-    canvas.restore();
+
+    for (paragraph_builder, xy, width) in paragraphs.iter_mut() {
+        let mut paragraph = paragraph_builder.build();
+        paragraph.layout(*width);
+        paragraph.paint(canvas, *xy);
+
+        canvas.restore();
+    }
 }

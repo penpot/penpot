@@ -86,46 +86,51 @@ pub fn render_stroke_inner_shadows(
 pub fn render_text_drop_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
-    blobs: &Vec<(skia::TextBlob, skia::Point, skia::Paint)>,
+    paragraphs: &mut Vec<(skia::textlayout::ParagraphBuilder, skia::Point, f32)>, // Updated type
     antialias: bool,
+    fonts: &skia::textlayout::FontCollection,
 ) {
     for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
-        render_text_drop_shadow(render_state, shadow, blobs, antialias);
+        render_text_drop_shadow(render_state, shadow, paragraphs, antialias, fonts);
     }
 }
 
 pub fn render_text_drop_shadow(
     render_state: &mut RenderState,
     shadow: &Shadow,
-    blobs: &Vec<(skia::TextBlob, skia::Point, skia::Paint)>,
+    paragraphs: &mut Vec<(skia::textlayout::ParagraphBuilder, skia::Point, f32)>, // Updated type
     antialias: bool,
+    fonts: &skia::textlayout::FontCollection,
 ) {
     let paint = shadow.get_drop_shadow_paint(antialias);
     text::render(
         render_state,
-        blobs,
+        paragraphs,
         Some(SurfaceId::DropShadows),
         Some(paint),
+        fonts,
     );
 }
 
 pub fn render_text_stroke_drop_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
-    blobs: &Vec<(skia::TextBlob, skia::Point, skia::Paint)>,
+    paragraphs: &mut Vec<(skia::textlayout::ParagraphBuilder, skia::Point, f32)>, // Updated type
     stroke: &Stroke,
     antialias: bool,
+    fonts: &skia::textlayout::FontCollection,
 ) {
     for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
         let stroke_shadow = shadow.get_drop_shadow_filter();
-        strokes::render_text_blobs(
+        strokes::render_text_paragraphs(
             render_state,
             shape,
             stroke,
-            blobs,
+            paragraphs,
             Some(SurfaceId::DropShadows),
             stroke_shadow.as_ref(),
             antialias,
+            fonts,
         );
     }
 }
@@ -133,31 +138,34 @@ pub fn render_text_stroke_drop_shadows(
 pub fn render_text_inner_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
-    blobs: &Vec<(skia::TextBlob, skia::Point, skia::Paint)>,
+    paragraphs: &mut Vec<(skia::textlayout::ParagraphBuilder, skia::Point, f32)>, // Updated type
     antialias: bool,
+    fonts: &skia::textlayout::FontCollection,
 ) {
     for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
-        render_text_inner_shadow(render_state, shadow, blobs, antialias);
+        render_text_inner_shadow(render_state, shadow, paragraphs, antialias, fonts);
     }
 }
 
 pub fn render_text_stroke_inner_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
-    blobs: &Vec<(skia::TextBlob, skia::Point, skia::Paint)>,
+    paragraphs: &mut Vec<(skia::textlayout::ParagraphBuilder, skia::Point, f32)>, // Updated type
     stroke: &Stroke,
     antialias: bool,
+    fonts: &skia::textlayout::FontCollection,
 ) {
     for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
         let stroke_shadow = shadow.get_inner_shadow_filter();
-        strokes::render_text_blobs(
+        strokes::render_text_paragraphs(
             render_state,
             shape,
             stroke,
-            blobs,
+            paragraphs,
             Some(SurfaceId::InnerShadows),
             stroke_shadow.as_ref(),
             antialias,
+            fonts,
         );
     }
 }
@@ -165,15 +173,18 @@ pub fn render_text_stroke_inner_shadows(
 pub fn render_text_inner_shadow(
     render_state: &mut RenderState,
     shadow: &Shadow,
-    blobs: &Vec<(skia::TextBlob, skia::Point, skia::Paint)>,
+    paragraphs: &mut Vec<(skia::textlayout::ParagraphBuilder, skia::Point, f32)>, // Updated type
     antialias: bool,
+    fonts: &skia::textlayout::FontCollection,
 ) {
     let paint = shadow.get_inner_shadow_paint(antialias);
+
     text::render(
         render_state,
-        blobs,
+        paragraphs,
         Some(SurfaceId::InnerShadows),
         Some(paint),
+        fonts,
     );
 }
 

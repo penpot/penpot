@@ -416,28 +416,61 @@ impl RenderState {
             }
 
             Type::Text(text_content) => {
-                self.surfaces
-                    .apply_mut(&[SurfaceId::Fills, SurfaceId::Strokes, SurfaceId::InnerShadows, SurfaceId::DropShadows], |s| {
+                self.surfaces.apply_mut(
+                    &[
+                        SurfaceId::Fills,
+                        SurfaceId::Strokes,
+                        SurfaceId::InnerShadows,
+                        SurfaceId::DropShadows,
+                    ],
+                    |s| {
                         s.canvas().concat(&matrix);
-                    });
+                    },
+                );
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let blobs = text_content.get_text_blobs(antialias);
+                let mut paragraphs = text_content.get_text_paragraphs(); // Updated type
+                let fonts = self.fonts().font_collection().clone();
 
-                shadows::render_text_drop_shadows(self, &shape, &blobs, antialias);
-                text::render(self, &blobs, None, None);
+                shadows::render_text_drop_shadows(self, &shape, &mut paragraphs, antialias, &fonts);
+                text::render(self, &mut paragraphs, None, None, &fonts);
 
                 for stroke in shape.strokes().rev() {
                     shadows::render_text_stroke_drop_shadows(
-                        self, &shape, &blobs, stroke, antialias,
+                        self,
+                        &shape,
+                        &mut paragraphs,
+                        stroke,
+                        antialias,
+                        &fonts,
                     );
-                    strokes::render_text_blobs(self, &shape, stroke, &blobs, None, None, antialias);
+                    strokes::render_text_paragraphs(
+                        self,
+                        &shape,
+                        stroke,
+                        &mut paragraphs,
+                        None,
+                        None,
+                        antialias,
+                        &fonts,
+                    );
                     shadows::render_text_stroke_inner_shadows(
-                        self, &shape, &blobs, stroke, antialias,
+                        self,
+                        &shape,
+                        &mut paragraphs,
+                        stroke,
+                        antialias,
+                        &fonts,
                     );
                 }
 
-                shadows::render_text_inner_shadows(self, &shape, &blobs, antialias);
+                shadows::render_text_inner_shadows(
+                    self,
+                    &shape,
+                    &mut paragraphs,
+                    antialias,
+                    &fonts,
+                );
             }
             _ => {
                 self.surfaces.apply_mut(
