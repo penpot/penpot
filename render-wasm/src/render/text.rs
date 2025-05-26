@@ -3,7 +3,7 @@ use skia_safe::{self as skia, canvas::SaveLayerRec};
 
 pub fn render(
     render_state: &mut RenderState,
-    paths: &Vec<(skia::Path, skia::Paint)>,
+    paths: &Vec<(skia::TextBlob, skia::Point, skia::Paint)>,
     surface_id: Option<SurfaceId>,
     paint: Option<skia::Paint>,
 ) {
@@ -15,11 +15,8 @@ pub fn render(
 
     canvas.save_layer(&mask);
 
-    for (path, paint) in paths {
-        if path.is_empty() {
-            eprintln!("Warning: Empty path detected");
-        }
-        canvas.draw_path(path, paint);
+    for (text_blob, origin, paint) in paths {
+        canvas.draw_text_blob(text_blob, *origin, paint);
     }
     canvas.restore();
 }

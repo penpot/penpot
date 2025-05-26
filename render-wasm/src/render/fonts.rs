@@ -87,16 +87,6 @@ impl FontStore {
         let serialized = format!("{}", family);
         self.font_provider.family_names().any(|x| x == serialized)
     }
-
-    pub fn get_emoji_font(&self, size: f32) -> Option<Font> {
-        if let Some(typeface) = self
-            .font_provider
-            .match_family_style(DEFAULT_EMOJI_FONT, skia::FontStyle::default())
-        {
-            return Some(Font::from_typeface(typeface, size));
-        }
-        None
-    }
 }
 
 fn load_default_provider(font_mgr: &FontMgr) -> skia::textlayout::TypefaceFontProvider {

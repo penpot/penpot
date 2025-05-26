@@ -26,6 +26,8 @@ skia-safe = { version = "0.81.0", default-features = false, features = [
   "textlayout",
   "binary-cache",
 ] }
+unic-emoji-char = "0.9.0"
+unicode-segmentation = "1.12.0"
 uuid = { version = "1.11.0", features = ["v4"] }
 
 [profile.release]

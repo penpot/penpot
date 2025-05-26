@@ -7,7 +7,7 @@ use crate::{
 };
 use skia_safe::{
     self as skia,
-    textlayout::{Paragraph as SkiaParagraph, ParagraphBuilder, ParagraphStyle},
+    textlayout::{ParagraphBuilder, ParagraphStyle},
     Point, TextBlob,
 };
 
@@ -18,6 +18,7 @@ use crate::shapes::{self, merge_fills};
 use crate::utils::uuid_from_u32;
 use crate::wasm::fills::parse_fills_from_bytes;
 use crate::Uuid;
+use unic_emoji_char::is_emoji;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum GrowType {
@@ -128,31 +129,29 @@ impl TextContent {
         self.grow_type = grow_type;
     }
 
-    pub fn get_paths(&self, antialias: bool) -> Vec<(skia::Path, skia::Paint)> {
-        let mut paths = Vec::new();
-
+    pub fn get_text_blobs(&self, antialias: bool) -> Vec<(skia::TextBlob, skia::Point, skia::Paint)> {
+        let mut text_blobs = Vec::new();
+    
         let mut offset_y = self.bounds.y();
         let mut paragraphs = self.get_skia_paragraphs();
         for paragraph_builder in paragraphs.iter_mut() {
-            // 1. Get paragraph and set the width layout
             let mut skia_paragraph = paragraph_builder.build();
             let text = paragraph_builder.get_text();
             let paragraph_width = self.bounds.width();
             skia_paragraph.layout(paragraph_width);
-
+            let mut segment_start_index = 0;
+    
             let mut line_offset_y = offset_y;
-
-            // 2. Iterate through each line in the paragraph
+    
             for line_metrics in skia_paragraph.get_line_metrics() {
                 let line_baseline = line_metrics.baseline as f32;
+                let line_height = line_metrics.height as f32;
                 let start = line_metrics.start_index;
                 let end = line_metrics.end_index;
-
-                // 3. Get styles present in line for each text leaf
+    
                 let style_metrics = line_metrics.get_style_metrics(start..end);
-
                 let mut offset_x = 0.0;
-
+    
                 for (i, (start_index, style_metric)) in style_metrics.iter().enumerate() {
                     let end_index = style_metrics.get(i + 1).map_or(end, |next| next.0);
 
@@ -167,75 +166,61 @@ impl TextContent {
                         .map(|(i, _)| i)
                         .unwrap_or(text.len());
 
-                    let leaf_text = &text[start_byte..end_byte];
+                    let affected_text = &text[start_byte..end_byte];
+                    let segments = split_text_into_segments(affected_text);
 
-                    let font = skia_paragraph.get_font_at(*start_index);
-
-                    let blob_offset_x = self.bounds.x() + line_metrics.left as f32 + offset_x;
-                    let blob_offset_y = line_offset_y;
-
-                    // 4. Get the path for each text leaf
-                    if let Some((text_path, paint)) = self.generate_text_path(
-                        leaf_text,
-                        &font,
-                        blob_offset_x,
-                        blob_offset_y,
-                        style_metric,
-                        antialias,
-                    ) {
-                        let text_width = font.measure_text(leaf_text, None).0;
-                        offset_x += text_width;
-                        paths.push((text_path, paint));
+                    for segment in segments {
+                        let font = skia_paragraph.get_font_at(segment_start_index);
+                        segment_start_index += segment.len();
+    
+                        let blob_offset_x = self.bounds.x() + line_metrics.left as f32 + offset_x;
+                        let blob_offset_y = line_offset_y;
+    
+                        if let Some((text_blob, origin, paint)) = self.generate_text_blob(
+                            &segment,
+                            &font,
+                            blob_offset_x,
+                            blob_offset_y,
+                            style_metric,
+                            antialias,
+                        ) {
+                            let text_width = font.measure_str(&segment, None).0;
+                            offset_x += text_width;
+                            text_blobs.push((text_blob, origin, paint));
+                        }
                     }
                 }
-                line_offset_y = offset_y + line_baseline;
+                line_offset_y += line_height; // Increment line_offset_y by the line height
             }
-            offset_y += skia_paragraph.height();
-        }
-        paths
-    }
 
-    fn generate_text_path(
+            offset_y = line_offset_y; // Update offset_y to the last line's position
+        }
+        text_blobs
+    }
+    
+    fn generate_text_blob(
         &self,
-        leaf_text: &str,
+        affected_text: &str,
         font: &skia::Font,
         blob_offset_x: f32,
         blob_offset_y: f32,
         style_metric: &skia::textlayout::StyleMetrics,
         antialias: bool,
-    ) -> Option<(skia::Path, skia::Paint)> {
-        // Convert text to path, including text decoration
-        if let Some((text_blob_path, text_blob_bounds)) =
-            Self::get_text_blob_path(leaf_text, font, blob_offset_x, blob_offset_y)
-        {
-            let mut text_path = text_blob_path.clone();
-            let text_width = font.measure_text(leaf_text, None).0;
-
-            let decoration = style_metric.text_style.decoration();
-            let font_metrics = style_metric.font_metrics;
-
-            let blob_left = blob_offset_x;
-            let blob_top = blob_offset_y;
-            let blob_height = text_blob_bounds.height();
-
-            if let Some(decoration_rect) = self.calculate_text_decoration_rect(
-                decoration.ty,
-                font_metrics,
-                blob_left,
-                blob_top,
-                text_width,
-                blob_height,
-            ) {
-                text_path.add_rect(decoration_rect, None);
-            }
+    ) -> Option<(TextBlob, skia::Point, skia::Paint)> {
+        if let Some(text_blob) = TextBlob::from_str(affected_text, font) {
+            let bounds = text_blob.bounds();
+            let origin = Point::new(
+                blob_offset_x + bounds.left,
+                blob_offset_y - bounds.top,
+            );
 
             let mut paint = style_metric.text_style.foreground();
             paint.set_anti_alias(antialias);
 
-            return Some((text_path, paint));
-        } else {
-            eprintln!("Failed to generate path for text.");
+            return Some((text_blob, origin, paint));
         }
+
+        eprintln!("Failed to create TextBlob for text: {}", affected_text);
         None
     }
 
@@ -256,6 +241,7 @@ impl TextContent {
         paragraphs
     }
 
+    #[allow(dead_code)]
     fn calculate_text_decoration_rect(
         &self,
         decoration: skia::textlayout::TextDecoration,
@@ -288,31 +274,6 @@ impl TextContent {
             }
             _ => None,
         }
-    }
-
-    fn get_text_blob_path(
-        leaf_text: &str,
-        font: &skia::Font,
-        blob_offset_x: f32,
-        blob_offset_y: f32,
-    ) -> Option<(skia::Path, skia::Rect)> {
-        with_state!(state, {
-            let utf16_text = leaf_text.encode_utf16().collect::<Vec<u16>>();
-            let text = unsafe { skia_safe::as_utf16_unchecked(&utf16_text) };
-            let emoji_font = state.render_state.fonts().get_emoji_font(font.size());
-            let use_font = emoji_font.as_ref().unwrap_or(font);
-
-            if let Some(mut text_blob) = TextBlob::from_text(text, use_font) {
-                let path = SkiaParagraph::get_path(&mut text_blob);
-                let d = Point::new(blob_offset_x, blob_offset_y);
-                let offset_path = path.with_offset(d);
-                let bounds = text_blob.bounds();
-                return Some((offset_path, *bounds));
-            }
-        });
-
-        eprintln!("Failed to create TextBlob for text.");
-        None
     }
 }
 
@@ -723,4 +684,29 @@ pub fn auto_height(paragraphs: &mut [ParagraphBuilder]) -> f32 {
         paragraph.layout(f32::MAX);
         auto_height + paragraph.height()
     })
+}
+
+fn split_text_into_segments(text: &str) -> Vec<String> {
+    let mut segments = Vec::new();
+    let mut current_segment = String::new();
+
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        let is_current_emoji = is_emoji(c);
+
+        current_segment.push(c);
+
+        while let Some(&next_char) = chars.peek() {
+            if is_emoji(next_char) == is_current_emoji {
+                current_segment.push(chars.next().unwrap());
+            } else {
+                break;
+            }
+        }
+
+        segments.push(current_segment.clone());
+        current_segment.clear();
+    }
+
+    segments
 }
