@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.theme-select
+(ns app.main.ui.workspace.tokens.themes.theme-selector
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
@@ -74,7 +74,7 @@
     [:> text* {:as "span" :typography "body-small"} (tr "workspace.tokens.edit-themes")]
     [:> icon* {:icon-id i/arrow-right :aria-hidden true}]]])
 
-(mf/defc theme-select
+(mf/defc theme-selector
   [{:keys []}]
   (let [;; Store
         active-theme-paths (mf/deref refs/workspace-active-theme-paths-no-hidden)
