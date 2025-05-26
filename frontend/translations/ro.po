@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-25 18:01+0000\n"
-"Last-Translator: AlexTECPlayz <alextec70@outlook.com>\n"
-"Language-Team: Romanian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ro/>\n"
+"PO-Revision-Date: 2025-05-27 09:01+0000\n"
+"Last-Translator: laurentiucotet <cotetlaurentiu@gmail.com>\n"
+"Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ro/>\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < "
 "20)) ? 1 : 2;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.12-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -5470,3 +5470,45 @@ msgstr "Actualizează"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click pentru a închide calea"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:59
+msgid "dashboard.empty-project.add-library"
+msgstr "Adaugă o Librărie sau un Șablon"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:45
+#, fuzzy
+msgid "dashboard.empty-project.start"
+msgstr "Începe să creezi lucruri uimitoare"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:41
+msgid "dashboard.add-file"
+msgstr "Adaugă filă"
+
+#: src/app/main/ui/dashboard.cljs:241
+#, unused
+msgid "dashboard.import.error"
+msgstr "Importarea a eșuat. Încearcă din nou"
+
+#: src/app/main/ui/dashboard.cljs:243
+msgid "dashboard.import.bad-url"
+msgstr "Importarea a eșuat. URL-ul șablonului este incorect"
+
+#: src/app/main/ui/dashboard/import.cljs:481
+msgid "dashboard.import.import-error.disclaimer"
+msgstr "Nu toate fișierele au fost importate"
+
+#: src/app/main/ui/dashboard/import.cljs:485
+msgid "dashboard.import.import-error.message1"
+msgstr "Următoarele fișiere au erori:"
+
+#: src/app/main/ui/comments.cljs:530
+msgid "comments.mentions.not-found"
+msgstr "Nicio persoană găsită pentru @%s"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:57
+msgid "dashboard.empty-project.go-to-libraries"
+msgstr "Mergi la Librării și Șabloane"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:53
+msgid "dashboard.empty-project.import-penpot"
+msgstr "Importă un fișier .penpot"
