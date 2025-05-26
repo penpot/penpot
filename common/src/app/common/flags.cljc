@@ -116,6 +116,7 @@
     :terms-and-privacy-checkbox
     ;; Only for developtment.
     :tiered-file-data-storage
+    :token-units
     :transit-readable-response
     :user-feedback
     ;; TODO: remove this flag.
