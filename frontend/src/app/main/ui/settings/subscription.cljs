@@ -185,7 +185,7 @@
         teams                           (deref teams*)
         locale                          (mf/deref i18n/locale)
         penpot-member                   (dt/format-date-locale-short (:created-at profile) {:locale locale})
-        subscription-member             (:start-date subscription)
+        subscription-member             (dt/format-date-locale-short (:start-date subscription) {:locale locale})
         go-to-pricing-page              (mf/use-fn
                                          (fn []
                                            (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "settings" :section "subscription"}))

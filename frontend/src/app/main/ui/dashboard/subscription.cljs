@@ -47,15 +47,14 @@
                                  (:type subscription)
                                  "professional")
         subscription-is-trial  (= (:status subscription) "trialing")
-
-        go-to-subscription     (dm/str (u/join cf/public-uri "#/settings/subscriptions"))]
+        subscription-href      (dm/str (u/join cf/public-uri "#/settings/subscriptions"))]
 
     (case subscription-name
       "professional"
       [:> cta-power-up*
        {:top-title (tr "subscription.dashboard.power-up.your-subscription")
         :top-description (tr "subscription.dashboard.power-up.professional.top-title")
-        :bottom-description (tr "subscription.dashboard.power-up.professional.bottom-description", go-to-subscription)
+        :bottom-description (tr "subscription.dashboard.power-up.professional.bottom-description", subscription-href)
         :has-dropdown true}]
 
       "unlimited"
@@ -63,13 +62,13 @@
         [:> cta-power-up*
          {:top-title (tr "subscription.dashboard.power-up.your-subscription")
           :top-description (tr "subscription.dashboard.power-up.trial.top-title")
-          :bottom-description (tr "subscription.dashboard.power-up.trial.bottom-description", go-to-subscription)
+          :bottom-description (tr "subscription.dashboard.power-up.trial.bottom-description", subscription-href)
           :has-dropdown true}]
 
         [:> cta-power-up*
          {:top-title (tr "subscription.dashboard.power-up.your-subscription")
           :top-description (tr "subscription.dashboard.power-up.unlimited-plan")
-          :bottom-description (tr "subscription.dashboard.power-up.unlimited.bottom-description", go-to-subscription)
+          :bottom-description (tr "subscription.dashboard.power-up.unlimited.bottom-description", subscription-href)
           :has-dropdown true}])
 
       "enterprise"
@@ -80,16 +79,18 @@
 
 (mf/defc team*
   [{:keys [is-owner team]}]
-  (let [subscription              (:subscription team)
-        subscription-name         (:type subscription)
-        subscription-is-trial     (= "trialing" (:status subscription))
-        go-to-manage-subscription (mf/use-fn
-                                   (fn []
+  (let [subscription          (:subscription team)
+        subscription-name     (:type subscription)
+        subscription-is-trial (= "trialing" (:status subscription))
+
+        go-to-manage-subscription
+        (mf/use-fn
+         (fn []
            ;; TODO add event tracking
-                                     (let [current-href (rt/get-current-href)
-                                           returnUrl (js/encodeURIComponent current-href)
-                                           href (str "payments/subscriptions/show?returnUrl=" returnUrl)]
-                                       (st/emit! (rt/nav-raw :href href)))))]
+           (let [href (-> (rt/get-current-href)
+                          (rt/encode-url))
+                 href (str "payments/subscriptions/show?returnUrl=" href)]
+             (st/emit! (rt/nav-raw :href href)))))]
 
     [:div {:class (stl/css :team)}
      [:div {:class (stl/css :team-label)}
@@ -97,10 +98,15 @@
      [:span {:class (stl/css :team-text)}
       (case subscription-name
         "professional" (tr "subscription.settings.professional")
-        "unlimited" (if subscription-is-trial (tr "subscription.settings.unlimited-trial") (tr "subscription.settings.unlimited"))
+        "unlimited" (if subscription-is-trial
+                      (tr "subscription.settings.unlimited-trial")
+                      (tr "subscription.settings.unlimited"))
+
         "enterprise" (tr "subscription.settings.enterprise"))]
-     (when (and is-owner (not= subscription-name "professional")) [:button {:class (stl/css :manage-subscription-link) :on-click go-to-manage-subscription}
-                                                                   (tr "subscription.settings.manage-your-subscription")])]))
+     (when (and is-owner (not= subscription-name "professional"))
+       [:button {:class (stl/css :manage-subscription-link)
+                 :on-click go-to-manage-subscription}
+        (tr "subscription.settings.manage-your-subscription")])]))
 
 (mf/defc menu-team-icon*
   [{:keys [subscription-name]}]
@@ -127,31 +133,63 @@
         subscription-name     (:type subscription)
         subscription-is-trial (= "trialing" (:status subscription))
         is-owner              (:is-owner (:permissions team))
+
         email-owner           (:email (some #(when (:is-admin %) %) (:members team)))
         mail-to-owner         (str "<a href=\"" "mailto:" email-owner "\">" email-owner "</a>")
         go-to-subscription    (dm/str (u/join cf/public-uri "#/settings/subscriptions"))
-        link                  (if is-owner
-                                go-to-subscription
-                                mail-to-owner)
-        cta-title             (cond
-                                (= "professional" subscription-name) (tr "subscription.dashboard.cta.professional-plan-designed")
-                                subscription-is-trial (tr "subscription.dashboard.cta.trial-plan-designed")
-                                (= "unlimited" subscription-name) (tr "subscription.dashboard.cta.unlimited-many-editors" (:quantity (:subscription (:props profile)))))
 
-        cta-message           (cond
-                                (and (= "professional" subscription-name) is-owner) (tr "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
-                                                                                        link)
-                                (and (= "professional" subscription-name) (not is-owner)) (tr "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
-                                                                                              link)
-                                (and subscription-is-trial is-owner) (tr "subscription.dashboard.cta.upgrade-to-full-access-owner"
-                                                                         link)
-                                (and subscription-is-trial (not is-owner)) (tr "subscription.dashboard.cta.upgrade-to-full-access-member"
-                                                                               link)
-                                (and (= "unlimited" subscription-name) (not subscription-is-trial)) (tr "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner-more-seats"
-                                                                                                        link))]
+        link
+        (if is-owner
+          go-to-subscription
+          mail-to-owner)
+
+        cta-title
+        (cond
+          (= "professional" subscription-name)
+          (tr "subscription.dashboard.cta.professional-plan-designed")
+
+          subscription-is-trial
+          (tr "subscription.dashboard.cta.trial-plan-designed")
+
+          (= "unlimited" subscription-name)
+          (tr "subscription.dashboard.cta.unlimited-many-editors" (:quantity (:subscription (:props profile)))))
+
+        cta-message
+        (cond
+          (and (= "professional" subscription-name) is-owner)
+          (tr "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner" link)
+
+          (and (= "professional" subscription-name) (not is-owner))
+          (tr "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member" link)
+
+          (and subscription-is-trial is-owner)
+          (tr "subscription.dashboard.cta.upgrade-to-full-access-owner" link)
+
+          (and subscription-is-trial (not is-owner))
+          (tr "subscription.dashboard.cta.upgrade-to-full-access-member" link)
+          (and (= "unlimited" subscription-name) (not subscription-is-trial))
+          (tr "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner-more-seats" link))]
 
     [:> cta* {:class (stl/css-case ::members-cta-full-width banner-is-expanded :members-cta (not banner-is-expanded)) :title cta-title}
      [:> i18n/tr-html*
       {:tag-name "span"
        :class (stl/css :cta-message)
        :content cta-message}]]))
+
+(defn show-subscription-members-main-banner?
+  [team profile]
+  (or
+   (and (= (:type (:subscription team)) "professional") (>= (count (:members team)) 8))
+   (and
+    (= (:type (:subscription team)) "unlimited")
+    (not (= (:status (:subscription team)) "trialing"))
+    (>= (count (:members team)) (:quantity (:subscription (:props profile))))
+    (:is-owner (:permissions team)))
+   (= (:status (:subscription team)) "paused")))
+
+(defn show-subscription-invitations-main-banner?
+  [team]
+  (or
+   (and (= (:type (:subscription team)) "professional")
+        (>= (count (:members team)) 8))
+   (= (:status (:subscription team)) "paused")))
