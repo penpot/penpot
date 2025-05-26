@@ -87,7 +87,14 @@ A non exhaustive list of changes:
 - Fix selection of short paths [Github #4472](https://github.com/penpot/penpot/issues/4472)
 - Fix element positioning on the right side to adjust to grid [#11073](https://tree.taiga.io/project/penpot/issue/11073)
 
-## 2.7.0 (Unreleased)
+## 2.7.1
+
+### :bug: Bugs fixed
+
+- Fix incorrect handling of strokes with images on importing files
+- Fix tokens disappearing after manual additions [Taiga #11063](https://tree.taiga.io/project/penpot/issue/11063)
+
+## 2.7.0
 
 ### :rocket: Epics and highlights
 
