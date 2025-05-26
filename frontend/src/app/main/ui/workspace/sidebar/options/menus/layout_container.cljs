@@ -1288,7 +1288,7 @@
            (st/emit! (dwge/locate-board (first ids)))))]
 
     [:div {:class (stl/css :grid-layout-menu)}
-     [:div {:class (stl/css :row)}
+     [:div {:class (stl/css :grid-first-row)}
       [:div {:class (stl/css :grid-layout-menu-title)} "GRID LAYOUT"]
       [:> icon-button* {:variant "ghost"
                         :class (stl/css :help-button)
@@ -1327,17 +1327,17 @@
                         :on-click handle-locate-grid
                         :icon "locate"}]]
 
-     [:div {:class (stl/css :row)}
+     [:div {:class (stl/css :gap-row)}
       [:& gap-section {:on-change on-gap-change
                        :value (:layout-gap values)}]]
 
-     [:div {:class (stl/css :row :padding-section)}
+     [:div {:class (stl/css :padding-row :padding-section)}
       [:& padding-section {:value (:layout-padding values)
                            :type (:layout-padding-type values)
                            :on-type-change on-padding-type-change
                            :on-change on-padding-change}]]
 
-     [:div {:class (stl/css :row :grid-tracks-row)}
+     [:div {:class (stl/css :grid-tracks-row)}
       [:& grid-columns-row {:is-column true
                             :expanded? @columns-open?
                             :toggle toggle-columns-open
