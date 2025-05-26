@@ -5,6 +5,7 @@
 ### :bug: Bugs fixed
 
 - Fix incorrect handling of strokes with images on importing files
+- Fix tokens disappearing after manual additions [Taiga #11063](https://tree.taiga.io/project/penpot/issue/11063)
 
 
 ## 2.7.0 
