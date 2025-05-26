@@ -134,3 +134,7 @@
               (ctpl/update-page file-data
                                 (:id page)
                                 #(ctst/set-shape % (assoc origin :interactions interactions)))))))
+
+(defn extract-first-line-height [text-node]
+  (get-in text-node
+          [:content :children 0 :children 0 :children 0 :line-height]))

@@ -205,6 +205,7 @@
 (def ^:icon-id msg-neutral "msg-neutral")
 (def ^:icon-id msg-success "msg-success")
 (def ^:icon-id msg-warning "msg-warning")
+(def ^:icon-id number "number")
 (def ^:icon-id open-link "open-link")
 (def ^:icon-id padding-bottom "padding-bottom")
 (def ^:icon-id padding-extended "padding-extended")

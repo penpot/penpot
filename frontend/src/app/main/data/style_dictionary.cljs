@@ -8,6 +8,7 @@
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
+   [app.common.data :as d]
    [app.common.files.tokens :as cft]
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -55,7 +56,46 @@
     {:value value :unit (tinycolor/color-format tc)}
     {:errors [(wte/error-with-value :error.token/invalid-color value)]}))
 
+(defn- numeric-string? [s]
+  (and (string? s)
+       (re-matches #"^-?\d+(\.\d+)?$" s)))
+
+(defn- with-units [s]
+  (and (string? s)
+       (re-matches #"^-?\d+(\.\d+)?(px|rem)$" s)))
+
 (defn- parse-sd-token-numeric-value
+  "Parses `value` of a numeric `sd-token` into a map like `{:value 1 :unit \"px\"}`.
+  If the `value` is not parseable and/or has missing references returns a map with `:errors`."
+  [value]
+  (let [number? (or (number? value)
+                    (numeric-string? value))
+        parsed-value  {:value (d/parse-double value)}
+        out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
+                          (<= (:value parsed-value) sm/min-safe-int))]
+
+    (cond
+      (and parsed-value (not out-of-bounds) number?)
+      parsed-value
+
+      out-of-bounds
+      {:errors [(wte/error-with-value :error.token/number-too-large value)]}
+
+      (seq (ctob/find-token-value-references value))
+      (let [references (seq (ctob/find-token-value-references value))]
+        {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+         :references references})
+
+      (with-units value)
+      {:errors [(wte/error-with-value :error.style-dictionary/value-with-units value)]}
+
+      (not number?)
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]}
+
+      :else
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
+
+(defn- parse-sd-token-general-value
   "Parses `value` of a numeric `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
@@ -162,7 +202,8 @@
                                 :color (parse-sd-token-color-value value)
                                 :opacity (parse-sd-token-opacity-value value has-references?)
                                 :stroke-width (parse-sd-token-stroke-width-value value has-references?)
-                                (parse-sd-token-numeric-value value))
+                                :numeric (parse-sd-token-numeric-value value)
+                                (parse-sd-token-general-value value))
            output-token (cond (:errors parsed-token-value)
                               (merge origin-token parsed-token-value)
 

@@ -165,14 +165,14 @@
 (mf/defc token-pill*
   {::mf/wrap [mf/memo]}
   [{:keys [on-click token on-context-menu selected-shapes active-theme-tokens]}]
-  (let [{:keys [name value errors]} token
+  (let [{:keys [name value errors type]} token
 
         has-selected?  (pos? (count selected-shapes))
         is-reference?  (cft/is-reference? token)
         contains-path? (str/includes? name ".")
 
         {:keys [attributes all-attributes]}
-        (get dwta/token-properties (:type token))
+        (get dwta/token-properties type)
 
         full-applied?
         (if has-selected?
@@ -204,9 +204,11 @@
 
         color
         (when (cft/color-token? token)
-          (let [theme-token (get active-theme-tokens (:name token))]
+          (let [theme-token (get active-theme-tokens name)]
             (or (dwtc/resolved-token-bullet-color theme-token)
                 (dwtc/resolved-token-bullet-color token))))
+
+        numeric-token (= type :numeric)
 
         on-click
         (mf/use-fn
@@ -240,18 +242,20 @@
            (dom/stop-propagation event)
            (when (and can-edit? (not (seq errors)) on-click)
              (on-click event))))
+
         on-hover
         (mf/use-fn
          (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set)
          (fn [event]
            (let [node  (dom/get-current-target event)
-                 theme-token (get active-theme-tokens (:name token))
+                 theme-token (get active-theme-tokens name)
                  title (generate-tooltip is-viewer? (first selected-shapes) theme-token token
                                          half-applied? no-valid-value ref-not-in-active-set)]
              (dom/set-attribute! node "title" title))))]
 
     [:button {:class (stl/css-case
                       :token-pill true
+                      :token-pill-no-icon (and numeric-token (not errors?))
                       :token-pill-default can-edit?
                       :token-pill-applied (and can-edit? has-selected? (or half-applied? full-applied?))
                       :token-pill-invalid (and can-edit? errors?)
@@ -276,13 +280,12 @@
         {:icon-id "broken-link"
          :class (stl/css :token-pill-icon)}]
 
-       color
-       [:& color-bullet {:color color
-                         :mini true}]
-       :else
-       [:> token-status-icon*
-        {:icon-id token-status-id
-         :class (stl/css :token-pill-icon)}])
+       (not numeric-token)
+       (if color
+         [:& color-bullet {:color color :mini true}]
+         [:> token-status-icon*
+          {:icon-id token-status-id
+           :class (stl/css :token-pill-icon)}]))
 
      (if contains-path?
        (let [[first-part last-part] (cfh/split-by-last-period name)]

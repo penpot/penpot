@@ -182,6 +182,7 @@
 (def ^:icon msg-neutral (icon-xref :msg-neutral))
 (def ^:icon msg-success (icon-xref :msg-success))
 (def ^:icon msg-warning (icon-xref :msg-warning))
+(def ^:icon number (icon-xref :number))
 (def ^:icon open-link (icon-xref :open-link))
 (def ^:icon oauth-1 (icon-xref :oauth-1))
 (def ^:icon oauth-2 (icon-xref :oauth-2))

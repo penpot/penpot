@@ -169,6 +169,13 @@
            item)))
      root)))
 
+(defn update-text-content
+  [shape pred-fn update-fn attrs]
+  (let [update-attrs-fn #(update-fn % attrs)
+        transform   #(transform-nodes pred-fn update-attrs-fn %)]
+    (-> shape
+        (update :content transform))))
+
 (defn generate-shape-name
   [text]
   (subs text 0 (min 280 (count text))))

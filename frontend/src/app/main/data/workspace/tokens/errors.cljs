@@ -56,6 +56,10 @@
    {:error/code :error.style-dictionary/invalid-token-value
     :error/fn #(str (tr "workspace.tokens.invalid-value" %))}
 
+   :error.style-dictionary/value-with-units
+   {:error/code :error.style-dictionary/value-with-units
+    :error/fn #(str (tr "workspace.tokens.value-with-units"))}
+
    :error.style-dictionary/invalid-token-value-opacity
    {:error/code :error.style-dictionary/invalid-token-value-opacity
     :error/fn #(str/join "\n" [(str (tr "workspace.tokens.invalid-value" %) ".") (tr "workspace.tokens.opacity-range")])}
@@ -63,6 +67,10 @@
    :error.style-dictionary/invalid-token-value-stroke-width
    {:error/code :error.style-dictionary/invalid-token-value-stroke-width
     :error/fn #(str/join "\n" [(str (tr "workspace.tokens.invalid-value" %) ".") (tr "workspace.tokens.stroke-width-range")])}
+
+   :error.style-dictionary/invalid-numeric-token-value
+   {:error/code :error.style-dictionary/invalid-numeric-token-value
+    :error/fn #(str/join "\n" [(str (tr "workspace.tokens.invalid-value" %) ".") (tr "workspace.tokens.numeric-token")])}
 
    :error/unknown
    {:error/code :error/unknown

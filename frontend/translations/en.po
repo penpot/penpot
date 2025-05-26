@@ -7282,6 +7282,10 @@ msgstr ""
 msgid "workspace.tokens.invalid-value"
 msgstr "Invalid token value: %s"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:57
+msgid "workspace.tokens.value-with-units"
+msgstr "Invalid value: Units are not allowed."
+
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:190
 msgid "workspace.tokens.label.group"
 msgstr "Group"
@@ -7496,6 +7500,10 @@ msgstr "The value is not valid"
 #: src/app/main/ui/workspace/tokens/form.cljs:555
 msgid "workspace.tokens.warning-name-change"
 msgstr "Renaming this token will break any reference to its old name."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.tokens.add-token"
+msgstr "Add token: %s"
 
 #: src/app/main/ui/workspace/sidebar.cljs:137, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
