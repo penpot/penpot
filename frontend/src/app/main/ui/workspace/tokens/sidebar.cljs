@@ -56,6 +56,7 @@
     :color "drop"
     :boolean "boolean-difference"
     :opacity "percentage"
+    :numeric "number"
     :rotation "rotation"
     :spacing "padding-extended"
     :string "text-mixed"

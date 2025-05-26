@@ -328,6 +328,27 @@
             (dwsl/update-layout-child shape-ids props {:ignore-touched true
                                                        :page-id page-id}))))))))
 
+(defn update-line-height
+  ([value shape-ids attributes] (update-line-height value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+   (when (number? value)
+    ;;  (dwsh/update-shapes shape-ids
+    ;;                      #(assoc % :line-height value)
+    ;;                      {:ignore-touched true
+    ;;                       :page-id page-id})
+     
+     )))
+
+(defn update-shape-rotation
+  ([value shape-ids attributes] (update-shape-rotation value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+   (when (number? value)
+    ;;  (dwsh/update-shapes shape-ids
+    ;;                      #(assoc % :rotation value)
+    ;;                      {:ignore-touched true
+    ;;                       :page-id page-id})
+     )))
+
 ;; Map token types to different properties used along the cokde ---------------------------------------------------------
 
 ;; FIXME: the values should be lazy evaluated, probably a function,
@@ -389,6 +410,15 @@
     :modal {:key :tokens/opacity
             :fields [{:label "Opacity"
                       :key :opacity}]}}
+
+   :numeric
+   {:title "Number"
+    :attributes ctt/numeric-keys
+    ;; TODO: Review this¡¡¡
+    :on-update-shape update-opacity
+    :modal {:key :tokens/numeric
+            :fields [{:label "number"
+                      :key :numeric}]}}
 
    :rotation
    {:title "Rotation"
