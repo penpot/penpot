@@ -244,6 +244,9 @@
      :sizing sizing-attribute-actions
      :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
      :opacity (partial generic-attribute-actions #{:opacity} "Opacity")
+     :numeric (fn [context-data]
+                [(generic-attribute-actions #{:rotation} "Rotation" (assoc context-data :on-update-shape dwta/update-rotation))
+                 (generic-attribute-actions #{:line-height} "Line Height" (assoc context-data :on-update-shape dwta/update-line-height))])
      :stroke-width stroke-width
      :dimensions (fn [context-data]
                    (concat

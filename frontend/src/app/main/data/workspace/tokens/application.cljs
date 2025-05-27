@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
+   [app.common.text :as txt]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
@@ -331,23 +332,14 @@
 (defn update-line-height
   ([value shape-ids attributes] (update-line-height value shape-ids attributes nil))
   ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
-   (when (number? value)
-    ;;  (dwsh/update-shapes shape-ids
-    ;;                      #(assoc % :line-height value)
-    ;;                      {:ignore-touched true
-    ;;                       :page-id page-id})
-     
-     )))
-
-(defn update-shape-rotation
-  ([value shape-ids attributes] (update-shape-rotation value shape-ids attributes nil))
-  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
-   (when (number? value)
-    ;;  (dwsh/update-shapes shape-ids
-    ;;                      #(assoc % :rotation value)
-    ;;                      {:ignore-touched true
-    ;;                       :page-id page-id})
-     )))
+   (let [update-node? (fn [node]
+                        (or (txt/is-text-node? node)
+                            (txt/is-paragraph-node? node)))]
+     (when (number? value)
+       (dwsh/update-shapes shape-ids
+                           #(txt/update-text-content % update-node? d/txt-merge {:line-height value})
+                           {:ignore-touched true
+                            :page-id page-id})))))
 
 ;; Map token types to different properties used along the cokde ---------------------------------------------------------
 
@@ -414,8 +406,7 @@
    :numeric
    {:title "Number"
     :attributes ctt/numeric-keys
-    ;; TODO: Review this¡¡¡
-    :on-update-shape update-opacity
+    :on-update-shape update-rotation
     :modal {:key :tokens/numeric
             :fields [{:label "number"
                       :key :numeric}]}}
