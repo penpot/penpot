@@ -12,8 +12,11 @@
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.files.tokens :as cft]
+   [app.common.types.file :as ctf]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.color :as dwtc]
+   [app.main.data.workspace.tokens.errors :as wte]
+   [app.main.data.workspace.tokens.prepare-value :as wtpv]
    [app.main.refs :as refs]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
@@ -104,10 +107,10 @@
 
 (defn- generate-tooltip
   "Generates a tooltip for a given token"
-  [is-viewer shape theme-token token half-applied no-valid-value ref-not-in-active-set]
-  (let [{:keys [name value type resolved-value]} token
-        resolved-value-theme (:resolved-value theme-token)
-        resolved-value (or resolved-value-theme resolved-value)
+  [is-viewer shape theme-token token half-applied no-valid-value ref-not-in-active-set base-font-size]
+  (let [{:keys [name value type errors]} token
+        resolved-value-theme (wtpv/resolve-value-preview theme-token base-font-size)
+        resolved-value (or resolved-value-theme (wtpv/resolve-value-preview token base-font-size))
         {:keys [title] :as token-props} (dwta/get-token-properties theme-token)
         applied-tokens (:applied-tokens shape)
         app-token-vals (set (vals applied-tokens))
@@ -125,6 +128,10 @@
                            (tr "workspace.tokens.resolved-value" resolved-value))]
 
     (cond
+      (seq errors)
+      (->> (wte/humanize-errors errors)
+           (str/join "\n"))
+
       ;; If there are errors, show the appropriate message
       ref-not-in-active-set
       (tr "workspace.tokens.ref-not-valid")
@@ -165,7 +172,10 @@
 (mf/defc token-pill*
   {::mf/wrap [mf/memo]}
   [{:keys [on-click token on-context-menu selected-shapes active-theme-tokens]}]
-  (let [{:keys [name value errors]} token
+  (let [file-data (deref refs/workspace-data)
+        base-font-size (ctf/get-base-font-size-int file-data)
+
+        {:keys [name value errors]} token
 
         has-selected?  (pos? (count selected-shapes))
         is-reference?  (cft/is-reference? token)
@@ -242,12 +252,12 @@
              (on-click event))))
         on-hover
         (mf/use-fn
-         (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set)
+         (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set base-font-size)
          (fn [event]
            (let [node  (dom/get-current-target event)
                  theme-token (get active-theme-tokens (:name token))
                  title (generate-tooltip is-viewer? (first selected-shapes) theme-token token
-                                         half-applied? no-valid-value ref-not-in-active-set)]
+                                         half-applied? no-valid-value ref-not-in-active-set base-font-size)]
              (dom/set-attribute! node "title" title))))]
 
     [:button {:class (stl/css-case

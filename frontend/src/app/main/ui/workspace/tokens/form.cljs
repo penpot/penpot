@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
+   [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.modal :as modal]
@@ -19,6 +20,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.tokens.prepare-value :as wtpv]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.tokens.warnings :as wtw]
    [app.main.refs :as refs]
@@ -118,7 +120,7 @@
                                                                              :name token-name
                                                                              :type (:type token)}))))]
         (->> tokens'
-             (sd/resolve-tokens-interactive)
+             (sd/resolve-tokens-interactive tokens' :sd-config sd/form-config)
              (rx/mapcat
               (fn [resolved-tokens]
                 (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
@@ -235,7 +237,9 @@
 (mf/defc form
   {::mf/wrap-props false}
   [{:keys [token token-type action selected-token-set-name on-display-colorpicker]}]
-  (let [create? (not (instance? ctob/Token token))
+  (let [file-data (deref refs/workspace-data)
+        base-font-size (ctf/get-base-font-size-int file-data)
+        create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
         token-properties (dwta/get-token-properties token)
         is-color-token (cft/color-token? token)
@@ -328,11 +332,13 @@
         value-input-ref (mf/use-ref nil)
         value-ref (mf/use-ref (:value token))
 
-        token-resolve-result* (mf/use-state (get resolved-tokens (cft/token-identifier token)))
+        token-resolve-result* (mf/use-state (some-> (get resolved-tokens (cft/token-identifier token))
+                                                    (wtpv/resolve-value-preview base-font-size)))
         token-resolve-result (deref token-resolve-result*)
 
         set-resolve-value
         (mf/use-fn
+         (mf/deps base-font-size)
          (fn [token-or-err]
            (let [error? (:errors token-or-err)
                  warnings? (:warnings token-or-err)
@@ -344,7 +350,7 @@
                      (:warnings {:warnings token-or-err})
 
                      :else
-                     (:resolved-value token-or-err))]
+                     (wtpv/resolve-value-preview token-or-err base-font-size))]
              (when is-color-token (reset! color* (if error? nil v)))
              (reset! token-resolve-result* v))))
 

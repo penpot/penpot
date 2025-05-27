@@ -50,3 +50,61 @@
                (t/is (= :error.token/number-too-large
                         (get-in resolved-tokens ["borderRadius.largeFn" :errors 0 :error/code])))
                (done))))))))
+
+(defn evaluate-math [value]
+  (let [platform-config #js {:mathFractionDigits 2}
+        token #js {"value" value "type" "dimensions"}]
+    (sd/check-and-evaluate-math token platform-config)))
+
+(defn catch-evaluate-math [value]
+  (try
+    (evaluate-math value)
+    (catch js/Error e (ex-data e))))
+
+(defn math-error? [value]
+  (= :error.style-dictionary/invalid-math-expression (:error/code value)))
+
+(t/deftest evaluate-math-expressions-test
+  (t/testing "evaluates math expressions directly using check-and-evaluate-math"
+    ;; Multiplication tests
+    (t/is (= 6 (evaluate-math "2 * 3")))
+    (t/is (= "6px" (evaluate-math "2px * 3px")))
+
+    ;; Division tests
+    (t/is (= 1.33 (evaluate-math "4 / 3")))
+    (t/is (= "1.33px" (evaluate-math "4px / 3px")))
+    (t/is (= "1.33px" (evaluate-math "4 / 3px")))
+
+    ;; Addition tests
+    (t/is (= 5 (evaluate-math "2 + 3")))
+    (t/is (= "5px" (evaluate-math "2 + 3px")))
+    (t/is (= "5px" (evaluate-math "2px + 3")))
+
+    ;; Subtraction tests
+    (t/is (= -1 (evaluate-math "2 - 3")))
+    (t/is (= "-1px" (evaluate-math "2 - 3px")))
+    (t/is (= "-1px" (evaluate-math "2px - 3px")))
+
+    (evaluate-math "1px + 1rem")
+
+    ;; Invalid operations test
+    (t/is (math-error? (catch-evaluate-math "2px * 3rem")))
+    (t/is (math-error? (catch-evaluate-math "3rem * 2px")))
+    (t/is (math-error? (catch-evaluate-math "4px / 3rem")))
+    ;; TODO This wont throw yet in sd-transforms
+    #_
+    (t/is (math-error? (catch-evaluate-math "4 / 3rem")))
+    (t/is (math-error? (catch-evaluate-math "4rem / 3px")))
+    ;; TODO This doesnt work in check-and-evaluate-math
+    #_
+    (t/is (= "1.33rem" (evaluate-math "4rem / 3rem")))
+    ;; TODO This wont throw yet in sd-transforms
+    #_
+    (t/is (= "2rem" (evaluate-math "4rem - 2")))
+    ;; TODO This wont throw yet in sd-transforms
+    #_
+    (t/is (= "-4rem" (evaluate-math "2 - 4rem")))))
+
+(comment
+  (t/run-tests *ns*)
+  nil)
