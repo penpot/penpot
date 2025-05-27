@@ -416,9 +416,17 @@ impl RenderState {
             }
 
             Type::Text(text_content) => {
-                self.surfaces.apply_mut(&[SurfaceId::Fills], |s| {
-                    s.canvas().concat(&matrix);
-                });
+                self.surfaces.apply_mut(
+                    &[
+                        SurfaceId::Fills,
+                        SurfaceId::Strokes,
+                        SurfaceId::DropShadows,
+                        SurfaceId::InnerShadows,
+                    ],
+                    |s| {
+                        s.canvas().concat(&matrix);
+                    },
+                );
 
                 let text_content = text_content.new_bounds(shape.selrect());
                 let paragraphs = text_content.get_skia_paragraphs(self.fonts.font_collection());
