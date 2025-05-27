@@ -680,7 +680,7 @@
 
 
          (and (not (:is-default team))
-              (not (contains? cf/flags :subscriptions)))
+              (or (not= "unlimited" subscription-name) (not= "enterprise" subscription-name)))
          [:div {:class (stl/css :team-name)}
           [:img {:src (cf/resolve-team-photo-url team)
                  :class (stl/css :team-picture)
