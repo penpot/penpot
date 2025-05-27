@@ -1,4 +1,4 @@
-import { test, expect, describe } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { WorkspacePage } from "../pages/WorkspacePage";
 
 test.beforeEach(async ({ page }) => {
@@ -38,7 +38,7 @@ const setupFileWithMultipeAttributes = async (workspace) => {
   );
 };
 
-describe("Constraints", () => {
+test.describe("Constraints", () => {
   test("Constraint dropdown shows 'Mixed' when multiple layers are selected with different constraints", async ({
     page,
   }) => {
@@ -66,25 +66,31 @@ describe("Constraints", () => {
   });
 });
 
-describe("Shape attributes", () => {
+test.describe("Shape attributes", () => {
   test("Cannot add a new fill when the limit has been reached", async ({
     page,
   }) => {
     const workspace = new WorkspacePage(page);
     await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "design/get-file-fills-limit.json");
 
     await workspace.goToWorkspace({
-      fileId: "b3e5731a-c295-801d-8006-3fc33c3b1b13",
-      pageId: "b3e5731a-c295-801d-8006-3fc33c3b1b14",
+      fileId: "d2847136-a651-80ac-8006-4202d9214aa7",
+      pageId: "d2847136-a651-80ac-8006-4202d9214aa8",
     });
 
     await workspace.clickLeafLayer("Rectangle");
 
-    expect(false);
+    await workspace.page.getByTestId("add-fill").click();
+    await expect(
+      workspace.page.getByRole("button", { name: "#B1B2B5" }),
+    ).toHaveCount(8);
+
+    await expect(workspace.page.getByTestId("add-fill")).toBeDisabled();
   });
 });
 
-describe("Multiple shapes attributes", () => {
+test.describe("Multiple shapes attributes", () => {
   test("User selects multiple shapes with sames fills, strokes, shadows and blur", async ({
     page,
   }) => {
