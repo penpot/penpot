@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.files
   (:require
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -211,7 +212,8 @@
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file} {:keys [read-only?]}]
   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
             pmap/*tracked* (pmap/create-tracked)]
-    (let [;; For avoid unnecesary overhead of creating multiple pointers and
+    (let [libs (delay (bfc/get-resolved-file-libraries cfg file))
+          ;; For avoid unnecesary overhead of creating multiple pointers and
           ;; handly internally with objects map in their worst case (when
           ;; probably all shapes and all pointers will be readed in any
           ;; case), we just realize/resolve them before applying the
@@ -219,7 +221,7 @@
           file (-> file
                    (update :data feat.fdata/process-pointers deref)
                    (update :data feat.fdata/process-objects (partial into {}))
-                   (fmg/migrate-file))]
+                   (fmg/migrate-file libs))]
 
       (if (or read-only? (db/read-only? conn))
         file
@@ -615,44 +617,6 @@
 
 ;; --- COMMAND QUERY: get-file-libraries
 
-(def ^:private sql:get-file-libraries
-  "WITH RECURSIVE libs AS (
-     SELECT fl.*, flr.synced_at
-       FROM file AS fl
-       JOIN file_library_rel AS flr ON (flr.library_file_id = fl.id)
-      WHERE flr.file_id = ?::uuid
-    UNION
-     SELECT fl.*, flr.synced_at
-       FROM file AS fl
-       JOIN file_library_rel AS flr ON (flr.library_file_id = fl.id)
-       JOIN libs AS l ON (flr.file_id = l.id)
-   )
-   SELECT l.id,
-          l.features,
-          l.project_id,
-          p.team_id,
-          l.created_at,
-          l.modified_at,
-          l.deleted_at,
-          l.name,
-          l.revn,
-          l.vern,
-          l.synced_at,
-          l.is_shared
-     FROM libs AS l
-    INNER JOIN project AS p ON (p.id = l.project_id)
-    WHERE l.deleted_at IS NULL OR l.deleted_at > now();")
-
-(defn get-file-libraries
-  [conn file-id]
-  (into []
-        (comp
-         ;; FIXME: :is-indirect set to false to all rows looks
-         ;; completly useless
-         (map #(assoc % :is-indirect false))
-         (map decode-row))
-        (db/exec! conn [sql:get-file-libraries file-id])))
-
 (def ^:private schema:get-file-libraries
   [:map {:title "get-file-libraries"}
    [:file-id ::sm/uuid]])
@@ -664,7 +628,7 @@
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id]}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
-    (get-file-libraries conn file-id)))
+    (bfc/get-file-libraries conn file-id)))
 
 
 ;; --- COMMAND QUERY: Files that use this File library

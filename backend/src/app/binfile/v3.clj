@@ -754,8 +754,9 @@
                    (assoc :data data)
                    (assoc :name file-name)
                    (assoc :project-id project-id)
-                   (dissoc :options)
-                   (bfc/process-file))]
+                   (dissoc :options))
+
+          file  (bfc/process-file cfg file)]
 
       (bfm/register-pending-migrations! cfg file)
       (bfc/save-file! cfg file ::db/return-keys false)

@@ -146,13 +146,9 @@
 
 (defn process-file!
   [system file-id update-fn & {:keys [label validate? with-libraries?] :or {validate? true} :as opts}]
-  (let [conn  (db/get-connection system)
-        file  (bfc/get-file system file-id ::db/for-update true)
+  (let [file  (bfc/get-file system file-id ::db/for-update true)
         libs  (when with-libraries?
-                (->> (files/get-file-libraries conn file-id)
-                     (into [file] (map (fn [{:keys [id]}]
-                                         (bfc/get-file system id))))
-                     (d/index-by :id)))
+                (bfc/get-resolved-file-libraries system file))
 
         file' (when file
                 (if with-libraries?
