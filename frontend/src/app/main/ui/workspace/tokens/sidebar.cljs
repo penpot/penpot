@@ -130,8 +130,7 @@
          [:> icon-button* {:on-click on-popover-open-click
                            :variant "ghost"
                            :icon "add"
-                           ;;  TODO: This needs translation
-                           :aria-label (str "Add token: " title)}])]
+                           :aria-label (tr "workspace.tokens.add-token" title)}])]
       (when is-open
         [:& cmm/asset-section-block {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
