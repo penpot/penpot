@@ -9,6 +9,7 @@
    #?(:clj [app.common.fressian :as fres])
    #?(:clj [app.common.json :as json])
    #?(:clj [app.common.test-helpers.tokens :as tht])
+   #?(:clj [app.common.uuid :as uuid])
    [app.common.data :as d]
    [app.common.time :as dt]
    [app.common.transit :as tr]
@@ -1507,7 +1508,7 @@
                                                                         :value "{accent.default}"})}))
                           (ctob/add-theme (ctob/make-token-theme :name "theme-1"
                                                                  :group "group-1"
-                                                                 :id "test-id-00"
+                                                                 :external-id "test-id-00"
                                                                  :modified-at now
                                                                  :sets #{"core"})))
            result   (ctob/export-dtcg-json tokens-lib)
@@ -1537,7 +1538,8 @@
 
 #?(:clj
    (t/deftest export-parse-dtcg-json
-     (with-redefs [dt/now (constantly #inst "2024-10-16T12:01:20.257840055-00:00")]
+     (with-redefs [dt/now    (constantly #inst "2024-10-16T12:01:20.257840055-00:00")
+                   uuid/next (constantly uuid/zero)]
        (let [tokens-lib (-> (ctob/make-tokens-lib)
                             (ctob/add-set (ctob/make-token-set :name "core"
                                                                :tokens {"colors.red.600"
@@ -1626,7 +1628,7 @@
                                                                         :value "{accent.default}"})}))
                           (ctob/add-theme (ctob/make-token-theme :name "theme-1"
                                                                  :group "group-1"
-                                                                 :id "test-id-01"
+                                                                 :external-id "test-id-01"
                                                                  :modified-at now
                                                                  :sets #{"core"}))
                           (ctob/toggle-theme-active? "group-1" "theme-1"))
