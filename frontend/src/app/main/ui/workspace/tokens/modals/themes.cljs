@@ -26,7 +26,7 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.tokens.sets :as wts]
+   [app.main.ui.workspace.tokens.sets.sets-list :as wts]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
