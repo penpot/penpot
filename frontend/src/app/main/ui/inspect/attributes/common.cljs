@@ -26,18 +26,20 @@
 (def file-colors-ref
   (l/derived (l/in [:viewer :file :data :colors]) st/state))
 
-(defn make-colors-library-ref [libraries-place file-id]
+(defn make-colors-library-ref
+  [libraries-place file-id]
   (let [get-library
         (fn [state]
           (get-in state [libraries-place file-id :data :colors]))]
     (l/derived get-library st/state)))
 
-(defn- use-colors-library [color]
-  (-> (mf/use-memo
-       (mf/deps (:file-id color))
-       #(make-colors-library-ref :files (:file-id color)))
-      mf/deref))
+(defn- use-colors-library
+  [{:keys [ref-file] :as color}]
+  (let [library (mf/with-memo [ref-file]
+                  (make-colors-library-ref :files ref-file))]
+    (mf/deref library)))
 
+;; FIXME: this breaks react hooks rule (broken code)
 (defn- get-file-colors []
   (or (mf/deref file-colors-ref) (mf/deref refs/workspace-file-colors)))
 
@@ -51,8 +53,8 @@
 (mf/defc color-row [{:keys [color format copy-data on-change-format]}]
   (let [colors-library     (use-colors-library color)
         file-colors        (get-file-colors)
-        color-library-name (get-in (or colors-library file-colors) [(:id color) :name])
-        color              (assoc color :color-library-name color-library-name)
+        color-library-name (get-in (or colors-library file-colors) [(:ref-id color) :name])
+        color              (assoc color :name color-library-name)
         image              (:image color)]
 
 
