@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.viewer
   (:require
+   [app.binfile.common :as bfc]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.schema :as sm]
@@ -78,7 +79,7 @@
                   :always
                   (update :data select-keys [:id :options :pages :pages-index :components]))
 
-        libs    (->> (files/get-file-libraries conn file-id)
+        libs    (->> (bfc/get-file-libraries conn file-id)
                      (mapv (fn [{:keys [id] :as lib}]
                              (merge lib (files/get-file cfg id)))))
 

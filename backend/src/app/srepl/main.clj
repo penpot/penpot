@@ -390,12 +390,9 @@
   [file-id]
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! (assoc main/system ::db/rollback true)
-                (fn [{:keys [::db/conn] :as system}]
-                  (let [file (h/get-file system file-id)
-                        libs (->> (files/get-file-libraries conn file-id)
-                                  (into [file] (map (fn [{:keys [id]}]
-                                                      (h/get-file system id))))
-                                  (d/index-by :id))]
+                (fn [system]
+                  (let [file (bfc/get-file system file-id)
+                        libs (bfc/get-resolved-file-libraries system file)]
                     (cfv/validate-file file libs))))))
 
 (defn repair-file!

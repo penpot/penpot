@@ -617,9 +617,6 @@
 
 ;; --- COMMAND QUERY: get-file-libraries
 
-;; Moved to app.binfile.common to avoid circular dependencies
-(dm/export bfc/get-file-libraries)
-
 (def ^:private schema:get-file-libraries
   [:map {:title "get-file-libraries"}
    [:file-id ::sm/uuid]])
@@ -631,7 +628,7 @@
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id]}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
-    (get-file-libraries conn file-id)))
+    (bfc/get-file-libraries conn file-id)))
 
 
 ;; --- COMMAND QUERY: Files that use this File library
