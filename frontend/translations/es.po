@@ -5204,6 +5204,9 @@ msgstr "Cambiar a tema oscuro"
 msgid "workspace.header.menu.toggle-light-theme"
 msgstr "Cambiar a tema claro"
 
+msgid "workspace.header.menu.toggle-system-theme"
+msgstr "Cambiar a tema del sistema"
+
 #: src/app/main/ui/workspace/main_menu.cljs:457
 msgid "workspace.header.menu.undo"
 msgstr "Deshacer"
