@@ -54,11 +54,12 @@
                         result)))
                   {})))
 
+;; FIXME: can be optimized with internal reduction
 (defn point-indices
   [content point]
   (->> (d/enumerate content)
        (filter (fn [[_ segment]] (= point (helpers/segment->point segment))))
-       (mapv (fn [[index _]] index))))
+       (map (fn [[index _]] index))))
 
 (defn handler-indices
   "Return an index where the key is the positions and the values the handlers"
@@ -272,41 +273,51 @@
 
 (defn- remove-line-curves
   "Remove all curves that have both handlers in the same position that the
-  beginning and end points. This makes them really line-to commands"
-  [content]
-  (let [with-prev (d/enumerate (d/with-prev content))
-        process-command
-        (fn [content [index [command prev]]]
+  beginning and end points. This makes them really line-to commands.
 
-          (let [cur-point (helpers/segment->point command)
+  NOTE: works with plain format so it expects to receive a vector"
+  [content]
+  (assert (vector? content) "expected a plain format for `content`")
+
+  (let [with-prev (d/enumerate (d/with-prev content))
+
+        process-segment
+        (fn [content [index [segment prev]]]
+          (let [cur-point (helpers/segment->point segment)
                 pre-point (helpers/segment->point prev)
-                handler-c1 (get-handler command :c1)
-                handler-c2 (get-handler command :c2)]
-            (if (and (= :curve-to (:command command))
+                handler-c1 (get-handler segment :c1)
+                handler-c2 (get-handler segment :c2)]
+            (if (and (= :curve-to (:command segment))
                      (= cur-point handler-c2)
                      (= pre-point handler-c1))
               (assoc content index {:command :line-to
                                     :params (into {} cur-point)})
               content)))]
 
-    (reduce process-command content with-prev)))
+    (reduce process-segment content with-prev)))
 
 (defn make-corner-point
   "Changes the content to make a point a 'corner'"
   [content point]
-  (let [handlers (-> (get-handlers content)
-                     (get point))
-        change-content
+  (let [handlers
+        (-> (get-handlers content)
+            (get point))
+
+        transform-content
         (fn [content [index prefix]]
           (let [cx (d/prefix-keyword prefix :x)
                 cy (d/prefix-keyword prefix :y)]
             (-> content
                 (assoc-in [index :params cx] (:x point))
-                (assoc-in [index :params cy] (:y point)))))]
-    (as-> content $
-      (reduce change-content $ handlers)
-      (remove-line-curves $))))
+                (assoc-in [index :params cy] (:y point)))))
 
+        content
+        (reduce transform-content (vec content) handlers)
+
+        content
+        (remove-line-curves content)]
+
+    (impl/from-plain content)))
 
 (defn- line->curve
   [from-p segment]
@@ -346,88 +357,118 @@
 
 (def ^:private xf:mapcat-points
   (comp
-   (mapcat #(vector (:next-p %) (:prev-p %)))
+   (mapcat #(list (:next-p %) (:prev-p %)))
    (remove nil?)))
 
 (defn make-curve-point
-  "Changes the content to make the point a 'curve'. The handlers will be positioned
-  in the same vector that results from the previous->next points but with fixed length."
+  "Changes the content to make the point a 'curve'. The handlers will be
+  positioned in the same vector that results from the previous->next
+  points but with fixed length."
   [content point]
 
-  (let [indices (point-indices content point)
-        vectors (map (fn [index]
-                       (let [segment (nth content index)
-                             prev-i (dec index)
-                             prev (when (not (= :move-to (:command segment)))
-                                    (get content prev-i))
-                             next-i (inc index)
-                             next (get content next-i)
+  (let [;; We perform this operation before because it can be
+        ;; optimized with internal reduction so is better to use the
+        ;; PathData type before converting it to plain vector.
+        indices
+        (point-indices content point)
 
-                             next (when (not (= :move-to (:command next)))
-                                    next)]
-                         {:index index
-                          :prev-i (when (some? prev) prev-i)
-                          :prev-c prev
-                          :prev-p (helpers/segment->point prev)
-                          :next-i (when (some? next) next-i)
-                          :next-c next
-                          :next-p (helpers/segment->point next)
-                          :segment segment}))
-                     indices)
+        vectors
+        (map (fn [index]
+               (let [segment (nth content index)
+                     prev-i (dec index)
+                     prev (when (not (= :move-to (:command segment)))
+                            (get content prev-i))
+                     next-i (inc index)
+                     next (get content next-i)
 
-        points (into #{} xf:mapcat-points vectors)]
+                     next (when (not (= :move-to (:command next)))
+                            next)]
+                 {:index index
+                  :prev-i (when (some? prev) prev-i)
+                  :prev-c prev
+                  :prev-p (helpers/segment->point prev)
+                  :next-i (when (some? next) next-i)
+                  :next-c next
+                  :next-p (helpers/segment->point next)
+                  :segment segment}))
+             indices)
 
-    (if (= (count points) 2)
-      (let [v1 (gpt/to-vec (first points) point)
-            v2 (gpt/to-vec (first points) (second points))
-            vp (gpt/project v1 v2)
-            vh (gpt/subtract v1 vp)
+        points
+        (into #{} xf:mapcat-points vectors)
 
-            add-curve
-            (fn [content {:keys [index prev-p next-p next-i]}]
-              (let [cur-segment (get content index)
-                    next-segment (get content next-i)
+        ;; We transform content to a plain format for execute the
+        ;; algorithm because right now is the only way to execute it
+        content
+        (vec content)
 
-                    ;; New handlers for prev-point and next-point
-                    prev-h (when (some? prev-p) (gpt/add prev-p vh))
-                    next-h (when (some? next-p) (gpt/add next-p vh))
+        content
+        (if (= (count points) 2)
+          (let [[fpoint spoint] (vec points)
+                v1 (gpt/to-vec fpoint point)
+                v2 (gpt/to-vec fpoint spoint)
+                vp (gpt/project v1 v2)
+                vh (gpt/subtract v1 vp)
 
-                    ;; Correct 1/3 to the point improves the curve
-                    prev-correction (when (some? prev-h) (gpt/scale (gpt/to-vec prev-h point) (/ 1 3)))
-                    next-correction (when (some? next-h) (gpt/scale (gpt/to-vec next-h point) (/ 1 3)))
+                add-curve
+                (fn [content {:keys [index prev-p next-p next-i]}]
+                  (let [curr-segment (get content index)
+                        curr-command (get curr-segment :command)
 
-                    prev-h (when (some? prev-h) (gpt/add prev-h prev-correction))
-                    next-h (when (some? next-h) (gpt/add next-h next-correction))]
-                (cond-> content
-                  (and (= :line-to (:command cur-segment)) (some? prev-p))
-                  (update index helpers/update-curve-to prev-p prev-h)
+                        next-segment (get content next-i)
+                        next-command (get next-segment :command)
 
-                  (and (= :line-to (:command next-segment)) (some? next-p))
-                  (update next-i helpers/update-curve-to next-h next-p)
+                        ;; New handlers for prev-point and next-point
+                        prev-h
+                        (when (some? prev-p) (gpt/add prev-p vh))
 
-                  (and (= :curve-to (:command cur-segment)) (some? prev-p))
-                  (update index update-handler :c2 prev-h)
+                        next-h
+                        (when (some? next-p) (gpt/add next-p vh))
 
-                  (and (= :curve-to (:command next-segment)) (some? next-p))
-                  (update next-i update-handler :c1 next-h))))]
+                        ;; Correct 1/3 to the point improves the curve
+                        prev-correction
+                        (when (some? prev-h) (gpt/scale (gpt/to-vec prev-h point) (/ 1 3)))
 
-        (reduce add-curve content vectors))
+                        next-correction
+                        (when (some? next-h) (gpt/scale (gpt/to-vec next-h point) (/ 1 3)))
 
-      (let [add-curve
-            (fn [content {:keys [index segment prev-p next-c next-i]}]
-              (cond-> content
-                (= :line-to (:command segment))
-                (update index #(line->curve prev-p %))
+                        prev-h
+                        (when (some? prev-h) (gpt/add prev-h prev-correction))
 
-                (= :curve-to (:command segment))
-                (update index #(line->curve prev-p %))
+                        next-h
+                        (when (some? next-h) (gpt/add next-h next-correction))]
 
-                (= :line-to (:command next-c))
-                (update next-i #(line->curve point %))
+                    (cond-> content
+                      (and (= :line-to curr-command) (some? prev-p))
+                      (update index helpers/update-curve-to prev-p prev-h)
 
-                (= :curve-to (:command next-c))
-                (update next-i #(line->curve point %))))]
-        (reduce add-curve content vectors)))))
+                      (and (= :line-to next-command) (some? next-p))
+                      (update next-i helpers/update-curve-to next-h next-p)
+
+                      (and (= :curve-to curr-command) (some? prev-p))
+                      (update index update-handler :c2 prev-h)
+
+                      (and (= :curve-to next-command) (some? next-p))
+                      (update next-i update-handler :c1 next-h))))]
+
+            (reduce add-curve content vectors))
+
+          (let [add-curve
+                (fn [content {:keys [index segment prev-p next-c next-i]}]
+                  (cond-> content
+                    (= :line-to (:command segment))
+                    (update index #(line->curve prev-p %))
+
+                    (= :curve-to (:command segment))
+                    (update index #(line->curve prev-p %))
+
+                    (= :line-to (:command next-c))
+                    (update next-i #(line->curve point %))
+
+                    (= :curve-to (:command next-c))
+                    (update next-i #(line->curve point %))))]
+            (reduce add-curve content vectors)))]
+
+    (impl/from-plain content)))
 
 (defn get-segments-with-points
   "Given a content and a set of points return all the segments in the path
