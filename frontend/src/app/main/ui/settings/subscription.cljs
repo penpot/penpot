@@ -59,7 +59,9 @@
                                       (mf/use-fn
                                        (mf/deps min-members)
                                        (fn []
-                                        ;; TODO add event tracking subscribe trial unlimited
+                                         (st/emit! (ptk/event ::ev/event {::ev/name "subscription-activate-trial"
+                                                                          :type "unlimited"
+                                                                          :quantity min-members}))
                                          (let [current-href (rt/get-current-href)
                                                returnUrl (js/encodeURIComponent current-href)
                                                href (dm/str "payments/subscriptions/create?type=unlimited&quantity=" min-members "&returnUrl=" returnUrl)]
@@ -67,14 +69,17 @@
 
                                       (mf/use-fn
                                        (fn []
-                                        ;; TODO add event tracking subscribe trial enterprise
+                                         (st/emit! (ptk/event ::ev/event {::ev/name "subscription-activate-trial"
+                                                                          :type "enterprise"}))
                                          (let [current-href (rt/get-current-href)
                                                returnUrl (js/encodeURIComponent current-href)
                                                href (dm/str "payments/subscriptions/create?type=enterprise&returnUrl=" returnUrl)]
                                            (st/emit! (rt/nav-raw :href href))))))
         handle-accept-dialog       (mf/use-callback
                                     (fn []
-                                      ;; TODO add event subscribe to another subscription
+                                      (st/emit! (ptk/event ::ev/event {::ev/name "subscription-management"
+                                                                       ::ev/origin "profile"
+                                                                       :section "subscription-management-modal"}))
                                       (let [current-href (rt/get-current-href)
                                             returnUrl (js/encodeURIComponent current-href)
                                             href (dm/str "payments/subscriptions/show?returnUrl=" returnUrl)]
@@ -82,7 +87,7 @@
                                       (modal/hide!)))
         handle-close-dialog        (mf/use-callback
                                     (fn []
-                                      ;; TODO add event tracking close modal/cancel subscription
+                                      (st/emit! (ptk/event ::ev/event {::ev/name "subscription-management-close-modal"}))
                                       (modal/hide!)))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -147,7 +152,7 @@
 
   (let [handle-close-dialog  (mf/use-callback
                               (fn []
-                                ;; TODO add event tracking close modal
+                                (st/emit! (ptk/event ::ev/event {::ev/name "subscription-success-close-modal"}))
                                 (modal/hide!)))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -192,7 +197,9 @@
                                            (dom/open-new-window "https://penpot.app/pricing")))
         go-to-payments                  (mf/use-fn
                                          (fn []
-                                           ;; TODO add event tracking manage subscription in stripe
+                                           (st/emit! (ptk/event ::ev/event {::ev/name "subscription-management"
+                                                                            ::ev/origin "profile"
+                                                                            :section "subscription"}))
                                            (let [current-href (rt/get-current-href)
                                                  returnUrl (js/encodeURIComponent current-href)
                                                  href (dm/str "payments/subscriptions/show?returnUrl=" returnUrl)]
@@ -200,7 +207,7 @@
         open-subscription-modal         (mf/use-fn
                                          (mf/deps teams)
                                          (fn [subscription-name]
-                                           ;; TODO add event tracking open modal to try trial
+                                           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management-modal"}))
                                            (st/emit!
                                             (modal/show :management-dialog
                                                         {:subscription-name subscription-name
