@@ -265,7 +265,7 @@
                                   :type :color})
           file (setup-file #(-> (ctob/add-set % (ctob/make-token-set :name set-name))
                                 (ctob/add-token-in-set set-name token)))
-          prev-token-set (-> file tht/get-tokens-lib :sets first)
+          prev-token-set (-> file tht/get-tokens-lib (ctob/get-set set-name))
           new-set-name "foo1"
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))

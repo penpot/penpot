@@ -799,10 +799,10 @@
         (apply-changes-local))))
 
 (defn update-active-token-themes
-  [changes token-active-theme-ids prev-token-active-theme-ids]
+  [changes active-theme-paths prev-active-theme-paths]
   (-> changes
-      (update :redo-changes conj {:type :update-active-token-themes :theme-ids token-active-theme-ids})
-      (update :undo-changes conj {:type :update-active-token-themes :theme-ids prev-token-active-theme-ids})
+      (update :redo-changes conj {:type :update-active-token-themes :theme-paths active-theme-paths})
+      (update :undo-changes conj {:type :update-active-token-themes :theme-paths prev-active-theme-paths})
       (apply-changes-local)))
 
 (defn set-token-theme [changes group theme-name theme]
