@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-21 08:44+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Ukrainian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ukr_UA/>\n"
+"PO-Revision-Date: 2025-05-28 14:01+0000\n"
+"Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
+"Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
+"frontend/ukr_UA/>\n"
 "Language: ukr_UA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -7331,3 +7331,344 @@ msgstr "Автозбережені версії зберігатимуться �
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Натисність щоб закінчити шлях"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:90
+msgid "workspace.tokens.base-font-size"
+msgstr "Базовий розмір шрифту"
+
+#: src/app/main/ui/workspace/context_menu.cljs:207
+msgid "workspace.shape.menu.copy-svg"
+msgstr "Копіювати як SVG"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:132
+msgid "workspace.tokens.import-multiple-files"
+msgstr "У декількох файлах імʼя / шлях файлу - імена набору."
+
+#: src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:105
+msgid "subscription.settings.professional.teams-editors"
+msgstr "Безліч команд по 8 редакторів кожна"
+
+#: src/app/main/ui/settings/subscription.cljs:66, src/app/main/ui/settings/subscription.cljs:75, src/app/main/ui/settings/subscription.cljs:118
+msgid "subscription.settings.unlimited.storage"
+msgstr ""
+"25 ГБ сховища, версії з автозбереженнями на 30 днів та резервні копії файлів"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:44
+msgid "workspace.tokens.base-font-size.error"
+msgstr ""
+"Базовий розмір шрифту повинен бути значенням у пікселях або без одиниці "
+"виміру."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:138
+msgid "workspace.tokens.import-warning"
+msgstr "Імпорт токенів перепише усі наявні токени, набори та теми."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:24
+msgid "workspace.tokens.invalid-json-token-name-detail"
+msgstr ""
+"\"%s\" це не дійсне імʼя токену.\n"
+"Імена токену можуть містити в собі літери та цифри, розділені крапкою та не "
+"повинні починатись з $."
+
+#: src/app/main/data/style_dictionary.cljs:294
+msgid "workspace.tokens.unknown-token-type"
+msgstr "Пропущені токени"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:65, src/app/main/data/workspace/tokens/warnings.cljs:19
+msgid "workspace.tokens.stroke-width-range"
+msgstr "Ширина обведення має бути більшим ніж 0 або дорівнювати 0."
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:93
+msgid "workspace.tokens.setting-description"
+msgstr ""
+"Тут можна налаштувати базовий розмір шрифту, який визначає значення 1rem:"
+
+#: src/app/main/data/style_dictionary.cljs:296
+msgid "workspace.tokens.unknown-token-type-section"
+msgstr "Тип \"%s\" непідтримуваний (%s)\n"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:85
+msgid "workspace.tokens.settings"
+msgstr "Налаштування токену"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:778
+msgid "workspace.options.component.unlinked"
+msgstr "Розʼєднано"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:746
+msgid "workspace.options.component.variant"
+msgstr "Варіант"
+
+#: src/app/main/ui/settings/subscription.cljs:51
+msgid "subscription.settings.section-plan"
+msgstr "Ваша підписка"
+
+#: src/app/main/ui/dashboard/subscription.cljs:76
+msgid "subscription.dashboard.power-up.enterprise-plan"
+msgstr "Корпоративний план"
+
+#: src/app/main/ui/dashboard/subscription.cljs:53
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr ""
+"Отримайте додаткові редактори та сховище, резервне копіювання файлів та "
+"більше з **Безлімітним планом**"
+
+#: src/app/main/ui/dashboard/subscription.cljs:51
+msgid "subscription.dashboard.power-up.professional.top-title"
+msgstr "Професійний план"
+
+#: src/app/main/ui/dashboard/subscription.cljs:67
+msgid "subscription.dashboard.power-up.unlimited-plan"
+msgstr "Безлімітний план"
+
+#: src/app/main/ui/dashboard/subscription.cljs:69
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-description"
+msgstr ""
+"Отримайте поліпшену безпеку, журнал активності, виділену підтримку та більше "
+"разом з **Корпоративним планом**"
+
+#: src/app/main/ui/dashboard/subscription.cljs:70
+msgid "subscription.dashboard.power-up.unlimited.cta"
+msgstr "Глянути"
+
+#: src/app/main/ui/settings/subscription.cljs:85, src/app/main/ui/settings/subscription.cljs:130
+msgid "subscription.settings.enterprise.logs"
+msgstr "Журнал активності"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:488
+msgid "workspace.shape.menu.restore-variant"
+msgstr "Відновити варіант"
+
+#: src/app/main/ui/dashboard/import.cljs:481
+msgid "dashboard.import.import-error.disclaimer"
+msgstr "Не всі файли було імортовано"
+
+#: src/app/main/ui/dashboard/import.cljs:485
+msgid "dashboard.import.import-error.message1"
+msgstr "Наступні файли мають помилки:"
+
+#: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:68, src/app/main/ui/ds/notifications/shared/notification_pill.cljs:73
+msgid "workspace.notification-pill.detail"
+msgstr "Деталі"
+
+#: src/app/main/ui/dashboard/import.cljs:490
+msgid "dashboard.import.import-error.message2"
+msgstr "Файли з помилками не буде вивантажено."
+
+#: src/app/main/errors.cljs:195
+msgid "errors.comment-error"
+msgstr "З коментарем сталась помилка"
+
+#: src/app/main/errors.cljs:264
+msgid "errors.deprecated"
+msgstr ""
+"Вибачте! Це старий файл, що використовує застарілий тип ресурсів Penpot, і "
+"їх не можна відкрити."
+
+#: src/app/main/errors.cljs:267
+msgid "errors.deprecated.contact.after"
+msgstr "щоб ми Вам допомогли."
+
+#: src/app/main/errors.cljs:265
+msgid "errors.deprecated.contact.before"
+msgstr "Оскільки Penpot не підтримує цей тип Ресурсів, Ви можете"
+
+#: src/app/main/errors.cljs:266
+msgid "errors.deprecated.contact.text"
+msgstr "звʼязатись з нами"
+
+#: src/app/main/errors.cljs:157
+msgid "errors.internal-assertion-error"
+msgstr "Внутрішня помилка під час вставки"
+
+#: src/app/main/errors.cljs:173
+msgid "errors.internal-worker-error"
+msgstr "Під час роботи веб-виконавця сталась помилка."
+
+#: src/app/main/errors.cljs:186
+msgid "errors.svg-parser.invalid-svg"
+msgstr "SVG недійсний або сформований неправильно"
+
+#: src/app/main/data/tokens.cljs:
+#, unused
+msgid "errors.token-set-doesnt-exists"
+msgstr "Не можна дублювати невідомий набір"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variants"
+msgstr "Властивості варіантів"
+
+#: src/app/main/ui/workspace/tokens/sets_context_menu.cljs:63
+msgid "labels.duplicate"
+msgstr "Дублювати"
+
+#: src/app/main/ui/dashboard/import.cljs:294
+msgid "labels.error"
+msgstr "Помилка"
+
+#: src/app/main/ui/dashboard/team.cljs:753
+msgid "labels.no-invitations-gather-people"
+msgstr "Збирайте людей та створюйте чудові речі разом."
+
+#: src/app/main/ui/dashboard/subscription.cljs:77
+msgid "subscription.dashboard.power-up.enterprise.description"
+msgstr "Поліпшена безпека, журнал активності, виділена підтримка та більше."
+
+#: src/app/main/ui/dashboard/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:131
+msgid "subscription.dashboard.power-up.subscribe"
+msgstr "Підписатись"
+
+#: src/app/main/ui/dashboard/subscription.cljs:63
+msgid "subscription.dashboard.power-up.trial.bottom-description"
+msgstr "Насолоджуєтесь пробним періодом? Отримайте повний доступ назавжди."
+
+#: src/app/main/ui/dashboard/subscription.cljs:62
+msgid "subscription.dashboard.power-up.trial.top-description"
+msgstr ""
+"Додаткові редактори та версії з автозбереженням, резервне копіювання файлів "
+"та більше."
+
+#: src/app/main/ui/dashboard/subscription.cljs:61
+msgid "subscription.dashboard.power-up.trial.top-title"
+msgstr "Безлімітний план (пробний)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:68
+msgid "subscription.dashboard.power-up.unlimited.top-description"
+msgstr "Додаткові редактори та сховище, версії з автозбереженнями та більше."
+
+#: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:44, src/app/main/ui/settings/subscription.cljs:47
+msgid "subscription.labels"
+msgstr "Підписки"
+
+#: src/app/main/ui/settings/subscription.cljs:63
+msgid "subscription.settings.benefits.all-professional-benefits"
+msgstr "Усі переваги Професійного плану разом з:"
+
+#: src/app/main/ui/settings/subscription.cljs:72
+msgid "subscription.settings.benefits.all-unlimited-benefits"
+msgstr "Усі переваги безлімітного плану та:"
+
+#: src/app/main/ui/settings/subscription.cljs:80, src/app/main/ui/settings/subscription.cljs:123
+msgid "subscription.settings.enterprise"
+msgstr "Корпоративний"
+
+#: src/app/main/ui/settings/subscription.cljs:84, src/app/main/ui/settings/subscription.cljs:129
+msgid "subscription.settings.enterprise.security"
+msgstr "Поліпшена безпека"
+
+#: src/app/main/ui/settings/subscription.cljs:83, src/app/main/ui/settings/subscription.cljs:128
+msgid "subscription.settings.enterprise.support"
+msgstr "Виділена підтримка"
+
+#: src/app/main/ui/settings/subscription.cljs:67, src/app/main/ui/settings/subscription.cljs:76, src/app/main/ui/settings/subscription.cljs:86
+msgid "subscription.settings.manage-your-subscription"
+msgstr "Керувати підписками"
+
+#: src/app/main/ui/settings/subscription.cljs:96
+msgid "subscription.settings.member-since"
+msgstr "Учасник Penpot з %s"
+
+#: src/app/main/ui/settings/subscription.cljs:99
+msgid "subscription.settings.other-plans"
+msgstr "Інші плани Penpot"
+
+#: src/app/main/ui/settings/subscription.cljs:103, src/app/main/ui/settings/subscription.cljs:114
+msgid "subscription.settings.price-editor-month"
+msgstr "редакторів на місяць"
+
+#: src/app/main/ui/settings/subscription.cljs:126
+msgid "subscription.settings.price-organization-month"
+msgstr "організацій на місяць"
+
+#: src/app/main/ui/settings/subscription.cljs:54, src/app/main/ui/settings/subscription.cljs:101
+msgid "subscription.settings.professional"
+msgstr "Професійний"
+
+#: src/app/main/ui/settings/subscription.cljs:55, src/app/main/ui/settings/subscription.cljs:104
+msgid "subscription.settings.professional.projects-files"
+msgstr "Проєкти, файли та чернетки без обмежень"
+
+#: src/app/main/ui/settings/subscription.cljs:57, src/app/main/ui/settings/subscription.cljs:106
+msgid "subscription.settings.professional.storage"
+msgstr "10 ГБ сховища та версії з автозбереженнями на 7 днів"
+
+#: src/app/main/ui/settings/subscription.cljs:92
+msgid "subscription.settings.support-us-since"
+msgstr "Ви підтримуєте нас з %s"
+
+#: src/app/main/ui/settings/subscription.cljs:119
+msgid "subscription.settings.ulimited.try-it-free"
+msgstr "Спробуйте 14 днів безкоштовно"
+
+#: src/app/main/ui/settings/subscription.cljs:70, src/app/main/ui/settings/subscription.cljs:111
+msgid "subscription.settings.unlimited"
+msgstr "Безлімітний"
+
+#: src/app/main/ui/settings/subscription.cljs:61
+msgid "subscription.settings.unlimited-trial"
+msgstr "Безлімітний (пробний)"
+
+#: src/app/main/ui/settings/subscription.cljs:65, src/app/main/ui/settings/subscription.cljs:74, src/app/main/ui/settings/subscription.cljs:117
+msgid "subscription.settings.unlimited.bill"
+msgstr "Місячний рахунок з граничною сумою"
+
+#: src/app/main/ui/settings/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:73, src/app/main/ui/settings/subscription.cljs:116
+msgid "subscription.settings.unlimited.teams"
+msgstr "Безліч команд з безліччю учасників"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:174
+msgid "workspace.assets.components.num-variants"
+msgstr "%s Варіантів"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "Виявити помилкові варіанти"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
+msgid "workspace.options.component.variant.malformed.multi"
+msgstr "Деякі варіанти мають помилкове імʼя"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.malformed.single"
+msgstr "Цей варіант має помилкове імʼя. Спробуйте використати таку структуру:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:311
+msgid "workspace.options.component.variant.malformed.structure"
+msgstr ""
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:160
+msgid "workspace.tokens.choose-file"
+msgstr "Обрати файл"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:165
+msgid "workspace.tokens.choose-folder"
+msgstr "Обрати теку"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:37
+msgid "workspace.tokens.empty-input"
+msgstr "Значення токену не може бути порожнім"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:131
+msgid "workspace.tokens.import-single-file"
+msgstr ""
+"У одному файлі JSON, ключі першого рівня повинні бути іменами набору токенів."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:128
+msgid "workspace.tokens.import-tokens"
+msgstr "Імпортувати токени"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:341
+msgid "workspace.tokens.inactive-set"
+msgstr "Неактивний"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:332
+msgid "workspace.tokens.inactive-set-description"
+msgstr ""
+"Цей набір неактивний. Змініть тему чи активуйте набір щоб побачити зміни в "
+"області перегляду"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:23
+msgid "workspace.tokens.invalid-json-token-name"
+msgstr "Помилка імпорту: Помилкове імʼя токену в JSON."
