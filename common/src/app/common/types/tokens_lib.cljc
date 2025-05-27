@@ -109,7 +109,7 @@
   [token]
   (get-path token token-separator))
 
-(defrecord Token [name type value description modified-at])
+(defrecord Token [id name type value description modified-at])
 
 (defn token?
   [o]
@@ -117,6 +117,7 @@
 
 (def schema:token-attrs
   [:map {:title "Token"}
+   [:id ::sm/uuid]
    [:name cto/token-name-ref]
    [:type [::sm/one-of cto/token-types]]
    [:value ::sm/any]
@@ -140,7 +141,7 @@
 (defn make-token
   [& {:as attrs}]
   (-> attrs
-      (dissoc :id) ;; we will remove this when old data structures are removed
+      (update :id #(or % (uuid/next)))
       (update :modified-at #(or % (dt/now)))
       (update :description d/nilv "")
       (check-token-attrs)
@@ -336,10 +337,11 @@
   (get-token [_ token-name] "return token by token-name")
   (get-tokens [_] "return an ordered sequence of all tokens in the set"))
 
-(defrecord TokenSet [name description modified-at tokens]
+(defrecord TokenSet [id name description modified-at tokens]
   ITokenSet
   (update-name [_ set-name]
-    (TokenSet. (-> (split-token-set-name name)
+    (TokenSet. id
+               (-> (split-token-set-name name)
                    (drop-last)
                    (concat [set-name])
                    (join-set-path))
@@ -349,7 +351,8 @@
 
   (add-token [_ token]
     (let [token (check-token token)]
-      (TokenSet. name
+      (TokenSet. id
+                 name
                  description
                  (dt/now)
                  (assoc tokens (:name token) token))))
@@ -358,7 +361,8 @@
     (if-let [token (get tokens token-name)]
       (let [token' (-> (make-token (f token))
                        (assoc :modified-at (dt/now)))]
-        (TokenSet. name
+        (TokenSet. id
+                   name
                    description
                    (dt/now)
                    (if (= (:name token) (:name token'))
@@ -369,7 +373,8 @@
       this))
 
   (delete-token [_ token-name]
-    (TokenSet. name
+    (TokenSet. id
+               name
                description
                (dt/now)
                (dissoc tokens token-name)))
@@ -386,6 +391,7 @@
 
 (def schema:token-set-attrs
   [:map {:title "TokenSet"}
+   [:id ::sm/uuid]
    [:name :string]
    [:description {:optional true} :string]
    [:modified-at {:optional true} ::sm/inst]
@@ -430,7 +436,7 @@
 (defn make-token-set
   [& {:as attrs}]
   (-> attrs
-      (dissoc :id)
+      (update :id #(or % (uuid/next)))
       (update :modified-at #(or % (dt/now)))
       (update :tokens #(into (d/ordered-map) %))
       (update :description d/nilv "")
@@ -521,14 +527,15 @@
   (theme-matches-group-name [_ group name] "if a theme matches the given group & name")
   (hidden-temporary-theme? [_] "if a theme is the (from the user ui) hidden temporary theme"))
 
-(defrecord TokenTheme [name group description is-source id modified-at sets]
+(defrecord TokenTheme [id name group description is-source external-id modified-at sets]
   ITokenTheme
   (set-sets [_ set-names]
-    (TokenTheme. name
+    (TokenTheme. id
+                 name
                  group
                  description
                  is-source
-                 id
+                 external-id
                  (dt/now)
                  set-names))
 
@@ -551,11 +558,12 @@
 
   (update-set-name [this prev-set-name set-name]
     (if (get sets prev-set-name)
-      (TokenTheme. name
+      (TokenTheme. id
+                   name
                    group
                    description
                    is-source
-                   id
+                   external-id
                    (dt/now)
                    (conj (disj sets prev-set-name) set-name))
       this))
@@ -576,11 +584,12 @@
 
 (def schema:token-theme-attrs
   [:map {:title "TokenTheme"}
+   [:id ::sm/uuid]
    [:name :string]
    [:group {:optional true} :string]
    [:description {:optional true} :string]
    [:is-source {:optional true} :boolean]
-   [:id {:optional true} :string]
+   [:external-id {:optional true} :string]
    [:modified-at {:optional true} ::sm/inst]
    [:sets {:optional true} [:set {:gen/max 5} :string]]])
 
@@ -609,22 +618,25 @@
 
 (defn make-token-theme
   [& {:as attrs}]
-  (-> attrs
-      (update :group d/nilv top-level-theme-group-name)
-      (update :description d/nilv "")
-      (update :is-source d/nilv false)
-      (update :id #(or % (str (uuid/next))))
-      (update :modified-at #(or % (dt/now)))
-      (update :sets set)
-      (check-token-theme-attrs)
-      (map->TokenTheme)))
+  (let [id (uuid/next)]
+    (-> attrs
+        (update :id d/nilv id)
+        (update :group d/nilv top-level-theme-group-name)
+        (update :description d/nilv "")
+        (update :is-source d/nilv false)
+        (update :external-id #(or % (str id)))
+        (update :modified-at #(or % (dt/now)))
+        (update :sets set)
+        (check-token-theme-attrs)
+        (map->TokenTheme))))
 
 (defn make-hidden-token-theme
   [& {:as attrs}]
   (-> attrs
+      (assoc :id uuid/zero)
+      (assoc :external-id "")
       (assoc :group hidden-token-theme-group)
       (assoc :name hidden-token-theme-name)
-      (assoc :id (str uuid/zero))
       (make-token-theme)))
 
 ;; === TokenThemes (collection)
@@ -730,8 +742,8 @@
                                                      (join-set-path parent)))]
                     [{:is-new true
                       :is-group false
-                      :id ""
-                      :parent-path parent
+                      :id ""                    ; FIXME: This is a calculated id, used for the sets tree in the sidear
+                      :parent-path parent       ; It may be refactored now to use the actual :id
                       :token-set tset
                       :depth depth}])
 
@@ -1441,10 +1453,12 @@ Will return a value that matches this schema:
         (->> (get decoded-json "$themes")
              (map (fn [theme]
                     (make-token-theme
+                     :id (or (uuid/parse* (get theme "id"))
+                             (uuid/next))
                      :name (get theme "name")
                      :group (get theme "group")
                      :is-source (get theme "is-source")
-                     :id (get theme "id")
+                     :external-id (get theme "id")
                      :modified-at (some-> (get theme "modified-at")
                                           (dt/parse-instant))
                      :sets (into #{}
@@ -1534,7 +1548,8 @@ Will return a value that matches this schema:
                                      (into {})
                                      walk/stringify-keys)]
                   (-> theme-map
-                      (set/rename-keys  {"sets" "selectedTokenSets"})
+                      (set/rename-keys  {"sets" "selectedTokenSets"
+                                         "external-id" "id"})
                       (update "selectedTokenSets" (fn [sets]
                                                     (->> (for [s sets] [s "enabled"])
                                                          (into {})))))))))
@@ -1656,8 +1671,8 @@ Will return a value that matches this schema:
 
            ;; Ensure we add an :id field for each existing theme
            themes
-           (reduce (fn [result group-id]
-                     (update result group-id
+           (reduce (fn [acc group-id]
+                     (update acc group-id
                              (fn [themes]
                                (reduce (fn [themes theme-id]
                                          (update themes theme-id
@@ -1669,6 +1684,51 @@ Will return a value that matches this schema:
                                        (keys themes)))))
                    themes
                    (keys themes))]
+
+       (->TokensLib sets themes active-themes))))
+
+#?(:clj
+   (defn- read-tokens-lib-v1-2
+     "Reads the tokens lib data structure and add ids to tokens, sets and themes."
+     [r]
+     (let [sets          (fres/read-object! r)
+           themes        (fres/read-object! r)
+           active-themes (fres/read-object! r)
+
+           migrate-token
+           (fn [token]
+             (assoc token :id (uuid/next)))
+
+           migrate-sets-node
+           (fn recurse [node]
+             (if (token-set? node)
+               (assoc node
+                      :id (uuid/next)
+                      :tokens (d/update-vals (:tokens node) migrate-token))
+               (d/update-vals node recurse)))
+
+           sets
+           (d/update-vals sets migrate-sets-node)
+
+           migrate-theme
+           (fn [theme]
+             (if (get theme :external-id)
+               theme
+               (if (hidden-temporary-theme? theme)
+                 (assoc theme
+                        :id uuid/zero
+                        :external-id "")
+                 (assoc theme                             ;; Rename the :id field to :external-id, and add
+                        :id (or (uuid/parse* (:id theme)) ;; a new :id that is the same as the old if if
+                                (uuid/next))              ;; this is an uuid, else a new uuid is generated.
+                        :external-id (:id theme)))))
+
+           migrate-theme-group
+           (fn [group]
+             (d/update-vals group migrate-theme))
+
+           themes
+           (d/update-vals themes migrate-theme-group)]
 
        (->TokensLib sets themes active-themes))))
 
@@ -1724,8 +1784,11 @@ Will return a value that matches this schema:
     {:name "penpot/tokens-lib/v1.1"
      :rfn read-tokens-lib-v1-1}
 
-    ;; CURRENT TOKENS LIB READER & WRITTER
     {:name "penpot/tokens-lib/v1.2"
+     :rfn read-tokens-lib-v1-2}
+
+    ;; CURRENT TOKENS LIB READER & WRITTER
+    {:name "penpot/tokens-lib/v1.3"
      :class TokensLib
      :wfn write-tokens-lib
      :rfn read-tokens-lib}))
