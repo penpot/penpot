@@ -333,8 +333,7 @@
   ([value shape-ids attributes] (update-line-height value shape-ids attributes nil))
   ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
    (let [update-node? (fn [node]
-                        (or (txt/is-text-node? node)
-                            (txt/is-paragraph-node? node)))]
+                        (txt/is-paragraph-node? node))]
      (when (number? value)
        (dwsh/update-shapes shape-ids
                            #(txt/update-text-content % update-node? d/txt-merge {:line-height value})
