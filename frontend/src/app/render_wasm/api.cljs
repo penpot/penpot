@@ -870,6 +870,38 @@
          :center (gpt/point cx cy)
          :transform transform}))))
 
+(defn get-selection-rect
+  [entries]
+  (when (d/not-empty? entries)
+    (let [offset (mem/alloc-bytes-32 (* (count entries) 16))
+          heapu32 (mem/get-heap-u32)]
+
+      (loop [entries (seq entries)
+             current-offset  offset]
+        (when-not (empty? entries)
+          (let [id (first entries)]
+            (sr/heapu32-set-uuid id heapu32 current-offset)
+            (recur (rest entries) (+ current-offset (mem/ptr8->ptr32 16))))))
+
+      (let [offset (h/call wasm/internal-module "_get_selection_rect")
+            heapf32 (mem/get-heap-f32)
+            width (aget heapf32 (mem/ptr8->ptr32 (+ offset 0)))
+            height (aget heapf32 (mem/ptr8->ptr32 (+ offset 4)))
+            cx (aget heapf32 (mem/ptr8->ptr32 (+ offset 8)))
+            cy (aget heapf32 (mem/ptr8->ptr32 (+ offset 12)))
+            a (aget heapf32 (mem/ptr8->ptr32 (+ offset 16)))
+            b (aget heapf32 (mem/ptr8->ptr32 (+ offset 20)))
+            c (aget heapf32 (mem/ptr8->ptr32 (+ offset 24)))
+            d (aget heapf32 (mem/ptr8->ptr32 (+ offset 28)))
+            e (aget heapf32 (mem/ptr8->ptr32 (+ offset 32)))
+            f (aget heapf32 (mem/ptr8->ptr32 (+ offset 36)))
+            transform (gmt/matrix a b c d e f)]
+        (h/call wasm/internal-module "_free_bytes")
+        {:width width
+         :height height
+         :center (gpt/point cx cy)
+         :transform transform}))))
+
 (defn set-canvas-background
   [background]
   (let [rgba (sr-clr/hex->u32argb background 1)]

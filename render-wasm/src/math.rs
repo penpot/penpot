@@ -64,7 +64,7 @@ impl Bounds {
         Self { nw, ne, se, sw }
     }
 
-    pub fn join_bounds(bounds: &[&Bounds]) -> Self {
+    pub fn join_bounds(bounds: &[Bounds]) -> Self {
         let (min_x, min_y, max_x, max_y) =
             bounds
                 .iter()

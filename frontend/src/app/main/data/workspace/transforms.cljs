@@ -136,7 +136,7 @@
     (update [_ state]
       (-> state
           (update :workspace-local dissoc :transform :duplicate-move-started?)
-          (dissoc :workspace-selrect)))))
+          (dissoc :workspace-selrect :workspace-wasm-modifiers)))))
 
 ;; -- Resize --------------------------------------------------------
 

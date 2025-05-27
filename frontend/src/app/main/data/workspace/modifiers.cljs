@@ -486,11 +486,16 @@
    []
    (keep
     (fn [[id data]]
-      (if (ctm/has-geometry? (:modifiers data))
+      (cond
+        (= id uuid/zero)
+        nil
+
+        (ctm/has-geometry? (:modifiers data))
         {:id id
          :transform (ctm/modifiers->transform (:modifiers data))}
 
         ;; Unit matrix is used for reflowing
+        :else
         {:id id
          :transform (gmt/matrix)})))
    modif-tree))
@@ -511,6 +516,13 @@
     (update [_ state]
       (assoc state :workspace-selrect selrect))))
 
+(defn set-temporary-modifiers
+  [modifiers]
+  (ptk/reify ::set-temporary-modifiers
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :workspace-wasm-modifiers modifiers))))
+
 #_:clj-kondo/ignore
 (defn set-wasm-modifiers
   [modif-tree & {:keys [ignore-constraints ignore-snap-pixel]
@@ -521,7 +533,6 @@
     (update [_ state]
       (let [property-changes
             (extract-property-changes modif-tree)]
-
         (-> state
             (assoc :prev-wasm-props (:wasm-props state))
             (assoc :wasm-props property-changes))))
@@ -537,8 +548,11 @@
         (let [structure-entries (parse-structure-modifiers modif-tree)]
           (wasm.api/set-structure-modifiers structure-entries)
           (let [geometry-entries (parse-geometry-modifiers modif-tree)
-                selrect (wasm.api/propagate-apply geometry-entries pixel-precision)]
-            (rx/of (set-temporary-selrect selrect))))))))
+                modifiers (wasm.api/propagate-modifiers geometry-entries pixel-precision)]
+            (wasm.api/set-modifiers modifiers)
+            (let [selrect (wasm.api/get-selection-rect (->> geometry-entries (map :id)))]
+              (rx/of (set-temporary-selrect selrect)
+                     (set-temporary-modifiers modifiers)))))))))
 
 #_:clj-kondo/ignore
 (defn apply-wasm-modifiers

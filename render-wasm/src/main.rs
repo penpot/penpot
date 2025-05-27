@@ -362,36 +362,41 @@ pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> *mut u8 {
         .collect();
 
     with_state!(state, {
-        let (result, _) = shapes::propagate_modifiers(state, &entries, pixel_precision);
+        let result = shapes::propagate_modifiers(state, &entries, pixel_precision);
         mem::write_vec(result)
     })
 }
 
 #[no_mangle]
-pub extern "C" fn propagate_apply(pixel_precision: bool) -> *mut u8 {
+pub extern "C" fn get_selection_rect() -> *mut u8 {
     let bytes = mem::bytes();
 
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
-        .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
+    let entries: Vec<Uuid> = bytes
+        .chunks(16)
+        .map(|bytes| {
+            uuid_from_u32_quartet(
+                u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+                u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
+                u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+                u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
+            )
+        })
         .collect();
 
     with_state!(state, {
-        let (result, bounds) = shapes::propagate_modifiers(state, &entries, pixel_precision);
-
-        for entry in result {
-            state.modifiers.insert(entry.id, entry.transform);
-        }
-        state.rebuild_modifier_tiles();
-
-        mem::free_bytes();
-
-        let bbs: Vec<_> = entries.iter().flat_map(|e| bounds.get(&e.id)).collect();
+        let bbs: Vec<_> = entries
+            .iter()
+            .flat_map(|id| {
+                let default = Matrix::default();
+                let modifier = state.modifiers.get(id).unwrap_or(&default);
+                state.shapes.get(id).map(|b| b.bounds().transform(modifier))
+            })
+            .collect();
 
         let result_bound = if bbs.len() == 1 {
             bbs[0]
         } else {
-            &Bounds::join_bounds(&bbs)
+            Bounds::join_bounds(&bbs)
         };
 
         let width = result_bound.width();
@@ -410,7 +415,6 @@ pub extern "C" fn propagate_apply(pixel_precision: bool) -> *mut u8 {
         bytes[28..32].clone_from_slice(&transform[4].to_le_bytes());
         bytes[32..36].clone_from_slice(&transform[2].to_le_bytes());
         bytes[36..40].clone_from_slice(&transform[5].to_le_bytes());
-
         mem::write_bytes(bytes)
     })
 }
