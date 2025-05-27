@@ -378,7 +378,7 @@
     [:update-active-token-themes
      [:map {:title "UpdateActiveTokenThemes"}
       [:type [:= :update-active-token-themes]]
-      [:theme-ids [:set :string]]]]
+      [:theme-paths [:set :string]]]]
 
     [:rename-token-set-group
      [:map {:title "RenameTokenSetGroup"}
@@ -1051,9 +1051,9 @@
                                      (ctob/make-token-theme (merge prev-token-theme theme)))))))))
 
 (defmethod process-change :update-active-token-themes
-  [data {:keys [theme-ids]}]
+  [data {:keys [theme-paths]}]
   (update data :tokens-lib #(-> % (ctob/ensure-tokens-lib)
-                                (ctob/set-active-themes theme-ids))))
+                                (ctob/set-active-themes theme-paths))))
 
 (defmethod process-change :rename-token-set-group
   [data {:keys [set-group-path set-group-fname]}]
