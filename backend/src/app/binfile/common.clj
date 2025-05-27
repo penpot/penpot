@@ -429,7 +429,6 @@
                         (-> fdata
                             (assoc :id id)
                             (dissoc :recent-colors))))
-        (fmg/migrate-file libs)
         (update :data (fn [fdata]
                         (-> fdata
                             (update :pages-index relink-shapes)
@@ -437,6 +436,7 @@
                             (update :media relink-media)
                             (update :colors relink-colors)
                             (d/without-nils))))
+        (fmg/migrate-file libs)
 
         ;; NOTE: this is necessary because when we just creating a new
         ;; file from imported artifact or cloned file there are no
