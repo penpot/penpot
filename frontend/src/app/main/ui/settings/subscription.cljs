@@ -152,7 +152,7 @@
 
   (let [handle-close-dialog  (mf/use-callback
                               (fn []
-                                (st/emit! (ptk/event ::ev/event {::ev/name "subscription-success-close-modal"}))
+                                (st/emit! (ptk/event ::ev/event {::ev/name "subscription-success"}))
                                 (modal/hide!)))]
 
     [:div {:class (stl/css :modal-overlay)}
