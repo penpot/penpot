@@ -340,6 +340,7 @@
                                     (-> data
                                         (blob/decode)
                                         (assoc :id (:id file)))))
+          libs (delay (bfc/get-resolved-file-libraries cfg file))
 
           ;; For avoid unnecesary overhead of creating multiple pointers
           ;; and handly internally with objects map in their worst
@@ -350,7 +351,7 @@
                  (-> file
                      (update :data feat.fdata/process-pointers deref)
                      (update :data feat.fdata/process-objects (partial into {}))
-                     (fmg/migrate-file))
+                     (fmg/migrate-file libs))
                  file)
 
           file (apply update-fn cfg file args)
@@ -379,13 +380,6 @@
 
       (bfc/encode-file cfg file))))
 
-(defn- get-file-libraries
-  "A helper for preload file libraries, mainly used for perform file
-  semantical and structural validation"
-  [{:keys [::db/conn] :as cfg} file]
-  (->> (files/get-file-libraries conn (:id file))
-       (into [file] (map #(bfc/get-file cfg (:id %))))
-       (d/index-by :id)))
 
 (defn- soft-validate-file-schema!
   [file]
@@ -411,7 +405,7 @@
         (when (and (or (contains? cf/flags :file-validation)
                        (contains? cf/flags :soft-file-validation))
                    (not skip-validate))
-          (get-file-libraries cfg file))
+          (bfc/get-resolved-file-libraries cfg file))
 
 
         ;; The main purpose of this atom is provide a contextual state

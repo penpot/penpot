@@ -58,18 +58,21 @@
   (map :name))
 
 (defn migrate
-  [{:keys [id] :as file}]
+  [{:keys [id] :as file} libs]
 
   (let [diff
         (set/difference available-migrations (:migrations file))
 
+        data (-> (:data file)
+                 (assoc :libs libs))
+
         data
-        (reduce migrate-data (:data file) diff)
+        (reduce migrate-data data diff)
 
         data
         (-> data
             (assoc :id id)
-            (dissoc :version))]
+            (dissoc :version :libs))]
 
     (-> file
         (assoc :data data)
@@ -88,7 +91,7 @@
     result))
 
 (defn migrate-file
-  [file]
+  [file libs]
   (binding [cfeat/*new* (atom #{})]
     (let [version (or (:version file)
                       (-> file :data :version))]
@@ -104,7 +107,7 @@
           ;; this code from this function that executes on
           ;; each file migration operation
           (update :features cfeat/migrate-legacy-features)
-          (migrate)
+          (migrate libs)
           (update :features (fnil into #{}) (deref cfeat/*new*))))))
 
 (defn migrated?
