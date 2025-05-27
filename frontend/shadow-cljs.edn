@@ -122,6 +122,7 @@
   :storybook
   {:target :esm
    :output-dir "target/storybook/"
+   :devtools {:enabled false}
    :js-options
    {:js-provider :import
     :entry-keys ["module" "browser" "main"]
@@ -134,6 +135,7 @@
     :components
     {:exports {default app.main.ui.ds/default
                helpers app.main.ui.ds.helpers/default}
+     :prepend-js ";(globalThis.goog.provide = globalThis.goog.constructNamespace_);(globalThis.goog.require = globalThis.goog.module.get);"
      :depends-on #{:base}}}
 
    :compiler-options
