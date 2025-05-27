@@ -132,6 +132,13 @@
         item))
     root)))
 
+(defn update-text-content
+  [shape pred-fn update-fn attrs]
+  (let [update-attrs-fn #(update-fn % attrs)
+        transform   #(transform-nodes pred-fn update-attrs-fn %)]
+    (-> shape
+        (update :content transform))))
+
 (defn xform-nodes
   "The same as transform but instead of receiving a funcion, receives
   a transducer."
