@@ -19,7 +19,7 @@ use options::RenderOptions;
 use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
-use crate::shapes::{modified_children_ids, Corners, Shape, StructureEntry, Type};
+use crate::shapes::{modified_children_ids, Corners, Shape, StrokeKind, StructureEntry, Type};
 use crate::tiles::{self, TileRect, TileViewbox, TileWithDistance};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
@@ -441,13 +441,21 @@ impl RenderState {
                         self.fonts.font_collection(),
                     );
                     shadows::render_text_drop_shadows(self, &shape, &stroke_paragraphs, antialias);
-                    text::render(
-                        self,
-                        &shape,
-                        &stroke_paragraphs,
-                        Some(SurfaceId::Strokes),
-                        None,
-                    );
+                    if stroke.kind == StrokeKind::Inner {
+                        // Inner strokes must be rendered on the Fills surface because their blend modes
+                        // (e.g., SrcATop, DstOver) rely on the text fill already being present underneath.
+                        // Rendering them on a separate surface would break this blending and result in incorrect visuals as
+                        // black color background.
+                        text::render(self, &shape, &stroke_paragraphs, None, None);
+                    } else {
+                        text::render(
+                            self,
+                            &shape,
+                            &stroke_paragraphs,
+                            Some(SurfaceId::Strokes),
+                            None,
+                        );
+                    }
                     shadows::render_text_inner_shadows(self, &shape, &stroke_paragraphs, antialias);
                 }
 
