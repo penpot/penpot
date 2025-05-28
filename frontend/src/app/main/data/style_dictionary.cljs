@@ -21,6 +21,7 @@
    [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]
+   [app.config :as cf]
    [app.util.array :as array]
    [app.util.object :as obj]))
 
@@ -146,16 +147,18 @@
     sd))
 
 (def default-config
-  {:platforms {:json
-               {:transformGroup (:name penpot-transform-group)
-                ;; Required: The StyleDictionary API is focused on files even when working in the browser
-                :files [{:format "custom/json" :destination "penpot"}]}}
-   :preprocessors ["tokens-studio"]
-   ;; Silences style dictionary logs and errors
-   ;; We handle token errors in the UI
-   :log {:verbosity "silent"
-         :warnings "silent"
-         :errors {:brokenReferences "console"}}})
+  (cond-> {:platforms {:json
+                       {:transformGroup "tokens-studio"
+                        ;; Required: The StyleDictionary API is focused on files even when working in the browser
+                        :files [{:format "custom/json" :destination "penpot"}]}}
+           :preprocessors ["tokens-studio"]
+           ;; Silences style dictionary logs and errors
+           ;; We handle token errors in the UI
+           :log {:verbosity "silent"
+                 :warnings "silent"
+                 :errors {:brokenReferences "console"}}}
+    (contains? cf/flags :token-units)
+    (assoc-in [:platforms :json :transformGroup] (:name penpot-transform-group))))
 
 (def form-config
   (-> default-config
@@ -173,7 +176,9 @@
   "Parses `value` of a numeric `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (let [parsed-value  (cft/parse-token-value value)
+  (let [parsed-value  (if (contains? cf/flags :token-units)
+                        (cft/parse-token-value-with-rem value)
+                        (cft/parse-token-value value))
         out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
                           (<= (:value parsed-value) sm/min-safe-int))]
     (if (and parsed-value (not out-of-bounds))
@@ -216,7 +221,9 @@
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value has-references?]
 
-  (let [parsed-value (cft/parse-token-value value)
+  (let [parsed-value (if (contains? cf/flags :token-units)
+                        (cft/parse-token-value-with-rem value)
+                        (cft/parse-token-value value))
         out-of-scope (< (:value parsed-value) 0)
         references (seq (ctob/find-token-value-references value))]
     (cond
