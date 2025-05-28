@@ -59,7 +59,7 @@
                                       (mf/use-fn
                                        (mf/deps min-members)
                                        (fn []
-                                         (st/emit! (ptk/event ::ev/event {::ev/name "subscription-activate-trial"
+                                         (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
                                                                           :type "unlimited"
                                                                           :quantity min-members}))
                                          (let [current-href (rt/get-current-href)
@@ -69,7 +69,7 @@
 
                                       (mf/use-fn
                                        (fn []
-                                         (st/emit! (ptk/event ::ev/event {::ev/name "subscription-activate-trial"
+                                         (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
                                                                           :type "enterprise"}))
                                          (let [current-href (rt/get-current-href)
                                                returnUrl (js/encodeURIComponent current-href)
@@ -77,7 +77,7 @@
                                            (st/emit! (rt/nav-raw :href href))))))
         handle-accept-dialog       (mf/use-callback
                                     (fn []
-                                      (st/emit! (ptk/event ::ev/event {::ev/name "subscription-management"
+                                      (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
                                                                        ::ev/origin "profile"
                                                                        :section "subscription-management-modal"}))
                                       (let [current-href (rt/get-current-href)
@@ -87,7 +87,7 @@
                                       (modal/hide!)))
         handle-close-dialog        (mf/use-callback
                                     (fn []
-                                      (st/emit! (ptk/event ::ev/event {::ev/name "subscription-management-close-modal"}))
+                                      (st/emit! (ptk/event ::ev/event {::ev/name "close-subscription-modal"}))
                                       (modal/hide!)))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -197,7 +197,7 @@
                                            (dom/open-new-window "https://penpot.app/pricing")))
         go-to-payments                  (mf/use-fn
                                          (fn []
-                                           (st/emit! (ptk/event ::ev/event {::ev/name "subscription-management"
+                                           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
                                                                             ::ev/origin "profile"
                                                                             :section "subscription"}))
                                            (let [current-href (rt/get-current-href)
@@ -207,7 +207,7 @@
         open-subscription-modal         (mf/use-fn
                                          (mf/deps teams)
                                          (fn [subscription-name]
-                                           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management-modal"}))
+                                           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-modal"}))
                                            (st/emit!
                                             (modal/show :management-dialog
                                                         {:subscription-name subscription-name

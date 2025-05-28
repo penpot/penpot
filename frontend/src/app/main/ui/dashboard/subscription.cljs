@@ -88,7 +88,7 @@
         go-to-manage-subscription
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "subscription-management"
+           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
                                             ::ev/origin "dashboard"
                                             :section "team-settings"}))
            (let [href (-> (rt/get-current-href)
