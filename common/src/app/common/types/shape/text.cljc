@@ -7,6 +7,7 @@
 (ns app.common.types.shape.text
   (:require
    [app.common.schema :as sm]
+   [app.common.types.fill :refer [schema:fill]]
    [app.common.types.shape :as-alias shape]
    [app.common.types.shape.text.position-data :as-alias position-data]))
 
@@ -34,7 +35,7 @@
           [:key {:optional true} :string]
           [:fills {:optional true}
            [:maybe
-            [:vector {:gen/max 2} ::shape/fill]]]
+            [:vector {:gen/max 2}  schema:fill]]]
           [:font-family {:optional true} :string]
           [:font-size {:optional true} :string]
           [:font-style {:optional true} :string]
@@ -51,7 +52,7 @@
              [:key {:optional true} :string]
              [:fills {:optional true}
               [:maybe
-               [:vector {:gen/max 2} ::shape/fill]]]
+               [:vector {:gen/max 2} schema:fill]]]
              [:font-family {:optional true} :string]
              [:font-size {:optional true} :string]
              [:font-style {:optional true} :string]
@@ -75,7 +76,7 @@
    [:y ::sm/safe-number]
    [:width ::sm/safe-number]
    [:height ::sm/safe-number]
-   [:fills [:vector {:gen/max 2} ::shape/fill]]
+   [:fills [:vector {:gen/max 2} schema:fill]]
    [:font-family {:optional true} :string]
    [:font-size {:optional true} :string]
    [:font-style {:optional true} :string]

@@ -19,6 +19,7 @@
 
   io.lettuce/lettuce-core {:mvn/version "6.6.0.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
+  com.google.guava/guava {:mvn/version "33.4.8-jre"}
 
   funcool/yetti
   {:git/tag "v11.4"

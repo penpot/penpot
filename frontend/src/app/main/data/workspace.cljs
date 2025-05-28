@@ -20,6 +20,7 @@
    [app.common.logic.shapes :as cls]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
+   [app.common.types.fill :as types.fill]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
@@ -80,6 +81,7 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
+   [clojure.walk :as walk]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
@@ -133,10 +135,28 @@
                                         (rx/of [k v])))))))
        (rx/reduce conj {})))
 
+
+(defn process-fills
+  "A function responsible to analyze the file data or shape for references
+  and apply lookup-index on it."
+  [data]
+  (letfn [(process-map-form [form]
+            (let [fills (get form :fills)]
+              (if (vector? fills)
+                (assoc form :fills (types.fill/from-plain fills))
+                form)))
+
+          (process-form [form]
+            (if (map? form)
+              (process-map-form form)
+              form))]
+    (walk/postwalk process-form data)))
+
 (defn- resolve-file
   [file]
   (->> (fpmap/resolve-file file)
        (rx/map :data)
+       (rx/map process-fills)
        (rx/mapcat
         (fn [{:keys [pages-index] :as data}]
           (->> (rx/from (seq pages-index))
