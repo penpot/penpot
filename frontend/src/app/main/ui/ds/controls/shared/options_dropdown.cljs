@@ -55,61 +55,48 @@
   (let [props (mf/spread-props props
                                {:class (stl/css :option-list)
                                 :tab-index "-1"
-                                :role "listbox"})]
+                                :role "listbox"})
 
-    (if empty-to-end
+        options-blank (when empty-to-end
+                        (array/filter #(str/blank? (obj/get % "id")) options))
+        options       (if empty-to-end
+                        (array/filter #((complement str/blank?) (obj/get % "id")) options)
+                        options)]
 
-      (let [with-id       (array/filter #((complement str/blank?) (obj/get % "id")) options)
-            with-blank-id (array/filter #(str/blank? (obj/get % "id")) options)]
-        [:> "ul" props
-         (for [option ^js with-id]
-           (let [id    (obj/get option "id")
-                 label (obj/get option "label")
-                 aria-label (obj/get option "aria-label")
-                 icon (obj/get option "icon")]
-             [:> option* {:selected (= id selected)
-                          :key id
-                          :id id
-                          :label label
-                          :icon icon
-                          :aria-label aria-label
-                          :set-ref set-ref
-                          :focused (= id focused)
-                          :dimmed false
-                          :on-click on-click}]))
+    [:> "ul" props
+     (for [option ^js options]
+       (let [id    (obj/get option "id")
+             label (obj/get option "label")
+             aria-label (obj/get option "aria-label")
+             icon (obj/get option "icon")]
+         [:> option* {:selected (= id selected)
+                      :key id
+                      :id id
+                      :label label
+                      :icon icon
+                      :aria-label aria-label
+                      :set-ref set-ref
+                      :focused (= id focused)
+                      :dimmed false
+                      :on-click on-click}]))
 
-         (when (seq with-blank-id)
-           [:hr {:class (stl/css :option-separator)}])
+     (when (seq options-blank)
+       [:*
+        (when (seq options)
+          [:hr {:class (stl/css :option-separator)}])
 
-         (for [option ^js with-blank-id]
-           (let [id    (obj/get option "id")
-                 label (obj/get option "label")
-                 aria-label (obj/get option "aria-label")
-                 icon (obj/get option "icon")]
-             [:> option* {:selected (= id selected)
-                          :key id
-                          :id id
-                          :label label
-                          :icon icon
-                          :aria-label aria-label
-                          :set-ref set-ref
-                          :focused (= id focused)
-                          :dimmed true
-                          :on-click on-click}]))])
-
-      [:> "ul" props
-       (for [option ^js options]
-         (let [id    (obj/get option "id")
-               label (obj/get option "label")
-               aria-label (obj/get option "aria-label")
-               icon (obj/get option "icon")]
-           [:> option* {:selected (= id selected)
-                        :key id
-                        :id id
-                        :label label
-                        :icon icon
-                        :aria-label aria-label
-                        :set-ref set-ref
-                        :focused (= id focused)
-                        :dimmed false
-                        :on-click on-click}]))])))
+        (for [option ^js options-blank]
+          (let [id    (obj/get option "id")
+                label (obj/get option "label")
+                aria-label (obj/get option "aria-label")
+                icon (obj/get option "icon")]
+            [:> option* {:selected (= id selected)
+                         :key id
+                         :id id
+                         :label label
+                         :icon icon
+                         :aria-label aria-label
+                         :set-ref set-ref
+                         :focused (= id focused)
+                         :dimmed true
+                         :on-click on-click}]))])]))

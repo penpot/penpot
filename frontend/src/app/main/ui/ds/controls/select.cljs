@@ -95,6 +95,7 @@
 
         set-option-ref
         (mf/use-fn
+         (mf/deps options-nodes-refs)
          (fn [node id]
            (let [refs (or (mf/ref-val options-nodes-refs) #js {})
                  refs (if node

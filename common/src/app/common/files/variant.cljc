@@ -36,7 +36,7 @@
        (group-by :name)
        (map (fn [[k v]]
               {:name k
-               :value (distinct (map :value v))}))))
+               :value (->> v (map :value) distinct)}))))
 
 (defn get-variant-mains
   [component data]
