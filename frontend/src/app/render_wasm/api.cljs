@@ -12,8 +12,8 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.types.fill :as types.fill]
    [app.common.types.path :as path]
-   [app.common.types.shape :as shp]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -259,7 +259,7 @@
                                           (aget buffer 3))]
                 (when (zero? cached-image?)
                   (store-image id))))))
-        (take shp/MAX-FILLS fills)))
+        (take types.fill/MAX-FILLS fills)))
 
 (defn set-shape-strokes
   [strokes]
@@ -292,7 +292,9 @@
               (let [id            (dm/get-prop image :id)
                     buffer        (uuid/get-u32 id)
                     cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
-                (sr-fills/write-image-fill! offset dview id opacity (dm/get-prop image :width) (dm/get-prop image :height))
+                (sr-fills/write-image-fill! offset dview id opacity
+                                            (dm/get-prop image :width)
+                                            (dm/get-prop image :height))
                 (h/call wasm/internal-module "_add_shape_stroke_fill")
                 (when (== cached-image? 0)
                   (store-image id)))

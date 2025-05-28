@@ -12,7 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.types.shape :as shp]
+   [app.common.types.fill :as types.fill]
    [app.config :as cfg]
    [app.main.data.event :as-alias ev]
    [app.main.data.modal :as modal]
@@ -439,7 +439,7 @@
       (when (= selected-mode :gradient)
         [:> gradients*
          {:type (:type state)
-          :stops (if cap-stops? (vec (take shp/MAX-GRADIENT-STOPS (:stops state))) (:stops state))
+          :stops (if cap-stops? (vec (take types.fill/MAX-GRADIENT-STOPS (:stops state))) (:stops state))
           :editing-stop (:editing-stop state)
           :on-stop-edit-start handle-stop-edit-start
           :on-stop-edit-finish handle-stop-edit-finish
