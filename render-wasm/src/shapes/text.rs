@@ -34,9 +34,9 @@ impl GrowType {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct TextContent {
-    paragraphs: Vec<Paragraph>,
-    bounds: Rect,
-    grow_type: GrowType,
+    pub paragraphs: Vec<Paragraph>,
+    pub bounds: Rect,
+    pub grow_type: GrowType,
 }
 
 pub fn set_paragraphs_width(width: f32, paragraphs: &mut Vec<Vec<skia::textlayout::Paragraph>>) {
@@ -284,6 +284,13 @@ impl Paragraph {
         });
         style
     }
+
+    pub fn scale_content(&mut self, value: f32) {
+        self.letter_spacing *= value;
+        self.children
+            .iter_mut()
+            .for_each(|l| l.scale_content(value));
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -387,6 +394,10 @@ impl TextLeaf {
                 .join(" "),
             _ => self.text.clone(),
         }
+    }
+
+    pub fn scale_content(&mut self, value: f32) {
+        self.font_size *= value;
     }
 }
 

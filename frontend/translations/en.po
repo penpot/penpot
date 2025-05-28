@@ -5115,9 +5115,14 @@ msgstr "File"
 msgid "workspace.header.menu.option.help-info"
 msgstr "Help & info"
 
+#: src/app/main/ui/workspace/main_menu.cljs:881
+msgid "workspace.header.menu.option.preferences"
+msgstr "Preferences"
+
 #: src/app/main/ui/workspace/main_menu.cljs:916
 msgid "workspace.header.menu.option.power-up"
 msgstr "Power up your plan"
+
 msgid "workspace.header.menu.option.view"
 msgstr "View"
 

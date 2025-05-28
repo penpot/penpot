@@ -125,4 +125,11 @@ impl Shadow {
 
         filter
     }
+
+    pub fn scale_content(&mut self, value: f32) {
+        self.blur *= value;
+        self.spread *= value;
+        self.offset.0 *= value;
+        self.offset.1 *= value;
+    }
 }

@@ -17,7 +17,9 @@ mod wasm;
 use indexmap::IndexSet;
 use math::{Bounds, Matrix};
 use mem::SerializableResult;
-use shapes::{BoolType, ConstraintH, ConstraintV, StructureEntry, TransformEntry, Type};
+use shapes::{
+    BoolType, ConstraintH, ConstraintV, StructureEntry, StructureEntryType, TransformEntry, Type,
+};
 use skia_safe as skia;
 use state::State;
 use utils::uuid_from_u32_quartet;
@@ -424,18 +426,30 @@ pub extern "C" fn set_structure_modifiers() {
     let bytes = mem::bytes();
 
     let entries: Vec<_> = bytes
-        .chunks(40)
+        .chunks(44)
         .map(|data| StructureEntry::from_bytes(data.try_into().unwrap()))
         .collect();
 
     with_state!(state, {
         for entry in entries {
-            state.structure.entry(entry.parent).or_insert_with(Vec::new);
-            state
-                .structure
-                .get_mut(&entry.parent)
-                .expect("Parent not found for entry")
-                .push(entry);
+            match entry.entry_type {
+                StructureEntryType::ScaleContent => {
+                    let Some(shape) = state.shapes.get(&entry.id) else {
+                        continue;
+                    };
+                    for id in shape.all_children_with_self(&state.shapes) {
+                        state.scale_content.insert(id, entry.value);
+                    }
+                }
+                _ => {
+                    state.structure.entry(entry.parent).or_insert_with(Vec::new);
+                    state
+                        .structure
+                        .get_mut(&entry.parent)
+                        .expect("Parent not found for entry")
+                        .push(entry);
+                }
+            }
         }
     });
 
@@ -446,6 +460,7 @@ pub extern "C" fn set_structure_modifiers() {
 pub extern "C" fn clean_modifiers() {
     with_state!(state, {
         state.structure.clear();
+        state.scale_content.clear();
         state.modifiers.clear();
     });
 }

@@ -102,6 +102,7 @@ impl SerializableResult for TransformEntry {
 pub enum StructureEntryType {
     RemoveChild,
     AddChild,
+    ScaleContent,
 }
 
 impl StructureEntryType {
@@ -109,6 +110,7 @@ impl StructureEntryType {
         match value {
             1 => Self::RemoveChild,
             2 => Self::AddChild,
+            3 => Self::ScaleContent,
             _ => unreachable!(),
         }
     }
@@ -121,19 +123,27 @@ pub struct StructureEntry {
     pub index: u32,
     pub parent: Uuid,
     pub id: Uuid,
+    pub value: f32,
 }
 
 impl StructureEntry {
-    pub fn new(entry_type: StructureEntryType, index: u32, parent: Uuid, id: Uuid) -> Self {
+    pub fn new(
+        entry_type: StructureEntryType,
+        index: u32,
+        parent: Uuid,
+        id: Uuid,
+        value: f32,
+    ) -> Self {
         StructureEntry {
             entry_type,
             index,
             parent,
             id,
+            value,
         }
     }
 
-    pub fn from_bytes(bytes: [u8; 40]) -> Self {
+    pub fn from_bytes(bytes: [u8; 44]) -> Self {
         let entry_type = StructureEntryType::from_u32(u32::from_le_bytes([
             bytes[0], bytes[1], bytes[2], bytes[3],
         ]));
@@ -154,7 +164,9 @@ impl StructureEntry {
             u32::from_le_bytes([bytes[36], bytes[37], bytes[38], bytes[39]]),
         );
 
-        StructureEntry::new(entry_type, index, parent, id)
+        let value = f32::from_le_bytes([bytes[40], bytes[41], bytes[42], bytes[43]]);
+
+        StructureEntry::new(entry_type, index, parent, id, value)
     }
 }
 

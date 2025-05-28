@@ -456,9 +456,9 @@
    (mapcat
     (fn [[parent-id data]]
       (when (ctm/has-structure? (:modifiers data))
-        (->> data
-             :modifiers
-             :structure-parent
+        (->> (concat
+              (get-in data [:modifiers :structure-parent])
+              (get-in data [:modifiers :structure-child]))
              (mapcat
               (fn [modifier]
                 (case (:type modifier)
@@ -468,7 +468,8 @@
                               {:type :remove-children
                                :parent parent-id
                                :id child-id
-                               :index 0})))
+                               :index 0
+                               :value 0})))
 
                   :add-children
                   (->> (:value modifier)
@@ -476,7 +477,15 @@
                               {:type :add-children
                                :parent parent-id
                                :id child-id
-                               :index (:index modifier)})))
+                               :index (:index modifier)
+                               :value 0})))
+
+                  :scale-content
+                  [{:type :scale-content
+                    :parent parent-id
+                    :id parent-id
+                    :index 0
+                    :value (:value modifier)}]
                   nil)))))))
    modif-tree))
 
@@ -554,6 +563,29 @@
               (rx/of (set-temporary-selrect selrect)
                      (set-temporary-modifiers modifiers)))))))))
 
+(defn propagate-structure-modifiers
+  [modif-tree objects]
+  (letfn [(propagate-children
+            [modif-tree parent-id modifiers]
+            (let [new-modifiers (ctm/select-child-structre-modifiers modifiers)]
+              (->> (get-in objects [parent-id :shapes])
+                   (reduce
+                    #(update-in %1 [%2 :modifiers] ctm/add-modifiers new-modifiers)
+                    modif-tree))))]
+    (loop [pending    (into [] (keys modif-tree))
+           modif-tree modif-tree]
+      (if-let [next (first pending)]
+        (let [pending (rest pending)
+              modifiers (get-in modif-tree [next :modifiers])
+
+              [pending modif-tree]
+              (if (ctm/has-structure-child? modifiers)
+                [(into pending (get-in objects [next :shapes]))
+                 (propagate-children modif-tree next modifiers)]
+                [pending modif-tree])]
+          (recur pending modif-tree))
+        modif-tree))))
+
 #_:clj-kondo/ignore
 (defn apply-wasm-modifiers
   [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-group]
@@ -574,6 +606,9 @@
              (map (fn [{:keys [id transform]}] [id transform]))
              (wasm.api/propagate-modifiers geometry-entries snap-pixel?))
 
+            modif-tree
+            (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
+
             ids
             (into (set (keys modif-tree)) (keys transforms))
 
@@ -585,7 +620,6 @@
                 (-> shape
                     (gsh/apply-transform transform)
                     (ctm/apply-structure-modifiers modifiers))))]
-
         (rx/of
          (clear-local-transform)
          (dwsh/update-shapes ids update-shape))))))
