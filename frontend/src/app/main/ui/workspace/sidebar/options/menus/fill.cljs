@@ -12,6 +12,7 @@
    [app.common.types.color :as ctc]
    [app.common.types.shape :as shp]
    [app.common.types.shape.attrs :refer [default-color]]
+   [app.config :as cfg]
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
@@ -55,7 +56,7 @@
         values               (d/without-nils values)
         fills                (:fills values)
         has-fills?           (or (= :multiple fills) (some? (seq fills)))
-        can-add-fills?       (and (not (= :multiple fills)) (< (count fills) shp/MAX-FILLS))
+        can-add-fills?       (and (contains? cfg/flags :binary-fills) (not (= :multiple fills)) (< (count fills) shp/MAX-FILLS))
 
         state*               (mf/use-state has-fills?)
         open?                (deref state*)
