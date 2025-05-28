@@ -14,6 +14,7 @@
    #?(:clj [clojure.data.json :as json])
    #?(:cljs [app.common.weak-map :as weak-map])
    [app.common.buffer :as buf]
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
@@ -265,10 +266,6 @@
       4 {:command :close-path
          :params {}})))
 
-(defn- in-range?
-  [size i]
-  (and (< i size) (>= i 0)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TYPE: PATH-DATA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -283,7 +280,7 @@
 
      (equals [_ other]
        (if (instance? PathData other)
-         (.equals ^ByteBuffer buffer (.-buffer ^PathData other))
+         (buf/equals? buffer (.-buffer ^PathData other))
          false))
 
      ITransformable
@@ -336,12 +333,12 @@
 
      clojure.lang.Indexed
      (nth [_ i]
-       (if (in-range? size i)
+       (if (d/in-range? size i)
          (read-segment buffer i)
          nil))
 
      (nth [_ i default]
-       (if (in-range? size i)
+       (if (d/in-range? size i)
          (read-segment buffer i)
          default))
 
@@ -357,10 +354,10 @@
 
    :cljs
    #_:clj-kondo/ignore
-   (deftype PathData [size buffer dview cache ^:mutable __hash]
+   (deftype PathData [size buffer cache ^:mutable __hash]
      Object
      (toString [_]
-       (to-string dview size))
+       (to-string buffer size))
 
      IPathData
      (-get-byte-size [_]
@@ -370,56 +367,43 @@
        ;; NOTE: we still use u8 because until the heap refactor merge
        ;; we can't guarrantee the alignment of offset on 4 bytes
        (assert (instance? js/ArrayBuffer into-buffer))
-       (let [size (.-byteLength buffer)
-             mem  (js/Uint8Array. into-buffer offset size)]
-         (.set mem (js/Uint8Array. buffer))))
+       (let [buffer' (.-buffer ^js/DataView buffer)
+             size    (.-byteLength buffer')
+             mem     (js/Uint8Array. into-buffer offset size)]
+         (.set mem (js/Uint8Array. buffer'))))
 
      ITransformable
      (-transform [this m]
-       (let [buffer (buf/clone buffer)
-             dview  (js/DataView. buffer)]
-         (impl-transform dview m size)
-         (PathData. size buffer dview (weak-map/create) nil)))
+       (let [buffer (buf/clone buffer)]
+         (impl-transform buffer m size)
+         (PathData. size buffer (weak-map/create) nil)))
 
      (-walk [_ f initial]
-       (impl-walk dview f initial size))
+       (impl-walk buffer f initial size))
 
      (-reduce [_ f initial]
-       (impl-reduce dview f initial size))
+       (impl-reduce buffer f initial size))
 
      (-lookup [_ index f]
        (when (and (<= 0 index)
                   (< index size))
-         (impl-lookup dview index f)))
+         (impl-lookup buffer index f)))
 
      cljs.core/ISequential
      cljs.core/IEquiv
      (-equiv [this other]
        (if (instance? PathData other)
-         (let [obuffer (.-buffer other)]
-           (if (= (.-byteLength obuffer)
-                  (.-byteLength buffer))
-             (let [cb (js/Uint32Array. buffer)
-                   ob (js/Uint32Array. obuffer)
-                   sz (alength cb)]
-               (loop [i 0]
-                 (if (< i sz)
-                   (if (= (aget ob i)
-                          (aget cb i))
-                     (recur (inc i))
-                     false)
-                   true)))
-             false))
+         (buf/equals? buffer (.-buffer other))
          false))
 
      cljs.core/IReduce
      (-reduce [_ f]
        (loop [index  1
               result (if (pos? size)
-                       (read-segment dview 0)
+                       (read-segment buffer 0)
                        nil)]
          (if (< index size)
-           (let [result (f result (read-segment dview index))]
+           (let [result (f result (read-segment buffer index))]
              (if (reduced? result)
                @result
                (recur (inc index) result)))
@@ -429,7 +413,7 @@
        (loop [index  0
               result start]
          (if (< index size)
-           (let [result (f result (read-segment dview index))]
+           (let [result (f result (read-segment buffer index))]
              (if (reduced? result)
                @result
                (recur (inc index) result)))
@@ -444,13 +428,13 @@
 
      cljs.core/IIndexed
      (-nth [_ i]
-       (if (in-range? size i)
-         (read-segment dview i)
+       (if (d/in-range? size i)
+         (read-segment buffer i)
          nil))
 
      (-nth [_ i default]
-       (if (in-range? i size)
-         (read-segment dview i)
+       (if (d/in-range? i size)
+         (read-segment buffer i)
          default))
 
      cljs.core/ISeqable
@@ -458,7 +442,7 @@
        (when (pos? size)
          ((fn next-seq [i]
             (when (< i size)
-              (cons (read-segment dview i)
+              (cons (read-segment buffer i)
                     (lazy-seq (next-seq (inc i))))))
           0)))
 
@@ -608,17 +592,15 @@
        (let [size  (.-byteLength buffer)
              count (long (/ size SEGMENT-BYTE-SIZE))]
          (PathData. count
-                    buffer
                     (js/DataView. buffer)
                     (weak-map/create)
                     nil))
 
        (instance? js/DataView buffer)
-       (let [dview  buffer
-             buffer (.-buffer dview)
-             size  (.-byteLength buffer)
-             count (long (/ size SEGMENT-BYTE-SIZE))]
-         (PathData. count buffer dview (weak-map/create) nil))
+       (let [buffer' (.-buffer ^js/DataView buffer)
+             size    (.-byteLength ^js/ArrayBuffer buffer')
+             count   (long (/ size SEGMENT-BYTE-SIZE))]
+         (PathData. count buffer (weak-map/create) nil))
 
        (instance? js/Uint8Array buffer)
        (from-bytes (.-buffer buffer))
@@ -710,7 +692,7 @@
   :class PathData
   :wfn (fn [^PathData pdata]
          (let [buffer (.-buffer pdata)]
-           #?(:cljs (js/Uint8Array. buffer)
+           #?(:cljs (js/Uint8Array. (.-buffer ^js/DataView buffer))
               :clj  (.array ^ByteBuffer buffer))))
   :rfn from-bytes})
 
