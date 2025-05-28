@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.schema
-  (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean type])
+  (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean type keys])
   #?(:cljs (:require-macros [app.common.schema :refer [ignoring]]))
   (:require
    [app.common.data :as d]
@@ -117,6 +117,21 @@
 (defn transformer
   [& transformers]
   (apply mt/transformer transformers))
+
+(defn entries
+  "Get map entires of a map schema"
+  [schema]
+  (m/entries schema default-options))
+
+(def ^:private xf:map-key
+  (map key))
+
+(defn keys
+  "Given a map schema, return all keys as set"
+  [schema]
+  (->> (entries schema)
+       (into #{} xf:map-key)))
+
 
 ;; (defn key-transformer
 ;;   [& {:as opts}]
