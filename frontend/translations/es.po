@@ -1647,6 +1647,9 @@ msgstr "RGBA"
 msgid "inspect.attributes.fill"
 msgstr "Relleno"
 
+msgid "inspect.attributes.color"
+msgstr "Color"
+
 #: src/app/main/ui/inspect/attributes/common.cljs:95, src/app/main/ui/inspect/attributes/image.cljs:51
 msgid "inspect.attributes.image.download"
 msgstr "Descargar imagen original"
