@@ -7292,6 +7292,10 @@ msgstr ""
 msgid "workspace.tokens.invalid-value"
 msgstr "Valor de token no válido: %s"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:57
+msgid "workspace.tokens.value-with-units"
+msgstr "Valor no válido: No se permiten unidades."
+
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:190
 msgid "workspace.tokens.label.group"
 msgstr "Grupo"
