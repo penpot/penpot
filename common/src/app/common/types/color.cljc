@@ -98,7 +98,7 @@
      [:map {:title "GradientStop"}
       [:color schema:hex-color]
       [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
-      [:offset ::sm/safe-number]]]]])
+      [:offset [::sm/number {:min 0 :max 1}]]]]]])
 
 (def schema:gradient-color
   [:map [:gradient schema:gradient]])
