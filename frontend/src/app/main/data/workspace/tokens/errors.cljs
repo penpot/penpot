@@ -52,6 +52,14 @@
    {:error/code :error.style-dictionary/missing-reference
     :error/fn #(str (tr "workspace.tokens.missing-references") (str/join " " %))}
 
+   :error.style-dictionary/invalid-math-expression
+   {:error/code :error.style-dictionary/invalid-math-expression
+    :error/fn #(tr "workspace.token.invalid-math-expr")}
+
+   :error.style-dictionary/dimension-value-needs-unit
+   {:error/code :error.style-dictionary/dimension-value-needs-unit
+    :error/fn #(tr "workspace.token.dimension-value-needs-unit")}
+
    :error.style-dictionary/invalid-token-value
    {:error/code :error.style-dictionary/invalid-token-value
     :error/fn #(str (tr "workspace.tokens.invalid-value" %))}

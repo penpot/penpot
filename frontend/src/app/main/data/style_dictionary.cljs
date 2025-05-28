@@ -8,6 +8,7 @@
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
+   [app.common.data :as d]
    [app.common.files.tokens :as cft]
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -19,11 +20,118 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [app.config :as cf]
+   [app.util.array :as array]
+   [app.util.object :as obj]))
 
 (l/set-level! :debug)
 
 ;; === Style Dictionary
+
+(defn has-rem? [value]
+  (str/includes? value "rem"))
+
+(defn has-px? [value]
+  (str/includes? value "px"))
+
+(defn- has-mult-or-div-math-expr?
+  "Check if string contains mathematical operators"
+  [value]
+  (and (string? value)
+       (some #(str/includes? value (str %)) #{\* \/})))
+
+(defn- has-invalid-math-expr?
+  "Check if string contains both rem and px units"
+  [value]
+  (and (has-mult-or-div-math-expr? value)
+       (has-px? value)
+       (has-rem? value)))
+
+(defn add-px-suffix [value]
+  (let [number-regex #"(\d+(?:\.\d+)?)([^\w\.]|$)"
+        add-px (fn [[_ num after]]
+                 (if (or (str/includes? after "px")
+                         (str/includes? after "rem"))
+                   (str num after)
+                   (str num "px" after)))]
+    (str/replace value number-regex add-px)))
+
+(defn- rem-to-px [value]
+  (let [rem-regex #"(\d+(?:\.\d+)?)rem"
+        base-size 16
+        rem-to-px (fn [[_ num]]
+                    (str (* (js/parseFloat num) base-size) "px"))]
+    (str/replace value rem-regex rem-to-px)))
+
+(defn add-error-to-sd-token!
+  "Mutable set an error to the processing `sd-token`.
+  Replace with error api when it arrives in StyleDictionary v5."
+  [sd-token error]
+  (let [errors (or (.-errors sd-token) [])]
+    (set! (.-errors sd-token) (conj errors error))))
+
+(defn raise-sd-error! [err-key ^js sd-token]
+  (let [value (.-value sd-token)
+        err (wte/error-with-value err-key value)]
+    (add-error-to-sd-token! sd-token err)
+    (throw (ex-info "StyleDictionary Error" err))))
+
+(defn get-platform-config-option [cfg k]
+  (some-> (obj/get cfg "options")
+          (obj/get (name k))))
+
+(defn has-unitless-digit? [s]
+  (if-not (string? s)
+    false
+    (let [digit-pattern #"\b(\d+)(?!px|rem)\b"]
+      (boolean (re-find digit-pattern s)))))
+
+;; TODO Doesn't warn on "1+{unitless}"
+(defn- check-process-unitless-dimension-token [token platform-config]
+  (let [value (.-value token)
+        error-on-unitless-dimension? (get-platform-config-option platform-config :has-error-on-unitless-dimension)
+        unitless-dimension-error? (and error-on-unitless-dimension? (has-unitless-digit? value))]
+    (if unitless-dimension-error?
+      (raise-sd-error! :error.style-dictionary/dimension-value-needs-unit token)
+      (add-px-suffix (.-value token)))))
+
+(def default-unitless-dimensions-to-px-transform
+  "To differentiate between unitless px transforms and number tokens we always prepend px to any digits without any.
+  We need this check for crosss unit checking."
+  {:type "value"
+   :name "penpot/default-unitless-dimensions-to-px-transform"
+   :filter (fn [^js token]
+             (= (.-type token) "dimensions"))
+   :transform check-process-unitless-dimension-token})
+
+(defn check-and-evaluate-math [^js token ^js platform-config]
+  (let [value (.-value token)
+        token (cond
+                (has-invalid-math-expr? value)
+                (raise-sd-error! :error.style-dictionary/invalid-math-expression token)
+
+                (and (has-rem? value) (has-px? value))
+                (obj/merge token #js {"value" (rem-to-px value)})
+
+                :else token)]
+    (sd-transforms/checkAndEvaluateMath token (.-mathFractionDigits platform-config))))
+
+(def wrapped-math-transform
+  "A wrapper around `sd-transforms/checkAndEvaluateMath` with custom rules for which math expressions to allow:
+  - Allows rem/px addition & subtraction by converting rems to px
+  - Disallows multiplication or division for different units (e.g.: 1px * 1rem)"
+  {:type "value"
+   :transitive true
+   :name "penpot/math-transform"
+   :transform check-and-evaluate-math})
+
+(def penpot-transform-group
+  {:name "penpot"
+   :transforms (.concat #js [(:name default-unitless-dimensions-to-px-transform)
+                             (:name wrapped-math-transform)]
+                        (->> (sd-transforms/getTransforms #js {:platform "none"})
+                             (array/filter #(not= % "ts/resolveMath"))))})
 
 (def setup-style-dictionary
   "Initiates the StyleDictionary instance.
@@ -33,19 +141,28 @@
     (.registerFormat sd #js {:name "custom/json"
                              :format (fn [^js res]
                                        (.-tokens (.-dictionary res)))})
+    (.registerTransform sd (clj->js default-unitless-dimensions-to-px-transform))
+    (.registerTransform sd (clj->js wrapped-math-transform))
+    (.registerTransformGroup sd (clj->js penpot-transform-group))
     sd))
 
 (def default-config
-  {:platforms {:json
-               {:transformGroup "tokens-studio"
-                ;; Required: The StyleDictionary API is focused on files even when working in the browser
-                :files [{:format "custom/json" :destination "penpot"}]}}
-   :preprocessors ["tokens-studio"]
-   ;; Silences style dictionary logs and errors
-   ;; We handle token errors in the UI
-   :log {:verbosity "silent"
-         :warnings "silent"
-         :errors {:brokenReferences "console"}}})
+  (cond-> {:platforms {:json
+                       {:transformGroup "tokens-studio"
+                        ;; Required: The StyleDictionary API is focused on files even when working in the browser
+                        :files [{:format "custom/json" :destination "penpot"}]}}
+           :preprocessors ["tokens-studio"]
+           ;; Silences style dictionary logs and errors
+           ;; We handle token errors in the UI
+           :log {:verbosity "silent"
+                 :warnings "silent"
+                 :errors {:brokenReferences "console"}}}
+    (contains? cf/flags :token-units)
+    (assoc-in [:platforms :json :transformGroup] (:name penpot-transform-group))))
+
+(def form-config
+  (-> default-config
+      (assoc-in [:platforms :json :options :has-error-on-unitless-dimension] true)))
 
 (defn- parse-sd-token-color-value
   "Parses `value` of a color `sd-token` into a map like `{:value 1 :unit \"px\"}`.
@@ -59,7 +176,9 @@
   "Parses `value` of a numeric `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (let [parsed-value  (cft/parse-token-value value)
+  (let [parsed-value  (if (contains? cf/flags :token-units)
+                        (cft/parse-token-value-with-rem value)
+                        (cft/parse-token-value value))
         out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
                           (<= (:value parsed-value) sm/min-safe-int))]
     (if (and parsed-value (not out-of-bounds))
@@ -102,7 +221,9 @@
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value has-references?]
 
-  (let [parsed-value (cft/parse-token-value value)
+  (let [parsed-value (if (contains? cf/flags :token-units)
+                        (cft/parse-token-value-with-rem value)
+                        (cft/parse-token-value value))
         out-of-scope (< (:value parsed-value) 0)
         references (seq (ctob/find-token-value-references value))]
     (cond
@@ -175,7 +296,12 @@
                               :else
                               (assoc origin-token
                                      :resolved-value (:value parsed-token-value)
-                                     :unit (:unit parsed-token-value)))]
+                                     :unit (:unit parsed-token-value)))
+           sd-errors (.-errors sd-token)
+           sd-warnings (.-warnings sd-token)
+           output-token (cond-> output-token
+                          sd-errors (update :errors d/concat-vec sd-errors)
+                          sd-warnings (update :warnings d/concat-vec sd-warnings))]
        (assoc acc (:name output-token) output-token)))
    {} sd-tokens))
 
@@ -235,9 +361,11 @@
 
   So to get back the original token from the resolved sd-token (see my updates for what an sd-token is) we include a temporary :id for the token that we pass to StyleDictionary,
   this way after the resolving computation we can restore any token, even clashing ones with the same :name path by just looking up that :id in the ids map."
-  [tokens]
-  (let [{:keys [tokens-tree ids]} (ctob/backtrace-tokens-tree tokens)]
-    (resolve-tokens-tree tokens-tree  #(get ids (sd-token-uuid %)))))
+  [tokens & {:keys [sd-config]}]
+  (let [{:keys [tokens-tree ids]} (ctob/backtrace-tokens-tree tokens)
+        sd-config (or sd-config default-config)
+        sd (StyleDictionary. sd-config)]
+    (resolve-tokens-tree tokens-tree #(get ids (sd-token-uuid %)) sd)))
 
 (defn resolve-tokens-with-errors [tokens]
   (resolve-tokens-tree
