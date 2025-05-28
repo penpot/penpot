@@ -21,6 +21,7 @@
    [app.common.text :as txt]
    [app.common.transit :as t]
    [app.common.types.color :as types.color]
+   [app.common.types.fill :refer [schema:fill]]
    [app.common.types.grid :as ctg]
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segment]
@@ -118,43 +119,6 @@
 
 (def schema:points
   [:vector {:gen/max 4 :gen/min 4} ::gpt/point])
-
-;; FIXME: generate from schema for make schema unique source of truth
-(def fill-attrs
-  "A set of attrs that corresponds to fill data type"
-  #{:fill-color :fill-opacity :fill-color-gradient :fill-color-ref-id :fill-color-ref-file})
-
-(def ^:private schema:fill-attrs
-  [:map {:title "FillAttrs"}
-   [:fill-color-ref-file {:optional true} ::sm/uuid]
-   [:fill-color-ref-id {:optional true} ::sm/uuid]
-   [:fill-opacity {:optional true} [::sm/number {:min 0 :max 1}]]
-   [:fill-color {:optional true} types.color/schema:hex-color]
-   [:fill-color-gradient {:optional true} types.color/schema:gradient]
-   [:fill-image {:optional true} types.color/schema:image]])
-
-;; FIXME: the register is necessary until this is moved to a separated
-;; ns because it is used on shapes.text
-(def valid-fill-attrs
-  "A set used for proper check if color should contain only one of the
-  attrs listed in this set."
-  #{:fill-image :fill-color :fill-color-gradient})
-
-(defn has-valid-fill-attrs?
-  "Check if color has correct color attrs"
-  [color]
-  (let [attrs  (set (keys color))
-        result (set/intersection attrs valid-fill-attrs)]
-    (= 1 (count result))))
-
-(def schema:fill
-  (sm/register!
-   ^{::sm/type ::fill}
-   [:and schema:fill-attrs
-    [:fn has-valid-fill-attrs?]]))
-
-(def check-fill
-  (sm/check-fn schema:fill))
 
 ;; FIXME: the register is necessary until this is moved to a separated
 ;; ns because it is used on shapes.text
@@ -805,8 +769,3 @@
         (d/patch-object (select-keys props basic-extract-props))
         (cond-> (cfh/text-shape? shape) (patch-text-props props))
         (cond-> (cfh/frame-shape? shape) (patch-layout-props props)))))
-
-;; FIXME: Get these from the wasm module, and tweak the values
-;; (we'd probably want 12 stops at most)
-(def MAX-GRADIENT-STOPS 16)
-(def MAX-FILLS 8)
