@@ -827,10 +827,10 @@ test.describe("Tokens: Themes modal", () => {
         .getByRole("button", { name: "colors.black" })
         .click({ button: "right" });
       await tokenContextMenuForToken.getByText("Fill").click();
-      const inputColor = await workspacePage.page
-        .getByPlaceholder("Mixed")
-        .nth(2);
 
+      const inputColor = workspacePage.page.getByRole("textbox", {
+        name: "Color",
+      });
       await expect(inputColor).toHaveValue("000000");
     });
   });
