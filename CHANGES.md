@@ -86,11 +86,11 @@ A non exhaustive list of changes:
 
 ### :bug: Bugs fixed
 - Fix getCurrentUser for plugins api [Taiga #11057](https://tree.taiga.io/project/penpot/issue/11057)
-
 - Fix spacing / sizes of different elements in the measurements section of the design tab [Taiga #11076](https://tree.taiga.io/project/penpot/issue/11076)
 - Fix selection of short paths [Github #4472](https://github.com/penpot/penpot/issues/4472)
 - Fix element positioning on the right side to adjust to grid [#11073](https://tree.taiga.io/project/penpot/issue/11073)
 - Fix palette is over sidebar [#11160](https://tree.taiga.io/project/penpot/issue/11160)
+- Fix font size input not displaying "mixed" when multiple texts are selected [Taiga #11177](https://tree.taiga.io/project/penpot/issue/11177)
 
 ## 2.7.1
 
