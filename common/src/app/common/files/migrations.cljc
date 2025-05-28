@@ -26,6 +26,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.fill :as types.fill]
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segment]
    [app.common.types.shape :as cts]
@@ -826,7 +827,7 @@
         (d/update-when :components d/update-vals update-container))))
 
 (def ^:private valid-fill?
-  (sm/lazy-validator ::cts/fill))
+  (sm/lazy-validator types.fill/schema:fill))
 
 (defmethod migrate-data "legacy-43"
   [data _]
