@@ -230,3 +230,29 @@ test("BUG 9543 - Layout padding inputs not showing 'mixed' when needed", async (
     "Mixed",
   );
 });
+
+test("BUG 11177 - Font size input not showing 'mixed' when needed", async ({
+  page,
+}) => {
+  const workspace = new WorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "design/get-file-fragment-11177.json",
+  );
+  await workspace.mockRPC("update-file?id=*", "design/update-file-11177.json");
+  await workspace.mockRPC("get-file?id=*", "design/get-file-11177.json");
+
+  await workspace.goToWorkspace({
+    fileId: "b3e5731a-c295-801d-8006-3fc33c3b1b13",
+    pageId: "b3e5731a-c295-801d-8006-3fc33c3b1b14",
+  });
+
+  await workspace.clickLeafLayer("Ipsum");
+  await workspace.clickLeafLayer("Lorem", { modifiers: ["Shift"] });
+
+  const fontSizeInput = workspace.page.getByLabel("Font size");
+
+  await expect(fontSizeInput).toHaveValue("");
+  await expect(fontSizeInput).toHaveAttribute("placeholder", "Mixed");
+});
