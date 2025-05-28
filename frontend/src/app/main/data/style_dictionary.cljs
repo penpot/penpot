@@ -61,8 +61,8 @@
        (re-matches #"^-?\d+(\.\d+)?$" s)))
 
 (defn- with-units [s]
-    (and (string? s)
-        (re-matches #"^-?\d+(\.\d+)?(px|rem)$" s)))
+  (and (string? s)
+       (re-matches #"^-?\d+(\.\d+)?(px|rem)$" s)))
 
 (defn- parse-sd-token-numeric-value
   "Parses `value` of a numeric `sd-token` into a map like `{:value 1 :unit \"px\"}`.
@@ -85,7 +85,7 @@
       (let [references (seq (ctob/find-token-value-references value))]
         {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
          :references references})
-      
+
       (with-units value)
       {:errors [(wte/error-with-value :error.style-dictionary/value-with-units value)]}
 
