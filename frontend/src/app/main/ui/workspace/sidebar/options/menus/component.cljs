@@ -31,6 +31,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.product.input-with-meta :refer [input-with-meta*]]
    [app.main.ui.hooks :as h]
@@ -236,7 +237,9 @@
           [:div {:class (stl/css  :counter)} (str size "/300")])]])))
 
 
-(defn- get-variant-error-message [errors]
+(defn- get-variant-error-message
+  "Generate error message depending on the selected variants"
+  [errors]
   (cond
     (and (= (count errors) 1) (some? (first errors)))
     (tr "workspace.options.component.variant.malformed.single.one")
@@ -248,6 +251,16 @@
     (tr "workspace.options.component.variant.malformed.single.some")
 
     :else nil))
+
+
+(defn- get-variant-options
+  "Get variant options for a given property name"
+  [prop-name prop-vals]
+  (->> (filter #(= (:name %) prop-name) prop-vals)
+       first
+       :value
+       (map (fn [val] {:id val
+                       :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
 
 
 (mf/defc component-variant-main-instance*
@@ -271,23 +284,17 @@
         variant-errors     (mapv :variant-error shapes)
         variant-error-msg  (get-variant-error-message variant-errors)
 
-        empty-indicator "--"
-
         get-options
         (mf/use-fn
          (mf/deps prop-vals)
          (fn [prop-name]
-           (->> (filter #(= (:name %) prop-name) prop-vals)
-                first
-                :value
-                (map (fn [val] {:label val :id val})))))
+           (get-variant-options prop-name prop-vals)))
 
         update-property-value
         (mf/use-fn
          (mf/deps component-ids)
          (fn [pos value]
-           (let [value (str/trim value)
-                 value (if (= value empty-indicator) "" value)]
+           (let [value (d/nilv (str/trim value) "")]
              (doseq [id component-ids]
                (st/emit! (dwv/update-property-value id pos value))
                (st/emit! (dwv/update-error id nil))))))
@@ -315,9 +322,10 @@
 
           (let [mixed-value? (= (:value prop) false)]
             [:> combobox* {:id (str "variant-prop-" variant-id "-" pos)
-                           :placeholder (if mixed-value? (tr "settings.multiple") empty-indicator)
+                           :placeholder (if mixed-value? (tr "settings.multiple") "--")
                            :default-selected (if mixed-value? "" (:value prop))
                            :options (clj->js (get-options (:name prop)))
+                           :empty-to-end true
                            :on-change (partial update-property-value pos)}])]])]
 
      (when variant-error-msg
@@ -328,6 +336,7 @@
          (str variant-error-msg " " (tr "workspace.options.component.variant.malformed.structure.title"))]
         [:div {:class (stl/css :variant-error-darken)}
          (tr "workspace.options.component.variant.malformed.structure.example")]])]))
+
 
 (mf/defc component-variant*
   [{:keys [component shape data]}]
@@ -342,13 +351,11 @@
         prop-vals          (mf/with-memo [data objects variant-id]
                              (cfv/extract-properties-values data objects variant-id))
 
-        get-options-vals
+        get-options
         (mf/use-fn
          (mf/deps prop-vals)
          (fn [prop-name]
-           (->> (filter #(= (:name %) prop-name) prop-vals)
-                first
-                :value)))
+           (get-variant-options prop-name prop-vals)))
 
         switch-component
         (mf/use-fn
@@ -360,7 +367,7 @@
                    valid-comps  (->> variant-components
                                      (remove #(= (:id %) component-id))
                                      (filter #(= (dm/get-in % [:variant-properties pos :value]) val)))
-                   nearest-comp (apply min-key  #(ctv/distance target-props (:variant-properties %)) valid-comps)]
+                   nearest-comp (apply min-key #(ctv/distance target-props (:variant-properties %)) valid-comps)]
                (when nearest-comp
                  (st/emit! (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true)))))))]
 
@@ -370,9 +377,11 @@
         [:*
          [:span {:class (stl/css :variant-property-name)}
           (:name prop)]
-         [:& select {:default-value (if (str/empty? (:value prop)) "--" (:value prop))
-                     :options (clj->js (get-options-vals (:name prop)))
-                     :on-change #(switch-component pos %)}]]])]))
+         [:> select* {:default-selected (:value prop)
+                      :options (clj->js (get-options (:name prop)))
+                      :empty-to-end true
+                      :on-change (partial switch-component pos)}]]])]))
+
 
 (mf/defc component-swap-item
   {::mf/props :obj}

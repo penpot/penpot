@@ -2051,6 +2051,10 @@ msgstr "Edit file"
 msgid "labels.editor"
 msgstr "Editor"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:263
+msgid "labels.empty"
+msgstr "Empty"
+
 #: src/app/main/ui/dashboard/import.cljs:294
 msgid "labels.error"
 msgstr "Error"
