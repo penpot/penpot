@@ -33,7 +33,13 @@
 (def versions
   (l/derived :workspace-versions st/state))
 
-(def versions-stored-days 7)
+(defn get-versions-stored-days
+  [team]
+  (let [subscription-name (-> team :subscription :type)]
+    (cond
+      (= subscription-name "unlimited") 30
+      (= subscription-name "enterprise") 90
+      :else 7)))
 
 (defn group-snapshots
   [data]
@@ -206,6 +212,7 @@
   []
   (let [profiles   (mf/deref refs/profiles)
         profile    (mf/deref refs/profile)
+        team       (mf/deref refs/team)
 
         expanded   (mf/use-state #{})
 
@@ -358,7 +365,7 @@
 
                nil))])
 
-        [:> cta* {:title (tr "workspace.versions.warning.text" versions-stored-days)}
+        [:> cta* {:title (tr "workspace.versions.warning.text" (get-versions-stored-days team))}
          [:> i18n/tr-html*
           {:tag-name "div"
            :class (stl/css :cta)
