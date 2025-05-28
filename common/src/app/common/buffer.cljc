@@ -129,11 +129,35 @@
        (let [buffer (ByteBuffer/wrap dst)]
          (.order buffer ByteOrder/LITTLE_ENDIAN)))
      :cljs
-     (let [src-view (js/Uint32Array. buffer)
-           dst-buff (js/ArrayBuffer. (.-byteLength buffer))
+     (let [buffer'  (.-buffer ^js/DataView buffer)
+           src-view (js/Uint32Array. buffer')
+           dst-buff (js/ArrayBuffer. (.-byteLength buffer'))
            dst-view (js/Uint32Array. dst-buff)]
        (.set dst-view src-view)
-       dst-buff)))
+       (js/DataView. dst-buff))))
+
+(defn equals?
+  [buffer-a buffer-b]
+  #?(:clj
+     (.equals ^ByteBuffer buffer-a
+              ^ByteBuffer buffer-b)
+
+     :cljs
+     (let [buffer-a (.-buffer buffer-a)
+           buffer-b (.-buffer buffer-b)]
+       (if (= (.-byteLength buffer-a)
+              (.-byteLength buffer-b))
+         (let [cb (js/Uint32Array. buffer-a)
+               ob (js/Uint32Array. buffer-b)
+               sz (alength cb)]
+           (loop [i 0]
+             (if (< i sz)
+               (if (== (aget ob i)
+                       (aget cb i))
+                 (recur (inc i))
+                 false)
+               true)))
+         false))))
 
 (defn buffer?
   [o]
