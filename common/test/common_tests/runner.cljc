@@ -7,6 +7,7 @@
 (ns common-tests.runner
   (:require
    [clojure.test :as t]
+   [common-tests.buffer-test]
    [common-tests.colors-test]
    [common-tests.data-test]
    [common-tests.files-changes-test]
@@ -56,6 +57,7 @@
 (defn -main
   [& args]
   (t/run-tests
+   'common-tests.buffer-test
    'common-tests.colors-test
    'common-tests.data-test
    'common-tests.files-changes-test
