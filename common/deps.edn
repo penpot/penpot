@@ -2,9 +2,9 @@
  {org.clojure/clojure {:mvn/version "1.12.0"}
   org.clojure/data.json {:mvn/version "2.5.1"}
   org.clojure/tools.cli {:mvn/version "1.1.230"}
-  org.clojure/clojurescript {:mvn/version "1.12.38"}
   org.clojure/test.check {:mvn/version "1.1.1"}
   org.clojure/data.fressian {:mvn/version "1.1.0"}
+  org.clojure/clojurescript {:mvn/version "1.12.42"}
 
   ;; Logging
   org.apache.logging.log4j/log4j-api {:mvn/version "2.24.3"}
@@ -59,7 +59,7 @@
  {:dev
   {:extra-deps
    {org.clojure/tools.namespace {:mvn/version "RELEASE"}
-    thheller/shadow-cljs {:mvn/version "3.0.5"}
+    thheller/shadow-cljs {:mvn/version "3.1.5"}
     com.clojure-goes-fast/clj-async-profiler {:mvn/version "RELEASE"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     criterium/criterium {:mvn/version "RELEASE"}
