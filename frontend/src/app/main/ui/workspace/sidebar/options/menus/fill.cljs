@@ -22,6 +22,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
+;; FIXME:revisit this
 (def fill-attrs
   [:fills
    :fill-color
