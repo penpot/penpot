@@ -73,7 +73,7 @@
          on-pointer-move :on-pointer-move
          parent-ref :parent-ref
          size :size}
-        (use-resize-hook :left-sidebar 275 275 500 :x false :left)
+        (use-resize-hook :left-sidebar 318 318 500 :x false :left)
 
         {on-pointer-down-pages :on-pointer-down
          on-lost-pointer-capture-pages  :on-lost-pointer-capture
