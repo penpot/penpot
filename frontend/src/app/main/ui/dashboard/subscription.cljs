@@ -5,6 +5,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.config :as cf]
+   [app.main.data.event :as ev]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu-item*]]
@@ -14,6 +15,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [lambdaisland.uri :as u]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc cta-power-up*
@@ -86,7 +88,9 @@
         go-to-manage-subscription
         (mf/use-fn
          (fn []
-           ;; TODO add event tracking
+           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
+                                            ::ev/origin "dashboard"
+                                            :section "team-settings"}))
            (let [href (-> (rt/get-current-href)
                           (rt/encode-url))
                  href (str "payments/subscriptions/show?returnUrl=" href)]
