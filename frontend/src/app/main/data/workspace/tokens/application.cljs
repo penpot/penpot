@@ -58,7 +58,8 @@
                                     [])
 
                       resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
-                      tokenized-attributes (cft/attributes-map attributes token)]
+                      tokenized-attributes (cft/attributes-map attributes token)
+                      _ (prn tokenized-attributes)]
                   (rx/of
                    (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
                    (dwu/start-undo-transaction undo-id)
@@ -94,6 +95,7 @@
     (watch [_ _ _]
       (let [{:keys [attributes all-attributes on-update-shape]}
             (get token-properties (:type token))
+            _ (prn attributes)
 
             unapply-tokens?
             (cft/shapes-token-applied? token shapes (or all-attributes attributes))
@@ -333,7 +335,8 @@
   ([value shape-ids attributes] (update-line-height value shape-ids attributes nil))
   ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
    (let [update-node? (fn [node]
-                        (txt/is-paragraph-node? node))]
+                        (or (txt/is-text-node? node)
+                            (txt/is-paragraph-node? node)))]
      (when (number? value)
        (dwsh/update-shapes shape-ids
                            #(txt/update-text-content % update-node? d/txt-merge {:line-height value})
@@ -404,10 +407,11 @@
 
    :numeric
    {:title "Number"
-    :attributes ctt/numeric-keys
+    :attributes #{:rotation}
+    :all-attributes ctt/numeric-keys
     :on-update-shape update-rotation
     :modal {:key :tokens/numeric
-            :fields [{:label "number"
+            :fields [{:label "Number"
                       :key :numeric}]}}
 
    :rotation
