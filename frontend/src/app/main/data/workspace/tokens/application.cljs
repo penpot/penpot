@@ -58,8 +58,7 @@
                                     [])
 
                       resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
-                      tokenized-attributes (cft/attributes-map attributes token)
-                      _ (prn tokenized-attributes)]
+                      tokenized-attributes (cft/attributes-map attributes token)]
                   (rx/of
                    (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
                    (dwu/start-undo-transaction undo-id)
@@ -95,7 +94,6 @@
     (watch [_ _ _]
       (let [{:keys [attributes all-attributes on-update-shape]}
             (get token-properties (:type token))
-            _ (prn attributes)
 
             unapply-tokens?
             (cft/shapes-token-applied? token shapes (or all-attributes attributes))
@@ -333,7 +331,10 @@
 
 (defn update-line-height
   ([value shape-ids attributes] (update-line-height value shape-ids attributes nil))
-  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+  ([value shape-ids _attributes page-id] ; The attributes param is
+                                         ; needed to have the same
+                                         ; arity that other update
+                                         ; functions
    (let [update-node? (fn [node]
                         (or (txt/is-text-node? node)
                             (txt/is-paragraph-node? node)))]
@@ -343,7 +344,7 @@
                            {:ignore-touched true
                             :page-id page-id})))))
 
-;; Map token types to different properties used along the cokde ---------------------------------------------------------
+;; Map token types to different properties used along the cokde ---------------------------------------------
 
 ;; FIXME: the values should be lazy evaluated, probably a function,
 ;; becasue on future we will need to translate that labels and that

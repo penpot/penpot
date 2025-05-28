@@ -37,10 +37,14 @@
      :selected-pred #(seq (% ids-by-attributes))}))
 
 (defn generic-attribute-actions [attributes title {:keys [token selected-shapes on-update-shape hint]}]
-  (let [on-update-shape-fn (or on-update-shape
-                               (-> (dwta/get-token-properties token)
-                                   (:on-update-shape)))
-        {:keys [selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)]
+  (let [on-update-shape-fn
+        (or on-update-shape
+            (-> (dwta/get-token-properties token)
+                (:on-update-shape)))
+
+        {:keys [selected-pred shape-ids]}
+        (attribute-actions token selected-shapes attributes)]
+
     (map (fn [attribute]
            (let [selected? (selected-pred attribute)
                  props {:attributes #{attribute}
