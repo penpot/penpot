@@ -1,9 +1,8 @@
 {
-  "name": "@penpotapp/library",
+  "name": "@penpot/library",
   "version": "1.0.0",
   "license": "MPL-2.0",
   "author": "Kaleidos INC",
-  "private": true,
   "packageManager": "yarn@4.9.1+sha512.f95ce356460e05be48d66401c1ae64ef84d163dd689964962c6888a9810865e39097a5e9de748876c2e0bf89b232d583c33982773e9903ae7a76257270986538",
   "type": "module",
   "repository": {
@@ -12,6 +11,14 @@
   },
   "resolutions": {
     "@zip.js/zip.js@npm:^2.7.44": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch"
+  },
+  "files": [
+    "target/library/penpot.js",
+    "target/library/penpot.js.map"
+  ],
+  "main": "./target/library/penpot.js",
+  "exports": {
+    ".": "./target/library/penpot.js"
   },
   "imports": {
     "#self": {
@@ -30,13 +37,13 @@
   },
   "devDependencies": {
     "@types/node": "^22.12.0",
+    "@zip.js/zip.js": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch",
     "concurrently": "^9.1.2",
+    "luxon": "^3.6.1",
     "nodemon": "^3.1.9",
-    "shadow-cljs": "3.0.5"
+    "shadow-cljs": "3.1.4"
   },
   "dependencies": {
-    "@zip.js/zip.js": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch",
-    "luxon": "^3.6.1",
     "source-map-support": "^0.5.21"
   }
 }
