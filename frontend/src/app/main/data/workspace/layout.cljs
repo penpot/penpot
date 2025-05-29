@@ -142,7 +142,7 @@
   {:hide-palettes :app.main.data.workspace/hide-palettes?
    :colorpalette :app.main.data.workspace/show-colorpalette?
    :textpalette :app.main.data.workspace/show-textpalette?
-   :rulers :app.main.data.workspace/show-rulers? })
+   :rulers :app.main.data.workspace/show-rulers?})
 
 (defn load-layout-flags
   "Given the current layout flags, and updates them with the data
