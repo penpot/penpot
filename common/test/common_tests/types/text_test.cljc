@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.types.text-content-test
+(ns common-tests.types.text-test
   (:require
    [app.common.types.text :as cttx]
    [clojure.test :as t :include-macros true]))
