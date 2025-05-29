@@ -54,9 +54,14 @@
 
         ;; Excluding nil values
         values               (d/without-nils values)
-        fills                (:fills values)
+        fills                (if (contains? cfg/flags :frontend-binary-fills)
+                               (take shp/MAX-FILLS (d/nilv (:fills values) []))
+                               (:fills values))
         has-fills?           (or (= :multiple fills) (some? (seq fills)))
-        can-add-fills?       (and (contains? cfg/flags :frontend-binary-fills) (not (= :multiple fills)) (< (count fills) shp/MAX-FILLS))
+        can-add-fills?       (if (contains? cfg/flags :frontend-binary-fills)
+                               (and (not (= :multiple fills))
+                                    (< (count fills) shp/MAX-FILLS))
+                               (not (= :multiple fills)))
 
         state*               (mf/use-state has-fills?)
         open?                (deref state*)
@@ -170,7 +175,7 @@
 
           (seq fills)
           [:& h/sortable-container {}
-           (for [[index value] (d/enumerate (:fills values []))]
+           (for [[index value] (d/enumerate fills)]
              [:> color-row* {:color (ctc/fill->shape-color value)
                              :key index
                              :index index
