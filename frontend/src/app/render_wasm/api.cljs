@@ -238,36 +238,46 @@
          (map process-fill-image))))
 
 (defn set-shape-fills
-  [fills]
-  (h/call wasm/internal-module "_clear_shape_fills")
-  (keep (fn [fill]
-          (let [opacity  (or (:fill-opacity fill) 1.0)
-                color    (:fill-color fill)
-                gradient (:fill-color-gradient fill)
-                image    (:fill-image fill)
-                offset   (mem/alloc-bytes sr-fills/FILL-BYTE-SIZE)
-                heap     (mem/get-heap-u8)
-                dview    (js/DataView. (.-buffer heap))]
-            (cond
-              (some? color)
-              (do
-                (sr-fills/write-solid-fill! offset dview (sr-clr/hex->u32argb color opacity))
-                (h/call wasm/internal-module "_add_shape_fill"))
+  ;; We support the old "Image" Penpot type addind the metadata info related to the image as a fill-image
+  [fills metadata]
+  (let [fills (if metadata
+                (cons {:fill-image (assoc metadata :keep-aspect-ratio false)
+                       :opacity    1}
+                      fills)
+                fills)]
+    (h/call wasm/internal-module "_clear_shape_fills")
+    (keep (fn [fill]
+            (let [opacity  (or (:fill-opacity fill) 1.0)
+                  color    (:fill-color fill)
+                  gradient (:fill-color-gradient fill)
+                  image    (:fill-image fill)
+                  offset   (mem/alloc-bytes sr-fills/FILL-BYTE-SIZE)
+                  heap     (mem/get-heap-u8)
+                  dview    (js/DataView. (.-buffer heap))]
+              (cond
+                (some? color)
+                (do
+                  (sr-fills/write-solid-fill! offset dview (sr-clr/hex->u32argb color opacity))
+                  (h/call wasm/internal-module "_add_shape_fill"))
 
-              (some? gradient)
-              (do
-                (sr-fills/write-gradient-fill! offset dview gradient opacity)
-                (h/call wasm/internal-module "_add_shape_fill"))
+                (some? gradient)
+                (do
+                  (sr-fills/write-gradient-fill! offset dview gradient opacity)
+                  (h/call wasm/internal-module "_add_shape_fill"))
 
-              (some? image)
-              (let [id            (dm/get-prop image :id)
-                    buffer        (uuid/get-u32 id)
-                    cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
-                (sr-fills/write-image-fill! offset dview id opacity (dm/get-prop image :width) (dm/get-prop image :height))
-                (h/call wasm/internal-module "_add_shape_fill")
-                (when (== cached-image? 0)
-                  (store-image id))))))
-        fills))
+                (some? image)
+                (let [id            (dm/get-prop image :id)
+                      buffer        (uuid/get-u32 id)
+                      cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                            (aget buffer 0) (aget buffer 1)
+                                            (aget buffer 2) (aget buffer 3))]
+                  (sr-fills/write-image-fill! offset dview id opacity
+                                              (dm/get-prop image :width)
+                                              (dm/get-prop image :height))
+                  (h/call wasm/internal-module "_add_shape_fill")
+                  (when (== cached-image? 0)
+                    (store-image id))))))
+          fills)))
 
 (defn set-shape-strokes
   [strokes]
@@ -692,6 +702,7 @@
                        [] (dm/get-prop shape :fills))
         strokes      (if (= type :group)
                        [] (dm/get-prop shape :strokes))
+        metadata     (dm/get-prop shape :metadata)
         children     (dm/get-prop shape :shapes)
         blend-mode   (dm/get-prop shape :blend-mode)
         opacity      (dm/get-prop shape :opacity)
@@ -750,7 +761,7 @@
 
     (let [pending (into [] (concat
                             (set-shape-text content)
-                            (set-shape-fills fills)
+                            (set-shape-fills fills metadata)
                             (set-shape-strokes strokes)))]
       (perf/end-measure "set-object")
       pending)))

@@ -122,7 +122,7 @@
                       (api/set-shape-clip-content false))
       :rotation     (api/set-shape-rotation v)
       :transform    (api/set-shape-transform v)
-      :fills        (into [] (api/set-shape-fills v))
+      :fills        (into [] (api/set-shape-fills v (:metadata shape)))
       :strokes      (into [] (api/set-shape-strokes v))
       :blend-mode   (api/set-shape-blend-mode v)
       :opacity      (api/set-shape-opacity v)
