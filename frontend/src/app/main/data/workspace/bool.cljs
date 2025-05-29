@@ -44,7 +44,7 @@
          :frame-id (:frame-id head)
          :parent-id (:parent-id head)
          :name name
-         :shapes (vec shapes)}
+         :shapes (into [] d/xf:map-id shapes)}
 
         shape
         (-> shape
