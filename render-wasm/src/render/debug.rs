@@ -41,7 +41,7 @@ pub fn render_debug_cache_surface(render_state: &mut RenderState) {
 }
 
 pub fn render_wasm_label(render_state: &mut RenderState) {
-    let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
+    let canvas = render_state.surfaces.canvas(SurfaceId::Target);
     let skia::ISize { width, height } = canvas.base_layer_size();
     let mut paint = skia::Paint::default();
     paint.set_color(skia::Color::from_argb(100, 0, 0, 0));
