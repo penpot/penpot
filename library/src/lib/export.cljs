@@ -82,6 +82,14 @@
     :is-shared
     :version})
 
+(defn- encode-shape*
+  [{:keys [type] :as shape}]
+  (let [shape (if (or (= type :path)
+                      (= type :bool))
+                (update shape :content vec)
+                shape)]
+    (-> shape encode-shape json/encode)))
+
 (defn- generate-file-export-procs
   [{:keys [id data] :as file}]
   (cons
@@ -109,7 +117,7 @@
                  (map (fn [[shape-id shape]]
                         (let [shape (assoc shape :page-id page-id)]
                           [(str "files/" id "/pages/" page-id "/" shape-id ".json")
-                           (delay (-> shape encode-shape json/encode))]))
+                           (delay (encode-shape* shape))]))
                       objects)))))))
 
     (->> (get data :components)
