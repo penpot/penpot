@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-27 09:01+0000\n"
+"PO-Revision-Date: 2025-05-30 09:01+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -7494,3 +7494,44 @@ msgstr "Tekstvienību iestatījumi"
 #: src/app/main/ui/workspace/tokens/modals/settings.cljs:93
 msgid "workspace.tokens.setting-description"
 msgstr "Šeit var konfigurēt pamata fonta izmēru, kas nosaka 1rem vērtību:"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variants"
+msgstr "Paveida īpašības"
+
+#: src/app/main/errors.cljs:157
+msgid "errors.internal-assertion-error"
+msgstr "Iekšēja apgalvojuma kļūda"
+
+#: src/app/main/ui/dashboard/subscription.cljs:53
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr ""
+"Iegūsti papildu redaktorus un krātuvi, datņu rezerves kopēšanu un vēl ar **"
+"neierobežoto plānu**"
+
+#: src/app/main/ui/dashboard/subscription.cljs:51
+msgid "subscription.dashboard.power-up.professional.top-title"
+msgstr "Profesionālais plāns"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:131
+msgid "subscription.dashboard.power-up.subscribe"
+msgstr "Abonēt"
+
+#: src/app/main/ui/dashboard/subscription.cljs:63
+msgid "subscription.dashboard.power-up.trial.bottom-description"
+msgstr "Patīk izmēģinājuma laiks? Atslēdz nepārtrauktu pilnu piekļuvi!"
+
+#: src/app/main/ui/dashboard/subscription.cljs:62
+msgid "subscription.dashboard.power-up.trial.top-description"
+msgstr ""
+"Papildu redaktori, krājumi un automātiski saglabātas versijas, datņu "
+"rezerves kopēšana un vēl."
+
+#: src/app/main/ui/dashboard/subscription.cljs:61
+msgid "subscription.dashboard.power-up.trial.top-title"
+msgstr "Neierobežots plāns (izmēģinājums)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:67
+msgid "subscription.dashboard.power-up.unlimited-plan"
+msgstr "Neierobežots plāns"
