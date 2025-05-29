@@ -63,12 +63,6 @@
 
 ;; === Token
 
-(def token-separator ".")
-
-(defn get-token-path
-  [token]
-  (get-path token token-separator))
-
 (defrecord Token [id name type value description modified-at])
 
 (defn token?
@@ -92,11 +86,11 @@
    (sm/required-keys schema:token-attrs)
    [:fn token?]])
 
-(def check-token
-  (sm/check-fn schema:token :hint "expected valid token"))
-
 (def ^:private check-token-attrs
   (sm/check-fn schema:token-attrs :hint "expected valid params for token"))
+
+(def check-token
+  (sm/check-fn schema:token :hint "expected valid token"))
 
 (defn make-token
   [& {:as attrs}]
@@ -106,6 +100,12 @@
       (update :description d/nilv "")
       (check-token-attrs)
       (map->Token)))
+
+(def token-separator ".")
+
+(defn get-token-path
+  [token]
+  (get-path token token-separator))
 
 (defn find-token-value-references
   "Returns set of token references found in `token-value`.
@@ -136,6 +136,106 @@
     (group-by :type tokens')))
 
 ;; === Token Set
+
+(defprotocol ITokenSet
+  (add-token [_ token] "add a token at the end of the list")
+  (update-token [_ token-name f] "update a token in the list")
+  (delete-token [_ token-name] "delete a token from the list")
+  (get-token [_ token-name] "return token by token-name")
+  (get-tokens [_] "return an ordered sequence of all tokens in the set"))
+
+(defrecord TokenSet [id name description modified-at tokens]
+  ITokenSet
+  (add-token [_ token]
+    (let [token (check-token token)]
+      (TokenSet. id
+                 name
+                 description
+                 (dt/now)
+                 (assoc tokens (:name token) token))))
+
+  (update-token [this token-name f]
+    (if-let [token (get tokens token-name)]
+      (let [token' (-> (make-token (f token))
+                       (assoc :modified-at (dt/now)))]
+        (TokenSet. id
+                   name
+                   description
+                   (dt/now)
+                   (if (= (:name token) (:name token'))
+                     (assoc tokens (:name token') token')
+                     (-> tokens
+                         (d/oassoc-before (:name token) (:name token') token')
+                         (dissoc (:name token))))))
+      this))
+
+  (delete-token [_ token-name]
+    (TokenSet. id
+               name
+               description
+               (dt/now)
+               (dissoc tokens token-name)))
+
+  (get-token [_ token-name]
+    (get tokens token-name))
+
+  (get-tokens [_]
+    (vals tokens)))
+
+(defn token-set?
+  [o]
+  (instance? TokenSet o))
+
+(def schema:token-set-attrs
+  [:map {:title "TokenSet"}
+   [:id ::sm/uuid]
+   [:name :string]
+   [:description {:optional true} :string]
+   [:modified-at {:optional true} ::sm/inst]
+   [:tokens {:optional true
+             :gen/gen (->> (sg/map-of (sg/generator ::sm/text)
+                                      (sg/generator schema:token))
+                           (sg/fmap #(into (d/ordered-map) %)))}
+    [:and
+     [:map-of {:gen/max 5
+               :decode/json (fn [v]
+                              (cond
+                                (d/ordered-map? v)
+                                v
+
+                                (map? v)
+                                (into (d/ordered-map) v)
+
+                                :else
+                                v))}
+      :string schema:token]
+     [:fn d/ordered-map?]]]])
+
+(declare make-token-set)
+
+(def schema:token-set
+  [:and {:gen/gen (->> (sg/generator schema:token-set-attrs)
+                       (sg/fmap #(make-token-set %)))}
+   (sm/required-keys schema:token-set-attrs)
+   [:fn token-set?]])
+
+(sm/register! ::token-set schema:token-set) ;; Need to register for the recursive schema of token-sets
+
+(def ^:private check-token-set-attrs
+  (sm/check-fn schema:token-set-attrs :hint "expected valid params for token-set"))
+
+(def check-token-set
+  (sm/check-fn schema:token-set :hint "expected valid token set"))
+
+(defn make-token-set
+  [& {:as attrs}]
+  (-> attrs
+      (update :id #(or % (uuid/next)))
+      (update :modified-at #(or % (dt/now)))
+      (update :tokens #(into (d/ordered-map) %))
+      (update :description d/nilv "")
+      (check-token-set-attrs)
+      (map->TokenSet)))
 
 (def set-prefix "S-")
 
@@ -253,106 +353,6 @@
            (assoc-in [:ids temp-id] token))))
    {:tokens-tree {} :ids {}} tokens))
 
-(defprotocol ITokenSet
-  (add-token [_ token] "add a token at the end of the list")
-  (update-token [_ token-name f] "update a token in the list")
-  (delete-token [_ token-name] "delete a token from the list")
-  (get-token [_ token-name] "return token by token-name")
-  (get-tokens [_] "return an ordered sequence of all tokens in the set"))
-
-(defrecord TokenSet [id name description modified-at tokens]
-  ITokenSet
-  (add-token [_ token]
-    (let [token (check-token token)]
-      (TokenSet. id
-                 name
-                 description
-                 (dt/now)
-                 (assoc tokens (:name token) token))))
-
-  (update-token [this token-name f]
-    (if-let [token (get tokens token-name)]
-      (let [token' (-> (make-token (f token))
-                       (assoc :modified-at (dt/now)))]
-        (TokenSet. id
-                   name
-                   description
-                   (dt/now)
-                   (if (= (:name token) (:name token'))
-                     (assoc tokens (:name token') token')
-                     (-> tokens
-                         (d/oassoc-before (:name token) (:name token') token')
-                         (dissoc (:name token))))))
-      this))
-
-  (delete-token [_ token-name]
-    (TokenSet. id
-               name
-               description
-               (dt/now)
-               (dissoc tokens token-name)))
-
-  (get-token [_ token-name]
-    (get tokens token-name))
-
-  (get-tokens [_]
-    (vals tokens)))
-
-(defn token-set?
-  [o]
-  (instance? TokenSet o))
-
-(def schema:token-set-attrs
-  [:map {:title "TokenSet"}
-   [:id ::sm/uuid]
-   [:name :string]
-   [:description {:optional true} :string]
-   [:modified-at {:optional true} ::sm/inst]
-   [:tokens {:optional true
-             :gen/gen (->> (sg/map-of (sg/generator ::sm/text)
-                                      (sg/generator schema:token))
-                           (sg/fmap #(into (d/ordered-map) %)))}
-    [:and
-     [:map-of {:gen/max 5
-               :decode/json (fn [v]
-                              (cond
-                                (d/ordered-map? v)
-                                v
-
-                                (map? v)
-                                (into (d/ordered-map) v)
-
-                                :else
-                                v))}
-      :string schema:token]
-     [:fn d/ordered-map?]]]])
-
-(declare make-token-set)
-
-(def schema:token-set
-  [:and {:gen/gen (->> (sg/generator schema:token-set-attrs)
-                       (sg/fmap #(make-token-set %)))}
-   (sm/required-keys schema:token-set-attrs)
-   [:fn token-set?]])
-
-(sm/register! ::token-set schema:token-set)
-
-(def check-token-set
-  (sm/check-fn schema:token-set :hint "expected valid token set"))
-
-(def ^:private check-token-set-attrs
-  (sm/check-fn schema:token-set-attrs :hint "expected valid params for token-set"))
-
-(defn make-token-set
-  [& {:as attrs}]
-  (-> attrs
-      (update :id #(or % (uuid/next)))
-      (update :modified-at #(or % (dt/now)))
-      (update :tokens #(into (d/ordered-map) %))
-      (update :description d/nilv "")
-      (check-token-set-attrs)
-      (map->TokenSet)))
-
 ;; === TokenSets (collection)
 
 (defprotocol ITokenSets
@@ -399,6 +399,9 @@
     :string
     schema:token-set-node]
    [:fn d/ordered-map?]])
+
+(def ^:private check-token-sets
+  (sm/check-fn schema:token-sets :hint "expected valid token sets"))
 
 (def valid-token-sets?
   (sm/validator schema:token-sets))
@@ -567,11 +570,17 @@
              [:fn d/ordered-map?]]]
    [:fn d/ordered-map?]])
 
+(def ^:private check-token-themes
+  (sm/check-fn schema:token-themes :hint "expected valid token themes"))
+
 (def valid-token-themes?
   (sm/validator schema:token-themes))
 
 (def ^:private schema:active-themes
   [:set :string])
+
+(def ^:private check-active-themes
+  (sm/check-fn schema:active-themes :hint "expected valid active themes"))
 
 (def valid-active-token-themes?
   (sm/validator schema:active-themes))
@@ -1105,15 +1114,6 @@ Will return a value that matches this schema:
   [o]
   (and (instance? TokensLib o)
        (validate o)))
-
-(def ^:private check-token-sets
-  (sm/check-fn schema:token-sets :hint "expected valid token sets"))
-
-(def ^:private check-token-themes
-  (sm/check-fn schema:token-themes :hint "expected valid token themes"))
-
-(def ^:private check-active-themes
-  (sm/check-fn schema:active-themes :hint "expected valid active themes"))
 
 (defn- ensure-hidden-theme
   "A helper that is responsible to ensure that the hidden theme always
