@@ -31,7 +31,7 @@
     (watch [_ state _]
       (let [data (dsh/lookup-file-data state)]
         (->> (get data :tokens-lib)
-             (ctob/get-active-themes-set-tokens)
+             (ctob/get-tokens-in-active-sets)
              (sd/resolve-tokens)
              (rx/mapcat #(rx/of (end))))))))
 

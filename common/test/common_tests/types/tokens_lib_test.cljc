@@ -544,10 +544,10 @@
                                                                    (ctob/make-token :name "token-4"
                                                                                     :type :border-radius
                                                                                     :value 4000)}))
-                       (ctob/update-theme ctob/hidden-token-theme-group ctob/hidden-token-theme-name
+                       (ctob/update-theme ctob/hidden-theme-group ctob/hidden-theme-name
                                           #(ctob/enable-sets % #{"set-a" "set-b"})))
 
-        tokens (ctob/get-active-themes-set-tokens tokens-lib)]
+        tokens (ctob/get-tokens-in-active-sets tokens-lib)]
 
     (t/is (= (mapv key tokens) ["token-1" "token-2" "token-3"]))
     (t/is (= (get-in tokens ["token-1" :value]) 100))
@@ -595,7 +595,7 @@
                                                               :sets #{"set-b" "set-c" "set-a"}))
                        (ctob/set-active-themes #{"/single-theme"}))
 
-        tokens (ctob/get-active-themes-set-tokens tokens-lib)]
+        tokens (ctob/get-tokens-in-active-sets tokens-lib)]
 
     ;; Note that sets order inside the theme is undefined. What matters is order in that the
     ;; sets have been added to the library.
@@ -648,7 +648,7 @@
                                                               :sets #{"set-b" "set-a"}))
                        (ctob/set-active-themes #{"/theme-1" "/theme-2"}))
 
-        tokens (ctob/get-active-themes-set-tokens tokens-lib)]
+        tokens (ctob/get-tokens-in-active-sets tokens-lib)]
 
     ;; Note that themes order is irrelevant. What matters is the union of the active sets
     ;; and the order of the sets in the library.
@@ -693,7 +693,7 @@
                                                               :sets #{}))
                        (ctob/set-active-themes #{"App/Web" "Brand/Brand A"}))
 
-        tokens (ctob/get-active-themes-set-tokens tokens-lib)]
+        tokens (ctob/get-tokens-in-active-sets tokens-lib)]
 
     (t/is (= (mapv key tokens) ["red" "border1"]))
     (t/is (= (get-in tokens ["red" :value]) "#ff0000"))
@@ -703,13 +703,13 @@
   (let [tokens-lib (-> (ctob/make-tokens-lib)
                        (ctob/add-set (ctob/make-token-set :name "set-a")))
 
-        tokens (ctob/get-active-themes-set-tokens tokens-lib)]
+        tokens (ctob/get-tokens-in-active-sets tokens-lib)]
 
     (t/is (empty? tokens))))
 
 (t/deftest list-active-themes-tokens-no-sets
   (let [tokens-lib (ctob/make-tokens-lib)
-        tokens (ctob/get-active-themes-set-tokens tokens-lib)]
+        tokens (ctob/get-tokens-in-active-sets tokens-lib)]
 
     (t/is (empty? tokens))))
 
@@ -1327,7 +1327,7 @@
        (t/is (= 1 (count themes)))
        (t/testing "existing theme is default theme"
          (t/is (= (:group first-theme) ""))
-         (t/is (= (:name first-theme) ctob/hidden-token-theme-name)))
+         (t/is (= (:name first-theme) ctob/hidden-theme-name)))
        (t/testing "token exist in dark set"
          (t/is (tht/token-data-eq? (ctob/get-token-in-set lib "dark" "small")
                                    {:name "small"

@@ -47,7 +47,7 @@
       (when (empty? (get state :workspace-editor-state))
         (when-let [tokens (some-> (dsh/lookup-file-data state)
                                   (get :tokens-lib)
-                                  (ctob/get-active-themes-set-tokens))]
+                                  (ctob/get-tokens-in-active-sets))]
           (->> (sd/resolve-tokens tokens)
                (rx/mapcat
                 (fn [resolved-tokens]

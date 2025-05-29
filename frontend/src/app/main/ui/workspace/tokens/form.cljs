@@ -239,7 +239,7 @@
         token (or token {:type token-type})
         token-properties (dwta/get-token-properties token)
         is-color-token (cft/color-token? token)
-        selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
+        tokens-in-selected-set (mf/deref refs/workspace-all-tokens-in-selected-set)
 
         active-theme-tokens (cond-> (mf/deref refs/workspace-active-theme-sets-tokens)
                               ;; Ensure that the resolved value uses the currently editing token
@@ -254,12 +254,12 @@
                     (mf/deps (:name token))
                     #(cft/token-name->path (:name token)))
 
-        selected-set-tokens-tree (mf/use-memo
-                                  (mf/deps token-path selected-set-tokens)
-                                  (fn []
-                                    (-> (ctob/tokens-tree selected-set-tokens)
-                                        ;; Allow setting editing token to it's own path
-                                        (d/dissoc-in token-path))))
+        tokens-tree-in-selected-set (mf/use-memo
+                                     (mf/deps token-path tokens-in-selected-set)
+                                     (fn []
+                                       (-> (ctob/tokens-tree tokens-in-selected-set)
+                                           ;; Allow setting editing token to it's own path
+                                           (d/dissoc-in token-path))))
         cancel-ref  (mf/use-ref nil)
 
         on-cancel-ref
@@ -278,10 +278,10 @@
 
         validate-name
         (mf/use-fn
-         (mf/deps selected-set-tokens-tree)
+         (mf/deps tokens-tree-in-selected-set)
          (fn [value]
            (let [schema (token-name-schema {:token token
-                                            :tokens-tree selected-set-tokens-tree})]
+                                            :tokens-tree tokens-tree-in-selected-set})]
              (m/explain schema (finalize-name value)))))
 
         on-blur-name

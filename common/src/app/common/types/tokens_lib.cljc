@@ -25,14 +25,14 @@
 
 ;; TODO: add again the removed functions and refactor the rest of the module to use them
 
-(def schema:groupable-item
+(def ^:private schema:groupable-item
   [:map {:title "Groupable item"}
    [:name :string]])
 
-(def valid-groupable-item?
+(def ^:private valid-groupable-item?
   (sm/validator schema:groupable-item))
 
-(def xf-map-trim
+(def ^:private xf-map-trim
   (comp
    (map str/trim)
    (remove str/empty?)))
@@ -44,18 +44,22 @@
        (into [] xf-map-trim)
        (not-empty)))
 
-(defn split-path-name [s separator]
-  (let [[path name] (str/split s (re-pattern (str "\\" separator)) 2)]
-    [(or path "") name]))
-
 (defn join-path
   "Regenerate a path as a string, from a vector."
   [path separator]
   (str/join separator path))
 
+(defn split-path-name
+  "Decompose a string in the form 'one.two.three' into a vector with two elements: first the
+   path and second the name, removing spaces (e.g. ['one.two' 'three'])."
+  [path separator]
+  (let [pathv (split-path path separator)]
+    [(join-path (butlast pathv) separator)
+     (last pathv)]))
+
 (defn get-path
-  "Get the path of object by specified separator (E.g. with '.'
-  separator, the 'group.subgroup.name' -> ['group' 'subgroup'])"
+  "Get the path of object by specified separator (E.g. with '.' separator, the
+  'group.subgroup.name' -> ['group' 'subgroup'])"
   [item separator]
   (assert (valid-groupable-item? item) "expected groupable item")
   (->> (split-path (:name item) separator)
@@ -101,7 +105,7 @@
       (check-token-attrs)
       (map->Token)))
 
-(def token-separator ".")
+(def ^:private token-separator ".")
 
 (defn get-token-path
   [token]
@@ -219,7 +223,7 @@
    (sm/required-keys schema:token-set-attrs)
    [:fn token-set?]])
 
-(sm/register! ::token-set schema:token-set) ;; Need to register for the recursive schema of token-sets
+(sm/register! ::token-set schema:token-set) ;; need to register for the recursive schema of token-sets
 
 (def ^:private check-token-set-attrs
   (sm/check-fn schema:token-set-attrs :hint "expected valid params for token-set"))
@@ -237,11 +241,11 @@
       (check-token-set-attrs)
       (map->TokenSet)))
 
-(def set-prefix "S-")
+(def ^:private set-prefix "S-")
 
-(def set-group-prefix "G-")
+(def ^:private set-group-prefix "G-")
 
-(def set-separator "/")
+(def ^:private set-separator "/")
 
 (defn join-set-path [path]
   (join-path path set-separator))
@@ -285,11 +289,11 @@
 (defn add-set-group-prefix [group-path]
   (str set-group-prefix group-path))
 
-(defn get-token-set-path
+(defn get-set-path
   [token-set]
   (get-path token-set set-separator))
 
-(defn split-token-set-name
+(defn split-set-name
   [name]
   (split-path name set-separator))
 
@@ -299,23 +303,23 @@
   If `relative-to` is provided, the normalized name will preserve the
   same group prefix as reference name"
   ([name]
-   (->> (split-token-set-name name)
+   (->> (split-set-name name)
         (str/join set-separator)))
   ([name relative-to]
-   (->> (concat (butlast (split-token-set-name relative-to))
-                (split-token-set-name name))
+   (->> (concat (butlast (split-set-name relative-to))
+                (split-set-name name))
         (str/join set-separator))))
 
 (defn set-name->prefixed-full-path [name-str]
-  (-> (split-token-set-name name-str)
+  (-> (split-set-name name-str)
       (set-full-path->set-prefixed-full-path)))
 
-(defn get-token-set-prefixed-path [token-set]
+(defn get-set-prefixed-path [token-set]
   (let [path (get-path token-set set-separator)]
     (set-full-path->set-prefixed-full-path path)))
 
 (defn prefixed-set-path-string->set-name-string [path-str]
-  (->> (split-token-set-name path-str)
+  (->> (split-set-name path-str)
        (map (fn [path-part]
               (or (-> (split-set-str-path-prefix path-part)
                       (second))
@@ -351,7 +355,8 @@
        (-> acc
            (assoc-in (concat [:tokens-tree] path) token)
            (assoc-in [:ids temp-id] token))))
-   {:tokens-tree {} :ids {}} tokens))
+   {:tokens-tree {} :ids {}}
+   tokens))
 
 ;; === TokenSets (collection)
 
@@ -403,27 +408,27 @@
 (def ^:private check-token-sets
   (sm/check-fn schema:token-sets :hint "expected valid token sets"))
 
-(def valid-token-sets?
+(def ^:private valid-token-sets?
   (sm/validator schema:token-sets))
 
 ;; === TokenTheme
 
-(def theme-separator "/")
+(def ^:private theme-separator "/")
 
-(defn token-theme-path [group name]
+(defn join-theme-path [group name]
   (join-path [group name] theme-separator))
 
-(defn split-token-theme-path [path]
+(defn split-theme-path [path]
   (split-path-name path theme-separator))
 
-(def hidden-token-theme-group
+(def hidden-theme-group
   "")
 
-(def hidden-token-theme-name
+(def hidden-theme-name
   "__PENPOT__HIDDEN__TOKEN__THEME__")
 
-(def hidden-token-theme-path
-  (token-theme-path hidden-token-theme-group hidden-token-theme-name))
+(def hidden-theme-path
+  (join-theme-path hidden-theme-group hidden-theme-name))
 
 (defprotocol ITokenTheme
   (set-sets [_ set-names] "set the active token sets")
@@ -433,9 +438,9 @@
   (disable-sets [_ set-names] "disable sets in theme")
   (toggle-set [_ set-name] "toggle a set enabled / disabled in the theme")
   (update-set-name [_ prev-set-name set-name] "update set-name from `prev-set-name` to `set-name` when it exists")
-  (theme-path [_] "get `token-theme-path` from theme")
+  (theme-path [_] "get `theme-path` from theme")
   (theme-matches-group-name [_ group name] "if a theme matches the given group & name")
-  (hidden-temporary-theme? [_] "if a theme is the (from the user ui) hidden temporary theme"))
+  (hidden-theme? [_] "if a theme is the (from the user ui) hidden temporary theme"))
 
 (defrecord TokenTheme [id name group description is-source external-id modified-at sets]
   ITokenTheme
@@ -479,14 +484,14 @@
       this))
 
   (theme-path [_]
-    (token-theme-path group name))
+    (join-theme-path group name))
 
   (theme-matches-group-name [this group name]
     (and (= (:group this) group)
          (= (:name this) name)))
 
-  (hidden-temporary-theme? [this]
-    (theme-matches-group-name this hidden-token-theme-group hidden-token-theme-name)))
+  (hidden-theme? [this]
+    (theme-matches-group-name this hidden-theme-group hidden-theme-name)))
 
 (defn token-theme?
   [o]
@@ -508,13 +513,13 @@
    (sm/required-keys schema:token-theme-attrs)
    [:fn token-theme?]])
 
-(def check-token-theme
-  (sm/check-fn schema:token-theme :hint "expected a valid token-theme"))
-
 (def ^:private check-token-theme-attrs
   (sm/check-fn schema:token-theme-attrs :hint "expected valid params for token-theme"))
 
-(def top-level-theme-group-name
+(def check-token-theme
+  (sm/check-fn schema:token-theme :hint "expected a valid token-theme"))
+
+(def ^:private top-level-theme-group-name
   "Top level theme groups have an empty string as the theme group."
   "")
 
@@ -535,13 +540,13 @@
         (check-token-theme-attrs)
         (map->TokenTheme))))
 
-(defn make-hidden-token-theme
+(defn make-hidden-theme
   [& {:as attrs}]
   (-> attrs
       (assoc :id uuid/zero)
       (assoc :external-id "")
-      (assoc :group hidden-token-theme-group)
-      (assoc :name hidden-token-theme-name)
+      (assoc :group hidden-theme-group)
+      (assoc :name hidden-theme-name)
       (make-token-theme)))
 
 ;; === TokenThemes (collection)
@@ -573,7 +578,7 @@
 (def ^:private check-token-themes
   (sm/check-fn schema:token-themes :hint "expected valid token themes"))
 
-(def valid-token-themes?
+(def ^:private valid-token-themes?
   (sm/validator schema:token-themes))
 
 (def ^:private schema:active-themes
@@ -582,7 +587,7 @@
 (def ^:private check-active-themes
   (sm/check-fn schema:active-themes :hint "expected valid active themes"))
 
-(def valid-active-token-themes?
+(def ^:private valid-active-token-themes?
   (sm/validator schema:active-themes))
 
 (defn walk-sets-tree-seq
@@ -613,7 +618,7 @@
                       ;; Set
                       (and v (instance? TokenSet v))
                       [{:group? false
-                        :path (split-token-set-name (:name v))
+                        :path (split-set-name (:name v))
                         :parent-path parent
                         :depth depth
                         :set v}]
@@ -661,7 +666,7 @@
                   (and v (instance? TokenSet v))
                   (let [name (:name v)]
                     [{:is-group false
-                      :path (split-token-set-name name)
+                      :path (split-set-name name)
                       :id name
                       :parent-path parent
                       :depth depth
@@ -712,7 +717,7 @@ Will return a value that matches this schema:
 `:none`    None of the nested sets are active
 `:all`     All of the nested sets are active
 `:partial` Mixed active state of nested sets")
-  (get-active-themes-set-tokens [_] "set of set names that are active in the the active themes")
+  (get-tokens-in-active-sets [_] "set of set names that are active in the the active themes")
   (get-all-tokens [_] "all tokens in the lib")
   (validate [_]))
 
@@ -741,7 +746,7 @@ Will return a value that matches this schema:
 
   ITokenSets
   (add-set [_ token-set]
-    (let [path      (get-token-set-prefixed-path token-set)
+    (let [path      (get-set-prefixed-path token-set)
           token-set (check-token-set token-set)]
       (TokensLib. (d/oassoc-in sets path token-set)
                   themes
@@ -753,7 +758,7 @@ Will return a value that matches this schema:
       (if set
         (let [set' (-> (make-token-set (f set))
                        (assoc :modified-at (dt/now)))
-              prefixed-full-path' (get-token-set-prefixed-path set')
+              prefixed-full-path' (get-set-prefixed-path set')
               name-changed? (not= (:name set) (:name set'))]
           (if name-changed?
             (TokensLib. (-> sets
@@ -783,7 +788,7 @@ Will return a value that matches this schema:
                   active-themes)))
 
   (delete-set-group [this set-group-name]
-    (let [path (split-token-set-name set-group-name)
+    (let [path (split-set-name set-group-name)
           prefixed-path (map add-set-group-prefix path)
           child-set-names (->> (get-sets-at-path this path)
                                (map :name)
@@ -798,7 +803,7 @@ Will return a value that matches this schema:
                   active-themes)))
 
   (delete-set-path [_ prefixed-set-name]
-    (let [prefixed-set-path (split-token-set-name prefixed-set-name)
+    (let [prefixed-set-path (split-set-name prefixed-set-name)
           set-node (get-in sets prefixed-set-path)
           set-group? (not (instance? TokenSet set-node))
           set-name-string (prefixed-set-path-string->set-name-string prefixed-set-name)]
@@ -912,7 +917,7 @@ Will return a value that matches this schema:
          (filter (partial instance? TokenSet))))
 
   (get-sets-at-prefix-path [_ prefixed-path-str]
-    (some->> (get-in sets (split-token-set-name prefixed-path-str))
+    (some->> (get-in sets (split-set-name prefixed-path-str))
              (tree-seq d/ordered-map? vals)
              (filter (partial instance? TokenSet))))
 
@@ -968,13 +973,13 @@ Will return a value that matches this schema:
                             (d/dissoc-in [group name])))
                       (if same-path?
                         active-themes
-                        (disj active-themes (token-theme-path group name)))))
+                        (disj active-themes (join-theme-path group name)))))
         this)))
 
   (delete-theme [_ group name]
     (TokensLib. sets
                 (d/dissoc-in themes [group name])
-                (disj active-themes (token-theme-path group name))))
+                (disj active-themes (join-theme-path group name))))
 
   (get-theme-tree [_]
     themes)
@@ -1015,10 +1020,10 @@ Will return a value that matches this schema:
   (deactivate-theme [_ group name]
     (TokensLib. sets
                 themes
-                (disj active-themes (token-theme-path group name))))
+                (disj active-themes (join-theme-path group name))))
 
   (theme-active? [_ group name]
-    (contains? active-themes (token-theme-path group name)))
+    (contains? active-themes (join-theme-path group name)))
 
   (toggle-theme-active? [this group name]
     (if (theme-active? this group name)
@@ -1084,7 +1089,7 @@ Will return a value that matches this schema:
             :else :none))
         :none)))
 
-  (get-active-themes-set-tokens [this]
+  (get-tokens-in-active-sets [this]
     (let [theme-set-names  (get-active-themes-set-names this)
           all-set-names    (get-ordered-set-names this)
           active-set-names (filter theme-set-names all-set-names)
@@ -1099,7 +1104,8 @@ Will return a value that matches this schema:
     (reduce
      (fn [tokens' set]
        (into tokens' (map (fn [x] [(:name x) x]) (get-tokens set))))
-     {} (get-sets this)))
+     {}
+     (get-sets this)))
 
   (validate [_]
     (and (valid-token-sets? sets)
@@ -1108,7 +1114,7 @@ Will return a value that matches this schema:
 
 (defn get-hidden-theme
   [tokens-lib]
-  (get-theme tokens-lib hidden-token-theme-group hidden-token-theme-name))
+  (get-theme tokens-lib hidden-theme-group hidden-theme-name))
 
 (defn valid-tokens-lib?
   [o]
@@ -1119,11 +1125,11 @@ Will return a value that matches this schema:
   "A helper that is responsible to ensure that the hidden theme always
   exists on the themes data structure"
   [themes]
-  (update themes hidden-token-theme-group
+  (update themes hidden-theme-group
           (fn [data]
-            (if (contains? data hidden-token-theme-name)
+            (if (contains? data hidden-theme-name)
               data
-              (d/oassoc data hidden-token-theme-name (make-hidden-token-theme))))))
+              (d/oassoc data hidden-theme-name (make-hidden-theme))))))
 
 (defn make-tokens-lib
   "Create an empty or prepopulated tokens library."
@@ -1131,7 +1137,7 @@ Will return a value that matches this schema:
   (let [sets          (or sets (d/ordered-map))
         themes        (-> (or themes (d/ordered-map))
                           (ensure-hidden-theme))
-        active-themes (or active-themes #{hidden-token-theme-path})]
+        active-themes (or active-themes #{hidden-theme-path})]
     (TokensLib.
      (check-token-sets sets)
      (check-token-themes themes)
@@ -1325,7 +1331,7 @@ Will return a value that matches this schema:
         (or (->> (get metadata "activeThemes")
                  (into #{})
                  (not-empty))
-            #{hidden-token-theme-path})
+            #{hidden-theme-path})
 
         themes
         (->> (get decoded-json "$themes")
@@ -1366,7 +1372,7 @@ Will return a value that matches this schema:
                 ordered-set-names)
 
         library
-        (update-theme library hidden-token-theme-group hidden-token-theme-name
+        (update-theme library hidden-theme-group hidden-theme-name
                       #(assoc % :sets active-set-names))
 
         library
@@ -1374,7 +1380,7 @@ Will return a value that matches this schema:
 
         library
         (reduce (fn [library theme-path]
-                  (let [[group name] (split-token-theme-path theme-path)]
+                  (let [[group name] (split-theme-path theme-path)]
                     (activate-theme library group name)))
                 library
                 active-theme-names)]
@@ -1420,7 +1426,7 @@ Will return a value that matches this schema:
   (let [themes-xform
         (comp
          (filter #(and (instance? TokenTheme %)
-                       (not (hidden-temporary-theme? %))))
+                       (not (hidden-theme? %))))
          (map (fn [token-theme]
                 (let [theme-map (->> token-theme
                                      (into {})
@@ -1439,7 +1445,7 @@ Will return a value that matches this schema:
         ;; Active themes without exposing hidden penpot theme
         active-themes-clear
         (-> (get-active-theme-paths tokens-lib)
-            (disj hidden-token-theme-path))
+            (disj hidden-theme-path))
 
         update-token-fn
         (fn [token]
@@ -1592,7 +1598,7 @@ Will return a value that matches this schema:
            (fn [theme]
              (if (get theme :external-id)
                theme
-               (if (hidden-temporary-theme? theme)
+               (if (hidden-theme? theme)
                  (assoc theme
                         :id uuid/zero
                         :external-id "")

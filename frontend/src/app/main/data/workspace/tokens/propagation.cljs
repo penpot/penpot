@@ -187,7 +187,7 @@
     (watch [_ state _]
       (when-let [tokens-lib (-> (dsh/lookup-file-data state)
                                 (get :tokens-lib))]
-        (->> (ctob/get-active-themes-set-tokens tokens-lib)
+        (->> (ctob/get-tokens-in-active-sets tokens-lib)
              (sd/resolve-tokens)
              (rx/mapcat (fn [sd-tokens]
                           (let [undo-id (js/Symbol)]
