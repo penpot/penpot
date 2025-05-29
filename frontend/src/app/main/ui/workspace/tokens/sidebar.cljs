@@ -269,7 +269,7 @@
         active-theme-tokens
         (mf/with-memo [tokens-lib]
           (if tokens-lib
-            (ctob/get-active-themes-set-tokens tokens-lib)
+            (ctob/get-tokens-in-active-sets tokens-lib)
             {}))
 
         ;; Resolve tokens as second step

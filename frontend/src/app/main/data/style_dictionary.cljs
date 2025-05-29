@@ -138,7 +138,6 @@
   If the `value` is not parseable and/or has missing references returns a map with `:errors`.
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value has-references?]
-
   (let [parsed-value (cft/parse-token-value value)
         out-of-scope (< (:value parsed-value) 0)
         references (seq (ctob/find-token-value-references value))]
@@ -277,7 +276,7 @@
   (let [{:keys [tokens-tree ids]} (ctob/backtrace-tokens-tree tokens)]
     (resolve-tokens-tree tokens-tree  #(get ids (sd-token-uuid %)))))
 
-(defn resolve-tokens-with-errors [tokens]
+(defn resolve-tokens-with-verbose-errors [tokens]
   (resolve-tokens-tree
    (ctob/tokens-tree tokens)
    #(get tokens (sd-token-name %))

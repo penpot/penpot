@@ -411,7 +411,7 @@
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)
         token-name (:token-name mdata)
-        token (mf/deref (refs/workspace-selected-token-set-token token-name))
+        token (mf/deref (refs/workspace-token-in-selected-set token-name))
         selected-token-set-name (mf/deref refs/selected-token-set-name)]
     [:ul {:class (stl/css :context-list)}
      [:& menu-tree {:submenu-offset width

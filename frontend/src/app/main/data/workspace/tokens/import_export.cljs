@@ -74,7 +74,7 @@
     (st/emit! (show-unknown-types-warning unknown-tokens)))
   (try
     (->> (ctob/get-all-tokens tokens-lib)
-         (sd/resolve-tokens-with-errors)
+         (sd/resolve-tokens-with-verbose-errors)
          (rx/map (fn [_]
                    tokens-lib))
          (rx/catch (fn [sd-error]
