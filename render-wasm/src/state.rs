@@ -69,6 +69,7 @@ pub(crate) struct State<'a> {
     pub current_shape: Option<&'a mut Shape>,
     pub shapes: HashMap<Uuid, &'a mut Shape>,
     pub modifiers: HashMap<Uuid, skia::Matrix>,
+    pub scale_content: HashMap<Uuid, f32>,
     pub structure: HashMap<Uuid, Vec<StructureEntry>>,
     pub shapes_pool: ShapesPool,
 }
@@ -81,6 +82,7 @@ impl<'a> State<'a> {
             current_shape: None,
             shapes: HashMap::with_capacity(capacity),
             modifiers: HashMap::new(),
+            scale_content: HashMap::new(),
             structure: HashMap::new(),
             shapes_pool: ShapesPool::new(),
         }
@@ -99,6 +101,7 @@ impl<'a> State<'a> {
             &mut self.shapes,
             &self.modifiers,
             &self.structure,
+            &self.scale_content,
             timestamp,
         )?;
         Ok(())
@@ -109,6 +112,7 @@ impl<'a> State<'a> {
             &mut self.shapes,
             &self.modifiers,
             &self.structure,
+            &self.scale_content,
             timestamp,
         )?;
         Ok(())

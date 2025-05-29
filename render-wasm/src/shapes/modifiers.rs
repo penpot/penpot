@@ -14,6 +14,7 @@ use crate::shapes::{
 use crate::state::State;
 use crate::uuid::Uuid;
 
+#[allow(clippy::too_many_arguments)]
 fn propagate_children(
     shape: &Shape,
     shapes: &HashMap<Uuid, &mut Shape>,
@@ -22,6 +23,7 @@ fn propagate_children(
     transform: Matrix,
     bounds: &HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
+    scale_content: &HashMap<Uuid, f32>,
 ) -> VecDeque<Modifier> {
     let children_ids = modified_children_ids(shape, structure.get(&shape.id));
 
@@ -35,6 +37,8 @@ fn propagate_children(
         let Some(child) = shapes.get(child_id) else {
             continue;
         };
+
+        let ignore_constraints = scale_content.contains_key(child_id);
 
         let child_bounds = bounds.find(child);
 
@@ -73,6 +77,7 @@ fn propagate_children(
             constraint_h,
             constraint_v,
             transform,
+            ignore_constraints,
         );
 
         result.push_back(Modifier::transform(*child_id, transform));
@@ -200,6 +205,7 @@ pub fn propagate_modifiers(
                             transform,
                             &bounds,
                             &state.structure,
+                            &state.scale_content,
                         );
                         entries.append(&mut children);
                     }
@@ -309,6 +315,12 @@ pub fn propagate_modifiers(
                 continue;
             };
 
+            let shape = if let Some(scale_content) = state.scale_content.get(id) {
+                &shape.scale_content(*scale_content)
+            } else {
+                shape
+            };
+
             let Type::Frame(frame_data) = &shape.shape_type else {
                 continue;
             };
@@ -386,6 +398,7 @@ mod tests {
             &bounds_before,
             &bounds_after,
             transform,
+            &HashMap::new(),
             &HashMap::new(),
             &HashMap::new(),
         );

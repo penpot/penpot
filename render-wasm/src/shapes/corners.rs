@@ -21,3 +21,14 @@ pub fn make_corners(raw_corners: (f32, f32, f32, f32)) -> Option<Corners> {
         ])
     }
 }
+
+pub fn scale_corners(corners: &mut Corners, value: f32) {
+    corners[0].x *= value;
+    corners[0].y *= value;
+    corners[1].x *= value;
+    corners[1].y *= value;
+    corners[2].x *= value;
+    corners[2].y *= value;
+    corners[3].x *= value;
+    corners[3].y *= value;
+}

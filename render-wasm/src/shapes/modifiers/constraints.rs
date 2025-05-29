@@ -104,10 +104,12 @@ pub fn propagate_shape_constraints(
     constraint_h: ConstraintH,
     constraint_v: ConstraintV,
     transform: Matrix,
+    ignore_constrainst: bool,
 ) -> Matrix {
     // if the constrains are scale & scale or the transform has only moves we
     // can propagate as is
-    if (constraint_h == ConstraintH::Scale && constraint_v == ConstraintV::Scale)
+    if (ignore_constrainst
+        || constraint_h == ConstraintH::Scale && constraint_v == ConstraintV::Scale)
         || transform.is_translate()
     {
         return transform;

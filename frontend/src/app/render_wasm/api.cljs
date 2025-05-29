@@ -793,17 +793,19 @@
 (defn set-structure-modifiers
   [entries]
   (when-not (empty? entries)
-    (let [offset (mem/alloc-bytes-32 (mem/get-list-size entries 40))
-          heapu32 (mem/get-heap-u32)]
+    (let [offset (mem/alloc-bytes-32 (mem/get-list-size entries 44))
+          heapu32 (mem/get-heap-u32)
+          heapf32 (mem/get-heap-f32)]
       (loop [entries (seq entries)
              current-offset  offset]
         (when-not (empty? entries)
-          (let [{:keys [type parent id index] :as entry} (first entries)]
+          (let [{:keys [type parent id index value] :as entry} (first entries)]
             (sr/heapu32-set-u32 (sr/translate-structure-modifier-type type) heapu32 (+ current-offset 0))
             (sr/heapu32-set-u32 (or index 0) heapu32 (+ current-offset 1))
             (sr/heapu32-set-uuid parent heapu32 (+ current-offset 2))
             (sr/heapu32-set-uuid id heapu32 (+ current-offset 6))
-            (recur (rest entries) (+ current-offset 10)))))
+            (aset heapf32 (+ current-offset 10) value)
+            (recur (rest entries) (+ current-offset 11)))))
       (h/call wasm/internal-module "_set_structure_modifiers"))))
 
 (defn propagate-modifiers

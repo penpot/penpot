@@ -110,6 +110,10 @@ impl Stroke {
         }
     }
 
+    pub fn scale_content(&mut self, value: f32) {
+        self.width *= value;
+    }
+
     pub fn delta(&self) -> f32 {
         match self.kind {
             StrokeKind::Inner => 0.,

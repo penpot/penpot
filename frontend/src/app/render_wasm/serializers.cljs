@@ -281,7 +281,8 @@
   [type]
   (case type
     :remove-children 1
-    :add-children    2))
+    :add-children    2
+    :scale-content 3))
 
 (defn translate-grow-type
   [grow-type]

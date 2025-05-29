@@ -4,6 +4,7 @@ use crate::render::BlendMode;
 use crate::uuid::Uuid;
 use std::cell::OnceCell;
 use std::collections::{HashMap, HashSet};
+use std::iter::once;
 
 mod blurs;
 mod bools;
@@ -108,6 +109,29 @@ impl Type {
             _ => None,
         }
     }
+
+    pub fn scale_content(&mut self, value: f32) {
+        match self {
+            Type::Rect(Rect {
+                corners: Some(corners),
+                ..
+            }) => {
+                corners::scale_corners(corners, value);
+            }
+            Type::Frame(Frame { corners, layout }) => {
+                if let Some(corners) = corners {
+                    corners::scale_corners(corners, value);
+                }
+                if let Some(layout) = layout {
+                    layout.scale_content(value);
+                }
+            }
+            Type::Text(TextContent { paragraphs, .. }) => {
+                paragraphs.iter_mut().for_each(|p| p.scale_content(value));
+            }
+            _ => {}
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Copy)]
@@ -206,6 +230,25 @@ impl Shape {
             layout_item: None,
             extrect: OnceCell::new(),
         }
+    }
+
+    pub fn scale_content(&self, value: f32) -> Self {
+        let mut result = self.clone();
+        result.shape_type.scale_content(value);
+        result
+            .strokes
+            .iter_mut()
+            .for_each(|s| s.scale_content(value));
+        result
+            .shadows
+            .iter_mut()
+            .for_each(|s| s.scale_content(value));
+        result.blur.scale_content(value);
+        result
+            .layout_item
+            .iter_mut()
+            .for_each(|i| i.scale_content(value));
+        result
     }
 
     fn invalidate_extrect(&mut self) {
@@ -364,7 +407,7 @@ impl Shape {
         }
     }
 
-    // FIXME: These arguments could be grouped or simplified
+    // FIXME: These argumoents could be grouped or simplified
     #[allow(clippy::too_many_arguments)]
     pub fn set_grid_layout_data(
         &mut self,
@@ -687,6 +730,17 @@ impl Shape {
         }
     }
 
+    pub fn all_children_with_self(&self, shapes: &HashMap<Uuid, &mut Shape>) -> IndexSet<Uuid> {
+        once(self.id)
+            .chain(self.children_ids().into_iter().flat_map(|id| {
+                shapes
+                    .get(&id)
+                    .map(|s| s.all_children_with_self(shapes))
+                    .unwrap_or_default()
+            }))
+            .collect()
+    }
+
     pub fn image_filter(&self, scale: f32) -> Option<skia::ImageFilter> {
         if !self.blur.hidden {
             match self.blur.blur_type {
@@ -873,6 +927,7 @@ pub fn modified_children_ids(
                 StructureEntryType::RemoveChild => {
                     to_remove.insert(&st.id);
                 }
+                _ => {}
             }
         }
 

@@ -327,10 +327,17 @@ impl RenderState {
 
     pub fn render_shape(
         &mut self,
-        shape: &mut Shape,
+        shape: &Shape,
         modifiers: Option<&Matrix>,
+        scale_content: Option<&f32>,
         clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
     ) {
+        let shape = if let Some(scale_content) = scale_content {
+            &shape.scale_content(*scale_content)
+        } else {
+            shape
+        };
+
         let surface_ids = &[
             SurfaceId::Fills,
             SurfaceId::Strokes,
@@ -542,6 +549,7 @@ impl RenderState {
         tree: &mut HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
+        scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(), String> {
         let scale = self.get_scale();
@@ -585,7 +593,7 @@ impl RenderState {
         self.current_tile = None;
         self.render_in_progress = true;
         self.apply_drawing_to_render_canvas(None);
-        self.process_animation_frame(tree, modifiers, structure, timestamp)?;
+        self.process_animation_frame(tree, modifiers, structure, scale_content, timestamp)?;
         performance::end_measure!("start_render_loop");
         Ok(())
     }
@@ -595,11 +603,12 @@ impl RenderState {
         tree: &mut HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
+        scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(), String> {
         performance::begin_measure!("process_animation_frame");
         if self.render_in_progress {
-            self.render_shape_tree(tree, modifiers, structure, timestamp)?;
+            self.render_shape_tree(tree, modifiers, structure, scale_content, timestamp)?;
             self.flush_and_submit();
 
             if self.render_in_progress {
@@ -709,6 +718,7 @@ impl RenderState {
         tree: &mut HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
+        scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(), String> {
         if !self.render_in_progress {
@@ -815,7 +825,12 @@ impl RenderState {
 
                         self.render_shape_enter(element, mask);
                         if !node_render_state.id.is_nil() {
-                            self.render_shape(element, modifiers.get(&element.id), clip_bounds);
+                            self.render_shape(
+                                element,
+                                modifiers.get(&element.id),
+                                scale_content.get(&element.id),
+                                clip_bounds,
+                            );
                         } else {
                             self.apply_drawing_to_render_canvas(Some(element));
                         }
