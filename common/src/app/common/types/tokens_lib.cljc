@@ -23,6 +23,8 @@
 
 ;; === Groups handling
 
+;; TODO: add again the removed functions and refactor the rest of the module to use them
+
 (def schema:groupable-item
   [:map {:title "Groupable item"}
    [:name :string]])
@@ -51,21 +53,6 @@
   [path separator]
   (str/join separator path))
 
-(defn group-item
-  "Add a group to the item name, in the form group.name."
-  [item group-name separator]
-  (assert (valid-groupable-item? item) "expected groupable item")
-  (update item :name #(dm/str group-name separator %)))
-
-(defn ungroup-item
-  "Remove the first group from the item name."
-  [item separator]
-  (assert (valid-groupable-item? item) "expected groupable item")
-  (update item :name #(-> %
-                          (split-path separator)
-                          (rest)
-                          (join-path separator))))
-
 (defn get-path
   "Get the path of object by specified separator (E.g. with '.'
   separator, the 'group.subgroup.name' -> ['group' 'subgroup'])"
@@ -73,33 +60,6 @@
   (assert (valid-groupable-item? item) "expected groupable item")
   (->> (split-path (:name item) separator)
        (not-empty)))
-
-(defn get-groups-str
-  "Get the groups part of the name. E.g. group.subgroup.name -> group.subgroup"
-  [item separator]
-  (-> (get-path item separator)
-      (butlast)
-      (join-path  separator)))
-
-(defn get-final-name
-  "Get the final part of the name. E.g. group.subgroup.name -> name"
-  [item separator]
-  (assert (valid-groupable-item? item) "expected groupable item")
-  (-> (:name item)
-      (split-path separator)
-      (last)))
-
-(defn group?
-  "Check if a node of the grouping tree is a group or a final item."
-  [item]
-  (d/ordered-map? item))
-
-(defn get-children
-  "Get all children of a group of a grouping tree. Each child is
-   a tuple [name item], where item "
-  [group]
-  (assert (group? group) "expected group node")
-  (seq group))
 
 ;; === Token
 
@@ -175,13 +135,6 @@
                   tokens)]
     (group-by :type tokens')))
 
-(defn filter-by-type [token-type tokens]
-  (let [token-type? #(= token-type (:type %))]
-    (cond
-      (d/ordered-map? tokens) (into (d/ordered-map) (filter (comp token-type? val) tokens))
-      (map? tokens) (into {} (filter (comp token-type? val) tokens))
-      :else (filter token-type? tokens))))
-
 ;; === Token Set
 
 (def set-prefix "S-")
@@ -189,10 +142,6 @@
 (def set-group-prefix "G-")
 
 (def set-separator "/")
-
-(defn join-set-path-str [& args]
-  (->> (filter some? args)
-       (str/join set-separator)))
 
 (defn join-set-path [path]
   (join-path path set-separator))
@@ -233,26 +182,8 @@
   (-> (set-group-path->set-group-prefixed-path path)
       (join-set-path)))
 
-(defn split-set-prefix [set-path]
-  (some->> set-path
-           (re-matches #"^([SG]-)(.*)")
-           (rest)))
-
-(defn add-set-prefix [set-name]
-  (str set-prefix set-name))
-
 (defn add-set-group-prefix [group-path]
   (str set-group-prefix group-path))
-
-(defn add-token-set-paths-prefix
-  "Returns token-set paths with prefixes to differentiate between sets and set-groups.
-
-  Sets will be prefixed with `set-prefix` (S-).
-  Set groups will be prefixed with `set-group-prefix` (G-)."
-  [paths]
-  (let [set-path (mapv add-set-group-prefix (butlast paths))
-        set-name (add-set-prefix (last paths))]
-    (conj set-path set-name)))
 
 (defn get-token-set-path
   [token-set]
@@ -274,12 +205,6 @@
    (->> (concat (butlast (split-token-set-name relative-to))
                 (split-token-set-name name))
         (str/join set-separator))))
-
-;; FIXME: revisit
-(defn get-token-set-final-name
-  [name]
-  (-> (split-token-set-name name)
-      (peek)))
 
 (defn set-name->prefixed-full-path [name-str]
   (-> (split-token-set-name name-str)
@@ -328,9 +253,7 @@
            (assoc-in [:ids temp-id] token))))
    {:tokens-tree {} :ids {}} tokens))
 
-
 (defprotocol ITokenSet
-  (update-name [_ set-name] "change a token set name while keeping the path")
   (add-token [_ token] "add a token at the end of the list")
   (update-token [_ token-name f] "update a token in the list")
   (delete-token [_ token-name] "delete a token from the list")
@@ -339,16 +262,6 @@
 
 (defrecord TokenSet [id name description modified-at tokens]
   ITokenSet
-  (update-name [_ set-name]
-    (TokenSet. id
-               (-> (split-token-set-name name)
-                   (drop-last)
-                   (concat [set-name])
-                   (join-set-path))
-               description
-               (dt/now)
-               tokens))
-
   (add-token [_ token]
     (let [token (check-token token)]
       (TokenSet. id
@@ -424,9 +337,6 @@
 
 (sm/register! ::token-set schema:token-set)
 
-(def valid-token-set?
-  (sm/validator schema:token-set))
-
 (def check-token-set
   (sm/check-fn schema:token-set :hint "expected valid token set"))
 
@@ -469,15 +379,12 @@
   (move-set-group [_ from-path to-path before-path before-group?] "Move token set group at `from-path` to `to-path` and order it before `before-path` with `before-group?`.")
   (set-count [_] "get the total number if sets in the library")
   (get-set-tree [_] "get a nested tree of all sets in the library")
-  (get-in-set-tree [_ path] "get `path` in nested tree of all sets in the library")
   (get-sets [_] "get an ordered sequence of all sets in the library")
-  (get-path-sets [_ path] "get an ordered sequence of sets at `path` in the library")
   (get-sets-at-prefix-path [_ prefixed-path-str] "get an ordered sequence of sets at `prefixed-path-str` in the library")
   (get-sets-at-path [_ path-str] "get an ordered sequence of sets at `path` in the library")
   (rename-set-group [_ from-path-str to-path-str] "renames set groups and all child set names from `from-path-str` to `to-path-str`")
   (get-ordered-set-names [_] "get an ordered sequence of all sets names in the library")
-  (get-set [_ set-name] "get one set looking for name")
-  (get-neighbor-set-name [_ set-name index-offset] "get neighboring set name offset by `index-offset`"))
+  (get-set [_ set-name] "get one set looking for name"))
 
 (def schema:token-set-node
   [:schema {:registry {::node [:or ::token-set
@@ -598,11 +505,6 @@
    (sm/required-keys schema:token-theme-attrs)
    [:fn token-theme?]])
 
-(sm/register! ::token-theme schema:token-theme)
-
-(def valid-token-theme?
-  (sm/validator schema:token-theme))
-
 (def check-token-theme
   (sm/check-fn schema:token-theme :hint "expected a valid token-theme"))
 
@@ -674,7 +576,6 @@
 (def valid-active-token-themes?
   (sm/validator schema:active-themes))
 
-;; DEPRECATED
 (defn walk-sets-tree-seq
   "Walk sets tree as a flat list.
 
@@ -861,8 +762,6 @@ Will return a value that matches this schema:
                         active-themes)))
         this)))
 
-
-
   (delete-set [_ set-name]
     (let [prefixed-path (set-name->prefixed-full-path set-name)]
       (TokensLib. (d/dissoc-in sets prefixed-path)
@@ -999,17 +898,9 @@ Will return a value that matches this schema:
   (get-set-tree [_]
     sets)
 
-  (get-in-set-tree [_ path]
-    (get-in sets path))
-
   (get-sets [_]
     (->> (tree-seq d/ordered-map? vals sets)
          (filter (partial instance? TokenSet))))
-
-  (get-path-sets [_ name]
-    (some->> (get-in sets (split-token-set-name name))
-             (tree-seq d/ordered-map? vals)
-             (filter (partial instance? TokenSet))))
 
   (get-sets-at-prefix-path [_ prefixed-path-str]
     (some->> (get-in sets (split-token-set-name prefixed-path-str))
@@ -1042,13 +933,6 @@ Will return a value that matches this schema:
   (get-set [_ set-name]
     (let [path (set-name->prefixed-full-path set-name)]
       (get-in sets path)))
-
-  (get-neighbor-set-name [this set-name index-offset]
-    (let [sets (get-ordered-set-names this)
-          index (d/index-of sets set-name)
-          neighbor-set-name (when index
-                              (nth sets (+ index-offset index) nil))]
-      neighbor-set-name))
 
   ITokenThemes
   (add-theme [_ token-theme]
@@ -1208,7 +1092,6 @@ Will return a value that matches this schema:
        (into tokens' (map (fn [x] [(:name x) x]) (get-tokens set))))
      {} (get-sets this)))
 
-  ;; FIXME: revisit if this still necessary
   (validate [_]
     (and (valid-token-sets? sets)
          (valid-token-themes? themes)
@@ -1242,11 +1125,6 @@ Will return a value that matches this schema:
               data
               (d/oassoc data hidden-token-theme-name (make-hidden-token-theme))))))
 
-;; NOTE: is possible that ordered map is not the most apropriate
-;; data structure and maybe we need a specific that allows us an
-;; easy way to reorder it, or just store inside Tokens data
-;; structure the data and the order separately as we already do
-;; with pages and pages-index.
 (defn make-tokens-lib
   "Create an empty or prepopulated tokens library."
   [& {:keys [sets themes active-themes]}]
@@ -1558,7 +1436,7 @@ Will return a value that matches this schema:
              (tree-seq d/ordered-map? vals)
              (into [] themes-xform))
 
-          ;; Active themes without exposing hidden penpot theme
+        ;; Active themes without exposing hidden penpot theme
         active-themes-clear
         (-> (get-active-theme-paths tokens-lib)
             (disj hidden-token-theme-path))
