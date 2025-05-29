@@ -287,7 +287,7 @@
          (fn []
            (when on-reverse-stops
              (on-reverse-stops))))
-        cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :binary-fills))
+        cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
         add-stop-disabled? (when cap-stops? (>= (count stops) shp/MAX-GRADIENT-STOPS))]
 
     [:div {:class (stl/css :gradient-panel)}

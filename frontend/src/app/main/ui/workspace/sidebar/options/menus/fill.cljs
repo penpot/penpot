@@ -56,7 +56,7 @@
         values               (d/without-nils values)
         fills                (:fills values)
         has-fills?           (or (= :multiple fills) (some? (seq fills)))
-        can-add-fills?       (and (contains? cfg/flags :binary-fills) (not (= :multiple fills)) (< (count fills) shp/MAX-FILLS))
+        can-add-fills?       (and (contains? cfg/flags :frontend-binary-fills) (not (= :multiple fills)) (< (count fills) shp/MAX-FILLS))
 
         state*               (mf/use-state has-fills?)
         open?                (deref state*)

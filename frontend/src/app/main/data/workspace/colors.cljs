@@ -822,7 +822,7 @@
     (update [_ state]
       (update state :colorpicker
               (fn [{:keys [stops editing-stop] :as state}]
-                (let [cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :binary-fills))
+                (let [cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
                       can-add-stop? (or (not cap-stops?) (< (count stops) shp/MAX-GRADIENT-STOPS))]
                   (if can-add-stop?
                     (if (cc/uniform-spread? stops)
@@ -868,7 +868,7 @@
       (update state :colorpicker
               (fn [state]
                 (let [stops (:stops state)
-                      cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :binary-fills))
+                      cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
                       can-add-stop? (or (not cap-stops?) (< (count stops) shp/MAX-GRADIENT-STOPS))]
                   (if can-add-stop? (let [new-stop (-> (cc/interpolate-gradient stops offset)
                                                        (split-color-components))
@@ -889,7 +889,7 @@
       (update state :colorpicker
               (fn [state]
                 (let [stop  (or (:editing-stop state) 0)
-                      cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :binary-fills))
+                      cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
                       stops (mapv split-color-components (if cap-stops? (take shp/MAX-GRADIENT-STOPS stops) stops))]
                   (-> state
                       (assoc :current-color (get stops stop))

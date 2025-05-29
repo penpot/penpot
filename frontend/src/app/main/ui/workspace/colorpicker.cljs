@@ -338,7 +338,7 @@
          (fn [value]
            (st/emit! (dc/update-colorpicker-gradient-opacity (/ value 100)))))
 
-        cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :binary-fills))
+        cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
 
         tabs
         #js [#js {:aria-label (tr "workspace.libraries.colors.rgba")

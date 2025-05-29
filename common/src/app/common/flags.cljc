@@ -127,7 +127,8 @@
     :render-wasm-dpr
     :hide-release-modal
     :subscriptions
-    :subscriptions-old})
+    :subscriptions-old
+    :frontend-binary-fills})
 
 (def all-flags
   (set/union email login varia))
