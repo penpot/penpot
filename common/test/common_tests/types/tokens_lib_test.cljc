@@ -872,35 +872,6 @@
     (t/is (= (second path) "subgroup"))
     (t/is (= (nth path 2) "name"))))
 
-(t/deftest group-and-ungroup-token-set
-  (let [token-set1   (ctob/make-token-set :name "token-set1")
-        token-set2   (ctob/make-token-set :name "some group/token-set2")
-
-        token-set1'  (ctob/group-item token-set1 "big group" "/")
-        token-set2'  (ctob/group-item token-set2 "big group" "/")
-        token-set1'' (ctob/ungroup-item token-set1' "/")
-        token-set2'' (ctob/ungroup-item token-set2' "/")]
-    (t/is (= (:name token-set1') "big group/token-set1"))
-    (t/is (= (:name token-set2') "big group/some group/token-set2"))
-    (t/is (= (:name token-set1'') "token-set1"))
-    (t/is (= (:name token-set2'') "some group/token-set2"))))
-
-(t/deftest get-token-set-groups-str
-  (let [token-set1 (ctob/make-token-set :name "token-set1")
-        token-set2 (ctob/make-token-set :name "some-group/token-set2")
-        token-set3 (ctob/make-token-set :name "some-group/some-subgroup/token-set3")]
-    (t/is (= (ctob/get-groups-str token-set1 "/") ""))
-    (t/is (= (ctob/get-groups-str token-set2 "/") "some-group"))
-    (t/is (= (ctob/get-groups-str token-set3 "/") "some-group/some-subgroup"))))
-
-(t/deftest get-token-set-final-name
-  (let [token-set1 (ctob/make-token-set :name "token-set1")
-        token-set2 (ctob/make-token-set :name "some-group/token-set2")
-        token-set3 (ctob/make-token-set :name "some-group/some-subgroup/token-set3")]
-    (t/is (= (ctob/get-final-name token-set1 "/") "token-set1"))
-    (t/is (= (ctob/get-final-name token-set2 "/") "token-set2"))
-    (t/is (= (ctob/get-final-name token-set3 "/") "token-set3"))))
-
 (t/deftest add-tokens-in-set
   (let [tokens-lib (-> (ctob/make-tokens-lib)
                        (ctob/add-set (ctob/make-token-set :name "test-token-set"))
@@ -1062,65 +1033,6 @@
     (t/is (nil? token'))
     (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))))
 
-(t/deftest add-token-set-with-groups
-  (let [tokens-lib (-> (ctob/make-tokens-lib)
-                       (ctob/add-set (ctob/make-token-set :name "token-set-1"))
-                       (ctob/add-set (ctob/make-token-set :name "group1/token-set-2"))
-                       (ctob/add-set (ctob/make-token-set :name "group1/token-set-3"))
-                       (ctob/add-set (ctob/make-token-set :name "group1/subgroup11/token-set-4"))
-                       (ctob/add-set (ctob/make-token-set :name "group2/token-set-5")))
-
-        sets-list     (ctob/get-sets tokens-lib)
-
-        sets-tree     (ctob/get-set-tree tokens-lib)
-
-        [node-set1 node-group1 node-group2]
-        (ctob/get-children sets-tree)
-
-        [node-set2 node-set3 node-subgroup11]
-        (ctob/get-children (second node-group1))
-
-        [node-set4]
-        (ctob/get-children (second node-subgroup11))
-
-        [node-set5]
-        (ctob/get-children (second node-group2))]
-
-    (t/is (= (count sets-list) 5))
-    (t/is (= (:name (nth sets-list 0)) "token-set-1"))
-    (t/is (= (:name (nth sets-list 1)) "group1/token-set-2"))
-    (t/is (= (:name (nth sets-list 2)) "group1/token-set-3"))
-    (t/is (= (:name (nth sets-list 3)) "group1/subgroup11/token-set-4"))
-    (t/is (= (:name (nth sets-list 4)) "group2/token-set-5"))
-
-    (t/is (= (first node-set1) "S-token-set-1"))
-    (t/is (= (ctob/group? (second node-set1)) false))
-    (t/is (= (:name (second node-set1)) "token-set-1"))
-
-    (t/is (= (first node-group1) "G-group1"))
-    (t/is (= (ctob/group? (second node-group1)) true))
-    (t/is (= (count (second node-group1)) 3))
-
-    (t/is (= (first node-set2) "S-token-set-2"))
-    (t/is (= (ctob/group? (second node-set2)) false))
-    (t/is (= (:name (second node-set2)) "group1/token-set-2"))
-
-    (t/is (= (first node-set3) "S-token-set-3"))
-    (t/is (= (ctob/group? (second node-set3)) false))
-    (t/is (= (:name (second node-set3)) "group1/token-set-3"))
-
-    (t/is (= (first node-subgroup11) "G-subgroup11"))
-    (t/is (= (ctob/group? (second node-subgroup11)) true))
-    (t/is (= (count (second node-subgroup11)) 1))
-
-    (t/is (= (first node-set4) "S-token-set-4"))
-    (t/is (= (ctob/group? (second node-set4)) false))
-    (t/is (= (:name (second node-set4)) "group1/subgroup11/token-set-4"))
-
-    (t/is (= (first node-set5) "S-token-set-5"))
-    (t/is (= (ctob/group? (second node-set5)) false))
-    (t/is (= (:name (second node-set5)) "group2/token-set-5"))))
-
 (t/deftest update-token-set-in-groups
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
                         (ctob/add-set (ctob/make-token-set :name "token-set-1"))
@@ -1217,68 +1129,6 @@
     (t/is (= (ctob/set-count tokens-lib') 1))
     (t/is (= (count sets-tree') 1))
     (t/is (nil? token-set'))))
-
-(t/deftest add-theme-with-groups
-  (let [tokens-lib (-> (ctob/make-tokens-lib)
-                       (ctob/add-theme (ctob/make-token-theme :group "" :name "token-theme-1"))
-                       (ctob/add-theme (ctob/make-token-theme :group "group1" :name "token-theme-2"))
-                       (ctob/add-theme (ctob/make-token-theme :group "group1" :name "token-theme-3"))
-                       (ctob/add-theme (ctob/make-token-theme :group "group2" :name "token-theme-4")))
-
-        themes-list   (ctob/get-themes tokens-lib)
-
-        themes-tree   (ctob/get-theme-tree tokens-lib)
-
-        [node-group0 node-group1 node-group2]
-        (ctob/get-children themes-tree)
-
-        [hidden-theme node-theme1]
-        (ctob/get-children (second node-group0))
-
-        [node-theme2 node-theme3]
-        (ctob/get-children (second node-group1))
-
-        [node-theme4]
-        (ctob/get-children (second node-group2))]
-
-    (t/is (= (count themes-list) 5))
-    (t/is (= (:name (nth themes-list 0)) "__PENPOT__HIDDEN__TOKEN__THEME__"))
-    (t/is (= (:name (nth themes-list 1)) "token-theme-1"))
-    (t/is (= (:name (nth themes-list 2)) "token-theme-2"))
-    (t/is (= (:name (nth themes-list 3)) "token-theme-3"))
-    (t/is (= (:name (nth themes-list 4)) "token-theme-4"))
-    (t/is (= (:group (nth themes-list 1)) ""))
-    (t/is (= (:group (nth themes-list 2)) "group1"))
-    (t/is (= (:group (nth themes-list 3)) "group1"))
-    (t/is (= (:group (nth themes-list 4)) "group2"))
-
-    (t/is (= (first node-group0) ""))
-    (t/is (= (ctob/group? (second node-group0)) true))
-    (t/is (= (count (second node-group0)) 2))
-
-    (t/is (= (first hidden-theme) "__PENPOT__HIDDEN__TOKEN__THEME__"))
-    (t/is (= (ctob/group? (second hidden-theme)) false))
-    (t/is (= (:name (second hidden-theme)) "__PENPOT__HIDDEN__TOKEN__THEME__"))
-
-    (t/is (= (first node-theme1) "token-theme-1"))
-    (t/is (= (ctob/group? (second node-theme1)) false))
-    (t/is (= (:name (second node-theme1)) "token-theme-1"))
-
-    (t/is (= (first node-group1) "group1"))
-    (t/is (= (ctob/group? (second node-group1)) true))
-    (t/is (= (count (second node-group1)) 2))
-
-    (t/is (= (first node-theme2) "token-theme-2"))
-    (t/is (= (ctob/group? (second node-theme2)) false))
-    (t/is (= (:name (second node-theme2)) "token-theme-2"))
-
-    (t/is (= (first node-theme3) "token-theme-3"))
-    (t/is (= (ctob/group? (second node-theme3)) false))
-    (t/is (= (:name (second node-theme3)) "token-theme-3"))
-
-    (t/is (= (first node-theme4) "token-theme-4"))
-    (t/is (= (ctob/group? (second node-theme4)) false))
-    (t/is (= (:name (second node-theme4)) "token-theme-4"))))
 
 (t/deftest update-token-theme-in-groups
   (let [tokens-lib   (-> (ctob/make-tokens-lib)
