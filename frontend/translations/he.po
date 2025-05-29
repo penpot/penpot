@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-27 09:01+0000\n"
+"PO-Revision-Date: 2025-05-30 09:01+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -6802,7 +6802,6 @@ msgid "workspace.tokens.opacity-range"
 msgstr "שקיפות צריכה להיות בין 0 ל־100% או 0 ו־1 (כלומר 50% או 0.5)."
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:124
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "ערך מקורי: %s"
 
@@ -6824,7 +6823,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "שגיאות הפניה: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/tokens/form.cljs:219, src/app/main/ui/workspace/tokens/form.cljs:223, src/app/main/ui/workspace/tokens/token_pill.cljs:125
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "ערך פתור: %s"
 
@@ -6876,7 +6874,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "רשימת ערכות עיצוב"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:573, src/app/main/ui/workspace/tokens/form.cljs:574
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "תיאור"
 
@@ -7314,3 +7311,46 @@ msgstr ""
 #: src/app/main/errors.cljs:265
 msgid "errors.deprecated.contact.before"
 msgstr "למרות ש־Penpot לא תומך יותר בסוג המשאבים הזה, אפשר"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:24
+msgid "workspace.tokens.invalid-json-token-name-detail"
+msgstr ""
+"„%s” אינו שם תקף לאסימון.\n"
+"שמות האסימונים יכולים להכיל אותיות וספרות מופרדים בתווי . ואסור שיתחילו "
+"בדולר ($)."
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:93
+msgid "workspace.tokens.setting-description"
+msgstr "כאן אפשר להגדיר את גודל הכתב הבסיסי, שמגדיר את הערך של 1rem:"
+
+#: src/app/main/ui/dashboard/subscription.cljs:62
+msgid "subscription.dashboard.power-up.trial.top-description"
+msgstr "עורכים נוספים, אחסון וגרסה נשמרת אוטומטית, גיבוי קבצים ועוד."
+
+#: src/app/main/ui/dashboard/subscription.cljs:61
+msgid "subscription.dashboard.power-up.trial.top-title"
+msgstr "תוכנית לא מוגבלת (ניסיון)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:67
+msgid "subscription.dashboard.power-up.unlimited-plan"
+msgstr "תוכנית לא מוגבלת"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:23
+msgid "workspace.tokens.invalid-json-token-name"
+msgstr "שגיאת ייבוא: שם אסימון שגוי ב־JSON."
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:85
+msgid "workspace.tokens.settings"
+msgstr "הגדרות אסימונים"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:65, src/app/main/data/workspace/tokens/warnings.cljs:19
+msgid "workspace.tokens.stroke-width-range"
+msgstr "עובי הקו חייב להיות גדול או שווה ל־0."
+
+#: src/app/main/data/style_dictionary.cljs:296
+msgid "workspace.tokens.unknown-token-type-section"
+msgstr "הסוג ‚%s’ לא נתמך (%s)\n"
+
+#: src/app/main/data/style_dictionary.cljs:294
+msgid "workspace.tokens.unknown-token-type"
+msgstr "אסימונים שנפסחו"
