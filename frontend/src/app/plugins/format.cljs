@@ -139,6 +139,8 @@
             :path path
             :color color
             :opacity opacity
+            :refId (format-id ref-id)
+            :refFile (format-id ref-file)
             :gradient (format-gradient gradient)
             :image (format-image image)}))))
 
@@ -188,6 +190,7 @@
 ;;  fillColorRefId?: string;
 ;;  fillImage?: ImageData;
 ;;}
+
 (defn format-fill
   [{:keys [fill-color fill-opacity fill-color-gradient fill-color-ref-file fill-color-ref-id fill-image] :as fill}]
   (when (some? fill)

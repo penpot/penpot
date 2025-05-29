@@ -7,13 +7,13 @@
 (ns app.common.types.path.impl
   "Contains schemas and data type implementation for PathData binary
   and plain formats"
-  #?(:cljs
-     (:require-macros [app.common.types.path.impl :refer [read-float read-short write-float write-short]]))
   (:refer-clojure :exclude [-lookup -reduce])
+  #?(:cljs (:require-macros [app.common.types.path.impl]))
   (:require
    #?(:clj [app.common.fressian :as fres])
    #?(:clj [clojure.data.json :as json])
    #?(:cljs [app.common.weak-map :as weak-map])
+   [app.common.buffer :as buf]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
@@ -42,93 +42,42 @@
 ;; IMPL HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmacro read-short
-  [target offset]
-  (if (:ns &env)
-    `(.getInt16 ~target ~offset true)
-    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
-      `(.getShort ~target ~offset))))
-
-(defmacro read-float
-  [target offset]
-  (if (:ns &env)
-    `(.getFloat32 ~target ~offset true)
-    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
-      `(double (.getFloat ~target ~offset)))))
-
-(defmacro write-float
-  [target offset value]
-  (if (:ns &env)
-    `(.setFloat32 ~target ~offset ~value true)
-    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
-      `(.putFloat ~target ~offset ~value))))
-
-(defmacro write-short
-  [target offset value]
-  (if (:ns &env)
-    `(.setInt16 ~target ~offset ~value true)
-    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
-      `(.putShort ~target ~offset ~value))))
-
 (defmacro with-cache
   "A helper macro that facilitates cache handling for content
   instance, only relevant on CLJS"
   [target key & expr]
   (if (:ns &env)
-    (let [cache (gensym "cache-")
-          target (with-meta target {:tag 'js})]
-      `(let [~cache (.-cache ~target)
-             ~'result (.get ~cache ~key)]
+    (let [target (with-meta target {:tag 'js})]
+      `(let [~'cache  (.-cache ~target)
+             ~'result (.get ~'cache ~key)]
          (if ~'result
            (do
              ~'result)
            (let [~'result (do ~@expr)]
-             (.set ~cache ~key ~'result)
+             (.set ~'cache ~key ~'result)
              ~'result))))
     `(do ~@expr)))
-
-(defn- allocate
-  [n-segments]
-  #?(:clj (let [buffer (ByteBuffer/allocate (* n-segments SEGMENT-BYTE-SIZE))]
-            (.order buffer ByteOrder/LITTLE_ENDIAN))
-     :cljs (new js/ArrayBuffer (* n-segments SEGMENT-BYTE-SIZE))))
-
-(defn- clone-buffer
-  [buffer]
-  #?(:clj
-     (let [src (.array ^ByteBuffer buffer)
-           len (alength ^bytes src)
-           dst (byte-array len)]
-       (System/arraycopy src 0 dst 0 len)
-       (let [buffer (ByteBuffer/wrap dst)]
-         (.order buffer ByteOrder/LITTLE_ENDIAN)))
-     :cljs
-     (let [src-view (js/Uint32Array. buffer)
-           dst-buff (js/ArrayBuffer. (.-byteLength buffer))
-           dst-view (js/Uint32Array. dst-buff)]
-       (.set dst-view src-view)
-       dst-buff)))
 
 (defn- impl-transform-segment
   "Apply a transformation to a segment located under specified offset"
   [buffer offset a b c d e f]
-  (let [t (read-short buffer offset)]
+  (let [t (buf/read-short buffer offset)]
     (case t
       (1 2)
-      (let [x (read-float buffer (+ offset 20))
-            y (read-float buffer (+ offset 24))
+      (let [x (buf/read-float buffer (+ offset 20))
+            y (buf/read-float buffer (+ offset 24))
             x (+ (* x a) (* y c) e)
             y (+ (* x b) (* y d) f)]
-        (write-float buffer (+ offset 20) x)
-        (write-float buffer (+ offset 24) y))
+        (buf/write-float buffer (+ offset 20) x)
+        (buf/write-float buffer (+ offset 24) y))
 
       3
-      (let [c1x (read-float buffer (+ offset 4))
-            c1y (read-float buffer (+ offset 8))
-            c2x (read-float buffer (+ offset 12))
-            c2y (read-float buffer (+ offset 16))
-            x   (read-float buffer (+ offset 20))
-            y   (read-float buffer (+ offset 24))
+      (let [c1x (buf/read-float buffer (+ offset 4))
+            c1y (buf/read-float buffer (+ offset 8))
+            c2x (buf/read-float buffer (+ offset 12))
+            c2y (buf/read-float buffer (+ offset 16))
+            x   (buf/read-float buffer (+ offset 20))
+            y   (buf/read-float buffer (+ offset 24))
 
             c1x (+ (* c1x a) (* c1y c) e)
             c1y (+ (* c1x b) (* c1y d) f)
@@ -137,12 +86,12 @@
             x   (+ (* x a) (* y c) e)
             y   (+ (* x b) (* y d) f)]
 
-        (write-float buffer (+ offset 4) c1x)
-        (write-float buffer (+ offset 8) c1y)
-        (write-float buffer (+ offset 12) c2x)
-        (write-float buffer (+ offset 16) c2y)
-        (write-float buffer (+ offset 20) x)
-        (write-float buffer (+ offset 24) y))
+        (buf/write-float buffer (+ offset 4) c1x)
+        (buf/write-float buffer (+ offset 8) c1y)
+        (buf/write-float buffer (+ offset 12) c2x)
+        (buf/write-float buffer (+ offset 16) c2y)
+        (buf/write-float buffer (+ offset 20) x)
+        (buf/write-float buffer (+ offset 24) y))
 
       nil)))
 
@@ -166,13 +115,13 @@
          result (transient initial)]
     (if (< index size)
       (let [offset (* index SEGMENT-BYTE-SIZE)
-            type   (read-short buffer offset)
-            c1x    (read-float buffer (+ offset 4))
-            c1y    (read-float buffer (+ offset 8))
-            c2x    (read-float buffer (+ offset 12))
-            c2y    (read-float buffer (+ offset 16))
-            x      (read-float buffer (+ offset 20))
-            y      (read-float buffer (+ offset 24))
+            type   (buf/read-short buffer offset)
+            c1x    (buf/read-float buffer (+ offset 4))
+            c1y    (buf/read-float buffer (+ offset 8))
+            c2x    (buf/read-float buffer (+ offset 12))
+            c2y    (buf/read-float buffer (+ offset 16))
+            x      (buf/read-float buffer (+ offset 20))
+            y      (buf/read-float buffer (+ offset 24))
             type   (case type
                      1 :line-to
                      2 :move-to
@@ -191,13 +140,13 @@
          result initial]
     (if (< index size)
       (let [offset (* index SEGMENT-BYTE-SIZE)
-            type   (read-short buffer offset)
-            c1x    (read-float buffer (+ offset 4))
-            c1y    (read-float buffer (+ offset 8))
-            c2x    (read-float buffer (+ offset 12))
-            c2y    (read-float buffer (+ offset 16))
-            x      (read-float buffer (+ offset 20))
-            y      (read-float buffer (+ offset 24))
+            type   (buf/read-short buffer offset)
+            c1x    (buf/read-float buffer (+ offset 4))
+            c1y    (buf/read-float buffer (+ offset 8))
+            c2x    (buf/read-float buffer (+ offset 12))
+            c2y    (buf/read-float buffer (+ offset 16))
+            x      (buf/read-float buffer (+ offset 20))
+            y      (buf/read-float buffer (+ offset 24))
             type   (case type
                      1 :line-to
                      2 :move-to
@@ -212,13 +161,13 @@
 (defn impl-lookup
   [buffer index f]
   (let [offset (* index SEGMENT-BYTE-SIZE)
-        type   (read-short buffer offset)
-        c1x    (read-float buffer (+ offset 4))
-        c1y    (read-float buffer (+ offset 8))
-        c2x    (read-float buffer (+ offset 12))
-        c2y    (read-float buffer (+ offset 16))
-        x      (read-float buffer (+ offset 20))
-        y      (read-float buffer (+ offset 24))
+        type   (buf/read-short buffer offset)
+        c1x    (buf/read-float buffer (+ offset 4))
+        c1y    (buf/read-float buffer (+ offset 8))
+        c2x    (buf/read-float buffer (+ offset 12))
+        c2y    (buf/read-float buffer (+ offset 16))
+        x      (buf/read-float buffer (+ offset 20))
+        y      (buf/read-float buffer (+ offset 24))
         type   (case type
                  1 :line-to
                  2 :move-to
@@ -230,27 +179,27 @@
 (defn- to-string-segment*
   [buffer offset type ^StringBuilder builder]
   (case (long type)
-    1 (let [x (read-float buffer (+ offset 20))
-            y (read-float buffer (+ offset 24))]
+    1 (let [x (buf/read-float buffer (+ offset 20))
+            y (buf/read-float buffer (+ offset 24))]
         (doto builder
           (.append "M")
           (.append x)
           (.append ",")
           (.append y)))
-    2 (let [x (read-float buffer (+ offset 20))
-            y (read-float buffer (+ offset 24))]
+    2 (let [x (buf/read-float buffer (+ offset 20))
+            y (buf/read-float buffer (+ offset 24))]
         (doto builder
           (.append "L")
           (.append x)
           (.append ",")
           (.append y)))
 
-    3 (let [c1x (read-float buffer (+ offset 4))
-            c1y (read-float buffer (+ offset 8))
-            c2x (read-float buffer (+ offset 12))
-            c2y (read-float buffer (+ offset 16))
-            x   (read-float buffer (+ offset 20))
-            y   (read-float buffer (+ offset 24))]
+    3 (let [c1x (buf/read-float buffer (+ offset 4))
+            c1y (buf/read-float buffer (+ offset 8))
+            c2x (buf/read-float buffer (+ offset 12))
+            c2y (buf/read-float buffer (+ offset 16))
+            x   (buf/read-float buffer (+ offset 20))
+            y   (buf/read-float buffer (+ offset 24))]
         (doto builder
           (.append "C")
           (.append c1x)
@@ -275,7 +224,7 @@
     (loop [index 0]
       (when (< index size)
         (let [offset (* index SEGMENT-BYTE-SIZE)
-              type   (read-short buffer offset)]
+              type   (buf/read-short buffer offset)]
           (to-string-segment* buffer offset type builder)
           (recur (inc index)))))
 
@@ -285,26 +234,26 @@
   "Read segment from binary buffer at specified index"
   [buffer index]
   (let [offset (* index SEGMENT-BYTE-SIZE)
-        type   (read-short buffer offset)]
+        type   (buf/read-short buffer offset)]
     (case (long type)
-      1 (let [x (read-float buffer (+ offset 20))
-              y (read-float buffer (+ offset 24))]
+      1 (let [x (buf/read-float buffer (+ offset 20))
+              y (buf/read-float buffer (+ offset 24))]
           {:command :move-to
            :params {:x (double x)
                     :y (double y)}})
 
-      2 (let [x (read-float buffer (+ offset 20))
-              y (read-float buffer (+ offset 24))]
+      2 (let [x (buf/read-float buffer (+ offset 20))
+              y (buf/read-float buffer (+ offset 24))]
           {:command :line-to
            :params {:x (double x)
                     :y (double y)}})
 
-      3 (let [c1x (read-float buffer (+ offset 4))
-              c1y (read-float buffer (+ offset 8))
-              c2x (read-float buffer (+ offset 12))
-              c2y (read-float buffer (+ offset 16))
-              x   (read-float buffer (+ offset 20))
-              y   (read-float buffer (+ offset 24))]
+      3 (let [c1x (buf/read-float buffer (+ offset 4))
+              c1y (buf/read-float buffer (+ offset 8))
+              c2x (buf/read-float buffer (+ offset 12))
+              c2y (buf/read-float buffer (+ offset 16))
+              x   (buf/read-float buffer (+ offset 20))
+              y   (buf/read-float buffer (+ offset 24))]
           {:command :curve-to
            :params {:x (double x)
                     :y (double y)
@@ -339,7 +288,7 @@
 
      ITransformable
      (-transform [_ m]
-       (let [buffer (clone-buffer buffer)]
+       (let [buffer (buf/clone buffer)]
          (impl-transform buffer m size)
          (PathData. size buffer nil)))
 
@@ -427,7 +376,7 @@
 
      ITransformable
      (-transform [this m]
-       (let [buffer (clone-buffer buffer)
+       (let [buffer (buf/clone buffer)
              dview  (js/DataView. buffer)]
          (impl-transform dview m size)
          (PathData. size buffer dview (weak-map/create) nil)))
@@ -688,10 +637,8 @@
   [segments]
   (assert (check-segments segments))
 
-  (let [total    (count segments)
-        #?@(:cljs [buffer' (allocate total)
-                   buffer  (new js/DataView buffer')]
-            :clj  [buffer  (allocate total)])]
+  (let [total  (count segments)
+        buffer (buf/allocate (* total SEGMENT-BYTE-SIZE))]
     (loop [index 0]
       (when (< index total)
         (let [segment (nth segments index)
@@ -701,18 +648,18 @@
             (let [params (get segment :params)
                   x      (float (get params :x))
                   y      (float (get params :y))]
-              (write-short buffer offset 1)
-              (write-float buffer (+ offset 20) x)
-              (write-float buffer (+ offset 24) y))
+              (buf/write-short buffer offset 1)
+              (buf/write-float buffer (+ offset 20) x)
+              (buf/write-float buffer (+ offset 24) y))
 
             :line-to
             (let [params (get segment :params)
                   x      (float (get params :x))
                   y      (float (get params :y))]
 
-              (write-short buffer offset 2)
-              (write-float buffer (+ offset 20) x)
-              (write-float buffer (+ offset 24) y))
+              (buf/write-short buffer offset 2)
+              (buf/write-float buffer (+ offset 20) x)
+              (buf/write-float buffer (+ offset 24) y))
 
             :curve-to
             (let [params (get segment :params)
@@ -723,16 +670,16 @@
                   c2x    (float (get params :c2x x))
                   c2y    (float (get params :c2y y))]
 
-              (write-short buffer offset 3)
-              (write-float buffer (+ offset 4)  c1x)
-              (write-float buffer (+ offset 8)  c1y)
-              (write-float buffer (+ offset 12) c2x)
-              (write-float buffer (+ offset 16) c2y)
-              (write-float buffer (+ offset 20) x)
-              (write-float buffer (+ offset 24) y))
+              (buf/write-short buffer offset 3)
+              (buf/write-float buffer (+ offset 4)  c1x)
+              (buf/write-float buffer (+ offset 8)  c1y)
+              (buf/write-float buffer (+ offset 12) c2x)
+              (buf/write-float buffer (+ offset 16) c2y)
+              (buf/write-float buffer (+ offset 20) x)
+              (buf/write-float buffer (+ offset 24) y))
 
             :close-path
-            (write-short buffer offset 4))
+            (buf/write-short buffer offset 4))
           (recur (inc index)))))
 
     (from-bytes buffer)))

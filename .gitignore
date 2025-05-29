@@ -30,6 +30,7 @@
 /*.zip
 /.clj-kondo/.cache
 /_dump
+/notes
 /backend/*.md
 /backend/*.sql
 /backend/*.txt

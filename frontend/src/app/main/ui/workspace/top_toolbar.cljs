@@ -9,7 +9,6 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
-   [app.common.media :as cm]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -64,7 +63,7 @@
       i/img
       [:& file-uploader
        {:input-id "image-upload"
-        :accept cm/str-image-types
+        :accept dwm/accept-image-types
         :multi true
         :ref ref
         :on-selected on-selected}]]]))

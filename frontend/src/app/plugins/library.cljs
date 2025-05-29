@@ -126,7 +126,7 @@
      (fn [self value]
        (let [value (parser/parse-gradient value)]
          (cond
-           (not (sm/validate ::ctc/gradient value))
+           (not (sm/validate ctc/schema:gradient value))
            (u/display-not-valid :gradient value)
 
            (not (r/check-permission plugin-id "library:write"))
@@ -144,7 +144,7 @@
      (fn [self value]
        (let [value (parser/parse-image-data value)]
          (cond
-           (not (sm/validate ::ctc/image-color value))
+           (not (sm/validate ctc/schema:image value))
            (u/display-not-valid :image value)
 
            (not (r/check-permission plugin-id "library:write"))

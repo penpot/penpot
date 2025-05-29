@@ -8,6 +8,7 @@
   (:refer-clojure :exclude [set subseq uuid filter map let boolean vector keyword int double])
   #?(:cljs (:require-macros [app.common.schema.generators]))
   (:require
+   [app.common.math :as mth]
    [app.common.schema.registry :as sr]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
@@ -40,7 +41,8 @@
 
 (defn small-double
   [& {:keys [min max] :or {min -100 max 100}}]
-  (tg/double* {:min min, :max max, :infinite? false, :NaN? false}))
+  (->> (tg/double* {:min min, :max max, :infinite? false, :NaN? false})
+       (tg/fmap #(mth/precision % 2))))
 
 (defn small-int
   [& {:keys [min max] :or {min -100 max 100}}]

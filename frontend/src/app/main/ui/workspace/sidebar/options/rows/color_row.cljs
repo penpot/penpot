@@ -12,7 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.main.data.modal :as modal]
-   [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.colors :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
@@ -116,7 +116,7 @@
            (let [color (-> color
                            (assoc :color value)
                            (dissoc :gradient))]
-             (st/emit! (dwl/add-recent-color color)
+             (st/emit! (dwc/add-recent-color color)
                        (on-change color)))))
 
         handle-opacity-change
@@ -126,7 +126,7 @@
            (let [color (-> color
                            (assoc :opacity (/ value 100))
                            (dissoc :ref-id :ref-file))]
-             (st/emit! (dwl/add-recent-color color)
+             (st/emit! (dwc/add-recent-color color)
                        (on-change color)))))
 
         handle-click-color

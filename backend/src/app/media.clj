@@ -55,7 +55,7 @@
   (sm/check-fn schema:input))
 
 (defn validate-media-type!
-  ([upload] (validate-media-type! upload cm/valid-image-types))
+  ([upload] (validate-media-type! upload cm/image-types))
   ([upload allowed]
    (when-not (contains? allowed (:mtype upload))
      (ex/raise :type :validation
