@@ -197,8 +197,8 @@ impl Default for TextContent {
 pub struct Paragraph {
     num_leaves: u32,
     text_align: u8,
-    text_decoration: u8,
     text_direction: u8,
+    text_decoration: u8,
     text_transform: u8,
     line_height: f32,
     letter_spacing: f32,
@@ -212,8 +212,8 @@ impl Default for Paragraph {
         Self {
             num_leaves: 0,
             text_align: 0,
-            text_decoration: 0,
             text_direction: 0,
+            text_decoration: 0,
             text_transform: 0,
             line_height: 1.0,
             letter_spacing: 0.0,
@@ -229,8 +229,8 @@ impl Paragraph {
     pub fn new(
         num_leaves: u32,
         text_align: u8,
-        text_decoration: u8,
         text_direction: u8,
+        text_decoration: u8,
         text_transform: u8,
         line_height: f32,
         letter_spacing: f32,
@@ -241,8 +241,8 @@ impl Paragraph {
         Self {
             num_leaves,
             text_align,
-            text_decoration,
             text_direction,
+            text_decoration,
             text_transform,
             line_height,
             letter_spacing,
@@ -352,6 +352,8 @@ impl TextLeaf {
             3 => skia::textlayout::TextDecoration::OVERLINE,
             _ => skia::textlayout::TextDecoration::NO_DECORATION,
         });
+        // FIXME
+        style.set_decoration_color(paint.color());
 
         style.set_font_families(&[
             self.serialized_font_family(),
@@ -369,6 +371,15 @@ impl TextLeaf {
     ) -> skia::textlayout::TextStyle {
         let mut style = self.to_style(paragraph, &Rect::default());
         style.set_foreground_paint(stroke_paint);
+        style.set_font_size(self.font_size);
+        style.set_letter_spacing(paragraph.letter_spacing);
+        style.set_decoration_type(match paragraph.text_decoration {
+            0 => skia::textlayout::TextDecoration::NO_DECORATION,
+            1 => skia::textlayout::TextDecoration::UNDERLINE,
+            2 => skia::textlayout::TextDecoration::LINE_THROUGH,
+            3 => skia::textlayout::TextDecoration::OVERLINE,
+            _ => skia::textlayout::TextDecoration::NO_DECORATION,
+        });
         style
     }
 
