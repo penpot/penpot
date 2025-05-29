@@ -159,14 +159,15 @@
      (let [objects  (dsh/lookup-page-objects state)
            selected (dm/get-in state [:workspace-local :selected])]
        {:objects objects :selected selected}))
-   st/state (fn [v1 v2]
-              (and (identical? (:objects v1) (:objects v2))
-                   (= (:selected v1) (:selected v2))))))
+   st/state
+   (fn [v1 v2]
+     (and (identical? (:objects v1) (:objects v2))
+          (= (:selected v1) (:selected v2))))))
 
 (def selected-shapes
   (l/derived
    (fn [{:keys [objects selected]}]
-     (dsh/process-selected-shapes objects selected))
+     (dsh/process-selected objects selected))
    selected-shapes-data =))
 
 (defn make-selected-ref
