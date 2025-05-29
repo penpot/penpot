@@ -236,12 +236,7 @@ test("BUG 11177 - Font size input not showing 'mixed' when needed", async ({
 }) => {
   const workspace = new WorkspacePage(page);
   await workspace.setupEmptyFile();
-  await workspace.mockRPC(
-    "get-file-fragment?file-id=*&fragment-id=*",
-    "design/get-file-fragment-11177.json",
-  );
-  await workspace.mockRPC("update-file?id=*", "design/update-file-11177.json");
-  await workspace.mockRPC("get-file?id=*", "design/get-file-11177.json");
+  await workspace.mockRPC(/get\-file\?/, "design/get-file-11177.json");
 
   await workspace.goToWorkspace({
     fileId: "b3e5731a-c295-801d-8006-3fc33c3b1b13",
