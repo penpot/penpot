@@ -544,7 +544,7 @@
                                                                    (ctob/make-token :name "token-4"
                                                                                     :type :border-radius
                                                                                     :value 4000)}))
-                       (ctob/update-theme ctob/hidden-token-theme-group ctob/hidden-token-theme-name
+                       (ctob/update-theme ctob/hidden-theme-group ctob/hidden-theme-name
                                           #(ctob/enable-sets % #{"set-a" "set-b"})))
 
         tokens (ctob/get-active-themes-set-tokens tokens-lib)]
@@ -1327,7 +1327,7 @@
        (t/is (= 1 (count themes)))
        (t/testing "existing theme is default theme"
          (t/is (= (:group first-theme) ""))
-         (t/is (= (:name first-theme) ctob/hidden-token-theme-name)))
+         (t/is (= (:name first-theme) ctob/hidden-theme-name)))
        (t/testing "token exist in dark set"
          (t/is (tht/token-data-eq? (ctob/get-token-in-set lib "dark" "small")
                                    {:name "small"

@@ -57,8 +57,8 @@
   (let [;; FIXME: this code should be reusable under helper under
         ;; common types namespace
         name
-        (if-let [parent-path (ctob/get-token-set-path parent-set)]
-          (->> (concat parent-path (ctob/split-token-set-name name))
+        (if-let [parent-path (ctob/get-set-path parent-set)]
+          (->> (concat parent-path (ctob/split-set-name name))
                (ctob/join-set-path))
           (ctob/normalize-set-name name))]
 

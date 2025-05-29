@@ -114,9 +114,9 @@
             active-token-themes (some-> tokens-lib
                                         (ctob/toggle-theme-active? group name)
                                         (ctob/get-active-theme-paths))
-            active-token-themes' (if (= active-token-themes #{ctob/hidden-token-theme-path})
+            active-token-themes' (if (= active-token-themes #{ctob/hidden-theme-path})
                                    active-token-themes
-                                   (disj active-token-themes ctob/hidden-token-theme-path))
+                                   (disj active-token-themes ctob/hidden-theme-path))
             changes (-> (pcb/empty-changes it)
                         (pcb/update-active-token-themes active-token-themes' prev-active-token-themes))]
         (rx/of
@@ -319,7 +319,7 @@
                 (ctob/add-token token))
 
             hidden-theme
-            (ctob/make-hidden-token-theme)
+            (ctob/make-hidden-theme)
 
             hidden-theme-with-set
             (ctob/enable-set hidden-theme set-name)
@@ -331,7 +331,7 @@
                 (pcb/set-token-theme (:group hidden-theme)
                                      (:name hidden-theme)
                                      hidden-theme-with-set)
-                (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} #{}))]
+                (pcb/update-active-token-themes #{ctob/hidden-theme-path} #{}))]
         (rx/of (dch/commit-changes changes)
                (set-selected-token-set-name set-name))))))
 

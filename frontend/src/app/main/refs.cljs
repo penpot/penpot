@@ -466,7 +466,7 @@
   (l/derived (fn [lib]
                (or
                 (some-> lib
-                        (ctob/delete-theme ctob/hidden-token-theme-group ctob/hidden-token-theme-name)
+                        (ctob/delete-theme ctob/hidden-theme-group ctob/hidden-theme-name)
                         (ctob/get-theme-tree))
                 []))
              tokens-lib))
@@ -475,7 +475,7 @@
   (l/derived #(or (some-> % ctob/get-themes) []) tokens-lib))
 
 (def workspace-token-themes-no-hidden
-  (l/derived #(remove ctob/hidden-temporary-theme? %) workspace-token-themes))
+  (l/derived #(remove ctob/hidden-theme? %) workspace-token-themes))
 
 (def selected-token-set-name
   (l/derived (l/key :selected-token-set-name) workspace-tokens))
@@ -498,7 +498,7 @@
    tokens-lib))
 
 (def workspace-active-theme-paths-no-hidden
-  (l/derived #(disj % ctob/hidden-token-theme-path) workspace-active-theme-paths))
+  (l/derived #(disj % ctob/hidden-theme-path) workspace-active-theme-paths))
 
 ;; FIXME: deprecated, it should not be implemented with ref (still used in form)
 (def workspace-active-theme-sets-tokens

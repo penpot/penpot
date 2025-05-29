@@ -83,7 +83,7 @@
         current-label (cond
                         (> active-themes-count 1) (tr "workspace.tokens.active-themes" active-themes-count)
                         (= active-themes-count 1) (some->> (first active-theme-paths)
-                                                           (ctob/split-token-theme-path)
+                                                           (ctob/split-theme-path)
                                                            (remove empty?)
                                                            (str/join " / "))
                         :else (tr "workspace.tokens.no-active-theme"))
