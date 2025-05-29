@@ -20,20 +20,18 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu
                                                  dropdown-menu-item*]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
-   [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
-   [app.main.ui.workspace.tokens.sets :as tsets]
-   [app.main.ui.workspace.tokens.sets-context-menu :refer [token-set-context-menu*]]
-   [app.main.ui.workspace.tokens.theme-select :refer [theme-select]]
+   [app.main.ui.workspace.tokens.sets :refer [token-sets-section*]]
+   [app.main.ui.workspace.tokens.sets.context-menu :refer [token-set-context-menu*]]
+   [app.main.ui.workspace.tokens.themes :refer [themes-header*]]
    [app.main.ui.workspace.tokens.token-pill :refer [token-pill*]]
    [app.util.array :as array]
    [app.util.dom :as dom]
@@ -162,93 +160,17 @@
       [(seq (array/sort! empty))
        (seq (array/sort! filled))])))
 
-(mf/defc themes-header*
-  {::mf/private true}
-  []
-  (let [ordered-themes
-        (mf/deref refs/workspace-token-themes-no-hidden)
-
-        can-edit?
-        (mf/use-ctx ctx/can-edit?)
-
-        open-modal
-        (mf/use-fn
-         (fn [e]
-           (dom/stop-propagation e)
-           (modal/show! :tokens/themes {})))]
-
-    [:div {:class (stl/css :themes-wrapper)}
-     [:> text* {:as "div" :typography "headline-small" :class (stl/css :themes-header)} (tr "labels.themes")]
-     (if (empty? ordered-themes)
-       [:div {:class (stl/css :empty-theme-wrapper)}
-        [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
-         (tr "workspace.tokens.no-themes")]
-        (when can-edit?
-          [:button {:on-click open-modal
-                    :class (stl/css :create-theme-button)}
-           (tr "workspace.tokens.create-one")])]
-       (if can-edit?
-         [:div {:class (stl/css :theme-select-wrapper)}
-          [:& theme-select]
-          [:> button* {:variant "secondary"
-                       :class (stl/css :edit-theme-button)
-                       :on-click open-modal}
-           (tr "labels.edit")]]
-         [:div {:title (when-not can-edit?
-                         (tr "workspace.tokens.no-permission-themes"))}
-          [:& theme-select]]))]))
-
-(mf/defc token-sets-list*
-  {::mf/private true}
-  [{:keys [tokens-lib]}]
-  (let [;; FIXME: This is an inneficient operation just for being
-        ;; ability to check if there are some sets and lookup the
-        ;; first one when no set is selected, should be REFACTORED; is
-        ;; inneficient because instead of return the sets as-is (tree)
-        ;; it firstly makes it a plain seq from tree.
-        token-sets
-        (some-> tokens-lib (ctob/get-sets))
-
-        selected-token-set-name
-        (mf/deref refs/selected-token-set-name)
-
-        {:keys [token-set-edition-id
-                token-set-new-path]}
-        (mf/deref refs/workspace-tokens)]
-
-    (if (and (empty? token-sets)
-             (not token-set-new-path))
-
-      (when-not token-set-new-path
-        [:> tsets/inline-add-button*])
-
-      [:> h/sortable-container {}
-       [:> tsets/sets-list*
-        {:tokens-lib tokens-lib
-         :new-path token-set-new-path
-         :edition-id token-set-edition-id
-         :selected selected-token-set-name}]])))
-
-(mf/defc token-sets-section*
+(mf/defc token-management-section*
   {::mf/private true}
   [{:keys [resize-height] :as props}]
 
-  (let [can-edit?
-        (mf/use-ctx ctx/can-edit?)]
-
     [:*
      [:> token-set-context-menu*]
-     [:article {:data-testid "token-themes-sets-sidebar"
-                :class (stl/css :sets-section-wrapper)
+     [:section {:data-testid "token-management-sidebar"
+                :class (stl/css :token-management-section-wrapper)
                 :style {"--resize-height" (str resize-height "px")}}
-      [:div {:class (stl/css :sets-sidebar)}
        [:> themes-header*]
-       [:div {:class (stl/css :sidebar-header)}
-        [:& title-bar {:title (tr "labels.sets")}
-         (when can-edit?
-           [:> tsets/add-button*])]]
-
-       [:> token-sets-list* props]]]]))
+       [:> token-sets-section* props]]])
 
 (mf/defc tokens-section*
   [{:keys [tokens-lib]}]
@@ -438,7 +360,7 @@
         (mf/deref refs/tokens-lib)]
 
     [:div {:class (stl/css :sidebar-wrapper)}
-     [:> token-sets-section*
+     [:> token-management-section*
       {:resize-height size-pages-opened
        :tokens-lib tokens-lib}]
      [:article {:class (stl/css :tokens-section-wrapper)
