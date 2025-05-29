@@ -133,20 +133,6 @@
 (def decode-add-component
   (sm/decode-fn schema:add-component sm/json-transformer))
 
-(def schema:add-component-instance
-  [:map
-   [:component-id ::sm/uuid]
-   [:file-id {:optional true} ::sm/uuid]
-   [:frame-id {:optional true} ::sm/uuid]
-   [:page-id {:optional true} ::sm/uuid]])
-
-(def ^:private check-add-component-instance
-  (sm/check-fn schema:add-component-instance
-               :hint "invalid arguments passed for add-component-instance"))
-
-(def decode-add-component-instance
-  (sm/decode-fn schema:add-component-instance sm/json-transformer))
-
 (def schema:add-bool
   [:map
    [:group-id ::sm/uuid]
@@ -451,33 +437,6 @@
     (-> state
         (commit-change change1)
         (commit-change change2))))
-
-
-(defn add-component-instance
-  [state params]
-
-  (let [{:keys [component-id file-id frame-id page-id]}
-        (check-add-component-instance params)
-
-        file-id
-        (or file-id (get state ::current-file-id))
-
-        frame-id
-        (or frame-id (get state ::current-frame-id))
-
-        page-id
-        (or page-id (get state ::current-page-id))
-
-        change
-        {:type :mod-obj
-         :id frame-id
-         :page-id page-id
-         :operations
-         [{:type :set :attr :component-root :val true}
-          {:type :set :attr :component-id :val component-id}
-          {:type :set :attr :component-file :val file-id}]}]
-
-    (commit-change state change)))
 
 (defn delete-shape
   [file id]

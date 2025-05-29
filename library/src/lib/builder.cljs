@@ -230,16 +230,6 @@
         (catch :default cause
           (handle-exception cause))))
 
-    :addComponentInstance
-    (fn [params]
-      (try
-        (let [params (-> (decode-params params)
-                         (fb/decode-add-component-instance))]
-          (-> (swap! state fb/add-component-instance params)
-              (get-last-id)))
-        (catch :default cause
-          (handle-exception cause))))
-
     :addFileMedia
     (fn [params blob]
 
