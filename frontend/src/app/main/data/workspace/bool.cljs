@@ -44,7 +44,7 @@
          :frame-id (:frame-id head)
          :parent-id (:parent-id head)
          :name name
-         :shapes (vec shapes)}
+         :shapes (into [] d/xf:map-id shapes)}
 
         shape
         (-> shape
@@ -69,8 +69,8 @@
             (-> type d/name str/capital)
 
             ids
-            (->> (or ids (dsh/lookup-selected state))
-                 (cph/clean-loops objects))
+            (->> (or ids (dsh/get-selected-ids state))
+                 (dsh/process-selected objects))
 
             xform
             (comp
