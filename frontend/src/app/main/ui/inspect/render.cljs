@@ -11,6 +11,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.main.data.viewer :as dv]
+   [app.main.data.workspace.selection :as dws]
    [app.main.store :as st]
    [app.main.ui.inspect.selection-feedback :refer [selection-feedback]]
    [app.main.ui.shapes.bool :as bool]
@@ -30,6 +31,9 @@
 
 (declare shape-container-factory)
 
+;;
+;; TODO: Aquí está el tema del hover de shapes.
+;;
 (defn handle-hover-shape
   [shape hover?]
   (fn [event]
@@ -39,7 +43,8 @@
       (dom/stop-propagation event)
       (st/emit! (dv/hover-shape (:id shape) hover?)))))
 
-(defn select-shape [shape]
+(defn handle-select-shape
+  [shape]
   (fn [event]
     (when-not (or (cfh/group-shape? shape)
                   (cfh/root-frame? shape))
@@ -67,7 +72,7 @@
         [:> shape-container {:shape shape
                              :on-pointer-enter (handle-hover-shape shape true)
                              :on-pointer-leave (handle-hover-shape shape false)
-                             :on-click (select-shape shape)}
+                             :on-click (handle-select-shape shape)}
          [:& component {:shape shape
                         :frame frame
                         :childs childs

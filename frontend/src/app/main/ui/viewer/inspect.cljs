@@ -33,7 +33,9 @@
 
     (dom/prevent-default event)
     (dom/stop-propagation event)
+
     (st/emit! (dv/select-shape frame-id))
+    
     (when over-section?
       (if has-force?
         (dom/remove-class! layout "force-visible")

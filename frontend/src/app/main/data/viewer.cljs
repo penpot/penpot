@@ -701,11 +701,15 @@
 
 (defn select-shape
   ([id]
+   (select-shape id false))
+
+  ([id toggle?]
+   (.log js/console "select-shape" id toggle?)
    (ptk/reify ::select-shape
      ptk/UpdateEvent
      (update [_ state]
        (-> state
-           (assoc-in [:viewer-local :selected] #{id}))))))
+           (update-in [:viewer-local :selected] d/toggle-selection id toggle?))))))
 
 (defn toggle-selection
   [id]

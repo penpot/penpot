@@ -133,28 +133,29 @@
      ptk/UpdateEvent
      (update [_ state]
        (-> state
+           (js/console.log "select-shape" id toggle?)
            (update-in [:workspace-local :selected] d/toggle-selection id toggle?)
            (assoc-in [:workspace-local :last-selected] id)))
 
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id              (:current-page-id state)
-             objects              (dsh/lookup-page-objects state page-id)
-             selected-id          (dsh/lookup-selected state)
-             selected             (dsh/lookup-shapes state selected-id)
-             frame-ids            (map (fn [item] (let [parent (cfh/get-frame objects (:id item))]
-                                                    (:id parent))) selected)
-             params-without-board (-> (rt/get-params state)
-                                      (dissoc :board-id))
-             params-board         (-> (rt/get-params state)
-                                      (assoc :board-id frame-ids))]
+            (let [page-id              (:current-page-id state)
+                  objects              (dsh/lookup-page-objects state page-id)
+                  selected-id          (dsh/lookup-selected state)
+                  selected             (dsh/lookup-shapes state selected-id)
+                  frame-ids            (map (fn [item] (let [parent (cfh/get-frame objects (:id item))]
+                                                         (:id parent))) selected)
+                  params-without-board (-> (rt/get-params state)
+                                           (dissoc :board-id))
+                  params-board         (-> (rt/get-params state)
+                                           (assoc :board-id frame-ids))]
 
-         (rx/of (dwc/expand-all-parents [id] objects)
-                :interrupt
-                ::dwsp/interrupt
-                (if (some #(= % uuid/zero) frame-ids)
-                  (rt/nav :workspace params-without-board {::rt/replace true})
-                  (rt/nav :workspace params-board {::rt/replace true}))))))))
+              (rx/of (dwc/expand-all-parents [id] objects)
+                     :interrupt
+                     ::dwsp/interrupt
+                     (if (some #(= % uuid/zero) frame-ids)
+                       (rt/nav :workspace params-without-board {::rt/replace true})
+                       (rt/nav :workspace params-board {::rt/replace true}))))))))
 
 (defn select-prev-shape
   ([]
