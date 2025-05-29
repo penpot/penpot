@@ -542,7 +542,7 @@ impl Shape {
 
     pub fn set_path_attr(&mut self, name: String, value: String) {
         match self.shape_type {
-            Type::Path(_) => {
+            Type::Path(_) | Type::Bool(_) => {
                 self.set_svg_attr(name, value);
             }
             _ => unreachable!("This shape should have path attrs"),
