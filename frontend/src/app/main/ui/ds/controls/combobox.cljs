@@ -259,7 +259,7 @@
                 :data-testid "combobox-input"
                 :max-length (d/nilv max-length max-input-length)
                 :disabled disabled
-                :value selected-value
+                :value (d/nilv selected-value "")
                 :placeholder placeholder
                 :on-change on-input-change
                 :on-click on-input-click

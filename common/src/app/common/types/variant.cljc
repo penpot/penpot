@@ -54,6 +54,7 @@
 
 (def property-prefix "Property")
 (def property-regex (re-pattern (str property-prefix "(\\d+)")))
+(def property-max-length 60)
 (def value-prefix "Value ")
 
 
@@ -134,7 +135,9 @@
   (->> (str/split s ",")
        (mapv #(str/split % "=" 2))
        (every? #(and (= 2 (count %))
-                     (not (str/blank? (first %)))))))
+                     (not (str/blank? (first %)))
+                     (< (count (first %)) property-max-length)
+                     (< (count (second %)) property-max-length)))))
 
 
 (defn find-properties-to-remove

@@ -8,6 +8,8 @@
   (:require-macros
    [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
+   [app.main.constants :refer [max-input-length]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -17,11 +19,12 @@
   [:map
    [:value :string]
    [:meta {:optional true} :string]
+   [:max-length {:optional true} :int]
    [:on-blur {:optional true} fn?]])
 
 (mf/defc input-with-meta*
   {::mf/schema schema:input-with-meta}
-  [{:keys [value meta on-blur] :rest props}]
+  [{:keys [value meta max-length on-blur] :rest props}]
   (let [editing*  (mf/use-state false)
         editing?  (deref editing*)
 
@@ -63,6 +66,7 @@
 
         props (mf/spread-props props {:ref input-ref
                                       :default-value value
+                                      :max-length (d/nilv max-length max-input-length)
                                       :auto-focus true
                                       :on-focus on-focus
                                       :on-blur on-stop-edit

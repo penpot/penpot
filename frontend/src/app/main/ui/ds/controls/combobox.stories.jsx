@@ -18,10 +18,12 @@ export default {
   component: Combobox,
   argTypes: {
     disabled: { control: "boolean" },
+    maxLength: { control: "number" },
     hasError: { control: "boolean" },
   },
   args: {
     disabled: false,
+    maxLength: 10,
     hasError: false,
     placeholder: "Select a month",
     options: [
