@@ -10,8 +10,10 @@
   (:require
    [app.config :as cfg]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defonce theme (get storage/global ::theme cfg/default-theme))
@@ -44,3 +46,30 @@
                   #js [])
     theme))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Set the preferred color scheme based on the user's system settings.
+;; TODO: this is unrelated to the theme support above, which seems unused as
+;;       of v2.7
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce ^:private color-scheme-mq
+  (.matchMedia globals/window "(prefers-color-scheme: dark)"))
+
+;; This atom is referenced in app.main.ui.app
+(defonce preferred-color-scheme
+  (atom (if (.-matches color-scheme-mq) "dark" "light")))
+
+(defonce prefers-color-scheme-sub
+  (let [sub (rx/behavior-subject "dark")
+        ob  (->> (rx/from-event color-scheme-mq "change")
+                 (rx/map #(if (.-matches %) "dark" "light")))]
+    (rx/sub! ob sub)
+    sub))
+
+(defn initialize
+  []
+  (ptk/reify ::initialize
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> prefers-color-scheme-sub
+           (rx/map #(reset! preferred-color-scheme %))))))

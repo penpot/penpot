@@ -935,6 +935,15 @@ msgstr "Cambiar el idioma de la interfaz"
 msgid "dashboard.select-ui-theme"
 msgstr "Selecciona un tema"
 
+msgid "dashboard.select-ui-theme.dark"
+msgstr "Penpot Dark (por defecto)"
+
+msgid "dashboard.select-ui-theme.light"
+msgstr "Penpot Light"
+
+msgid "dashboard.select-ui-theme.system"
+msgstr "Sistema"
+
 #: src/app/main/ui/settings/notifications.cljs:57
 msgid "dashboard.settings.notifications.dashboard-comments.all"
 msgstr "Todos los comentarios, menciones y respuestas"
@@ -5194,6 +5203,9 @@ msgstr "Cambiar a tema oscuro"
 #: src/app/main/ui/workspace/main_menu.cljs:283
 msgid "workspace.header.menu.toggle-light-theme"
 msgstr "Cambiar a tema claro"
+
+msgid "workspace.header.menu.toggle-system-theme"
+msgstr "Cambiar a tema del sistema"
 
 #: src/app/main/ui/workspace/main_menu.cljs:457
 msgid "workspace.header.menu.undo"

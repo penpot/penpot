@@ -160,8 +160,10 @@
     (update [_ state]
       (update-in state [:profile :theme]
                  (fn [current]
-                   (if (= current "default")
-                     "light"
+                   (case current
+                     "dark"   "light"
+                     "light"  "system"
+                     "system" "dark"
                      "default"))))
 
     ptk/WatchEvent

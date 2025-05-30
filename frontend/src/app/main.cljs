@@ -97,7 +97,8 @@
   (cur/init-styles)
   (thr/init!)
   (init-ui)
-  (st/emit! (plugins/initialize)
+  (st/emit! (theme/initialize)
+            (plugins/initialize)
             (initialize)))
 
 (defn ^:export reinit
