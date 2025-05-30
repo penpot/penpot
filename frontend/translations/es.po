@@ -7307,6 +7307,10 @@ msgstr ""
 msgid "workspace.tokens.invalid-value"
 msgstr "Valor de token no válido: %s"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:57
+msgid "workspace.tokens.value-with-units"
+msgstr "Valor no válido: No se permiten unidades."
+
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:190
 msgid "workspace.tokens.label.group"
 msgstr "Grupo"
@@ -7484,6 +7488,10 @@ msgstr "La importación se ha realizado correctamente pero se omitieron algunos 
 #: src/app/main/data/style_dictionary.cljs:296
 msgid "workspace.tokens.unknown-token-type-section"
 msgstr "El tipo '%s' no está soportado (%s)\n"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.tokens.add-token"
+msgstr "Añadir token: %s"
 
 #: src/app/main/ui/workspace/sidebar.cljs:137, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"

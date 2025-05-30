@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "../../ds/typography.scss" as *;
+@use "../../ds/borders.scss" as *;
 @import "refactor/common-refactor.scss";
 
 .token-pill {
@@ -16,13 +17,18 @@
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: $s-6;
-  border: $s-1 solid var(--token-pill-border);
-  outline: $s-2 solid var(--token-pill-outline);
-  height: $s-24;
+  border: $b-1 solid var(--token-pill-border);
+  outline: $b-2 solid var(--token-pill-outline);
+  height: var(--sp-xxl);
   border-radius: $br-8;
-  padding: $s-2 $s-8 $s-2 $s-4;
+  padding: var(--sp-xxs) var(--sp-s) var(--sp-xxs) var(--sp-xs);
   color: var(--token-pill-foreground);
   background: var(--token-pill-background);
+}
+
+.token-pill-no-icon {
+  grid-template-columns: 1fr;
+  padding: var(--sp-xxs) var(--sp-s);
 }
 
 .name-wrapper {

@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
+   [app.common.text :as txt]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
@@ -328,7 +329,22 @@
             (dwsl/update-layout-child shape-ids props {:ignore-touched true
                                                        :page-id page-id}))))))))
 
-;; Map token types to different properties used along the cokde ---------------------------------------------------------
+(defn update-line-height
+  ([value shape-ids attributes] (update-line-height value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id] ; The attributes param is
+                                         ; needed to have the same
+                                         ; arity that other update
+                                         ; functions
+   (let [update-node? (fn [node]
+                        (or (txt/is-text-node? node)
+                            (txt/is-paragraph-node? node)))]
+     (when (number? value)
+       (dwsh/update-shapes shape-ids
+                           #(txt/update-text-content % update-node? d/txt-merge {:line-height value})
+                           {:ignore-touched true
+                            :page-id page-id})))))
+
+;; Map token types to different properties used along the cokde ---------------------------------------------
 
 ;; FIXME: the values should be lazy evaluated, probably a function,
 ;; becasue on future we will need to translate that labels and that
@@ -389,6 +405,15 @@
     :modal {:key :tokens/opacity
             :fields [{:label "Opacity"
                       :key :opacity}]}}
+
+   :numeric
+   {:title "Number"
+    :attributes #{:rotation}
+    :all-attributes ctt/numeric-keys
+    :on-update-shape update-rotation
+    :modal {:key :tokens/numeric
+            :fields [{:label "Number"
+                      :key :numeric}]}}
 
    :rotation
    {:title "Rotation"

@@ -37,10 +37,14 @@
      :selected-pred #(seq (% ids-by-attributes))}))
 
 (defn generic-attribute-actions [attributes title {:keys [token selected-shapes on-update-shape hint]}]
-  (let [on-update-shape-fn (or on-update-shape
-                               (-> (dwta/get-token-properties token)
-                                   (:on-update-shape)))
-        {:keys [selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)]
+  (let [on-update-shape-fn
+        (or on-update-shape
+            (-> (dwta/get-token-properties token)
+                (:on-update-shape)))
+
+        {:keys [selected-pred shape-ids]}
+        (attribute-actions token selected-shapes attributes)]
+
     (map (fn [attribute]
            (let [selected? (selected-pred attribute)
                  props {:attributes #{attribute}
@@ -244,6 +248,9 @@
      :sizing sizing-attribute-actions
      :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
      :opacity (partial generic-attribute-actions #{:opacity} "Opacity")
+     :numeric (fn [context-data]
+                [(generic-attribute-actions #{:rotation} "Rotation" (assoc context-data :on-update-shape dwta/update-rotation))
+                 (generic-attribute-actions #{:line-height} "Line Height" (assoc context-data :on-update-shape dwta/update-line-height))])
      :stroke-width stroke-width
      :dimensions (fn [context-data]
                    (concat
