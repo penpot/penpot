@@ -11,6 +11,22 @@ pub struct Tile(pub i32, pub i32);
 pub struct TileRect(pub i32, pub i32, pub i32, pub i32);
 
 impl TileRect {
+    pub fn width(&self) -> i32 {
+        self.2 - self.0
+    }
+
+    pub fn height(&self) -> i32 {
+        self.3 - self.1
+    }
+
+    pub fn center_x(&self) -> i32 {
+        self.0 + self.width() / 2
+    }
+
+    pub fn center_y(&self) -> i32 {
+        self.1 + self.height() / 2
+    }
+
     pub fn contains(&self, tile: &Tile) -> bool {
         tile.0 >= self.0 && tile.1 >= self.1 && tile.0 <= self.2 && tile.1 <= self.3
     }
@@ -44,14 +60,7 @@ impl TileViewbox {
     }
 }
 
-pub type TileWithDistance = (i32, i32, i32);
-
 pub const TILE_SIZE: f32 = 512.;
-
-// @see https://en.wikipedia.org/wiki/Taxicab_geometry
-pub fn manhattan_distance(a: Tile, b: Tile) -> i32 {
-    (a.0 - b.0).abs() + (a.1 - b.1).abs()
-}
 
 pub fn get_tile_dimensions() -> skia::ISize {
     (TILE_SIZE as i32, TILE_SIZE as i32).into()
@@ -149,5 +158,77 @@ impl TileHashMap {
     pub fn invalidate(&mut self) {
         self.grid.clear();
         self.index.clear();
+    }
+}
+
+const VIEWPORT_DEFAULT_CAPACITY: usize = 24 * 12;
+
+// This structure keeps the list of tiles that are in the pending list, the
+// ones that are going to be rendered.
+pub struct PendingTiles {
+    pub list: Vec<Tile>,
+}
+
+impl PendingTiles {
+    pub fn new_empty() -> Self {
+        Self {
+            list: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
+        }
+    }
+
+    pub fn update(&mut self, tile_viewbox: &TileViewbox) {
+        self.list.clear();
+
+        let columns = tile_viewbox.interest_rect.width();
+        let rows = tile_viewbox.interest_rect.height();
+
+        let total = columns * rows;
+
+        let mut cx = tile_viewbox.interest_rect.center_x();
+        let mut cy = tile_viewbox.interest_rect.center_y();
+
+        let ratio = (columns as f32 / rows as f32).ceil() as i32;
+
+        let mut direction_current = 0;
+        let mut direction_total_x = ratio;
+        let mut direction_total_y = 1;
+        let mut direction = 0;
+        let mut current = 0;
+
+        self.list.push(Tile(cx, cy));
+        while current < total {
+            match direction {
+                0 => cx += 1,
+                1 => cy += 1,
+                2 => cx -= 1,
+                3 => cy -= 1,
+                _ => unreachable!("Invalid direction"),
+            }
+
+            self.list.push(Tile(cx, cy));
+
+            direction_current += 1;
+            let direction_total = if direction % 2 == 0 {
+                direction_total_x
+            } else {
+                direction_total_y
+            };
+
+            if direction_current == direction_total {
+                if direction % 2 == 0 {
+                    direction_total_x += 1;
+                } else {
+                    direction_total_y += 1;
+                }
+                direction = (direction + 1) % 4;
+                direction_current = 0;
+            }
+            current += 1;
+        }
+        self.list.reverse();
+    }
+
+    pub fn pop(&mut self) -> Option<Tile> {
+        self.list.pop()
     }
 }
