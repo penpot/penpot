@@ -81,6 +81,7 @@ A non exhaustive list of changes:
 - Copy to SVG from contextual menu [Github #838](https://github.com/penpot/penpot/issues/838)
 - Add styles for Inkeep Chat at workspace [Taiga #10708](https://tree.taiga.io/project/penpot/us/10708)
 - Add configuration for air gapped installations with Docker
+- Persist ruler visibility across files and reloads [GitHub #4586](https://github.com/penpot/penpot/issues/4586)
 
 ### :bug: Bugs fixed
 - Fix getCurrentUser for plugins api [Taiga #11057](https://tree.taiga.io/project/penpot/issue/11057)
