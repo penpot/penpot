@@ -14,7 +14,9 @@
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.shapes :as ths]
-   [app.common.types.container :as ctn]))
+   [app.common.text :as txt]
+   [app.common.types.container :as ctn]
+   [app.common.types.shape :as cts]))
 
 ;; ----- File building
 
@@ -57,6 +59,18 @@
                                     :name "Rect1"
                                     :parent-label frame-label}
                                    child-params))))
+
+(defn add-frame-with-text
+  [file frame-label child-label text & {:keys [frame-params child-params]}]
+  (let [shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
+                  (txt/change-text text)
+                  (assoc :position-data nil
+                         :parent-label frame-label))]
+    (-> file
+        (add-frame frame-label frame-params)
+        (ths/add-sample-shape child-label
+                              (merge shape
+                                     child-params)))))
 
 (defn add-minimal-component
   [file component-label root-label
