@@ -10,7 +10,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.features :as cfeat]
+   ;; [app.common.features :as cfeat]
    [app.common.files.changes :as ch]
    [app.common.files.migrations :as fmig]
    [app.common.geom.shapes :as gsh]
@@ -133,20 +133,6 @@
 (def decode-add-component
   (sm/decode-fn schema:add-component sm/json-transformer))
 
-(def schema:add-component-instance
-  [:map
-   [:component-id ::sm/uuid]
-   [:file-id {:optional true} ::sm/uuid]
-   [:frame-id {:optional true} ::sm/uuid]
-   [:page-id {:optional true} ::sm/uuid]])
-
-(def ^:private check-add-component-instance
-  (sm/check-fn schema:add-component-instance
-               :hint "invalid arguments passed for add-component-instance"))
-
-(def decode-add-component-instance
-  (sm/decode-fn schema:add-component-instance sm/json-transformer))
-
 (def schema:add-bool
   [:map
    [:group-id ::sm/uuid]
@@ -198,11 +184,31 @@
   (-> (get-current-objects state)
       (get shape-id)))
 
+;; WORKAROUND: A copy of features from staging for make the library
+;; generate files compatible with version released right now. This
+;; should be removed and replaced with cfeat/default-features when 2.8
+;; version is released
+
+(def default-features
+  #{"fdata/shape-data-type"
+    "styles/v2"
+    "layout/grid"
+    "components/v2"
+    "plugins/runtime"
+    "design-tokens/v1"})
+
+;; WORKAROUND: the same as features
+(def available-migrations
+  (-> fmig/available-migrations
+      (disj "003-convert-path-content")
+      (disj "0002-clean-shape-interactions")
+      (disj "0003-fix-root-shape")))
+
 (defn add-file
   [state params]
   (let [params (-> params
-                   (assoc :features cfeat/default-features)
-                   (assoc :migrations fmig/available-migrations)
+                   (assoc :features default-features)
+                   (assoc :migrations available-migrations)
                    (update :id default-uuid))
         file   (types.file/make-file params :create-page false)]
     (-> state
@@ -431,33 +437,6 @@
     (-> state
         (commit-change change1)
         (commit-change change2))))
-
-
-(defn add-component-instance
-  [state params]
-
-  (let [{:keys [component-id file-id frame-id page-id]}
-        (check-add-component-instance params)
-
-        file-id
-        (or file-id (get state ::current-file-id))
-
-        frame-id
-        (or frame-id (get state ::current-frame-id))
-
-        page-id
-        (or page-id (get state ::current-page-id))
-
-        change
-        {:type :mod-obj
-         :id frame-id
-         :page-id page-id
-         :operations
-         [{:type :set :attr :component-root :val true}
-          {:type :set :attr :component-id :val component-id}
-          {:type :set :attr :component-file :val file-id}]}]
-
-    (commit-change state change)))
 
 (defn delete-shape
   [file id]
