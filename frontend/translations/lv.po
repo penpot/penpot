@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-30 09:01+0000\n"
+"PO-Revision-Date: 2025-05-31 10:03+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -7535,3 +7535,31 @@ msgstr "Neierobežots plāns (izmēģinājums)"
 #: src/app/main/ui/dashboard/subscription.cljs:67
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Neierobežots plāns"
+
+#: src/app/main/ui/settings/subscription.cljs:57, src/app/main/ui/settings/subscription.cljs:106
+msgid "subscription.settings.professional.storage"
+msgstr "10 GB krātuves un 7 dienu automātiskās saglabāšanas versijas"
+
+#: src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:105
+msgid "subscription.settings.professional.teams-editors"
+msgstr "Neierobežotas komandas līdz 8 dalībniekiem"
+
+#: src/app/main/ui/settings/subscription.cljs:92
+msgid "subscription.settings.support-us-since"
+msgstr "Tu atbalsti mūs kopš %s"
+
+#: src/app/main/ui/settings/subscription.cljs:119
+msgid "subscription.settings.ulimited.try-it-free"
+msgstr "Izmēģināt 14 dienas"
+
+#: src/app/main/ui/settings/subscription.cljs:54, src/app/main/ui/settings/subscription.cljs:101
+msgid "subscription.settings.professional"
+msgstr "Profesionāls"
+
+#: src/app/main/ui/settings/subscription.cljs:55, src/app/main/ui/settings/subscription.cljs:104
+msgid "subscription.settings.professional.projects-files"
+msgstr "Neierobežoti projekti, datnes un uzmetumi"
+
+#: src/app/main/ui/settings/subscription.cljs:51
+msgid "subscription.settings.section-plan"
+msgstr "Tavs abonements"
