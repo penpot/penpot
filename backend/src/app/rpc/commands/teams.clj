@@ -149,7 +149,7 @@
        ON (tpr.profile_id = p.id)
     WHERE t.deleted_at IS null
       AND tp.profile_id = ?
-    ORDER BY tp.created_at ASC;")
+    ORDER BY tp.created_at ASC")
 
 (defn process-permissions
   [team]
