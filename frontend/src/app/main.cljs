@@ -93,7 +93,6 @@
   []
   (mw/init!)
   (i18n/init! cf/translations)
-  (theme/init! cf/themes)
   (cur/init-styles)
   (thr/init!)
   (init-ui)
