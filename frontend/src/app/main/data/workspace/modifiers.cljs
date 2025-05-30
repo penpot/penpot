@@ -36,6 +36,9 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
+(def ^:private xf:without-uuid-zero
+  (remove #(= % uuid/zero)))
+
 ;; -- temporary modifiers -------------------------------------------
 
 ;; During an interactive transformation of shapes (e.g. when resizing or rotating
@@ -594,8 +597,8 @@
   (ptk/reify ::apply-wasm-modifiesr
     ptk/WatchEvent
     (watch [_ state _]
-      (let [geometry-entries
-            (parse-geometry-modifiers modif-tree)
+      (let [objects          (dsh/lookup-page-objects state)
+            geometry-entries (parse-geometry-modifiers modif-tree)
 
             snap-pixel?
             (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
@@ -610,7 +613,7 @@
             (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
 
             ids
-            (into (set (keys modif-tree)) (keys transforms))
+            (into [] xf:without-uuid-zero (keys transforms))
 
             update-shape
             (fn [shape]
@@ -622,6 +625,8 @@
                     (ctm/apply-structure-modifiers modifiers))))]
         (rx/of
          (clear-local-transform)
+         (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
+         (ptk/event ::dwcm/move-frame-comment-threads transforms)
          (dwsh/update-shapes ids update-shape))))))
 
 (def ^:private
@@ -708,9 +713,6 @@
                 (gm/set-objects-modifiers objects))]
 
         (assoc state :workspace-modifiers modif-tree)))))
-
-(def ^:private xf:without-uuid-zero
-  (remove #(= % uuid/zero)))
 
 (def ^:private transform-attrs
   #{:selrect

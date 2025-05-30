@@ -95,9 +95,9 @@
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
 
         ;; DEREFS
-
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
+        wasm-modifiers    (mf/deref workspace-wasm-modifiers)
 
         workspace-editor-state (mf/deref refs/workspace-editor-state)
 
@@ -105,10 +105,9 @@
         objects           (get page :objects)
         page-id           (get page :id)
         background        (get page :background clr/canvas)
+        guides            (get page :guides)
 
         base-objects      (ui-hooks/with-focus-objects objects focus)
-
-        wasm-modifiers    (mf/deref workspace-wasm-modifiers)
 
         objects-modified
         (mf/with-memo
@@ -575,9 +574,10 @@
          [:> guides/viewport-guides*
           {:zoom zoom
            :vbox vbox
-           :guides (:guides page)
+           :guides guides
            :hover-frame guide-frame
-           :disabled-guides disabled-guides?}])
+           :disabled-guides disabled-guides?
+           :modifiers wasm-modifiers}])
 
        ;; DEBUG LAYOUT DROP-ZONES
        (when (dbg/enabled? :layout-drop-zones)
