@@ -1354,6 +1354,26 @@
 
     (update data :pages-index d/update-vals update-page)))
 
+(defmethod migrate-data "0005-deprecate-image-type"
+  [data _]
+  (letfn [(update-object [object]
+            (if (cfh/image-shape? object)
+              (let [metadata (:metadata object)
+                    fills (into [{:fill-image (assoc metadata :keep-aspect-ratio false)
+                                  :opacity    1}]
+                                (:fills object))]
+                (-> object
+                    (assoc :fills fills)
+                    (dissoc :metadata)
+                    (assoc :type :rect)))
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (def available-migrations
   (into (d/ordered-set)
@@ -1414,4 +1434,5 @@
          "0002-clean-shape-interactions"
          "0003-fix-root-shape"
          "0003-convert-path-content"
-         "0004-add-partial-text-touched-flags"]))
+         "0004-add-partial-text-touched-flags"
+         "0005-deprecate-image-type"]))
