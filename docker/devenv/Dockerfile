@@ -19,11 +19,7 @@ RUN set -ex; \
     echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail; \
     apt-get -qq update; \
     apt-get -qqy install --no-install-recommends \
-        build-essential \
-        openssh-client \
-        redis-tools \
         locales \
-        gnupg2 \
         ca-certificates \
         wget \
         sudo \
@@ -32,18 +28,12 @@ RUN set -ex; \
         curl \
         bash \
         git \
-        rlwrap \
-        unzip \
-        rsync \
-        fakeroot \
-        file \
-        less \
-        jq \
-        nginx \
     ; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
     rm -rf /var/lib/apt/lists/*;
+
+COPY files/apt.sources /etc/apt/sources.list.d/ubuntu.sources
 
 RUN set -ex; \
     usermod -l penpot -d /home/penpot -G users -s /bin/bash ubuntu; \
@@ -53,6 +43,19 @@ RUN set -ex; \
 RUN set -ex; \
     apt-get -qq update; \
     apt-get -qqy install --no-install-recommends \
+        build-essential \
+        openssh-client \
+        redis-tools \
+        gnupg2 \
+        rlwrap \
+        unzip \
+        rsync \
+        fakeroot \
+        file \
+        less \
+        jq \
+        nginx \
+        \
         python3 \
         python3-tabulate \
         imagemagick \
@@ -97,6 +100,23 @@ RUN set -ex; \
         libgbm1 \
         xvfb \
         libfontconfig-dev \
+        \
+        fonts-noto-color-emoji \
+        fonts-unifont \
+        libfreetype6 \
+        xfonts-cyrillic \
+        xfonts-scalable \
+        fonts-ipafont-gothic \
+        fonts-wqy-zenhei \
+        fonts-tlwg-loma-otf \
+        fonts-freefont-ttf \
+        libasound2t64 \
+        libatk-bridge2.0-0t64 \
+        libatk1.0-0t64 \
+        libatspi2.0-0t64 \
+        libcups2t64 \
+        libdrm2 \
+        libxkbcommon0 \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
@@ -159,7 +179,6 @@ RUN set -eux; \
     tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
     chown -R root /usr/local/nodejs; \
     corepack enable; \
-    npx playwright install --with-deps chromium; \
     rm -rf /tmp/nodejs.tar.gz;
 
 RUN set -ex; \
