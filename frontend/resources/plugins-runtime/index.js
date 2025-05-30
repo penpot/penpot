@@ -5086,7 +5086,8 @@ class zc extends HTMLElement {
       "allow-modals",
       "allow-popups",
       "allow-popups-to-escape-sandbox",
-      "allow-storage-access-by-user-activation"
+      "allow-storage-access-by-user-activation",
+      "allow-same-origin"
     ), o && l.sandbox.add("allow-downloads"), l.addEventListener("load", () => {
       var d;
       (d = this.shadowRoot) == null || d.dispatchEvent(
