@@ -10,7 +10,9 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.types.color :as ctc]
+   [app.common.types.shape :as shp]
    [app.common.types.shape.attrs :refer [default-color]]
+   [app.config :as cfg]
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
@@ -44,7 +46,7 @@
 
 (mf/defc fill-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values"]))]}
-  [{:keys [ids type values disable-remove?] :as props}]
+  [{:keys [ids type values] :as props}]
   (let [label (case type
                 :multiple (tr "workspace.options.selection-fill")
                 :group (tr "workspace.options.group-fill")
@@ -52,9 +54,14 @@
 
         ;; Excluding nil values
         values               (d/without-nils values)
-        fills                (:fills values)
+        fills                (if (contains? cfg/flags :frontend-binary-fills)
+                               (take shp/MAX-FILLS (d/nilv (:fills values) []))
+                               (:fills values))
         has-fills?           (or (= :multiple fills) (some? (seq fills)))
-
+        can-add-fills?       (if (contains? cfg/flags :frontend-binary-fills)
+                               (and (not (= :multiple fills))
+                                    (< (count fills) shp/MAX-FILLS))
+                               (not (= :multiple fills)))
 
         state*               (mf/use-state has-fills?)
         open?                (deref state*)
@@ -73,12 +80,12 @@
         (mf/use-fn
          (mf/deps ids fills)
          (fn [_]
-           (st/emit! (dc/add-fill ids {:color default-color
-                                       :opacity 1}))
-
-           (when (or (= :multiple fills)
-                     (not (some? (seq fills))))
-             (open-content))))
+           (when can-add-fills?
+             (st/emit! (dc/add-fill ids {:color default-color
+                                         :opacity 1}))
+             (when (or (= :multiple fills)
+                       (not (some? (seq fills))))
+               (open-content)))))
 
         on-change
         (fn [index]
@@ -146,11 +153,12 @@
                      :title        label
                      :class        (stl/css-case :title-spacing-fill (not has-fills?))}
 
-       (when (and (not disable-remove?) (not (= :multiple fills)))
+       (when (not (= :multiple fills))
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "workspace.options.fill.add-fill")
                            :on-click on-add
                            :data-testid "add-fill"
+                           :disabled (not can-add-fills?)
                            :icon "add"}])]]
 
      (when open?
@@ -167,7 +175,7 @@
 
           (seq fills)
           [:& h/sortable-container {}
-           (for [[index value] (d/enumerate (:fills values []))]
+           (for [[index value] (d/enumerate fills)]
              [:> color-row* {:color (ctc/fill->shape-color value)
                              :key index
                              :index index

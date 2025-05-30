@@ -134,7 +134,7 @@
 
         handler-state (mf/use-state {:display? false :offset 0 :hover nil})
 
-        cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :binary-fills))
+        cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
         can-add-stop? (if cap-stops? (< (count stops) shp/MAX-GRADIENT-STOPS) true)
 
         endpoint-on-pointer-down
@@ -525,7 +525,7 @@
         shape        (mf/deref shape-ref)
         state        (mf/deref refs/colorpicker)
         gradient     (:gradient state)
-        cap-stops?   (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :binary-fills))
+        cap-stops?   (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
         stops        (if cap-stops?
                        (vec (take shp/MAX-GRADIENT-STOPS (:stops state)))
                        (:stops state))

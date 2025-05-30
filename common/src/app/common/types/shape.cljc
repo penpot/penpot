@@ -762,4 +762,7 @@
         (cond-> (cfh/text-shape? shape) (patch-text-props props))
         (cond-> (cfh/frame-shape? shape) (patch-layout-props props)))))
 
+;; FIXME: Get these from the wasm module, and tweak the values
+;; (we'd probably want 12 stops at most)
 (def MAX-GRADIENT-STOPS 16)
+(def MAX-FILLS 8)

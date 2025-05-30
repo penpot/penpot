@@ -66,6 +66,31 @@ test.describe("Constraints", () => {
   });
 });
 
+test.describe("Shape attributes", () => {
+  test("Cannot add a new fill when the limit has been reached", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.mockConfigFlags(["enable-frontend-binary-fills"]);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "design/get-file-fills-limit.json");
+
+    await workspace.goToWorkspace({
+      fileId: "d2847136-a651-80ac-8006-4202d9214aa7",
+      pageId: "d2847136-a651-80ac-8006-4202d9214aa8",
+    });
+
+    await workspace.clickLeafLayer("Rectangle");
+
+    await workspace.page.getByTestId("add-fill").click();
+    await expect(
+      workspace.page.getByRole("button", { name: "#B1B2B5" }),
+    ).toHaveCount(8);
+
+    await expect(workspace.page.getByTestId("add-fill")).toBeDisabled();
+  });
+});
+
 test.describe("Multiple shapes attributes", () => {
   test("User selects multiple shapes with sames fills, strokes, shadows and blur", async ({
     page,

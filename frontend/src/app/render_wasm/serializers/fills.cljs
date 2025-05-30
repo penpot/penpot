@@ -1,11 +1,11 @@
 (ns app.render-wasm.serializers.fills
   (:require
+   [app.common.data.macros :as dm]
    [app.common.types.shape :as shp]
    [app.common.uuid :as uuid]
    [app.render-wasm.serializers.color :as clr]))
 
 (def ^:private GRADIENT-STOP-SIZE 8)
-
 
 (def GRADIENT-BYTE-SIZE 156)
 (def SOLID-BYTE-SIZE 4)
@@ -13,6 +13,7 @@
 
 ;; FIXME: get it from the wasm module
 (def FILL-BYTE-SIZE (+ 4 (max GRADIENT-BYTE-SIZE IMAGE-BYTE-SIZE SOLID-BYTE-SIZE)))
+
 
 (defn write-solid-fill!
   [offset dview argb]
@@ -61,3 +62,20 @@
           (.setUint32  dview  loop-offset       argb true)
           (.setFloat32 dview  (+ loop-offset 4) stop-offset true)
           (recur (rest stops) (+ loop-offset GRADIENT-STOP-SIZE)))))))
+
+(defn write-fill!
+  [offset dview fill]
+  (let [opacity  (or (:fill-opacity fill) 1.0)
+        color    (:fill-color fill)
+        gradient (:fill-color-gradient fill)
+        image    (:fill-image fill)]
+    (cond
+      (some? color)
+      (write-solid-fill! offset dview (clr/hex->u32argb color opacity))
+
+      (some? gradient)
+      (write-gradient-fill! offset dview gradient opacity)
+
+      (some? image)
+      (let [id (dm/get-prop image :id)]
+        (write-image-fill! offset dview id opacity (dm/get-prop image :width) (dm/get-prop image :height))))))

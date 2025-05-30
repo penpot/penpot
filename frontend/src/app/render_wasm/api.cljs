@@ -13,6 +13,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.types.path :as path]
+   [app.common.types.shape :as shp]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -241,33 +242,24 @@
   [fills]
   (h/call wasm/internal-module "_clear_shape_fills")
   (keep (fn [fill]
-          (let [opacity  (or (:fill-opacity fill) 1.0)
-                color    (:fill-color fill)
-                gradient (:fill-color-gradient fill)
-                image    (:fill-image fill)
-                offset   (mem/alloc-bytes sr-fills/FILL-BYTE-SIZE)
+          (let [offset (mem/alloc-bytes sr-fills/FILL-BYTE-SIZE)
                 heap     (mem/get-heap-u8)
-                dview    (js/DataView. (.-buffer heap))]
-            (cond
-              (some? color)
-              (do
-                (sr-fills/write-solid-fill! offset dview (sr-clr/hex->u32argb color opacity))
-                (h/call wasm/internal-module "_add_shape_fill"))
-
-              (some? gradient)
-              (do
-                (sr-fills/write-gradient-fill! offset dview gradient opacity)
-                (h/call wasm/internal-module "_add_shape_fill"))
-
-              (some? image)
-              (let [id            (dm/get-prop image :id)
-                    buffer        (uuid/get-u32 id)
-                    cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
-                (sr-fills/write-image-fill! offset dview id opacity (dm/get-prop image :width) (dm/get-prop image :height))
-                (h/call wasm/internal-module "_add_shape_fill")
-                (when (== cached-image? 0)
+                dview    (js/DataView. (.-buffer heap))
+                image (:fill-image fill)]
+            (sr-fills/write-fill! offset dview fill)
+            (h/call wasm/internal-module "_add_shape_fill")
+            ;; store image for image fills if not cached
+            (when (some? image)
+              (let [id     (dm/get-prop image :id)
+                    buffer (uuid/get-u32 id)
+                    cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                          (aget buffer 0)
+                                          (aget buffer 1)
+                                          (aget buffer 2)
+                                          (aget buffer 3))]
+                (when (zero? cached-image?)
                   (store-image id))))))
-        fills))
+        (take shp/MAX-FILLS fills)))
 
 (defn set-shape-strokes
   [strokes]
