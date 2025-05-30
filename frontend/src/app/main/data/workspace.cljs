@@ -274,6 +274,14 @@
              (rx/map bundle-fetched)
              (rx/take-until stopper-s))))))
 
+(defn process-wasm-object
+  [id]
+  (ptk/reify ::process-wasm-object
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [objects (dsh/lookup-page-objects state)]
+        (api/process-object (get objects id))))))
+
 (defn initialize-workspace
   [team-id file-id]
   (assert (uuid? team-id) "expected valud uuid for `team-id`")
@@ -361,24 +369,30 @@
                      (rx/take 1)
                      (rx/map #(dwcm/navigate-to-comment-id comment-id))))
 
+              (when render-wasm?
+                (->> stream
+                     (rx/filter dch/commit?)
+                     (rx/map deref)
+                     (rx/mapcat
+                      (fn [{:keys [redo-changes]}]
+                        (let [added (->> redo-changes
+                                         (filter #(= (:type %) :add-obj))
+                                         (map :id))]
+                          (->> (rx/from added)
+                               (rx/map process-wasm-object)))))))
+
               (->> stream
                    (rx/filter dch/commit?)
                    (rx/map deref)
-                   (rx/mapcat (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo?]}]
-                                (when render-wasm?
-                                  (let [added (->> redo-changes
-                                                   (filter #(= (:type %) :add-obj))
-                                                   (map :obj))]
-                                    (doseq [shape added]
-                                      (api/process-object shape))))
-
-                                (if (and save-undo? (seq undo-changes))
-                                  (let [entry {:undo-changes undo-changes
-                                               :redo-changes redo-changes
-                                               :undo-group undo-group
-                                               :tags tags}]
-                                    (rx/of (dwu/append-undo entry stack-undo?)))
-                                  (rx/empty))))))
+                   (rx/mapcat
+                    (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo?]}]
+                      (if (and save-undo? (seq undo-changes))
+                        (let [entry {:undo-changes undo-changes
+                                     :redo-changes redo-changes
+                                     :undo-group undo-group
+                                     :tags tags}]
+                          (rx/of (dwu/append-undo entry stack-undo?)))
+                        (rx/empty))))))
              (rx/take-until stoper-s))))
 
     ptk/EffectEvent
