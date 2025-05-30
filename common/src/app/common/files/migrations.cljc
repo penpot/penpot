@@ -1375,6 +1375,38 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0006-fix-old-texts-fills"
+  [data _]
+  (letfn [(fix-fills [node]
+            (let [fills (cond
+                          (or (some? (:fill-color node))
+                              (some? (:fill-opacity node))
+                              (some? (:fill-color-gradient node)))
+                          [(d/without-nils (select-keys node [:fill-color :fill-opacity :fill-color-gradient
+                                                              :fill-color-ref-id :fill-color-ref-file]))]
+
+                          (nil? (:fills node))
+                          [{:fill-color "#000000" :fill-opacity 1}]
+
+                          :else
+                          (:fills node))]
+              (-> node
+                  (assoc :fills fills)
+                  (dissoc :fill-color :fill-opacity :fill-color-gradient
+                          :fill-color-ref-id :fill-color-ref-file))))
+
+          (update-object [object]
+            (if (cfh/text-shape? object)
+              (update object :content (partial txt/transform-nodes identity fix-fills))
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1435,4 +1467,5 @@
          "0003-fix-root-shape"
          "0003-convert-path-content"
          "0004-add-partial-text-touched-flags"
-         "0005-deprecate-image-type"]))
+         "0005-deprecate-image-type"
+         "0006-fix-old-texts-fills"]))
