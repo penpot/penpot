@@ -284,7 +284,8 @@ RUN set -eux; \
     cd emsdk; \
     ./emsdk install $EMSCRIPTEN_VERSION; \
     ./emsdk activate $EMSCRIPTEN_VERSION; \
-    rustup target add wasm32-unknown-emscripten;
+    rustup target add wasm32-unknown-emscripten; \
+    cargo install cargo-watch;
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
 COPY files/nginx-mime.types /etc/nginx/mime.types
