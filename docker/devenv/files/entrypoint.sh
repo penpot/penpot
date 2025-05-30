@@ -2,8 +2,7 @@
 
 set -e
 
-rsync -avr /usr/local/cargo/ /home/penpot/.cargo/
-
-usermod -u ${EXTERNAL_UID:-1000} penpot
+usermod -u ${EXTERNAL_UID:-1000} penpot;
+chown -R penpot:users /home/cargo;
 
 exec "$@"

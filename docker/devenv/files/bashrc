@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 
 export JAVA_OPTS=${JAVA_OPTS:-"-Xmx1000m -Xms200m"};
-export CARGO_HOME=$HOME/.cargo;
-export PATH=$HOME/.cargo/bin:$PATH
-
-EMSDK_QUIET=1 . /usr/local/emsdk/emsdk_env.sh;
+EMSDK_QUIET=1 . /home/emsdk/emsdk_env.sh;
 
 alias l='ls --color -GFlh'
 alias rm='rm -r'
