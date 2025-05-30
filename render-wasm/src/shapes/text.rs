@@ -103,7 +103,7 @@ impl TextContent {
                 let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
                 for leaf in &p.children {
                     let text_style = leaf.to_style(p, &self.bounds); // FIXME
-                    let text = leaf.apply_text_transform(p.text_transform);
+                    let text = leaf.apply_text_transform();
                     builder.push_style(&text_style);
                     builder.add_text(&text);
                     builder.pop();
@@ -131,7 +131,7 @@ impl TextContent {
                 let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
                 for leaf in &paragraph.children {
                     let stroke_style = leaf.to_stroke_style(paragraph, &stroke_paint);
-                    let text: String = leaf.apply_text_transform(paragraph.text_transform);
+                    let text: String = leaf.apply_text_transform();
                     builder.push_style(&stroke_style);
                     builder.add_text(&text);
                     builder.pop();
@@ -301,15 +301,20 @@ pub struct TextLeaf {
     font_style: u8,
     font_weight: i32,
     font_variant_id: Uuid,
+    text_decoration: u8,
+    text_transform: u8,
     fills: Vec<shapes::Fill>,
 }
 
 impl TextLeaf {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         text: String,
         font_family: FontFamily,
         font_size: f32,
         font_style: u8,
+        text_decoration: u8,
+        text_transform: u8,
         font_weight: i32,
         font_variant_id: Uuid,
         fills: Vec<shapes::Fill>,
@@ -319,6 +324,8 @@ impl TextLeaf {
             font_family,
             font_size,
             font_style,
+            text_decoration,
+            text_transform,
             font_weight,
             font_variant_id,
             fills,
@@ -345,7 +352,7 @@ impl TextLeaf {
         style.set_letter_spacing(paragraph.letter_spacing);
         style.set_height(paragraph.line_height);
         style.set_height_override(true);
-        style.set_decoration_type(match paragraph.text_decoration {
+        style.set_decoration_type(match self.text_decoration {
             0 => skia::textlayout::TextDecoration::NO_DECORATION,
             1 => skia::textlayout::TextDecoration::UNDERLINE,
             2 => skia::textlayout::TextDecoration::LINE_THROUGH,
@@ -373,7 +380,7 @@ impl TextLeaf {
         style.set_foreground_paint(stroke_paint);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(paragraph.letter_spacing);
-        style.set_decoration_type(match paragraph.text_decoration {
+        style.set_decoration_type(match self.text_decoration {
             0 => skia::textlayout::TextDecoration::NO_DECORATION,
             1 => skia::textlayout::TextDecoration::UNDERLINE,
             2 => skia::textlayout::TextDecoration::LINE_THROUGH,
@@ -387,8 +394,8 @@ impl TextLeaf {
         format!("{}", self.font_family)
     }
 
-    pub fn apply_text_transform(&self, transform: u8) -> String {
-        match transform {
+    pub fn apply_text_transform(&self) -> String {
+        match self.text_transform {
             1 => self.text.to_uppercase(),
             2 => self.text.to_lowercase(),
             3 => self
@@ -413,15 +420,15 @@ impl TextLeaf {
 }
 
 const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
-//const RAW_LEAF_DATA_SIZE: usize = std::mem::size_of::<RawTextLeaf>();
-// FIXME
-pub const RAW_LEAF_DATA_SIZE: usize = 56;
+const RAW_LEAF_DATA_SIZE: usize = std::mem::size_of::<RawTextLeaf>();
 pub const RAW_LEAF_FILLS_SIZE: usize = 160;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct RawTextLeaf {
     font_style: u8,
+    text_decoration: u8,
+    text_transform: u8,
     font_size: f32,
     font_weight: i32,
     font_id: [u32; 4],
@@ -452,6 +459,8 @@ impl TryFrom<&[u8]> for RawTextLeaf {
 #[derive(Debug, Clone)]
 pub struct RawTextLeafData {
     font_style: u8,
+    text_decoration: u8,
+    text_transform: u8,
     font_size: f32,
     font_weight: i32,
     font_id: [u32; 4],
@@ -479,6 +488,8 @@ impl From<&[u8]> for RawTextLeafData {
 
         Self {
             font_style: text_leaf.font_style,
+            text_decoration: text_leaf.text_decoration,
+            text_transform: text_leaf.text_transform,
             font_size: text_leaf.font_size,
             font_weight: text_leaf.font_weight,
             font_id: text_leaf.font_id,
@@ -583,6 +594,8 @@ impl From<&Vec<u8>> for RawTextData {
                 font_family,
                 text_leaf.font_size,
                 text_leaf.font_style,
+                text_leaf.text_decoration,
+                text_leaf.text_transform,
                 text_leaf.font_weight,
                 font_variant_id,
                 text_leaf.fills.clone(),

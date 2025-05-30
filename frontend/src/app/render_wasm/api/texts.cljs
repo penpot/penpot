@@ -104,12 +104,17 @@
               font-id (f/serialize-font-id (:font-id leaf))
               font-family (hash (:font-family leaf))
               font-variant-id (sr/serialize-uuid (:font-variant-id leaf))
+              leaf-text-decoration (or (sr/serialize-text-decoration (:text-decoration leaf)) (sr/serialize-text-decoration (:text-decoration paragraph)))
+              leaf-text-transform (or (sr/serialize-text-transform (:text-transform leaf)) (sr/serialize-text-transform (:text-transform paragraph)))
               text-buffer (utf8->buffer (:text leaf))
               text-length (.-byteLength text-buffer)
               fills (:fills leaf)
               total-fills (count fills)]
 
           (.setUint8 dview offset font-style le?)
+          (.setUint8 dview (+ offset 1) leaf-text-decoration le?)
+          (.setUint8 dview (+ offset 2) leaf-text-transform le?)
+
           (.setFloat32 dview (+ offset 4) font-size le?)
           (.setUint32 dview (+ offset 8) font-weight le?)
           (.setUint32 dview (+ offset 12) (aget font-id 0) le?)
