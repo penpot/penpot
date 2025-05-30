@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>WASM + WebGL2 Texts</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script type="module">
+    import initWasmModule from '/js/render_wasm.js';
+    import {
+      init, assignCanvas, setupInteraction, useShape, setShapeChildren, addTextShape, hexToU32ARGB,getRandomInt, getRandomColor, getRandomFloat, addShapeSolidFill, addShapeSolidStrokeFill
+    } from './js/lib.js';
+
+    const canvas = document.getElementById("canvas");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const MIN_LINES = 1;
+    const MAX_LINES = 5;
+    const MIN_WORDS = 1;
+    const MAX_WORDS = 10;
+
+    const params = new URLSearchParams(document.location.search);
+    const texts = params.get("texts") || 100;
+
+    function getRandomText() {
+      const words = ["Hello", "World", "Penpot", "Canvas", "Text", "Shape", "Random", "Line"];
+      const lines = Math.floor(Math.random() * MAX_LINES) + MIN_LINES;
+      let text = "";
+      for (let i = 0; i < lines; i++) {
+        const lineLength = Math.floor(Math.random() * MAX_WORDS) + MIN_WORDS;
+        const line = Array.from({ length: lineLength }, () => words[Math.floor(Math.random() * words.length)]).join(" ");
+        text += line;
+        if (i < lines - 1) text += "\n";
+      }
+      return text;
+    }
+
+    initWasmModule().then(Module => {
+      init(Module);
+      assignCanvas(canvas);
+      Module._set_canvas_background(hexToU32ARGB("#FABADA", 1));
+      Module._set_view(1, 0, 0);
+      Module._init_shapes_pool(texts + 1);
+      setupInteraction(canvas);
+
+      const children = [];
+      for (let i = 0; i < texts; i++) {
+        const uuid = crypto.randomUUID();
+        children.push(uuid);
+
+        useShape(uuid);
+        Module._set_parent(0, 0, 0, 0);
+        Module._set_shape_type(5);
+
+        const x1 = getRandomInt(0, canvas.width);
+        const y1 = getRandomInt(0, canvas.height);
+        const width = getRandomInt(20, 500);
+        const height = getRandomInt(20, 100);
+        Module._set_shape_selrect(x1, y1, x1 + width, y1 + height);
+
+        if (Math.random() < 0.3) {
+          const numStrokes = getRandomInt(1, 3);
+          for (let j = 0; j < numStrokes; j++) {
+            const strokeWidth = getRandomInt(1, 10);
+            Module._add_shape_center_stroke(strokeWidth, 0, 0, 0);
+            const color = getRandomColor();
+            const argb2 = hexToU32ARGB(color, getRandomFloat(0.1, 1.0));
+            addShapeSolidStrokeFill(argb2);
+          }
+        }
+
+        const fontSize = Math.random() * 50 + 10;
+        const text = getRandomText();
+        addTextShape(x1, y1, fontSize, text);
+      }
+
+      useShape("00000000-0000-0000-0000-000000000000");
+      setShapeChildren(children);
+
+      performance.mark('render:begin');
+      Module._render(Date.now());
+      performance.mark('render:end');
+      const { duration } = performance.measure('render', 'render:begin', 'render:end');
+      console.log(`Render time: ${duration.toFixed(2)}ms`);
+    });
+  </script>
+</body>
+</html>

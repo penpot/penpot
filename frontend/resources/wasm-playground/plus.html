@@ -27,7 +27,7 @@
     import {
       init, addShapeSolidFill, assignCanvas, hexToU32ARGB, getRandomInt, getRandomColor,
       getRandomFloat, useShape, setShapeChildren, setupInteraction, set_parent, allocBytes,
-      addShapeSolidStroleFill, getHeapU32
+      addShapeSolidStrokeFill, getHeapU32
     } from './js/lib.js';
 
     const canvas = document.getElementById("canvas");
@@ -90,7 +90,7 @@
         const color = getRandomColor();
         Module._add_shape_center_stroke(10, 0,  0, 0);
         const argb2 = hexToU32ARGB(color, getRandomFloat(0.1, 1.0));
-        addShapeSolidStroleFill(argb2);
+        addShapeSolidStrokeFill(argb2);
 
       }
 
