@@ -147,7 +147,6 @@ jobs:
           working_directory: "./frontend"
           command: |
             yarn install
-            yarn run playwright install --with-deps chromium
 
       - run:
           name: Build Storybook
@@ -189,7 +188,6 @@ jobs:
             yarn run build:app:assets
             yarn run build:app
             yarn run build:app:libs
-            yarn run playwright install --with-deps chromium
             yarn run test:e2e -x --workers=4
 
   test-backend:
