@@ -24,6 +24,7 @@
    [app.db.sql :as-alias sql]
    [app.features.fdata :as feat.fdata]
    [app.features.file-migrations :as feat.fmigr]
+   [app.features.logical-deletion :as ldel]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
@@ -934,12 +935,13 @@
 ;; --- MUTATION COMMAND: delete-file
 
 (defn- mark-file-deleted
-  [conn file-id]
-  (let [file (db/update! conn :file
-                         {:deleted-at (dt/now)}
-                         {:id file-id}
-                         {::db/return-keys [:id :name :is-shared :deleted-at
-                                            :project-id :created-at :modified-at]})]
+  [conn team file-id]
+  (let [delay (ldel/get-deletion-delay team)
+        file  (db/update! conn :file
+                          {:deleted-at (dt/in-future delay)}
+                          {:id file-id}
+                          {::db/return-keys [:id :name :is-shared :deleted-at
+                                             :project-id :created-at :modified-at]})]
     (wrk/submit! {::db/conn conn
                   ::wrk/task :delete-object
                   ::wrk/params {:object :file
@@ -955,7 +957,11 @@
 (defn- delete-file
   [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
   (check-edition-permissions! conn profile-id id)
-  (let [file (mark-file-deleted conn id)]
+  (let [team (teams/get-team conn
+                             :profile-id profile-id
+                             :file-id id)
+        file (mark-file-deleted conn team id)]
+
     (rph/with-meta (rph/wrap)
       {::audit/props {:project-id (:project-id file)
                       :name (:name file)

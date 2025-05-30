@@ -209,16 +209,16 @@
                     ::rpc/profile-id (:id prof1)
                     :id (:id team1)}
             out    (th/command! params)]
-      ;; (th/print-result! out)
+        ;; (th/print-result! out)
 
         (let [team (th/db-get :team {:id (:id team1)} {::db/remove-deleted false})]
           (t/is (dt/instant? (:deleted-at team)))))
 
-    ;; Request profile to be deleted
+      ;; Request profile to be deleted
       (let [params {::th/type :delete-profile
                     ::rpc/profile-id (:id prof1)}
             out    (th/command! params)]
-      ;; (th/print-result! out)
+        ;; (th/print-result! out)
         (t/is (nil? (:result out)))
         (t/is (nil? (:error out)))))))
 

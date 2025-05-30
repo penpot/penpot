@@ -12,6 +12,7 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.db.sql :as-alias sql]
+   [app.features.logical-deletion :as ldel]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
@@ -202,32 +203,40 @@
 (sv/defmethod ::delete-font
   {::doc/added "1.18"
    ::webhooks/event? true
-   ::sm/params schema:delete-font}
-  [cfg {:keys [::rpc/profile-id id team-id]}]
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
-                (teams/check-edition-permissions! conn profile-id team-id)
-                (let [fonts   (db/query conn :team-font-variant
-                                        {:team-id team-id
-                                         :font-id id
-                                         :deleted-at nil}
-                                        {::sql/for-update true})
-                      tnow    (dt/now)]
+   ::sm/params schema:delete-font
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id team-id]}]
+  (let [team  (teams/get-team conn
+                              :profile-id profile-id
+                              :team-id team-id)
 
-                  (when-not (seq fonts)
-                    (ex/raise :type :not-found
-                              :code :object-not-found))
+        fonts (db/query conn :team-font-variant
+                        {:team-id team-id
+                         :font-id id
+                         :deleted-at nil}
+                        {::sql/for-update true})
 
-                  (doseq [font fonts]
-                    (db/update! conn :team-font-variant
-                                {:deleted-at tnow}
-                                {:id (:id font)}))
+        delay (ldel/get-deletion-delay team)
+        tnow  (dt/in-future delay)]
 
-                  (rph/with-meta (rph/wrap)
-                    {::audit/props {:id id
-                                    :team-id team-id
-                                    :name (:font-family (peek fonts))
-                                    :profile-id profile-id}})))))
+    (teams/check-edition-permissions! (:permissions team))
+
+    (when-not (seq fonts)
+      (ex/raise :type :not-found
+                :code :object-not-found))
+
+
+    (doseq [font fonts]
+      (db/update! conn :team-font-variant
+                  {:deleted-at tnow}
+                  {:id (:id font)}
+                  {::db/return-keys false}))
+
+    (rph/with-meta (rph/wrap)
+      {::audit/props {:id id
+                      :team-id team-id
+                      :name (:font-family (peek fonts))
+                      :profile-id profile-id}})))
 
 ;; --- DELETE FONT VARIANT
 
@@ -239,19 +248,23 @@
 (sv/defmethod ::delete-font-variant
   {::doc/added "1.18"
    ::webhooks/event? true
-   ::sm/params schema:delete-font-variant}
-  [cfg {:keys [::rpc/profile-id id team-id]}]
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
-                (teams/check-edition-permissions! conn profile-id team-id)
-                (let [variant (db/get conn :team-font-variant
-                                      {:id id :team-id team-id}
-                                      {::sql/for-update true})]
+   ::sm/params schema:delete-font-variant
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id team-id]}]
+  (let [team    (teams/get-team conn
+                                :profile-id profile-id
+                                :team-id team-id)
+        variant (db/get conn :team-font-variant
+                        {:id id :team-id team-id}
+                        {::sql/for-update true})
+        delay   (ldel/get-deletion-delay team)]
 
-                  (db/update! conn :team-font-variant
-                              {:deleted-at (dt/now)}
-                              {:id (:id variant)})
+    (teams/check-edition-permissions! (:permissions team))
+    (db/update! conn :team-font-variant
+                {:deleted-at (dt/in-future delay)}
+                {:id (:id variant)}
+                {::db/return-keys false})
 
-                  (rph/with-meta (rph/wrap)
-                    {::audit/props {:font-family (:font-family variant)
-                                    :font-id (:font-id variant)}})))))
+    (rph/with-meta (rph/wrap)
+      {::audit/props {:font-family (:font-family variant)
+                      :font-id (:font-id variant)}})))

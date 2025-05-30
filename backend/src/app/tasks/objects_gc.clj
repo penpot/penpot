@@ -9,7 +9,6 @@
   of deleted or unreachable objects."
   (:require
    [app.common.logging :as l]
-   [app.config :as cf]
    [app.db :as db]
    [app.storage :as sto]
    [app.util.time :as dt]
@@ -18,15 +17,15 @@
 (def ^:private sql:get-profiles
   "SELECT id, photo_id FROM profile
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() - ?::interval
+      AND deleted_at < now() + ?::interval
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-profiles!
-  [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-profiles min-age chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-profiles deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id photo-id]}]
                  (l/trc :hint "permanently delete" :rel "profile" :id (str id))
 
@@ -41,15 +40,15 @@
 (def ^:private sql:get-teams
   "SELECT deleted_at, id, photo_id FROM team
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() - ?::interval
+      AND deleted_at < now() + ?::interval
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-teams!
-  [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-teams min-age chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-teams deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id photo-id deleted-at]}]
                  (l/trc :hint "permanently delete"
                         :rel "team"
@@ -69,15 +68,15 @@
   "SELECT id, team_id, deleted_at, woff1_file_id, woff2_file_id, otf_file_id, ttf_file_id
      FROM team_font_variant
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() - ?::interval
+      AND deleted_at < now() + ?::interval
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-fonts!
-  [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-fonts min-age chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-fonts deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id team-id deleted-at] :as font}]
                  (l/trc :hint "permanently delete"
                         :rel "team-font-variant"
@@ -101,15 +100,15 @@
   "SELECT id, deleted_at, team_id
      FROM project
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() - ?::interval
+      AND deleted_at < now() + ?::interval
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-projects!
-  [{:keys [::db/conn ::min-age ::chunk-size] :as cfg}]
-  (->> (db/plan conn [sql:get-projects min-age chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size] :as cfg}]
+  (->> (db/plan conn [sql:get-projects deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id team-id deleted-at]}]
                  (l/trc :hint "permanently delete"
                         :rel "project"
@@ -127,15 +126,15 @@
   "SELECT id, deleted_at, project_id, data_backend, data_ref_id
      FROM file
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() - ?::interval
+      AND deleted_at < now() + ?::interval
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-files!
-  [{:keys [::db/conn ::sto/storage ::min-age ::chunk-size] :as cfg}]
-  (->> (db/plan conn [sql:get-files min-age chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::sto/storage ::deletion-threshold ::chunk-size] :as cfg}]
+  (->> (db/plan conn [sql:get-files deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id deleted-at project-id] :as file}]
                  (l/trc :hint "permanently delete"
                         :rel "file"
@@ -156,15 +155,15 @@
   "SELECT file_id, revn, media_id, deleted_at
      FROM file_thumbnail
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() - ?::interval
+      AND deleted_at < now() + ?::interval
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn delete-file-thumbnails!
-  [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-file-thumbnails min-age chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-file-thumbnails deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id revn media-id deleted-at]}]
                  (l/trc :hint "permanently delete"
                         :rel "file-thumbnail"
@@ -185,15 +184,15 @@
   "SELECT file_id, object_id, media_id, deleted_at
      FROM file_tagged_object_thumbnail
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() - ?::interval
+      AND deleted_at < now() + ?::interval
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn delete-file-object-thumbnails!
-  [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-file-object-thumbnails min-age chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-file-object-thumbnails deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id object-id media-id deleted-at]}]
                  (l/trc :hint "permanently delete"
                         :rel "file-tagged-object-thumbnail"
@@ -214,15 +213,15 @@
   "SELECT file_id, id, deleted_at, data_ref_id
      FROM file_data_fragment
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() - ?::interval
+      AND deleted_at < now() + ?::interval
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-file-data-fragments!
-  [{:keys [::db/conn ::sto/storage ::min-age ::chunk-size] :as cfg}]
-  (->> (db/plan conn [sql:get-file-data-fragments min-age chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::sto/storage ::deletion-threshold ::chunk-size] :as cfg}]
+  (->> (db/plan conn [sql:get-file-data-fragments deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id id deleted-at data-ref-id]}]
                  (l/trc :hint "permanently delete"
                         :rel "file-data-fragment"
@@ -240,15 +239,15 @@
   "SELECT id, file_id, media_id, thumbnail_id, deleted_at
      FROM file_media_object
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() - ?::interval
+      AND deleted_at < now() + ?::interval
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-file-media-objects!
-  [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-file-media-objects min-age chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-file-media-objects deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id file-id deleted-at] :as fmo}]
                  (l/trc :hint "permanently delete"
                         :rel "file-media-object"
@@ -269,15 +268,15 @@
   "SELECT id, file_id, deleted_at, data_backend, data_ref_id
      FROM file_change
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() - ?::interval
+      AND deleted_at < now() + ?::interval
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-file-changes!
-  [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-file-change min-age chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-file-change deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id file-id deleted-at] :as xlog}]
                  (l/trc :hint "permanently delete"
                         :rel "file-change"
@@ -324,16 +323,13 @@
 
 (defmethod ig/expand-key ::handler
   [k v]
-  {k (assoc v
-            ::min-age (cf/get-deletion-delay)
-            ::chunk-size 100)})
+  {k (assoc v ::chunk-size 100)})
 
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (let [min-age (dt/duration (or (:min-age props) (::min-age cfg)))
-          cfg     (assoc cfg ::min-age (db/interval min-age))]
-
+    (let [threshold (dt/duration (get props :deletion-threshold 0))
+          cfg       (assoc cfg ::deletion-threshold (db/interval threshold))]
       (loop [procs (map deref deletion-proc-vars)
              total 0]
         (if-let [proc-fn (first procs)]
