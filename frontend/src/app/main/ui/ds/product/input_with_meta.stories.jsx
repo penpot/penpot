@@ -19,10 +19,14 @@ export default {
     meta: {
       control: { type: "text" },
     },
+    maxLength: {
+      control: { type: "number" },
+    },
   },
   args: {
     value: "Property 1",
     meta: "Value1, Value2",
+    maxLength: 10,
   },
   render: ({ ...args }) => <InputWithMeta {...args} />,
 };

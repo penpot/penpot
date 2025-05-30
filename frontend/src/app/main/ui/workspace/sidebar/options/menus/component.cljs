@@ -317,6 +317,7 @@
          [:*
           [:div {:class (stl/css :variant-property-name-wrapper)}
            [:> input-with-meta* {:value (:name prop)
+                                 :max-length ctv/property-max-length
                                  :data-position pos
                                  :on-blur update-property-name}]]
 
@@ -326,6 +327,7 @@
                            :default-selected (if mixed-value? "" (:value prop))
                            :options (clj->js (get-options (:name prop)))
                            :empty-to-end true
+                           :max-length ctv/property-max-length
                            :on-change (partial update-property-value pos)}])]])]
 
      (when variant-error-msg
@@ -965,6 +967,7 @@
                       :class (stl/css :variant-property-row)}
                 [:> input-with-meta* {:value (:name property)
                                       :meta meta
+                                      :max-length ctv/property-max-length
                                       :data-position pos
                                       :on-blur update-property-name}]
                 [:> icon-button* {:variant "ghost"

@@ -25,11 +25,14 @@
         string-valid-with-no-value   "border=no, color="
         string-valid-with-dashes     "border=no, color=--"
         string-valid-with-equal      "border=yes color=yes"
-        string-invalid-1             ""
-        string-invalid-2             "=yes"
-        string-invalid-3             "border"
-        string-invalid-4             "border=yes, =gray"
-        string-invalid-5             "border=yes, color"]
+
+        string-invalid-empty         ""
+        string-invalid-no-property-1 "=yes"
+        string-invalid-no-property-2 "border=yes, =gray"
+        string-invalid-no-equal-1    "border"
+        string-invalid-no-equal-2    "border=yes, color"
+        string-invalid-too-long-1    "this is a too long property name which should throw a validation error=yes"
+        string-invalid-too-long-2    "border=this is a too long property name which should throw a validation error"]
 
     (t/testing "convert map to formula"
       (t/is (= (ctv/properties-map->formula map-with-two-props) string-valid-with-two-props))
@@ -50,11 +53,13 @@
       (t/is (= (ctv/valid-properties-formula? string-valid-with-spaces) true))
       (t/is (= (ctv/valid-properties-formula? string-valid-with-no-value) true))
       (t/is (= (ctv/valid-properties-formula? string-valid-with-dashes) true))
-      (t/is (= (ctv/valid-properties-formula? string-invalid-1) false))
-      (t/is (= (ctv/valid-properties-formula? string-invalid-2) false))
-      (t/is (= (ctv/valid-properties-formula? string-invalid-3) false))
-      (t/is (= (ctv/valid-properties-formula? string-invalid-4) false))
-      (t/is (= (ctv/valid-properties-formula? string-invalid-5) false)))))
+      (t/is (= (ctv/valid-properties-formula? string-invalid-empty) false))
+      (t/is (= (ctv/valid-properties-formula? string-invalid-no-property-1) false))
+      (t/is (= (ctv/valid-properties-formula? string-invalid-no-equal-1) false))
+      (t/is (= (ctv/valid-properties-formula? string-invalid-no-property-2) false))
+      (t/is (= (ctv/valid-properties-formula? string-invalid-no-equal-2) false))
+      (t/is (= (ctv/valid-properties-formula? string-invalid-too-long-1) false))
+      (t/is (= (ctv/valid-properties-formula? string-invalid-too-long-2) false)))))
 
 
 (t/deftest find-properties
