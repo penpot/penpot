@@ -53,6 +53,7 @@
               {
                 "~#penpot/token-set": {
                   "~:name": "core",
+                  "~:id": "~u51e13852-1a8e-8037-8005-9e9413a1f1f6",
                   "~:description": "",
                   "~:modified-at": "~m1737542498283",
                   "~:tokens": {
@@ -61,6 +62,7 @@
                         "colors.red.600",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d600",
                             "~:name": "colors.red.600",
                             "~:type": "~:color",
                             "~:value": "#e53e3e",
@@ -73,6 +75,7 @@
                         "colors.white",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d601",
                             "~:name": "colors.white",
                             "~:type": "~:color",
                             "~:value": "#ffffff",
@@ -85,6 +88,7 @@
                         "colors.pink.400",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d602",
                             "~:name": "colors.pink.400",
                             "~:type": "~:color",
                             "~:value": "#f687b3",
@@ -97,6 +101,7 @@
                         "colors.blue.300",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d603",
                             "~:name": "colors.blue.300",
                             "~:type": "~:color",
                             "~:value": "#90cdf4",
@@ -109,6 +114,7 @@
                         "colors.red.700",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d604",
                             "~:name": "colors.red.700",
                             "~:type": "~:color",
                             "~:value": "#c53030",
@@ -121,6 +127,7 @@
                         "colors.pink.800",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d605",
                             "~:name": "colors.pink.800",
                             "~:type": "~:color",
                             "~:value": "#97266d",
@@ -133,6 +140,7 @@
                         "colors.green.100",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d606",
                             "~:name": "colors.green.100",
                             "~:type": "~:color",
                             "~:value": "#f0fff4",
@@ -145,6 +153,7 @@
                         "colors.blue.100",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d607",
                             "~:name": "colors.blue.100",
                             "~:type": "~:color",
                             "~:value": "#ebf8ff",
@@ -157,6 +166,7 @@
                         "colors.green.800",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d608",
                             "~:name": "colors.green.800",
                             "~:type": "~:color",
                             "~:value": "#276749",
@@ -169,6 +179,7 @@
                         "colors.indigo.500",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d609",
                             "~:name": "colors.indigo.500",
                             "~:type": "~:color",
                             "~:value": "#667eea",
@@ -181,6 +192,7 @@
                         "dimension.sm",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d610",
                             "~:name": "dimension.sm",
                             "~:type": "~:dimensions",
                             "~:value": "{dimension.xs} * {dimension.scale}",
@@ -193,6 +205,7 @@
                         "colors.purple.900",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d611",
                             "~:name": "colors.purple.900",
                             "~:type": "~:color",
                             "~:value": "#44337a",
@@ -205,6 +218,7 @@
                         "colors.orange.200",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d612",
                             "~:name": "colors.orange.200",
                             "~:type": "~:color",
                             "~:value": "#feebc8",
@@ -217,6 +231,7 @@
                         "colors.teal.700",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d613",
                             "~:name": "colors.teal.700",
                             "~:type": "~:color",
                             "~:value": "#2c7a7b",
@@ -229,6 +244,7 @@
                         "colors.green.300",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d614",
                             "~:name": "colors.green.300",
                             "~:type": "~:color",
                             "~:value": "#9ae6b4",
@@ -241,6 +257,7 @@
                         "colors.pink.600",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d615",
                             "~:name": "colors.pink.600",
                             "~:type": "~:color",
                             "~:value": "#d53f8c",
@@ -253,6 +270,7 @@
                         "colors.yellow.200",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d616",
                             "~:name": "colors.yellow.200",
                             "~:type": "~:color",
                             "~:value": "#fefcbf",
@@ -265,6 +283,7 @@
                         "colors.yellow.800",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d617",
                             "~:name": "colors.yellow.800",
                             "~:type": "~:color",
                             "~:value": "#975a16",
@@ -277,6 +296,7 @@
                         "colors.teal.200",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d618",
                             "~:name": "colors.teal.200",
                             "~:type": "~:color",
                             "~:value": "#b2f5ea",
@@ -289,6 +309,7 @@
                         "colors.teal.500",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d619",
                             "~:name": "colors.teal.500",
                             "~:type": "~:color",
                             "~:value": "#38b2ac",
@@ -301,6 +322,7 @@
                         "colors.blue.200",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d620",
                             "~:name": "colors.blue.200",
                             "~:type": "~:color",
                             "~:value": "#bee3f8",
@@ -313,6 +335,7 @@
                         "colors.green.600",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d621",
                             "~:name": "colors.green.600",
                             "~:type": "~:color",
                             "~:value": "#38a169",
@@ -325,6 +348,7 @@
                         "colors.indigo.400",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d622",
                             "~:name": "colors.indigo.400",
                             "~:type": "~:color",
                             "~:value": "#7f9cf5",
@@ -337,6 +361,7 @@
                         "colors.purple.600",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d623",
                             "~:name": "colors.purple.600",
                             "~:type": "~:color",
                             "~:value": "#805ad5",
@@ -349,6 +374,7 @@
                         "colors.purple.400",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d624",
                             "~:name": "colors.purple.400",
                             "~:type": "~:color",
                             "~:value": "#b794f4",
@@ -361,6 +387,7 @@
                         "colors.indigo.900",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d625",
                             "~:name": "colors.indigo.900",
                             "~:type": "~:color",
                             "~:value": "#3c366b",
@@ -373,6 +400,7 @@
                         "spacing.lg",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d626",
                             "~:name": "spacing.lg",
                             "~:type": "~:spacing",
                             "~:value": "{dimension.lg}",
@@ -385,6 +413,7 @@
                         "colors.purple.300",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d627",
                             "~:name": "colors.purple.300",
                             "~:type": "~:color",
                             "~:value": "#d6bcfa",
@@ -397,6 +426,7 @@
                         "colors.yellow.500",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d628",
                             "~:name": "colors.yellow.500",
                             "~:type": "~:color",
                             "~:value": "#ecc94b",
@@ -409,6 +439,7 @@
                         "opacity.md",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d629",
                             "~:name": "opacity.md",
                             "~:type": "~:opacity",
                             "~:value": "50%",
@@ -421,6 +452,7 @@
                         "colors.purple.800",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d630",
                             "~:name": "colors.purple.800",
                             "~:type": "~:color",
                             "~:value": "#553c9a",
@@ -433,6 +465,7 @@
                         "colors.yellow.900",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d631",
                             "~:name": "colors.yellow.900",
                             "~:type": "~:color",
                             "~:value": "#744210",
@@ -445,6 +478,7 @@
                         "dimension.xl",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d632",
                             "~:name": "dimension.xl",
                             "~:type": "~:dimensions",
                             "~:value": "{dimension.lg} * {dimension.scale}",
@@ -457,6 +491,7 @@
                         "colors.yellow.700",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d633",
                             "~:name": "colors.yellow.700",
                             "~:type": "~:color",
                             "~:value": "#b7791f",
@@ -469,6 +504,7 @@
                         "colors.green.900",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d634",
                             "~:name": "colors.green.900",
                             "~:type": "~:color",
                             "~:value": "#22543d",
@@ -481,6 +517,7 @@
                         "spacing.md",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d635",
                             "~:name": "spacing.md",
                             "~:type": "~:spacing",
                             "~:value": "{dimension.md}",
@@ -493,6 +530,7 @@
                         "colors.red.200",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d636",
                             "~:name": "colors.red.200",
                             "~:type": "~:color",
                             "~:value": "#fed7d7",
@@ -505,6 +543,7 @@
                         "colors.orange.600",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d637",
                             "~:name": "colors.orange.600",
                             "~:type": "~:color",
                             "~:value": "#dd6b20",
@@ -517,6 +556,7 @@
                         "dimension.scale",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d638",
                             "~:name": "dimension.scale",
                             "~:type": "~:dimensions",
                             "~:value": "2",
@@ -529,6 +569,7 @@
                         "colors.red.800",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d639",
                             "~:name": "colors.red.800",
                             "~:type": "~:color",
                             "~:value": "#9b2c2c",
@@ -541,6 +582,7 @@
                         "colors.red.300",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d640",
                             "~:name": "colors.red.300",
                             "~:type": "~:color",
                             "~:value": "#feb2b2",
@@ -553,6 +595,7 @@
                         "dimension.md",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d641",
                             "~:name": "dimension.md",
                             "~:type": "~:dimensions",
                             "~:value": "{dimension.sm} * {dimension.scale}",
@@ -565,6 +608,7 @@
                         "colors.gray.600",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d642",
                             "~:name": "colors.gray.600",
                             "~:type": "~:color",
                             "~:value": "#718096",
@@ -577,6 +621,7 @@
                         "colors.pink.100",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d643",
                             "~:name": "colors.pink.100",
                             "~:type": "~:color",
                             "~:value": "#fff5f7",
@@ -589,6 +634,7 @@
                         "colors.yellow.300",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d644",
                             "~:name": "colors.yellow.300",
                             "~:type": "~:color",
                             "~:value": "#faf089",
@@ -601,6 +647,7 @@
                         "colors.orange.800",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d645",
                             "~:name": "colors.orange.800",
                             "~:type": "~:color",
                             "~:value": "#9c4221",
@@ -613,6 +660,7 @@
                         "colors.indigo.700",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d646",
                             "~:name": "colors.indigo.700",
                             "~:type": "~:color",
                             "~:value": "#4c51bf",
@@ -625,6 +673,7 @@
                         "colors.yellow.400",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d647",
                             "~:name": "colors.yellow.400",
                             "~:type": "~:color",
                             "~:value": "#f6e05e",
@@ -637,6 +686,7 @@
                         "opacity.low",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d648",
                             "~:name": "opacity.low",
                             "~:type": "~:opacity",
                             "~:value": "10%",
@@ -649,6 +699,7 @@
                         "colors.indigo.200",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d649",
                             "~:name": "colors.indigo.200",
                             "~:type": "~:color",
                             "~:value": "#c3dafe",
@@ -661,6 +712,7 @@
                         "colors.blue.900",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d650",
                             "~:name": "colors.blue.900",
                             "~:type": "~:color",
                             "~:value": "#2a4365",
@@ -673,6 +725,7 @@
                         "colors.gray.500",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d651",
                             "~:name": "colors.gray.500",
                             "~:type": "~:color",
                             "~:value": "#a0aec0",
@@ -685,6 +738,7 @@
                         "colors.red.400",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d652",
                             "~:name": "colors.red.400",
                             "~:type": "~:color",
                             "~:value": "#fc8181",
@@ -697,6 +751,7 @@
                         "colors.teal.800",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d653",
                             "~:name": "colors.teal.800",
                             "~:type": "~:color",
                             "~:value": "#285e61",
@@ -709,6 +764,7 @@
                         "colors.gray.300",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d654",
                             "~:name": "colors.gray.300",
                             "~:type": "~:color",
                             "~:value": "#e2e8f0",
@@ -721,6 +777,7 @@
                         "colors.teal.600",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d655",
                             "~:name": "colors.teal.600",
                             "~:type": "~:color",
                             "~:value": "#319795",
@@ -733,6 +790,7 @@
                         "colors.red.500",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d656",
                             "~:name": "colors.red.500",
                             "~:type": "~:color",
                             "~:value": "#f56565",
@@ -745,6 +803,7 @@
                         "colors.teal.400",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d657",
                             "~:name": "colors.teal.400",
                             "~:type": "~:color",
                             "~:value": "#4fd1c5",
@@ -757,6 +816,7 @@
                         "borderRadius.lg",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d658",
                             "~:name": "borderRadius.lg",
                             "~:type": "~:border-radius",
                             "~:value": "8",
@@ -769,6 +829,7 @@
                         "colors.gray.200",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d659",
                             "~:name": "colors.gray.200",
                             "~:type": "~:color",
                             "~:value": "#edf2f7",
@@ -781,6 +842,7 @@
                         "colors.red.900",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d660",
                             "~:name": "colors.red.900",
                             "~:type": "~:color",
                             "~:value": "#742a2a",
@@ -793,6 +855,7 @@
                         "colors.gray.900",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d661",
                             "~:name": "colors.gray.900",
                             "~:type": "~:color",
                             "~:value": "#1a202c",
@@ -805,6 +868,7 @@
                         "colors.pink.700",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d662",
                             "~:name": "colors.pink.700",
                             "~:type": "~:color",
                             "~:value": "#b83280",
@@ -817,6 +881,7 @@
                         "colors.green.200",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d663",
                             "~:name": "colors.green.200",
                             "~:type": "~:color",
                             "~:value": "#c6f6d5",
@@ -829,6 +894,7 @@
                         "colors.pink.500",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d664",
                             "~:name": "colors.pink.500",
                             "~:type": "~:color",
                             "~:value": "#ed64a6",
@@ -841,6 +907,7 @@
                         "colors.yellow.600",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d665",
                             "~:name": "colors.yellow.600",
                             "~:type": "~:color",
                             "~:value": "#d69e2e",
@@ -853,6 +920,7 @@
                         "colors.orange.700",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d666",
                             "~:name": "colors.orange.700",
                             "~:type": "~:color",
                             "~:value": "#c05621",
@@ -865,6 +933,7 @@
                         "colors.teal.100",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d667",
                             "~:name": "colors.teal.100",
                             "~:type": "~:color",
                             "~:value": "#e6fffa",
@@ -877,6 +946,7 @@
                         "colors.gray.800",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d668",
                             "~:name": "colors.gray.800",
                             "~:type": "~:color",
                             "~:value": "#2d3748",
@@ -889,6 +959,7 @@
                         "colors.orange.300",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d669",
                             "~:name": "colors.orange.300",
                             "~:type": "~:color",
                             "~:value": "#fbd38d",
@@ -901,6 +972,7 @@
                         "colors.orange.100",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d670",
                             "~:name": "colors.orange.100",
                             "~:type": "~:color",
                             "~:value": "#fffaf0",
@@ -913,6 +985,7 @@
                         "colors.purple.700",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d671",
                             "~:name": "colors.purple.700",
                             "~:type": "~:color",
                             "~:value": "#6b46c1",
@@ -925,6 +998,7 @@
                         "dimension.lg",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d672",
                             "~:name": "dimension.lg",
                             "~:type": "~:dimensions",
                             "~:value": "{dimension.md} * {dimension.scale}",
@@ -937,6 +1011,7 @@
                         "colors.gray.400",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d673",
                             "~:name": "colors.gray.400",
                             "~:type": "~:color",
                             "~:value": "#cbd5e0",
@@ -949,6 +1024,7 @@
                         "colors.indigo.100",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d674",
                             "~:name": "colors.indigo.100",
                             "~:type": "~:color",
                             "~:value": "#ebf4ff",
@@ -961,6 +1037,7 @@
                         "colors.green.500",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d675",
                             "~:name": "colors.green.500",
                             "~:type": "~:color",
                             "~:value": "#48bb78",
@@ -973,6 +1050,7 @@
                         "colors.pink.300",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d676",
                             "~:name": "colors.pink.300",
                             "~:type": "~:color",
                             "~:value": "#fbb6ce",
@@ -985,6 +1063,7 @@
                         "colors.pink.900",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d677",
                             "~:name": "colors.pink.900",
                             "~:type": "~:color",
                             "~:value": "#702459",
@@ -997,6 +1076,7 @@
                         "colors.purple.200",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d678",
                             "~:name": "colors.purple.200",
                             "~:type": "~:color",
                             "~:value": "#e9d8fd",
@@ -1009,6 +1089,7 @@
                         "colors.purple.500",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d679",
                             "~:name": "colors.purple.500",
                             "~:type": "~:color",
                             "~:value": "#9f7aea",
@@ -1021,6 +1102,7 @@
                         "colors.green.700",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d680",
                             "~:name": "colors.green.700",
                             "~:type": "~:color",
                             "~:value": "#2f855a",
@@ -1033,6 +1115,7 @@
                         "colors.indigo.800",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d681",
                             "~:name": "colors.indigo.800",
                             "~:type": "~:color",
                             "~:value": "#434190",
@@ -1045,6 +1128,7 @@
                         "colors.blue.700",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d682",
                             "~:name": "colors.blue.700",
                             "~:type": "~:color",
                             "~:value": "#2b6cb0",
@@ -1057,6 +1141,7 @@
                         "borderRadius.sm",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d683",
                             "~:name": "borderRadius.sm",
                             "~:type": "~:border-radius",
                             "~:value": "4",
@@ -1069,6 +1154,7 @@
                         "colors.black",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d684",
                             "~:name": "colors.black",
                             "~:type": "~:color",
                             "~:value": "#000000",
@@ -1081,6 +1167,7 @@
                         "opacity.high",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d685",
                             "~:name": "opacity.high",
                             "~:type": "~:opacity",
                             "~:value": "90%",
@@ -1093,6 +1180,7 @@
                         "colors.blue.800",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d686",
                             "~:name": "colors.blue.800",
                             "~:type": "~:color",
                             "~:value": "#2c5282",
@@ -1105,6 +1193,7 @@
                         "colors.orange.400",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d687",
                             "~:name": "colors.orange.400",
                             "~:type": "~:color",
                             "~:value": "#f6ad55",
@@ -1117,6 +1206,7 @@
                         "colors.pink.200",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d688",
                             "~:name": "colors.pink.200",
                             "~:type": "~:color",
                             "~:value": "#fed7e2",
@@ -1129,6 +1219,7 @@
                         "colors.gray.100",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d689",
                             "~:name": "colors.gray.100",
                             "~:type": "~:color",
                             "~:value": "#f7fafc",
@@ -1141,6 +1232,7 @@
                         "spacing.xl",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d690",
                             "~:name": "spacing.xl",
                             "~:type": "~:spacing",
                             "~:value": "{dimension.xl}",
@@ -1153,6 +1245,7 @@
                         "dimension.xs",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d691",
                             "~:name": "dimension.xs",
                             "~:type": "~:dimensions",
                             "~:value": "4",
@@ -1165,6 +1258,7 @@
                         "colors.teal.900",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d692",
                             "~:name": "colors.teal.900",
                             "~:type": "~:color",
                             "~:value": "#234e52",
@@ -1177,6 +1271,7 @@
                         "colors.teal.300",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d693",
                             "~:name": "colors.teal.300",
                             "~:type": "~:color",
                             "~:value": "#81e6d9",
@@ -1189,6 +1284,7 @@
                         "colors.blue.500",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d694",
                             "~:name": "colors.blue.500",
                             "~:type": "~:color",
                             "~:value": "#4299e1",
@@ -1201,6 +1297,7 @@
                         "borderRadius.xl",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d695",
                             "~:name": "borderRadius.xl",
                             "~:type": "~:border-radius",
                             "~:value": "16",
@@ -1213,6 +1310,7 @@
                         "colors.green.400",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d696",
                             "~:name": "colors.green.400",
                             "~:type": "~:color",
                             "~:value": "#68d391",
@@ -1225,6 +1323,7 @@
                         "colors.indigo.300",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d697",
                             "~:name": "colors.indigo.300",
                             "~:type": "~:color",
                             "~:value": "#a3bffa",
@@ -1237,6 +1336,7 @@
                         "colors.red.100",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d698",
                             "~:name": "colors.red.100",
                             "~:type": "~:color",
                             "~:value": "#fff5f5",
@@ -1249,6 +1349,7 @@
                         "colors.orange.900",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d699",
                             "~:name": "colors.orange.900",
                             "~:type": "~:color",
                             "~:value": "#7b341e",
@@ -1261,6 +1362,7 @@
                         "colors.purple.100",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d700",
                             "~:name": "colors.purple.100",
                             "~:type": "~:color",
                             "~:value": "#faf5ff",
@@ -1273,6 +1375,7 @@
                         "spacing.xs",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d701",
                             "~:name": "spacing.xs",
                             "~:type": "~:spacing",
                             "~:value": "{dimension.xs}",
@@ -1285,6 +1388,7 @@
                         "colors.indigo.600",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d702",
                             "~:name": "colors.indigo.600",
                             "~:type": "~:color",
                             "~:value": "#5a67d8",
@@ -1297,6 +1401,7 @@
                         "colors.gray.700",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d703",
                             "~:name": "colors.gray.700",
                             "~:type": "~:color",
                             "~:value": "#4a5568",
@@ -1309,6 +1414,7 @@
                         "colors.blue.400",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d704",
                             "~:name": "colors.blue.400",
                             "~:type": "~:color",
                             "~:value": "#63b3ed",
@@ -1321,6 +1427,7 @@
                         "spacing.sm",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d705",
                             "~:name": "spacing.sm",
                             "~:type": "~:spacing",
                             "~:value": "{dimension.sm}",
@@ -1333,6 +1440,7 @@
                         "colors.orange.500",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d706",
                             "~:name": "colors.orange.500",
                             "~:type": "~:color",
                             "~:value": "#ed8936",
@@ -1345,6 +1453,7 @@
                         "colors.yellow.100",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d707",
                             "~:name": "colors.yellow.100",
                             "~:type": "~:color",
                             "~:value": "#fffff0",
@@ -1357,6 +1466,7 @@
                         "colors.blue.600",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d708",
                             "~:name": "colors.blue.600",
                             "~:type": "~:color",
                             "~:value": "#3182ce",
@@ -1378,6 +1488,7 @@
                     "S-light",
                     {
                       "~#penpot/token-set": {
+                        "~:id": "~u66697432-c33d-8055-8006-2c62de27d709",
                         "~:name": "LightDark/light",
                         "~:description": "",
                         "~:modified-at": "~m1737542498290",
@@ -1387,6 +1498,7 @@
                               "accent.default",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d710",
                                   "~:name": "accent.default",
                                   "~:type": "~:color",
                                   "~:value": "{colors.indigo.400}",
@@ -1399,6 +1511,7 @@
                               "bg.muted",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d711",
                                   "~:name": "bg.muted",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.100}",
@@ -1411,6 +1524,7 @@
                               "bg.subtle",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d712",
                                   "~:name": "bg.subtle",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.200}",
@@ -1423,6 +1537,7 @@
                               "accent.bg",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d713",
                                   "~:name": "accent.bg",
                                   "~:type": "~:color",
                                   "~:value": "{colors.indigo.200}",
@@ -1435,6 +1550,7 @@
                               "accent.onAccent",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d714",
                                   "~:name": "accent.onAccent",
                                   "~:type": "~:color",
                                   "~:value": "{colors.white}",
@@ -1447,6 +1563,7 @@
                               "shadows.default",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d715",
                                   "~:name": "shadows.default",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.900}",
@@ -1459,6 +1576,7 @@
                               "fg.muted",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d716",
                                   "~:name": "fg.muted",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.700}",
@@ -1471,6 +1589,7 @@
                               "fg.default",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d717",
                                   "~:name": "fg.default",
                                   "~:type": "~:color",
                                   "~:value": "{colors.black}",
@@ -1483,6 +1602,7 @@
                               "fg.subtle",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d718",
                                   "~:name": "fg.subtle",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.500}",
@@ -1495,6 +1615,7 @@
                               "bg.default",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d719",
                                   "~:name": "bg.default",
                                   "~:type": "~:color",
                                   "~:value": "{colors.white}",
@@ -1508,11 +1629,11 @@
                       }
                     }
                   ],
-
                   [
                     "S-dark",
                     {
                       "~#penpot/token-set": {
+                        "~:id": "~u66697432-c33d-8055-8006-2c62de27d720",
                         "~:name": "LightDark/dark",
                         "~:description": "",
                         "~:modified-at": "~m1737542498291",
@@ -1522,6 +1643,7 @@
                               "accent.default",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d721",
                                   "~:name": "accent.default",
                                   "~:type": "~:color",
                                   "~:value": "{colors.indigo.600}",
@@ -1534,6 +1656,7 @@
                               "bg.muted",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d722",
                                   "~:name": "bg.muted",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.700}",
@@ -1546,6 +1669,7 @@
                               "bg.subtle",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d723",
                                   "~:name": "bg.subtle",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.600}",
@@ -1558,6 +1682,7 @@
                               "accent.bg",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d724",
                                   "~:name": "accent.bg",
                                   "~:type": "~:color",
                                   "~:value": "{colors.indigo.800}",
@@ -1570,6 +1695,7 @@
                               "accent.onAccent",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d725",
                                   "~:name": "accent.onAccent",
                                   "~:type": "~:color",
                                   "~:value": "{colors.white}",
@@ -1582,6 +1708,7 @@
                               "shadows.default",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d726",
                                   "~:name": "shadows.default",
                                   "~:type": "~:color",
                                   "~:value": "rgba({colors.black}, 0.3)",
@@ -1594,6 +1721,7 @@
                               "fg.muted",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d727",
                                   "~:name": "fg.muted",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.300}",
@@ -1606,6 +1734,7 @@
                               "fg.default",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d728",
                                   "~:name": "fg.default",
                                   "~:type": "~:color",
                                   "~:value": "{colors.white}",
@@ -1618,6 +1747,7 @@
                               "fg.subtle",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d729",
                                   "~:name": "fg.subtle",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.500}",
@@ -1630,6 +1760,7 @@
                               "bg.default",
                               {
                                 "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d730",
                                   "~:name": "bg.default",
                                   "~:type": "~:color",
                                   "~:value": "{colors.gray.900}",
@@ -1650,6 +1781,7 @@
               "S-theme",
               {
                 "~#penpot/token-set": {
+                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d731",
                   "~:name": "theme",
                   "~:description": "",
                   "~:modified-at": "~m1737542498292",
@@ -1659,6 +1791,7 @@
                         "button.primary.background",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d732",
                             "~:name": "button.primary.background",
                             "~:type": "~:color",
                             "~:value": "{accent.default}",
@@ -1671,6 +1804,7 @@
                         "button.primary.text",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d733",
                             "~:name": "button.primary.text",
                             "~:type": "~:color",
                             "~:value": "{accent.onAccent}",
@@ -1683,6 +1817,7 @@
                         "button.borderRadius",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d734",
                             "~:name": "button.borderRadius",
                             "~:type": "~:border-radius",
                             "~:value": "{borderRadius.lg}",
@@ -1695,6 +1830,7 @@
                         "card.borderRadius",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d735",
                             "~:name": "card.borderRadius",
                             "~:type": "~:border-radius",
                             "~:value": "{borderRadius.lg}",
@@ -1707,6 +1843,7 @@
                         "card.background",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d736",
                             "~:name": "card.background",
                             "~:type": "~:color",
                             "~:value": "{bg.default}",
@@ -1719,6 +1856,7 @@
                         "card.padding",
                         {
                           "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d737",
                             "~:name": "card.padding",
                             "~:type": "~:dimensions",
                             "~:value": "{dimension.md}",
@@ -1744,11 +1882,12 @@
                     "Light",
                     {
                       "~#penpot/token-theme": {
+                        "~:id": "~u66697432-c33d-8055-8006-2c62de27d738",
                         "~:name": "Light",
                         "~:group": "Core",
                         "~:description": "",
                         "~:is-source": false,
-                        "~:id": "core-light",
+                        "~:external-id": "core-light",
                         "~:modified-at": "~m1737542746842",
                         "~:sets": {
                           "~#set": ["LightDark/light", "theme", "core"]
@@ -1760,11 +1899,12 @@
                     "Dark",
                     {
                       "~#penpot/token-theme": {
+                        "~:id": "~u66697432-c33d-8055-8006-2c62de27d739",
                         "~:name": "Dark",
                         "~:group": "Core",
                         "~:description": "",
                         "~:is-source": false,
-                        "~:id": "core-dark",
+                        "~:external-id": "core-dark",
                         "~:modified-at": "~m1737542746842",
                         "~:sets": {
                           "~#set": ["LightDark/dark", "theme", "core"]
@@ -1783,11 +1923,12 @@
                     "__PENPOT__HIDDEN__TOKEN__THEME__",
                     {
                       "~#penpot/token-theme": {
+                        "~:id": "~u00000000-0000-0000-0000-000000000000",
                         "~:name": "__PENPOT__HIDDEN__TOKEN__THEME__",
                         "~:group": "",
                         "~:description": "",
                         "~:is-source": false,
-                        "~:id": "hidden-theme",
+                        "~:external-id": "",
                         "~:modified-at": "~m1737542683555",
                         "~:sets": {
                           "~#set": ["LightDark/light", "theme", "core"]
