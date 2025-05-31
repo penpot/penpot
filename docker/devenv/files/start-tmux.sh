@@ -10,12 +10,10 @@ echo "[start-tmux.sh] Installing node dependencies"
 pushd ~/penpot/frontend/
 corepack install;
 yarn install;
-yarn run playwright install --with-deps chromium
 popd
 pushd ~/penpot/exporter/
 corepack install;
 yarn install
-yarn run playwright install --with-deps chromium
 popd
 
 tmux -2 new-session -d -s penpot

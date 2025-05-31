@@ -48,13 +48,6 @@ jobs:
           command: |
             yarn run lint:clj:library
 
-      - run:
-          name: "lint scss on frontend"
-          working_directory: "./frontend"
-          command: |
-            yarn install
-            yarn run lint:scss
-
   test-common:
     docker:
       - image: penpotapp/devenv:latest
@@ -72,7 +65,7 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "common/deps.edn"}}
+            - v1-dependencies-{{ checksum "common/deps.edn"}}-{{ checksum "common/yarn.lock" }}
 
       - run:
           name: "JVM tests"
@@ -90,7 +83,10 @@ jobs:
       - save_cache:
           paths:
             - ~/.m2
-          key: v1-dependencies-{{ checksum "common/deps.edn"}}
+            - ~/.yarn
+            - ~/.gitlibs
+            - ~/.cache/ms-playwright
+          key: v1-dependencies-{{ checksum "common/deps.edn"}}-{{ checksum "common/yarn.lock" }}
 
   test-frontend:
     docker:
@@ -109,19 +105,27 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "frontend/deps.edn"}}
+            - v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
+
+      - run:
+          name: "lint scss on frontend"
+          working_directory: "./frontend"
+          command: |
+            yarn install
+            yarn run lint:scss
 
       - run:
           name: "unit tests"
           working_directory: "./frontend"
           command: |
-            yarn install
             yarn run test
 
       - save_cache:
           paths:
             - ~/.m2
-          key: v1-dependencies-{{ checksum "frontend/deps.edn"}}
+            - ~/.yarn
+            - ~/.gitlibs
+          key: v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
 
   test-components:
     docker:
@@ -140,14 +144,14 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "frontend/deps.edn"}}
+            - v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
 
       - run:
           name: Install dependencies
           working_directory: "./frontend"
           command: |
             yarn install
-            yarn run playwright install --with-deps chromium
+            yarn run playwright install chromium
 
       - run:
           name: Build Storybook
@@ -179,7 +183,7 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "frontend/deps.edn"}}
+            - v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
 
       - run:
           name: "integration tests"
@@ -189,7 +193,7 @@ jobs:
             yarn run build:app:assets
             yarn run build:app
             yarn run build:app:libs
-            yarn run playwright install --with-deps chromium
+            yarn run playwright install chromium
             yarn run test:e2e -x --workers=4
 
   test-backend:
@@ -231,6 +235,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.m2
+            - ~/.gitlibs
           key: v1-dependencies-{{ checksum "backend/deps.edn" }}
 
   test-render-wasm:
@@ -272,10 +277,12 @@ workflows:
 
       - test-components:
           requires:
+            - test-frontend: success
             - lint: success
 
       - test-integration:
           requires:
+            - test-frontend: success
             - lint: success
 
       - test-backend:
