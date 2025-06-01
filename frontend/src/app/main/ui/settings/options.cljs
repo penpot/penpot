@@ -14,6 +14,7 @@
    [app.main.ui.components.forms :as fm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.theme :as theme]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:options-form
@@ -37,6 +38,7 @@
   (let [profile (mf/deref refs/profile)
         initial (mf/with-memo [profile]
                   (update profile :lang #(or % "")))
+
         form    (fm/use-form :schema schema:options-form
                              :initial initial)]
 
@@ -58,7 +60,7 @@
      [:div {:class (stl/css :fields-row)}
       [:& fm/select {:label (tr "dashboard.select-ui-theme")
                      :name :theme
-                     :default "default"
+                     :default theme/default
                      :options [{:label (tr "dashboard.select-ui-theme.dark") :value "dark"}
                                {:label (tr "dashboard.select-ui-theme.light") :value "light"}
                                {:label (tr "dashboard.select-ui-theme.system") :value "system"}]
