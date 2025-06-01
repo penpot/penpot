@@ -12,6 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.component :as ctc]
    [app.common.types.container :as ctn]
+   [app.common.types.path :as path]
    [app.common.types.path.bool :as bool]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
@@ -35,7 +36,7 @@
         head
         (cond-> head
           (and (contains? head :svg-attrs) (empty? (:fills head)))
-          (assoc :fills bool/default-fills))
+          (assoc :fills path/default-bool-fills))
 
         shape
         {:id shape-id
@@ -48,11 +49,25 @@
 
         shape
         (-> shape
-            (merge (select-keys head bool/style-properties))
+            (merge (select-keys head path/bool-style-properties))
             (cts/setup-shape)
-            (gsh/update-bool objects))]
+            (path/update-bool-shape objects))]
 
     [shape (cph/get-position-on-parent objects (:id head))]))
+
+(defn group->bool
+  [type group objects]
+  (let [shapes (->> (:shapes group)
+                    (map (d/getf objects)))
+        head (if (= type :difference) (first shapes) (last shapes))
+        head (cond-> head
+               (and (contains? head :svg-attrs) (empty? (:fills head)))
+               (assoc :fills path/default-bool-fills))]
+    (-> group
+        (assoc :type :bool)
+        (assoc :bool-type type)
+        (merge (select-keys head bool/style-properties))
+        (path/update-bool-shape objects))))
 
 (defn create-bool
   [type & {:keys [ids force-shape-id]}]
@@ -101,20 +116,6 @@
             (rx/of (dch/commit-changes changes)
                    (dws/select-shapes (d/ordered-set shape-id)))))))))
 
-(defn group->bool
-  [type group objects]
-  (let [shapes (->> (:shapes group)
-                    (map (d/getf objects)))
-        head (if (= type :difference) (first shapes) (last shapes))
-        head (cond-> head
-               (and (contains? head :svg-attrs) (empty? (:fills head)))
-               (assoc :fills bool/default-fills))]
-    (-> group
-        (assoc :type :bool)
-        (assoc :bool-type type)
-        (merge (select-keys head bool/style-properties))
-        (gsh/update-bool objects))))
-
 (defn group-to-bool
   [shape-id type]
   (ptk/reify ::group-to-bool
@@ -130,7 +131,7 @@
   (-> shape
       (assoc :type :group)
       (dissoc :bool-type)
-      (d/without-keys bool/style-group-properties)
+      (d/without-keys path/bool-group-style-properties)
       (gsh/update-group-selrect
        (mapv (d/getf objects)
              (:shapes shape)))))

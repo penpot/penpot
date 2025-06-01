@@ -22,6 +22,14 @@
 
 #?(:clj (set! *warn-on-reflection* true))
 
+(def ^:cosnt bool-group-style-properties bool/group-style-properties)
+(def ^:const bool-style-properties bool/style-properties)
+(def ^:const default-bool-fills bool/default-fills)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TRANSFORMATIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn content?
   [o]
   (impl/path-data? o))
@@ -196,6 +204,13 @@
   [shape objects]
   (-> (calc-bool-content* shape objects)
       (impl/path-data)))
+
+(defn update-bool-shape
+  "Calculates the selrect+points for the boolean shape"
+  [shape objects]
+  (let [content (calc-bool-content shape objects)
+        shape   (assoc shape :content content)]
+    (update-geometry shape)))
 
 (defn shape-with-open-path?
   [shape]

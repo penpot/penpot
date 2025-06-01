@@ -19,6 +19,7 @@
    [app.common.types.color :as types.color]
    [app.common.types.file :as types.file]
    [app.common.types.page :as types.page]
+   [app.common.types.path :as types.path]
    [app.common.types.shape :as types.shape]
    [app.common.types.typography :as types.typography]
    [app.common.uuid :as uuid]
@@ -346,7 +347,7 @@
     (let [objects  (get-current-objects state)
           bool     (-> group
                        (assoc :type :bool)
-                       (gsh/update-bool objects))
+                       (types.path/update-bool-shape objects))
           change   {:type :mod-obj
                     :id (:id bool)
                     :operations

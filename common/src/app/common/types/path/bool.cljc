@@ -18,11 +18,11 @@
 (def default-fills
   [{:fill-color clr/black}])
 
-(def style-group-properties
+(def group-style-properties
   [:shadow :blur])
 
 (def style-properties
-  (into style-group-properties
+  (into group-style-properties
         [:fill-color
          :fill-opacity
          :fill-color-gradient
