@@ -294,7 +294,7 @@
 
 (defn close-group
   [state]
-  (let [group-id (-> state :parent-stack peek)
+  (let [group-id (-> state ::parent-stack peek)
         group    (get-shape state group-id)
         children (->> (get group :shapes)
                       (into [] (keep (partial get-shape state)))
@@ -347,6 +347,7 @@
     (let [objects  (get-current-objects state)
           bool     (-> group
                        (assoc :type :bool)
+                       (assoc :bool-type type)
                        (types.path/update-bool-shape objects))
           change   {:type :mod-obj
                     :id (:id bool)
