@@ -55,7 +55,7 @@
 
     [shape (cph/get-position-on-parent objects (:id head))]))
 
-(defn group->bool
+(defn- group->bool
   [type group objects]
   (let [shapes (->> (:shapes group)
                     (map (d/getf objects)))
