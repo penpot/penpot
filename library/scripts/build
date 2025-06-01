@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# NOTE: this script should be called from the parent directory to
+# properly work.
+
+export CURRENT_VERSION=$(node -p "require('./package.json').version");
+export NODE_ENV=production;
+
+set -ex
+
+yarn run build
+
+sed -i -re "s/\%version\%/$CURRENT_VERSION/g" target/library/penpot.js

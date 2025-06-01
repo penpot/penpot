@@ -190,8 +190,7 @@
                             :features (:features file)})))
         params {:type "penpot/export-files"
                 :version 1
-                ;; FIXME: set proper placeholder for replacement on build
-                :generated-by "penpot-lib/develop"
+                :generated-by "penpot-library/%version%"
                 :files files
                 :relations []}]
     ["manifest.json" (delay (json/encode params))]))
