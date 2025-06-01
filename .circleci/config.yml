@@ -108,10 +108,18 @@ jobs:
             - v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
 
       - run:
+          name: "install dependencies"
+          working_directory: "./frontend"
+          # We install playwright here because the dependent tasks
+          # uses the same cache as this task so we prepopulate it
+          command: |
+            yarn install
+            yarn run playwright install chromium
+
+      - run:
           name: "lint scss on frontend"
           working_directory: "./frontend"
           command: |
-            yarn install
             yarn run lint:scss
 
       - run:
@@ -125,6 +133,7 @@ jobs:
             - ~/.m2
             - ~/.yarn
             - ~/.gitlibs
+            - ~/.cache/ms-playwright
           key: v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
 
   test-components:
