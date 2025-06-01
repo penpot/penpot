@@ -5,6 +5,7 @@
 - Fix incorrect boolean type assignation
 - Fix fill and stroke handling on boolean shape creation
 - Add sample-bool.js to the playground directory
+- Fix compatibility issue on file media with penpot 2.7.x
 
 ## 1.0.1
 

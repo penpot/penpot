@@ -18,6 +18,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
    [app.common.svg :as csvg]
+   [app.common.time :as dt]
    [app.common.types.color :as types.color]
    [app.common.types.component :as types.comp]
    [app.common.types.container :as types.cont]
@@ -575,6 +576,7 @@
                  :size (get blob :size)})
         (update ::file-media assoc id
                 {:id id
+                 :created-at (dt/now)
                  :name name
                  :width width
                  :height height
