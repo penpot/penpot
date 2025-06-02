@@ -41,6 +41,9 @@
 (def ^:private encode-component
   (sm/encoder types.component/schema:component sm/json-transformer))
 
+(def encode-file-media
+  (sm/encoder types.file/schema:media sm/json-transformer))
+
 (def encode-color
   (sm/encoder types.color/schema:color sm/json-transformer))
 
@@ -175,6 +178,7 @@
                     [(str "files/" (:file-id file-media) "/media/" file-media-id ".json")
                      (delay (-> file-media
                                 (dissoc :file-id)
+                                (encode-file-media)
                                 (json/encode)))]))))))
 
 (defn- generate-manifest-procs
@@ -186,8 +190,7 @@
                             :features (:features file)})))
         params {:type "penpot/export-files"
                 :version 1
-                ;; FIXME: set proper placeholder for replacement on build
-                :generated-by "penpot-lib/develop"
+                :generated-by "penpot-library/%version%"
                 :files files
                 :relations []}]
     ["manifest.json" (delay (json/encode params))]))

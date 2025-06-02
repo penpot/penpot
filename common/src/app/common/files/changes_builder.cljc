@@ -18,6 +18,7 @@
    [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
+   [app.common.types.path :as path]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]))
@@ -685,10 +686,10 @@
                                  (empty? children) ;; a parent with no children will be deleted,
                                  nil               ;; so it does not need resize
 
-                                 (= (:type parent) :bool)
-                                 (gsh/update-bool parent objects)
+                                 (cfh/bool-shape? parent)
+                                 (path/update-bool-shape parent objects)
 
-                                 (= (:type parent) :group)
+                                 (cfh/group-shape? parent)
                                  ;; FIXME: this functions should be
                                  ;; normalized in the same way as
                                  ;; update-bool in order to make all

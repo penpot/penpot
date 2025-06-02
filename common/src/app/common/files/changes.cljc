@@ -24,6 +24,7 @@
    [app.common.types.grid :as ctg]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.tokens-lib :as ctob]
@@ -744,7 +745,7 @@
                 group
 
                 (= :bool (:type group))
-                (gsh/update-bool group objects)
+                (path/update-bool-shape group objects)
 
                 (:masked-group group)
                 (->> (map lookup children)

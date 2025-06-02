@@ -456,13 +456,6 @@
         (assoc :flip-x  (-> mask :flip-x))
         (assoc :flip-y  (-> mask :flip-y)))))
 
-(defn update-bool
-  "Calculates the selrect+points for the boolean shape"
-  [shape objects]
-  (let [content (path/calc-bool-content shape objects)
-        shape   (assoc shape :content content)]
-    (path/update-geometry shape)))
-
 ;; FIXME: revisit
 (defn update-shapes-geometry
   [objects ids]
@@ -477,7 +470,7 @@
                   (update-mask-selrect shape children)
 
                   (cfh/bool-shape? shape)
-                  (update-bool shape objects)
+                  (path/update-bool-shape shape objects)
 
                   (cfh/group-shape? shape)
                   (update-group-selrect shape children)

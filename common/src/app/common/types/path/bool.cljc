@@ -18,28 +18,13 @@
 (def default-fills
   [{:fill-color clr/black}])
 
-(def style-group-properties
-  [:shadow :blur])
+(def group-style-properties
+  #{:shadow :blur})
 
+;; FIXME: revisit
 (def style-properties
-  (into style-group-properties
-        [:fill-color
-         :fill-opacity
-         :fill-color-gradient
-         :fill-color-ref-file
-         :fill-color-ref-id
-         :fill-image
-         :fills
-         :stroke-color
-         :stroke-color-ref-file
-         :stroke-color-ref-id
-         :stroke-opacity
-         :stroke-style
-         :stroke-width
-         :stroke-alignment
-         :stroke-cap-start
-         :stroke-cap-end
-         :strokes]))
+  (into group-style-properties
+        [:fills :strokes]))
 
 (defn add-previous
   ([content]

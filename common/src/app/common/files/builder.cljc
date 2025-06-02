@@ -10,15 +10,21 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   ;; [app.common.features :as cfeat]
+   [app.common.exceptions :as ex]
    [app.common.files.changes :as ch]
+   ;; [app.common.features :as cfeat]
+   [app.common.files.helpers :as cph]
    [app.common.files.migrations :as fmig]
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
    [app.common.svg :as csvg]
+   [app.common.time :as dt]
    [app.common.types.color :as types.color]
+   [app.common.types.component :as types.comp]
+   [app.common.types.container :as types.cont]
    [app.common.types.file :as types.file]
    [app.common.types.page :as types.page]
+   [app.common.types.path :as types.path]
    [app.common.types.shape :as types.shape]
    [app.common.types.typography :as types.typography]
    [app.common.uuid :as uuid]
@@ -293,7 +299,7 @@
 
 (defn close-group
   [state]
-  (let [group-id (-> state :parent-stack peek)
+  (let [group-id (-> state ::parent-stack peek)
         group    (get-shape state group-id)
         children (->> (get group :shapes)
                       (into [] (keep (partial get-shape state)))
@@ -329,6 +335,35 @@
                     (commit-change state change :add-container true)))]
       (update state ::parent-stack pop))))
 
+(defn- update-bool-style-properties
+  [bool-shape objects]
+  (let [xform
+        (comp
+         (map (d/getf objects))
+         (remove cph/frame-shape?)
+         (remove types.comp/is-variant?)
+         (remove (partial types.cont/has-any-copy-parent? objects)))
+
+        children
+        (->> (get bool-shape :shapes)
+             (into [] xform)
+             (not-empty))]
+
+    (when-not children
+      (ex/raise :type :validation
+                :code :empty-children
+                :hint "expected a group with at least one shape for creating a bool"))
+
+    (let [head  (if (= type :difference)
+                  (first children)
+                  (last children))
+          fills (if (and (contains? head :svg-attrs) (empty? (:fills head)))
+                  types.path/default-bool-fills
+                  (get head :fills))]
+      (-> bool-shape
+          (assoc :fills fills)
+          (assoc :stroks (get head :strokes))))))
+
 (defn add-bool
   [state params]
   (let [{:keys [group-id type]}
@@ -337,32 +372,40 @@
         group
         (get-shape state group-id)
 
-        children
-        (->> (get group :shapes)
-             (not-empty))]
+        objects
+        (get-current-objects state)
 
-    (assert (some? children) "expect group to have at least 1 element")
+        bool
+        (-> group
+            (assoc :type :bool)
+            (assoc :bool-type type)
+            (update-bool-style-properties objects)
+            (types.path/update-bool-shape objects))
 
-    (let [objects  (get-current-objects state)
-          bool     (-> group
-                       (assoc :type :bool)
-                       (gsh/update-bool objects))
-          change   {:type :mod-obj
-                    :id (:id bool)
-                    :operations
-                    [{:type :set :attr :content :val (:content bool) :ignore-touched true}
-                     {:type :set :attr :type :val :bool :ignore-touched true}
-                     {:type :set :attr :bool-type :val type :ignore-touched true}
-                     {:type :set :attr :selrect :val (:selrect bool) :ignore-touched true}
-                     {:type :set :attr :points  :val (:points bool) :ignore-touched true}
-                     {:type :set :attr :x       :val (-> bool :selrect :x) :ignore-touched true}
-                     {:type :set :attr :y       :val (-> bool :selrect :y) :ignore-touched true}
-                     {:type :set :attr :width   :val (-> bool :selrect :width) :ignore-touched true}
-                     {:type :set :attr :height  :val (-> bool :selrect :height) :ignore-touched true}]}]
+        selrect
+        (get bool :selrect)
 
-      (-> state
-          (commit-change change :add-container true)
-          (assoc ::last-id group-id)))))
+        operations
+        [{:type :set :attr :content :val (:content bool) :ignore-touched true}
+         {:type :set :attr :type :val :bool :ignore-touched true}
+         {:type :set :attr :bool-type :val type :ignore-touched true}
+         {:type :set :attr :selrect :val selrect :ignore-touched true}
+         {:type :set :attr :points :val (:points bool) :ignore-touched true}
+         {:type :set :attr :x :val (get selrect :x) :ignore-touched true}
+         {:type :set :attr :y :val (get selrect :y) :ignore-touched true}
+         {:type :set :attr :width :val (get selrect :width) :ignore-touched true}
+         {:type :set :attr :height :val (get selrect :height) :ignore-touched true}
+         {:type :set :attr :fills :val (:fills bool) :ignore-touched true}
+         {:type :set :attr :strokes :val (:strokes bool) :ignore-touched true}]
+
+        change
+        {:type :mod-obj
+         :id (:id bool)
+         :operations operations}]
+
+    (-> state
+        (commit-change change :add-container true)
+        (assoc ::last-id group-id))))
 
 (defn add-shape
   [state params]
@@ -533,6 +576,7 @@
                  :size (get blob :size)})
         (update ::file-media assoc id
                 {:id id
+                 :created-at (dt/now)
                  :name name
                  :width width
                  :height height
