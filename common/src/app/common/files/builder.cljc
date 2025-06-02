@@ -582,6 +582,7 @@
                  :height height
                  :file-id file-id
                  :media-id media-id
+                 :is-local true
                  :mtype (get blob :mtype)})
 
         (assoc ::last-id id))))
