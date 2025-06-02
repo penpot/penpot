@@ -418,7 +418,7 @@
       [:type [:= :set-token-set]]
       [:set-name :string]
       [:group? :boolean]
-      [:token-set [:maybe ctob/schema:token-set-attrs]]]]
+      [:token-set [:maybe [:fn ctob/token-set?]]]]]
 
     [:set-token
      [:map {:title "SetTokenChange"}
@@ -1025,11 +1025,10 @@
                   (ctob/delete-set lib' set-name))
 
                 (not (ctob/get-set lib' set-name))
-                (ctob/add-set lib' (ctob/make-token-set token-set))
+                (ctob/add-set lib' token-set)
 
                 :else
-                (ctob/update-set lib' set-name (fn [prev-token-set]
-                                                 (ctob/make-token-set (merge prev-token-set token-set)))))))))
+                (ctob/update-set lib' set-name (fn [_] token-set)))))))
 
 (defmethod process-change :set-token-theme
   [data {:keys [group theme-name theme]}]
