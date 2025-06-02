@@ -29,11 +29,11 @@
    [rumext.v2 :as mf]))
 
 (defn- on-stream-imported
-  [tokens-lib-stream]
+  [type tokens-lib-stream]
   (rx/sub!
    tokens-lib-stream
    (fn [lib]
-     (st/emit! (ptk/data-event ::ev/event {::ev/name "import-tokens"})
+     (st/emit! (ptk/data-event ::ev/event {::ev/name "import-tokens" :type type})
                (dwtl/import-tokens-lib lib))
      (modal/hide!))
    (fn [err]
@@ -72,7 +72,7 @@
                                               [(.-webkitRelativePath file)
                                                file-text])))))
                   (dwti/import-directory-stream)
-                  (on-stream-imported))
+                  (on-stream-imported "multiple"))
 
              (-> (mf/ref-val dir-input-ref)
                  (dom/set-value! "")))))
@@ -85,7 +85,7 @@
                           (first))]
              (->> (wapi/read-file-as-text file)
                   (dwti/import-file-stream (.-name file))
-                  (on-stream-imported))
+                  (on-stream-imported "single"))
 
              (-> (mf/ref-val file-input-ref)
                  (dom/set-value! "")))))]
