@@ -6,33 +6,37 @@
 
 (ns app.util.theme
   (:require
+   [app.common.data :as d]
    [app.util.globals :as globals]
    [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]))
+   [rumext.v2 :as mf]))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Set the preferred color scheme based on the user's system settings.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defonce ^:private color-scheme-mq
+(defonce ^:private color-scheme-media-query
   (.matchMedia globals/window "(prefers-color-scheme: dark)"))
 
-;; This atom is referenced in app.main.ui.app
-(defonce preferred-color-scheme
-  (atom (if (.-matches color-scheme-mq) "dark" "light")))
+(def ^:const default "dark")
 
-(defonce prefers-color-scheme-sub
-  (let [sub (rx/behavior-subject "dark")
-        ob  (->> (rx/from-event color-scheme-mq "change")
-                 (rx/map #(if (.-matches %) "dark" "light")))]
-    (rx/sub! ob sub)
-    sub))
+(defn- set-color-scheme
+  [^string color]
 
-(defn initialize
-  []
-  (ptk/reify ::initialize
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> prefers-color-scheme-sub
-           (rx/map #(reset! preferred-color-scheme %))))))
+  (let [node  (.querySelector js/document "body")
+        class (if (= color "dark") "default" "light")]
+    (.removeAttribute node "class")
+    (.add ^js (.-classList ^js node) class)))
+
+(defn use-initialize
+  [{profile-theme :theme}]
+  (let [system-theme* (mf/use-state #(if (.-matches color-scheme-media-query) "dark" "light"))
+        system-theme  (deref system-theme*)]
+
+    (mf/with-effect []
+      (let [s (->> (rx/from-event color-scheme-media-query "change")
+                   (rx/map #(if (.-matches %) "dark" "light"))
+                   (rx/subs! #(reset! system-theme* %)))]
+        (fn []
+          (rx/dispose! s))))
+
+    (mf/with-effect [system-theme profile-theme]
+      (set-color-scheme
+       (if (= profile-theme "system") system-theme
+           (d/nilv profile-theme "dark"))))))

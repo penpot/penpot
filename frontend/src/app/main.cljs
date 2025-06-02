@@ -27,7 +27,6 @@
    [app.plugins :as plugins]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
-   [app.util.theme :as theme]
    [beicon.v2.core :as rx]
    [debug]
    [features]
@@ -96,8 +95,7 @@
   (cur/init-styles)
   (thr/init!)
   (init-ui)
-  (st/emit! (theme/initialize)
-            (plugins/initialize)
+  (st/emit! (plugins/initialize)
             (initialize)))
 
 (defn ^:export reinit
