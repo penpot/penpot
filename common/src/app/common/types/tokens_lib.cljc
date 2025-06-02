@@ -25,13 +25,6 @@
 
 ;; TODO: add again the removed functions and refactor the rest of the module to use them
 
-(def ^:private schema:groupable-item
-  [:map {:title "Groupable item"}
-   [:name :string]])
-
-(def ^:private valid-groupable-item?
-  (sm/validator schema:groupable-item))
-
 (def ^:private xf-map-trim
   (comp
    (map str/trim)
@@ -60,9 +53,8 @@
 (defn get-path
   "Get the path of object by specified separator (E.g. with '.' separator, the
   'group.subgroup.name' -> ['group' 'subgroup'])"
-  [item separator]
-  (assert (valid-groupable-item? item) "expected groupable item")
-  (->> (split-path (:name item) separator)
+  [name separator]
+  (->> (split-path name separator)
        (not-empty)))
 
 ;; === Token
@@ -109,7 +101,7 @@
 
 (defn get-token-path
   [token]
-  (get-path token token-separator))
+  (get-path (:name token) token-separator))
 
 (defn find-token-value-references
   "Returns set of token references found in `token-value`.
@@ -142,14 +134,62 @@
 ;; === Token Set
 
 (defprotocol ITokenSet
+  (get-name [_] "get the name of the token set")
+  (get-description [_] "get the description of the token set")
+  (get-modified-at [_] "get the modified date of the token set")
+  (rename-set [_ name] "change the name of the token set")
+  (set-description [_ description] "set the description of the token set")
   (add-token [_ token] "add a token at the end of the list")
   (update-token [_ token-name f] "update a token in the list")
   (delete-token [_ token-name] "delete a token from the list")
   (get-token [_ token-name] "return token by token-name")
-  (get-tokens [_] "return an ordered sequence of all tokens in the set"))
+  (get-tokens [_] "return an ordered sequence of all tokens in the set")
+  (get-tokens-map [_] "return a map of tokens in the set, indexed by token-name"))
 
-(defrecord TokenSet [id name description modified-at tokens]
+(deftype TokenSet [id name description modified-at tokens]
+  #?@(:clj  [clojure.lang.IDeref
+             (deref [_] {:id id
+                         :name name
+                         :description description
+                         :modified-at modified-at
+                         :tokens tokens})]
+      :cljs [cljs.core/IDeref
+             (-deref [_] {:id id
+                          :name name
+                          :description description
+                          :modified-at modified-at
+                          :tokens tokens})])
+
+  #?@(:cljs [cljs.core/IEncodeJS
+             (-clj->js [_] (js-obj "id" (clj->js id)
+                                   "name" (clj->js name)
+                                   "description" (clj->js description)
+                                   "modified-at" (clj->js modified-at)
+                                   "tokens" (clj->js tokens)))])
   ITokenSet
+  (get-name [_]
+    name)
+
+  (get-description [_]
+    description)
+
+  (get-modified-at [_]
+    modified-at)
+
+  (rename-set [_ new-name]
+    (TokenSet. id
+               new-name
+               description
+               (dt/now)
+               tokens))
+
+  (set-description [_ new-description]
+    (TokenSet. id
+               name
+               (d/nilv new-description "")
+               (dt/now)
+               tokens))
+
   (add-token [_ token]
     (let [token (check-token token)]
       (TokenSet. id
@@ -184,7 +224,10 @@
     (get tokens token-name))
 
   (get-tokens [_]
-    (vals tokens)))
+    (vals tokens))
+
+  (get-tokens-map [_]
+    tokens))
 
 (defn token-set?
   [o]
@@ -218,10 +261,7 @@
 (declare make-token-set)
 
 (def schema:token-set
-  [:and {:gen/gen (->> (sg/generator schema:token-set-attrs)
-                       (sg/fmap #(make-token-set %)))}
-   (sm/required-keys schema:token-set-attrs)
-   [:fn token-set?]])
+  (sm/required-keys schema:token-set-attrs))
 
 (sm/register! ::token-set schema:token-set) ;; need to register for the recursive schema of token-sets
 
@@ -233,13 +273,17 @@
 
 (defn make-token-set
   [& {:as attrs}]
-  (-> attrs
-      (update :id #(or % (uuid/next)))
-      (update :modified-at #(or % (dt/now)))
-      (update :tokens #(into (d/ordered-map) %))
-      (update :description d/nilv "")
-      (check-token-set-attrs)
-      (map->TokenSet)))
+  (let [attrs (-> attrs
+                  (update :id #(or % (uuid/next)))
+                  (update :modified-at #(or % (dt/now)))
+                  (update :tokens #(into (d/ordered-map) %))
+                  (update :description d/nilv "")
+                  (check-token-set-attrs))]
+    (TokenSet. (:id attrs)
+               (:name attrs)
+               (:description attrs)
+               (:modified-at attrs)
+               (:tokens attrs))))
 
 (def ^:private set-prefix "S-")
 
@@ -291,7 +335,7 @@
 
 (defn get-set-path
   [token-set]
-  (get-path token-set set-separator))
+  (get-path (get-name token-set) set-separator))
 
 (defn split-set-name
   [name]
@@ -315,7 +359,7 @@
       (set-full-path->set-prefixed-full-path)))
 
 (defn get-set-prefixed-path [token-set]
-  (let [path (get-path token-set set-separator)]
+  (let [path (get-path (get-name token-set) set-separator)]
     (set-full-path->set-prefixed-full-path path)))
 
 (defn prefixed-set-path-string->set-name-string [path-str]
@@ -333,7 +377,7 @@
       (conj name)))
 
 (defn tokens-tree
-  "Convert tokens into a nested tree with their `:name` as the path.
+  "Convert tokens into a nested tree with their name as the path.
   Optionally use `update-token-fn` option to transform the token."
   [tokens & {:keys [update-token-fn]
              :or {update-token-fn identity}}]
@@ -343,7 +387,7 @@
              {} tokens))
 
 (defn backtrace-tokens-tree
-  "Convert tokens into a nested tree with their `:name` as the path.
+  "Convert tokens into a nested tree with their name as the path.
   Generates a uuid per token to backtrace a token from an external source (StyleDictionary).
   The backtrace can't be the name as the name might not exist when the user is creating a token."
   [tokens]
@@ -392,7 +436,7 @@
   (get-set [_ set-name] "get one set looking for name"))
 
 (def schema:token-set-node
-  [:schema {:registry {::node [:or ::token-set
+  [:schema {:registry {::node [:or [:fn token-set?]
                                [:and
                                 [:map-of {:gen/max 5} :string [:ref ::node]]
                                 [:fn d/ordered-map?]]]}}
@@ -618,7 +662,7 @@
                       ;; Set
                       (and v (instance? TokenSet v))
                       [{:group? false
-                        :path (split-set-name (:name v))
+                        :path (split-set-name (get-name v))
                         :parent-path parent
                         :depth depth
                         :set v}]
@@ -664,7 +708,7 @@
 
                   ;; Set
                   (and v (instance? TokenSet v))
-                  (let [name (:name v)]
+                  (let [name (get-name v)]
                     [{:is-group false
                       :path (split-set-name name)
                       :id name
@@ -728,11 +772,11 @@ Will return a value that matches this schema:
   ;; NOTE: This is only for debug purposes, pending to properly
   ;; implement the toString and alternative printing.
   #?@(:clj  [clojure.lang.IDeref
-             (deref [_] {:sets sets
+             (deref [_] {:sets (d/mapm #(deref %2) sets)
                          :themes themes
                          :active-themes active-themes})]
       :cljs [cljs.core/IDeref
-             (-deref [_] {:sets sets
+             (-deref [_] {:sets (d/mapm #(deref %2) sets)
                           :themes themes
                           :active-themes active-themes})])
 
@@ -746,8 +790,8 @@ Will return a value that matches this schema:
 
   ITokenSets
   (add-set [_ token-set]
-    (let [path      (get-set-prefixed-path token-set)
-          token-set (check-token-set token-set)]
+    (assert (token-set? token-set) "expected valid token-set")
+    (let [path (get-set-prefixed-path token-set)]
       (TokensLib. (d/oassoc-in sets path token-set)
                   themes
                   active-themes)))
@@ -756,10 +800,9 @@ Will return a value that matches this schema:
     (let [prefixed-full-path (set-name->prefixed-full-path set-name)
           set (get-in sets prefixed-full-path)]
       (if set
-        (let [set' (-> (make-token-set (f set))
-                       (assoc :modified-at (dt/now)))
+        (let [set' (f set)
               prefixed-full-path' (get-set-prefixed-path set')
-              name-changed? (not= (:name set) (:name set'))]
+              name-changed? (not= (get-name set) (get-name set'))]
           (if name-changed?
             (TokensLib. (-> sets
                             (d/oassoc-in-before prefixed-full-path prefixed-full-path' set')
@@ -767,7 +810,7 @@ Will return a value that matches this schema:
                         (walk/postwalk
                          (fn [form]
                            (if (instance? TokenTheme form)
-                             (update-set-name form (:name set) (:name set'))
+                             (update-set-name form (get-name set) (get-name set'))
                              form))
                          themes)
                         active-themes)
@@ -791,7 +834,7 @@ Will return a value that matches this schema:
     (let [path (split-set-name set-group-name)
           prefixed-path (map add-set-group-prefix path)
           child-set-names (->> (get-sets-at-path this path)
-                               (map :name)
+                               (map get-name)
                                (into #{}))]
       (TokensLib. (d/dissoc-in sets prefixed-path)
                   (walk/postwalk
@@ -833,7 +876,7 @@ Will return a value that matches this schema:
                   (set-full-path->set-prefixed-full-path before-path)))
 
               set
-              (assoc prev-set :name (join-set-path to-path))
+              (rename-set prev-set (join-set-path to-path))
 
               reorder?
               (= prefixed-from-path prefixed-to-path)
@@ -856,7 +899,7 @@ Will return a value that matches this schema:
                         (walk/postwalk
                          (fn [form]
                            (if (instance? TokenTheme form)
-                             (update-set-name form (:name prev-set) (:name set))
+                             (update-set-name form (get-name prev-set) (get-name set))
                              form))
                          themes))
                       active-themes))
@@ -888,15 +931,15 @@ Will return a value that matches this schema:
                     (d/oupdate-in prefixed-to-path (fn [sets]
                                                      (walk/prewalk
                                                       (fn [form]
-                                                        (if (instance? TokenSet form)
-                                                          (update form :name #(str to-path-str (str/strip-prefix % from-path-str)))
+                                                        (if (token-set? form)
+                                                          (rename-set form (str to-path-str (str/strip-prefix (get-name form) from-path-str)))
                                                           form))
                                                       sets)))))
               themes' (if reorder?
                         themes
                         (let [rename-sets-map (->> (get-sets-at-path this from-path)
                                                    (map (fn [set]
-                                                          [(:name set) (str to-path-str (str/strip-prefix (:name set) from-path-str))]))
+                                                          [(get-name set) (str to-path-str (str/strip-prefix (get-name set) from-path-str))]))
                                                    (into {}))]
                           (walk/postwalk
                            (fn [form]
@@ -934,12 +977,12 @@ Will return a value that matches this schema:
           sets (get-sets-at-path this path)]
       (reduce
        (fn [lib set]
-         (update-set lib (:name set) (fn [set']
-                                       (update set' :name #(str to-path-str (str/strip-prefix % from-path-str))))))
+         (update-set lib (get-name set) (fn [set']
+                                       (rename-set set' (str to-path-str (str/strip-prefix (get-name set') from-path-str))))))
        this sets)))
 
   (get-ordered-set-names [this]
-    (map :name (get-sets this)))
+    (map get-name (get-sets this)))
 
   (set-count [this]
     (count (get-sets this)))
@@ -1080,7 +1123,7 @@ Will return a value that matches this schema:
           prefixed-path-str (set-group-path->set-group-prefixed-path-str group-path)]
       (if (seq active-set-names)
         (let [path-active-set-names (->> (get-sets-at-prefix-path this prefixed-path-str)
-                                         (map :name)
+                                         (map get-name)
                                          (into #{}))
               difference (set/difference path-active-set-names active-set-names)]
           (cond
@@ -1095,7 +1138,7 @@ Will return a value that matches this schema:
           active-set-names (filter theme-set-names all-set-names)
           tokens           (reduce (fn [tokens set-name]
                                      (let [set (get-set this set-name)]
-                                       (merge tokens (:tokens set))))
+                                       (merge tokens (get-tokens-map set))))
                                    (d/ordered-map)
                                    active-set-names)]
       tokens))
@@ -1137,8 +1180,7 @@ Will return a value that matches this schema:
   (let [sets          (or sets (d/ordered-map))
         themes        (-> (or themes (d/ordered-map))
                           (ensure-hidden-theme))
-        active-themes (or active-themes #{hidden-theme-path})]
-    (TokensLib.
+        active-themes (or active-themes #{hidden-theme-path})]    (TokensLib.
      (check-token-sets sets)
      (check-token-themes themes)
      (check-active-themes active-themes))))
@@ -1160,11 +1202,10 @@ Will return a value that matches this schema:
 
 (defn duplicate-set [set-name lib & {:keys [suffix]}]
   (let [sets (get-sets lib)
-        unames (map :name sets)
+        unames (map get-name sets)
         copy-name (cfh/generate-unique-name set-name unames :suffix suffix)]
     (some-> (get-set lib set-name)
-            (assoc :name copy-name)
-            (assoc :modified-at (dt/now)))))
+            (rename-set copy-name))))
 
 ;; === Import / Export from JSON format
 
@@ -1457,8 +1498,9 @@ Will return a value that matches this schema:
         (->> (get-set-tree tokens-lib)
              (tree-seq d/ordered-map? vals)
              (filter (partial instance? TokenSet))
-             (map (fn [{:keys [name tokens]}]
-                    [name (tokens-tree tokens :update-token-fn update-token-fn)])))
+             (map (fn [set]
+                    [(get-name set)
+                     (tokens-tree (get-tokens-map set) :update-token-fn update-token-fn)])))
 
         ordered-set-names
         (mapv first name-set-tuples)
@@ -1509,8 +1551,8 @@ Will return a value that matches this schema:
 
  {:id "penpot/token-set"
   :class TokenSet
-  :wfn #(into {} %)
-  :rfn #(map->TokenSet %)}
+  :wfn #(into {} (deref %))
+  :rfn #(make-token-set %)}
 
  {:id "penpot/token-theme"
   :class TokenTheme
@@ -1647,10 +1689,10 @@ Will return a value that matches this schema:
      :class TokenSet
      :wfn (fn [n w o]
             (fres/write-tag! w n 1)
-            (fres/write-object! w (into {} o)))
+            (fres/write-object! w (into {} (deref o))))
      :rfn (fn [r]
             (let [obj (fres/read-object! r)]
-              (map->TokenSet obj)))}
+              (make-token-set obj)))}
 
     {:name "penpot/token-theme/v1"
      :class TokenTheme
