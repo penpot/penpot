@@ -1,5 +1,13 @@
 # CHANGELOG
 
+
+## 2.7.2 (Unreleased)
+
+### :bug: Bugs fixed
+
+- Update plugins runtime [Github #6604](https://github.com/penpot/penpot/pull/6604)
+
+
 ## 2.7.1
 
 ### :bug: Bugs fixed
@@ -8,7 +16,7 @@
 - Fix tokens disappearing after manual additions [Taiga #11063](https://tree.taiga.io/project/penpot/issue/11063)
 
 
-## 2.7.0 
+## 2.7.0
 
 ### :rocket: Epics and highlights
 
