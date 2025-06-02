@@ -2,7 +2,6 @@
 # NOTE: this script should be called from the parent directory to
 # properly work.
 
-
 export INCLUDE_STORYBOOK=${BUILD_STORYBOOK:-no};
 export INCLUDE_WASM=${BUILD_WASM:-yes};
 export CURRENT_VERSION=$1;
