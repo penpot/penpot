@@ -87,7 +87,7 @@
     (watch [_ state _]
       (let [ids (:ids args)
             object-modifiers (:modifiers args)
-
+            object-transforms (:transforms args)
             objects (dsh/lookup-page-objects state)
 
             is-frame? (fn [id] (= :frame (get-in objects [id :type])))
@@ -95,8 +95,18 @@
 
             build-move-event
             (fn [guide]
-              (let [frame (get objects (:frame-id guide))
-                    frame' (gsh/transform-shape frame (get-in object-modifiers [(:frame-id guide) :modifiers]))
+              (let [frame-id (:frame-id guide)
+                    frame (get objects frame-id)
+                    modifier (get-in object-modifiers [frame-id :modifiers])
+                    transform (get object-transforms frame-id)
+
+                    frame'
+                    (cond-> frame
+                      (some? modifier)
+                      (gsh/transform-shape modifier)
+
+                      (some? transform)
+                      (gsh/apply-transform transform))
 
                     moved (gpt/to-vec (gpt/point (:x frame) (:y frame))
                                       (gpt/point (:x frame') (:y frame')))
