@@ -84,6 +84,7 @@ A non exhaustive list of changes:
 - Add configuration for air gapped installations with Docker
 - Support system color scheme [Github #5030](https://github.com/penpot/penpot/issues/5030)
 - Update google fonts (at 2025/05/19)
+- Persist ruler visibility across files and reloads [GitHub #4586](https://github.com/penpot/penpot/issues/4586)
 
 ### :bug: Bugs fixed
 - Fix getCurrentUser for plugins api [Taiga #11057](https://tree.taiga.io/project/penpot/issue/11057)
