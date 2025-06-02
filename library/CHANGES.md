@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.0.3
+
+- Add missing isLocal field on file media for fix compatibility of the
+  library with penpot 2.7.xx
+
+
 ## 1.0.2
 
 - Fix incorrect boolean type assignation
