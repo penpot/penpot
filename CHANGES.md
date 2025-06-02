@@ -38,12 +38,21 @@ on [its own changelog](library/CHANGES.md)
 - Fix palette is over sidebar [#11160](https://tree.taiga.io/project/penpot/issue/11160)
 - Fix font size input not displaying "mixed" when multiple texts are selected [Taiga #11177](https://tree.taiga.io/project/penpot/issue/11177)
 
+
+## 2.7.2 (Unreleased)
+
+### :bug: Bugs fixed
+
+- Update plugins runtime [Github #6604](https://github.com/penpot/penpot/pull/6604)
+
+
 ## 2.7.1
 
 ### :bug: Bugs fixed
 
 - Fix incorrect handling of strokes with images on importing files
 - Fix tokens disappearing after manual additions [Taiga #11063](https://tree.taiga.io/project/penpot/issue/11063)
+
 
 ## 2.7.0
 
