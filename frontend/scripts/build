@@ -14,6 +14,9 @@ export TS=$(date +%s);
 # performant code on macros (example: rumext)
 export NODE_ENV=production;
 
+echo "Current path:"
+echo $PATH
+
 set -ex
 
 corepack enable;
