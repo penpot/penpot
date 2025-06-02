@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-export JAVA_OPTS=${JAVA_OPTS:-"-Xmx1000m -Xms200m"};
-EMSDK_QUIET=1 . /home/emsdk/emsdk_env.sh;
-
 alias l='ls --color -GFlh'
 alias rm='rm -r'
 alias ls='ls --color -F'
