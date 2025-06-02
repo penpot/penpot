@@ -212,7 +212,7 @@
   [{:keys [id set label tree-depth tree-path tree-index is-selected is-active is-draggable is-editing
            on-select on-drop on-toggle on-start-edition on-reset-edition on-edit-submit]}]
 
-  (let [set-name  (get set :name)
+  (let [set-name  (ctob/get-name set)
         can-edit? (mf/use-ctx ctx/can-edit?)
 
         on-click

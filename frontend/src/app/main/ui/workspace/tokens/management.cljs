@@ -80,7 +80,7 @@
         ;; select the first one from the list of sets
         selected-token-set-tokens
         (when selected-token-set
-          (get selected-token-set :tokens))
+          (ctob/get-tokens-map selected-token-set))
 
         tokens
         (mf/with-memo [active-theme-tokens selected-token-set-tokens]
@@ -120,7 +120,7 @@
                           (not (ctob/get-set tokens-lib selected-token-set-name)))))
         (let [match (->> (ctob/get-sets tokens-lib)
                          (first)
-                         (:name))]
+                         (ctob/get-name))]
           (st/emit! (dwtl/set-selected-token-set-name match)))))
 
     [:*

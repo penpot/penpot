@@ -41,7 +41,7 @@
   [group-path tokens-lib tokens-lib-theme]
   (let [deactivate? (contains? #{:all :partial} (ctob/sets-at-path-all-active? tokens-lib group-path))
         sets-names  (->> (ctob/get-sets-at-path tokens-lib group-path)
-                         (map :name)
+                         (map ctob/get-name)
                          (into #{}))]
     (if deactivate?
       (ctob/disable-sets tokens-lib-theme sets-names)

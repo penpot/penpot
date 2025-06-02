@@ -916,7 +916,7 @@
     (-> changes
         (update :redo-changes conj {:type :set-token-set
                                     :set-name name
-                                    :token-set (assoc prev-token-set :name new-name)
+                                    :token-set (ctob/rename prev-token-set new-name)
                                     :group? false})
         (update :undo-changes conj {:type :set-token-set
                                     :set-name new-name
@@ -937,11 +937,11 @@
                                     :group? group?})
         (update :undo-changes conj (if prev-token-set
                                      {:type :set-token-set
-                                      :set-name (or
-                                                 ;; Undo of edit
-                                                 (:name token-set)
-                                                 ;; Undo of delete
-                                                 set-name)
+                                      :set-name (if token-set
+                                                  ;; Undo of edit
+                                                  (ctob/get-name token-set)
+                                                  ;; Undo of delete
+                                                  set-name)
                                       :token-set prev-token-set
                                       :group? group?}
                                      ;; Undo of create
