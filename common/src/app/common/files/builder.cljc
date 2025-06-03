@@ -21,7 +21,6 @@
    [app.common.time :as dt]
    [app.common.types.color :as types.color]
    [app.common.types.component :as types.comp]
-   [app.common.types.container :as types.cont]
    [app.common.types.file :as types.file]
    [app.common.types.page :as types.page]
    [app.common.types.path :as types.path]
@@ -341,8 +340,7 @@
         (comp
          (map (d/getf objects))
          (remove cph/frame-shape?)
-         (remove types.comp/is-variant?)
-         (remove (partial types.cont/has-any-copy-parent? objects)))
+         (remove types.comp/is-variant?))
 
         children
         (->> (get bool-shape :shapes)

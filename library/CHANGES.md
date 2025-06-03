@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.0.4
+
+- Fix incorrect shapes filtering on creating boolean shapes within components
+
+
 ## 1.0.3
 
 - Add missing isLocal field on file media for fix compatibility of the
