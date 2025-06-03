@@ -263,6 +263,7 @@
 
 (defn set-shape-strokes
   [strokes]
+  (println "set-shape-strokes")
   (h/call wasm/internal-module "_clear_shape_strokes")
   (keep (fn [stroke]
           (let [opacity   (or (:stroke-opacity stroke) 1.0)
@@ -285,6 +286,7 @@
             (cond
               (some? gradient)
               (do
+                (println 1)
                 (sr-fills/write-gradient-fill! offset dview gradient opacity)
                 (h/call wasm/internal-module "_add_shape_stroke_fill"))
 
@@ -301,6 +303,7 @@
 
               (some? color)
               (do
+                (println 3)
                 (sr-fills/write-solid-fill! offset dview (sr-clr/hex->u32argb color opacity))
                 (h/call wasm/internal-module "_add_shape_stroke_fill")))))
         strokes))

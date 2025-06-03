@@ -1351,6 +1351,33 @@
 
     (update data :pages-index d/update-vals update-page)))
 
+(defmethod migrate-data "0004-clean-shadow-and-colors"
+  [data _]
+  (letfn [(clean-shadow [shadow]
+            (update shadow :color (fn [color]
+                                    (let [ref-id   (get color :id)
+                                          ref-file (get color :file-id)]
+                                      (-> (d/without-qualified color)
+                                          (select-keys [:opacity :color :gradient :image :ref-id :ref-file])
+                                          (cond-> ref-id
+                                            (assoc :ref-id ref-id))
+                                          (cond-> ref-file
+                                            (assoc :ref-file ref-file)))))))
+
+          (update-object [object]
+            (d/update-when object :shadow #(mapv clean-shadow %)))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))
+
+          (clean-library-color [color]
+            (dissoc color :file-id))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container)
+        (d/update-when :colors d/update-vals clean-library-color))))
+
 (defmethod migrate-data "0005-deprecate-image-type"
   [data _]
   (letfn [(update-object [object]
@@ -1404,32 +1431,78 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0004-clean-shadow-and-colors"
+(def ^:private valid-stroke?
+  (sm/lazy-validator ::cts/stroke))
+
+(defmethod migrate-data "0007-fix-strokes"
   [data _]
-  (letfn [(clean-shadow [shadow]
-            (update shadow :color (fn [color]
-                                    (let [ref-id   (get color :id)
-                                          ref-file (get color :file-id)]
-                                      (-> (d/without-qualified color)
-                                          (select-keys [:opacity :color :gradient :image :ref-id :ref-file])
-                                          (cond-> ref-id
-                                            (assoc :ref-id ref-id))
-                                          (cond-> ref-file
-                                            (assoc :ref-file ref-file)))))))
+  (letfn [(fix-strokes [object]
+            (d/update-when object :strokes (partial filterv valid-stroke?)))
 
           (update-object [object]
-            (d/update-when object :shadow #(mapv clean-shadow %)))
+                         (-> object
+                             (fix-strokes)
+
+                             ;; The text shape also can has strokes on the text
+                             ;; fragments so we need to fix strokes there
+                             (cond-> (cfh/text-shape? object)
+                               (update :content (partial txt/transform-nodes identity fix-strokes)))))
 
           (update-container [container]
-            (d/update-when container :objects d/update-vals update-object))
-
-          (clean-library-color [color]
-            (dissoc color :file-id))]
+                            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
         (update :pages-index d/update-vals update-container)
-        (d/update-when :components d/update-vals update-container)
-        (d/update-when :colors d/update-vals clean-library-color))))
+        (d/update-when :components d/update-vals update-container))))
+
+;; Fixes shapes with nested :fills in the :fills attribute
+(defmethod migrate-data "0008-fix-nested-fills"
+  [data _]
+  (letfn [(extract-leaf-fills [fills]
+            (->> fills
+                 flatten
+                 (mapcat (fn [entry]
+                           (cond
+                             ;; If it's a map with non-empty :fills, recurse into its :fills
+                             (and (map? entry) (seq (:fills entry)))
+                             (extract-leaf-fills (:fills entry))
+
+                             ;; If it's a map with empty :fills, remove :fills and keep it if still valid
+                             (and (map? entry) (contains? entry :fills))
+                             (let [cleaned (dissoc entry :fills)]
+                               (if (valid-fill? cleaned)
+                                 [cleaned]
+                                 []))
+
+                             ;; If it's a map with no :fills at all, keep it if valid
+                             (map? entry)
+                             (do
+                               (if (valid-fill? entry)
+                                 [entry]
+                                 []))
+
+                             ;; Ignore all other values
+                             :else [])))
+                 vec))
+
+          (fix-nested-fills [object]
+            (update object :fills extract-leaf-fills))
+
+          (update-object [object]
+            (-> object
+                (fix-nested-fills)
+
+                ;; The text shape also can has strokes on the text
+                ;; fragments so we need to fix strokes there
+                (cond-> (cfh/text-shape? object)
+                  (update :content (partial txt/transform-nodes identity fix-nested-fills)))))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (def available-migrations
   (into (d/ordered-set)
@@ -1493,4 +1566,7 @@
          "0004-add-partial-text-touched-flags"
          "0004-clean-shadow-and-colors"
          "0005-deprecate-image-type"
-         "0006-fix-old-texts-fills"]))
+         "0006-fix-old-texts-fills"
+         "0007-fix-strokes"
+         "0008-fix-nested-fills"
+         ]))
