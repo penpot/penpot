@@ -73,7 +73,7 @@
    [:size ::sm/int]
    [:content-type :string]
    [:bucket [::sm/one-of {:format :string} sto/valid-buckets]]
-   [:hash :string]])
+   [:hash {:optional true} :string]])
 
 (def ^:private schema:file-thumbnail
   [:map {:title "FileThumbnail"}
@@ -821,13 +821,14 @@
                       :expected-size (:size object)
                       :found-size (sto/get-size content)))
 
-          (when (not= (:hash object) (sto/get-hash content))
-            (ex/raise :type :validation
-                      :code :inconsistent-penpot-file
-                      :hint "found corrupted storage object: hash does not match"
-                      :path path
-                      :expected-hash (:hash object)
-                      :found-hash (sto/get-hash content)))
+          (when-let [hash (get object :hash)]
+            (when (not= hash (sto/get-hash content))
+              (ex/raise :type :validation
+                        :code :inconsistent-penpot-file
+                        :hint "found corrupted storage object: hash does not match"
+                        :path path
+                        :expected-hash (:hash object)
+                        :found-hash (sto/get-hash content))))
 
           (let [params  (-> object
                             (dissoc :id :size)
