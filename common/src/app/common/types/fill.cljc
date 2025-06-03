@@ -19,7 +19,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def schema:fill-attrs
-  [:map {:title "FillAttrs"}
+  [:map {:title "FillAttrs" :closed true}
    [:fill-color-ref-file {:optional true} ::sm/uuid]
    [:fill-color-ref-id {:optional true} ::sm/uuid]
    [:fill-opacity {:optional true} [::sm/number {:min 0 :max 1}]]

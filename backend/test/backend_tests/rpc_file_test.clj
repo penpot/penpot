@@ -343,8 +343,9 @@
                 :name "image"
                 :frame-id uuid/zero
                 :parent-id uuid/zero
-                :type :image
-                :metadata {:id (:id fmo1) :width 100 :height 100 :mtype "image/jpeg"}})}])
+                :type :rect
+                :fills [{:fill-opacity 1
+                         :fill-image {:id (:id fmo1) :width 100 :height 100 :mtype "image/jpeg"}}]})}])
 
       ;; Check that reference storage objects on filemediaobjects
       ;; are the same because of deduplication feature.
@@ -462,7 +463,8 @@
           fmo3    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
           fmo4    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
           fmo5    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
-          s-shid  (uuid/random)
+          s1-shid  (uuid/random)
+          s2-shid  (uuid/random)
           t-shid  (uuid/random)
 
           page-id (first (get-in file [:data :pages]))]
@@ -481,19 +483,31 @@
        :changes
        [{:type :add-obj
          :page-id page-id
-         :id s-shid
+         :id s1-shid
          :parent-id uuid/zero
          :frame-id uuid/zero
          :components-v2 true
          :obj (cts/setup-shape
-               {:id s-shid
+               {:id s1-shid
                 :name "image"
                 :frame-id uuid/zero
                 :parent-id uuid/zero
-                :type :image
-                :metadata {:id (:id fmo1) :width 100 :height 100 :mtype "image/jpeg"}
-                :fills [{:opacity 1 :fill-image {:id (:id fmo2) :width 100 :height 100 :mtype "image/jpeg"}}]
-                :strokes [{:opacity 1 :stroke-image {:id (:id fmo3) :width 100 :height 100 :mtype "image/jpeg"}}]})}
+                :type :rect
+                :fills [{:fill-opacity 1 :fill-image {:id (:id fmo2) :width 101 :height 100 :mtype "image/jpeg"}}]
+                :strokes [{:stroke-opacity 1 :stroke-image {:id (:id fmo3) :width 102 :height 100 :mtype "image/jpeg"}}]})}
+        {:type :add-obj
+         :page-id page-id
+         :id s2-shid
+         :parent-id uuid/zero
+         :frame-id uuid/zero
+         :components-v2 true
+         :obj (cts/setup-shape
+               {:id s2-shid
+                :name "image"
+                :frame-id uuid/zero
+                :parent-id uuid/zero
+                :type :rect
+                :fills [{:fill-opacity 1 :fill-image {:id (:id fmo1) :width 103 :height 100 :mtype "image/jpeg"}}]})}
         {:type :add-obj
          :page-id page-id
          :id t-shid
@@ -519,7 +533,8 @@
                                                              {:fills [{:fill-opacity 1
                                                                        :fill-color "#000000"}]
                                                               :text "bye"}]}]}]}
-                :strokes [{:opacity 1 :stroke-image {:id (:id fmo5) :width 100 :height 100 :mtype "image/jpeg"}}]})}])
+                :strokes [{:stroke-opacity 1 :stroke-image {:id (:id fmo5) :width 100 :height 100 :mtype "image/jpeg"}}]})}])
+
 
       ;; run the file-gc task immediately without forced min-age
       (t/is (false? (th/run-task! :file-gc {:file-id (:id file)})))
@@ -557,10 +572,13 @@
        :vern 0
        :changes [{:type :del-obj
                   :page-id (first (get-in file [:data :pages]))
-                  :id s-shid}
+                  :id s1-shid}
                  {:type :del-obj
                   :page-id (first (get-in file [:data :pages]))
-                  :id t-shid}])
+                  :id t-shid}
+                 {:type :del-obj
+                  :page-id (first (get-in file [:data :pages]))
+                  :id s2-shid}])
 
       ;; Now, we have deleted the usage of pointers to the
       ;; file-media-objects, if we paste file-gc, they should be marked

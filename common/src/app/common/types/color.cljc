@@ -79,6 +79,10 @@
    [:name {:optional true} ::sm/text]
    [:keep-aspect-ratio {:optional true} :boolean]])
 
+(def image-attrs
+  "A set of attrs that corresponds to image data type"
+  (sm/keys schema:image))
+
 (def schema:image-color
   [:map [:image schema:image]])
 
@@ -99,6 +103,10 @@
       [:color schema:hex-color]
       [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
       [:offset [::sm/number {:min 0 :max 1}]]]]]])
+
+(def gradient-attrs
+  "A set of attrs that corresponds to gradient data type"
+  (sm/keys schema:gradient))
 
 (def schema:gradient-color
   [:map [:gradient schema:gradient]])

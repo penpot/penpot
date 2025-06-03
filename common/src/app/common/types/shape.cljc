@@ -135,7 +135,7 @@
     (= 1 (count result))))
 
 (def schema:stroke-attrs
-  [:map {:title "StrokeAttrs"}
+  [:map {:title "StrokeAttrs" :closed true}
    [:stroke-color-ref-file {:optional true} ::sm/uuid]
    [:stroke-color-ref-id {:optional true} ::sm/uuid]
    [:stroke-opacity {:optional true} ::sm/safe-number]
@@ -151,6 +151,10 @@
    [:stroke-color {:optional true} types.color/schema:hex-color]
    [:stroke-color-gradient {:optional true} types.color/schema:gradient]
    [:stroke-image {:optional true} types.color/schema:image]])
+
+(def stroke-attrs
+  "A set of attrs that corresponds to stroke data type"
+  (sm/keys schema:stroke-attrs))
 
 (def schema:stroke
   (sm/register!
