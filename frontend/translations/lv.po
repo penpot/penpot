@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-31 10:03+0000\n"
+"PO-Revision-Date: 2025-06-03 14:04+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -7563,3 +7563,28 @@ msgstr "Neierobežoti projekti, datnes un uzmetumi"
 #: src/app/main/ui/settings/subscription.cljs:51
 msgid "subscription.settings.section-plan"
 msgstr "Tavs abonements"
+
+#: src/app/main/ui/dashboard/subscription.cljs:69
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-description"
+msgstr ""
+"Iegūsti izvērstu drošību, darbību žurnālus, mērķētu atbalstu un vēl ar **"
+"uzņēmējdarbības plānu**"
+
+#: src/app/main/ui/dashboard/subscription.cljs:70
+msgid "subscription.dashboard.power-up.unlimited.cta"
+msgstr "Paskatīties"
+
+#: src/app/main/ui/dashboard/subscription.cljs:68
+msgid "subscription.dashboard.power-up.unlimited.top-description"
+msgstr ""
+"Papildu redaktori, krātuve un automātiski saglabātas versijas, datņu "
+"rezerves kopijas un vēl."
+
+#: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:44, src/app/main/ui/settings/subscription.cljs:47
+msgid "subscription.labels"
+msgstr "Abonements"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:132
+msgid "workspace.tokens.import-multiple-files"
+msgstr "Daudzās datnēs datnes nosaukums/ceļš ir kopas nosaukums."
