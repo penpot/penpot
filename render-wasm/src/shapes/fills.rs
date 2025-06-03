@@ -240,7 +240,7 @@ pub fn merge_fills(fills: &[Fill], bounding_box: Rect) -> skia::Paint {
         if let Some(shader) = shader {
             combined_shader = match combined_shader {
                 Some(existing_shader) => Some(skia::shaders::blend(
-                    skia::Blender::mode(skia::BlendMode::Overlay),
+                    skia::Blender::mode(skia::BlendMode::DstOver),
                     existing_shader,
                     shader,
                 )),

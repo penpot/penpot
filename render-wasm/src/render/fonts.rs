@@ -1,4 +1,5 @@
 use skia_safe::{self as skia, textlayout, Font, FontMgr};
+use std::collections::HashSet;
 
 use crate::shapes::{FontFamily, FontStyle};
 use crate::uuid::Uuid;
@@ -21,6 +22,7 @@ pub struct FontStore {
     font_provider: textlayout::TypefaceFontProvider,
     font_collection: textlayout::FontCollection,
     debug_font: Font,
+    fallback_fonts: HashSet<String>,
 }
 
 impl FontStore {
@@ -41,6 +43,7 @@ impl FontStore {
             font_provider,
             font_collection,
             debug_font,
+            fallback_fonts: HashSet::new(),
         }
     }
 
@@ -61,6 +64,7 @@ impl FontStore {
         family: FontFamily,
         font_data: &[u8],
         is_emoji: bool,
+        is_fallback: bool,
     ) -> Result<(), String> {
         if self.has_family(&family) {
             return Ok(());
@@ -80,12 +84,21 @@ impl FontStore {
 
         self.font_provider.register_typeface(typeface, font_name);
         self.font_collection.clear_caches();
+
+        if is_fallback {
+            self.fallback_fonts.insert(alias);
+        }
+
         Ok(())
     }
 
     pub fn has_family(&self, family: &FontFamily) -> bool {
         let serialized = format!("{}", family);
         self.font_provider.family_names().any(|x| x == serialized)
+    }
+
+    pub fn get_fallback(&self) -> &HashSet<String> {
+        &self.fallback_fonts
     }
 }
 

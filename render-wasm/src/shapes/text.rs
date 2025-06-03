@@ -7,10 +7,11 @@ use skia_safe::{
     paint::Paint,
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle},
 };
+use std::collections::HashSet;
 
 use super::FontFamily;
 use crate::shapes::{self, merge_fills, set_paint_fill, Stroke, StrokeKind};
-use crate::utils::uuid_from_u32;
+use crate::utils::{get_fallback_fonts, uuid_from_u32};
 use crate::wasm::fills::parse_fills_from_bytes;
 use crate::Uuid;
 
@@ -94,6 +95,7 @@ impl TextContent {
     }
 
     pub fn to_paragraphs(&self, fonts: &FontCollection) -> Vec<Vec<skia::textlayout::Paragraph>> {
+        let fallback_fonts = get_fallback_fonts();
         let mut paragraph_group = Vec::new();
         let paragraphs = self
             .paragraphs
@@ -102,7 +104,7 @@ impl TextContent {
                 let paragraph_style = p.paragraph_to_style();
                 let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
                 for leaf in &p.children {
-                    let text_style = leaf.to_style(p, &self.bounds); // FIXME
+                    let text_style = leaf.to_style(p, &self.bounds, fallback_fonts); // FIXME
                     let text = leaf.apply_text_transform();
                     builder.push_style(&text_style);
                     builder.add_text(&text);
@@ -121,6 +123,7 @@ impl TextContent {
         bounds: &Rect,
         fonts: &FontCollection,
     ) -> Vec<Vec<skia::textlayout::Paragraph>> {
+        let fallback_fonts = get_fallback_fonts();
         let mut paragraph_group = Vec::new();
         let stroke_paints = get_text_stroke_paints(stroke, bounds);
 
@@ -130,7 +133,8 @@ impl TextContent {
                 let paragraph_style = paragraph.paragraph_to_style();
                 let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
                 for leaf in &paragraph.children {
-                    let stroke_style = leaf.to_stroke_style(paragraph, &stroke_paint);
+                    let stroke_style =
+                        leaf.to_stroke_style(paragraph, &stroke_paint, fallback_fonts);
                     let text: String = leaf.apply_text_transform();
                     builder.push_style(&stroke_style);
                     builder.add_text(&text);
@@ -336,6 +340,7 @@ impl TextLeaf {
         &self,
         paragraph: &Paragraph,
         content_bounds: &Rect,
+        fallback_fonts: &HashSet<String>,
     ) -> skia::textlayout::TextStyle {
         let mut style = skia::textlayout::TextStyle::default();
 
@@ -359,14 +364,18 @@ impl TextLeaf {
             3 => skia::textlayout::TextDecoration::OVERLINE,
             _ => skia::textlayout::TextDecoration::NO_DECORATION,
         });
-        // FIXME
+
+        // FIXME fix decoration styles
         style.set_decoration_color(paint.color());
 
-        style.set_font_families(&[
+        let mut font_families = vec![
             self.serialized_font_family(),
             default_font(),
             DEFAULT_EMOJI_FONT.to_string(),
-        ]);
+        ];
+
+        font_families.extend(fallback_fonts.iter().cloned());
+        style.set_font_families(&font_families);
 
         style
     }
@@ -375,8 +384,9 @@ impl TextLeaf {
         &self,
         paragraph: &Paragraph,
         stroke_paint: &Paint,
+        fallback_fonts: &HashSet<String>,
     ) -> skia::textlayout::TextStyle {
-        let mut style = self.to_style(paragraph, &Rect::default());
+        let mut style = self.to_style(paragraph, &Rect::default(), fallback_fonts);
         style.set_foreground_paint(stroke_paint);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(paragraph.letter_spacing);

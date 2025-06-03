@@ -14,19 +14,19 @@ pub extern "C" fn store_font(
     weight: u32,
     style: u8,
     is_emoji: bool,
+    is_fallback: bool,
 ) {
     with_state!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
         let font_bytes = mem::bytes();
+
         let family = FontFamily::new(id, weight, style.into());
-        let res = state
+        let _ = state
             .render_state()
             .fonts_mut()
-            .add(family, &font_bytes, is_emoji);
+            .add(family, &font_bytes, is_emoji, is_fallback);
 
-        if let Err(msg) = res {
-            eprintln!("{}", msg);
-        }
+        mem::free_bytes();
     });
 }
 
