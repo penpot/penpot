@@ -307,7 +307,7 @@
      clojure.lang.IHashEq
      (hasheq [this]
        (when-not hash
-         (set! hash (clojure.lang.Murmur3/hashOrdered (seq this))))
+         (set! hash (clojure.lang.Murmur3/hashOrdered (vec this))))
        hash)
 
      clojure.lang.Sequential
