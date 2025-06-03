@@ -34,7 +34,7 @@ function build-devenv {
     fi
 
     # docker build -t $DEVENV_IMGNAME:latest .
-    docker buildx build --platform linux/amd64,linux/arm64 --push -t $DEVENV_IMGNAME:latest .;
+    docker buildx build --platform linux/amd64 --push -t $DEVENV_IMGNAME:latest .;
     docker pull $DEVENV_IMGNAME:latest;
 
     popd;
@@ -103,6 +103,21 @@ function run-devenv-shell {
            -e EXTERNAL_UID=$CURRENT_USER_ID \
            penpot-devenv-main sudo -EH -u penpot bash;
 }
+
+function run-devenv-isolated-shell {
+    docker volume create ${DEVENV_PNAME}_user_data;
+    docker run -ti --rm \
+           --mount source=${DEVENV_PNAME}_user_data,type=volume,target=/home/penpot/ \
+           --mount source=`pwd`,type=bind,target=/home/penpot/penpot \
+           -e EXTERNAL_UID=$CURRENT_USER_ID \
+           -e BUILD_STORYBOOK=$BUILD_STORYBOOK \
+           -e BUILD_WASM=$BUILD_WASM \
+           -e SHADOWCLJS_EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS \
+           -e JAVA_OPTS="$JAVA_OPTS" \
+           -w /home/penpot/penpot/$1 \
+           $DEVENV_IMGNAME:latest sudo -EH -u penpot bash
+}
+
 
 function build {
     echo ">> build start: $1"
@@ -233,6 +248,7 @@ function usage {
     echo "- drop-devenv                      Remove the development oriented docker compose containers, volumes and clean images."
     echo "- run-devenv                       Attaches to the running devenv container and starts development environment"
     echo "- run-devenv-shell                 Attaches to the running devenv container and starts a bash shell."
+    echo "- isolated-shell                   Starts a bash shell in a new devenv container."
     echo "- log-devenv                       Show logs of the running devenv docker compose service."
     echo ""
     echo "- build-bundle                     Build all bundles (frontend, backend and exporter)."
@@ -280,6 +296,11 @@ case $1 in
     run-devenv-shell)
         run-devenv-shell ${@:2}
         ;;
+
+    isolated-shell)
+        run-devenv-isolated-shell ${@:2}
+        ;;
+
     stop-devenv)
         stop-devenv ${@:2}
         ;;

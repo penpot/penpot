@@ -260,10 +260,10 @@ RUN set -ex; \
     mv /tmp/mc /usr/local/bin/; \
     chmod +x /usr/local/bin/mc;
 
-WORKDIR /home
+WORKDIR /usr/local
 
 # Install Rust toolchain
-ENV PATH=/home/cargo/bin:$PATH RUSTUP_HOME=/home/rustp CARGO_HOME=/home/cargo
+ENV PATH=/usr/local/cargo/bin:$PATH RUSTUP_HOME=/usr/local/rustpo CARGO_HOME=/usr/local/cargo
 
 RUN set -eux; \
     # Same steps as in Rust official Docker image https://github.com/rust-lang/docker-rust/blob/9f287282d513a84cb7c7f38f197838f15d37b6a9/1.81.0/bookworm/Dockerfile
