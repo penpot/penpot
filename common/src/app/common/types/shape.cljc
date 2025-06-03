@@ -140,7 +140,7 @@
    [:stroke-color-ref-id {:optional true} ::sm/uuid]
    [:stroke-opacity {:optional true} ::sm/safe-number]
    [:stroke-style {:optional true}
-    [::sm/one-of #{:solid :dotted :dashed :mixed :none :svg}]]
+    [::sm/one-of #{:solid :dotted :dashed :mixed}]]
    [:stroke-width {:optional true} ::sm/safe-number]
    [:stroke-alignment {:optional true}
     [::sm/one-of #{:center :inner :outer}]]
