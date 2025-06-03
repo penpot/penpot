@@ -602,11 +602,24 @@ impl Shape {
 
             rect.join(shadow_rect);
         }
+
         if self.blur.blur_type != blurs::BlurType::None {
             rect.left -= self.blur.value;
             rect.top -= self.blur.value;
             rect.right += self.blur.value;
             rect.bottom += self.blur.value;
+        }
+
+        if let Some(max_stroke_width) = self
+            .strokes
+            .iter()
+            .map(|s| s.width)
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+        {
+            rect.left -= max_stroke_width / 2.0;
+            rect.top -= max_stroke_width / 2.0;
+            rect.right += max_stroke_width / 2.0;
+            rect.bottom += max_stroke_width / 2.0;
         }
 
         rect
@@ -704,6 +717,7 @@ impl Shape {
         match self.shape_type {
             Type::Text(ref mut text) => {
                 text.add_paragraph(paragraph);
+                text.new_bounds(self.selrect);
                 Ok(())
             }
             _ => Err("Shape is not a text".to_string()),

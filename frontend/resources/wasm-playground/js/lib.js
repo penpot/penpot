@@ -216,3 +216,86 @@ export function setupInteraction(canvas) {
   canvas.addEventListener("mouseup", () => { isPanning = false; });
   canvas.addEventListener("mouseout", () => { isPanning = false; });
 }
+
+export function addTextShape(x, y, fontSize, text) {
+  const numLeaves = 1; // Single text leaf for simplicity
+  const paragraphAttrSize = 48;
+  const leafAttrSize = 56;
+  const fillSize = 160;
+  const textBuffer = new TextEncoder().encode(text);
+  const textSize = textBuffer.byteLength;
+
+  // Calculate fills
+  const fills = [
+    {
+      type: "solid",
+      color: getRandomColor(),
+      opacity: getRandomFloat(0.5, 1.0),
+    },
+  ];
+  const totalFills = fills.length;
+  const totalFillsSize = totalFills * fillSize;
+
+  // Calculate metadata and total buffer size
+  const metadataSize = paragraphAttrSize + leafAttrSize + totalFillsSize;
+  const totalSize = metadataSize + textSize;
+
+  // Allocate buffer
+  const bufferPtr = allocBytes(totalSize);
+  const heap = new Uint8Array(Module.HEAPU8.buffer, bufferPtr, totalSize);
+  const dview = new DataView(heap.buffer, bufferPtr, totalSize);
+
+  // Set number of leaves
+  dview.setUint32(0, numLeaves, true);
+
+  // Serialize paragraph attributes
+  dview.setUint8(4, 1); // text-align: left
+  dview.setUint8(5, 0); // text-direction: LTR
+  dview.setUint8(6, 0); // text-decoration: none
+  dview.setUint8(7, 0); // text-transform: none
+  dview.setFloat32(8, 1.2, true); // line-height
+  dview.setFloat32(12, 0, true); // letter-spacing
+  dview.setUint32(16, 0, true); // typography-ref-file (UUID part 1)
+  dview.setUint32(20, 0, true); // typography-ref-file (UUID part 2)
+  dview.setUint32(24, 0, true); // typography-ref-file (UUID part 3)
+  dview.setInt32(28, 0, true); // typography-ref-file (UUID part 4)
+  dview.setUint32(32, 0, true); // typography-ref-id (UUID part 1)
+  dview.setUint32(36, 0, true); // typography-ref-id (UUID part 2)
+  dview.setUint32(40, 0, true); // typography-ref-id (UUID part 3)
+  dview.setInt32(44, 0, true); // typography-ref-id (UUID part 4)
+
+  // Serialize leaf attributes
+  const leafOffset = paragraphAttrSize;
+  dview.setUint8(leafOffset, 0); // font-style: normal
+  dview.setFloat32(leafOffset + 4, fontSize, true); // font-size
+  dview.setUint32(leafOffset + 8, 400, true); // font-weight: normal
+  dview.setUint32(leafOffset + 12, 0, true); // font-id (UUID part 1)
+  dview.setUint32(leafOffset + 16, 0, true); // font-id (UUID part 2)
+  dview.setUint32(leafOffset + 20, 0, true); // font-id (UUID part 3)
+  dview.setInt32(leafOffset + 24, 0, true); // font-id (UUID part 4)
+  dview.setInt32(leafOffset + 28, 0, true); // font-family hash
+  dview.setUint32(leafOffset + 32, 0, true); // font-variant-id (UUID part 1)
+  dview.setUint32(leafOffset + 36, 0, true); // font-variant-id (UUID part 2)
+  dview.setUint32(leafOffset + 40, 0, true); // font-variant-id (UUID part 3)
+  dview.setInt32(leafOffset + 44, 0, true); // font-variant-id (UUID part 4)
+  dview.setInt32(leafOffset + 48, textSize, true); // text-length
+  dview.setInt32(leafOffset + 52, totalFills, true); // total fills count
+
+  // Serialize fills
+  let fillOffset = leafOffset + leafAttrSize;
+  fills.forEach((fill) => {
+    if (fill.type === "solid") {
+      const argb = hexToU32ARGB(fill.color, fill.opacity);
+      dview.setUint8(fillOffset, 0x00, true); // Fill type: solid
+      dview.setUint32(fillOffset + 4, argb, true);
+      fillOffset += fillSize; // Move to the next fill
+    }
+  });
+
+  // Add text content
+  const textOffset = metadataSize;
+  heap.set(textBuffer, textOffset);
+
+  // Call the WebAssembly function
+  Module._set_shape_text_content();
+}
