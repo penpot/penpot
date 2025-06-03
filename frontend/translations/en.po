@@ -7122,6 +7122,22 @@ msgstr "Choose file"
 msgid "workspace.tokens.choose-folder"
 msgstr "Choose folder"
 
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:251
+msgid "workspace.tokens.import-button-prefix"
+msgstr "Import %s"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:245
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "ZIP file"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:246
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "Single JSON file"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:247
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "Folder"
+
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:245
 msgid "workspace.tokens.color"
 msgstr "Color"
