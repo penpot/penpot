@@ -27,11 +27,7 @@ if [ "$_BUILD_MODE" = "release" ]; then
     _CARGO_PARAMS="--release $_CARGO_PARAMS"
     EMCC_CFLAGS="-Os $EMCC_CFLAGS"
 else
-    # TODO: Extra parameters that could be good to look into:
-    #        -gseparate-dwarf
-    #        -gsplit-dwarf
-    #        -gsource-map
-    EMCC_CFLAGS="-g $EMCC_CFLAGS -sVERBOSE=1 -sMALLOC=emmalloc-debug"
+    EMCC_CFLAGS="-g -gsplit-dwarf $EMCC_CFLAGS -sERROR_ON_WASM_CHANGES_AFTER_LINK -sVERBOSE=1 -sMALLOC=emmalloc-debug"
 fi
 
 export EMCC_CFLAGS;
