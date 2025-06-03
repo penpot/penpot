@@ -240,4 +240,28 @@ impl Stroke {
 
         paint
     }
+
+    // Render text paths (unused)
+    #[allow(dead_code)]
+    pub fn to_text_stroked_paint(
+        &self,
+        is_open: bool,
+        rect: &Rect,
+        svg_attrs: &HashMap<String, String>,
+        scale: f32,
+        antialias: bool,
+    ) -> skia::Paint {
+        let mut paint = self.to_paint(rect, svg_attrs, scale, antialias);
+        match self.render_kind(is_open) {
+            StrokeKind::Inner => {
+                paint.set_stroke_width(2. * paint.stroke_width());
+            }
+            StrokeKind::Center => {}
+            StrokeKind::Outer => {
+                paint.set_stroke_width(2. * paint.stroke_width());
+            }
+        }
+
+        paint
+    }
 }
