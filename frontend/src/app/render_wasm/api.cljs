@@ -614,7 +614,8 @@
   (let [paragraph-set (first (dm/get-prop content :children))
         paragraphs (dm/get-prop paragraph-set :children)
         fonts (fonts/get-content-fonts content)
-        emoji? (atom false)]
+        emoji? (atom false)
+        languages (atom #{})]
     (loop [index 0]
       (when (< index (count paragraphs))
         (let [paragraph (nth paragraphs index)
@@ -623,12 +624,14 @@
             (let [text (apply str (map :text leaves))]
               (when (and (not @emoji?) (t/contains-emoji? text))
                 (reset! emoji? true))
+              (swap! languages into (t/get-languages text))
               (t/write-shape-text leaves paragraph text))
             (recur (inc index))))))
-    (let [fonts (if @emoji?
-                  (f/add-emoji-font fonts)
-                  fonts)]
-      (f/store-fonts fonts))))
+    (let [updated-fonts
+          (-> fonts
+              (cond-> emoji? (f/add-emoji-font))
+              (f/add-noto-fonts @languages))]
+      (f/store-fonts updated-fonts))))
 
 (defn set-shape-text
   [content]
