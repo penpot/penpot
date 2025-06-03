@@ -64,6 +64,15 @@ pub fn parse_fills_from_bytes(buffer: &[u8], num_fills: usize) -> Vec<shapes::Fi
 }
 
 #[no_mangle]
+pub extern "C" fn set_shape_fills() {
+    with_current_shape!(state, |shape: &mut Shape| {
+        let bytes = mem::bytes();
+        let fills = parse_fills_from_bytes(&bytes, bytes.len() / RAW_FILL_DATA_SIZE);
+        shape.set_fills(fills);
+    });
+}
+
+#[no_mangle]
 pub extern "C" fn add_shape_fill() {
     with_current_shape!(state, |shape: &mut Shape| {
         let bytes = mem::bytes();
