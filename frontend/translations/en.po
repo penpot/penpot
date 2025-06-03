@@ -6873,7 +6873,7 @@ msgstr "Import Error: Invalid token data in JSON."
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:16
 msgid "workspace.token.invalid-json-token-name"
-msgstr "Import Error: Invalid token name in in JSON."
+msgstr "Import Error: Invalid token name in JSON."
 
 #: src/app/main/ui/workspace/tokens/errors.cljs:18
 msgid "workspace.token.invalid-json-token-name-detail"
