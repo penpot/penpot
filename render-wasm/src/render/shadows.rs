@@ -2,7 +2,7 @@ use super::{RenderState, SurfaceId};
 use crate::render::strokes;
 use crate::render::text::{self};
 use crate::shapes::{Shadow, Shape, Stroke, Type};
-use skia_safe::{textlayout::Paragraph, Paint};
+use skia_safe::{canvas::SaveLayerRec, textlayout::Paragraph, Paint};
 
 // Fill Shadows
 pub fn render_fill_drop_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
@@ -54,8 +54,9 @@ pub fn render_stroke_drop_shadows(
                 render_state,
                 shape,
                 stroke,
-                Some(SurfaceId::Strokes), // FIXME
+                None,
                 filter.as_ref(),
+                None,
                 antialias,
             )
         }
@@ -75,8 +76,9 @@ pub fn render_stroke_inner_shadows(
                 render_state,
                 shape,
                 stroke,
-                Some(SurfaceId::Strokes), // FIXME
+                None,
                 filter.as_ref(),
+                None,
                 antialias,
             )
         }
@@ -102,14 +104,19 @@ pub fn render_text_drop_shadow(
     antialias: bool,
 ) {
     let paint = shadow.get_drop_shadow_paint(antialias);
+    let mask_paint = paint.clone();
+    let mask = SaveLayerRec::default().paint(&mask_paint);
+    let canvas = render_state.get_canvas_at(SurfaceId::DropShadows);
+    canvas.save_layer(&mask);
 
     text::render(
         render_state,
         shape,
         paragraphs,
         Some(SurfaceId::DropShadows),
-        Some(paint),
     );
+
+    render_state.restore_canvas(SurfaceId::DropShadows);
 }
 
 pub fn render_text_inner_shadows(
@@ -131,14 +138,20 @@ pub fn render_text_inner_shadow(
     antialias: bool,
 ) {
     let paint = shadow.get_inner_shadow_paint(antialias);
+    let mask_paint = paint.clone();
+    let mask = SaveLayerRec::default().paint(&mask_paint);
+    let canvas = render_state.get_canvas_at(SurfaceId::InnerShadows);
+
+    canvas.save_layer(&mask);
 
     text::render(
         render_state,
         shape,
         paragraphs,
         Some(SurfaceId::InnerShadows),
-        Some(paint),
     );
+
+    render_state.restore_canvas(SurfaceId::InnerShadows);
 }
 
 fn render_shadow_paint(
