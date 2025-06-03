@@ -157,7 +157,7 @@
   (sm/decoder ::cty/typography sm/json-transformer))
 
 (def decode-tokens-lib
-  (sm/decoder ::cto/tokens-lib sm/json-transformer))
+  (sm/decoder cto/schema:tokens-lib sm/json-transformer))
 
 (def decode-plugin-data
   (sm/decoder ::ctpg/plugin-data sm/json-transformer))
