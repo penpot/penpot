@@ -285,11 +285,12 @@ title: 10· Design Tokens
 <p>When a token set is selected, the tokens within the selected set are displayed on the panel below.</p>
 
 
-<h3 id="design-tokens-sets-delete">Deleting and Renaming a Token Set</h3>
-<p>Token sets can be renamed or deleted by right-clicking on the token set and:</p>
+<h3 id="design-tokens-sets-edit">Deleting, Duplicating and Renaming a Token Set</h3>
+<p>Right-click a token set to perform these quick actions:</p>
 <ol>
-    <li>Selecting <strong>Rename</strong>, entering a new name, and hitting Enter.</li>
-    <li>Selecting <strong>Delete</strong>.</li>
+    <li><strong>Rename</strong>: Give the set a new name and press Enter.</li>
+    <li><strong>Duplicate</strong>: Make a copy of the set.</li>
+    <li><strong>Delete</strong>: Remove the set permanently.</li>
 </ol>
 <figure>
   <img src="/img/design-tokens/14-tokens-sets-edit.webp" alt="Tokens sets edit" />
@@ -299,10 +300,10 @@ title: 10· Design Tokens
 <p>Once you have created a token set, you can start creating tokens within that token set. To do so, simply select the token set and create a new token.</p>
 <p class="advice">If a token with the same name already exists in another set, a new token can still be created in the current set.</p>
 
-<h3 id="design-tokens-groups">Creating Token Groups</h3>
-<p>You can create a token set group by simply naming your token sets to have a folder path. For example, you can create a <strong><i>Light</i></strong> group with a <strong><i>Global</i></strong> set and a <strong><i>Colors</i></strong> set using: <code class="language-js">Light/Global</code>, <code class="language-js">Light/Colors</code>. </p>
+<h3 id="design-tokens-groups">Creating Token Set Folders</h3>
+<p>To group token sets just use folder-style names. For example, naming your sets <code class="language-js">Light/Global</code> and <code class="language-js">Light/Colors</code> will create a folder called <strong><i>Light</i></strong> with two sets inside it: <strong><i>Global</i></strong> and <strong><i>Colors</i></strong>.</p>
 <figure>
-  <img src="/img/design-tokens/15-tokens-sets-group.webp" alt="Tokens sets group" />
+  <img src="/img/design-tokens/15-tokens-sets-group.webp" alt="Tokens sets folder" />
 </figure>
 
 <h2 id="design-tokens-themes">Token Themes</h2>
