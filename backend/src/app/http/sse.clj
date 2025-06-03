@@ -9,7 +9,6 @@
   (:refer-clojure :exclude [tap])
   (:require
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.http.errors :as errors]
@@ -54,18 +53,20 @@
      ::yres/status 200
      ::yres/body (yres/stream-body
                   (fn [_ output]
-                    (binding [events/*channel* (sp/chan :buf buf :xf (keep encode))]
-                      (let [listener (events/start-listener
-                                      (partial write! output)
-                                      (partial pu/close! output))]
-                        (try
+                    (let [channel  (sp/chan :buf buf :xf (keep encode))
+                          listener (events/start-listener
+                                    channel
+                                    (partial write! output)
+                                    (partial pu/close! output))]
+                      (try
+                        (binding [events/*channel* channel]
                           (let [result (handler)]
-                            (events/tap :end result))
-                          (catch Throwable cause
-                            (events/tap :error (errors/handle' cause request))
-                            (when-not (ex/instance? java.io.EOFException cause)
-                              (binding [l/*context* (errors/request->context request)]
-                                (l/err :hint "unexpected error on processing sse response" :cause cause))))
-                          (finally
-                            (sp/close! events/*channel*)
-                            (px/await! listener)))))))}))
+                            (events/tap :end result)))
+
+                        (catch Throwable cause
+                          (let [result (errors/handle' cause request)]
+                            (events/tap channel :error result)))
+
+                        (finally
+                          (sp/close! channel)
+                          (px/await! listener))))))}))

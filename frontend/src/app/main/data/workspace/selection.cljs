@@ -22,6 +22,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as md]
    [app.main.data.workspace.collapse :as dwc]
+   [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.zoom :as dwz]
@@ -305,8 +306,9 @@
      (watch [_ state _]
        (let [params-without-board (-> (rt/get-params state)
                                       (dissoc :board-id))]
-         (rx/of ::dwsp/interrupt)
-         (rx/of (rt/nav :workspace params-without-board {::rt/replace true}))))
+         (rx/of ::dwsp/interrupt
+                (dwe/clear-edition-mode)
+                (rt/nav :workspace params-without-board {::rt/replace true}))))
 
      ptk/UpdateEvent
      (update [_ state]

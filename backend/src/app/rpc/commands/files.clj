@@ -189,7 +189,7 @@
    [:is-shared ::sm/boolean]
    [:project-id ::sm/uuid]
    [:created-at ::dt/instant]
-   [:data {:optional true} :any]])
+   [:data {:optional true} ::sm/any]])
 
 (def schema:permissions-mixin
   [:map {:title "PermissionsMixin"}

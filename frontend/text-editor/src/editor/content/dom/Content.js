@@ -83,7 +83,10 @@ export function mapContentFragmentFromDocument(document, root, styleDefaults) {
     currentNode = nodeIterator.nextNode();
   }
 
-  fragment.appendChild(currentParagraph);
+  if (currentParagraph) {
+    fragment.appendChild(currentParagraph);
+  }
+
   if (fragment.children.length === 1) {
     const isContentInline = isContentFragmentFromDocumentInline(document);
     if (isContentInline) {

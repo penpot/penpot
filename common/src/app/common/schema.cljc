@@ -214,8 +214,7 @@
 
 (defn lazy-validator
   [s]
-  (let [s   (schema s)
-        vfn (delay (validator s))]
+  (let [vfn (delay (validator s))]
     (fn [v] (@vfn v))))
 
 (defn lazy-explainer
@@ -318,11 +317,14 @@
   ([params]
    (cond
      (map? params)
-     (let [type (get params :type)]
+     (let [mdata (meta params)
+           type  (or (get mdata ::id)
+                     (get mdata ::type)
+                     (get params :type))]
        (assert (qualified-keyword? type) "expected qualified keyword for `type`")
        (let [s (m/-simple-schema params)]
          (swap! sr/registry assoc type s)
-         nil))
+         s))
 
      (vector? params)
      (let [mdata (meta params)
@@ -330,11 +332,12 @@
                      (get mdata ::type))]
        (assert (qualified-keyword? type) "expected qualified keyword to be on metadata")
        (swap! sr/registry assoc type params)
-       nil)
+       params)
 
      (m/into-schema? params)
      (let [type (m/-type params)]
-       (swap! sr/registry assoc type params))
+       (swap! sr/registry assoc type params)
+       params)
 
      :else
      (throw (ex-info "Invalid Arguments" {}))))
@@ -1041,6 +1044,8 @@
      :type-properties
      {:title "agent"
       :description "instance of clojure agent"}}))
+
+(register! ::any (mu/update-properties :any assoc :gen/gen sg/any))
 
 ;; ---- PREDICATES
 

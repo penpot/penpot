@@ -1,6 +1,22 @@
 # CHANGELOG
 
-## 2.7.0 (Unreleased)
+
+## 2.7.2 (Unreleased)
+
+### :bug: Bugs fixed
+
+- Update plugins runtime [Github #6604](https://github.com/penpot/penpot/pull/6604)
+
+
+## 2.7.1
+
+### :bug: Bugs fixed
+
+- Fix incorrect handling of strokes with images on importing files
+- Fix tokens disappearing after manual additions [Taiga #11063](https://tree.taiga.io/project/penpot/issue/11063)
+
+
+## 2.7.0
 
 ### :rocket: Epics and highlights
 
@@ -21,6 +37,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix "at" icon to match all icons on app [Taiga #11136](https://tree.taiga.io/project/penpot/issue/11136)
 - Fix problem in viewer with the back button [Taiga #10907](https://tree.taiga.io/project/penpot/issue/10907)
 - Fix resize bar background on tokens panel [Taiga #10811](https://tree.taiga.io/project/penpot/issue/10811)
 - Fix shortcut for history version panel [Taiga #11006](https://tree.taiga.io/project/penpot/issue/11006)
@@ -47,6 +64,13 @@
 - Fix cannot rename Design Token Sets when group of same name exists [Taiga Issue #10773](https://tree.taiga.io/project/penpot/issue/10773)
 - Fix problem when duplicating grid layout [Github #6391](https://github.com/penpot/penpot/issues/6391)
 - Fix issue that makes workspace shortcuts stop working [Taiga #11062](https://tree.taiga.io/project/penpot/issue/11062)
+- Fix problem while syncing library colors and typographies [Taiga #11068](https://tree.taiga.io/project/penpot/issue/11068)
+- Fix problem with path edition of shapes [Taiga #9496](https://tree.taiga.io/project/penpot/issue/9496)
+- Fix exception on paste invalid html [Taiga #11047](https://tree.taiga.io/project/penpot/issue/11047)
+- Fix share button being displayed with no permissions [Taiga #11086](https://tree.taiga.io/project/penpot/issue/11086)
+- Fix inline styles in code tab [Taiga Issue #7583](https://tree.taiga.io/project/penpot/issue/7583)
+- Fix exception on returning openapi.json
+- Fix json encoding of TokensLib [Taiga #10994](https://tree.taiga.io/project/penpot/issue/10994)
 
 ## 2.6.2
 

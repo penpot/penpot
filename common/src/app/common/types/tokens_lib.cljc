@@ -7,6 +7,7 @@
 (ns app.common.types.tokens-lib
   (:require
    #?(:clj [app.common.fressian :as fres])
+   #?(:clj [clojure.data.json :as json])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -118,7 +119,7 @@
   [:map {:title "Token"}
    [:name cto/token-name-ref]
    [:type [::sm/one-of cto/token-types]]
-   [:value :any]
+   [:value ::sm/any]
    [:description {:optional true} :string]
    [:modified-at {:optional true} ::sm/inst]])
 
@@ -389,7 +390,8 @@
    [:description {:optional true} :string]
    [:modified-at {:optional true} ::sm/inst]
    [:tokens {:optional true
-             :gen/gen (->> (sg/generator [:map-of ::sm/text schema:token])
+             :gen/gen (->> (sg/map-of (sg/generator ::sm/text)
+                                      (sg/generator schema:token))
                            (sg/fmap #(into (d/ordered-map) %)))}
     [:and
      [:map-of {:gen/max 5
@@ -909,6 +911,12 @@ Will return a value that matches this schema:
              (-clj->js [_] (js-obj "sets" (clj->js sets)
                                    "themes" (clj->js themes)
                                    "active-themes" (clj->js active-themes)))])
+
+
+  #?@(:clj
+      [json/JSONWriter
+       (-write [this writter options] (json/-write (encode-dtcg this) writter options))])
+
 
   ITokenSets
   (add-set [_ token-set]
