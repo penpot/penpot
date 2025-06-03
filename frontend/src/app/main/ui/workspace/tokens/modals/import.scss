@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "../../../ds/typography.scss" as t;
+@use "../../../ds/_borders.scss" as *;
 @use "../../../ds/_sizes.scss" as *;
 @import "refactor/common-refactor.scss";
 
@@ -47,4 +48,24 @@
   position: absolute;
   inset-block-start: var(--sp-s);
   inset-inline-end: var(--sp-s);
+}
+
+.dropdown-trigger-btn {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  border-inline-start: $b-1 solid var(--color-accent-tertiary);
+  width: var(--sp-xxxl);
+  padding-inline-start: 0;
+  padding-inline-end: 0;
+  justify-content: center;
+}
+
+.dropdown-btn {
+  border-end-end-radius: 0;
+  border-start-end-radius: 0;
+}
+
+.dropdown-btn-wrapper {
+  position: relative;
+  display: flex;
 }
