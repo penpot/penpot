@@ -21,6 +21,7 @@
    [app.plugins.register :as plugins.register]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.storage :as storage]
+   [app.util.theme :as theme]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -160,11 +161,12 @@
     (update [_ state]
       (update-in state [:profile :theme]
                  (fn [current]
-                   (case current
-                     "dark"   "light"
-                     "light"  "system"
-                     "system" "dark"
-                     "default"))))
+                   (let [current (if (= current "system")
+                                   (theme/get-system-theme)
+                                   current)]
+                     (case current
+                       "dark"   "light"
+                       "light"  "dark")))))
 
     ptk/WatchEvent
     (watch [it state _]
