@@ -572,6 +572,9 @@ impl RenderState {
         performance::end_measure!("tile_cache");
 
         self.pending_nodes.clear();
+        if self.pending_nodes.capacity() < tree.len() {
+            self.pending_nodes.reserve(tree.len() - self.pending_nodes.capacity());
+        }
         // reorder by distance to the center.
         self.current_tile = None;
         self.render_in_progress = true;

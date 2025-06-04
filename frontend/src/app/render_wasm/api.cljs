@@ -778,7 +778,13 @@
 (defn set-objects
   [objects]
   (perf/begin-measure "set-objects")
-  (let [shapes        (into [] (vals objects))
+  #_(do
+    (api-js/setObjects objects set-object)
+    (clear-drawing-cache)
+    (request-render "set-objects")
+    (perf/end-measure "set-objects"))
+  (let [get-memory-measure (perf/memory-measure)
+        shapes        (into [] (vals objects))
         total-shapes  (count shapes)
         pending
         (loop [index 0 pending []]
@@ -786,7 +792,8 @@
             (let [shape    (nth shapes index)
                   pending' (set-object objects shape)]
               (recur (inc index) (into pending pending')))
-            pending))]
+            pending))
+        _ (js/console.log (clj->js (get-memory-measure)))]
     (perf/end-measure "set-objects")
     (clear-drawing-cache)
     (request-render "set-objects")
