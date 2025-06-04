@@ -5483,7 +5483,31 @@ msgstr "Unlinked"
 msgid "workspace.options.component.variant"
 msgstr "Variant"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:988
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "Locate duplicated variants"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "Some variants have identical properties and values"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.adjust"
+msgstr "Adjust the values so they can be retrieved."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr "These variants have identical properties and values."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr "This variant has identical properties and values to another variant."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr "Some of these variants have identical properties and values."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
 msgid "workspace.options.component.variant.malformed.group.locate"
 msgstr "Locate invalid variants"
 
