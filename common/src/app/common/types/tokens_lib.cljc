@@ -1452,6 +1452,8 @@ Will return a value that matches this schema:
         (->> (get decoded-json "$themes")
              (map (fn [theme]
                     (make-token-theme
+                     :id (or (uuid/parse* (get theme "id"))
+                             (uuid/next))
                      :name (get theme "name")
                      :group (get theme "group")
                      :is-source (get theme "is-source")
@@ -1693,41 +1695,39 @@ Will return a value that matches this schema:
            active-themes (fres/read-object! r)
 
            migrate-token
-           (fn [_ token]
+           (fn [token]
              (assoc token :id (uuid/next)))
 
            migrate-sets-node
-           (fn recurse [_ node]
+           (fn recurse [node]
              (if (token-set? node)
                (assoc node
                       :id (uuid/next)
-                      :tokens (d/mapm migrate-token (:tokens node)))
-               (d/mapm recurse node)))
+                      :tokens (d/update-vals (:tokens node) migrate-token))
+               (d/update-vals node recurse)))
 
            sets
-           (d/mapm migrate-sets-node sets)
+           (d/update-vals sets migrate-sets-node)
 
            migrate-theme
-           (fn [_ theme]
+           (fn [theme]
              (if (get theme :external-id)
                theme
                (if (hidden-temporary-theme? theme)
                  (assoc theme
                         :id uuid/zero
                         :external-id "")
-                 (assoc theme                          ;; Rename the :id field to :external-id, and add
-                        :id (try                       ;; a new :id that is the same as the old if if
-                              (uuid/uuid (:id theme))  ;; this is an uuud, else a new uuid is generated.
-                              (catch Exception _
-                                (uuid/next)))
+                 (assoc theme                             ;; Rename the :id field to :external-id, and add
+                        :id (or (uuid/parse* (:id theme)) ;; a new :id that is the same as the old if if
+                                (uuid/next))              ;; this is an uuid, else a new uuid is generated.
                         :external-id (:id theme)))))
 
            migrate-theme-group
-           (fn [_ group]
-             (d/mapm migrate-theme group))
+           (fn [group]
+             (d/update-vals group migrate-theme))
 
            themes
-           (d/mapm migrate-theme-group themes)]
+           (d/update-vals themes migrate-theme-group)]
 
        (->TokensLib sets themes active-themes))))
 
