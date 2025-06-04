@@ -30,10 +30,11 @@
 
     [:div {:class (stl/css :cta-power-up)
            :on-click handle-click}
-     [:button {:class (stl/css :cta-top-section)}
+     [:button {:class (stl/css-case :cta-top-section true
+                                    :cta-without-dropdown (not has-dropdown))}
       [:div {:class (stl/css :content)}
-       [:span {:class (stl/css :cta-title :cta-text)} top-title]
-       [:span {:class (stl/css :cta-text-m)} top-description]]
+       [:span {:class (stl/css :cta-title)} top-title]
+       [:span {:class (stl/css :cta-text)} top-description]]
       (when has-dropdown [:span {:class (stl/css :icon-dropdown)}  i/arrow])]
 
      (when (and has-dropdown show-data)
@@ -138,7 +139,7 @@
         subscription-is-trial (= "trialing" (:status subscription))
         is-owner              (:is-owner (:permissions team))
 
-        email-owner           (:email (some #(when (:is-admin %) %) (:members team)))
+        email-owner           (:email (some #(when (:is-owner %) %) (:members team)))
         mail-to-owner         (str "<a href=\"" "mailto:" email-owner "\">" email-owner "</a>")
         go-to-subscription    (dm/str (u/join cf/public-uri "#/settings/subscriptions"))
 
