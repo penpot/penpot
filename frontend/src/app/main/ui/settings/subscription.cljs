@@ -55,7 +55,7 @@
                                         "professional" (tr "subscription.settings.professional")
                                         "unlimited" (tr "subscription.settings.unlimited")
                                         "enterprise" (tr "subscription.settings.enterprise")))
-        handle-subscription-trial   (if "unlimited"
+        handle-subscription-trial   (if (= subscription-name "unlimited")
                                       (mf/use-fn
                                        (mf/deps min-members)
                                        (fn []
@@ -222,7 +222,6 @@
       (dom/set-html-title (tr "subscription.labels")))
 
     (when show-subscription-success-modal
-       ;; add name subscription from params
       (st/emit! (modal/show :subscription-success
                             {:subscription-name (if (= (:subscription (:query params)) "subscribed-to-penpot-unlimited")
                                                   (tr "subscription.settings.unlimited-trial-modal")

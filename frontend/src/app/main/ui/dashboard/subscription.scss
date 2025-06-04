@@ -18,6 +18,11 @@
   display: grid;
   color: var(--color-foreground-secondary);
   grid-template-columns: 1fr auto;
+  padding: 0;
+}
+
+.cta-top-section.cta-without-dropdown {
+  cursor: default;
 }
 
 .cta-top-section .content {
@@ -52,21 +57,17 @@
 }
 
 .cta-text,
-.cta-text-m,
 .cta-title {
   text-align: left;
 }
 
 .cta-title {
+  @include t.use-typography("title-small");
   margin-block-end: var(--sp-xs);
 }
 
 .cta-text {
   @include t.use-typography("body-small");
-}
-
-.cta-text-m {
-  @include t.use-typography("body-medium");
 }
 
 .cta-bottom-section .content a {

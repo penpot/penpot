@@ -1099,6 +1099,9 @@ msgstr "Mejora tu plan"
 msgid "subscription.dashboard.team-plan"
 msgstr "Plan de equipo"
 
+msgid "subscription.dashboard.power-up.your-subscription"
+msgstr "Tu suscripción:"
+
 msgid "subscription.dashboard.power-up.professional.top-title"
 msgstr "Plan Professional"
 
@@ -4384,13 +4387,6 @@ msgstr "Plan Enterprise"
 msgid "subscription.dashboard.power-up.enterprise.description"
 msgstr "Seguridad avanzada, registros de actividad, asistencia dedicada y mucho más."
 
-#: src/app/main/ui/dashboard/subscription.cljs:53
-#, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-description"
-msgstr ""
-"Consigue editores y almacenamiento adicionales, copias de seguridad de "
-"archivos y mucho más con el **Plan ilimitado**"
-
 #: src/app/main/ui/dashboard/subscription.cljs:51
 msgid "subscription.dashboard.power-up.professional.top-title"
 msgstr "Plan Professional"
@@ -4398,10 +4394,6 @@ msgstr "Plan Professional"
 #: src/app/main/ui/dashboard/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:131
 msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Suscríbete"
-
-#: src/app/main/ui/dashboard/subscription.cljs:63
-msgid "subscription.dashboard.power-up.trial.bottom-description"
-msgstr "¿Disfrutas de la prueba? Desbloquea el acceso completo para siempre."
 
 #: src/app/main/ui/dashboard/subscription.cljs:62
 msgid "subscription.dashboard.power-up.trial.top-description"
@@ -4416,13 +4408,6 @@ msgstr "Plan Unlimited (Prueba)"
 #: src/app/main/ui/dashboard/subscription.cljs:67
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Plan ilimitado"
-
-#: src/app/main/ui/dashboard/subscription.cljs:69
-#, markdown
-msgid "subscription.dashboard.power-up.unlimited.bottom-description"
-msgstr ""
-"Obtenga seguridad avanzada, registros de actividad, asistencia dedicada y "
-"mucho más con el **Plan de empresa**"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 msgid "subscription.dashboard.power-up.unlimited.cta"
@@ -4621,6 +4606,12 @@ msgstr "organización por mes"
 
 msgid "subscription.settings.try-it-free"
 msgstr "Pruébalo gratis durante 14 días"
+
+msgid "subscription.settings.subscribe"
+msgstr "Suscríbete"
+
+msgid "subscription.settings.start-trial"
+msgstr "Comenzar prueba gratuita"
 
 msgid "subscription.settings.professional.projects-files"
 msgstr "Proyectos, archivos y borradores ilimitados"
