@@ -16,6 +16,12 @@
 
 (def ^:const default "dark")
 
+(defn get-system-theme
+  []
+  (if ^boolean (.-matches color-scheme-media-query)
+    "dark"
+    "light"))
+
 (defn- set-color-scheme
   [^string color]
 
@@ -26,7 +32,7 @@
 
 (defn use-initialize
   [{profile-theme :theme}]
-  (let [system-theme* (mf/use-state #(if (.-matches color-scheme-media-query) "dark" "light"))
+  (let [system-theme* (mf/use-state get-system-theme)
         system-theme  (deref system-theme*)]
 
     (mf/with-effect []
