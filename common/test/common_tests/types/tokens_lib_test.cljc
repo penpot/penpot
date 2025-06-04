@@ -29,7 +29,7 @@
                                 :type :boolean
                                 :value true)
         token2 (ctob/make-token :name "test-token-2"
-                                :type :numeric
+                                :type :number
                                 :value 66
                                 :description "test description"
                                 :modified-at now)]
@@ -42,7 +42,7 @@
     (t/is (ctob/check-token token1))
 
     (t/is (= (:name token2) "test-token-2"))
-    (t/is (= (:type token2) :numeric))
+    (t/is (= (:type token2) :number))
     (t/is (= (:value token2) 66))
     (t/is (= (:description token2) "test description"))
     (t/is (= (:modified-at token2) now))

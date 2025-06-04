@@ -44,7 +44,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       ;; We do not allow to apply tokens while text editor is open.
-      (when (nil? (get state :workspace-editor-state))
+      (when (empty? (get state :workspace-editor-state))
         (when-let [tokens (some-> (dsh/lookup-file-data state)
                                   (get :tokens-lib)
                                   (ctob/get-active-themes-set-tokens))]
@@ -408,14 +408,14 @@
             :fields [{:label "Opacity"
                       :key :opacity}]}}
 
-   :numeric
+   :number
    {:title "Number"
-    :attributes #{:rotation}
-    :all-attributes ctt/numeric-keys
+    :attributes ctt/rotation-keys
+    :all-attributes ctt/number-keys
     :on-update-shape update-rotation
-    :modal {:key :tokens/numeric
+    :modal {:key :tokens/number
             :fields [{:label "Number"
-                      :key :numeric}]}}
+                      :key :number}]}}
 
    :rotation
    {:title "Rotation"

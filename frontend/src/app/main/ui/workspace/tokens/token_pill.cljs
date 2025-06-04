@@ -208,7 +208,7 @@
             (or (dwtc/resolved-token-bullet-color theme-token)
                 (dwtc/resolved-token-bullet-color token))))
 
-        numeric-token (= type :numeric)
+        number-token (= type :number)
 
         on-click
         (mf/use-fn
@@ -255,7 +255,7 @@
 
     [:button {:class (stl/css-case
                       :token-pill true
-                      :token-pill-no-icon (and numeric-token (not errors?))
+                      :token-pill-no-icon (and number-token (not errors?))
                       :token-pill-default can-edit?
                       :token-pill-applied (and can-edit? has-selected? (or half-applied? full-applied?))
                       :token-pill-invalid (and can-edit? errors?)
@@ -280,7 +280,7 @@
         {:icon-id "broken-link"
          :class (stl/css :token-pill-icon)}]
 
-       (not numeric-token)
+       (not number-token)
        (if color
          [:& color-bullet {:color color :mini true}]
          [:> token-status-icon*

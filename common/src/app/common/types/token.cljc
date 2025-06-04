@@ -33,7 +33,7 @@
    :border-radius "borderRadius"
    :color         "color"
    :dimensions    "dimension"
-   :numeric       "number"
+   :number        "number"
    :opacity       "opacity"
    :other         "other"
    :rotation      "rotation"
@@ -122,12 +122,12 @@
 
 (def rotation-keys (schema-keys schema:rotation))
 
-(def ^:private schema:numeric
+(def ^:private schema:number
   [:map
    [:rotation {:optional true} token-name-ref]
    [:line-height {:optional true} token-name-ref]])
 
-(def numeric-keys (schema-keys schema:numeric))
+(def number-keys (schema-keys schema:number))
 
 (def all-keys (set/union color-keys
                          border-radius-keys
@@ -137,7 +137,7 @@
                          spacing-keys
                          dimensions-keys
                          rotation-keys
-                         numeric-keys))
+                         number-keys))
 
 (def ^:private schema:tokens
   [:map {:title "Applied Tokens"}])
@@ -149,7 +149,7 @@
    schema:sizing
    schema:spacing
    schema:rotation
-   schema:numeric
+   schema:number
    schema:dimensions])
 
 (defn shape-attr->token-attrs
@@ -182,7 +182,7 @@
      (opacity-keys shape-attr) #{shape-attr}
      (spacing-keys shape-attr) #{shape-attr}
      (rotation-keys shape-attr) #{shape-attr}
-     (numeric-keys shape-attr) #{shape-attr})))
+     (number-keys shape-attr) #{shape-attr})))
 
 (defn token-attr->shape-attr
   [token-attr]

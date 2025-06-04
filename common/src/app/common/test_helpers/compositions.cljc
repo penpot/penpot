@@ -29,21 +29,15 @@
                                 :name "Rect1"}
                                params)))
 
-(defn create-text-structure [text-nodes]
-  {:type :root
-   :children [{:type :paragraph-set
-               :children [{:type :paragraph
-                           :children text-nodes}]}]})
-
 (defn add-text
-  [file text-label & {:keys [] :as params}]
+  [file text-label content & {:keys [text-params] :as text}]
+  (let [shape (-> (cts/setup-shape {:type :text :x 0 :y 0})
+                  (txt/change-text content))]
+    (ths/add-sample-shape file text-label
+                          (merge shape
+                                 text-params))))
 
-  ;; Generated shape tree:
-  ;; :text-label [:type :text :name Text1 :content{...}]
-  (ths/add-sample-shape file text-label
-                        {:type :text
-                         :name "Text1"
-                         :content (create-text-structure params)}))
+
 
 (defn add-frame
   [file frame-label & {:keys [] :as params}]

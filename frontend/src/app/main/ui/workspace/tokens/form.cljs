@@ -523,9 +523,7 @@
       [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
        (if (= action "edit")
          (tr "workspace.tokens.edit-token")
-         (tr "workspace.tokens.create-token" (if (= :numeric token-type)
-                                               "number"
-                                               token-type)))]
+         (tr "workspace.tokens.create-token" token-type))]
 
       [:div {:class (stl/css :input-row)}
        (let [token-title (str/lower (:title token-properties))]
