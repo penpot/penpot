@@ -1255,8 +1255,11 @@ Will return a value that matches this schema:
    {:type ::tokens-lib
     :pred valid-tokens-lib?
     :type-properties
-    {:encode/json export-dtcg-json
-     :decode/json parse-multi-set-dtcg-json}}))
+    ;; NOTE: we can't assign statically at eval time the value of a
+    ;; function that is declared but not defined; so we need to pass
+    ;; an anonymous function and delegate the resolution to runtime
+    {:encode/json #(export-dtcg-json %)
+     :decode/json #(parse-multi-set-dtcg-json %)}}))
 
 (defn duplicate-set [set-name lib & {:keys [suffix]}]
   (let [sets (get-sets lib)
