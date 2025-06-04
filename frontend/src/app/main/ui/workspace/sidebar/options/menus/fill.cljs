@@ -10,7 +10,7 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.types.color :as ctc]
-   [app.common.types.shape :as shp]
+   [app.common.types.fill :as types.fill]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.config :as cfg]
    [app.main.data.workspace.colors :as dc]
@@ -24,6 +24,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
+;; FIXME:revisit this
 (def fill-attrs
   [:fills
    :fill-color
@@ -55,12 +56,12 @@
         ;; Excluding nil values
         values               (d/without-nils values)
         fills                (if (contains? cfg/flags :frontend-binary-fills)
-                               (take shp/MAX-FILLS (d/nilv (:fills values) []))
+                               (take types.fill/MAX-FILLS (d/nilv (:fills values) []))
                                (:fills values))
         has-fills?           (or (= :multiple fills) (some? (seq fills)))
         can-add-fills?       (if (contains? cfg/flags :frontend-binary-fills)
                                (and (not (= :multiple fills))
-                                    (< (count fills) shp/MAX-FILLS))
+                                    (< (count fills) types.fill/MAX-FILLS))
                                (not (= :multiple fills)))
 
         state*               (mf/use-state has-fills?)
@@ -176,7 +177,7 @@
           (seq fills)
           [:& h/sortable-container {}
            (for [[index value] (d/enumerate fills)]
-             [:> color-row* {:color (ctc/fill->shape-color value)
+             [:> color-row* {:color (ctc/fill->color value)
                              :key index
                              :index index
                              :title (tr "workspace.options.fill")

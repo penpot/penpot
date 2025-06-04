@@ -22,10 +22,11 @@
    [app.common.schema :as sm]
    [app.common.svg :as csvg]
    [app.common.text :as txt]
-   [app.common.types.color :as ctc]
+   [app.common.types.color :as types.color]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.fill :as types.fill]
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segment]
    [app.common.types.shape :as cts]
@@ -826,7 +827,7 @@
         (d/update-when :components d/update-vals update-container))))
 
 (def ^:private valid-fill?
-  (sm/lazy-validator ::cts/fill))
+  (sm/lazy-validator types.fill/schema:fill))
 
 (defmethod migrate-data "legacy-43"
   [data _]
@@ -1004,14 +1005,11 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(def ^:private valid-color?
-  (sm/lazy-validator ::ctc/color))
-
 (defmethod migrate-data "legacy-51"
   [data _]
   (let [update-colors
         (fn [colors]
-          (into {} (filter #(-> % val valid-color?) colors)))]
+          (into {} (filter #(-> % val types.color/valid-color?) colors)))]
     (update data :colors update-colors)))
 
 (defmethod migrate-data "legacy-52"
@@ -1328,7 +1326,6 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-
 (defmethod migrate-data "0004-add-partial-text-touched-flags"
   [data _]
   (letfn [(update-object [page object]
@@ -1354,6 +1351,33 @@
 
     (update data :pages-index d/update-vals update-page)))
 
+(defmethod migrate-data "0004-clean-shadow-and-colors"
+  [data _]
+  (letfn [(clean-shadow [shadow]
+            (update shadow :color (fn [color]
+                                    (let [ref-id   (get color :id)
+                                          ref-file (get color :file-id)]
+                                      (-> (d/without-qualified color)
+                                          (select-keys [:opacity :color :gradient :image :ref-id :ref-file])
+                                          (cond-> ref-id
+                                            (assoc :ref-id ref-id))
+                                          (cond-> ref-file
+                                            (assoc :ref-file ref-file)))))))
+
+          (update-object [object]
+            (d/update-when object :shadow #(mapv clean-shadow %)))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))
+
+          (clean-library-color [color]
+            (dissoc color :file-id))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container)
+        (d/update-when :colors d/update-vals clean-library-color))))
+
 (defmethod migrate-data "0005-deprecate-image-type"
   [data _]
   (letfn [(update-object [object]
@@ -1369,7 +1393,7 @@
               object))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
         (update :pages-index d/update-vals update-container)
@@ -1378,17 +1402,12 @@
 (defmethod migrate-data "0006-fix-old-texts-fills"
   [data _]
   (letfn [(fix-fills [node]
-            (let [fills (cond
-                          (or (some? (:fill-color node))
-                              (some? (:fill-opacity node))
-                              (some? (:fill-color-gradient node)))
+            (let [fills (if (and (not (seq (:fills node)))
+                                 (or (some? (:fill-color node))
+                                     (some? (:fill-opacity node))
+                                     (some? (:fill-color-gradient node))))
                           [(d/without-nils (select-keys node [:fill-color :fill-opacity :fill-color-gradient
                                                               :fill-color-ref-id :fill-color-ref-file]))]
-
-                          (nil? (:fills node))
-                          [{:fill-color "#000000" :fill-opacity 1}]
-
-                          :else
                           (:fills node))]
               (-> node
                   (assoc :fills fills)
@@ -1406,6 +1425,77 @@
     (-> data
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
+
+(def ^:private valid-stroke?
+  (sm/lazy-validator cts/schema:stroke))
+
+(defmethod migrate-data "0007-clear-invalid-strokes-and-fills"
+  [data _]
+  (letfn [(clear-color-image [image]
+            (select-keys image types.color/image-attrs))
+
+          (clear-color-gradient [gradient]
+            (select-keys gradient types.color/gradient-attrs))
+
+          (clear-stroke [stroke]
+            (-> stroke
+                (select-keys cts/stroke-attrs)
+                (d/update-when :stroke-color-gradient clear-color-gradient)
+                (d/update-when :stroke-image clear-color-image)))
+
+          (fix-strokes [strokes]
+            (->> (map clear-stroke strokes)
+                 (filterv valid-stroke?)))
+
+          ;; Fixes shapes with nested :fills in the :fills attribute
+          ;; introduced in a migration `0006-fix-old-texts-fills` when
+          ;; txt/transform-nodes with identity pred was broken
+          (remove-nested-fills [[fill :as fills]]
+            (if (and (= 1 (count fills))
+                     (contains? fill :fills))
+              (:fills fill)
+              fills))
+
+          (clear-fill [fill]
+            (-> fill
+                (select-keys types.fill/fill-attrs)
+                (d/update-when :fill-image clear-color-image)
+                (d/update-when :fill-color-gradient clear-color-gradient)))
+
+          (fix-fills [fills]
+            (->> fills
+                 (remove-nested-fills)
+                 (map clear-fill)
+                 (filterv valid-fill?)))
+
+          (fix-object [object]
+            (-> object
+                (d/update-when :strokes fix-strokes)
+                (d/update-when :fills fix-fills)))
+
+          (update-shape [object]
+            (-> object
+                (fix-object)
+                ;; The text shape also can has strokes and fils on the
+                ;; text fragments so we need to fix them there
+                (cond-> (cfh/text-shape? object)
+                  (update :content (partial txt/transform-nodes identity fix-object)))))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
+(defmethod migrate-data "0008-fix-library-colors-opacity"
+  [data _]
+  (letfn [(update-color [color]
+            (if (and (contains? color :opacity)
+                     (nil? (get color :opacity)))
+              (assoc color :opacity 1)
+              color))]
+    (d/update-when data :colors d/update-vals update-color)))
 
 (def available-migrations
   (into (d/ordered-set)
@@ -1467,5 +1557,8 @@
          "0003-fix-root-shape"
          "0003-convert-path-content"
          "0004-add-partial-text-touched-flags"
+         "0004-clean-shadow-and-colors"
          "0005-deprecate-image-type"
-         "0006-fix-old-texts-fills"]))
+         "0006-fix-old-texts-fills"
+         "0007-clear-invalid-strokes-and-fills"
+         "0008-fix-library-colors-opacity"]))

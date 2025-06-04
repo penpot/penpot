@@ -7,11 +7,9 @@
 (ns app.worker.import
   (:refer-clojure :exclude [resolve])
   (:require
-   [app.common.data :as d]
    [app.common.json :as json]
    [app.common.logging :as log]
    [app.common.schema :as sm]
-   [app.common.text :as ct]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
    [app.util.http :as http]
@@ -43,51 +41,6 @@
           :response-type response-type
           :method :get})
         (rx/map :body))))
-
-(defn resolve-text-content
-  [node context]
-  (let [resolve (:resolve context)]
-    (->> node
-         (ct/transform-nodes
-          (fn [item]
-            (cond-> item
-              (uuid? (get item :fill-color-ref-id))
-              (d/update-when :fill-color-ref-id resolve)
-
-              (uuid? (get item :fill-color-ref-file))
-              (d/update-when :fill-color-ref-file resolve)
-
-              (uuid? (get item :typography-ref-id))
-              (d/update-when :typography-ref-id resolve)
-
-              (uuid? (get item :typography-ref-file))
-              (d/update-when :typography-ref-file resolve)))))))
-
-(defn resolve-fills-content
-  [fills context]
-  (let [resolve (:resolve context)]
-    (->> fills
-         (mapv
-          (fn [fill]
-            (cond-> fill
-              (uuid? (get fill :fill-color-ref-id))
-              (d/update-when :fill-color-ref-id resolve)
-
-              (uuid? (get fill :fill-color-ref-file))
-              (d/update-when :fill-color-ref-file resolve)))))))
-
-(defn resolve-strokes-content
-  [fills context]
-  (let [resolve (:resolve context)]
-    (->> fills
-         (mapv
-          (fn [fill]
-            (cond-> fill
-              (uuid? (get fill :stroke-color-ref-id))
-              (d/update-when :stroke-color-ref-id resolve)
-
-              (uuid? (get fill :stroke-color-ref-file))
-              (d/update-when :stroke-color-ref-file resolve)))))))
 
 (defn parse-mtype [ba]
   (let [u8 (js/Uint8Array. ba 0 4)

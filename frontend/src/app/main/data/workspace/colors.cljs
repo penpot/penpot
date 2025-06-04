@@ -13,6 +13,7 @@
    [app.common.schema :as sm]
    [app.common.text :as txt]
    [app.common.types.color :as ctc]
+   [app.common.types.fill :as types.fill]
    [app.common.types.shape :as shp]
    [app.common.types.shape.shadow :refer [check-shadow]]
    [app.config :as cfg]
@@ -21,7 +22,6 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as md]
    [app.main.data.workspace.layout :as layout]
-   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -114,9 +114,9 @@
   ([state ids color transform]
    (transform-fill state ids color transform nil))
   ([state ids color transform options]
-   (let [page-id   (or (get options :page-id)
-                       (get state :current-page-id))
-         objects   (dsh/lookup-page-objects state page-id)
+   (let [page-id (or (get options :page-id)
+                     (get state :current-page-id))
+         objects (dsh/lookup-page-objects state page-id)
 
          [text-ids shape-ids]
          (split-text-shapes objects ids)
@@ -126,11 +126,11 @@
            (contains? color :color)
            (assoc :fill-color (:color color))
 
-           (contains? color :id)
-           (assoc :fill-color-ref-id (:id color))
+           (contains? color :ref-id)
+           (assoc :fill-color-ref-id (:ref-id color))
 
-           (contains? color :file-id)
-           (assoc :fill-color-ref-file (:file-id color))
+           (contains? color :ref-file)
+           (assoc :fill-color-ref-file (:ref-file color))
 
            (contains? color :gradient)
            (assoc :fill-color-gradient (:gradient color))
@@ -142,7 +142,10 @@
            (assoc :fill-image (:image color))
 
            :always
-           (d/without-nils))
+           (d/without-nils)
+
+           :always
+           (types.fill/check-fill))
 
          transform-attrs #(transform % fill)]
 
@@ -327,11 +330,11 @@
                            (contains? color :color)
                            (assoc :stroke-color (:color color))
 
-                           (contains? color :id)
-                           (assoc :stroke-color-ref-id (:id color))
+                           (contains? color :ref-id)
+                           (assoc :stroke-color-ref-id (:ref-id color))
 
-                           (contains? color :file-id)
-                           (assoc :stroke-color-ref-file (:file-id color))
+                           (contains? color :ref-file)
+                           (assoc :stroke-color-ref-file (:ref-file color))
 
                            (contains? color :gradient)
                            (assoc :stroke-color-gradient (:gradient color))
@@ -533,18 +536,19 @@
 
 (defn- color-att->text
   [color]
-  {:fill-color (when (:color color) (str/lower (:color color)))
-   :fill-opacity (:opacity color)
-   :fill-color-ref-id (:id color)
-   :fill-color-ref-file (:file-id color)
-   :fill-color-gradient (:gradient color)})
+  (d/without-nils
+   {:fill-color (when (:color color) (str/lower (:color color)))
+    :fill-opacity (:opacity color)
+    :fill-color-ref-id (:ref-id color)
+    :fill-color-ref-file (:ref-file color)
+    :fill-color-gradient (:gradient color)}))
 
 (defn change-text-color
   [old-color new-color index node]
   (let [fills (map #(dissoc % :fill-color-ref-id :fill-color-ref-file) (:fills node))
-        parsed-color (-> (d/without-nils (color-att->text old-color))
+        parsed-color (-> (color-att->text old-color)
                          (dissoc :fill-color-ref-id :fill-color-ref-file))
-        parsed-new-color (d/without-nils (color-att->text new-color))
+        parsed-new-color (color-att->text new-color)
         has-color? (d/index-of fills parsed-color)]
     (cond-> node
       (some? has-color?)
@@ -595,37 +599,33 @@
 
 (defn apply-color-from-palette
   [color stroke?]
+  (let [color (ctc/check-color color)]
+    (ptk/reify ::apply-color-from-palette
+      ptk/WatchEvent
+      (watch [_ state _]
+        (let [objects  (dsh/lookup-page-objects state)
+              selected (->> (dsh/lookup-selected state)
+                            (cfh/clean-loops objects))
 
-  (assert
-   (ctc/check-color color)
-   "expected valid color structure")
+              ids
+              (loop [pending (seq selected)
+                     result []]
+                (if (empty? pending)
+                  result
+                  (let [cur (first pending)
+                        group? (cfh/group-shape? objects cur)
 
-  (ptk/reify ::apply-color-from-palette
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects  (dsh/lookup-page-objects state)
-            selected (->> (dsh/lookup-selected state)
-                          (cfh/clean-loops objects))
+                        pending
+                        (if group?
+                          (concat pending (dm/get-in objects [cur :shapes]))
+                          pending)
 
-            ids
-            (loop [pending (seq selected)
-                   result []]
-              (if (empty? pending)
-                result
-                (let [cur (first pending)
-                      group? (cfh/group-shape? objects cur)
+                        result (cond-> result (not group?) (conj cur))]
+                    (recur (rest pending) result))))]
 
-                      pending
-                      (if group?
-                        (concat pending (dm/get-in objects [cur :shapes]))
-                        pending)
-
-                      result (cond-> result (not group?) (conj cur))]
-                  (recur (rest pending) result))))]
-
-        (if stroke?
-          (rx/of (change-stroke-color ids color 0))
-          (rx/of (change-fill ids color 0)))))))
+          (if stroke?
+            (rx/of (change-stroke-color ids color 0))
+            (rx/of (change-fill ids color 0))))))))
 
 (declare activate-colorpicker-color)
 (declare activate-colorpicker-gradient)
@@ -634,14 +634,10 @@
 
 (defn apply-color-from-colorpicker
   [color]
-
-  (assert (ctc/check-color color)
-          "expected valid color structure")
-
-  (ptk/reify ::apply-color-from-colorpicker
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [gradient-type (dm/get-in color [:gradient :type])]
+  (let [color (ctc/check-color color)]
+    (ptk/reify ::apply-color-from-colorpicker
+      ptk/UpdateEvent
+      (update [_ state]
         (update state :colorpicker
                 (fn [state]
                   (cond
@@ -655,19 +651,57 @@
                         (assoc :type :color)
                         (dissoc :editing-stop :stops :gradient))
 
+                    :else
+                    (let [gradient-type (dm/get-in color [:gradient :type])]
+                      (cond
+                        (= :linear gradient-type)
+                        (-> state
+                            (assoc :type :linear-gradient)
+                            (assoc :editing-stop 0)
+                            (update :current-color dissoc :image))
 
-                    (= :linear gradient-type)
-                    (-> state
-                        (assoc :type :linear-gradient)
-                        (assoc :editing-stop 0)
-                        (d/dissoc-in [:current-color :image]))
+                        (= :radial gradient-type)
+                        (-> state
+                            (assoc :type :radial-gradient)
+                            (assoc :editing-stop 0)
+                            (update :current-color dissoc :image)))))))))))
 
-                    (= :radial gradient-type)
-                    (-> state
-                        (assoc :type :radial-gradient)
-                        (assoc :editing-stop 0)
-                        (d/dissoc-in [:current-color :image])))))))))
+(defn- recent-color-equal?
+  [c1 c2]
+  (or (= c1 c2)
+      (and (some? (:color c1))
+           (some? (:color c2))
+           (= (:color c1) (:color c2)))))
 
+(defn add-recent-color
+  [color]
+  (let [color (ctc/check-color color)]
+    (ptk/reify ::add-recent-color
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [file-id (:current-file-id state)]
+          (update-in state [:recent-colors file-id]
+                     (fn [colors]
+                       (let [colors (d/removev (partial recent-color-equal? color) colors)
+                             colors (conj colors color)]
+                         (cond-> colors
+                           (> (count colors) 15)
+                           (subvec 1)))))))
+
+      ptk/EffectEvent
+      (effect [_ state _]
+        (let [recent-colors (:recent-colors state)]
+          (swap! storage/user assoc :recent-colors recent-colors))))))
+
+(defn apply-color-from-assets
+  [file-id color stroke?]
+  (let [color (ctc/check-library-color color)]
+    (ptk/reify ::apply-color-from-asserts
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (let [color (ctc/library-color->color color file-id)]
+          (rx/of (apply-color-from-palette color stroke?)
+                 (add-recent-color color)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COLORPICKER STATE MANAGEMENT
@@ -823,7 +857,7 @@
       (update state :colorpicker
               (fn [{:keys [stops editing-stop] :as state}]
                 (let [cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
-                      can-add-stop? (or (not cap-stops?) (< (count stops) shp/MAX-GRADIENT-STOPS))]
+                      can-add-stop? (or (not cap-stops?) (< (count stops) types.fill/MAX-GRADIENT-STOPS))]
                   (if can-add-stop?
                     (if (cc/uniform-spread? stops)
                       ;; Add to uniform
@@ -869,7 +903,7 @@
               (fn [state]
                 (let [stops (:stops state)
                       cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
-                      can-add-stop? (or (not cap-stops?) (< (count stops) shp/MAX-GRADIENT-STOPS))]
+                      can-add-stop? (or (not cap-stops?) (< (count stops) types.fill/MAX-GRADIENT-STOPS))]
                   (if can-add-stop? (let [new-stop (-> (cc/interpolate-gradient stops offset)
                                                        (split-color-components))
                                           stops (conj stops new-stop)
@@ -889,8 +923,12 @@
       (update state :colorpicker
               (fn [state]
                 (let [stop  (or (:editing-stop state) 0)
-                      cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
-                      stops (mapv split-color-components (if cap-stops? (take shp/MAX-GRADIENT-STOPS stops) stops))]
+                      cap-stops? (or (features/active-feature? state "render-wasm/v1")
+                                     (contains? cfg/flags :frontend-binary-fills))
+                      stops (mapv split-color-components
+                                  (if cap-stops?
+                                    (take types.fill/MAX-GRADIENT-STOPS stops)
+                                    stops))]
                   (-> state
                       (assoc :current-color (get stops stop))
                       (assoc :stops stops))))))))
@@ -953,8 +991,7 @@
                                 (update :current-color #(if (not= type :image) (dissoc % :image) %))
                                 ;; current color can be a library one
                                 ;; I'm changing via colorpicker
-                                (d/dissoc-in [:current-color :id])
-                                (d/dissoc-in [:current-color :file-id]))]
+                                (update :current-color dissoc :ref-id :ref-file))]
                   (if-let [stop (:editing-stop state)]
                     (update-in state [:stops stop] (fn [data] (->> changes
                                                                    (merge data)
@@ -966,15 +1003,17 @@
                           (assoc :type :color))))))))
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected-type  (-> state
-                               :colorpicker
-                               :type)
-            formated-color  (get-color-from-colorpicker-state (:colorpicker state))
+      (let [state (get-color-from-colorpicker-state (:colorpicker state))
+            type  (get state :type)
+
             ;; Type is set to color on closing the colorpicker, but we
             ;; can can close it while still uploading an image fill
-            ignore-color?   (and (= selected-type :color) (nil? (:color formated-color)))]
+            ignore-color?
+            (and (= type :color) (nil? (:color state)))]
+
         (when (and add-recent? (not ignore-color?))
-          (rx/of (dwl/add-recent-color formated-color)))))))
+          (let [color (select-keys state [:image :gradient :color :opacity])]
+            (rx/of (add-recent-color color))))))))
 
 (defn update-colorpicker-gradient
   [changes]

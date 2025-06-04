@@ -16,6 +16,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.text :as txt]
+   [app.common.types.fill :as types.fill]
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
@@ -234,9 +235,9 @@
 
 ;; --- Helpers
 
-(defn to-new-fills
+(defn- to-new-fills
   [data]
-  [(d/without-nils (select-keys data [:fill-color :fill-opacity :fill-color-gradient :fill-color-ref-id :fill-color-ref-file]))])
+  [(d/without-nils (select-keys data types.fill/fill-attrs))])
 
 (defn- shape-current-values
   [shape pred attrs]
@@ -246,9 +247,7 @@
                           (if (txt/is-text-node? node)
                             (let [fills
                                   (cond
-                                    (or (some? (:fill-color node))
-                                        (some? (:fill-opacity node))
-                                        (some? (:fill-color-gradient node)))
+                                    (types.fill/has-valid-fill-attrs? node)
                                     (to-new-fills node)
 
                                     (some? (:fills node))
@@ -474,13 +473,13 @@
 
 (defn migrate-node
   [node]
-  (let [color-attrs (select-keys node [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient])]
+  (let [color-attrs (not-empty (select-keys node types.fill/fill-attrs))]
     (cond-> node
       (nil? (:fills node))
       (assoc :fills [])
 
       ;; Migrate old colors and remove the old fromat
-      (d/not-empty? color-attrs)
+      color-attrs
       (-> (dissoc :fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient)
           (update :fills conj color-attrs))
 

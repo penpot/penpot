@@ -113,7 +113,7 @@
   (sm/encoder ::ctc/component sm/json-transformer))
 
 (def encode-color
-  (sm/encoder ::ctcl/color sm/json-transformer))
+  (sm/encoder ctcl/schema:library-color sm/json-transformer))
 
 (def encode-typography
   (sm/encoder ::cty/typography sm/json-transformer))
@@ -142,7 +142,7 @@
   (sm/decoder ::ctc/component sm/json-transformer))
 
 (def decode-color
-  (sm/decoder ::ctcl/color sm/json-transformer))
+  (sm/decoder ctcl/schema:library-color sm/json-transformer))
 
 (def decode-file
   (sm/decoder schema:file sm/json-transformer))
@@ -157,7 +157,7 @@
   (sm/decoder ::cty/typography sm/json-transformer))
 
 (def decode-tokens-lib
-  (sm/decoder ::cto/tokens-lib sm/json-transformer))
+  (sm/decoder cto/schema:tokens-lib sm/json-transformer))
 
 (def decode-plugin-data
   (sm/decoder ::ctpg/plugin-data sm/json-transformer))
@@ -186,7 +186,7 @@
   (sm/check-fn ::ctf/media))
 
 (def validate-color
-  (sm/check-fn ::ctcl/color))
+  (sm/check-fn ctcl/schema:library-color))
 
 (def validate-component
   (sm/check-fn ::ctc/component))
@@ -617,8 +617,7 @@
                    (let [object (->> (read-entry input entry)
                                      (clean-component-pre-decode)
                                      (decode-component)
-                                     (clean-component-post-decode)
-                                     (validate-component))]
+                                     (clean-component-post-decode))]
                      (if (= id (:id object))
                        (assoc result id object)
                        result)))
@@ -652,8 +651,7 @@
                  (let [object (->> (read-entry input entry)
                                    (bfl/clean-shape-pre-decode)
                                    (decode-shape)
-                                   (bfl/clean-shape-post-decode)
-                                   (validate-shape))]
+                                   (bfl/clean-shape-post-decode))]
                    (if (= id (:id object))
                      (assoc result id object)
                      result)))
@@ -699,7 +697,6 @@
         components   (read-file-components cfg)
         plugin-data  (read-file-plugin-data cfg)
         pages        (read-file-pages cfg)]
-
     {:pages (-> pages keys vec)
      :pages-index (into {} pages)
      :colors colors
@@ -756,7 +753,8 @@
                    (assoc :project-id project-id)
                    (dissoc :options))
 
-          file  (bfc/process-file cfg file)]
+          file  (bfc/process-file cfg file)
+          file  (ctf/check-file file)]
 
       (bfm/register-pending-migrations! cfg file)
       (bfc/save-file! cfg file ::db/return-keys false)

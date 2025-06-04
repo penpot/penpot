@@ -101,7 +101,7 @@
   (let [pdata (path/content sample-content)]
     (t/is (= sample-bytes
              (vec
-              #?(:cljs (js/Int8Array. (.-buffer pdata))
+              #?(:cljs (js/Int8Array. (.-buffer (.-buffer pdata)))
                  :clj  (.array (.-buffer pdata))))))
     (t/is (= sample-content
              (vec pdata)))))

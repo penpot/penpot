@@ -121,30 +121,6 @@
    {:name "Source Sans Pro Regular"}
    (select-keys default-text-attrs typography-fields)))
 
-(defn transform-nodes
-  ([transform root]
-   (transform-nodes identity transform root))
-  ([pred transform root]
-   (walk/postwalk
-    (fn [item]
-      (if (and (map? item) (pred item))
-        (transform item)
-        item))
-    root)))
-
-(defn xform-nodes
-  "The same as transform but instead of receiving a funcion, receives
-  a transducer."
-  [xf root]
-  (let [rf (fn [_ v] v)]
-    (walk/postwalk
-     (fn [item]
-       (let [rf (xf rf)]
-         (if (map? item)
-           (d/nilv (rf nil item) item)
-           item)))
-     root)))
-
 (defn node-seq
   ([root] (node-seq identity root))
   ([match? root]
@@ -164,6 +140,34 @@
 (defn is-root-node?
   [node]
   (= "root" (:type node)))
+
+(defn is-node?
+  [node]
+  (or (is-text-node? node) (is-paragraph-node? node) (is-root-node? node)))
+
+(defn transform-nodes
+  ([transform root]
+   (transform-nodes identity transform root))
+  ([pred transform root]
+   (walk/postwalk
+    (fn [item]
+      (if (and (is-node? item) (pred item))
+        (transform item)
+        item))
+    root)))
+
+(defn xform-nodes
+  "The same as transform but instead of receiving a funcion, receives
+  a transducer."
+  [xf root]
+  (let [rf (fn [_ v] v)]
+    (walk/postwalk
+     (fn [item]
+       (let [rf (xf rf)]
+         (if (is-node? item)
+           (d/nilv (rf nil item) item)
+           item)))
+     root)))
 
 (defn generate-shape-name
   [text]

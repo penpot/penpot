@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.schema
-  (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean type])
+  (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean type keys])
   #?(:cljs (:require-macros [app.common.schema :refer [ignoring]]))
   (:require
    [app.common.data :as d]
@@ -117,6 +117,21 @@
 (defn transformer
   [& transformers]
   (apply mt/transformer transformers))
+
+(defn entries
+  "Get map entires of a map schema"
+  [schema]
+  (m/entries schema default-options))
+
+(def ^:private xf:map-key
+  (map key))
+
+(defn keys
+  "Given a map schema, return all keys as set"
+  [schema]
+  (->> (entries schema)
+       (into #{} xf:map-key)))
+
 
 ;; (defn key-transformer
 ;;   [& {:as opts}]
@@ -702,7 +717,10 @@
                  (fn [v]
                    (and (pred v)
                         (>= max v)))
-                 pred)]
+                 pred)
+
+          gen (or (get props :gen/gen)
+                  (sg/small-int :max max :min min))]
 
       {:pred pred
        :type-properties
@@ -710,7 +728,7 @@
         :description "int"
         :error/message "expected to be int/long"
         :error/code "errors.invalid-integer"
-        :gen/gen (sg/small-int :max max :min min)
+        :gen/gen gen
         :decode/string parse-long
         :decode/json parse-long
         ::oapi/type "integer"
@@ -768,10 +786,11 @@
                         (>= max v)))
                  pred)
 
-          gen  (sg/one-of
-                (sg/small-int :max max :min min)
-                (->> (sg/small-double :max max :min min)
-                     (sg/fmap #(mth/precision % 2))))]
+          gen  (or (get props :gen/gen)
+                   (sg/one-of
+                    (sg/small-int :max max :min min)
+                    (->> (sg/small-double :max max :min min)
+                         (sg/fmap #(mth/precision % 2)))))]
 
       {:pred pred
        :type-properties
@@ -786,7 +805,9 @@
 
 (register! ::safe-int [::int {:max max-safe-int :min min-safe-int}])
 (register! ::safe-double [::double {:max max-safe-int :min min-safe-int}])
-(register! ::safe-number [::number {:max max-safe-int :min min-safe-int}])
+(register! ::safe-number [::number {:gen/gen (sg/small-double)
+                                    :max max-safe-int
+                                    :min min-safe-int}])
 
 (defn parse-boolean
   [v]
