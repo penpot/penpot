@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-03 14:04+0000\n"
+"PO-Revision-Date: 2025-06-05 09:01+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -7588,3 +7588,23 @@ msgstr "Abonements"
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:132
 msgid "workspace.tokens.import-multiple-files"
 msgstr "Daudzās datnēs datnes nosaukums/ceļš ir kopas nosaukums."
+
+#: src/app/main/ui/settings/subscription.cljs:63
+msgid "subscription.settings.benefits.all-professional-benefits"
+msgstr "Visas lietpratēju plāna priekšrocības un:"
+
+#: src/app/main/ui/settings/subscription.cljs:85, src/app/main/ui/settings/subscription.cljs:130
+msgid "subscription.settings.enterprise.logs"
+msgstr "Darbību žurnāli"
+
+#: src/app/main/ui/settings/subscription.cljs:72
+msgid "subscription.settings.benefits.all-unlimited-benefits"
+msgstr "Visas neierobežotā plāna priekšrocības un:"
+
+#: src/app/main/ui/settings/subscription.cljs:80, src/app/main/ui/settings/subscription.cljs:123
+msgid "subscription.settings.enterprise"
+msgstr "Uzņēmējdarbība"
+
+#: src/app/main/ui/settings/subscription.cljs:65, src/app/main/ui/settings/subscription.cljs:74, src/app/main/ui/settings/subscription.cljs:117
+msgid "subscription.settings.unlimited.bill"
+msgstr "Ierobežots ikmēneša rēķins"
