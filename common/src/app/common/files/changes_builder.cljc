@@ -524,7 +524,6 @@
                            :or {ignore-geometry? false ignore-touched false with-objects? false}}]
    (assert-container-id! changes)
    (assert-objects! changes)
-   (assert-page-id! changes)
    (let [page-id      (::page-id (meta changes))
          component-id (::component-id (meta changes))
          objects      (lookup-objects changes)
