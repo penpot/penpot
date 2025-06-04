@@ -240,26 +240,36 @@
 
 (defn set-shape-fills
   [fills]
-  (h/call wasm/internal-module "_clear_shape_fills")
-  (keep (fn [fill]
-          (let [offset (mem/alloc-bytes sr-fills/FILL-BYTE-SIZE)
-                heap     (mem/get-heap-u8)
-                dview    (js/DataView. (.-buffer heap))
-                image (:fill-image fill)]
-            (sr-fills/write-fill! offset dview fill)
-            (h/call wasm/internal-module "_add_shape_fill")
-            ;; store image for image fills if not cached
-            (when (some? image)
-              (let [id     (dm/get-prop image :id)
-                    buffer (uuid/get-u32 id)
-                    cached-image? (h/call wasm/internal-module "_is_image_cached"
-                                          (aget buffer 0)
-                                          (aget buffer 1)
-                                          (aget buffer 2)
-                                          (aget buffer 3))]
-                (when (zero? cached-image?)
-                  (store-image id))))))
-        (take shp/MAX-FILLS fills)))
+  (let [fills (take shp/MAX-FILLS fills)
+        image-fills (filter :fill-image fills)
+        offset (mem/alloc-bytes (* (count fills) sr-fills/FILL-BYTE-SIZE))
+        heap (mem/get-heap-u8)
+        dview (js/DataView. (.-buffer heap))]
+
+    ;; write fill data to heap
+    (loop [fills (seq fills)
+           current-offset 0]
+      (when-not (empty? fills)
+        (let [fill (first fills)]
+          (sr-fills/write-fill! offset dview fill)
+          (recur (rest fills) (+ current-offset sr-fills/FILL-BYTE-SIZE)))))
+
+    ;; send fills to wasm
+    (h/call wasm/internal-module "_set_shape_fills")
+
+    ;; load images for image fills if not cached
+    (keep (fn [fill]
+            (let [image         (:fill-image fill)
+                  id            (dm/get-prop image :id)
+                  buffer        (uuid/get-u32 id)
+                  cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                        (aget buffer 0)
+                                        (aget buffer 1)
+                                        (aget buffer 2)
+                                        (aget buffer 3))]
+              (when (zero? cached-image?)
+                (store-image id))))
+          image-fills)))
 
 (defn set-shape-strokes
   [strokes]

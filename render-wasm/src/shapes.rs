@@ -495,6 +495,10 @@ impl Shape {
         self.fills.iter()
     }
 
+    pub fn set_fills(&mut self, fills: Vec<Fill>) {
+        self.fills = fills;
+    }
+
     pub fn add_fill(&mut self, f: Fill) {
         self.fills.push(f);
     }
