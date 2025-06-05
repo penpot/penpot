@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-27 09:01+0000\n"
+"PO-Revision-Date: 2025-06-05 12:09+0000\n"
 "Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -7493,3 +7493,61 @@ msgstr "Sélectionner un fichier"
 #: src/app/main/errors.cljs:266
 msgid "errors.deprecated.contact.text"
 msgstr "nous contacter"
+
+#: src/app/main/errors.cljs:265
+msgid "errors.deprecated.contact.before"
+msgstr ""
+"Même si Penpot ne prend plus en charge ce type de ressource, vous pouvez"
+
+#: src/app/main/data/tokens.cljs:
+#, unused
+msgid "errors.token-set-doesnt-exists"
+msgstr "Impossible de dupliquer un ensemble inconnu"
+
+#: src/app/main/ui/dashboard/subscription.cljs:77
+msgid "subscription.dashboard.power-up.enterprise.description"
+msgstr ""
+"Sécurité avancée, journaux d'activité, assistance technique dédiée et plus "
+"encore."
+
+#: src/app/main/ui/dashboard/subscription.cljs:53
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr ""
+"Éditeurs et stockage supplémentaires, sauvegarde des fichiers et bien plus "
+"encore sont inclus dans le **forfait Illimité**"
+
+#: src/app/main/ui/dashboard/subscription.cljs:62
+msgid "subscription.dashboard.power-up.trial.top-description"
+msgstr ""
+"Éditeurs et stockage supplémentaires, version à enregistrement automatique, "
+"sauvegarde des fichiers et bien plus encore."
+
+#: src/app/main/ui/dashboard/subscription.cljs:69
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-description"
+msgstr ""
+"Sécurité avancée, journaux d'activité, assistance technique dédiée et bien "
+"plus encore more sont inclus dans le **forfait Entreprise**"
+
+#: src/app/main/ui/dashboard/subscription.cljs:68
+msgid "subscription.dashboard.power-up.unlimited.top-description"
+msgstr ""
+"Éditeurs et stockage supplémentaires, version à enregistrement automatique, "
+"sauvegarde des fichiers et bien plus encore."
+
+#: src/app/main/ui/settings/subscription.cljs:85, src/app/main/ui/settings/subscription.cljs:130
+msgid "subscription.settings.enterprise.logs"
+msgstr "Journaux d'activité"
+
+#: src/app/main/ui/settings/subscription.cljs:67, src/app/main/ui/settings/subscription.cljs:76, src/app/main/ui/settings/subscription.cljs:86
+msgid "subscription.settings.manage-your-subscription"
+msgstr "Gérer votre abonnement"
+
+#: src/app/main/ui/settings/subscription.cljs:103, src/app/main/ui/settings/subscription.cljs:114
+msgid "subscription.settings.price-editor-month"
+msgstr "éditeur par mois"
+
+#: src/app/main/ui/settings/subscription.cljs:126
+msgid "subscription.settings.price-organization-month"
+msgstr "organisation par mois"
