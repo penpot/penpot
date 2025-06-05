@@ -128,7 +128,8 @@
         position-tooltip
         (fn [^js tooltip trigger-rect]
           (let [all-placements (get-fallback-order placement)]
-            (.showPopover ^js tooltip)
+            (when (.-isConnected tooltip)
+              (.showPopover ^js tooltip))
             (loop [[current-placement & remaining-placements] all-placements]
               (when current-placement
                 (reset! placement* current-placement)
