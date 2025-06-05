@@ -1,4 +1,6 @@
+use crate::performance;
 use crate::shapes::Shape;
+
 use skia_safe::{self as skia, IRect, Paint, RRect};
 
 use super::{gpu_state::GpuState, tiles::Tile, tiles::TileViewbox, tiles::TILE_SIZE};
@@ -12,16 +14,17 @@ const TEXTURES_BATCH_DELETE: usize = 32;
 // If it's too big it could affect performance.
 const TILE_SIZE_MULTIPLIER: i32 = 2;
 
+#[repr(u32)]
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {
-    Target,
-    Cache,
-    Current,
-    Fills,
-    Strokes,
-    DropShadows,
-    InnerShadows,
-    Debug,
+    Target = 0b0000_0001,
+    Cache = 0b0000_0010,
+    Current = 0b0000_0100,
+    Fills = 0b0000_1000,
+    Strokes = 0b0001_0000,
+    DropShadows = 0b0010_0000,
+    InnerShadows = 0b0100_0000,
+    Debug = 0b1000_0000,
 }
 
 pub struct Surfaces {
@@ -137,11 +140,33 @@ impl Surfaces {
             .draw(self.canvas(to), (0.0, 0.0), sampling_options, paint);
     }
 
-    pub fn apply_mut(&mut self, ids: &[SurfaceId], mut f: impl FnMut(&mut skia::Surface)) {
-        for id in ids {
-            let surface = self.get_mut(*id);
-            f(surface);
+    pub fn apply_mut(&mut self, ids: u32, mut f: impl FnMut(&mut skia::Surface)) {
+        performance::begin_measure!("apply_mut::flags");
+        if ids & SurfaceId::Target as u32 != 0 {
+            f(self.get_mut(SurfaceId::Target));
         }
+        if ids & SurfaceId::Current as u32 != 0 {
+            f(self.get_mut(SurfaceId::Current));
+        }
+        if ids & SurfaceId::Cache as u32 != 0 {
+            f(self.get_mut(SurfaceId::Cache));
+        }
+        if ids & SurfaceId::Fills as u32 != 0 {
+            f(self.get_mut(SurfaceId::Fills));
+        }
+        if ids & SurfaceId::Strokes as u32 != 0 {
+            f(self.get_mut(SurfaceId::Strokes));
+        }
+        if ids & SurfaceId::InnerShadows as u32 != 0 {
+            f(self.get_mut(SurfaceId::InnerShadows));
+        }
+        if ids & SurfaceId::DropShadows as u32 != 0 {
+            f(self.get_mut(SurfaceId::DropShadows));
+        }
+        if ids & SurfaceId::Debug as u32 != 0 {
+            f(self.get_mut(SurfaceId::Debug));
+        }
+        performance::begin_measure!("apply_mut::flags");
     }
 
     pub fn update_render_context(&mut self, render_area: skia::Rect, scale: f32) {
@@ -150,12 +175,10 @@ impl Surfaces {
             -render_area.top() + self.margins.height as f32 / scale,
         );
         self.apply_mut(
-            &[
-                SurfaceId::Fills,
-                SurfaceId::Strokes,
-                SurfaceId::DropShadows,
-                SurfaceId::InnerShadows,
-            ],
+            SurfaceId::Fills as u32
+                | SurfaceId::Strokes as u32
+                | SurfaceId::DropShadows as u32
+                | SurfaceId::InnerShadows as u32,
             |s| {
                 s.canvas().restore();
                 s.canvas().save();
@@ -164,6 +187,7 @@ impl Surfaces {
         );
     }
 
+    #[inline]
     fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
         match id {
             SurfaceId::Target => &mut self.target,
@@ -224,13 +248,11 @@ impl Surfaces {
         self.canvas(SurfaceId::Strokes).restore_to_count(1);
         self.canvas(SurfaceId::Current).restore_to_count(1);
         self.apply_mut(
-            &[
-                SurfaceId::Fills,
-                SurfaceId::Strokes,
-                SurfaceId::Current,
-                SurfaceId::DropShadows,
-                SurfaceId::InnerShadows,
-            ],
+            SurfaceId::Fills as u32
+                | SurfaceId::Strokes as u32
+                | SurfaceId::Current as u32
+                | SurfaceId::DropShadows as u32
+                | SurfaceId::InnerShadows as u32,
             |s| {
                 s.canvas().clear(color).reset_matrix();
             },

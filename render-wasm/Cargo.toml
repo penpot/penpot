@@ -7,7 +7,7 @@ license-file = "../LICENSE"
 description = "Wasm-based canvas renderer for Penpot"
 
 [features]
-default = ["profile"]
+default = []
 profile = ["profile-macros", "profile-raf"]
 profile-macros = []
 profile-raf = []

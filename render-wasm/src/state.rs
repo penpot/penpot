@@ -52,9 +52,7 @@ impl ShapesPool {
         }
 
         self.shapes.extend(
-            iter::repeat_with(
-                || Box::new(Shape::new(Uuid::nil()))
-            ).take(additional as usize)
+            iter::repeat_with(|| Box::new(Shape::new(Uuid::nil()))).take(additional as usize),
         );
         performance::end_measure!("shapes_pool_initialize");
     }
@@ -62,11 +60,8 @@ impl ShapesPool {
     pub fn add_shape(&mut self, id: Uuid) -> &mut Shape {
         if self.counter >= self.shapes.len() {
             let additional = (self.shapes.len() as f32 * SHAPES_POOL_ALLOC_MULTIPLIER) as usize;
-            self.shapes.extend(
-                iter::repeat_with(
-                    || Box::new(Shape::new(Uuid::nil()))
-                ).take(additional)
-            );
+            self.shapes
+                .extend(iter::repeat_with(|| Box::new(Shape::new(Uuid::nil()))).take(additional));
         }
         let new_shape = &mut self.shapes[self.counter];
         new_shape.id = id;
