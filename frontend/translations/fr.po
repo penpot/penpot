@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-05 12:09+0000\n"
+"PO-Revision-Date: 2025-06-06 13:03+0000\n"
 "Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -2194,7 +2194,7 @@ msgstr[1] "%s projets"
 
 #, unused
 msgid "labels.ok"
-msgstr "Ok"
+msgstr "OK"
 
 #: src/app/main/ui/settings/password.cljs:77
 msgid "labels.old-password"
@@ -2215,7 +2215,7 @@ msgstr "ou"
 
 #: src/app/main/ui/onboarding/questions.cljs:131, src/app/main/ui/onboarding/questions.cljs:203, src/app/main/ui/onboarding/questions.cljs:285, src/app/main/ui/onboarding/questions.cljs:358
 msgid "labels.other"
-msgstr "Autres (préciser)"
+msgstr "Autres (précisez)"
 
 #: src/app/main/ui/onboarding/questions.cljs:91, src/app/main/ui/onboarding/questions.cljs:166, src/app/main/ui/onboarding/questions.cljs:255, src/app/main/ui/onboarding/questions.cljs:324
 msgid "labels.other-short"
@@ -2243,7 +2243,7 @@ msgstr "Précédent"
 
 #: src/app/main/ui/onboarding/questions.cljs:85
 msgid "labels.product-design"
-msgstr "Product ou UX Designer"
+msgstr "Product Design ou UX Design"
 
 #: src/app/main/ui/onboarding/questions.cljs:90
 msgid "labels.product-management"
@@ -2273,7 +2273,7 @@ msgstr "Actualiser le fichier"
 #: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
 #, unused
 msgid "labels.remove"
-msgstr "Retirer"
+msgstr "Supprimer"
 
 #: src/app/main/ui/dashboard/team.cljs:350
 msgid "labels.remove-member"
@@ -4302,7 +4302,7 @@ msgstr "Rechercher - %s - Penpot"
 
 #: src/app/main/ui/dashboard/libraries.cljs:57
 msgid "title.dashboard.shared-libraries"
-msgstr "Bibliothèques partagées - %s - Penpot"
+msgstr "Bibliothèques partagées – %s – Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:35
 msgid "title.default"
@@ -4322,7 +4322,7 @@ msgstr "Notifications - Penpot"
 
 #: src/app/main/ui/settings/options.cljs:76
 msgid "title.settings.options"
-msgstr "Paramètres - Penpot"
+msgstr "Paramètres – Penpot"
 
 #: src/app/main/ui/settings/password.cljs:103
 msgid "title.settings.password"
@@ -4342,7 +4342,7 @@ msgstr "Membres - %s - Penpot"
 
 #: src/app/main/ui/dashboard/team.cljs:1105
 msgid "title.team-settings"
-msgstr "Paramètres - %s - Penpot"
+msgstr "Paramètres – %s – Penpot"
 
 #: src/app/main/ui/dashboard/team.cljs:1058
 msgid "title.team-webhooks"
@@ -7452,7 +7452,7 @@ msgstr "Sélectionner un dossier"
 
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:128
 msgid "workspace.tokens.import-tokens"
-msgstr "Importer des jetons"
+msgstr "Importer des unités de style"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:341
 msgid "workspace.tokens.inactive-set"
@@ -7484,7 +7484,7 @@ msgstr "Assistance dédiée"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:37
 msgid "workspace.tokens.empty-input"
-msgstr "La valeur du jeton doit être renseignée"
+msgstr "La valeur de l'unité de style doit être renseignée"
 
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:160
 msgid "workspace.tokens.choose-file"
@@ -7507,8 +7507,7 @@ msgstr "Impossible de dupliquer un ensemble inconnu"
 #: src/app/main/ui/dashboard/subscription.cljs:77
 msgid "subscription.dashboard.power-up.enterprise.description"
 msgstr ""
-"Sécurité avancée, journaux d'activité, assistance technique dédiée et plus "
-"encore."
+"Sécurité avancée, journaux d'activité, assistance dédiée et plus encore."
 
 #: src/app/main/ui/dashboard/subscription.cljs:53
 #, markdown
@@ -7527,8 +7526,8 @@ msgstr ""
 #, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-description"
 msgstr ""
-"Sécurité avancée, journaux d'activité, assistance technique dédiée et bien "
-"plus encore more sont inclus dans le **forfait Entreprise**"
+"Sécurité avancée, journaux d'activité, assistance dédiée et bien plus encore "
+"more sont inclus dans le **forfait Entreprise**"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
 msgid "subscription.dashboard.power-up.unlimited.top-description"
@@ -7551,3 +7550,72 @@ msgstr "éditeur par mois"
 #: src/app/main/ui/settings/subscription.cljs:126
 msgid "subscription.settings.price-organization-month"
 msgstr "organisation par mois"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:311
+#, fuzzy
+msgid "workspace.options.component.variant.malformed.structure"
+msgstr "[property]=[value], [property]=[value]"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
+msgid "workspace.options.component.variant.malformed.multi"
+msgstr "Le nom de certaines variantes n'est pas valide"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:131
+msgid "workspace.tokens.import-single-file"
+msgstr ""
+"Dans un fichier JSON, les clés de premier niveau doivent correspondre aux "
+"noms définis des unités de style."
+
+#: src/app/main/errors.cljs:264
+msgid "errors.deprecated"
+msgstr ""
+"Désolé, il s'agit d'un ancien fichier qui utilise un type de ressource "
+"Penpot obsolète. Vous ne pouvez pas l'ouvrir."
+
+#: src/app/main/ui/dashboard/team.cljs:753
+msgid "labels.no-invitations-gather-people"
+msgstr "Rassemblez votre équipe et créez de grandes choses ensemble."
+
+#: src/app/main/ui/settings/subscription.cljs:55, src/app/main/ui/settings/subscription.cljs:104
+msgid "subscription.settings.professional.projects-files"
+msgstr "Projets, fichiers et brouillons illimités"
+
+#: src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:105
+msgid "subscription.settings.professional.teams-editors"
+msgstr "Équipes illimitées de 8 éditeurs maximum"
+
+#: src/app/main/ui/settings/subscription.cljs:92
+msgid "subscription.settings.support-us-since"
+msgstr "Vous nous soutenez depuis %s"
+
+#: src/app/main/ui/settings/subscription.cljs:65, src/app/main/ui/settings/subscription.cljs:74, src/app/main/ui/settings/subscription.cljs:117
+msgid "subscription.settings.unlimited.bill"
+msgstr "Facture mensuelle plafonnée"
+
+#: src/app/main/ui/settings/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:73, src/app/main/ui/settings/subscription.cljs:116
+msgid "subscription.settings.unlimited.teams"
+msgstr "Équipes illimités, quelle que soit la taille de votre équipe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:746
+msgid "workspace.options.component.variant"
+msgstr "Variante"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "Chercher des variantes non valides"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.malformed.single"
+msgstr ""
+"Le nom de cette variante n'est pas valide. Essayez d'utiliser la structure "
+"suivante  :"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:488
+msgid "workspace.shape.menu.restore-variant"
+msgstr "Rétablir la variante"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:132
+msgid "workspace.tokens.import-multiple-files"
+msgstr ""
+"Dans plusieurs fichiers, le nom/chemin d'accès du fichier correspondent aux "
+"noms définis."
