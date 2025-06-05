@@ -7265,6 +7265,26 @@ msgstr "Al importar un fichero JSON sobreescribirás todos tus tokens, sets y th
 msgid "workspace.tokens.import-warning"
 msgstr "Al importar tokens sobreescribirás todos tus tokens, sets y themes."
 
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:74
+msgid "workspace.tokens.export"
+msgstr "Exportar"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:51
+msgid "workspace.tokens.export.single-file"
+msgstr "fichero único"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:54
+msgid "workspace.tokens.export.multiple-files"
+msgstr "Múltiples ficheros"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:60
+msgid "workspace.tokens.export.preview"
+msgstr "Previsualizar:"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:37
+msgid "workspace.tokens.export.no-tokens-themes-sets"
+msgstr "No existen tokens, temas o sets para exportar."
+
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:341
 msgid "workspace.tokens.inactive-set"
 msgstr "Inactivo"

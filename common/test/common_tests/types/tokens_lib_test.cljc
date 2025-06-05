@@ -1507,3 +1507,56 @@
                                                 "$type" "color"
                                                 "$description" ""}}}}}]
        (t/is (= expected result)))))
+
+#?(:clj
+   (t/deftest export-dtcg-multi-file
+     (let [now (dt/now)
+           tokens-lib (-> (ctob/make-tokens-lib)
+                          (ctob/add-set (ctob/make-token-set :name "some/set"
+                                                             :tokens {"colors.red.600"
+                                                                      (ctob/make-token
+                                                                       {:name "colors.red.600"
+                                                                        :type :color
+                                                                        :value "#e53e3e"})
+                                                                      "spacing.multi-value"
+                                                                      (ctob/make-token
+                                                                       {:name "spacing.multi-value"
+                                                                        :type :spacing
+                                                                        :value "{dimension.sm} {dimension.xl}"
+                                                                        :description "You can have multiple values in a single spacing token"})
+                                                                      "button.primary.background"
+                                                                      (ctob/make-token
+                                                                       {:name "button.primary.background"
+                                                                        :type :color
+                                                                        :value "{accent.default}"})}))
+                          (ctob/add-theme (ctob/make-token-theme :name "theme-1"
+                                                                 :group "group-1"
+                                                                 :external-id "test-id-01"
+                                                                 :modified-at now
+                                                                 :sets #{"some/set"}))
+                          (ctob/toggle-theme-active? "group-1" "theme-1"))
+           result   (ctob/export-dtcg-multi-file tokens-lib)
+           expected {"$themes.json" [{"description" ""
+                                      "group" "group-1"
+                                      "is-source" false
+                                      "modified-at" now
+                                      "id" "test-id-01"
+                                      "name" "theme-1"
+                                      "selectedTokenSets" {"some/set" "enabled"}}]
+                     "$metadata.json" {"tokenSetOrder" ["some/set"]
+                                       "activeThemes" #{"group-1/theme-1"}
+                                       "activeSets" #{"some/set"}}
+                     "some/set.json"
+                     {"colors" {"red" {"600" {"$value" "#e53e3e"
+                                              "$type" "color"
+                                              "$description" ""}}}
+                      "spacing"
+                      {"multi-value"
+                       {"$value" "{dimension.sm} {dimension.xl}"
+                        "$type" "spacing"
+                        "$description" "You can have multiple values in a single spacing token"}}
+                      "button"
+                      {"primary" {"background" {"$value" "{accent.default}"
+                                                "$type" "color"
+                                                "$description" ""}}}}}]
+       (t/is (= expected result)))))

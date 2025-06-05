@@ -1420,8 +1420,13 @@ Will return a value that matches this schema:
       :else
       (parse-multi-set-dtcg-json decoded-json))))
 
-(defn export-dtcg-json
-  "Convert a TokensLib into a plain clojure map, suitable to be encoded as a multi sets json string in DTCG format."
+(defn- token->dtcg-token [token]
+  (cond-> {"$value" (:value token)
+           "$type" (cto/token-type->dtcg-token-type (:type token))}
+    (:description token) (assoc "$description" (:description token))))
+
+(defn- dtcg-export-themes
+  "Extract themes for a dtcg json export."
   [tokens-lib]
   (let [themes-xform
         (comp
@@ -1445,20 +1450,35 @@ Will return a value that matches this schema:
         ;; Active themes without exposing hidden penpot theme
         active-themes-clear
         (-> (get-active-theme-paths tokens-lib)
-            (disj hidden-theme-path))
+            (disj hidden-theme-path))]
+    {:themes themes
+     :active-themes active-themes-clear}))
 
-        update-token-fn
-        (fn [token]
-          (cond-> {"$value" (:value token)
-                   "$type" (cto/token-type->dtcg-token-type (:type token))}
-            (:description token) (assoc "$description" (:description token))))
+(defn export-dtcg-multi-file
+  "Convert a TokensLib into a plain clojure map, suitable to be encoded as a multi json files each encoded in DTCG format."
+  [tokens-lib]
+  (let [{:keys [themes active-themes]} (dtcg-export-themes tokens-lib)
+        sets (->> (get-sets tokens-lib)
+                  (map (fn [{:keys [name tokens]}]
+                         [(str name ".json") (tokens-tree tokens :update-token-fn token->dtcg-token)]))
+                  (into {}))]
+    (-> sets
+        (assoc "$themes.json" themes)
+        (assoc-in ["$metadata.json" "tokenSetOrder"] (get-ordered-set-names tokens-lib))
+        (assoc-in ["$metadata.json" "activeThemes"] active-themes)
+        (assoc-in ["$metadata.json" "activeSets"] (get-active-themes-set-names tokens-lib)))))
+
+(defn export-dtcg-json
+  "Convert a TokensLib into a plain clojure map, suitable to be encoded as a multi sets json string in DTCG format."
+  [tokens-lib]
+  (let [{:keys [themes active-themes]} (dtcg-export-themes tokens-lib)
 
         name-set-tuples
         (->> (get-set-tree tokens-lib)
              (tree-seq d/ordered-map? vals)
              (filter (partial instance? TokenSet))
              (map (fn [{:keys [name tokens]}]
-                    [name (tokens-tree tokens :update-token-fn update-token-fn)])))
+                    [name (tokens-tree tokens :update-token-fn token->dtcg-token)])))
 
         ordered-set-names
         (mapv first name-set-tuples)
@@ -1472,7 +1492,7 @@ Will return a value that matches this schema:
     (-> sets
         (assoc "$themes" themes)
         (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names)
-        (assoc-in ["$metadata" "activeThemes"] active-themes-clear)
+        (assoc-in ["$metadata" "activeThemes"] active-themes)
         (assoc-in ["$metadata" "activeSets"] active-set-names))))
 
 (defn get-tokens-of-unknown-type
