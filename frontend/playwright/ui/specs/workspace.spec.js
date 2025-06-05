@@ -294,7 +294,7 @@ test("User have edition menu entries", async ({ page }) => {
   await workspacePage.setupEmptyFile(page);
   await workspacePage.goToWorkspace();
 
-  await page.getByTitle("Main menu").click();
+  await page.getByRole("button", { name: "Main menu" }).click();
   await page.getByText("file").last().click();
 
   await expect(page.getByText("Add as Shared Library")).toBeVisible();
@@ -390,7 +390,7 @@ test("[Taiga #9930] Zoom fit all doesn't fits all", async ({
   const zoom = await page.getByTitle("Zoom");
   await zoom.click();
 
-  const zoomIn = await page.getByTitle("Zoom in");
+  const zoomIn = await page.getByRole("button", { name: "Zoom in" });
   await zoomIn.click();
   await zoomIn.click();
   await zoomIn.click();

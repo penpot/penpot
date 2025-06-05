@@ -40,6 +40,7 @@ test("Create a LINEAR gradient", async ({ page }) => {
     fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
     pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
   });
+
   await workspacePage.clickLeafLayer("Rectangle");
 
   const swatch = workspacePage.page.getByRole("button", { name: "#B1B2B5" });
@@ -74,17 +75,21 @@ test("Create a LINEAR gradient", async ({ page }) => {
 
   const inputColor2 = workspacePage.colorpicker
     .getByPlaceholder("Mixed")
-    .nth(1);
+    .nth(2);
   await inputColor2.fill("red");
 
-  const inputOpacity2 = workspacePage.colorpicker.getByPlaceholder("--").nth(1);
-  await inputOpacity2.fill("100");
+  const inputOpacity2 = workspacePage.colorpicker.getByPlaceholder("--").nth(2);
+  await inputOpacity2.fill("40");
 
-  const inputOpacityGlobal = workspacePage.page
-    .locator("div")
-    .filter({ hasText: /^FillLinear gradient%$/ })
-    .getByPlaceholder("--");
-  await inputOpacityGlobal.fill("100");
+  const inputOpacityGlobal = workspacePage.colorpicker.getByTestId(
+    "opacity-global-input",
+  );
+  await inputOpacityGlobal.fill("50");
+  await inputOpacityGlobal.press("Enter");
+  await expect(inputOpacityGlobal).toHaveValue("50");
+  await expect(inputOpacityGlobal).toBeVisible();
+
+  await expect(workspacePage.page.getByText("Linear gradient")).toBeVisible();
 });
 
 test("Create a RADIAL gradient", async ({ page }) => {
@@ -147,8 +152,18 @@ test("Create a RADIAL gradient", async ({ page }) => {
   const inputColor2 = workspacePage.page.getByPlaceholder("Mixed").nth(2);
   await inputColor2.fill("red");
 
-  const inputOpacity2 = workspacePage.colorpicker.getByPlaceholder("--").nth(1);
+  const inputOpacity2 = workspacePage.colorpicker.getByPlaceholder("--").nth(2);
   await inputOpacity2.fill("100");
+
+  const inputOpacityGlobal = workspacePage.colorpicker.getByTestId(
+    "opacity-global-input",
+  );
+  await inputOpacityGlobal.fill("50");
+  await inputOpacityGlobal.press("Enter");
+  await expect(inputOpacityGlobal).toHaveValue("50");
+  await expect(inputOpacityGlobal).toBeVisible();
+
+  await expect(workspacePage.page.getByText("Radial gradient")).toBeVisible();
 });
 
 test("Gradient stops limit", async ({ page }) => {

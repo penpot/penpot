@@ -42,7 +42,7 @@
 
       "left"
       {:top (- (+ trigger-top (/ trigger-height 2) half-arrow-height) (/ tooltip-height 2))
-       :left (- trigger-left tooltip-width)
+       :left (- trigger-left tooltip-width arrow-height)
        :right (+ (- trigger-left tooltip-width) tooltip-width)
        :bottom (+ (- (+ trigger-top (/ trigger-height 2) half-arrow-height) (/ tooltip-height 2)) tooltip-height)
        :width tooltip-width
@@ -109,7 +109,7 @@
 (def ^:private schema:tooltip
   [:map
    [:class {:optional true} :string]
-   [:id :string]
+   [:id {:optional true} :string]
    [:offset {:optional true} :int]
    [:delay {:optional true} :int]
    [:placement {:optional true}
@@ -118,7 +118,8 @@
 (mf/defc tooltip*
   {::mf/schema schema:tooltip}
   [{:keys [class id children tooltip-content placement offset delay] :rest props}]
-  (let [placement* (mf/use-state #(d/nilv placement "top"))
+  (let [id         (or id (mf/use-id))
+        placement* (mf/use-state #(d/nilv placement "top"))
         placement  (deref placement*)
         delay      (d/nilv delay 300)
 
