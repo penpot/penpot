@@ -24,7 +24,6 @@ on [its own changelog](library/CHANGES.md)
 - Deselect layers (and path nodes) with Ctrl+Shift+Drag [Github #2509](https://github.com/penpot/penpot/issues/2509)
 - Copy to SVG from contextual menu [Github #838](https://github.com/penpot/penpot/issues/838)
 - Add styles for Inkeep Chat at workspace [Taiga #10708](https://tree.taiga.io/project/penpot/us/10708)
-- On components overrides, separate the content of the text from the rest of properties [Taiga #7434](https://tree.taiga.io/project/penpot/us/7434)
 - Add configuration for air gapped installations with Docker
 - Support system color scheme [Github #5030](https://github.com/penpot/penpot/issues/5030)
 - Persist ruler visibility across files and reloads [GitHub #4586](https://github.com/penpot/penpot/issues/4586)

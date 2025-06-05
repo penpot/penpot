@@ -32,7 +32,6 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.shadow :as ctss]
-   [app.common.types.text :as cttx]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -1326,31 +1325,6 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0004-add-partial-text-touched-flags"
-  [data _]
-  (letfn [(update-object [page object]
-            (if (and (cfh/text-shape? object)
-                     (ctk/in-component-copy? object))
-              (let [file            {:id (:id data) :data data}
-                    libs            (when (:libs data)
-                                      (deref (:libs data)))
-                    ref-shape       (ctf/find-ref-shape file page libs object
-                                                        {:include-deleted? true :with-context? true})
-                    partial-touched (when ref-shape
-                                      (cttx/get-diff-type (:content object) (:content ref-shape)))]
-                (if (seq partial-touched)
-                  (update object :touched (fn [touched]
-                                            (reduce #(ctk/set-touched-group %1 %2)
-                                                    touched
-                                                    partial-touched)))
-                  object))
-              object))
-
-          (update-page [page]
-            (d/update-when page :objects d/update-vals (partial update-object page)))]
-
-    (update data :pages-index d/update-vals update-page)))
-
 (defmethod migrate-data "0004-clean-shadow-and-colors"
   [data _]
   (letfn [(clean-shadow [shadow]
@@ -1562,7 +1536,6 @@
          "0002-clean-shape-interactions"
          "0003-fix-root-shape"
          "0003-convert-path-content"
-         "0004-add-partial-text-touched-flags"
          "0004-clean-shadow-and-colors"
          "0005-deprecate-image-type"
          "0006-fix-old-texts-fills"
