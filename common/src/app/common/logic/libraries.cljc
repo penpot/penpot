@@ -1776,12 +1776,13 @@
                 ;; and attrs (bold, font, etc) are in the same attr :content.
                 ;; If only one of them is touched, we want to adress this case and
                 ;; only update the untouched one
-                text-partial-change? (when (and
-                                            omit-touched?
-                                            (cfh/text-shape? origin-shape)
-                                            (= :content attr)
-                                            (touched attr-group))
-                                       (is-text-partial-change? origin-shape dest-shape))
+                text-partial-change?
+                (when (and
+                       omit-touched?
+                       (cfh/text-shape? origin-shape)
+                       (= :content attr)
+                       (touched attr-group))
+                  (is-text-partial-change? origin-shape dest-shape))
 
                 skip-operations?
                 (or (= (get origin-shape attr) (get dest-shape attr))
@@ -1819,7 +1820,12 @@
   "Copy attributes that have changed in the shape previous to the switch
    to the current shape (post switch). Used only on variants switch"
   ;; NOTE: This function have similitudes but is very different to
-  ;; update-attrs
+  ;; update-attrs:
+  ;; In components (update-attrs), the source shape is "clean", and the destination
+  ;; shape may have touched elements that shouldn't be overwritten.
+  ;; In variants (update-attrs-on-switch), the destination shape is "clean",
+  ;; and it's the source shape that may have touched elements, and we only want
+  ;; to copy those touched elements.
   [changes current-shape previous-shape current-root prev-root origin-ref-shape container]
   (let [;; We need to sync only the position relative to the origin of the component.
         ;; (see update-attrs for a full explanation)
@@ -1856,13 +1862,14 @@
               ;; and attrs (bold, font, etc) are in the same attr :content.
               ;; If only one of them is touched, we want to adress this case and
               ;; only update the untouched one
-              text-partial-change? (when (and
-                                          (not skip-operations?)
-                                          (cfh/text-shape? current-shape)
-                                          (cfh/text-shape? previous-shape)
-                                          (= :content attr)
-                                          (touched attr-group))
-                                     (is-text-partial-change? current-shape previous-shape))
+              text-partial-change?
+              (when (and
+                     (not skip-operations?)
+                     (cfh/text-shape? current-shape)
+                     (cfh/text-shape? previous-shape)
+                     (= :content attr)
+                     (touched attr-group))
+                (is-text-partial-change? current-shape previous-shape))
 
               ;; position-data is a special case because can be affected by :geometry-group and :content-group
               ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
