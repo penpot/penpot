@@ -720,7 +720,8 @@
   [{:keys [hex alpha] :as data}]
   (-> data
       (assoc :color hex)
-      (assoc :opacity alpha)))
+      (assoc :opacity alpha)
+      (d/without-nils)))
 
 (defn clear-color-components
   [data]
@@ -748,13 +749,14 @@
     (clear-image-components current-color)
 
     :else
-    {:opacity opacity
-     :gradient (-> gradient
-                   (assoc :type (case type
-                                  :linear-gradient :linear
-                                  :radial-gradient :radial))
-                   (assoc :stops (mapv clear-color-components stops))
-                   (dissoc :shape-id))}))
+    (d/without-nils
+     {:opacity opacity
+      :gradient (-> gradient
+                    (assoc :type (case type
+                                   :linear-gradient :linear
+                                   :radial-gradient :radial))
+                    (assoc :stops (mapv clear-color-components stops))
+                    (dissoc :shape-id))})))
 
 (defn- colorpicker-onchange-runner
   "Effect event that runs the on-change callback with the latest
