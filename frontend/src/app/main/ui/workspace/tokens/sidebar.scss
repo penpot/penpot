@@ -39,7 +39,6 @@
   padding-block-end: var(--sp-l);
 }
 
-.themes-header,
 .sets-header-container {
   @include use-typography("headline-small");
   padding: var(--sp-s);
@@ -72,15 +71,6 @@
   font-style: italic;
 }
 
-.themes-wrapper {
-  padding: var(--sp-m) 0 0 var(--sp-m);
-}
-
-.empty-theme-wrapper {
-  padding: var(--sp-m);
-  color: var(--color-foreground-secondary);
-}
-
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -88,10 +78,6 @@
   margin-left: var(--sp-m);
   padding-top: var(--sp-m);
   color: var(--layer-row-foreground-color);
-}
-
-.empty-state-message {
-  color: var(--color-foreground-secondary);
 }
 
 .token-pills-wrapper {
@@ -167,30 +153,6 @@
   justify-content: space-between;
   align-items: center;
   flex: 1;
-}
-
-.theme-select-wrapper {
-  display: grid;
-  grid-template-columns: 1fr 0.28fr;
-  gap: $s-6;
-}
-
-.themes-button {
-  @extend .button-secondary;
-  width: auto;
-}
-
-.create-theme-button {
-  @include use-typography("body-small");
-  background-color: transparent;
-  border: none;
-  appearance: none;
-  color: var(--color-accent-primary);
-  cursor: pointer;
-}
-
-.edit-theme-button {
-  justify-content: center;
 }
 
 .resize-area-horiz {

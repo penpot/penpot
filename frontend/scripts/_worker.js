@@ -35,7 +35,7 @@ async function compileFile(path) {
         css: result.css,
       });
     } catch (cause) {
-      // console.error(cause);
+      console.error(cause);
       reject(cause);
     }
   });

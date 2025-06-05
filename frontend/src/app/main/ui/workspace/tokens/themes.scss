@@ -1,0 +1,47 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../ds/typography.scss" as *;
+@use "../../ds/_sizes" as *;
+@use "../../ds/spacing.scss" as *;
+
+.themes-wrapper {
+  padding: var(--sp-m) 0 0 var(--sp-m);
+}
+
+.themes-header {
+  padding: var(--sp-s);
+  color: var(--title-foreground-color);
+  word-break: break-word;
+}
+
+.empty-theme-wrapper {
+  padding: var(--sp-m);
+  color: var(--color-foreground-secondary);
+}
+
+.empty-state-message {
+  color: var(--color-foreground-secondary);
+}
+
+.create-theme-button {
+  @include use-typography("body-small");
+  background-color: transparent;
+  border: none;
+  appearance: none;
+  color: var(--color-accent-primary);
+  cursor: pointer;
+}
+
+.theme-selector-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 0.28fr;
+  gap: var(--sp-xs);
+}
+
+.edit-theme-button {
+  justify-content: center;
+}
