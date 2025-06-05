@@ -249,11 +249,11 @@
 
     ;; write fill data to heap
       (loop [fills (seq fills)
-             current-offset 0]
+             current-offset offset]
         (when-not (empty? fills)
-          (let [fill (first fills)]
-            (sr-fills/write-fill! offset dview fill)
-            (recur (rest fills) (+ current-offset sr-fills/FILL-BYTE-SIZE)))))
+          (let [fill       (first fills)
+                new-offset (sr-fills/write-fill! current-offset dview fill)]
+            (recur (rest fills) new-offset))))
 
     ;; send fills to wasm
       (h/call wasm/internal-module "_set_shape_fills")
