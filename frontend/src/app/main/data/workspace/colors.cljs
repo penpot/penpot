@@ -12,7 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
    [app.common.text :as txt]
-   [app.common.types.color :as ctc]
+   [app.common.types.color :as types.color]
    [app.common.types.fill :as types.fill]
    [app.common.types.shape :as shp]
    [app.common.types.shape.shadow :refer [check-shadow]]
@@ -181,15 +181,19 @@
   ([ids color position]
    (change-fill ids color position nil))
   ([ids color position options]
-   (ptk/reify ::change-fill
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [change-fn #(assoc-shape-fill %1 position %2)
-             undo-id   (js/Symbol)]
-         (rx/concat
-          (rx/of (dwu/start-undo-transaction undo-id))
-          (transform-fill state ids color change-fn options)
-          (rx/of (dwu/commit-undo-transaction undo-id))))))))
+   (assert (every? uuid? ids) "expect a coll of uuids for `ids`")
+   (assert (number? position) "expect a number for position")
+
+   (let [color (types.color/check-color color)]
+     (ptk/reify ::change-fill
+       ptk/WatchEvent
+       (watch [_ state _]
+         (let [change-fn #(assoc-shape-fill %1 position %2)
+               undo-id   (js/Symbol)]
+           (rx/concat
+            (rx/of (dwu/start-undo-transaction undo-id))
+            (transform-fill state ids color change-fn options)
+            (rx/of (dwu/commit-undo-transaction undo-id)))))))))
 
 (defn change-fill-and-clear
   ([ids color] (change-fill-and-clear ids color nil))
@@ -208,33 +212,27 @@
   ([ids color] (add-fill ids color nil))
   ([ids color options]
 
-   (assert
-    (ctc/check-color color)
-    "expected a valid color struct")
-
-   (assert
-    (every? uuid? ids)
-    "expected a valid coll of uuid's")
-
-   (ptk/reify ::add-fill
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [change-fn
-             (fn [shape attrs]
-               (-> shape
-                   (update :fills #(into [attrs] %))))
-             undo-id
-             (js/Symbol)]
-         (rx/concat
-          (rx/of (dwu/start-undo-transaction undo-id))
-          (transform-fill state ids color change-fn options)
-          (rx/of (dwu/commit-undo-transaction undo-id))))))))
+   (assert  (every? uuid? ids) "expected a valid coll of uuid's")
+   (let [color (types.color/check-color color)]
+     (ptk/reify ::add-fill
+       ptk/WatchEvent
+       (watch [_ state _]
+         (let [change-fn
+               (fn [shape attrs]
+                 (-> shape
+                     (update :fills #(into [attrs] %))))
+               undo-id
+               (js/Symbol)]
+           (rx/concat
+            (rx/of (dwu/start-undo-transaction undo-id))
+            (transform-fill state ids color change-fn options)
+            (rx/of (dwu/commit-undo-transaction undo-id)))))))))
 
 (defn remove-fill
   ([ids color position] (remove-fill ids color position nil))
   ([ids color position options]
 
-   (assert (ctc/check-color color)
+   (assert (types.color/check-color color)
            "expected a valid color struct")
    (assert (every? uuid? ids)
            "expected a valid coll of uuid's")
@@ -263,7 +261,7 @@
   ([ids color] (remove-all-fills ids color nil))
   ([ids color options]
 
-   (assert (ctc/check-color color) "expected a valid color struct")
+   (assert (types.color/check-color color) "expected a valid color struct")
    (assert (every? uuid? ids) "expected a valid coll of uuid's")
 
 
@@ -573,11 +571,11 @@
           "expected valid color operations")
 
   (assert
-   (ctc/check-color new-color)
+   (types.color/check-color new-color)
    "expected valid color structure")
 
   (assert
-   (ctc/check-color old-color)
+   (types.color/check-color old-color)
    "expected valid color structure")
 
   (ptk/reify ::change-color-in-selected
@@ -599,7 +597,7 @@
 
 (defn apply-color-from-palette
   [color stroke?]
-  (let [color (ctc/check-color color)]
+  (let [color (types.color/check-color color)]
     (ptk/reify ::apply-color-from-palette
       ptk/WatchEvent
       (watch [_ state _]
@@ -634,7 +632,7 @@
 
 (defn apply-color-from-colorpicker
   [color]
-  (let [color (ctc/check-color color)]
+  (let [color (types.color/check-color color)]
     (ptk/reify ::apply-color-from-colorpicker
       ptk/UpdateEvent
       (update [_ state]
@@ -675,7 +673,7 @@
 
 (defn add-recent-color
   [color]
-  (let [color (ctc/check-color color)]
+  (let [color (types.color/check-color color)]
     (ptk/reify ::add-recent-color
       ptk/UpdateEvent
       (update [_ state]
@@ -695,11 +693,11 @@
 
 (defn apply-color-from-assets
   [file-id color stroke?]
-  (let [color (ctc/check-library-color color)]
+  (let [color (types.color/check-library-color color)]
     (ptk/reify ::apply-color-from-asserts
       ptk/WatchEvent
       (watch [_ _ _]
-        (let [color (ctc/library-color->color color file-id)]
+        (let [color (types.color/library-color->color color file-id)]
           (rx/of (apply-color-from-palette color stroke?)
                  (add-recent-color color)))))))
 
@@ -722,7 +720,8 @@
   [{:keys [hex alpha] :as data}]
   (-> data
       (assoc :color hex)
-      (assoc :opacity alpha)))
+      (assoc :opacity alpha)
+      (d/without-nils)))
 
 (defn clear-color-components
   [data]
@@ -750,13 +749,14 @@
     (clear-image-components current-color)
 
     :else
-    {:opacity opacity
-     :gradient (-> gradient
-                   (assoc :type (case type
-                                  :linear-gradient :linear
-                                  :radial-gradient :radial))
-                   (assoc :stops (mapv clear-color-components stops))
-                   (dissoc :shape-id))}))
+    (d/without-nils
+     {:opacity opacity
+      :gradient (-> gradient
+                    (assoc :type (case type
+                                   :linear-gradient :linear
+                                   :radial-gradient :radial))
+                    (assoc :stops (mapv clear-color-components stops))
+                    (dissoc :shape-id))})))
 
 (defn- colorpicker-onchange-runner
   "Effect event that runs the on-change callback with the latest

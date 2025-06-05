@@ -1429,7 +1429,7 @@
 (def ^:private valid-stroke?
   (sm/lazy-validator cts/schema:stroke))
 
-(defmethod migrate-data "0007-clear-invalid-strokes-and-fills"
+(defmethod migrate-data "0007-clear-invalid-strokes-and-fills-v2"
   [data _]
   (letfn [(clear-color-image [image]
             (select-keys image types.color/image-attrs))
@@ -1474,13 +1474,18 @@
                 (d/update-when :strokes fix-strokes)
                 (d/update-when :fills fix-fills)))
 
+          (fix-text-content [content]
+            (->> content
+                 (txt/transform-nodes txt/is-content-node? fix-object)
+                 (txt/transform-nodes txt/is-paragraph-set-node? #(dissoc % :fills))))
+
           (update-shape [object]
             (-> object
                 (fix-object)
                 ;; The text shape also can has strokes and fils on the
                 ;; text fragments so we need to fix them there
                 (cond-> (cfh/text-shape? object)
-                  (update :content (partial txt/transform-nodes identity fix-object)))))
+                  (update :content fix-text-content))))
 
           (update-container [container]
             (d/update-when container :objects d/update-vals update-shape))]
@@ -1561,5 +1566,5 @@
          "0004-clean-shadow-and-colors"
          "0005-deprecate-image-type"
          "0006-fix-old-texts-fills"
-         "0007-clear-invalid-strokes-and-fills"
+         "0007-clear-invalid-strokes-and-fills-v2"
          "0008-fix-library-colors-opacity"]))

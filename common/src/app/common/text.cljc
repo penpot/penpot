@@ -133,6 +133,10 @@
   (and (string? (:text node))
        (not= (:text node) "")))
 
+(defn is-paragraph-set-node?
+  [node]
+  (= "paragraph-set" (:type node)))
+
 (defn is-paragraph-node?
   [node]
   (= "paragraph" (:type node)))
@@ -143,7 +147,17 @@
 
 (defn is-node?
   [node]
-  (or (is-text-node? node) (is-paragraph-node? node) (is-root-node? node)))
+  (or ^boolean (is-text-node? node)
+      ^boolean (is-paragraph-node? node)
+      ^boolean (is-paragraph-set-node? node)
+      ^boolean (is-root-node? node)))
+
+(defn is-content-node?
+  "Only matches content nodes, ignoring the paragraph-set nodes."
+  [node]
+  (or ^boolean (is-text-node? node)
+      ^boolean (is-paragraph-node? node)
+      ^boolean (is-root-node? node)))
 
 (defn transform-nodes
   ([transform root]
