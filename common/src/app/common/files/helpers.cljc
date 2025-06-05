@@ -111,6 +111,28 @@
        (not (frame-shape? shape))
        (= (dm/get-prop shape :frame-id) uuid/zero)))
 
+(defn get-shape-event-name
+  "Returns the event name corresponding to a shape type, or nil if no match."
+  [shape]
+  (let [shape-event-pairs [[frame-shape?    "create-board"]
+                           [image-shape?    "create-image"]
+                           [path-shape?     "create-path"]
+                           [circle-shape?   "create-circle"]
+                           [rect-shape?     "create-rectangle"]
+                           [text-shape?     "create-text"]]]
+    (some (fn [[event-type event-name]]
+            (when (event-type shape)
+              event-name))
+          shape-event-pairs)))
+
+(defn get-selected-type
+  "Returns the type of the shape if only one, or multiple if more than one"
+  [objects selected]
+  (if (= 1 (count selected))
+    (let [shape (get objects (first selected))]
+      (:type shape))
+    "multiple"))
+
 (defn has-children?
   ([objects id]
    (has-children? (get objects id)))
@@ -298,6 +320,22 @@
     (some->> shape-or-id
              (get objects)
              (get-frame objects))))
+
+(defn get-parent-type
+  "Returns the type of the parent of the shape, or Empty
+   if parent is Root Frame"
+  [objects shape]
+  (let [parent (get objects (:parent-id shape))]
+    (if (root? parent)
+      "Empty"
+      (:type parent))))
+
+(defn get-parent-layout
+  "Returns the layout of the parent of the shape, or nil if no parent"
+  [objects shape]
+  (let [parent (get objects (:parent-id shape))]
+    (when parent
+      (:layout parent))))
 
 (defn valid-frame-target?
   [objects parent-id shape-id]

@@ -2149,15 +2149,27 @@
                                                 #(ctl/add-children-to-cell % selected all-objects drop-cell)))
 
               undo-id      (js/Symbol)]
-
           (rx/concat
-           (->> (filter ctc/instance-head? orig-shapes)
-                (map (fn [{:keys [component-file]}]
-                       (ptk/event ::ev/event
-                                  {::ev/name "use-library-component"
-                                   ::ev/origin "paste"
-                                   :external-library (not= file-id component-file)})))
-                (rx/from))
+           (->> orig-shapes
+                (keep (fn [shape]
+
+                        (if (ctc/instance-head? shape)
+                          (ptk/event ::ev/event
+                                     {::ev/name "use-library-component"
+                                      ::ev/origin "paste"
+                                      :external-library (not= file-id (:component-file shape))
+                                      :parent-type (cfh/get-parent-type objects shape)})
+                          (when (cfh/get-shape-event-name shape)
+                            (ptk/event ::ev/event
+                                       (if (cfh/get-parent-layout objects shape)
+                                         {::ev/name "layout-add-element"
+                                          :element-type (:type shape)
+                                          :source "paste"
+                                          :parent-type (cfh/get-parent-type objects shape)}
+                                         {::ev/name (cfh/get-shape-event-name shape)
+                                          :parent-type (cfh/get-parent-type objects shape)
+                                          :source "paste"})))))))
+
            (rx/of (dwu/start-undo-transaction undo-id)
                   (dch/commit-changes changes)
                   (dws/select-shapes selected)
