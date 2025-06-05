@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-03 14:04+0000\n"
+"PO-Revision-Date: 2025-06-05 09:01+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -7097,3 +7097,11 @@ msgstr "Nicht alle Dateien wurden importiert"
 #: src/app/main/ui/dashboard/import.cljs:485
 msgid "dashboard.import.import-error.message1"
 msgstr "Die folgenden Dateien sind fehlerhaft:"
+
+#: src/app/main/errors.cljs:266
+msgid "errors.deprecated.contact.text"
+msgstr "kontaktieren Sie uns"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:152, src/app/main/data/workspace/tokens/library_edit.cljs:182
+msgid "errors.token-set-already-exists"
+msgstr "Ein Set mit dem gleichen Namen existiert bereits"
