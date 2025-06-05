@@ -1665,45 +1665,26 @@
                                         :shapes all-parents})]))))
 
 
+(defn- text-partial-change-value
+  [touched-shape untouched-shape touched]
+  (cond
+    (touched :text-content-structure-same-attrs)
+    ;; Keep the touched-shape structure and texts, update its attrs to make them like the untouched-shape
+    (cttx/copy-attrs-keys touched-shape (cttx/get-first-paragraph-text-attrs untouched-shape))
+
+    (touched :text-content-text)
+    ;; Keep the texts touched in touched-shape copy the texts from dest over the attrs of untouched-shape
+    (cttx/copy-text-keys touched-shape untouched-shape)
+
+    (touched :text-content-attribute)
+    ;; Keep the attrs touched in touched-shape copy the texts from untouched-shape over the attrs of touched-shape
+    (cttx/copy-text-keys untouched-shape touched-shape)))
+
 (defn- add-update-attr-operations
-  [attr dest-shape origin-shape roperations uoperations touched is-text-partial-change?]
-  (let [orig-value (get origin-shape attr)
-        dest-value (get dest-shape attr)
-        ;; position-data is a special case because can be affected by :geometry-group and :content-group
-        ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
-        ;; so it's calculated again
-        reset-pos-data?
-        (and (cfh/text-shape? origin-shape)
-             (= attr :position-data)
-             (not= orig-value dest-value)
-             (touched :geometry-group))
-
-        ;; We want to split the changes on the text itself and on its properties
-        text-value
-        (when is-text-partial-change?
-          (cond
-            (touched :text-content-structure-same-attrs)
-            ;; Keep the dest structure and texts, update its attrs to make them like the origin
-            (cttx/copy-attrs-keys dest-value (cttx/get-first-paragraph-text-attrs orig-value))
-
-            (touched :text-content-text)
-            ;; Keep the texts touched in dest: copy the texts from dest over the attrs of origin
-            (cttx/copy-text-keys dest-value orig-value)
-
-            (touched :text-content-attribute)
-            ;; Keep the attrs touched in dest: copy the texts from origin over the attrs of dest
-            (cttx/copy-text-keys orig-value dest-value)))
-
-        val (cond
-              ;; If position data changes and the geometry group is touched
-              ;; we need to put to nil so we can regenerate it
-              reset-pos-data? nil
-              is-text-partial-change? text-value
-              :else orig-value)
-
-        roperation {:type :set
+  [attr dest-shape roperations uoperations attr-val]
+  (let [roperation {:type :set
                     :attr attr
-                    :val val
+                    :val attr-val
                     :ignore-touched true}
         uoperation {:type :set
                     :attr attr
@@ -1714,13 +1695,13 @@
 
 (defn- is-text-partial-change?
   "Check if the attr update is a text partial change"
-  [origin-shape dest-shape attr touched]
-  (let [partial-text-keys [:text-content-attribute :text-content-text]
-        active-keys       (filter touched partial-text-keys)
-        orig-content      (get origin-shape attr)
-        orig-attrs        (cttx/get-first-paragraph-text-attrs orig-content)
-
-        equal-orig-attrs? (cttx/equal-attrs? orig-content orig-attrs)]
+  [untouched-shape touched-shape]
+  (let [touched             (get touched-shape :touched #{})
+        partial-text-keys   [:text-content-attribute :text-content-text]
+        active-keys         (filter touched partial-text-keys)
+        untouched-content   (:content untouched-shape)
+        untouched-attrs     (cttx/get-first-paragraph-text-attrs untouched-content)
+        eq-untouched-attrs? (cttx/equal-attrs? untouched-content untouched-attrs)]
     (and
      (or
      ;; One and only one of the keys is pressent
@@ -1731,12 +1712,12 @@
 
      (or
       ;; Both has the same structure
-      (cttx/equal-structure? (:content origin-shape) (:content dest-shape))
+      (cttx/equal-structure? untouched-content (:content touched-shape))
 
       ;; The origin and destiny have different structures, but each have the same attrs
       ;; for all the items on its content tree
       (and
-       equal-orig-attrs?
+       eq-untouched-attrs?
        (touched :text-content-structure-same-attrs))))))
 
 (defn- update-attrs
@@ -1782,73 +1763,145 @@
             (generate-update-tokens container dest-shape origin-shape touched omit-touched?))
 
           (let [attr-group        (get ctk/sync-attrs attr)
+                ;; position-data is a special case because can be affected by
+                ;; :geometry-group and :content-group so, if the position-data
+                ;; changes but the geometry is touched we need to reset the position-data
+                ;; so it's calculated again
+                reset-pos-data? (and (cfh/text-shape? origin-shape)
+                                     (= attr :position-data)
+                                     (not= (:position-data origin-shape) (:position-data dest-shape))
+                                     (touched :geometry-group))
+
                 ;; On texts, when we want to omit the touched attrs, both text (the actual letters)
                 ;; and attrs (bold, font, etc) are in the same attr :content.
                 ;; If only one of them is touched, we want to adress this case and
                 ;; only update the untouched one
                 text-partial-change? (when (and
                                             omit-touched?
-                                            (= :text (:type origin-shape))
+                                            (cfh/text-shape? origin-shape)
                                             (= :content attr)
                                             (touched attr-group))
-                                       (is-text-partial-change? origin-shape dest-shape attr touched))
+                                       (is-text-partial-change? origin-shape dest-shape))
 
-                skip-operations? (or (= (get origin-shape attr) (get dest-shape attr))
-                                     (and (touched attr-group)
-                                          omit-touched?
-                                          ;; When it is a text-partial-change, we should generate operations
-                                          ;; even when omit-touched? is true, but updating only the text or
-                                          ;; the attributes, omiting the other part
-                                          (not text-partial-change?)))
+                skip-operations?
+                (or (= (get origin-shape attr) (get dest-shape attr))
+                    (and (touched attr-group)
+                         omit-touched?
+                         ;; When it is a text-partial-change, we should generate operations
+                         ;; even when omit-touched? is true, but updating only the text or
+                         ;; the attributes, omiting the other part
+                         (not text-partial-change?)))
+
+                attr-val (when-not skip-operations?
+                           (cond
+                             ;; If position data changes and the geometry group is touched
+                             ;; we need to put to nil so we can regenerate it
+                             reset-pos-data?
+                             nil
+
+                             text-partial-change?
+                             (text-partial-change-value (:content dest-shape)
+                                                        (:content origin-shape)
+                                                        touched)
+
+                             :else
+                             (get origin-shape attr)))
 
                 [roperations' uoperations']
                 (if skip-operations?
                   [roperations uoperations]
-                  (add-update-attr-operations attr dest-shape origin-shape roperations uoperations touched text-partial-change?))]
+                  (add-update-attr-operations attr dest-shape roperations uoperations attr-val))]
             (recur (next attrs)
                    roperations'
                    uoperations')))))))
 
 (defn update-attrs-on-switch
-  "Copy attributes that have changed in the origin shape to the dest shape. Used on variants switch"
-  [changes dest-shape origin-shape dest-root origin-root origin-ref-shape container]
+  "Copy attributes that have changed in the shape previous to the switch
+   to the current shape (post switch). Used only on variants switch"
+  ;; NOTE: This function have similitudes but is very different to
+  ;; update-attrs
+  [changes current-shape previous-shape current-root prev-root origin-ref-shape container]
   (let [;; We need to sync only the position relative to the origin of the component.
         ;; (see update-attrs for a full explanation)
-        origin-shape   (reposition-shape origin-shape origin-root dest-root)
-        touched        (get dest-shape :touched #{})
-        touched-origin (get origin-shape :touched #{})]
+        previous-shape (reposition-shape previous-shape prev-root current-root)
+        touched        (get previous-shape :touched #{})]
 
     (loop [attrs       updatable-attrs
-           roperations [{:type :set-touched :touched (:touched origin-shape)}]
-           uoperations (list {:type :set-touched :touched (:touched dest-shape)})]
+           roperations [{:type :set-touched :touched (:touched previous-shape)}]
+           uoperations (list {:type :set-touched :touched (:touched current-shape)})]
       (if-let [attr (first attrs)]
         (let [attr-group (get ctk/sync-attrs attr)
+              skip-operations?
+              (or
+               ;; If the attribute is not valid for the destiny, don't copy it
+               (not (cts/is-allowed-attr? attr (:type current-shape)))
+
+               ;; If the values are already equal, don't copy them
+               (= (get previous-shape attr) (get current-shape attr))
+
+               ;; If the referenced shape on the original component doesn't
+               ;; have the same value, don't copy it
+               ;; Exceptions: :points :selrect and :content can be different
+               (and
+                (not (contains? #{:points :selrect :content} attr))
+                (not= (get origin-ref-shape attr) (get current-shape attr)))
+
+               ;; The :content attr cant't be copied to elements of different type
+               (and (= attr :content) (not= (:type previous-shape) (:type current-shape)))
+
+               ;; If the attr is not touched, don't copy it
+               (not (touched attr-group)))
+
+              ;; On texts, both text (the actual letters)
+              ;; and attrs (bold, font, etc) are in the same attr :content.
+              ;; If only one of them is touched, we want to adress this case and
+              ;; only update the untouched one
+              text-partial-change? (when (and
+                                          (not skip-operations?)
+                                          (cfh/text-shape? current-shape)
+                                          (cfh/text-shape? previous-shape)
+                                          (= :content attr)
+                                          (touched attr-group))
+                                     (is-text-partial-change? current-shape previous-shape))
+
+              ;; position-data is a special case because can be affected by :geometry-group and :content-group
+              ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
+              ;; so it's calculated again
+              reset-pos-data? (and
+                               (not skip-operations?)
+                               (cfh/text-shape? previous-shape)
+                               (= attr :position-data)
+                               (not= (:position-data previous-shape) (:position-data current-shape))
+                               (touched :geometry-group))
+
+              attr-val (when-not skip-operations?
+                         (cond
+                           ;; If position data changes and the geometry group is touched
+                           ;; we need to put to nil so we can regenerate it
+                           reset-pos-data?
+                           nil
+
+                           text-partial-change?
+                           (text-partial-change-value (:content previous-shape)
+                                                      (:content current-shape)
+                                                      touched)
+
+                           :else
+                           (get previous-shape attr)))
+
               [roperations' uoperations']
-              (if (or
-                   ;; If the attribute is not valid for the destiny, don't copy it
-                   (not (cts/is-allowed-attr? attr (:type dest-shape)))
-                   ;; If the values are already equal, don't copy it
-                   (= (get origin-shape attr) (get dest-shape attr))
-                   ;; If the referenced shape on the original component doesn't have the same value, don't copy it
-                   ;; Exceptions: :points :selrect and :content can be different
-                   (and
-                    (not (contains? #{:points :selrect :content} attr))
-                    (not= (get origin-ref-shape attr) (get dest-shape attr)))
-                   ;; The :content attr cant't be copied to elements of different type
-                   (and (= attr :content) (not= (:type origin-shape) (:type dest-shape)))
-                   ;; If the attr is not touched in the origin shape, don't copy it
-                   (not (touched-origin attr-group)))
+              (if skip-operations?
                 [roperations uoperations]
-                (add-update-attr-operations attr dest-shape origin-shape roperations uoperations touched false))]
+                (add-update-attr-operations attr current-shape roperations uoperations attr-val))]
           (recur (next attrs)
                  roperations'
                  uoperations'))
         (cond-> changes
           (> (count roperations) 1)
-          (add-update-attr-changes dest-shape container roperations uoperations)
+          (add-update-attr-changes current-shape container roperations uoperations)
 
           :always
-          (generate-update-tokens container dest-shape origin-shape touched false))))))
+          (generate-update-tokens container current-shape previous-shape touched false))))))
 
 (defn- propagate-attrs
   "Helper that puts the origin attributes (attrs) into dest but only if
