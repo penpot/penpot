@@ -75,16 +75,16 @@
                             objects
                             (:id new-shape))
         new-shapes-map     (into {} (map (juxt :shape-path identity) new-shapes-w-path))
-        orig-touched      (filter (comp seq :touched) orig-shapes-w-path)
+        orig-touched       (filter (comp seq :touched) orig-shapes-w-path)
 
         container          (ctn/make-container page :page)]
     (reduce
-     (fn [changes touched-shape]
-       (let [related-shape  (get new-shapes-map (:shape-path touched-shape))
-             orig-ref-shape (ctf/find-ref-shape nil container libraries touched-shape)]
-         (if related-shape
+     (fn [changes previous-shape]
+       (let [current-shape  (get new-shapes-map (:shape-path previous-shape))
+             orig-ref-shape (ctf/find-ref-shape nil container libraries previous-shape)]
+         (if current-shape
            (cll/update-attrs-on-switch
-            changes related-shape touched-shape new-shape original-shape orig-ref-shape container)
+            changes current-shape previous-shape new-shape original-shape orig-ref-shape container)
            changes)))
      changes
      orig-touched)))
