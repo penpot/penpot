@@ -117,8 +117,7 @@
          (mf/deps ids)
          (fn [index]
            (fn [color]
-             (let [color (-> color
-                             (assoc :id nil :file-id nil))]
+             (let [color (dissoc color :ref-id :ref-file)]
                (st/emit! (dc/change-fill ids color index))))))
 
         on-change-show-fill-on-export
