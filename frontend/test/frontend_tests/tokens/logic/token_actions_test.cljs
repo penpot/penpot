@@ -9,9 +9,11 @@
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
+   [app.common.text :as txt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.application :as dwta]
    [cljs.test :as t :include-macros true]
+   [cuerdas.core :as str]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.tokens.helpers.state :as tohs]
@@ -39,6 +41,7 @@
       (ctho/add-rect :rect-1 rect-1)
       (ctho/add-rect :rect-2 rect-2)
       (ctho/add-rect :rect-3 rect-3)
+      (ctho/add-text :text-1 "Hello World!")
       (assoc-in [:data :tokens-lib]
                 (-> (ctob/make-tokens-lib)
                     (ctob/add-theme (ctob/make-token-theme :name "Theme A" :sets #{"Set A"}))
@@ -442,6 +445,40 @@
              (t/testing "token got applied to rect without stroke but shape didnt get updated"
                (t/is (= (:stroke-width (:applied-tokens rect-without-stroke')) (:name token-target')))
                (t/is (empty? (:strokes rect-without-stroke')))))))))))
+
+(t/deftest test-apply-line-height
+  (t/testing "applies line-height token and updates the text line-height"
+    (t/async
+      done
+      (let [line-height-token {:name "big-height"
+                               :value "1.5"
+                               :type :number}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token line-height-token))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:line-height}
+                                       :token (toht/get-token file "big-height")
+                                       :on-update-shape dwta/update-line-height})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "big-height")
+                 text-1' (cths/get-shape file' :text-1)
+                 style-text-blocks (->> (:content text-1')
+                                        (txt/content->text+styles)
+                                        (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                        (mapv (fn [[style text]]
+                                                {:styles (merge txt/default-text-attrs style)
+                                                 :text-content text}))
+                                        (first)
+                                        (:styles))]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:line-height (:applied-tokens text-1')) (:name token-target')))
+             (t/is (= (:line-height style-text-blocks) 1.5)))))))))
 
 (t/deftest test-toggle-token-none
   (t/testing "should apply token to all selected items, where no item has the token applied"

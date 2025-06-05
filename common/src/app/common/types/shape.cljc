@@ -228,7 +228,7 @@
    [:blur {:optional true} ::ctsb/blur]
    [:grow-type {:optional true}
     [::sm/one-of grow-types]]
-   [:applied-tokens {:optional true} ::cto/applied-tokens]
+   [:applied-tokens {:optional true} cto/schema:applied-tokens]
    [:plugin-data {:optional true} ::ctpg/plugin-data]])
 
 (def schema:group-attrs

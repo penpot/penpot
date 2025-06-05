@@ -55,8 +55,45 @@
     {:value value :unit (tinycolor/color-format tc)}
     {:errors [(wte/error-with-value :error.token/invalid-color value)]}))
 
-(defn- parse-sd-token-numeric-value
-  "Parses `value` of a numeric `sd-token` into a map like `{:value 1 :unit \"px\"}`.
+(defn- numeric-string? [s]
+  (and (string? s)
+       (re-matches #"^-?\d+(\.\d+)?$" s)))
+
+(defn- with-units [s]
+  (and (string? s)
+       (re-matches #"^-?\d+(\.\d+)?(px|rem)$" s)))
+
+;; TODO: After mergin "dimension-tokens" revisit this function to check if it's still
+(defn- parse-sd-token-number-value
+  "Parses `value` of a number `sd-token` into a map like `{:value 1 :unit \"px\"}`.
+  If the `value` is not parseable and/or has missing references returns a map with `:errors`."
+  [value]
+  (let [number? (or (number? value)
+                    (numeric-string? value))
+        parsed-value  (cft/parse-token-value value)
+        out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
+                          (<= (:value parsed-value) sm/min-safe-int))]
+
+    (cond
+      (and parsed-value (not out-of-bounds) number?)
+      parsed-value
+
+      out-of-bounds
+      {:errors [(wte/error-with-value :error.token/number-too-large value)]}
+
+      (seq (ctob/find-token-value-references value))
+      (let [references (seq (ctob/find-token-value-references value))]
+        {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+         :references references})
+
+      (with-units value)
+      {:errors [(wte/error-with-value :error.style-dictionary/value-with-units value)]}
+
+      :else
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
+
+(defn- parse-sd-token-general-value
+  "Parses `value` of a number `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
   (let [parsed-value  (cft/parse-token-value value)
@@ -162,7 +199,8 @@
                                 :color (parse-sd-token-color-value value)
                                 :opacity (parse-sd-token-opacity-value value has-references?)
                                 :stroke-width (parse-sd-token-stroke-width-value value has-references?)
-                                (parse-sd-token-numeric-value value))
+                                :number (parse-sd-token-number-value value)
+                                (parse-sd-token-general-value value))
            output-token (cond (:errors parsed-token-value)
                               (merge origin-token parsed-token-value)
 

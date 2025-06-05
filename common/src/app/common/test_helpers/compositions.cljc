@@ -29,6 +29,16 @@
                                 :name "Rect1"}
                                params)))
 
+(defn add-text
+  [file text-label content & {:keys [text-params] :as text}]
+  (let [shape (-> (cts/setup-shape {:type :text :x 0 :y 0})
+                  (txt/change-text content))]
+    (ths/add-sample-shape file text-label
+                          (merge shape
+                                 text-params))))
+
+
+
 (defn add-frame
   [file frame-label & {:keys [] :as params}]
   ;; Generated shape tree:

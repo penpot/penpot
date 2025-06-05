@@ -56,6 +56,7 @@
     :color "drop"
     :boolean "boolean-difference"
     :opacity "percentage"
+    :number "number"
     :rotation "rotation"
     :spacing "padding-extended"
     :string "text-mixed"
@@ -70,6 +71,8 @@
   [{:keys [type tokens selected-shapes active-theme-tokens is-open]}]
   (let [{:keys [modal title]}
         (get dwta/token-properties type)
+        editing-ref  (mf/deref refs/workspace-editor-state)
+        not-editing? (empty? editing-ref)
 
         can-edit?
         (mf/use-ctx ctx/can-edit?)
@@ -111,10 +114,10 @@
 
         on-token-pill-click
         (mf/use-fn
-         (mf/deps selected-shapes)
+         (mf/deps selected-shapes not-editing?)
          (fn [event token]
            (dom/stop-propagation event)
-           (when (seq selected-shapes)
+           (when (and not-editing? (seq selected-shapes))
              (st/emit! (dwta/toggle-token {:token token
                                            :shapes selected-shapes})))))]
 
@@ -129,8 +132,7 @@
          [:> icon-button* {:on-click on-popover-open-click
                            :variant "ghost"
                            :icon "add"
-                           ;;  TODO: This needs translation
-                           :aria-label (str "Add token: " title)}])]
+                           :aria-label (tr "workspace.tokens.add-token" title)}])]
       (when is-open
         [:& cmm/asset-section-block {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
@@ -145,22 +147,27 @@
 
 (defn- get-sorted-token-groups
   "Separate token-types into groups of `empty` or `filled` depending if
-  tokens exist for that type.  Sort each group alphabetically (by
-  their type)."
+  tokens exist for that type. Sort each group alphabetically (by their type).
+  If `:token-units` is not in cf/flags, number tokens are excluded."
   [tokens-by-type]
-  (loop [empty  #js []
-         filled #js []
-         types  (-> dwta/token-properties keys seq)]
-    (if-let [type (first types)]
-      (if (not-empty (get tokens-by-type type))
-        (recur empty
-               (array/conj! filled type)
-               (rest types))
-        (recur (array/conj! empty type)
-               filled
-               (rest types)))
-      [(seq (array/sort! empty))
-       (seq (array/sort! filled))])))
+  (let [all-types (-> dwta/token-properties keys seq)
+        token-units? (contains? cf/flags :token-units)
+        filtered-types (if token-units?
+                         all-types
+                         (remove #(= % :number) all-types))]
+    (loop [empty  #js []
+           filled #js []
+           types  filtered-types]
+      (if-let [type (first types)]
+        (if (not-empty (get tokens-by-type type))
+          (recur empty
+                 (array/conj! filled type)
+                 (rest types))
+          (recur (array/conj! empty type)
+                 filled
+                 (rest types)))
+        [(seq (array/sort! empty))
+         (seq (array/sort! filled))]))))
 
 (mf/defc themes-header*
   {::mf/private true}

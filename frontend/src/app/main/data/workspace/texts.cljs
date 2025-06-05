@@ -398,13 +398,6 @@
 
         (rx/of (dwsh/update-shapes shape-ids update-fn))))))
 
-(defn- update-text-content
-  [shape pred-fn update-fn attrs]
-  (let [update-attrs-fn #(update-fn % attrs)
-        transform   #(txt/transform-nodes pred-fn update-attrs-fn %)]
-    (-> shape
-        (update :content transform))))
-
 (defn update-root-attrs
   [{:keys [id attrs]}]
   (ptk/reify ::update-root-attrs
@@ -416,7 +409,7 @@
             update-fn
             (fn [shape]
               (if (some? (:content shape))
-                (update-text-content shape txt/is-root-node? d/txt-merge attrs)
+                (txt/update-text-content shape txt/is-root-node? d/txt-merge attrs)
                 (assoc shape :content (d/txt-merge {:type "root"} attrs))))
 
             shape-ids (cond (cfh/text-shape? shape)  [id]
@@ -444,7 +437,7 @@
                              node
                              attrs))
 
-                update-fn #(update-text-content % txt/is-paragraph-node? merge-fn attrs)
+                update-fn #(txt/update-text-content % txt/is-paragraph-node? merge-fn attrs)
                 shape-ids (cond
                             (cfh/text-shape? shape)  [id]
                             (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
@@ -469,7 +462,7 @@
               shape-ids (cond
                           (cfh/text-shape? shape)  [id]
                           (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
-          (rx/of (dwsh/update-shapes shape-ids #(update-text-content % update-node? d/txt-merge attrs))))))))
+          (rx/of (dwsh/update-shapes shape-ids #(txt/update-text-content % update-node? d/txt-merge attrs))))))))
 
 (defn migrate-node
   [node]
