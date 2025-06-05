@@ -1441,7 +1441,8 @@
             (-> stroke
                 (select-keys cts/stroke-attrs)
                 (d/update-when :stroke-color-gradient clear-color-gradient)
-                (d/update-when :stroke-image clear-color-image)))
+                (d/update-when :stroke-image clear-color-image)
+                (d/update-when :stroke-style #(if (#{:svg :none} %) :solid %))))
 
           (fix-strokes [strokes]
             (->> (map clear-stroke strokes)
