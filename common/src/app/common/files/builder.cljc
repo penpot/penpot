@@ -117,7 +117,7 @@
   (sm/decode-fn types.shape/schema:shape-attrs sm/json-transformer))
 
 (def decode-library-color
-  (sm/decode-fn types.color/schema:color sm/json-transformer))
+  (sm/decode-fn types.color/schema:library-color sm/json-transformer))
 
 (def decode-library-typography
   (sm/decode-fn types.typography/schema:typography sm/json-transformer))

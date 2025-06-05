@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.0.6
+
+- Fix unexpected issue on library color decoding
+
+
 ## 1.0.5
 
 - Add progress reporting support
