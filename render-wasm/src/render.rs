@@ -15,7 +15,7 @@ use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
 use gpu_state::GpuState;
-use options::RenderOptions;
+use options::RenderStateOptions;
 use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
@@ -77,7 +77,7 @@ impl NodeRenderState {
 
 pub(crate) struct RenderState {
     gpu_state: GpuState,
-    pub options: RenderOptions,
+    pub options: RenderStateOptions,
     pub surfaces: Surfaces,
     pub fonts: FontStore,
     pub viewbox: Viewbox,
@@ -89,6 +89,7 @@ pub(crate) struct RenderState {
     pub render_request_id: Option<i32>,
     // Indicates whether the rendering process has pending frames.
     pub render_in_progress: bool,
+    pub render_is_full: bool,
     // Stack of nodes pending to be rendered.
     pending_nodes: Vec<NodeRenderState>,
     pub current_tile: Option<tiles::Tile>,
@@ -141,7 +142,7 @@ impl RenderState {
 
         RenderState {
             gpu_state,
-            options: RenderOptions::default(),
+            options: RenderStateOptions::default(),
             surfaces,
             fonts,
             viewbox,
@@ -151,6 +152,7 @@ impl RenderState {
             background_color: skia::Color::TRANSPARENT,
             render_request_id: None,
             render_in_progress: false,
+            render_is_full: false,
             pending_nodes: vec![],
             current_tile: None,
             sampling_options,
@@ -517,6 +519,7 @@ impl RenderState {
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
+        full: bool,
     ) -> Result<(), String> {
         let scale = self.get_scale();
         self.tile_viewbox.update(self.viewbox, scale);
@@ -557,6 +560,7 @@ impl RenderState {
         // reorder by distance to the center.
         self.current_tile = None;
         self.render_in_progress = true;
+        self.render_is_full = full;
         self.apply_drawing_to_render_canvas(None);
         self.process_animation_frame(tree, modifiers, structure, scale_content, timestamp)?;
         performance::end_measure!("start_render_loop");
@@ -569,11 +573,15 @@ impl RenderState {
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
-        timestamp: i32,
+        timestamp: i32
     ) -> Result<(), String> {
         performance::begin_measure!("process_animation_frame");
         if self.render_in_progress {
-            self.render_shape_tree_partial(tree, modifiers, structure, scale_content, timestamp)?;
+            if self.render_is_full {
+                self.render_shape_tree_full(tree, modifiers, structure, scale_content, timestamp)?;
+            } else {
+                self.render_shape_tree_partial(tree, modifiers, structure, scale_content, timestamp)?;
+            }
             self.flush_and_submit();
 
             if self.render_in_progress {
@@ -682,6 +690,17 @@ impl RenderState {
             tiles::TILE_SIZE,
             tiles::TILE_SIZE,
         )
+    }
+
+    pub fn render_shape_tree_full(
+        &mut self,
+        tree: &mut HashMap<Uuid, &mut Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
+        scale_content: &HashMap<Uuid, f32>,
+        timestamp: i32,
+    ) -> Result<(bool, bool), String> {
+        self.render_shape_tree_partial_uncached(tree, modifiers, structure, scale_content, timestamp)
     }
 
     pub fn render_shape_tree_partial_uncached(
