@@ -158,8 +158,17 @@
     (update [_ state]
       (update-in state [:profile :theme]
                  (fn [current]
-                   (let [current (if (= current "system")
+                   (let [current (cond
+                                   (= current "system")
                                    (theme/get-system-theme)
+
+                                   ;; NOTE: this is a workaround for
+                                   ;; the old data on the database
+                                   ;; where whe have `default` value
+                                   (= current "default")
+                                   "dark"
+
+                                   :else
                                    current)]
                      (case current
                        "dark"   "light"
