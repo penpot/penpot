@@ -7138,13 +7138,21 @@ msgstr "Base font size"
 msgid "workspace.tokens.base-font-size.error"
 msgstr "Base font size must be a value in pixels or unitless."
 
-#: src/app/main/ui/workspace/tokens/modals/import.cljs:160
-msgid "workspace.tokens.choose-file"
-msgstr "Choose file"
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:251
+msgid "workspace.tokens.import-button-prefix"
+msgstr "Import"
 
-#: src/app/main/ui/workspace/tokens/modals/import.cljs:165
-msgid "workspace.tokens.choose-folder"
-msgstr "Choose folder"
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:245
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "ZIP file"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:246
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "Single JSON file"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:247
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "Folder"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:241
 msgid "workspace.tokens.color"

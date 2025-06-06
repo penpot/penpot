@@ -48,3 +48,23 @@
   inset-block-start: var(--sp-s);
   inset-inline-end: var(--sp-s);
 }
+
+.dropdown-trigger-btn {
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+  border-left: 1px solid var(--color-accent-tertiary);
+  width: var(--sp-xxxl);
+  padding-left: 0;
+  padding-right: 0;
+  justify-content: center;
+}
+
+.dropdown-btn {
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.dropdown-btn-wrapper {
+  position: relative;
+  display: flex;
+}
