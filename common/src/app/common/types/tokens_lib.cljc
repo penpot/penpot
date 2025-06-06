@@ -1448,11 +1448,11 @@ Will return a value that matches this schema:
              (into [] themes-xform))
 
         ;; Active themes without exposing hidden penpot theme
-        active-themes-clear
+        active-themes
         (-> (get-active-theme-paths tokens-lib)
             (disj hidden-theme-path))]
     {:themes themes
-     :active-themes active-themes-clear}))
+     :active-themes active-themes}))
 
 (defn export-dtcg-multi-file
   "Convert a TokensLib into a plain clojure map, suitable to be encoded as a multi json files each encoded in DTCG format."
