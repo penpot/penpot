@@ -45,7 +45,7 @@
 }
 
 .preview-container {
-  border: $b-1 solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
+  border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
   overflow-y: auto;
   padding: var(--sp-xs) var(--sp-m);
@@ -100,7 +100,7 @@
 }
 
 .json-preview pre {
-  border: $b-1 solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
+  border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
   margin: 0;
   max-height: var(--container-max-height);
@@ -117,7 +117,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: $b-1 solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
+  border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
   overflow-y: auto;
   padding: var(--sp-s) var(--sp-m);
