@@ -72,7 +72,7 @@
   (let [writer (-> (zip/blob-writer {:mtype "application/zip"})
                    (zip/writer))]
     (doseq [[path content] multi-file-entries]
-      (zip/add writer path (json/encode content :key-fn identity)))
+      (zip/add writer path (json/encode content :key-fn identity :indent 2)))
     (-> (zip/close writer)
         (.then #(dom/trigger-download "tokens.zip" %)))))
 
