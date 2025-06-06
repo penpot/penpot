@@ -28,6 +28,7 @@ on [its own changelog](library/CHANGES.md)
 - Support system color scheme [Github #5030](https://github.com/penpot/penpot/issues/5030)
 - Persist ruler visibility across files and reloads [GitHub #4586](https://github.com/penpot/penpot/issues/4586)
 - Update google fonts (at 2025/05/19) [Taiga 10792](https://tree.taiga.io/project/penpot/us/10792)
+- Adds tokens multi file export [Github #117](https://github.com/tokens-studio/penpot/issues/117)
 
 ### :bug: Bugs fixed
 - Fix getCurrentUser for plugins api [Taiga #11057](https://tree.taiga.io/project/penpot/issue/11057)

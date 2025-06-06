@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.json :as json]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.data.event :as ev]
@@ -37,7 +36,6 @@
    [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [app.util.webapi :as wapi]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]
@@ -387,11 +385,7 @@
         (mf/use-fn
          (fn []
            (st/emit! (ptk/data-event ::ev/event {::ev/name "export-tokens"}))
-           (let [tokens-json (some-> (deref refs/tokens-lib)
-                                     (ctob/export-dtcg-json)
-                                     (json/encode :key-fn identity))]
-             (->> (wapi/create-blob (or tokens-json "{}") "application/json")
-                  (dom/trigger-download "tokens.json")))))
+           (modal/show! :tokens/export {})))
 
         on-modal-show
         (mf/use-fn
