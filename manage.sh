@@ -120,7 +120,6 @@ function run-devenv-isolated-shell {
            $DEVENV_IMGNAME:latest sudo -EH -u penpot bash
 }
 
-
 function build {
     echo ">> build start: $1"
     local version=$(print-current-version);
