@@ -131,7 +131,8 @@
                                        (aget id-buffer 2)
                                        (aget id-buffer 3)
                                        (:weight font-data)
-                                       (:style font-data)))]
+                                       (:style font-data)
+                                       emoji?))]
       (when-not font-stored?
         (store-font-url font-data uri emoji? fallback?)))))
 
