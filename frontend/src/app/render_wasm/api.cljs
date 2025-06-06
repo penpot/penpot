@@ -640,9 +640,10 @@
               (swap! languages into (t/get-languages text))
               (t/write-shape-text leaves paragraph text))
             (recur (inc index))))))
+
     (let [updated-fonts
           (-> fonts
-              (cond-> emoji? (f/add-emoji-font))
+              (cond-> @emoji? (f/add-emoji-font))
               (f/add-noto-fonts @languages))]
       (f/store-fonts updated-fonts))))
 
@@ -742,8 +743,6 @@
       (set-shape-svg-raw-content (get-static-markup shape)))
     (when (some? corners) (set-shape-corners corners))
     (when (some? shadows) (set-shape-shadows shadows))
-    (when (and (= type :text) (some? content))
-      (set-shape-text content))
     (when (= type :text)
       (set-shape-grow-type grow-type))
     (when (or (ctl/any-layout? shape)

@@ -148,7 +148,7 @@
 
   (h/call wasm/internal-module "_set_shape_text_content"))
 
-(def ^:private emoji-pattern #"[\uD83C-\uDBFF][\uDC00-\uDFFF]")
+(def ^:private emoji-pattern #"[\uD83C-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]")
 
 (def ^:private unicode-ranges
   {:japanese    #"[\u3040-\u30FF\u31F0-\u31FF\uFF66-\uFF9F]"
@@ -198,7 +198,7 @@
 
 
 (defn contains-emoji? [text]
-  (boolean (re-find emoji-pattern text)))
+  (boolean (some #(re-find emoji-pattern %) (seq text))))
 
 (defn get-languages [text]
   (reduce-kv (fn [result lang pattern]
