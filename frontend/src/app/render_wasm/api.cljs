@@ -189,27 +189,28 @@
 
 (defn- get-string-length [string] (+ (count string) 1))
 
-(defn- store-image
+(defn- fetch-image
   [id]
   (let [buffer (uuid/get-u32 id)
         url    (cf/resolve-file-media {:id id})]
-    (->> (http/send! {:method :get
-                      :uri url
-                      :response-type :blob})
-         (rx/map :body)
-         (rx/mapcat wapi/read-file-as-array-buffer)
-         (rx/map (fn [image]
-                   (let [size    (.-byteLength image)
-                         offset  (mem/alloc-bytes size)
-                         heap    (mem/get-heap-u8)
-                         data    (js/Uint8Array. image)]
-                     (.set heap data offset)
-                     (h/call wasm/internal-module "_store_image"
-                             (aget buffer 0)
-                             (aget buffer 1)
-                             (aget buffer 2)
-                             (aget buffer 3))
-                     true))))))
+    {:key url
+     :callback #(->> (http/send! {:method :get
+                                  :uri url
+                                  :response-type :blob})
+                     (rx/map :body)
+                     (rx/mapcat wapi/read-file-as-array-buffer)
+                     (rx/map (fn [image]
+                               (let [size    (.-byteLength image)
+                                     offset  (mem/alloc-bytes size)
+                                     heap    (mem/get-heap-u8)
+                                     data    (js/Uint8Array. image)]
+                                 (.set heap data offset)
+                                 (h/call wasm/internal-module "_store_image"
+                                         (aget buffer 0)
+                                         (aget buffer 1)
+                                         (aget buffer 2)
+                                         (aget buffer 3))
+                                 true))))}))
 
 (defn- get-fill-images
   [leaf]
@@ -227,7 +228,7 @@
                                  (aget buffer 2)
                                  (aget buffer 3))]
        (when (zero? cached-image?)
-         (store-image id))))))
+         (fetch-image id))))))
 
 (defn set-shape-text-images
   [content]
@@ -269,7 +270,7 @@
                                           (aget buffer 2)
                                           (aget buffer 3))]
                 (when (zero? cached-image?)
-                  (store-image id))))
+                  (fetch-image id))))
             image-fills))))
 
 (defn set-shape-strokes
@@ -308,7 +309,7 @@
                                             (dm/get-prop image :height))
                 (h/call wasm/internal-module "_add_shape_stroke_fill")
                 (when (== cached-image? 0)
-                  (store-image id)))
+                  (fetch-image id)))
 
               (some? color)
               (do
@@ -763,16 +764,20 @@
       pending)))
 
 
+(defn process-pending
+  [pending]
+  (when-let [pending (-> (d/index-by :key :callback pending) vals)]
+    (->> (rx/from pending)
+         (rx/mapcat (fn [callback] (callback)))
+         (rx/reduce conj [])
+         (rx/subs! (fn [_]
+                     (clear-drawing-cache)
+                     (request-render "set-objects"))))))
+
 (defn process-object
   [shape]
   (let [pending (set-object [] shape)]
-    (when-let [pending (seq pending)]
-      (->> (rx/from pending)
-           (rx/mapcat identity)
-           (rx/reduce conj [])
-           (rx/subs! (fn [_]
-                       (clear-drawing-cache)
-                       (request-render "set-objects")))))))
+    (process-pending pending)))
 
 (defn set-objects
   [objects]
@@ -789,13 +794,7 @@
     (perf/end-measure "set-objects")
     (clear-drawing-cache)
     (request-render "set-objects")
-    (when-let [pending (seq pending)]
-      (->> (rx/from pending)
-           (rx/mapcat identity)
-           (rx/reduce conj [])
-           (rx/subs! (fn [_]
-                       (clear-drawing-cache)
-                       (request-render "set-objects")))))))
+    (process-pending pending)))
 
 (defn set-structure-modifiers
   [entries]
