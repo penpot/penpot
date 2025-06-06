@@ -187,9 +187,11 @@ fn handle_stroke_caps(
     scale: f32,
     antialias: bool,
 ) {
-    let points_count = path.count_points();
-    let mut points = vec![Point::default(); points_count];
-    let c_points = path.get_points(&mut points);
+    let mut points = vec![Point::default(); path.count_points()];
+    path.get_points(&mut points);
+    // Curves can have duplicated points, so let's remove consecutive duplicated points
+    points.dedup();
+    let c_points = points.len();
 
     // Closed shapes don't have caps
     if c_points >= 2 && is_open {
@@ -213,7 +215,7 @@ fn handle_stroke_caps(
             stroke.width,
             &mut paint_stroke,
             last_point,
-            &points[points_count - 2],
+            &points[c_points - 2],
         );
     }
 }
