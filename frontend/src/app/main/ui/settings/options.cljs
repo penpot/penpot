@@ -37,7 +37,11 @@
   []
   (let [profile (mf/deref refs/profile)
         initial (mf/with-memo [profile]
-                  (update profile :lang #(or % "")))
+                  (-> profile
+                      (update :lang #(or % ""))
+                      (update :theme #(if (= % "default")
+                                        "dark"
+                                        %))))
 
         form    (fm/use-form :schema schema:options-form
                              :initial initial)]

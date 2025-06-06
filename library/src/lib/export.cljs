@@ -195,31 +195,78 @@
                 :relations []}]
     ["manifest.json" (delay (json/encode params))]))
 
+(defn- generate-procs
+  [state]
+  (let [state (deref state)]
+    (cons (generate-manifest-procs state)
+          (concat
+           (generate-files-export-procs state)
+           (generate-media-export-procs state)))))
+
+(def ^:private
+  xf:add-proc-index
+  (map-indexed
+   (fn [index proc]
+     (conj proc index))))
+
+(def ^:private ^:function noop-fn
+  (constantly nil))
+
 (defn- export
-  [state writer]
-  (->> (p/reduce (fn [writer [path data]]
-                   (let [data (if (delay? data) (deref data) data)]
-                     (js/console.log "export" path)
-                     (->> (zip/add writer path data)
-                          (p/fmap (constantly writer)))))
-
-                 writer
-                 (cons (generate-manifest-procs @state)
-                       (concat
-                        (generate-files-export-procs @state)
-                        (generate-media-export-procs @state))))
-
-       (p/mcat (fn [writer]
-                 (zip/close writer)))))
+  [state writer progress-fn]
+  (let [procs (into [] xf:add-proc-index (generate-procs state))
+        total (count procs)]
+    (->> (p/reduce (fn [writer [path data index]]
+                     (let [data   (if (delay? data) (deref data) data)
+                           report #js {:total total
+                                       :item (inc index)
+                                       :path path}]
+                       (->> (zip/add writer path data)
+                            (p/fmap (fn [_]
+                                      (progress-fn report)
+                                      writer)))))
+                   writer
+                   procs)
+         (p/mcat (fn [writer]
+                   (zip/close writer))))))
 
 (defn export-bytes
-  [state]
-  (export state (zip/writer (zip/bytes-writer))))
+  ([state]
+   (export state (zip/writer (zip/bytes-writer)) noop-fn))
+  ([state options]
+   (let [options
+         (if (object? options)
+           (json/->clj options)
+           options)
+
+         progress-fn
+         (get options :on-progress noop-fn)]
+
+     (export state (zip/writer (zip/bytes-writer)) progress-fn))))
 
 (defn export-blob
-  [state]
-  (export state (zip/writer (zip/blob-writer))))
+  ([state]
+   (export state (zip/writer (zip/blob-writer)) noop-fn))
+  ([state options]
+   (let [options
+         (if (object? options)
+           (json/->clj options)
+           options)
+
+         progress-fn
+         (get options :on-progress noop-fn)]
+
+     (export state (zip/writer (zip/blob-writer)) progress-fn))))
 
 (defn export-stream
-  [state stream]
-  (export state (zip/writer stream)))
+  ([state stream]
+   (export state (zip/writer stream) noop-fn))
+  ([state stream options]
+   (let [options
+         (if (object? options)
+           (json/->clj options)
+           options)
+
+         progress-fn
+         (get options :on-progress noop-fn)]
+     (export state (zip/writer stream) progress-fn))))

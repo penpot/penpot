@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 1.0.6
+
+- Fix unexpected issue on library color decoding
+
+
+## 1.0.5
+
+- Add progress reporting support
+- Remove leaked console.log
+
+## 1.0.4
+
+- Fix incorrect shapes filtering on creating boolean shapes within components
+
+
 ## 1.0.3
 
 - Add missing isLocal field on file media for fix compatibility of the

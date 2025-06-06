@@ -89,6 +89,8 @@ function log-devenv {
 function run-devenv-tmux {
     if [[ ! $(docker ps -f "name=penpot-devenv-main" -q) ]]; then
         start-devenv
+        echo "Waiting for containers fully start (5s)..."
+        sleep 5;
     fi
 
     docker exec -ti penpot-devenv-main sudo -EH -u penpot PENPOT_PLUGIN_DEV=$PENPOT_PLUGIN_DEV /home/start-tmux.sh
@@ -117,7 +119,6 @@ function run-devenv-isolated-shell {
            -w /home/penpot/penpot/$1 \
            $DEVENV_IMGNAME:latest sudo -EH -u penpot bash
 }
-
 
 function build {
     echo ">> build start: $1"

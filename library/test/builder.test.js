@@ -75,3 +75,46 @@ test("create context with file and page", () => {
   assert.ok(rootShape, "root shape should exist");
   assert.equal(rootShape.id, "00000000-0000-0000-0000-000000000000");
 });
+
+test("create context with color", () => {
+  const context = penpot.createBuildContext();
+
+  const fileId = context.addFile({name: "file 1"});
+  const pageId = context.addPage({name: "page 1"});
+
+  const colorId = context.genId();
+
+  const params = {
+    color: '#000000',
+    gradient: undefined,
+    id: colorId,
+    image: undefined,
+    name: 'Black-8',
+    opacity: 0.800000011920929,
+    path: 'Remote',
+  };
+
+  context.addLibraryColor(params);
+
+  const internalState = context.getInternalState();
+
+  const file = internalState.files[fileId];
+
+  assert.ok(file, "file should exist");
+
+  assert.ok(file.data);
+  assert.ok(file.data.pages);
+
+  const colors = file.data.colors
+
+  assert.ok(colors, "colors should exist");
+
+  const color = colors[colorId];
+
+  assert.ok(color, "color objects should exist");
+  assert.equal(color.color, params.color);
+  assert.equal(color.id, colorId);
+  assert.equal(color.path, params.path);
+  assert.equal(color.opacity, params.opacity);
+  assert.equal(color.name, params.name);
+});
