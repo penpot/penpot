@@ -14,6 +14,35 @@
   #?(:clj (= (System/getProperty "penpot.wasm.profile-marks") "true")
      :cljs false))
 
+(defn create-memory
+  [used total]
+  #?(:clj {:used used :total total}
+     :cljs #js {:used used :total total}))
+
+(defn get-memory
+  []
+  #?(:clj (create-memory -1 -1)
+     :cljs (create-memory
+            (.-usedJSHeapSize (.-memory js/performance))
+            (.-totalJSHeapSize (.-memory js/performance)))))
+
+(defn memory-measure
+  []
+  #?(:clj (fn []
+            {:begin (create-memory -1 -1)
+             :end (create-memory -1 -1)
+             :delta (create-memory -1 -1)})
+     :cljs (let [begin-memory (get-memory)]
+             (fn []
+               (let [end-memory (get-memory)]
+                 #js {:begin begin-memory
+                      :end end-memory
+                      :delta (create-memory
+                              (- (.-used end-memory)
+                                 (.-used begin-memory))
+                              (- (.-total end-memory)
+                                 (.-total begin-memory)))})))))
+
 (defmacro begin-measure
   [measure-name]
   (when enabled?

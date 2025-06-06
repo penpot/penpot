@@ -279,18 +279,14 @@ impl RenderState {
                 Some(&skia::Paint::default()),
             );
         }
+        let surface_ids = SurfaceId::Strokes as u32
+            | SurfaceId::Fills as u32
+            | SurfaceId::DropShadows as u32
+            | SurfaceId::InnerShadows as u32;
 
-        self.surfaces.apply_mut(
-            &[
-                SurfaceId::DropShadows,
-                SurfaceId::InnerShadows,
-                SurfaceId::Fills,
-                SurfaceId::Strokes,
-            ],
-            |s| {
-                s.canvas().clear(skia::Color::TRANSPARENT);
-            },
-        );
+        self.surfaces.apply_mut(surface_ids, |s| {
+            s.canvas().clear(skia::Color::TRANSPARENT);
+        });
     }
 
     pub fn render_shape(
@@ -306,12 +302,10 @@ impl RenderState {
             shape
         };
 
-        let surface_ids = &[
-            SurfaceId::Fills,
-            SurfaceId::Strokes,
-            SurfaceId::DropShadows,
-            SurfaceId::InnerShadows,
-        ];
+        let surface_ids = SurfaceId::Strokes as u32
+            | SurfaceId::Fills as u32
+            | SurfaceId::DropShadows as u32
+            | SurfaceId::InnerShadows as u32;
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().save();
         });
@@ -391,17 +385,13 @@ impl RenderState {
             }
 
             Type::Text(text_content) => {
-                self.surfaces.apply_mut(
-                    &[
-                        SurfaceId::Fills,
-                        SurfaceId::Strokes,
-                        SurfaceId::DropShadows,
-                        SurfaceId::InnerShadows,
-                    ],
-                    |s| {
-                        s.canvas().concat(&matrix);
-                    },
-                );
+                let surface_ids = SurfaceId::Strokes as u32
+                    | SurfaceId::Fills as u32
+                    | SurfaceId::DropShadows as u32
+                    | SurfaceId::InnerShadows as u32;
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas().concat(&matrix);
+                });
 
                 let text_content = text_content.new_bounds(shape.selrect());
                 let paragraphs = text_content.get_skia_paragraphs(self.fonts.font_collection());
@@ -437,17 +427,13 @@ impl RenderState {
                 shadows::render_text_inner_shadows(self, &shape, &paragraphs, antialias);
             }
             _ => {
-                self.surfaces.apply_mut(
-                    &[
-                        SurfaceId::Fills,
-                        SurfaceId::Strokes,
-                        SurfaceId::DropShadows,
-                        SurfaceId::InnerShadows,
-                    ],
-                    |s| {
-                        s.canvas().concat(&matrix);
-                    },
-                );
+                let surface_ids = SurfaceId::Strokes as u32
+                    | SurfaceId::Fills as u32
+                    | SurfaceId::DropShadows as u32
+                    | SurfaceId::InnerShadows as u32;
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas().concat(&matrix);
+                });
 
                 for fill in shape.fills().rev() {
                     fills::render(self, &shape, fill, antialias);
@@ -465,17 +451,13 @@ impl RenderState {
         };
 
         self.apply_drawing_to_render_canvas(Some(&shape));
-        self.surfaces.apply_mut(
-            &[
-                SurfaceId::Fills,
-                SurfaceId::Strokes,
-                SurfaceId::DropShadows,
-                SurfaceId::InnerShadows,
-            ],
-            |s| {
-                s.canvas().restore();
-            },
-        );
+        let surface_ids = SurfaceId::Strokes as u32
+            | SurfaceId::Fills as u32
+            | SurfaceId::DropShadows as u32
+            | SurfaceId::InnerShadows as u32;
+        self.surfaces.apply_mut(surface_ids, |s| {
+            s.canvas().restore();
+        });
     }
 
     pub fn update_render_context(&mut self, tile: tiles::Tile) {
@@ -543,17 +525,13 @@ impl RenderState {
         performance::begin_measure!("start_render_loop");
 
         self.reset_canvas();
-        self.surfaces.apply_mut(
-            &[
-                SurfaceId::Fills,
-                SurfaceId::Strokes,
-                SurfaceId::DropShadows,
-                SurfaceId::InnerShadows,
-            ],
-            |s| {
-                s.canvas().scale((scale, scale));
-            },
-        );
+        let surface_ids = SurfaceId::Strokes as u32
+            | SurfaceId::Fills as u32
+            | SurfaceId::DropShadows as u32
+            | SurfaceId::InnerShadows as u32;
+        self.surfaces.apply_mut(surface_ids, |s| {
+            s.canvas().scale((scale, scale));
+        });
 
         let viewbox_cache_size = get_cache_size(self.viewbox, scale);
         let cached_viewbox_cache_size = get_cache_size(self.cached_viewbox, scale);
@@ -572,6 +550,10 @@ impl RenderState {
         performance::end_measure!("tile_cache");
 
         self.pending_nodes.clear();
+        if self.pending_nodes.capacity() < tree.len() {
+            self.pending_nodes
+                .reserve(tree.len() - self.pending_nodes.capacity());
+        }
         // reorder by distance to the center.
         self.current_tile = None;
         self.render_in_progress = true;
@@ -884,7 +866,7 @@ impl RenderState {
                     if !is_empty {
                         self.apply_render_to_final_canvas(tile_rect);
                     } else {
-                        self.surfaces.apply_mut(&[SurfaceId::Target], |s| {
+                        self.surfaces.apply_mut(SurfaceId::Target as u32, |s| {
                             let mut paint = skia::Paint::default();
                             paint.set_color(self.background_color);
                             s.canvas().draw_rect(tile_rect, &paint);

@@ -1,12 +1,16 @@
 use std::collections::{hash_map::Entry, HashMap};
+use std::iter;
 
 use skia_safe as skia;
 
+use crate::performance;
 use crate::render::RenderState;
 use crate::shapes::Shape;
 use crate::shapes::StructureEntry;
 use crate::tiles;
 use crate::uuid::Uuid;
+
+const SHAPES_POOL_ALLOC_MULTIPLIER: f32 = 1.3;
 
 /// A pool allocator for `Shape` objects that attempts to minimize memory reallocations.
 ///
@@ -40,16 +44,24 @@ impl ShapesPool {
     }
 
     pub fn initialize(&mut self, capacity: usize) {
+        performance::begin_measure!("shapes_pool_initialize");
         self.counter = 0;
-        self.shapes = Vec::with_capacity(capacity);
-        for _ in 0..capacity {
-            self.shapes.push(Box::new(Shape::new(Uuid::nil())));
+        let additional = capacity as i32 - self.shapes.len() as i32;
+        if additional <= 0 {
+            return;
         }
+
+        self.shapes.extend(
+            iter::repeat_with(|| Box::new(Shape::new(Uuid::nil()))).take(additional as usize),
+        );
+        performance::end_measure!("shapes_pool_initialize");
     }
 
     pub fn add_shape(&mut self, id: Uuid) -> &mut Shape {
         if self.counter >= self.shapes.len() {
-            self.shapes.push(Box::new(Shape::new(Uuid::nil())));
+            let additional = (self.shapes.len() as f32 * SHAPES_POOL_ALLOC_MULTIPLIER) as usize;
+            self.shapes
+                .extend(iter::repeat_with(|| Box::new(Shape::new(Uuid::nil()))).take(additional));
         }
         let new_shape = &mut self.shapes[self.counter];
         new_shape.id = id;

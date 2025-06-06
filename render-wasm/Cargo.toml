@@ -26,7 +26,7 @@ skia-safe = { version = "0.81.0", default-features = false, features = [
   "textlayout",
   "binary-cache",
 ] }
-uuid = { version = "1.11.0", features = ["v4"] }
+uuid = { version = "1.11.0", features = ["v4", "js"] }
 
 [profile.release]
 opt-level = "s"
