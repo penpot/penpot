@@ -54,7 +54,7 @@
   (let [tokens-data (some-> (deref refs/tokens-lib)
                             (ctob/export-dtcg-json))
         tokens-json (some-> tokens-data
-                            (json/encode :key-fn identity :indent-depth 2))
+                            (json/encode :key-fn identity :indent 2))
         is-disabled (empty? tokens-data)
         on-export
         (mf/use-fn
