@@ -25,8 +25,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc export-tab*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-export is-disabled children]}]
   [:div {:class (stl/css :export-preview)}
    (when-not is-disabled
@@ -48,8 +47,7 @@
      (tr "workspace.tokens.export")]]])
 
 (mf/defc single-file-tab*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   []
   (let [tokens-data (some-> (deref refs/tokens-lib)
                             (ctob/export-dtcg-json))
@@ -77,8 +75,7 @@
         (.then #(dom/trigger-download "tokens.zip" %)))))
 
 (mf/defc multi-file-tab*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   []
   (let [files (some->> (deref refs/tokens-lib)
                        (ctob/export-dtcg-multi-file))
