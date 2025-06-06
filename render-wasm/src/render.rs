@@ -439,7 +439,7 @@ impl RenderState {
                     s.canvas().concat(&matrix);
                 });
 
-                if shape.fills.is_empty() && matches!(shape.shape_type, Type::Group(_)) {
+                if shape.fills.is_empty() && !matches!(shape.shape_type, Type::Group(_)) {
                     if let Some(fills_to_render) = self.nested_fills.last() {
                         let fills_to_render = fills_to_render.clone();
                         for fill in fills_to_render.iter() {
