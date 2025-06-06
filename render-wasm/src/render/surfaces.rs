@@ -21,6 +21,7 @@ pub enum SurfaceId {
     Strokes,
     DropShadows,
     InnerShadows,
+    UI,
     Debug,
 }
 
@@ -36,8 +37,10 @@ pub struct Surfaces {
     shape_strokes: skia::Surface,
     // used for rendering shadows
     drop_shadows: skia::Surface,
-    // used fo rendering over shadows.
+    // used for rendering over shadows.
     inner_shadows: skia::Surface,
+    // used for displaying auxiliary workspace elements
+    ui: skia::Surface,
     // for drawing debug info.
     debug: skia::Surface,
     // for drawing tiles.
@@ -71,6 +74,8 @@ impl Surfaces {
             gpu_state.create_surface_with_isize("shape_fills".to_string(), extra_tile_dims);
         let shape_strokes =
             gpu_state.create_surface_with_isize("shape_strokes".to_string(), extra_tile_dims);
+
+        let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height);
         let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height);
 
         let tiles = TileTextureCache::new();
@@ -82,6 +87,7 @@ impl Surfaces {
             inner_shadows,
             shape_fills,
             shape_strokes,
+            ui,
             debug,
             tiles,
             sampling_options,
@@ -174,6 +180,7 @@ impl Surfaces {
             SurfaceId::Fills => &mut self.shape_fills,
             SurfaceId::Strokes => &mut self.shape_strokes,
             SurfaceId::Debug => &mut self.debug,
+            SurfaceId::UI => &mut self.ui,
         }
     }
 
@@ -181,6 +188,7 @@ impl Surfaces {
         let dim = (target.width(), target.height());
         self.target = target;
         self.debug = self.target.new_surface_with_dimensions(dim).unwrap();
+        self.ui = self.target.new_surface_with_dimensions(dim).unwrap();
         // The rest are tile size surfaces
     }
 
@@ -237,6 +245,10 @@ impl Surfaces {
         );
 
         self.canvas(SurfaceId::Debug)
+            .clear(skia::Color::TRANSPARENT)
+            .reset_matrix();
+
+        self.canvas(SurfaceId::UI)
             .clear(skia::Color::TRANSPARENT)
             .reset_matrix();
     }

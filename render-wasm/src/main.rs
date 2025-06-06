@@ -104,8 +104,7 @@ pub extern "C" fn render(_: i32) {
 #[no_mangle]
 pub extern "C" fn render_from_cache(_: i32) {
     with_state!(state, {
-        let render_state = state.render_state();
-        render_state.render_from_cache();
+        state.render_from_cache();
     });
 }
 

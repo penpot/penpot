@@ -96,6 +96,13 @@ impl<'a> State<'a> {
         &mut self.render_state
     }
 
+    pub fn render_from_cache(&mut self) {
+        self.render_state.render_from_cache(
+            &self.shapes,
+            &self.structure
+        );
+    }
+
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
         self.render_state.start_render_loop(
             &mut self.shapes,

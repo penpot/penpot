@@ -638,25 +638,14 @@
            :zoom zoom}])
 
        [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
-        (when (or show-grid-editor? hover-grid?)
+        (when show-grid-editor?
           [:& grid-layout/editor
            {:zoom zoom
             :objects objects-modified
             :shape (or (get base-objects edition)
                        (get base-objects @hover-top-frame-id))
-            :view-only (not show-grid-editor?)}])
+            :view-only (not show-grid-editor?)}])]
 
-        (for [frame (ctt/get-frames objects)]
-          (when (and (ctl/grid-layout? frame)
-                     (empty? (:shapes frame))
-                     (not= edition (:id frame))
-                     (not= @hover-top-frame-id (:id frame)))
-            [:& grid-layout/editor
-             {:zoom zoom
-              :key (dm/str (:id frame))
-              :objects objects-modified
-              :shape frame
-              :view-only true}]))]
        [:g.scrollbar-wrapper {:clipPath "url(#clip-handlers)"}
         [:& scroll-bars/viewport-scrollbars
          {:objects base-objects

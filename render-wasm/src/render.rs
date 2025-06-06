@@ -9,6 +9,8 @@ mod shadows;
 mod strokes;
 mod surfaces;
 mod text;
+pub mod grid_layout;
+mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
@@ -295,6 +297,8 @@ impl RenderState {
 
     pub fn render_shape(
         &mut self,
+        shapes: &HashMap<Uuid, &mut Shape>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         shape: &Shape,
         modifiers: Option<&Matrix>,
         scale_content: Option<&f32>,
@@ -464,7 +468,9 @@ impl RenderState {
             }
         };
 
+        grid_layout::render_overlay(self, shape.as_ref(), shapes, structure);
         self.apply_drawing_to_render_canvas(Some(&shape));
+
         self.surfaces.apply_mut(
             &[
                 SurfaceId::Fills,
@@ -493,7 +499,11 @@ impl RenderState {
         }
     }
 
-    pub fn render_from_cache(&mut self) {
+    pub fn render_from_cache(
+        &mut self,
+        shapes: &HashMap<Uuid, &mut Shape>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>)
+    {
         let scale = self.get_cached_scale();
         if let Some(snapshot) = &self.cached_target_snapshot {
             let canvas = self.surfaces.canvas(SurfaceId::Target);
@@ -524,6 +534,10 @@ impl RenderState {
             canvas.clear(self.background_color);
             canvas.draw_image(snapshot, (0, 0), Some(&skia::Paint::default()));
             canvas.restore();
+
+            ui::render(self, shapes, structure);
+            debug::render_wasm_label(self);
+            
             self.flush_and_submit();
         }
     }
@@ -611,7 +625,6 @@ impl RenderState {
             && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS
     }
 
-    pub fn render_shape_enter(&mut self, element: &mut Shape, mask: bool) {
         // Masked groups needs two rendering passes, the first one rendering
         // the content and the second one rendering the mask so we need to do
         // an extra save_layer to keep all the masked group separate from
@@ -652,7 +665,7 @@ impl RenderState {
             .save_layer(&layer_rec);
     }
 
-    pub fn render_shape_exit(&mut self, element: &mut Shape, visited_mask: bool) {
+    pub fn render_shape_exit(&mut self, element: &Shape, visited_mask: bool) {
         if visited_mask {
             // Because masked groups needs two rendering passes (first drawing
             // the content and then drawing the mask), we need to do an
@@ -704,7 +717,7 @@ impl RenderState {
 
     pub fn render_shape_tree_partial_uncached(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -722,7 +735,7 @@ impl RenderState {
             } = node_render_state;
 
             is_empty = false;
-            let element = tree.get_mut(&node_id).ok_or(
+            let element = tree.get(&node_id).ok_or(
                 "Error: Element with root_id {node_render_state.id} not found in the tree."
                     .to_string(),
             )?;
@@ -788,6 +801,8 @@ impl RenderState {
             self.render_shape_enter(element, mask);
             if !node_render_state.id.is_nil() {
                 self.render_shape(
+                                tree,
+                                structure,
                     element,
                     modifiers.get(&element.id),
                     scale_content.get(&element.id),
@@ -943,6 +958,7 @@ impl RenderState {
             debug::render(self);
         }
 
+        ui::render(self, tree, structure);
         debug::render_wasm_label(self);
 
         Ok(())
