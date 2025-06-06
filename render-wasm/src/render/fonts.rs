@@ -66,7 +66,7 @@ impl FontStore {
         is_emoji: bool,
         is_fallback: bool,
     ) -> Result<(), String> {
-        if self.has_family(&family) {
+        if self.has_family(&family, is_emoji) {
             return Ok(());
         }
 
@@ -92,9 +92,14 @@ impl FontStore {
         Ok(())
     }
 
-    pub fn has_family(&self, family: &FontFamily) -> bool {
-        let serialized = format!("{}", family);
-        self.font_provider.family_names().any(|x| x == serialized)
+    pub fn has_family(&self, family: &FontFamily, is_emoji: bool) -> bool {
+        let alias = format!("{}", family);
+        let font_name = if is_emoji {
+            DEFAULT_EMOJI_FONT
+        } else {
+            alias.as_str()
+        };
+        self.font_provider.family_names().any(|x| x == font_name)
     }
 
     pub fn get_fallback(&self) -> &HashSet<String> {

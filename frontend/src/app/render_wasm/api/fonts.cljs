@@ -94,13 +94,14 @@
             fallback?)
     true))
 
-(defn- store-font-url
+(defn- fetch-font
   [font-data font-url emoji? fallback?]
-  (->> (http/send! {:method :get
-                    :uri font-url
-                    :response-type :buffer})
-       (rx/map (fn [{:keys [body]}]
-                 (store-font-buffer font-data body emoji? fallback?)))))
+  {:key font-url
+   :callback #(->> (http/send! {:method :get
+                                :uri font-url
+                                :response-type :buffer})
+                   (rx/map (fn [{:keys [body]}]
+                             (store-font-buffer font-data body emoji? fallback?))))})
 
 (defn- google-font-ttf-url
   [font-id font-variant-id]
@@ -131,9 +132,10 @@
                                        (aget id-buffer 2)
                                        (aget id-buffer 3)
                                        (:weight font-data)
-                                       (:style font-data)))]
+                                       (:style font-data)
+                                       emoji?))]
       (when-not font-stored?
-        (store-font-url font-data uri emoji? fallback?)))))
+        (fetch-font font-data uri emoji? fallback?)))))
 
 (defn serialize-font-style
   [font-style]

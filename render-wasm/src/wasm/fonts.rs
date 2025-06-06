@@ -31,11 +31,19 @@ pub extern "C" fn store_font(
 }
 
 #[no_mangle]
-pub extern "C" fn is_font_uploaded(a: u32, b: u32, c: u32, d: u32, weight: u32, style: u8) -> bool {
+pub extern "C" fn is_font_uploaded(
+    a: u32,
+    b: u32,
+    c: u32,
+    d: u32,
+    weight: u32,
+    style: u8,
+    is_emoji: bool,
+) -> bool {
     with_state!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
         let family = FontFamily::new(id, weight, style.into());
-        let res = state.render_state().fonts().has_family(&family);
+        let res = state.render_state().fonts().has_family(&family, is_emoji);
 
         res
     })
