@@ -55,13 +55,14 @@ impl State {
             .render_from_cache(&self.shapes, &self.modifiers, &self.structure);
     }
 
-    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
+    pub fn start_render_loop(&mut self, timestamp: i32, full: bool) -> Result<(), String> {
         self.render_state.start_render_loop(
             &self.shapes,
             &self.modifiers,
             &self.structure,
             &self.scale_content,
             timestamp,
+            full
         )?;
         Ok(())
     }
