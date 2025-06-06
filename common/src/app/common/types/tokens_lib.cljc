@@ -1464,9 +1464,9 @@ Will return a value that matches this schema:
                   (into {}))]
     (-> sets
         (assoc "$themes.json" themes)
-        (assoc-in ["$metadata.json" "tokenSetOrder"] (get-ordered-set-names tokens-lib))
-        (assoc-in ["$metadata.json" "activeThemes"] active-themes)
-        (assoc-in ["$metadata.json" "activeSets"] (get-active-themes-set-names tokens-lib)))))
+        (assoc "$metadata.json" {"tokenSetOrder" (get-ordered-set-names tokens-lib)
+                                 "activeThemes" active-themes
+                                 "activeSets" (get-active-themes-set-names tokens-lib)}))))
 
 (defn export-dtcg-json
   "Convert a TokensLib into a plain clojure map, suitable to be encoded as a multi sets json string in DTCG format."
@@ -1491,9 +1491,9 @@ Will return a value that matches this schema:
 
     (-> sets
         (assoc "$themes" themes)
-        (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names)
-        (assoc-in ["$metadata" "activeThemes"] active-themes)
-        (assoc-in ["$metadata" "activeSets"] active-set-names))))
+        (assoc "$metadata" {"tokenSetOrder" ordered-set-names
+                            "activeThemes" active-themes
+                            "activeSets" active-set-names}))))
 
 (defn get-tokens-of-unknown-type
   "Search for all tokens in the decoded json file that have a type that is not currently
