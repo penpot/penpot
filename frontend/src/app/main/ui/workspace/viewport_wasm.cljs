@@ -361,6 +361,7 @@
                                          :viewport-ref viewport-ref}])]
 
      [:canvas {:id "render"
+               :data-testid "canvas-wasm-shapes"
                :ref canvas-ref
                :class (stl/css :render-shapes)
                :key (dm/str "render" page-id)
