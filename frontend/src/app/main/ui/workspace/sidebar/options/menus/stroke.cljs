@@ -76,7 +76,7 @@
          (mf/deps ids)
          (fn [index color]
            (let [color (-> color
-                           (assoc :id nil :file-id nil))]
+                           (dissoc :ref-id :ref-file))]
              (st/emit! (dc/change-stroke-color ids color index)))))
 
         handle-reorder
