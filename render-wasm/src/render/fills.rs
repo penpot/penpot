@@ -135,6 +135,9 @@ pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill, antial
                 .surfaces
                 .draw_path_to(SurfaceId::Fills, shape, paint);
         }
+        (_, Type::Group(_)) => {
+            // Groups can have fills but they propagate them to their children
+        }
         (_, _) => {
             unreachable!("This shape should not have fills")
         }

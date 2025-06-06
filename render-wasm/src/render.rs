@@ -19,7 +19,9 @@ use options::RenderOptions;
 use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
-use crate::shapes::{modified_children_ids, Corners, Shape, StrokeKind, StructureEntry, Type};
+use crate::shapes::{
+    modified_children_ids, Corners, Fill, Shape, StrokeKind, StructureEntry, Type,
+};
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
@@ -97,6 +99,7 @@ pub(crate) struct RenderState {
     pub tile_viewbox: tiles::TileViewbox,
     pub tiles: tiles::TileHashMap,
     pub pending_tiles: PendingTiles,
+    pub nested_fills: Vec<Vec<Fill>>,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -162,6 +165,7 @@ impl RenderState {
                 1.0,
             ),
             pending_tiles: PendingTiles::new_empty(),
+            nested_fills: vec![],
         }
     }
 
@@ -435,8 +439,17 @@ impl RenderState {
                     s.canvas().concat(&matrix);
                 });
 
-                for fill in shape.fills().rev() {
-                    fills::render(self, &shape, fill, antialias);
+                if shape.fills.is_empty() && matches!(shape.shape_type, Type::Group(_)) {
+                    if let Some(fills_to_render) = self.nested_fills.last() {
+                        let fills_to_render = fills_to_render.clone();
+                        for fill in fills_to_render.iter() {
+                            fills::render(self, &shape, fill, antialias);
+                        }
+                    }
+                } else {
+                    for fill in shape.fills().rev() {
+                        fills::render(self, &shape, fill, antialias);
+                    }
                 }
 
                 for stroke in shape.strokes().rev() {
@@ -599,6 +612,8 @@ impl RenderState {
         // an extra save_layer to keep all the masked group separate from
         // other already drawn elements.
         if let Type::Group(group) = element.shape_type {
+            let fills = &element.fills;
+            self.nested_fills.push(fills.to_vec());
             if group.masked {
                 let paint = skia::Paint::default();
                 let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
@@ -643,6 +658,12 @@ impl RenderState {
                 if group.masked {
                     self.surfaces.canvas(SurfaceId::Current).restore();
                 }
+            }
+        }
+        if let Type::Group(group) = element.shape_type {
+            self.nested_fills.pop();
+            if group.masked {
+                self.surfaces.canvas(SurfaceId::Current).restore();
             }
         }
         self.surfaces.canvas(SurfaceId::Current).restore();
