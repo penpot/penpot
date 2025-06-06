@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-05 09:01+0000\n"
+"PO-Revision-Date: 2025-06-06 13:03+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -7608,3 +7608,47 @@ msgstr "Uzņēmējdarbība"
 #: src/app/main/ui/settings/subscription.cljs:65, src/app/main/ui/settings/subscription.cljs:74, src/app/main/ui/settings/subscription.cljs:117
 msgid "subscription.settings.unlimited.bill"
 msgstr "Ierobežots ikmēneša rēķins"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:174
+msgid "workspace.assets.components.num-variants"
+msgstr "%s varianti"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:488
+msgid "workspace.shape.menu.restore-variant"
+msgstr "Atjaunot variantu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:746
+msgid "workspace.options.component.variant"
+msgstr "Variants"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "Atrast nederīgos variantus"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.malformed.single"
+msgstr "Šim variantam ir nederīgs nosaukums. Jāmēģina izmantot šāda uzbūve:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
+msgid "workspace.options.component.variant.malformed.multi"
+msgstr "Dažiem variantiem ir nederīgi nosaukumi"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:131
+msgid "workspace.tokens.import-single-file"
+msgstr ""
+"Vienā JSON datnē pirmā līmeņa atslēgām vajadzētu būt tekstvienību kopu "
+"nosaukumiem."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:341
+msgid "workspace.tokens.inactive-set"
+msgstr "Neaktīva"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:332
+msgid "workspace.tokens.inactive-set-description"
+msgstr ""
+"Šī kopa nav aktīva. Jānomaina izskats vai jāaktivē šī kopa, lai skatlaukā "
+"redzētu izmaiņas"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:65, src/app/main/data/workspace/tokens/warnings.cljs:19
+msgid "workspace.tokens.stroke-width-range"
+msgstr "Vilkuma platumam ir jābūt vienādam vai lielākam par 0."
