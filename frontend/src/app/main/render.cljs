@@ -444,14 +444,16 @@
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [objects object-id embed]
+  [{:keys [objects object-id embed skip-children]
     :or {embed false}
     :as props}]
   (let [object  (get objects object-id)
         object (cond-> object
                  (:hide-fill-on-export object)
-                 (assoc :fills []))
+                 (assoc :fills [])
 
+                 skip-children
+                 (assoc :shapes []))
 
         {:keys [width height] :as bounds} (gsb/get-object-bounds objects object {:ignore-margin? false})
         vbox (format-viewbox bounds)

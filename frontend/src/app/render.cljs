@@ -62,7 +62,7 @@
 
 (mf/defc object-svg
   {::mf/wrap-props false}
-  [{:keys [object-id embed]}]
+  [{:keys [object-id embed skip-children]}]
   (let [objects (mf/deref ref:objects)]
 
     ;; Set the globa CSS to assign the page size, needed for PDF
@@ -79,11 +79,12 @@
       [:& render/object-svg
        {:objects objects
         :object-id object-id
-        :embed embed}])))
+        :embed embed
+        :skip-children skip-children}])))
 
 (mf/defc objects-svg
   {::mf/wrap-props false}
-  [{:keys [object-ids embed]}]
+  [{:keys [object-ids embed skip-children]}]
   (when-let [objects (mf/deref ref:objects)]
     (for [object-id object-ids]
       (let [objects (render/adapt-objects-for-shape objects object-id)]
@@ -91,7 +92,8 @@
          {:objects objects
           :key (str object-id)
           :object-id object-id
-          :embed embed}]))))
+          :embed embed
+          :skip-children skip-children}]))))
 
 (defn- fetch-objects-bundle
   [& {:keys [file-id page-id share-id object-id] :as options}]
@@ -121,6 +123,7 @@
    [:file-id ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]
    [:embed {:optional true} :boolean]
+   [:skip-children {:optional true} :boolean]
    [:object-id
     [:or
      ::sm/uuid
@@ -135,7 +138,7 @@
 
 (defn- render-objects
   [params]
-  (let [{:keys [file-id page-id embed share-id object-id] :as params} (render-objects-decoder params)]
+  (let [{:keys [file-id page-id embed share-id object-id skip-children] :as params} (render-objects-decoder params)]
     (if-not (render-objects-validator params)
       (do
         (js/console.error "invalid arguments")
@@ -152,7 +155,8 @@
              :page-id page-id
              :share-id share-id
              :object-id object-id
-             :embed embed}])
+             :embed embed
+             :skip-children skip-children}])
 
           (mf/html
            [:& objects-svg
@@ -160,7 +164,8 @@
              :page-id page-id
              :share-id share-id
              :object-ids (into #{} object-id)
-             :embed embed}]))))))
+             :embed embed
+             :skip-children skip-children}]))))))
 
 ;; ---- COMPONENTS SPRITE
 
