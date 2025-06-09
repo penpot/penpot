@@ -25,9 +25,10 @@
 (mf/defc numeric-input*
   {::mf/forward-ref true
    ::mf/schema schema:numeric-input}
-  [{:keys [id class min-value max-value  max-length value default on-change on-blur] :rest props} ref]
+  [{:keys [id class min-value max-value  max-length value default on-change on-blur on-focus select-on-focus?] :rest props} ref]
   (let [default   (d/nilv default 0)
         on-change (d/nilv on-change #(prn "on-change value" %))
+        select-on-focus? (d/nilv select-on-focus? true)
 
         id          (or id (mf/use-id))
 
@@ -48,7 +49,7 @@
          (fn [raw-value]
            (let [new-value (-> raw-value
                                (str/strip-suffix ".")
-                               (smt/expr-eval value))]
+                               (smt/expr-eval @last-value*))]
              (cond
                (d/num? new-value)
                (-> new-value
@@ -97,9 +98,10 @@
         (mf/use-fn
          (mf/deps parse-value)
          (fn [e]
-           (apply-value @raw-value*)
-           (when (fn? on-blur)
-             (on-blur e))))
+           (when (mf/ref-val dirty-ref)
+             (apply-value @raw-value*)
+             (when (fn? on-blur)
+               (on-blur e)))))
 
         handle-key-down
         (mf/use-fn
@@ -120,12 +122,28 @@
                (update-input (fmt/format-number @last-value*))
                (dom/blur! node)))))
 
+        handle-focus
+        (mf/use-callback
+         (mf/deps on-focus select-on-focus?)
+         (fn [event]
+           (let [target (dom/get-target event)]
+             (when (fn? on-focus)
+               (mf/set-ref-val! dirty-ref true)
+               (on-focus event))
+
+             (when select-on-focus?
+               (dom/select-text! target)
+               ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
+               (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))
+
+
         props (mf/spread-props props {:ref ref
                                       :type "text"
                                       :id id
                                       :default-value (fmt/format-number value)
                                       :on-blur on-blur
                                       :on-key-down handle-key-down
+                                      :on-focus handle-focus
                                       :on-change store-raw-value
                                       :max-length max-length})]
 
