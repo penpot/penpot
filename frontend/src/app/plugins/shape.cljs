@@ -1231,6 +1231,39 @@
 
          (cond-> (cfh/frame-shape? data)
            (-> (crc/add-properties!
+                {:name "clipContent"
+                 :get
+                 (fn [self]
+                   (-> self u/proxy->shape :show-content not))
+
+                 :set
+                 (fn [_ value]
+                   (cond
+                     (not (boolean? value))
+                     (u/display-not-valid :clipContent value)
+
+                     (not (r/check-permission plugin-id "content:write"))
+                     (u/display-not-valid :clipContent "Plugin doesn't have 'content:write' permission")
+
+                     :else
+                     (st/emit! (dwsh/update-shapes [id] #(assoc % :show-content (not value))))))}
+
+                {:name "showInViewMode"
+                 :get
+                 (fn [self]
+                   (-> self u/proxy->shape :hide-in-viewer not))
+                 :set
+                 (fn [_ value]
+                   (cond
+                     (not (boolean? value))
+                     (u/display-not-valid :showInViewMode value)
+
+                     (not (r/check-permission plugin-id "content:write"))
+                     (u/display-not-valid :showInViewMode "Plugin doesn't have 'content:write' permission")
+
+                     :else
+                     (st/emit! (dwsh/update-shapes [id] #(assoc % :hide-in-viewer (not value))))))}
+
                 {:name "grid"
                  :get
                  (fn [self]
