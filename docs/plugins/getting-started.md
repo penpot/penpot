@@ -140,7 +140,8 @@ The <code class="language-js">manifest.json</code> file contains the basic infor
     "user:read",
     "comment:read",
     "comment:write",
-    "allow:downloads"
+    "allow:downloads",
+    "allow:localstorage"
   ]
 }
 ```
@@ -172,6 +173,9 @@ Typical use cases: adding new comments to pages; deleting existing comments; rep
 
 - <code class="language-js">allow:downloads</code>: Allows downloading of the project file. Grants access to endpoints and operations that enable the downloading of the entire project file.
 Typical use cases: downloading the full project file for backup or sharing.
+
+- <code class="language-js">allow:localstorage</code>: Allows the access to the local storage proxy to store information. This info is only available for the plugin installation but be aware that a user can see this information in the browser.
+Typical use cases: storing authentication tokens for a plugin login
 
 _Note: Write permissions automatically includes its corresponding read permission (e.g., <code class="language-js">content:write</code> includes <code class="language-js">content:read</code>) because reading is required to perform write or modification actions._
 
