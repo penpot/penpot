@@ -70,16 +70,6 @@
   [^string title]
   (set! (.-title globals/document) title))
 
-(defn set-html-lang!
-  [^string lang]
-  (.setAttribute (.querySelector js/document "html") "lang" lang))
-
-(defn set-html-theme-color
-  [^string color]
-  (let [node (.querySelector js/document "body")]
-    (.removeAttribute node "class")
-    (.add ^js (.-classList ^js node) color)))
-
 (defn set-page-style!
   [styles]
   (let [node  (first (get-elements-by-tag globals/document "head"))

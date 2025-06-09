@@ -7,44 +7,60 @@
 @import "refactor/common-refactor.scss";
 
 .element-name {
+  --element-name-color: var(--context-hover-color, var(--layer-row-foreground-color));
+  --element-name-comp-color: var(--context-hover-color, var(--layer-row-component-foreground-color));
+  --element-name-opacity: var(--context-hover-opacity, $op-7);
+
   @include textEllipsis;
   @include bodySmallTypography;
+
+  color: var(--element-name-color);
+
   flex-grow: 1;
-  color: var(--context-hover-color, var(--layer-row-foreground-color));
+  block-size: 100%;
+  align-content: center;
+  min-inline-size: var(--sp-xl);
 
   &.selected {
     color: var(--layer-row-foreground-color-selected);
   }
 
   &.type-comp {
-    color: var(--context-hover-color, var(--layer-row-component-foreground-color));
+    color: var(--element-name-comp-color);
+
     &.hidden {
-      opacity: var(--context-hover-opacity, $op-7);
+      opacity: var(--element-name-opacity);
     }
   }
+
   &.hidden {
-    opacity: var(--context-hover-opacity, $op-7);
+    opacity: var(--element-name-opacity);
   }
 }
 
 .element-name-input {
+  --element-name-input-border-color: var(--input-border-color-focus);
+  --element-name-input-color: var(--layer-row-foreground-color);
+
   @include textEllipsis;
   @include bodySmallTypography;
   @include removeInputStyle;
+
   flex-grow: 1;
   height: $s-28;
-  max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
+  max-inline-size: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
   margin: 0;
-  padding-left: $s-6;
+  padding-inline-start: $s-6;
   border-radius: $br-8;
-  border: $s-1 solid var(--input-border-color-focus);
-  color: var(--layer-row-foreground-color);
+  border: $s-1 solid var(--element-name-input-border-color);
+  color: var(--element-name-input-color);
 
   &.selected {
-    min-width: $s-88;
+    min-inline-size: $s-100;
   }
 }
 
 .element-name-touched {
-  color: var(--layer-row-component-foreground-color);
+  --element-name-touched-color: var(--layer-row-component-foreground-color);
+  color: var(--element-name-touched-color);
 }

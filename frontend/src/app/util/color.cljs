@@ -82,7 +82,7 @@
 
 (defn get-color-name
   [color]
-  (or (:color-library-name color)
+  (or (:name (meta color))
       (:name color)
       (:color color)
       (gradient-type->string (:type (:gradient color)))))

@@ -12,7 +12,7 @@
 
 (defn get-token [file name]
   (some-> (get-in file [:data :tokens-lib])
-          (ctob/get-active-themes-set-tokens)
+          (ctob/get-tokens-in-active-sets)
           (get name)))
 
 (defn apply-token-to-shape

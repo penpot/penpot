@@ -6,26 +6,28 @@ mod grid_layout;
 
 use common::GetBounds;
 
-use crate::math::{identitish, Bounds, Matrix, Point};
+use crate::math::{self as math, identitish, Bounds, Matrix, Point};
 use crate::shapes::{
-    modified_children_ids, ConstraintH, ConstraintV, Frame, Group, Layout, Modifier, Shape,
-    StructureEntry, TransformEntry, Type,
+    auto_height, modified_children_ids, set_paragraphs_width, ConstraintH, ConstraintV, Frame,
+    Group, GrowType, Layout, Modifier, Shape, StructureEntry, TransformEntry, Type,
 };
 use crate::state::State;
 use crate::uuid::Uuid;
 
+#[allow(clippy::too_many_arguments)]
 fn propagate_children(
     shape: &Shape,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, &mut Shape>,
     parent_bounds_before: &Bounds,
     parent_bounds_after: &Bounds,
     transform: Matrix,
     bounds: &HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
+    scale_content: &HashMap<Uuid, f32>,
 ) -> VecDeque<Modifier> {
     let children_ids = modified_children_ids(shape, structure.get(&shape.id));
 
-    if children_ids.len() == 0 || identitish(transform) {
+    if children_ids.is_empty() || identitish(transform) {
         return VecDeque::new();
     }
 
@@ -35,6 +37,8 @@ fn propagate_children(
         let Some(child) = shapes.get(child_id) else {
             continue;
         };
+
+        let ignore_constraints = scale_content.contains_key(child_id);
 
         let child_bounds = bounds.find(child);
 
@@ -67,12 +71,13 @@ fn propagate_children(
         };
 
         let transform = constraints::propagate_shape_constraints(
-            &parent_bounds_before,
-            &parent_bounds_after,
+            parent_bounds_before,
+            parent_bounds_after,
             &child_bounds,
             constraint_h,
             constraint_v,
             transform,
+            ignore_constraints,
         );
 
         result.push_back(Modifier::transform(*child_id, transform));
@@ -83,11 +88,11 @@ fn propagate_children(
 
 fn calculate_group_bounds(
     shape: &Shape,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, &mut Shape>,
     bounds: &HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Option<Bounds> {
-    let shape_bounds = bounds.find(&shape);
+    let shape_bounds = bounds.find(shape);
     let mut result = Vec::<Point>::new();
 
     let children_ids = modified_children_ids(shape, structure.get(&shape.id));
@@ -100,18 +105,48 @@ fn calculate_group_bounds(
         result.append(&mut child_bounds.points());
     }
 
-    shape_bounds.from_points(result)
+    shape_bounds.with_points(result)
 }
 
-pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec<TransformEntry> {
+fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds) {
+    let tr = bounds.transform_matrix().unwrap_or_default();
+    let tr_inv = tr.invert().unwrap_or_default();
+
+    let x = bounds.min_x().round();
+    let y = bounds.min_y().round();
+
+    let mut round_transform = Matrix::scale((
+        bounds.width().round() / bounds.width(),
+        bounds.height().round() / bounds.height(),
+    ));
+    round_transform.post_concat(&tr);
+    round_transform.pre_concat(&tr_inv);
+
+    transform.post_concat(&round_transform);
+    bounds.transform_mut(&round_transform);
+
+    let dx = x - bounds.min_x();
+    let dy = y - bounds.min_y();
+
+    let round_transform = Matrix::translate((dx, dy));
+    transform.post_concat(&round_transform);
+    bounds.transform_mut(&round_transform);
+}
+
+pub fn propagate_modifiers(
+    state: &State,
+    modifiers: &[TransformEntry],
+    pixel_precision: bool,
+) -> Vec<TransformEntry> {
     let shapes = &state.shapes;
 
+    let font_col = state.render_state.fonts.font_collection();
     let mut entries: VecDeque<_> = modifiers
         .iter()
         .map(|entry| Modifier::Transform(entry.clone()))
         .collect();
 
-    for (id, _) in &state.structure {
+    for id in state.structure.keys() {
         if id != &Uuid::nil() {
             entries.push_back(Modifier::Reflow(*id));
         }
@@ -136,8 +171,30 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                         continue;
                     };
 
-                    let shape_bounds_before = bounds.find(&shape);
-                    let shape_bounds_after = shape_bounds_before.transform(&entry.transform);
+                    let shape_bounds_before = bounds.find(shape);
+                    let mut shape_bounds_after = shape_bounds_before.transform(&entry.transform);
+
+                    let mut transform = entry.transform;
+
+                    if let Type::Text(content) = &shape.shape_type {
+                        if content.grow_type() == GrowType::AutoHeight {
+                            let mut paragraphs = content.get_skia_paragraphs(font_col);
+                            set_paragraphs_width(shape_bounds_after.width(), &mut paragraphs);
+                            let height = auto_height(&paragraphs);
+                            let resize_transform = math::resize_matrix(
+                                &shape_bounds_after,
+                                &shape_bounds_after,
+                                shape_bounds_after.width(),
+                                height,
+                            );
+                            shape_bounds_after = shape_bounds_after.transform(&resize_transform);
+                            transform.post_concat(&resize_transform);
+                        }
+                    }
+
+                    if pixel_precision {
+                        set_pixel_precision(&mut transform, &mut shape_bounds_after);
+                    }
 
                     if entry.propagate {
                         let mut children = propagate_children(
@@ -145,21 +202,23 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                             shapes,
                             &shape_bounds_before,
                             &shape_bounds_after,
-                            entry.transform,
+                            transform,
                             &bounds,
                             &state.structure,
+                            &state.scale_content,
                         );
-
                         entries.append(&mut children);
                     }
 
                     bounds.insert(shape.id, shape_bounds_after);
 
-                    let default_matrix = Matrix::default();
-                    let mut shape_modif =
-                        modifiers.get(&shape.id).unwrap_or(&default_matrix).clone();
-                    shape_modif.post_concat(&entry.transform);
+                    let mut shape_modif = modifiers.get(&shape.id).copied().unwrap_or_default();
+                    shape_modif.post_concat(&transform);
                     modifiers.insert(shape.id, shape_modif);
+
+                    if shape.has_layout() {
+                        entries.push_back(Modifier::reflow(shape.id));
+                    }
 
                     if let Some(parent) = shape.parent_id.and_then(|id| shapes.get(&id)) {
                         if parent.has_layout() || parent.is_group_like() {
@@ -209,7 +268,7 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
                             let children_ids =
                                 modified_children_ids(shape, state.structure.get(&shape.id));
                             if let Some(child) = shapes.get(&children_ids[0]) {
-                                let child_bounds = bounds.find(&child);
+                                let child_bounds = bounds.find(child);
                                 bounds.insert(shape.id, child_bounds);
                                 reflow_parent = true;
                             }
@@ -248,12 +307,18 @@ pub fn propagate_modifiers(state: &State, modifiers: Vec<TransformEntry>) -> Vec
         }
 
         for id in layout_reflows.iter() {
-            if reflown.contains(&id) {
+            if reflown.contains(id) {
                 continue;
             }
 
-            let Some(shape) = state.shapes.get(&id) else {
+            let Some(shape) = state.shapes.get(id) else {
                 continue;
+            };
+
+            let shape = if let Some(scale_content) = state.scale_content.get(id) {
+                &shape.scale_content(*scale_content)
+            } else {
+                shape
             };
 
             let Type::Frame(frame_data) = &shape.shape_type else {
@@ -303,19 +368,20 @@ mod tests {
 
     #[test]
     fn test_propagate_shape() {
-        let mut shapes = HashMap::<Uuid, Shape>::new();
+        let mut shapes = HashMap::<Uuid, &mut Shape>::new();
 
         let child_id = Uuid::new_v4();
         let mut child = Shape::new(child_id);
         child.set_selrect(3.0, 3.0, 2.0, 2.0);
-        shapes.insert(child_id, child);
+        shapes.insert(child_id, &mut child);
 
         let parent_id = Uuid::new_v4();
         let mut parent = Shape::new(parent_id);
         parent.set_shape_type(Type::Group(Group::default()));
         parent.add_child(child_id);
         parent.set_selrect(1.0, 1.0, 5.0, 5.0);
-        shapes.insert(parent_id, parent.clone());
+        let mut parent_clone = parent.clone();
+        shapes.insert(parent_id, &mut parent_clone);
 
         let mut transform = Matrix::scale((2.0, 1.5));
         let x = parent.selrect.x();
@@ -334,6 +400,7 @@ mod tests {
             transform,
             &HashMap::new(),
             &HashMap::new(),
+            &HashMap::new(),
         );
 
         assert_eq!(result.len(), 1);
@@ -341,17 +408,17 @@ mod tests {
 
     #[test]
     fn test_group_bounds() {
-        let mut shapes = HashMap::<Uuid, Shape>::new();
+        let mut shapes = HashMap::<Uuid, &mut Shape>::new();
 
         let child1_id = Uuid::new_v4();
         let mut child1 = Shape::new(child1_id);
         child1.set_selrect(3.0, 3.0, 2.0, 2.0);
-        shapes.insert(child1_id, child1);
+        shapes.insert(child1_id, &mut child1);
 
         let child2_id = Uuid::new_v4();
         let mut child2 = Shape::new(child2_id);
         child2.set_selrect(0.0, 0.0, 1.0, 1.0);
-        shapes.insert(child2_id, child2);
+        shapes.insert(child2_id, &mut child2);
 
         let parent_id = Uuid::new_v4();
         let mut parent = Shape::new(parent_id);
@@ -359,7 +426,8 @@ mod tests {
         parent.add_child(child1_id);
         parent.add_child(child2_id);
         parent.set_selrect(0.0, 0.0, 3.0, 3.0);
-        shapes.insert(parent_id, parent.clone());
+        let mut parent_clone = parent.clone();
+        shapes.insert(parent_id, &mut parent_clone);
 
         let bounds =
             calculate_group_bounds(&parent, &shapes, &HashMap::new(), &HashMap::new()).unwrap();

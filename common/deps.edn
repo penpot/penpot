@@ -1,10 +1,10 @@
 {:deps
- {org.clojure/clojure {:mvn/version "1.12.0"}
+ {org.clojure/clojure {:mvn/version "1.12.1"}
   org.clojure/data.json {:mvn/version "2.5.1"}
   org.clojure/tools.cli {:mvn/version "1.1.230"}
-  org.clojure/clojurescript {:mvn/version "1.11.132"}
   org.clojure/test.check {:mvn/version "1.1.1"}
   org.clojure/data.fressian {:mvn/version "1.1.0"}
+  org.clojure/clojurescript {:mvn/version "1.12.42"}
 
   ;; Logging
   org.apache.logging.log4j/log4j-api {:mvn/version "2.24.3"}
@@ -12,14 +12,14 @@
   org.apache.logging.log4j/log4j-web {:mvn/version "2.24.3"}
   org.apache.logging.log4j/log4j-jul {:mvn/version "2.24.3"}
   org.apache.logging.log4j/log4j-slf4j2-impl {:mvn/version "2.24.3"}
-  org.slf4j/slf4j-api {:mvn/version "2.0.16"}
+  org.slf4j/slf4j-api {:mvn/version "2.0.17"}
   pl.tkowalcz.tjahzi/log4j2-appender {:mvn/version "0.9.32"}
 
-  selmer/selmer {:mvn/version "1.12.61"}
+  selmer/selmer {:mvn/version "1.12.62"}
   criterium/criterium {:mvn/version "0.4.6"}
 
   metosin/jsonista {:mvn/version "0.3.13"}
-  metosin/malli {:mvn/version "0.17.0"}
+  metosin/malli {:mvn/version "0.18.0"}
 
   expound/expound {:mvn/version "0.9.0"}
   com.cognitect/transit-clj {:mvn/version "1.0.333"}
@@ -30,7 +30,7 @@
   funcool/tubax {:mvn/version "2021.05.20-0"}
   funcool/cuerdas {:mvn/version "2025.05.26-411"}
   funcool/promesa
-  {:git/sha "0c5ed6ad033515a2df4b55addea044f60e9653d0"
+  {:git/sha "f52f58cfacf62f59eab717e2637f37729d0cc383"
    :git/url "https://github.com/funcool/promesa"}
 
   funcool/datoteka
@@ -59,7 +59,7 @@
  {:dev
   {:extra-deps
    {org.clojure/tools.namespace {:mvn/version "RELEASE"}
-    thheller/shadow-cljs {:mvn/version "2.28.20"}
+    thheller/shadow-cljs {:mvn/version "3.1.5"}
     com.clojure-goes-fast/clj-async-profiler {:mvn/version "RELEASE"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     criterium/criterium {:mvn/version "RELEASE"}
@@ -68,7 +68,7 @@
 
   :build
   {:extra-deps
-   {io.github.clojure/tools.build {:git/tag "v0.10.6" :git/sha "52cf7d6"}}
+   {io.github.clojure/tools.build {:git/tag "v0.10.9" :git/sha "e405aac"}}
    :ns-default build}
 
   :test
@@ -76,9 +76,9 @@
    :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
 
   :shadow-cljs
-  {:main-opts ["-m" "shadow.cljs.devtools.cli"]}
+  {:main-opts ["-m" "shadow.cljs.devtools.cli"]
+   :jvm-opts ["--sun-misc-unsafe-memory-access=allow"]}
 
   :outdated
   {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
    :main-opts ["-m" "antq.core"]}}}
-

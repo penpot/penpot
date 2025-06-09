@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.logic.tokens :as clt]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.constants :refer [max-input-length]]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
@@ -19,11 +20,12 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
+   [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.utilities.label :refer [label*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as ic]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
    [app.main.ui.workspace.tokens.sets :as wts]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -37,30 +39,27 @@
   (let [create-theme
         (mf/use-fn
          (mf/deps change-view)
-         #(change-view :create-theme))
-        close-modal
-        (mf/use-fn
-         #(st/emit! (modal/hide)))]
+         #(change-view :create-theme))]
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
-      (tr "workspace.token.themes-list")]
+      (tr "workspace.tokens.themes-list")]
      [:div {:class (stl/css :empty-themes-wrapper)}
       [:div {:class (stl/css :empty-themes-message)}
        [:> text* {:as "span" :typography "title-medium" :class (stl/css :empty-theme-title)}
-        (tr "workspace.token.no-themes-currently")]
+        (tr "workspace.tokens.no-themes-currently")]
        [:> text* {:as "span"
                   :class (stl/css :empty-theme-subtitle)
                   :typography "body-medium"}
-        (tr "workspace.token.create-new-theme")]]
+        (tr "workspace.tokens.create-new-theme")]]
       [:div {:class (stl/css :button-footer)}
        [:> button* {:variant "secondary"
                     :type "button"
-                    :on-click close-modal}
+                    :on-click modal/hide!}
         (tr "labels.close")]
        [:> button* {:variant "primary"
                     :type "button"
                     :on-click create-theme}
-        (tr "workspace.token.add-new-theme")]]]]))
+        (tr "workspace.tokens.add-new-theme")]]]]))
 
 (mf/defc switch
   [{:keys [selected? name on-change]}]
@@ -88,17 +87,13 @@
          (fn [e]
            (dom/prevent-default e)
            (dom/stop-propagation e)
-           (change-view :create-theme)))
-
-        close-modal
-        (mf/use-fn
-         #(st/emit! (modal/hide)))]
+           (change-view :create-theme)))]
 
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
-      (tr "workspace.token.themes-list")]
+      (tr "workspace.tokens.themes-list")]
      [:> text* {:as "div" :typography "body-medium" :class (stl/css :themes-modal-description)}
-      (tr "workspace.token.themes-description")]
+      (tr "workspace.tokens.themes-description")]
      [:ul {:class (stl/css :theme-group-wrapper)}
       (for [[group themes] themes-groups]
         [:li {:key (dm/str "token-theme-group" group)}
@@ -106,7 +101,7 @@
            [:> heading* {:level 3
                          :class (stl/css :theme-group-label)
                          :typography "body-large"}
-            [:div {:class (stl/css :group-title) :title (str (tr "workspace.token.group-name") ": " group)}
+            [:div {:class (stl/css :group-title) :title (str (tr "workspace.tokens.group-name") ": " group)}
              [:> icon* {:icon-id "group" :class (stl/css :group-title-icon)}]
              [:> text* {:as "span" :typography "body-medium" :class (stl/css :group-title-name)} group]]])
          [:ul {:class (stl/css :theme-group-rows-wrapper)}
@@ -132,7 +127,7 @@
                                  (dom/prevent-default e)
                                  (dom/stop-propagation e)
                                  (st/emit! (dwtl/toggle-token-theme-active? group name)))}
-               [:& switch {:name (tr "workspace.token.theme-name" name)
+               [:& switch {:name (tr "workspace.tokens.theme-name" name)
                            :on-change (constantly nil)
                            :selected? selected?}]]]
              [:div {:class (stl/css :theme-name-row)}
@@ -145,29 +140,29 @@
                                                   :sets-count-empty-button (not sets-count))
                              :variant "secondary"
                              :type "button"
-                             :title (tr "workspace.token.sets-hint")
+                             :title (tr "workspace.tokens.sets-hint")
                              :on-click on-edit-theme}
                  [:div {:class (stl/css :label-wrapper)}
                   [:> text* {:as "span" :typography "body-medium"}
                    (if sets-count
-                     (tr "workspace.token.num-active-sets" sets-count)
-                     (tr "workspace.token.no-active-sets"))]
+                     (tr "workspace.tokens.num-active-sets" sets-count)
+                     (tr "workspace.tokens.no-active-sets"))]
                   [:> icon* {:icon-id "arrow-right"}]]])
 
               [:> icon-button* {:on-click delete-theme
                                 :variant "ghost"
-                                :aria-label (tr "workspace.token.delete-theme-title")
+                                :aria-label (tr "workspace.tokens.delete-theme-title")
                                 :icon "delete"}]]])]])]
 
      [:div {:class (stl/css :button-footer)}
       [:> button* {:variant "secondary"
                    :type "button"
-                   :on-click close-modal}
+                   :on-click modal/hide!}
        (tr "labels.close")]
       [:> button* {:variant "primary"
                    :type "button"
                    :on-click create-theme}
-       (tr "workspace.token.add-new-theme")]]]))
+       (tr "workspace.tokens.add-new-theme")]]]))
 
 (mf/defc theme-inputs*
   [{:keys [theme on-change-field]}]
@@ -192,24 +187,21 @@
 
     [:div {:class (stl/css :edit-theme-inputs-wrapper)}
      [:div {:class (stl/css :group-input-wrapper)}
-      [:label {:for "groups-dropdown" :class (stl/css :label)}
-       [:span {:class (stl/css :main-label)} (tr "workspace.token.label.group")]
-       [:span {:class (stl/css :label-optional)} (dm/str "(" "" (tr "workspace.token.label.group-optional") "" ")")]]
+      [:> label* {:for "groups-dropdown" :is-optional true} (tr "workspace.tokens.label.group")]
       [:> combobox* {:id (dm/str "groups-dropdown")
-                     :placeholder (tr "workspace.token.label.group-placeholder")
+                     :placeholder (tr "workspace.tokens.label.group-placeholder")
                      :default-selected (:group theme)
                      :options (clj->js options)
                      :on-change on-update-group}]]
 
      [:div {:class (stl/css :group-input-wrapper)}
-      [:> input-tokens* {:id "theme-input"
-                         :label (tr "workspace.token.label.theme")
-                         :type "text"
-                         :max-length 256
-                         :placeholder (tr "workspace.token.label.theme-placeholder")
-                         :on-change on-update-name
-                         :value (mf/ref-val theme-name-ref)
-                         :auto-focus true}]]]))
+      [:> input* {:label (tr "workspace.tokens.label.theme")
+                  :placeholder (tr "workspace.tokens.label.theme-placeholder")
+                  :max-length max-input-length
+                  :variant "comfortable"
+                  :default-value (mf/ref-val theme-name-ref)
+                  :auto-focus true
+                  :on-change on-update-name}]]]))
 
 (mf/defc theme-modal-buttons*
   [{:keys [close-modal on-save-form disabled?] :as props}]
@@ -238,7 +230,7 @@
                   :on-click on-save-form
                   :on-key-down handle-key-down-save
                   :disabled disabled?}
-      (tr "workspace.token.save-theme")]]))
+      (tr "workspace.tokens.save-theme")]]))
 
 (defn- make-lib-with-theme
   [theme sets]
@@ -332,8 +324,8 @@
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
       (if is-editing
-        (tr "workspace.token.edit-theme-title")
-        (tr "workspace.token.add-new-theme"))]
+        (tr "workspace.tokens.edit-theme-title")
+        (tr "workspace.tokens.add-new-theme"))]
 
      [:form {:on-submit on-save-form :class (stl/css :edit-theme-form)}
       [:div {:class (stl/css :edit-theme-wrapper)}
@@ -342,12 +334,12 @@
                    :class (stl/css :back-btn)
                    :type "button"}
           [:> icon* {:icon-id ic/arrow-left :aria-hidden true}]
-          (tr "workspace.token.back-to-themes")])
+          (tr "workspace.tokens.back-to-themes")])
 
        [:> theme-inputs* {:theme current-theme
                           :on-change-field on-change-field}]
        [:> text* {:as "span"  :typography "body-small" :class (stl/css :select-sets-message)}
-        (tr "workspace.token.set-selection-theme")]
+        (tr "workspace.tokens.set-selection-theme")]
        [:div {:class (stl/css :sets-list-wrapper)}
 
         [:> wts/controlled-sets-list*

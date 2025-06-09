@@ -18,6 +18,7 @@
    [app.common.files.migrations :as-alias fmg]
    [app.common.json :as json]
    [app.common.logging :as l]
+   [app.common.media :as cmedia]
    [app.common.schema :as sm]
    [app.common.thumbnails :as cth]
    [app.common.types.color :as ctcl]
@@ -88,13 +89,19 @@
    ctf/schema:file
    [:map [:options {:optional true} ctf/schema:options]]])
 
+;; --- HELPERS
+
+(defn- default-now
+  [o]
+  (or o (dt/now)))
+
 ;; --- ENCODERS
 
 (def encode-file
   (sm/encoder schema:file sm/json-transformer))
 
 (def encode-page
-  (sm/encoder ::ctp/page sm/json-transformer))
+  (sm/encoder ctp/schema:page sm/json-transformer))
 
 (def encode-shape
   (sm/encoder ::cts/shape sm/json-transformer))
@@ -106,7 +113,7 @@
   (sm/encoder ::ctc/component sm/json-transformer))
 
 (def encode-color
-  (sm/encoder ::ctcl/color sm/json-transformer))
+  (sm/encoder ctcl/schema:library-color sm/json-transformer))
 
 (def encode-typography
   (sm/encoder ::cty/typography sm/json-transformer))
@@ -129,13 +136,13 @@
   (sm/decoder schema:manifest sm/json-transformer))
 
 (def decode-media
-  (sm/decoder ::ctf/media sm/json-transformer))
+  (sm/decoder ctf/schema:media sm/json-transformer))
 
 (def decode-component
   (sm/decoder ::ctc/component sm/json-transformer))
 
 (def decode-color
-  (sm/decoder ::ctcl/color sm/json-transformer))
+  (sm/decoder ctcl/schema:library-color sm/json-transformer))
 
 (def decode-file
   (sm/decoder schema:file sm/json-transformer))
@@ -150,7 +157,7 @@
   (sm/decoder ::cty/typography sm/json-transformer))
 
 (def decode-tokens-lib
-  (sm/decoder ::cto/tokens-lib sm/json-transformer))
+  (sm/decoder cto/schema:tokens-lib sm/json-transformer))
 
 (def decode-plugin-data
   (sm/decoder ::ctpg/plugin-data sm/json-transformer))
@@ -179,7 +186,7 @@
   (sm/check-fn ::ctf/media))
 
 (def validate-color
-  (sm/check-fn ::ctcl/color))
+  (sm/check-fn ctcl/schema:library-color))
 
 (def validate-component
   (sm/check-fn ::ctc/component))
@@ -229,27 +236,13 @@
                         :always
                         (bfc/clean-file-features))))))
 
-(defn- resolve-extension
-  [mtype]
-  (case mtype
-    "image/png"     ".png"
-    "image/jpeg"    ".jpg"
-    "image/gif"     ".gif"
-    "image/svg+xml" ".svg"
-    "image/webp"    ".webp"
-    "font/woff"     ".woff"
-    "font/woff2"    ".woff2"
-    "font/ttf"      ".ttf"
-    "font/otf"      ".otf"
-    "application/octet-stream" ".bin"))
-
 (defn- export-storage-objects
   [{:keys [::output] :as cfg}]
   (let [storage (sto/resolve cfg)]
     (doseq [id (-> bfc/*state* deref :storage-objects not-empty)]
       (let [sobject (sto/get-object storage id)
             smeta   (meta sobject)
-            ext     (resolve-extension (:content-type smeta))
+            ext     (cmedia/mtype->extension (:content-type smeta))
             path    (str "objects/" id ".json")
             params  (-> (meta sobject)
                         (assoc :id (:id sobject))
@@ -574,7 +567,13 @@
                  (let [object (->> (read-entry input entry)
                                    (decode-media)
                                    (validate-media))
-                       object (assoc object :file-id file-id)]
+                       object (-> object
+                                  (assoc :file-id file-id)
+                                  (update :created-at default-now)
+                                  ;; FIXME: this is set default to true for
+                                  ;; setting a value, this prop is no longer
+                                  ;; relevant;
+                                  (assoc :is-local true))]
                    (if (= id (:id object))
                      (conj result object)
                      result)))
@@ -618,8 +617,7 @@
                    (let [object (->> (read-entry input entry)
                                      (clean-component-pre-decode)
                                      (decode-component)
-                                     (clean-component-post-decode)
-                                     (validate-component))]
+                                     (clean-component-post-decode))]
                      (if (= id (:id object))
                        (assoc result id object)
                        result)))
@@ -653,8 +651,7 @@
                  (let [object (->> (read-entry input entry)
                                    (bfl/clean-shape-pre-decode)
                                    (decode-shape)
-                                   (bfl/clean-shape-post-decode)
-                                   (validate-shape))]
+                                   (bfl/clean-shape-post-decode))]
                    (if (= id (:id object))
                      (assoc result id object)
                      result)))
@@ -700,7 +697,6 @@
         components   (read-file-components cfg)
         plugin-data  (read-file-plugin-data cfg)
         pages        (read-file-pages cfg)]
-
     {:pages (-> pages keys vec)
      :pages-index (into {} pages)
      :colors colors
@@ -755,15 +751,10 @@
                    (assoc :data data)
                    (assoc :name file-name)
                    (assoc :project-id project-id)
-                   (dissoc :options)
-                   (bfc/process-file)
+                   (dissoc :options))
 
-                   ;; NOTE: this is necessary because when we just
-                   ;; creating a new file from imported artifact,
-                   ;; there are no migrations registered on the
-                   ;; database, so we need to persist all of them, not
-                   ;; only the applied
-                   (vary-meta dissoc ::fmg/migrated))]
+          file  (bfc/process-file cfg file)
+          file  (ctf/check-file file)]
 
       (bfm/register-pending-migrations! cfg file)
       (bfc/save-file! cfg file ::db/return-keys false)
@@ -807,7 +798,7 @@
                     :expected-id (str id)
                     :found-id (str (:id object))))
 
-        (let [ext     (resolve-extension (:content-type object))
+        (let [ext     (cmedia/mtype->extension (:content-type object))
               path    (str "objects/" id ext)
               content (->> path
                            (get-zip-entry input)

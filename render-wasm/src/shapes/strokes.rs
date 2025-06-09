@@ -1,4 +1,4 @@
-use crate::shapes::fills::Fill;
+use crate::shapes::fills::{Fill, SolidColor};
 use skia_safe::{self as skia, Rect};
 use std::collections::HashMap;
 
@@ -52,9 +52,9 @@ impl From<u8> for StrokeCap {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StrokeKind {
-    InnerStroke,
-    OuterStroke,
-    CenterStroke,
+    Inner,
+    Outer,
+    Center,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -71,68 +71,67 @@ impl Stroke {
     // Strokes for open shapes should be rendered as if they were centered.
     pub fn render_kind(&self, is_open: bool) -> StrokeKind {
         if is_open {
-            StrokeKind::CenterStroke
+            StrokeKind::Center
         } else {
             self.kind
         }
     }
 
     pub fn new_center_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
-        let transparent = skia::Color::from_argb(0, 0, 0, 0);
         Stroke {
-            fill: Fill::Solid(transparent),
-            width: width,
+            fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
+            width,
             style: StrokeStyle::from(style),
             cap_end: StrokeCap::from(cap_end),
             cap_start: StrokeCap::from(cap_start),
-            kind: StrokeKind::CenterStroke,
+            kind: StrokeKind::Center,
         }
     }
 
     pub fn new_inner_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
-        let transparent = skia::Color::from_argb(0, 0, 0, 0);
         Stroke {
-            fill: Fill::Solid(transparent),
-            width: width,
+            fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
+            width,
             style: StrokeStyle::from(style),
             cap_end: StrokeCap::from(cap_end),
             cap_start: StrokeCap::from(cap_start),
-            kind: StrokeKind::InnerStroke,
+            kind: StrokeKind::Inner,
         }
     }
 
     pub fn new_outer_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
-        let transparent = skia::Color::from_argb(0, 0, 0, 0);
         Stroke {
-            fill: Fill::Solid(transparent),
-            width: width,
+            fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
+            width,
             style: StrokeStyle::from(style),
             cap_end: StrokeCap::from(cap_end),
             cap_start: StrokeCap::from(cap_start),
-            kind: StrokeKind::OuterStroke,
+            kind: StrokeKind::Outer,
         }
+    }
+
+    pub fn scale_content(&mut self, value: f32) {
+        self.width *= value;
     }
 
     pub fn delta(&self) -> f32 {
         match self.kind {
-            StrokeKind::InnerStroke => 0.,
-            StrokeKind::CenterStroke => self.width,
-            StrokeKind::OuterStroke => self.width * 2.,
+            StrokeKind::Inner => 0.,
+            StrokeKind::Center => self.width,
+            StrokeKind::Outer => self.width * 2.,
         }
     }
 
     pub fn outer_rect(&self, rect: &Rect) -> Rect {
         match self.kind {
-            StrokeKind::InnerStroke => Rect::from_xywh(
+            StrokeKind::Inner => Rect::from_xywh(
                 rect.left + (self.width / 2.),
                 rect.top + (self.width / 2.),
                 rect.width() - self.width,
                 rect.height() - self.width,
             ),
-            StrokeKind::CenterStroke => {
-                Rect::from_xywh(rect.left, rect.top, rect.width(), rect.height())
-            }
-            StrokeKind::OuterStroke => Rect::from_xywh(
+            StrokeKind::Center => Rect::from_xywh(rect.left, rect.top, rect.width(), rect.height()),
+            StrokeKind::Outer => Rect::from_xywh(
                 rect.left - (self.width / 2.),
                 rect.top - (self.width / 2.),
                 rect.width() + self.width,
@@ -143,12 +142,12 @@ impl Stroke {
 
     pub fn outer_corners(&self, corners: &Corners) -> Corners {
         let offset = match self.kind {
-            StrokeKind::CenterStroke => 0.0,
-            StrokeKind::InnerStroke => -self.width / 2.0,
-            StrokeKind::OuterStroke => self.width / 2.0,
+            StrokeKind::Center => 0.0,
+            StrokeKind::Inner => -self.width / 2.0,
+            StrokeKind::Outer => self.width / 2.0,
         };
 
-        let mut outer = corners.clone();
+        let mut outer = *corners;
         for corner in outer.iter_mut() {
             corner.offset((offset, offset))
         }
@@ -166,9 +165,9 @@ impl Stroke {
         paint.set_style(skia::PaintStyle::Stroke);
 
         let width = match self.kind {
-            StrokeKind::InnerStroke => self.width,
-            StrokeKind::CenterStroke => self.width,
-            StrokeKind::OuterStroke => self.width + (1. / scale),
+            StrokeKind::Inner => self.width,
+            StrokeKind::Center => self.width,
+            StrokeKind::Outer => self.width + (1. / scale),
         };
 
         paint.set_stroke_width(width);
@@ -187,9 +186,9 @@ impl Stroke {
                 StrokeStyle::Dotted => {
                     let mut circle_path = skia::Path::new();
                     let width = match self.kind {
-                        StrokeKind::InnerStroke => self.width,
-                        StrokeKind::CenterStroke => self.width / 2.0,
-                        StrokeKind::OuterStroke => self.width,
+                        StrokeKind::Inner => self.width,
+                        StrokeKind::Center => self.width / 2.0,
+                        StrokeKind::Outer => self.width,
                     };
                     circle_path.add_circle((0.0, 0.0), width, None);
                     let advance = self.width + 5.0;
@@ -230,11 +229,11 @@ impl Stroke {
     ) -> skia::Paint {
         let mut paint = self.to_paint(rect, svg_attrs, scale, antialias);
         match self.render_kind(is_open) {
-            StrokeKind::InnerStroke => {
+            StrokeKind::Inner => {
                 paint.set_stroke_width(2. * paint.stroke_width());
             }
-            StrokeKind::CenterStroke => {}
-            StrokeKind::OuterStroke => {
+            StrokeKind::Center => {}
+            StrokeKind::Outer => {
                 paint.set_stroke_width(2. * paint.stroke_width());
             }
         }

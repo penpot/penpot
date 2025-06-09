@@ -10,45 +10,30 @@ fi
 
 . ./_build_env
 
-ALLOWED_RULES="
-        -A clippy::box_collection \
-        -A clippy::clone_on_copy \
-        -A clippy::derivable_impls \
-        -A clippy::enum_variant_names \
-        -A clippy::field_reassign_with_default \
-        -A clippy::from_over_into \
-        -A clippy::len_zero \
-        -A clippy::manual_map \
-        -A clippy::map_entry \
-        -A clippy::missing_safety_doc \
-        -A clippy::missing_transmute_annotations \
-        -A clippy::needless_borrow \
-        -A clippy::needless_borrows_for_generic_args \
-        -A clippy::needless_range_loop \
-        -A clippy::needless_return \
-        -A clippy::redundant_closure \
-        -A clippy::redundant_field_names \
-        -A clippy::single_match \
-        -A clippy::slow_vector_initialization \
-        -A clippy::too_many_arguments \
-        -A clippy::unnecessary_to_owned \
-        -A clippy::unused_unit \
-        -A clippy::unwrap_or_default \
-        -A clippy::useless_format \
-        -A clippy::wrong_self_convention \
-        -D static_mut_refs"
+export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm32-unknown-emscripten"};
+export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.81.0-3/skia-binaries-24dee32a277b6c7b5357-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache.tar.gz"}
+
+
+ALLOWED_RULES="-D static_mut_refs"
 
 # ./lint --fix
 if [[ "$1" == "--fix" ]]; then
     cargo clippy \
         --fix --allow-dirty \
         --target=wasm32-unknown-emscripten \
+        --all-targets \
         -- -D warnings \
         $ALLOWED_RULES
 else
     cargo clippy \
         --target=wasm32-unknown-emscripten \
+        --all-targets \
         -- -D warnings \
         $ALLOWED_RULES
 fi
+
+RESULT=$?
+
 popd
+
+exit $RESULT

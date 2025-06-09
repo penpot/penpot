@@ -3,44 +3,48 @@
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; Copyright (c) KALEIDOS INC
-;; Copyright (c) Mathieu BRUNOT <mathieu.brunot@monogramm.io>
 
 (ns app.util.theme
-  "A theme manager."
   (:require
-   [app.config :as cfg]
-   [app.util.dom :as dom]
-   [app.util.storage :as storage]
+   [app.common.data :as d]
+   [app.util.globals :as globals]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
-(defonce theme (get storage/global ::theme cfg/default-theme))
-(defonce theme-sub (rx/subject))
-(defonce themes #js {})
+(defonce ^:private color-scheme-media-query
+  (.matchMedia globals/window "(prefers-color-scheme: dark)"))
 
-(defn init!
-  [data]
-  (set! themes data))
+(def ^:const default "dark")
 
-(defn set-current-theme!
-  [v]
-  (when (not= theme v)
-    (when-some [el (dom/get-element "theme")]
-      (set! (.-href el) (str "css/main-" v ".css")))
-    (swap! storage/global assoc ::theme v)
-    (set! theme v)
-    (rx/push! theme-sub v)))
-
-(defn set-default-theme!
+(defn get-system-theme
   []
-  (set-current-theme! cfg/default-theme))
+  (if ^boolean (.-matches color-scheme-media-query)
+    "dark"
+    "light"))
 
-(defn use-theme
-  []
-  (let [[theme set-theme] (mf/useState theme)]
-    (mf/useEffect (fn []
-                    (let [sub (rx/sub! theme-sub #(set-theme %))]
-                      #(rx/dispose! sub)))
-                  #js [])
-    theme))
+(defn- set-color-scheme
+  [^string color]
 
+  (let [node  (.querySelector js/document "body")
+        class (if (= color "dark") "default" "light")]
+    (.removeAttribute node "class")
+    (.add ^js (.-classList ^js node) class)))
+
+(defn use-initialize
+  [{profile-theme :theme}]
+  (let [system-theme* (mf/use-state get-system-theme)
+        system-theme  (deref system-theme*)]
+
+    (mf/with-effect []
+      (let [s (->> (rx/from-event color-scheme-media-query "change")
+                   (rx/map #(if (.-matches %) "dark" "light"))
+                   (rx/subs! #(reset! system-theme* %)))]
+        (fn []
+          (rx/dispose! s))))
+
+    (mf/with-effect [system-theme profile-theme]
+      (set-color-scheme
+       (cond
+         (= profile-theme "system") system-theme
+         (= profile-theme "default") "dark"
+         :else (d/nilv profile-theme "dark"))))))

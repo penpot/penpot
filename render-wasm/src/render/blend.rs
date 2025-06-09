@@ -12,17 +12,17 @@ impl Default for BlendMode {
 impl From<i32> for BlendMode {
     fn from(value: i32) -> Self {
         if value <= skia::BlendMode::Luminosity as i32 {
-            unsafe { Self(std::mem::transmute(value)) }
+            unsafe { Self(std::mem::transmute::<i32, skia_safe::BlendMode>(value)) }
         } else {
             Self::default()
         }
     }
 }
 
-impl Into<skia::BlendMode> for BlendMode {
-    fn into(self) -> skia::BlendMode {
-        match self {
-            Self(skia_blend) => skia_blend,
+impl From<BlendMode> for skia::BlendMode {
+    fn from(val: BlendMode) -> Self {
+        match val {
+            BlendMode(skia_blend) => skia_blend,
         }
     }
 }

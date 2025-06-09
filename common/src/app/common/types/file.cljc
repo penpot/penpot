@@ -18,7 +18,6 @@
    [app.common.schema :as sm]
    [app.common.text :as ct]
    [app.common.types.color :as ctc]
-   [app.common.types.colors-list :as ctcl]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
@@ -32,27 +31,34 @@
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CONSTANTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce BASE-FONT-SIZE "16px")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def schema:media
   "A schema that represents the file media object"
-  [:map {:title "FileMediaObject"}
+  [:map {:title "FileMedia"}
    [:id ::sm/uuid]
-   [:created-at ::sm/inst]
+   [:created-at {:optional true} ::sm/inst]
    [:deleted-at {:optional true} ::sm/inst]
    [:name :string]
    [:width ::sm/safe-int]
    [:height ::sm/safe-int]
    [:mtype :string]
-   [:file-id {:optional true} ::sm/uuid]
    [:media-id ::sm/uuid]
+   [:file-id {:optional true} ::sm/uuid]
    [:thumbnail-id {:optional true} ::sm/uuid]
-   [:is-local :boolean]])
+   [:is-local {:optional true} :boolean]])
 
 (def schema:colors
-  [:map-of {:gen/max 5} ::sm/uuid ::ctc/color])
+  [:map-of {:gen/max 5} ::sm/uuid ctc/schema:library-color])
 
 (def schema:components
   [:map-of {:gen/max 5} ::sm/uuid ::ctn/container])
@@ -65,7 +71,8 @@
 
 (def schema:options
   [:map {:title "FileOptions"}
-   [:components-v2 {:optional true} ::sm/boolean]])
+   [:components-v2 {:optional true} ::sm/boolean]
+   [:base-font-size {:optional true} :string]])
 
 (def schema:data
   [:map {:title "FileData"}
@@ -83,6 +90,7 @@
   because sometimes we want to validate file without the data."
   [:map {:title "file"}
    [:id ::sm/uuid]
+   [:name :string]
    [:revn {:optional true} :int]
    [:vern {:optional true} :int]
    [:created-at {:optional true} ::sm/inst]
@@ -102,12 +110,13 @@
 (sm/register! ::colors schema:colors)
 (sm/register! ::typographies schema:typographies)
 
-(sm/register! ::media-object schema:media)
+(def check-file
+  (sm/check-fn schema:file :hint "check error on validating file"))
 
-(def check-file-data!
-  (sm/check-fn ::data))
+(def check-file-data
+  (sm/check-fn schema:data))
 
-(def check-media-object!
+(def check-file-media
   (sm/check-fn schema:media))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -127,40 +136,44 @@
                 (ctp/make-empty-page {:id page-id :name "Page 1"}))]
 
      (cond-> (assoc empty-file-data :id file-id)
-       (some? page-id)
+       (some? page)
        (ctpl/add-page page)
 
        :always
-       (assoc-in [:options :components-v2] true)))))
+       (update :options merge {:components-v2 true
+                               :base-font-size BASE-FONT-SIZE})))))
 
 (defn make-file
-  [{:keys [id project-id name revn is-shared features
-           ignore-sync-until modified-at deleted-at
-           create-page page-id]
-    :or {is-shared false revn 0 create-page true}}]
+  [{:keys [id project-id name revn is-shared features migrations
+           ignore-sync-until modified-at deleted-at]
+    :or {is-shared false revn 0}}
+
+   & {:keys [create-page page-id]
+      :or {create-page true}}]
 
   (let [id       (or id (uuid/next))
-
         data     (if create-page
                    (if page-id
                      (make-file-data id page-id)
                      (make-file-data id))
                    (make-file-data id nil))
 
-        file     {:id id
-                  :project-id project-id
-                  :name name
-                  :revn revn
-                  :vern 0
-                  :is-shared is-shared
-                  :version version
-                  :data data
-                  :features features
-                  :ignore-sync-until ignore-sync-until
-                  :modified-at modified-at
-                  :deleted-at deleted-at}]
+        file     (d/without-nils
+                  {:id id
+                   :project-id project-id
+                   :name name
+                   :revn revn
+                   :vern 0
+                   :is-shared is-shared
+                   :version version
+                   :data data
+                   :features features
+                   :migrations migrations
+                   :ignore-sync-until ignore-sync-until
+                   :modified-at modified-at
+                   :deleted-at deleted-at})]
 
-    (d/without-nils file)))
+    (check-file file)))
 
 ;; Helpers
 
@@ -285,7 +298,6 @@
                                  (ctkl/get-component (:data component-file) (:component-id head-shape) include-deleted?))]
             (when (some? component)
               (get-ref-shape (:data component-file) component shape :with-context? with-context?))))]
-
     (some find-ref-shape-in-head (ctn/get-parent-heads (:objects container) shape))))
 
 (defn advance-shape-ref
@@ -475,7 +487,7 @@
   [file-data library-data asset-type]
   (let [assets-seq (case asset-type
                      :component  (ctkl/components-seq library-data)
-                     :color      (ctcl/colors-seq library-data)
+                     :color      (ctc/colors-seq library-data)
                      :typography (ctyl/typographies-seq library-data))
 
         find-usages-in-container
@@ -514,7 +526,7 @@
   (letfn [(used-assets-shape [shape]
             (concat
              (ctkl/used-components-changed-since shape library since-date)
-             (ctcl/used-colors-changed-since shape library since-date)
+             (ctc/used-colors-changed-since shape library since-date)
              (ctyl/used-typographies-changed-since shape library since-date)))
 
           (used-assets-container [container]
@@ -650,7 +662,7 @@
                                              %
                                              shapes)))]
             (as-> file-data $
-              (ctcl/add-color $ color)
+              (ctc/add-color $ color)
               (reduce remap-shapes $ usages))))]
 
     (reduce absorb-color
@@ -1023,3 +1035,14 @@
 
     (-> file
         (update-in [:data :pages-index] detach-pages))))
+
+;; Base font size
+
+(defn get-base-font-size
+  "Retrieve the base font size value or token reference."
+  [file-data]
+  (get-in file-data [:options :base-font-size] BASE-FONT-SIZE))
+
+(defn set-base-font-size
+  [file-data base-font-size]
+  (assoc-in file-data [:options :base-font-size] base-font-size))

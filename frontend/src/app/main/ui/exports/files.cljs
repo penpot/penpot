@@ -16,7 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as i]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer  [tr]]
    [beicon.v2.core :as rx]
@@ -67,11 +67,11 @@
     [:div {:class (stl/css :file-name-label)}
      (:name file)]]])
 
-(mf/defc export-dialog*
+(mf/defc export-dialog
   {::mf/register modal/components
    ::mf/register-as ::fexp/export-files
    ::mf/props :obj}
-  [{:keys [team-id files features format]}]
+  [{:keys [team-id files format]}]
   (let [state*       (mf/use-state (partial initialize-state files))
         has-libs?    (some :has-libraries files)
 
@@ -88,14 +88,13 @@
 
         start-export
         (mf/use-fn
-         (mf/deps team-id selected files features)
+         (mf/deps team-id selected files)
          (fn []
            (swap! state* assoc :status :exporting)
-           (->> (uw/ask-many!
+           (->> (mw/ask-many!
                  {:cmd :export-files
                   :format format
                   :team-id team-id
-                  :features features
                   :type selected
                   :files files})
                 (rx/mapcat #(->> (rx/of %)

@@ -12,6 +12,7 @@
    [app.common.features :as cfeat]
    [app.common.logging :as log]
    [app.config :as cf]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.render-wasm :as wasm]
    [clojure.set :as set]
@@ -25,6 +26,20 @@
 (def global-enabled-features
   (cfeat/get-enabled-features cf/flags))
 
+(defn setup-wasm-features
+  [features state]
+  (let [params       (rt/get-params state)
+        wasm         (get params :wasm)
+        enable-wasm  (= "true" wasm)
+        disable-wasm (= "false" wasm)
+        features     (cond-> features
+                       enable-wasm  (conj "render-wasm/v1")
+                       disable-wasm (disj "render-wasm/v1"))]
+    ;; If wasm render is enabled text-editor/v2 must be used
+    (cond-> features
+      (contains? features "render-wasm/v1")
+      (conj "text-editor/v2"))))
+
 (defn get-enabled-features
   "An explicit lookup of enabled features for the current team"
   [state team-id]
@@ -32,7 +47,8 @@
     (-> global-enabled-features
         (set/union (get state :features-runtime #{}))
         (set/intersection cfeat/no-migration-features)
-        (set/union (get team :features)))))
+        (set/union (get team :features))
+        (setup-wasm-features state))))
 
 (defn active-feature?
   "Given a state and feature, check if feature is enabled."
@@ -97,7 +113,8 @@
     (update [_ state]
       (let [features (-> global-enabled-features
                          (set/union (get state :features-runtime #{}))
-                         (set/union features))]
+                         (set/union features)
+                         (setup-wasm-features state))]
         (assoc state :features features)))
 
     ptk/EffectEvent
@@ -110,4 +127,3 @@
         (log/inf :hint "initialized"
                  :enabled (str/join "," features)
                  :runtime (str/join "," (:features-runtime state)))))))
-

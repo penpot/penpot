@@ -2,11 +2,8 @@
 # NOTE: this script should be called from the parent directory to
 # properly work.
 
-set -ex
-
 export INCLUDE_STORYBOOK=${BUILD_STORYBOOK:-no};
 export INCLUDE_WASM=${BUILD_WASM:-yes};
-
 export CURRENT_VERSION=$1;
 export BUILD_DATE=$(date -R);
 export CURRENT_HASH=${CURRENT_HASH:-$(git rev-parse --short HEAD)};
@@ -16,6 +13,11 @@ export TS=$(date +%s);
 # Some cljs reacts on this environment variable for define more
 # performant code on macros (example: rumext)
 export NODE_ENV=production;
+
+echo "Current path:"
+echo $PATH
+
+set -ex
 
 corepack enable;
 corepack install || exit 1;

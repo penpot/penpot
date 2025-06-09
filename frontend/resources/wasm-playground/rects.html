@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>WASM + WebGL2 Canvas</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script type="module">
+    import initWasmModule from '/js/render_wasm.js';
+    import {
+      init, addShapeSolidFill, assignCanvas, hexToU32ARGB, getRandomInt, getRandomColor,
+      getRandomFloat, useShape, setShapeChildren, setupInteraction, addShapeSolidStrokeFill
+    } from './js/lib.js';
+
+    const canvas = document.getElementById("canvas");
+    canvas.width =  window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const params = new URLSearchParams(document.location.search);
+    const shapes = params.get("shapes") || 1000;
+
+    initWasmModule().then(Module => {
+      init(Module);
+      assignCanvas(canvas);
+      Module._set_canvas_background(hexToU32ARGB("#FABADA", 1));
+      Module._set_view(1, 0, 0);
+      Module._init_shapes_pool(shapes + 1);
+      setupInteraction(canvas);
+
+      const children = [];
+      for (let i = 0; i < shapes; i++) {
+        const uuid = crypto.randomUUID();
+        children.push(uuid);
+
+        useShape(uuid);
+        Module._set_parent(0, 0, 0, 0);
+        Module._set_shape_type(3);
+        const x1 = getRandomInt(0, canvas.width);
+        const y1 = getRandomInt(0, canvas.height);
+        const width = getRandomInt(20, 100);
+        const height = getRandomInt(20, 100);
+        Module._set_shape_selrect(x1, y1, x1 + width, y1 + height);
+
+        const color = getRandomColor();
+        const argb = hexToU32ARGB(color, getRandomFloat(0.1, 1.0));
+        addShapeSolidFill(argb)
+
+        Module._add_shape_center_stroke(10, 0,  0, 0);
+        const argb2 = hexToU32ARGB(color, getRandomFloat(0.1, 1.0));
+        addShapeSolidStrokeFill(argb2);        
+      }
+
+      useShape("00000000-0000-0000-0000-000000000000");
+      setShapeChildren(children);
+
+      performance.mark('render:begin');
+      Module._render(Date.now());
+      performance.mark('render:end');
+      const { duration } = performance.measure('render', 'render:begin', 'render:end');
+      // alert(`render time: ${duration.toFixed(2)}ms`);
+    });
+    
+  </script>
+</body>
+</html>

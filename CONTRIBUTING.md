@@ -1,62 +1,59 @@
 # Contributing Guide #
 
 Thank you for your interest in contributing to Penpot. This is a
-generic guide that details how to contribute to Penpot in a way that
-is efficient for everyone. If you want a specific documentation for
-different parts of the platform, please refer to `docs/` directory.
-
+generic guide that details how to contribute to the project in a way that
+is efficient for everyone. If you are looking for specific documentation on
+different parts of the platform, please refer to the `docs/` directory,
+or the rendered version at the [Help Center](https://help.penpot.app/).
 
 ## Reporting Bugs ##
 
 We are using [GitHub Issues](https://github.com/penpot/penpot/issues)
-for our public bugs. We keep a close eye on this and try to make it
+for our public bugs. We keep a close eye on them and try to make it
 clear when we have an internal fix in progress. Before filing a new
 task, try to make sure your problem doesn't already exist.
 
-If you found a bug, please report it, as far as possible with:
+If you found a bug, please report it, as far as possible, with:
 
 - a detailed explanation of steps to reproduce the error
-- a browser and the browser version used
-- a dev tools console exception stack trace (if it is available)
+- the browser and browser version used
+- a dev tools console exception stack trace (if available)
 
-If you found a bug that you consider better discuss in private (for
-example: security bugs), consider first send an email to
+If you found a bug which you think is better to discuss in private (for
+example, security bugs), consider first sending an email to
 `support@penpot.app`.
 
-**We don't have formal bug bounty program for security reports; this
-is an open source application and your contribution will be recognized
+**We don't have a formal bug bounty program for security reports; this
+is an open source application, and your contribution will be recognized
 in the changelog.**
 
 
-## Pull requests ##
+## Pull Requests ##
 
-If you want propose a change or bug fix with the Pull-Request system
-firstly you should carefully read the **DCO** section and format your
-commits accordingly.
+If you want to propose a change or bug fix via a pull request (PR),
+you should first carefully read the section **Developer's Certificate of
+Origin**. You must also format your code and commits according to the
+instructions below.
 
-If you intend to fix a bug it's fine to submit a pull request right
-away but we still recommend to file an issue detailing what you're
+If you intend to fix a bug, it's fine to submit a pull request right
+away, but we still recommend filing an issue detailing what you're
 fixing. This is helpful in case we don't accept that specific fix but
 want to keep track of the issue.
 
-If you want to implement or start working in a new feature, please
-open a **question** / **discussion** issue for it. No pull-request
-will be accepted without previous chat about the changes,
-independently if it is a new feature, already planned feature or small
-quick win.
+If you want to implement or start working on a new feature, please
+open a **question*- / **discussion*- issue for it. No PR
+will be accepted without a prior discussion about the changes,
+whether it is a new feature, an already planned one, or a quick win.
 
-If is going to be your first pull request, You can learn how from this
-free video series:
+If it is your first PR, you can learn how to proceed from
+[this free video
+series](https://egghead.io/courses/how-to-contribute-to-an-open-source-project-on-github)
 
-https://egghead.io/courses/how-to-contribute-to-an-open-source-project-on-github
-
-We will use the `easy fix` mark for tag for indicate issues that are
-easy for beginners.
-
+We use the `easy fix` tag to indicate issues that are appropriate for beginners.
 
 ## Commit Guidelines ##
 
-We have very precise rules over how our git commit messages can be formatted.
+We have very precise rules on how our git commit messages must be formatted.
 
 The commit message format is:
 
@@ -71,34 +68,37 @@ The commit message format is:
 Where type is:
 
 - :bug: `:bug:` a commit that fixes a bug
-- :sparkles: `:sparkles:` a commit that an improvement
-- :tada: `:tada:` a commit with new feature
+- :sparkles: `:sparkles:` a commit that adds an improvement
+- :tada: `:tada:` a commit with a new feature
 - :recycle: `:recycle:` a commit that introduces a refactor
 - :lipstick: `:lipstick:` a commit with cosmetic changes
-- :ambulance: `:ambulance:` a commit that fixes critical bug
+- :ambulance: `:ambulance:` a commit that fixes a critical bug
 - :books: `:books:` a commit that improves or adds documentation
-- :construction: `:construction:`: a wip commit
+- :construction: `:construction:` a WIP commit
 - :boom: `:boom:` a commit with breaking changes
 - :wrench: `:wrench:` a commit for config updates
 - :zap: `:zap:` a commit with performance improvements
-- :whale: `:whale:` a commit for docker related stuff
-- :paperclip: `:paperclip:` a commit with other not relevant changes
-- :arrow_up: `:arrow_up:` a commit with dependencies updates
-- :arrow_down: `:arrow_down:` a commit with dependencies downgrades
+- :whale: `:whale:` a commit for Docker-related stuff
+- :paperclip: `:paperclip:` a commit with other non-relevant changes
+- :arrow_up: `:arrow_up:` a commit with dependency updates
+- :arrow_down: `:arrow_down:` a commit with dependency downgrades
 - :fire: `:fire:` a commit that removes files or code
+- :globe_with_meridians: `:globe_with_meridians:` a commit that adds or updates
+  translations
 
 More info:
+
  - https://gist.github.com/parmentf/035de27d6ed1dce0b36a
  - https://gist.github.com/rxaviers/7360908
 
 Each commit should have:
 
-- A concise subject using imperative mood.
-- The subject should have capitalized the first letter, without period
-  at the end and no larger than 65 characters.
+- A concise subject using the imperative mood.
+- The subject should capitalize the first letter, omit the period
+  at the end, and be no longer than 65 characters.
 - A blank line between the subject line and the body.
-- An entry on the CHANGES.md file if applicable, referencing the
-  github or taiga issue/user-story using the these same rules.
+- An entry in the CHANGES.md file if applicable, referencing the
+  GitHub or Taiga issue/user story using these same rules.
 
 Examples of good commit messages:
 
@@ -111,8 +111,30 @@ Examples of good commit messages:
 - `:ambulance: Fix critical bug on user registration process`
 - `:tada: Add new approach for user registration`
 
+## Formatting and Linting ##
 
-## Code of conduct ##
+You will want to make sure your code is formatted and linted before submitting
+a PR. We use [cljfmt](https://github.com/weavejester/cljfmt) and
+[clj-kondo](https://github.com/clj-kondo/clj-kondo) for this. After installing
+them on your system, you can run them with:
+
+```bash
+# Check formatting
+yarn fmt:clj:check
+
+# Check and fix formatting
+yarn fmt:clj
+
+# Run the linter
+yarn lint:clj
+```
+
+There are more choices in `package.json`.
+
+Ideally, you should run these commands as git pre-commit hooks. A convenient way
+of defining them is to use [Husky](https://typicode.github.io/husky/#/).
+
+## Code of Conduct ##
 
 As contributors and maintainers of this project, we pledge to respect
 all people who contribute through reporting issues, posting feature
@@ -132,11 +154,11 @@ unprofessional conduct.
 
 Project maintainers have the right and responsibility to remove, edit,
 or reject comments, commits, code, wiki edits, issues, and other
-contributions that are not aligned to this Code of Conduct. Project
+contributions that are not aligned with this Code of Conduct. Project
 maintainers who do not follow the Code of Conduct may be removed from
 the project team.
 
-This code of conduct applies both within project spaces and in public
+This Code of Conduct applies both within project spaces and in public
 spaces when an individual is representing the project or its
 community.
 
@@ -145,12 +167,11 @@ may be reported by opening an issue or contacting one or more of the
 project maintainers.
 
 This Code of Conduct is adapted from the Contributor Covenant, version
-1.1.0, available from http://contributor-covenant.org/version/1/1/0/
+1.1.0, available from [http://contributor-covenant.org/version/1/1/0/](http://contributor-covenant.org/version/1/1/0/)
 
+## Developer's Certificate of Origin (DCO)
 
-## Developer's Certificate of Origin (DCO) ##
-
-By submitting code you are agree and can certify the below:
+By submitting code you agree to and can certify the following:
 
     Developer's Certificate of Origin 1.1
 
@@ -178,13 +199,15 @@ By submitting code you are agree and can certify the below:
         maintained indefinitely and may be redistributed consistent with
         this project or the open source license(s) involved.
 
-Then, all your code patches (**documentation are excluded**) should
+Then, all your code patches (**documentation is excluded**) should
 contain a sign-off at the end of the patch/commit description body. It
-can be automatically added on adding `-s` parameter to `git commit`.
+can be automatically added by adding the `-s` parameter to `git commit`.
 
-This is an example of the aspect of the line:
+This is an example of what the line should look like:
 
-	Signed-off-by: Andrey Antukh <niwi@niwi.nz>
+```
+Signed-off-by: Andrey Antukh <niwi@niwi.nz>
+```
 
 Please, use your real name (sorry, no pseudonyms or anonymous
 contributions are allowed).

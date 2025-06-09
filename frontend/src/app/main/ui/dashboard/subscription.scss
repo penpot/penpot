@@ -2,6 +2,7 @@
 @use "common/refactor/common-dashboard";
 @use "../ds/typography.scss" as t;
 @use "../ds/_borders.scss" as *;
+@use "../ds/spacing.scss" as *;
 
 .cta-power-up {
   display: flex;
@@ -17,6 +18,11 @@
   display: grid;
   color: var(--color-foreground-secondary);
   grid-template-columns: 1fr auto;
+  padding: 0;
+}
+
+.cta-top-section.cta-without-dropdown {
+  cursor: default;
 }
 
 .cta-top-section .content {
@@ -27,7 +33,7 @@
 .icon-dropdown {
   @include flexCenter;
   height: 100%;
-  width: $s-16;
+  width: var(--sp-l);
 }
 
 .icon-dropdown svg {
@@ -37,18 +43,16 @@
 }
 
 .cta-bottom-section {
-  border-block-start: $s-1 solid var(--color-background-quaternary);
-  display: grid;
+  border-block-start: $b-1 solid var(--color-background-quaternary);
   color: var(--color-foreground-secondary);
-  grid-template-columns: 1fr auto;
-  margin-block-start: $s-12;
-  padding-block-start: $s-12;
+  margin-block-start: var(--sp-m);
+  padding-block-start: var(--sp-m);
 }
 .cta-bottom-section .content {
   @include t.use-typography("body-small");
   @include buttonStyle;
   color: var(--color-foreground-secondary);
-  display: inline;
+  display: inline-block;
   text-align: left;
 }
 
@@ -57,22 +61,92 @@
   text-align: left;
 }
 
+.cta-title {
+  @include t.use-typography("title-small");
+  margin-block-end: var(--sp-xs);
+}
+
 .cta-text {
   @include t.use-typography("body-small");
 }
 
-.cta-title {
-  @include t.use-typography("body-medium");
-}
-
-.cta-bottom-section .content strong,
-.cta-highlight {
+.cta-bottom-section .content a {
   @include t.use-typography("body-small");
   color: var(--color-accent-tertiary);
+  margin-inline-start: var(--sp-xs);
 }
 
 .cta-link {
   @include buttonStyle;
   align-self: end;
-  margin-inline-start: $s-4;
+  margin-inline-start: var(--sp-xs);
+}
+
+.team {
+  display: grid;
+  grid-auto-rows: min-content;
+  gap: var(--sp-s);
+  max-width: $s-1000;
+  width: 100%;
+}
+
+.team-label {
+  @include t.use-typography("headline-small");
+  color: var(--title-foreground-color);
+}
+
+.team-text {
+  @include t.use-typography("body-large");
+  color: var(--color-foreground-primary);
+}
+
+.manage-subscription-link {
+  @include buttonStyle;
+  @include t.use-typography("body-small");
+  color: var(--color-accent-tertiary);
+  display: flex;
+  padding: 0;
+}
+
+.subscription-icon {
+  @extend .button-icon;
+  background: var(--color-background-primary);
+  stroke: var(--color-foreground-secondary);
+  border-radius: var(--sp-xs);
+  border: $b-1 solid var(--color-foreground-secondary);
+}
+
+.menu-item {
+  @extend .menu-item-base;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--menu-foreground-color-hover);
+
+    .open-arrow {
+      svg {
+        stroke: var(--menu-foreground-color-hover);
+      }
+    }
+  }
+}
+
+.members-cta {
+  height: fit-content;
+  margin-block-start: var(--sp-s);
+  margin-inline-start: $s-68;
+  max-width: $s-200;
+}
+
+.members-cta-full-width {
+  max-width: $s-1000;
+}
+
+.cta-message {
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-secondary);
+
+  a {
+    color: var(--color-accent-primary);
+  }
 }

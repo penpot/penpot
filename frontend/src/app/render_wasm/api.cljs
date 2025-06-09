@@ -8,10 +8,13 @@
   "A WASM based render API"
   (:require
    ["react-dom/server" :as rds]
-   [app.common.data :as d]
+   [app.common.data :as d :refer [not-empty?]]
    [app.common.data.macros :as dm]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
+   [app.common.types.fill :as types.fill]
+   [app.common.types.path :as path]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.shape.path :as path]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.fonts :as fonts]
@@ -28,8 +31,8 @@
    [app.render-wasm.serializers.fills :as sr-fills]
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
+   [app.util.functions :as fns]
    [app.util.http :as http]
-   [app.util.perf :as uperf]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
@@ -99,7 +102,7 @@
   (h/call wasm/internal-module "_render" timestamp)
   (set! wasm/internal-frame-id nil))
 
-
+(def debounce-render (fns/debounce render 100))
 
 (defn cancel-render
   [_]
@@ -186,68 +189,89 @@
 
 (defn- get-string-length [string] (+ (count string) 1))
 
-(defn- store-image
+(defn- fetch-image
   [id]
-
   (let [buffer (uuid/get-u32 id)
         url    (cf/resolve-file-media {:id id})]
-    (->> (http/send! {:method :get
-                      :uri url
-                      :response-type :blob})
-         (rx/map :body)
-         (rx/mapcat wapi/read-file-as-array-buffer)
-         (rx/map (fn [image]
-                   (let [size    (.-byteLength image)
-                         offset  (mem/alloc-bytes size)
-                         heap    (mem/get-heap-u8)
-                         data    (js/Uint8Array. image)]
-                     (.set heap data offset)
-                     (h/call wasm/internal-module "_store_image"
-                             (aget buffer 0)
-                             (aget buffer 1)
-                             (aget buffer 2)
-                             (aget buffer 3))
-                     true))))))
+    {:key url
+     :callback #(->> (http/send! {:method :get
+                                  :uri url
+                                  :response-type :blob})
+                     (rx/map :body)
+                     (rx/mapcat wapi/read-file-as-array-buffer)
+                     (rx/map (fn [image]
+                               (let [size    (.-byteLength image)
+                                     offset  (mem/alloc-bytes size)
+                                     heap    (mem/get-heap-u8)
+                                     data    (js/Uint8Array. image)]
+                                 (.set heap data offset)
+                                 (h/call wasm/internal-module "_store_image"
+                                         (aget buffer 0)
+                                         (aget buffer 1)
+                                         (aget buffer 2)
+                                         (aget buffer 3))
+                                 true))))}))
+
+(defn- get-fill-images
+  [leaf]
+  (filter :fill-image (:fills leaf)))
+
+(defn- process-fill-image
+  [fill]
+  (rx/from
+   (when-let [image (:fill-image fill)]
+     (let [id (dm/get-prop image :id)
+           buffer (uuid/get-u32 id)
+           cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                 (aget buffer 0)
+                                 (aget buffer 1)
+                                 (aget buffer 2)
+                                 (aget buffer 3))]
+       (when (zero? cached-image?)
+         (fetch-image id))))))
+
+(defn set-shape-text-images
+  [content]
+  (let [paragraph-set (first (get content :children))
+        paragraphs (get paragraph-set :children)]
+    (->> paragraphs
+         (mapcat :children)
+         (mapcat get-fill-images)
+         (map process-fill-image))))
 
 (defn set-shape-fills
   [fills]
-  (h/call wasm/internal-module "_clear_shape_fills")
-  (keep (fn [fill]
-          (let [opacity  (or (:fill-opacity fill) 1.0)
-                color    (:fill-color fill)
-                gradient (:fill-color-gradient fill)
-                image    (:fill-image fill)]
-            (cond
-              (some? color)
-              (let [rgba (sr-clr/hex->u32argb color opacity)]
-                (h/call wasm/internal-module "_add_shape_solid_fill" rgba))
+  (when (not-empty? fills)
+    (let [fills (take types.fill/MAX-FILLS fills)
+          image-fills (filter :fill-image fills)
+          offset (mem/alloc-bytes (* (count fills) sr-fills/FILL-BYTE-SIZE))
+          heap (mem/get-heap-u8)
+          dview (js/DataView. (.-buffer heap))]
 
-              (some? gradient)
-              (let [size   sr-fills/GRADIENT-BYTE-SIZE
-                    offset (mem/alloc-bytes size)
-                    heap   (mem/get-heap-u32)]
-                (sr-fills/write-gradient-fill! offset heap gradient opacity)
-                (case (:type gradient)
-                  :linear
-                  (h/call wasm/internal-module "_add_shape_linear_fill")
-                  :radial
-                  (h/call wasm/internal-module "_add_shape_radial_fill")))
+    ;; write fill data to heap
+      (loop [fills (seq fills)
+             current-offset offset]
+        (when-not (empty? fills)
+          (let [fill       (first fills)
+                new-offset (sr-fills/write-fill! current-offset dview fill)]
+            (recur (rest fills) new-offset))))
 
-              (some? image)
-              (let [id            (dm/get-prop image :id)
+    ;; send fills to wasm
+      (h/call wasm/internal-module "_set_shape_fills")
+
+    ;; load images for image fills if not cached
+      (keep (fn [fill]
+              (let [image         (:fill-image fill)
+                    id            (dm/get-prop image :id)
                     buffer        (uuid/get-u32 id)
-                    cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
-                (h/call wasm/internal-module "_add_shape_image_fill"
-                        (aget buffer 0)
-                        (aget buffer 1)
-                        (aget buffer 2)
-                        (aget buffer 3)
-                        opacity
-                        (dm/get-prop image :width)
-                        (dm/get-prop image :height))
-                (when (== cached-image? 0)
-                  (store-image id))))))
-        fills))
+                    cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                          (aget buffer 0)
+                                          (aget buffer 1)
+                                          (aget buffer 2)
+                                          (aget buffer 3))]
+                (when (zero? cached-image?)
+                  (fetch-image id))))
+            image-fills))))
 
 (defn set-shape-strokes
   [strokes]
@@ -261,7 +285,10 @@
                 align     (:stroke-alignment stroke)
                 style     (-> stroke :stroke-style sr/translate-stroke-style)
                 cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
-                cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)]
+                cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)
+                offset    (mem/alloc-bytes sr-fills/FILL-BYTE-SIZE)
+                heap      (mem/get-heap-u8)
+                dview     (js/DataView. (.-buffer heap))]
             (case align
               :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end)
               :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end)
@@ -269,34 +296,25 @@
 
             (cond
               (some? gradient)
-              (let [size   sr-fills/GRADIENT-BYTE-SIZE
-                    offset (mem/alloc-bytes size)
-                    heap   (mem/get-heap-u32)]
-                (sr-fills/write-gradient-fill! offset heap gradient opacity)
-                (case (:type gradient)
-                  :linear
-                  (h/call wasm/internal-module "_add_shape_stroke_linear_fill")
-                  :radial
-                  (h/call wasm/internal-module "_add_shape_stroke_radial_fill")))
+              (do
+                (sr-fills/write-gradient-fill! offset dview gradient opacity)
+                (h/call wasm/internal-module "_add_shape_stroke_fill"))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
                     buffer        (uuid/get-u32 id)
                     cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
-                (h/call wasm/internal-module "_add_shape_image_stroke"
-                        (aget buffer 0)
-                        (aget buffer 1)
-                        (aget buffer 2)
-                        (aget buffer 3)
-                        opacity
-                        (dm/get-prop image :width)
-                        (dm/get-prop image :height))
+                (sr-fills/write-image-fill! offset dview id opacity
+                                            (dm/get-prop image :width)
+                                            (dm/get-prop image :height))
+                (h/call wasm/internal-module "_add_shape_stroke_fill")
                 (when (== cached-image? 0)
-                  (store-image id)))
+                  (fetch-image id)))
 
               (some? color)
-              (let [rgba (sr-clr/hex->u32argb color opacity)]
-                (h/call wasm/internal-module "_add_shape_stroke_solid_fill" rgba)))))
+              (do
+                (sr-fills/write-solid-fill! offset dview (sr-clr/hex->u32argb color opacity))
+                (h/call wasm/internal-module "_add_shape_stroke_fill")))))
         strokes))
 
 (defn set-shape-path-attrs
@@ -311,13 +329,14 @@
     (h/call wasm/internal-module "stringToUTF8" str offset size)
     (h/call wasm/internal-module "_set_shape_path_attrs" (count attrs))))
 
+;; FIXME: revisit on heap refactor is merged to use u32 instead u8
 (defn set-shape-path-content
   [content]
-  (let [pdata  (path/path-data content)
-        size   (* (count pdata) path/SEGMENT-BYTE-SIZE)
+  (let [pdata  (path/content content)
+        size   (path/get-byte-size content)
         offset (mem/alloc-bytes size)
         heap   (mem/get-heap-u8)]
-    (path/-write-to pdata (.-buffer heap) offset)
+    (path/write-to pdata (.-buffer heap) offset)
     (h/call wasm/internal-module "_set_shape_path_content")))
 
 (defn set-shape-svg-raw-content
@@ -601,25 +620,62 @@
           (h/call wasm/internal-module "_add_shape_shadow" rgba blur spread x y (sr/translate-shadow-style style) hidden)
           (recur (inc index)))))))
 
+(declare propagate-apply)
+
 (defn set-shape-text-content
   [content]
   (h/call wasm/internal-module "_clear_shape_text")
   (let [paragraph-set (first (dm/get-prop content :children))
         paragraphs (dm/get-prop paragraph-set :children)
-        fonts (fonts/get-content-fonts content)]
+        fonts (fonts/get-content-fonts content)
+        emoji? (atom false)
+        languages (atom #{})]
     (loop [index 0]
       (when (< index (count paragraphs))
         (let [paragraph (nth paragraphs index)
               leaves (dm/get-prop paragraph :children)]
           (when (seq leaves)
-            (t/write-shape-text leaves paragraph)
+            (let [text (apply str (map :text leaves))]
+              (when (and (not @emoji?) (t/contains-emoji? text))
+                (reset! emoji? true))
+              (swap! languages into (t/get-languages text))
+              (t/write-shape-text leaves paragraph text))
             (recur (inc index))))))
-    (f/store-fonts fonts)))
+
+    (let [updated-fonts
+          (-> fonts
+              (cond-> @emoji? (f/add-emoji-font))
+              (f/add-noto-fonts @languages))]
+      (f/store-fonts updated-fonts))))
+
+(defn set-shape-text
+  [content]
+  (concat
+   (set-shape-text-images content)
+   (set-shape-text-content content)))
+
+(defn set-shape-grow-type
+  [grow-type]
+  (h/call wasm/internal-module "_set_shape_grow_type" (sr/translate-grow-type grow-type)))
+
+(defn text-dimensions
+  ([id]
+   (use-shape id)
+   (text-dimensions))
+  ([]
+   (let [offset (h/call wasm/internal-module "_get_text_dimensions")
+         heapf32 (mem/get-heap-f32)
+         width (aget heapf32 (mem/ptr8->ptr32 offset))
+         height (aget heapf32 (mem/ptr8->ptr32 (+ offset 4)))
+         max-width (aget heapf32 (mem/ptr8->ptr32 (+ offset 8)))]
+     (h/call wasm/internal-module "_free_bytes")
+     {:width width :height height :max-width max-width})))
 
 (defn set-view-box
   [zoom vbox]
   (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-  (render (uperf/now)))
+  (h/call wasm/internal-module "_render_from_cache")
+  (debounce-render))
 
 (defn clear-drawing-cache []
   (h/call wasm/internal-module "_clear_drawing_cache"))
@@ -651,6 +707,7 @@
         opacity      (dm/get-prop shape :opacity)
         hidden       (dm/get-prop shape :hidden)
         content      (dm/get-prop shape :content)
+        grow-type    (dm/get-prop shape :grow-type)
         blur         (dm/get-prop shape :blur)
         corners      (when (some? (dm/get-prop shape :r1))
                        [(dm/get-prop shape :r1)
@@ -687,9 +744,8 @@
       (set-shape-svg-raw-content (get-static-markup shape)))
     (when (some? corners) (set-shape-corners corners))
     (when (some? shadows) (set-shape-shadows shadows))
-    (when (and (= type :text) (some? content))
-      (set-shape-text-content content))
-
+    (when (= type :text)
+      (set-shape-grow-type grow-type))
     (when (or (ctl/any-layout? shape)
               (ctl/any-layout-immediate-child? objects shape))
       (set-layout-child shape))
@@ -701,25 +757,27 @@
       (set-grid-layout shape))
 
     (let [pending (into [] (concat
-                            (if (and (= type :text) (some? content))
-                              (set-shape-text-content content)
-                              [])
+                            (set-shape-text content)
                             (set-shape-fills fills)
                             (set-shape-strokes strokes)))]
       (perf/end-measure "set-object")
       pending)))
 
 
+(defn process-pending
+  [pending]
+  (when-let [pending (-> (d/index-by :key :callback pending) vals)]
+    (->> (rx/from pending)
+         (rx/mapcat (fn [callback] (callback)))
+         (rx/reduce conj [])
+         (rx/subs! (fn [_]
+                     (clear-drawing-cache)
+                     (request-render "set-objects"))))))
+
 (defn process-object
   [shape]
   (let [pending (set-object [] shape)]
-    (when-let [pending (seq pending)]
-      (->> (rx/from pending)
-           (rx/mapcat identity)
-           (rx/reduce conj [])
-           (rx/subs! (fn [_]
-                       (clear-drawing-cache)
-                       (request-render "set-objects")))))))
+    (process-pending pending)))
 
 (defn set-objects
   [objects]
@@ -736,54 +794,121 @@
     (perf/end-measure "set-objects")
     (clear-drawing-cache)
     (request-render "set-objects")
-    (when-let [pending (seq pending)]
-      (->> (rx/from pending)
-           (rx/mapcat identity)
-           (rx/reduce conj [])
-           (rx/subs! (fn [_]
-                       (clear-drawing-cache)
-                       (request-render "set-objects")))))))
+    (process-pending pending)))
 
 (defn set-structure-modifiers
   [entries]
   (when-not (empty? entries)
-    (let [offset (mem/alloc-bytes-32 (mem/get-list-size entries 40))
-          heapu32 (mem/get-heap-u32)]
+    (let [offset (mem/alloc-bytes-32 (mem/get-list-size entries 44))
+          heapu32 (mem/get-heap-u32)
+          heapf32 (mem/get-heap-f32)]
       (loop [entries (seq entries)
              current-offset  offset]
         (when-not (empty? entries)
-          (let [{:keys [type parent id index] :as entry} (first entries)]
+          (let [{:keys [type parent id index value] :as entry} (first entries)]
             (sr/heapu32-set-u32 (sr/translate-structure-modifier-type type) heapu32 (+ current-offset 0))
             (sr/heapu32-set-u32 (or index 0) heapu32 (+ current-offset 1))
             (sr/heapu32-set-uuid parent heapu32 (+ current-offset 2))
             (sr/heapu32-set-uuid id heapu32 (+ current-offset 6))
-            (recur (rest entries) (+ current-offset 10)))))
+            (aset heapf32 (+ current-offset 10) value)
+            (recur (rest entries) (+ current-offset 11)))))
       (h/call wasm/internal-module "_set_structure_modifiers"))))
 
 (defn propagate-modifiers
-  [entries]
-  (let [offset (mem/alloc-bytes-32 (modifier-get-entries-size entries))
-        heapf32 (mem/get-heap-f32)
-        heapu32 (mem/get-heap-u32)]
-
-    (loop [entries (seq entries)
-           current-offset  offset]
-      (when-not (empty? entries)
-        (let [{:keys [id transform]} (first entries)]
-          (sr/heapu32-set-uuid id heapu32 current-offset)
-          (sr/heapf32-set-matrix transform heapf32 (+ current-offset (mem/ptr8->ptr32 MODIFIER-ENTRY-TRANSFORM-OFFSET)))
-          (recur (rest entries) (+ current-offset (mem/ptr8->ptr32 MODIFIER-ENTRY-SIZE))))))
-
-    (let [result-offset (h/call wasm/internal-module "_propagate_modifiers")
+  [entries pixel-precision]
+  (when (d/not-empty? entries)
+    (let [offset (mem/alloc-bytes-32 (modifier-get-entries-size entries))
           heapf32 (mem/get-heap-f32)
-          heapu32 (mem/get-heap-u32)
-          len (aget heapu32 (mem/ptr8->ptr32 result-offset))
-          result
-          (->> (range 0 len)
-               (mapv #(dr/heap32->entry heapu32 heapf32 (mem/ptr8->ptr32 (+ result-offset 4 (* % MODIFIER-ENTRY-SIZE))))))]
-      (h/call wasm/internal-module "_free_bytes")
+          heapu32 (mem/get-heap-u32)]
 
-      result)))
+      (loop [entries (seq entries)
+             current-offset  offset]
+        (when-not (empty? entries)
+          (let [{:keys [id transform]} (first entries)]
+            (sr/heapu32-set-uuid id heapu32 current-offset)
+            (sr/heapf32-set-matrix transform heapf32 (+ current-offset (mem/ptr8->ptr32 MODIFIER-ENTRY-TRANSFORM-OFFSET)))
+            (recur (rest entries) (+ current-offset (mem/ptr8->ptr32 MODIFIER-ENTRY-SIZE))))))
+
+      (let [result-offset (h/call wasm/internal-module "_propagate_modifiers" pixel-precision)
+            heapf32 (mem/get-heap-f32)
+            heapu32 (mem/get-heap-u32)
+            len (aget heapu32 (mem/ptr8->ptr32 result-offset))
+            result
+            (->> (range 0 len)
+                 (mapv #(dr/heap32->entry heapu32 heapf32 (mem/ptr8->ptr32 (+ result-offset 4 (* % MODIFIER-ENTRY-SIZE))))))]
+        (h/call wasm/internal-module "_free_bytes")
+
+        result))))
+
+(defn propagate-apply
+  [entries pixel-precision]
+  (when (d/not-empty? entries)
+    (let [offset (mem/alloc-bytes-32 (modifier-get-entries-size entries))
+          heapf32 (mem/get-heap-f32)
+          heapu32 (mem/get-heap-u32)]
+
+      (loop [entries (seq entries)
+             current-offset  offset]
+        (when-not (empty? entries)
+          (let [{:keys [id transform]} (first entries)]
+            (sr/heapu32-set-uuid id heapu32 current-offset)
+            (sr/heapf32-set-matrix transform heapf32 (+ current-offset (mem/ptr8->ptr32 MODIFIER-ENTRY-TRANSFORM-OFFSET)))
+            (recur (rest entries) (+ current-offset (mem/ptr8->ptr32 MODIFIER-ENTRY-SIZE))))))
+
+      (let [offset (h/call wasm/internal-module "_propagate_apply" pixel-precision)
+            heapf32 (mem/get-heap-f32)
+            width (aget heapf32 (mem/ptr8->ptr32 (+ offset 0)))
+            height (aget heapf32 (mem/ptr8->ptr32 (+ offset 4)))
+            cx (aget heapf32 (mem/ptr8->ptr32 (+ offset 8)))
+            cy (aget heapf32 (mem/ptr8->ptr32 (+ offset 12)))
+
+            a (aget heapf32 (mem/ptr8->ptr32 (+ offset 16)))
+            b (aget heapf32 (mem/ptr8->ptr32 (+ offset 20)))
+            c (aget heapf32 (mem/ptr8->ptr32 (+ offset 24)))
+            d (aget heapf32 (mem/ptr8->ptr32 (+ offset 28)))
+            e (aget heapf32 (mem/ptr8->ptr32 (+ offset 32)))
+            f (aget heapf32 (mem/ptr8->ptr32 (+ offset 36)))
+            transform (gmt/matrix a b c d e f)]
+
+        (h/call wasm/internal-module "_free_bytes")
+        (request-render "set-modifiers")
+
+        {:width width
+         :height height
+         :center (gpt/point cx cy)
+         :transform transform}))))
+
+(defn get-selection-rect
+  [entries]
+  (when (d/not-empty? entries)
+    (let [offset (mem/alloc-bytes-32 (* (count entries) 16))
+          heapu32 (mem/get-heap-u32)]
+
+      (loop [entries (seq entries)
+             current-offset  offset]
+        (when-not (empty? entries)
+          (let [id (first entries)]
+            (sr/heapu32-set-uuid id heapu32 current-offset)
+            (recur (rest entries) (+ current-offset (mem/ptr8->ptr32 16))))))
+
+      (let [offset (h/call wasm/internal-module "_get_selection_rect")
+            heapf32 (mem/get-heap-f32)
+            width (aget heapf32 (mem/ptr8->ptr32 (+ offset 0)))
+            height (aget heapf32 (mem/ptr8->ptr32 (+ offset 4)))
+            cx (aget heapf32 (mem/ptr8->ptr32 (+ offset 8)))
+            cy (aget heapf32 (mem/ptr8->ptr32 (+ offset 12)))
+            a (aget heapf32 (mem/ptr8->ptr32 (+ offset 16)))
+            b (aget heapf32 (mem/ptr8->ptr32 (+ offset 20)))
+            c (aget heapf32 (mem/ptr8->ptr32 (+ offset 24)))
+            d (aget heapf32 (mem/ptr8->ptr32 (+ offset 28)))
+            e (aget heapf32 (mem/ptr8->ptr32 (+ offset 32)))
+            f (aget heapf32 (mem/ptr8->ptr32 (+ offset 36)))
+            transform (gmt/matrix a b c d e f)]
+        (h/call wasm/internal-module "_free_bytes")
+        {:width width
+         :height height
+         :center (gpt/point cx cy)
+         :transform transform}))))
 
 (defn set-canvas-background
   [background]
@@ -816,9 +941,12 @@
 
 (defn initialize
   [base-objects zoom vbox background]
-  (let [rgba (sr-clr/hex->u32argb background 1)]
+  (let [rgba         (sr-clr/hex->u32argb background 1)
+        shapes       (into [] (vals base-objects))
+        total-shapes (count shapes)]
     (h/call wasm/internal-module "_set_canvas_background" rgba)
     (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+    (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
     (set-objects base-objects)))
 
 (def ^:private canvas-options

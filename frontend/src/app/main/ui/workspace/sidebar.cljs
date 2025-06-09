@@ -73,7 +73,7 @@
          on-pointer-move :on-pointer-move
          parent-ref :parent-ref
          size :size}
-        (use-resize-hook :left-sidebar 275 275 500 :x false :left)
+        (use-resize-hook :left-sidebar 318 318 500 :x false :left)
 
         {on-pointer-down-pages :on-pointer-down
          on-lost-pointer-capture-pages  :on-lost-pointer-capture
@@ -277,22 +277,21 @@
                 [:> icon-button* {:variant "ghost"
                                   :aria-label (tr "labels.close")
                                   :on-click on-close-history
-                                  :icon "close"}])]
+                                  :icon "close"}])
+               tabs (mf/object
+                     [{:label (tr "workspace.versions.tab.history")
+                       :id "history"
+                       :content versions-tab}
+                      {:label (tr "workspace.versions.tab.actions")
+                       :id "actions"
+                       :content history-tab}])]
 
-
-           (let [tabs (mf/object
-                       [{:label (tr "workspace.versions.tab.history")
-                         :id "history"
-                         :content versions-tab}
-                        {:label (tr "workspace.versions.tab.actions")
-                         :id "actions"
-                         :content history-tab}])]
-             [:> tab-switcher*
-              {:tabs tabs
-               :default-selected "history"
-               :class (stl/css :left-sidebar-tabs)
-               :action-button-position "end"
-               :action-button button}]))
+           [:> tab-switcher*
+            {:tabs tabs
+             :default-selected "history"
+             :class (stl/css :left-sidebar-tabs)
+             :action-button-position "end"
+             :action-button button}])
 
          :else
          [:> options-toolbox* props])]]]))

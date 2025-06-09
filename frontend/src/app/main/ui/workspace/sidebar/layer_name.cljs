@@ -31,8 +31,8 @@
    ::mf/forward-ref true}
   [{:keys [shape-id shape-name is-shape-touched disabled-double-click
            on-start-edit on-stop-edit depth parent-size is-selected
-           type-comp type-frame variant-id variant-name variant-properties
-           component-id is-hidden is-blocked]} external-ref]
+           type-comp type-frame component-id is-hidden is-blocked
+           variant-id variant-name variant-properties variant-error]} external-ref]
   (let [edition*         (mf/use-state false)
         edition?         (deref edition*)
 
@@ -41,9 +41,12 @@
 
         shape-for-rename (mf/deref lens:shape-for-rename)
 
-        shape-name       (d/nilv variant-name shape-name)
+        shape-name       (if variant-id
+                           (d/nilv variant-error variant-name)
+                           shape-name)
+
         default-value    (if variant-id
-                           (ctv/properties-map-to-string variant-properties)
+                           (or variant-error (ctv/properties-map->formula variant-properties))
                            shape-name)
 
         has-path?        (str/includes? shape-name "/")
@@ -67,9 +70,13 @@
              (on-stop-edit)
              (reset! edition* false)
              (if variant-name
-               (let [valid? (ctv/valid-properties-string? name)
-                     props  (if valid? (ctv/properties-string-to-map name) {})]
-                 (st/emit! (dwv/update-properties-names-and-values component-id variant-id variant-properties props)))
+               (if (ctv/valid-properties-formula? name)
+                 (st/emit! (dwv/update-properties-names-and-values component-id variant-id variant-properties (ctv/properties-formula->map name))
+                           (dwv/remove-empty-properties variant-id)
+                           (dwv/update-error component-id nil))
+                 (st/emit! (dwv/update-properties-names-and-values component-id variant-id variant-properties {})
+                           (dwv/remove-empty-properties variant-id)
+                           (dwv/update-error component-id name)))
                (st/emit! (dw/end-rename-shape shape-id name))))))
 
         cancel-edit

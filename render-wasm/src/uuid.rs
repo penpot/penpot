@@ -63,7 +63,7 @@ impl SerializableResult for Uuid {
 
     fn as_bytes(&self) -> Self::BytesType {
         let mut result: Self::BytesType = [0; 16];
-        let (a, b, c, d) = uuid_to_u32_quartet(&self);
+        let (a, b, c, d) = uuid_to_u32_quartet(self);
         result[0..4].clone_from_slice(&a.to_le_bytes());
         result[4..8].clone_from_slice(&b.to_le_bytes());
         result[8..12].clone_from_slice(&c.to_le_bytes());

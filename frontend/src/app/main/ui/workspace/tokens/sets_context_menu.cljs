@@ -30,7 +30,7 @@
   [:li {:class (stl/css :context-menu-item)
         :data-value value
         :on-click on-click}
-   [:span {:class (stl/css :title)} title]])
+   title])
 
 (mf/defc menu*
   {::mf/private true}
@@ -57,7 +57,7 @@
 
     [:ul {:class (stl/css :context-list)}
      (when is-group
-       [:> menu-entry* {:title (tr "workspace.token.add-set-to-group") :on-click create-set-at-path}])
+       [:> menu-entry* {:title (tr "workspace.tokens.add-set-to-group") :on-click create-set-at-path}])
      [:> menu-entry* {:title (tr "labels.rename") :on-click on-edit}]
      (when-not is-group
        [:> menu-entry* {:title (tr "labels.duplicate") :on-click on-duplicate}])

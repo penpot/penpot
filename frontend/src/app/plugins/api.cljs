@@ -176,10 +176,10 @@
           (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
           (u/display-not-valid :replaceColor-shapes shapes)
 
-          (not (sm/validate ::ctc/color old-color))
+          (not (sm/validate ctc/schema:color old-color))
           (u/display-not-valid :replaceColor-oldColor old-color)
 
-          (not (sm/validate ::ctc/color new-color))
+          (not (sm/validate ctc/schema:color new-color))
           (u/display-not-valid :replaceColor-newColor new-color)
 
           :else
@@ -376,10 +376,10 @@
           (u/display-not-valid :createBoolean-shapes shapes)
 
           :else
-          (let [ids (into #{} (map #(obj/get % "$id")) shapes)
-                id-ret (atom nil)]
-            (st/emit! (dwb/create-bool bool-type ids {:id-ret id-ret}))
-            (shape/shape-proxy plugin-id @id-ret)))))
+          (let [ids      (into #{} (map #(obj/get % "$id")) shapes)
+                shape-id (uuid/next)]
+            (st/emit! (dwb/create-bool bool-type :ids ids :force-shape-id shape-id))
+            (shape/shape-proxy plugin-id shape-id)))))
 
     :generateMarkup
     (fn [shapes options]

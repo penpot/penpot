@@ -16,7 +16,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace :as dw]
+   [app.main.data.plugins :as dp]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.variants :as dwv]
@@ -126,7 +126,7 @@
      (fn [self value]
        (let [value (parser/parse-gradient value)]
          (cond
-           (not (sm/validate ::ctc/gradient value))
+           (not (sm/validate ctc/schema:gradient value))
            (u/display-not-valid :gradient value)
 
            (not (r/check-permission plugin-id "library:write"))
@@ -144,7 +144,7 @@
      (fn [self value]
        (let [value (parser/parse-image-data value)]
          (cond
-           (not (sm/validate ::ctc/image-color value))
+           (not (sm/validate ctc/schema:image value))
            (u/display-not-valid :image value)
 
            (not (r/check-permission plugin-id "library:write"))
@@ -227,7 +227,7 @@
         (u/display-not-valid :setPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :color id (keyword "plugin" (str plugin-id)) key value))))
+        (st/emit! (dp/set-plugin-data file-id :color id (keyword "plugin" (str plugin-id)) key value))))
 
     :getPluginDataKeys
     (fn []
@@ -266,7 +266,7 @@
         (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :color id (keyword "shared" namespace) key value))))
+        (st/emit! (dp/set-plugin-data file-id :color id (keyword "shared" namespace) key value))))
 
     :getSharedPluginDataKeys
     (fn [namespace]
@@ -562,7 +562,7 @@
         (u/display-not-valid :setPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :typography id (keyword "plugin" (str plugin-id)) key value))))
+        (st/emit! (dp/set-plugin-data file-id :typography id (keyword "plugin" (str plugin-id)) key value))))
 
     :getPluginDataKeys
     (fn []
@@ -601,7 +601,7 @@
         (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :typography id (keyword "shared" namespace) key value))))
+        (st/emit! (dp/set-plugin-data file-id :typography id (keyword "shared" namespace) key value))))
 
     :getSharedPluginDataKeys
     (fn [namespace]
@@ -707,7 +707,7 @@
         (u/display-not-valid :setPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :component id (keyword "plugin" (str plugin-id)) key value))))
+        (st/emit! (dp/set-plugin-data file-id :component id (keyword "plugin" (str plugin-id)) key value))))
 
     :getPluginDataKeys
     (fn []
@@ -746,7 +746,7 @@
         (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :component id (keyword "shared" namespace) key value))))
+        (st/emit! (dp/set-plugin-data file-id :component id (keyword "shared" namespace) key value))))
 
     :getSharedPluginDataKeys
     (fn [namespace]
@@ -872,7 +872,7 @@
         (u/display-not-valid :setPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :file (keyword "plugin" (str plugin-id)) key value))))
+        (st/emit! (dp/set-plugin-data file-id :file (keyword "plugin" (str plugin-id)) key value))))
 
     :getPluginDataKeys
     (fn []
@@ -908,7 +908,7 @@
         (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :file (keyword "shared" namespace) key value))))
+        (st/emit! (dp/set-plugin-data file-id :file (keyword "shared" namespace) key value))))
 
     :getSharedPluginDataKeys
     (fn [namespace]

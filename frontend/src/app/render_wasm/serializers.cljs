@@ -46,10 +46,14 @@
 
 (defn serialize-uuid
   [id]
-  (if (nil? id)
-    [uuid/zero]
-    (let [as-uuid (uuid/uuid id)]
-      (uuid/get-u32 as-uuid))))
+  (try
+    (if (nil? id)
+      (do
+        [uuid/zero])
+      (let [as-uuid (uuid/uuid id)]
+        (uuid/get-u32 as-uuid)))
+    (catch :default _e
+      [uuid/zero])))
 
 (defn heapu32-set-u32
   [value heap offset]
@@ -277,7 +281,15 @@
   [type]
   (case type
     :remove-children 1
-    :add-children    2))
+    :add-children    2
+    :scale-content 3))
+
+(defn translate-grow-type
+  [grow-type]
+  (case grow-type
+    :auto-width 1
+    :auto-height 2
+    0))
 
 (defn- serialize-enum
   [value enum-map]

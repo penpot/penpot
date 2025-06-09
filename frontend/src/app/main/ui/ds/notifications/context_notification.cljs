@@ -23,8 +23,7 @@
 (mf/defc context-notification*
   "Persistent notifications, they do not disappear.
    These are contextual messages in specific areas of the tool, usually in modals and Dashboard area, and are mainly informative."
-  {::mf/props :obj
-   ::mf/schema schema:context-notification}
+  {::mf/schema schema:context-notification}
   [{:keys [class type appearance level is-html children] :rest props}]
   (let [class (dm/str class " " (stl/css-case :contextual-notification true
                                               :contain-html is-html

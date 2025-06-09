@@ -4,7 +4,6 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../ds/typography.scss" as t;
 @use "../../../ds/_sizes.scss" as *;
 
 @import "refactor/common-refactor.scss";
@@ -211,20 +210,4 @@
   display: grid;
   grid-template-columns: 0.6fr 1fr;
   gap: $s-12;
-}
-
-.label {
-  @include t.use-typography("body-small");
-  @include textEllipsis;
-}
-
-.main-label {
-  @include t.use-typography("body-small");
-  color: var(--color-foreground-primary);
-}
-
-.label-optional {
-  @include t.use-typography("body-small");
-  margin-inline-start: 1ex;
-  color: var(--color-foreground-secondary);
 }

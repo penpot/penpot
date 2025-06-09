@@ -14,6 +14,7 @@
 
 .element-content {
   @include flexColumn;
+  gap: var(--sp-m);
 }
 
 .title-back {
@@ -706,7 +707,12 @@
   @include flexRow;
   justify-content: space-between;
   width: 100%;
-  margin-block-start: $s-12;
+}
+
+.variant-property-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
 }
 
 .variant-property-container {
@@ -735,4 +741,33 @@
   display: flex;
   flex: 0 0 auto;
   width: $s-104;
+}
+
+.variant-error-wrapper {
+  @include bodySmallTypography;
+  border: 1px solid var(--color-background-quaternary);
+  border-radius: $s-8;
+  padding: $s-12;
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
+}
+
+.variant-error-highlight {
+  color: var(--color-foreground-primary);
+}
+
+.variant-error-darken {
+  color: var(--color-foreground-secondary);
+}
+
+.variant-error-button {
+  @include bodySmallTypography;
+  background-color: transparent;
+  border: none;
+  appearance: none;
+  color: var(--color-accent-primary);
+  cursor: pointer;
+  padding: 0;
+  text-align: start;
 }

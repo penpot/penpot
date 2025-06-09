@@ -50,14 +50,7 @@
 
 .resolved-value {
   --input-hint-color: var(--color-foreground-primary);
-  margin-bottom: 0;
-  padding: $s-4 $s-6;
   color: var(--input-hint-color);
-  white-space: pre-wrap;
-}
-
-.resolved-value-placeholder {
-  --input-hint-color: var(--color-foreground-secondary);
 }
 
 .resolved-value-error {

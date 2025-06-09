@@ -8,10 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.shapes-builder :as sb]
    [app.common.svg :as csvg]
-   [app.common.svg.shapes-builder :as csvg.shapes-builder]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
@@ -92,7 +93,7 @@
                                  base-id)
 
                [new-shape new-children]
-               (csvg.shapes-builder/create-svg-shapes id svg-data position objects frame-id parent-id selected true)
+               (sb/create-svg-shapes id svg-data position objects frame-id parent-id selected true)
 
                changes         (-> (pcb/empty-changes it page-id)
                                    (pcb/with-objects objects)
@@ -119,6 +120,7 @@
                   (dwu/commit-undo-transaction undo-id)))
 
          (catch :default cause
-           (rx/throw {:type :svg-parser
-                      :data cause})))))))
+           (js/console.error cause)
+           (rx/throw (ex/error :type :svg-parser
+                               :hint (ex-message cause)))))))))
 

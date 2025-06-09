@@ -54,14 +54,14 @@
                                      (not is-edition-plugin?))
 
         handle-open-click
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps index manifest on-open-plugin can-open?)
          (fn []
            (when (and can-open? on-open-plugin)
              (on-open-plugin manifest))))
 
         handle-delete-click
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps index on-remove-plugin)
          (fn []
            (when on-remove-plugin
@@ -109,19 +109,14 @@
 
         user-can-edit? (:can-edit (deref refs/permissions))
 
-        handle-close-dialog
-        (mf/use-callback
-         (fn []
-           (modal/hide!)))
-
         handle-url-input
-        (mf/use-callback
+        (mf/use-fn
          (fn [value]
            (reset! input-status* nil)
            (reset! plugin-url* value)))
 
         handle-install-click
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps plugins-state plugin-url)
          (fn []
            (reset! fetching-manifest? true)
@@ -149,7 +144,7 @@
                    (reset! input-status* :error-url))))))
 
         handle-open-plugin
-        (mf/use-callback
+        (mf/use-fn
          (fn [manifest]
            (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
                                             ::ev/origin "workspace:plugins"
@@ -159,7 +154,7 @@
            (modal/hide!)))
 
         handle-remove-plugin
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps plugins-state)
          (fn [plugin-index]
            (let [plugins-list (preg/plugins-list)
@@ -173,7 +168,7 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-management)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} close-icon]
+      [:button {:class (stl/css :close-btn) :on-click modal/hide!} close-icon]
       [:div {:class (stl/css :modal-title)} (tr "workspace.plugins.title")]
 
       [:div {:class (stl/css :modal-content)}
@@ -291,7 +286,7 @@
         permissions (set permissions)
 
         handle-accept-dialog
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (ptk/event ::ev/event {::ev/name "allow-plugin-permissions"
@@ -301,7 +296,7 @@
            (when on-accept (on-accept))))
 
         handle-close-dialog
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (ptk/event ::ev/event {::ev/name "reject-plugin-permissions"
@@ -346,7 +341,7 @@
         permissions (set permissions)
 
         handle-accept-dialog
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (ptk/event ::ev/event {::ev/name "allow-plugin-permissions"
@@ -356,7 +351,7 @@
            (when on-accept (on-accept))))
 
         handle-close-dialog
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (ptk/event ::ev/event {::ev/name "reject-plugin-permissions"
@@ -399,7 +394,7 @@
   (let [{:keys [icon host name]} plugin
 
         handle-accept-dialog
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (ptk/event ::ev/event {::ev/name "try-out-accept"})
@@ -407,7 +402,7 @@
            (when on-accept (on-accept))))
 
         handle-close-dialog
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (ptk/event ::ev/event {::ev/name "try-out-cancel"})

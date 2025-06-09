@@ -6,11 +6,30 @@ else
     export _BUILD_MODE=${1:-debug};
 fi
 
+# 256 MB of initial heap to perform less
+# initial calls to memory grow.
+EM_INITIAL_HEAP=$((256 * 1024 * 1024))
+
+# 1.0 doubles the heap on every growth.
+EM_MEMORY_GROWTH_GEOMETRIC_STEP="0.8"
+
+# Malloc implementation to use.
+# - dlmalloc: a powerful general-purpose malloc.
+# - emmalloc: a simple and compact malloc designed for emscripten.
+# - emmalloc-debug: use emmalloc and add extra assertion checks.
+# - emmalloc-memvalidate: use emmalloc with assertions+heap consistency checking.
+# - emmalloc-verbose: use emmalloc with assertions + verbose logging.
+# - emmalloc-memvalidate-verbose: use emmalloc with assertions + heap consistency checking + verbose logging.
+# Default: dlmalloc
+EM_MALLOC="dlmalloc"
+
 EMCC_CFLAGS="--no-entry \
     --js-library src/js/wapi.js \
     -sASSERTIONS=1 \
     -sALLOW_TABLE_GROWTH=1 \
     -sALLOW_MEMORY_GROWTH=1 \
+    -sINITIAL_HEAP=$EM_INITIAL_HEAP \
+    -sMEMORY_GROWTH_GEOMETRIC_STEP=$EM_MEMORY_GROWTH_GEOMETRIC_STEP \
     -sENVIRONMENT=web \
     -sERROR_ON_UNDEFINED_SYMBOLS=0 \
     -sMAX_WEBGL_VERSION=2 \
@@ -18,9 +37,6 @@ EMCC_CFLAGS="--no-entry \
     -sEXPORT_NAME=createRustSkiaModule \
     -sEXPORTED_RUNTIME_METHODS=GL,stringToUTF8 \
     -sEXPORT_ES6=1"
-
-EMSDK_QUIET=1 . /usr/local/emsdk/emsdk_env.sh;
-. /usr/local/cargo/env
 
 export EM_CACHE="/tmp/emsdk_cache";
 
@@ -34,7 +50,7 @@ else
     #        -gseparate-dwarf
     #        -gsplit-dwarf
     #        -gsource-map
-    EMCC_CFLAGS="-g $EMCC_CFLAGS -sVERBOSE=1 -sMALLOC=emmalloc-debug"
+    EMCC_CFLAGS="-g $EMCC_CFLAGS -sVERBOSE=1 -sMALLOC=$EM_MALLOC"
 fi
 
 export EMCC_CFLAGS;

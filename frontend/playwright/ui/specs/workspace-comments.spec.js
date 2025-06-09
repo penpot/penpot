@@ -22,7 +22,7 @@ test("Group bubbles when zooming out if they overlap", async ({ page }) => {
   const zoom = page.getByTitle("Zoom");
   await zoom.click();
 
-  const zoomOut = page.getByTitle("Zoom out");
+  const zoomOut = page.getByRole("button", { name: "Zoom out" });
   await zoomOut.click();
   await zoomOut.click();
   await zoomOut.click();

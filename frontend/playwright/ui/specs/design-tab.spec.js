@@ -66,6 +66,31 @@ test.describe("Constraints", () => {
   });
 });
 
+test.describe("Shape attributes", () => {
+  test("Cannot add a new fill when the limit has been reached", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.mockConfigFlags(["enable-frontend-binary-fills"]);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "design/get-file-fills-limit.json");
+
+    await workspace.goToWorkspace({
+      fileId: "d2847136-a651-80ac-8006-4202d9214aa7",
+      pageId: "d2847136-a651-80ac-8006-4202d9214aa8",
+    });
+
+    await workspace.clickLeafLayer("Rectangle");
+
+    await workspace.page.getByTestId("add-fill").click();
+    await expect(
+      workspace.page.getByRole("button", { name: "#B1B2B5" }),
+    ).toHaveCount(8);
+
+    await expect(workspace.page.getByTestId("add-fill")).toBeDisabled();
+  });
+});
+
 test.describe("Multiple shapes attributes", () => {
   test("User selects multiple shapes with sames fills, strokes, shadows and blur", async ({
     page,
@@ -204,4 +229,25 @@ test("BUG 9543 - Layout padding inputs not showing 'mixed' when needed", async (
     "placeholder",
     "Mixed",
   );
+});
+
+test("BUG 11177 - Font size input not showing 'mixed' when needed", async ({
+  page,
+}) => {
+  const workspace = new WorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockRPC(/get\-file\?/, "design/get-file-11177.json");
+
+  await workspace.goToWorkspace({
+    fileId: "b3e5731a-c295-801d-8006-3fc33c3b1b13",
+    pageId: "b3e5731a-c295-801d-8006-3fc33c3b1b14",
+  });
+
+  await workspace.clickLeafLayer("Ipsum");
+  await workspace.clickLeafLayer("Lorem", { modifiers: ["Shift"] });
+
+  const fontSizeInput = workspace.page.getByLabel("Font size");
+
+  await expect(fontSizeInput).toHaveValue("");
+  await expect(fontSizeInput).toHaveAttribute("placeholder", "Mixed");
 });

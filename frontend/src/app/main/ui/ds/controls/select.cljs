@@ -15,6 +15,7 @@
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
+   [clojure.string :as str]
    [rumext.v2 :as mf]))
 
 (def listbox-id-index (atom 0))
@@ -66,14 +67,23 @@
    [:class {:optional true} :string]
    [:disabled {:optional true} :boolean]
    [:default-selected {:optional true} :string]
+   [:empty-to-end {:optional true} :boolean]
    [:on-change {:optional true} fn?]])
 
 (mf/defc select*
-  {::mf/props :obj
-   ::mf/schema schema:select}
-  [{:keys [options class disabled default-selected on-change] :rest props}]
-  (let [open* (mf/use-state false)
-        open  (deref open*)
+  {::mf/schema schema:select}
+  [{:keys [options class disabled default-selected empty-to-end on-change] :rest props}]
+  (let [is-open*        (mf/use-state false)
+        is-open         (deref is-open*)
+
+        selected-value* (mf/use-state  #(get-selected-option-id options default-selected))
+        selected-value  (deref selected-value*)
+
+        focused-value*  (mf/use-state nil)
+        focused-value   (deref focused-value*)
+
+        has-focus*      (mf/use-state false)
+        has-focus       (deref has-focus*)
 
         listbox-id-ref     (mf/use-ref (dm/str "select-listbox-" (swap! listbox-id-index inc)))
         options-nodes-refs (mf/use-ref nil)
@@ -81,38 +91,11 @@
         select-ref         (mf/use-ref nil)
         listbox-id         (mf/ref-val listbox-id-ref)
 
-        selected* (mf/use-state  #(get-selected-option-id options default-selected))
-        selected  (deref selected*)
+        empty-selected-value? (str/blank? selected-value)
 
-        focused* (mf/use-state nil)
-        focused  (deref focused*)
-
-        has-focus* (mf/use-state false)
-        has-focus  (deref has-focus*)
-
-        on-click
+        set-option-ref
         (mf/use-fn
-         (mf/deps disabled)
-         (fn [event]
-           (dom/stop-propagation event)
-           (reset! has-focus* true)
-           (when-not disabled
-             (swap! open* not))))
-
-        on-option-click
-        (mf/use-fn
-         (mf/deps on-change)
-         (fn [event]
-           (let [node  (dom/get-current-target event)
-                 id    (dom/get-data node "id")]
-             (reset! selected* id)
-             (reset! focused* nil)
-             (reset! open* false)
-             (when (fn? on-change)
-               (on-change id)))))
-
-        set-ref
-        (mf/use-fn
+         (mf/deps options-nodes-refs)
          (fn [node id]
            (let [refs (or (mf/ref-val options-nodes-refs) #js {})
                  refs (if node
@@ -120,47 +103,69 @@
                         (obj/unset! refs id))]
              (mf/set-ref-val! options-nodes-refs refs))))
 
-        on-blur
+        on-option-click
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [event]
+           (let [node  (dom/get-current-target event)
+                 id    (dom/get-data node "id")]
+             (reset! selected-value* id)
+             (reset! focused-value* nil)
+             (reset! is-open* false)
+             (when (fn? on-change)
+               (on-change id)))))
+
+        on-component-click
+        (mf/use-fn
+         (mf/deps disabled)
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! has-focus* true)
+           (when-not disabled
+             (swap! is-open* not))))
+
+        on-component-blur
         (mf/use-fn
          (fn [event]
            (let [target (.-relatedTarget event)
                  outside? (not (.contains (mf/ref-val select-ref) target))]
              (when outside?
-               (reset! focused* nil)
-               (reset! open* false)
+               (reset! focused-value* nil)
+               (reset! is-open* false)
                (reset! has-focus* false)))))
 
-        on-key-down
+        on-component-focus
         (mf/use-fn
-         (mf/deps focused disabled)
+         (fn [_]
+           (reset! has-focus* true)))
+
+        on-button-key-down
+        (mf/use-fn
+         (mf/deps focused-value disabled)
          (fn [event]
+           (dom/stop-propagation event)
            (when-not disabled
              (let [options (mf/ref-val options-ref)
                    len     (alength options)
-                   index   (array/find-index #(= (deref focused*) (obj/get % "id")) options)]
-               (dom/stop-propagation event)
+                   index   (array/find-index #(= (deref focused-value*) (obj/get % "id")) options)]
                (cond
                  (kbd/home? event)
-                 (handle-focus-change options focused* 0 options-nodes-refs)
+                 (handle-focus-change options focused-value* 0 options-nodes-refs)
 
                  (kbd/up-arrow? event)
-                 (handle-focus-change options focused* (mod (- index 1) len) options-nodes-refs)
+                 (handle-focus-change options focused-value* (mod (- index 1) len) options-nodes-refs)
 
                  (kbd/down-arrow? event)
-                 (handle-focus-change options focused* (mod (+ index 1) len) options-nodes-refs)
+                 (handle-focus-change options focused-value* (mod (+ index 1) len) options-nodes-refs)
 
                  (or (kbd/space? event) (kbd/enter? event))
-                 (when (deref open*)
+                 (when (deref is-open*)
                    (dom/prevent-default event)
-                   (handle-selection focused* selected* open*))
+                   (handle-selection focused-value* selected-value* is-open*))
 
                  (kbd/esc? event)
-                 (do (reset! open* false)
-                     (reset! focused* nil)))))))
-
-        on-focus
-        (mf/use-fn
-         (fn [_] (reset! has-focus* true)))
+                 (do (reset! is-open* false)
+                     (reset! focused-value* nil)))))))
 
         class (dm/str class " " (stl/css-case :select true
                                               :focused has-focus))
@@ -169,13 +174,13 @@
                                       :role "combobox"
                                       :aria-controls listbox-id
                                       :aria-haspopup "listbox"
-                                      :aria-activedescendant focused
-                                      :aria-expanded open
-                                      :on-key-down on-key-down
+                                      :aria-activedescendant focused-value
+                                      :aria-expanded is-open
+                                      :on-key-down on-button-key-down
                                       :disabled disabled
-                                      :on-click on-click})
+                                      :on-click on-component-click})
 
-        selected-option (get-option options selected)
+        selected-option (get-option options selected-value)
         label (obj/get selected-option "label")
         icon (obj/get selected-option "icon")]
 
@@ -183,10 +188,11 @@
       (mf/set-ref-val! options-ref options))
 
     [:div {:class (stl/css :select-wrapper)
-           :on-click on-click
-           :on-focus on-focus
+           :on-click on-component-click
+           :on-focus on-component-focus
            :ref select-ref
-           :on-blur on-blur}
+           :on-blur on-component-blur}
+
      [:> :button props
       [:span {:class (stl/css-case :select-header true
                                    :header-icon (some? icon))}
@@ -194,16 +200,19 @@
          [:> icon* {:icon-id icon
                     :size "s"
                     :aria-hidden true}])
-       [:span {:class (stl/css :header-label)}
-        label]]
+       [:span {:class (stl/css-case :header-label true
+                                    :header-label-dimmed empty-selected-value?)}
+        (if empty-selected-value? "--" label)]]
       [:> icon* {:icon-id i/arrow
                  :class (stl/css :arrow)
                  :size "m"
                  :aria-hidden true}]]
-     (when open
+
+     (when is-open
        [:> options-dropdown* {:on-click on-option-click
                               :id listbox-id
                               :options options
-                              :selected selected
-                              :focused focused
-                              :set-ref set-ref}])]))
+                              :selected selected-value
+                              :focused focused-value
+                              :empty-to-end empty-to-end
+                              :set-ref set-option-ref}])]))

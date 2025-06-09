@@ -36,6 +36,17 @@ export class BasePage {
   async mockRPC(path, jsonFilename, options) {
     return BasePage.mockRPC(this.page, path, jsonFilename, options);
   }
+
+  async mockConfigFlags(flags) {
+    const url = "**/js/config.js?ts=*";
+    return await this.page.route(url, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/javascript",
+        body: `var penpotFlags = "${flags.join(" ")}";`,
+      }),
+    );
+  }
 }
 
 export default BasePage;

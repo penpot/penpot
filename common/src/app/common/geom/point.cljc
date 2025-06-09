@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.geom.point
-  (:refer-clojure :exclude [divide min max abs])
+  (:refer-clojure :exclude [divide min max abs zero?])
   (:require
    #?(:clj [app.common.fressian :as fres])
    #?(:cljs [cljs.core :as c]
@@ -85,24 +85,22 @@
     (into {} p)
     p))
 
-;; FIXME: make like matrix
 (def schema:point
-  {:type ::point
-   :pred valid-point?
-   :type-properties
-   {:title "point"
-    :description "Point"
-    :error/message "expected a valid point"
-    :gen/gen (->> (sg/tuple (sg/small-int) (sg/small-int))
-                  (sg/fmap #(apply pos->Point %)))
-    ::oapi/type "string"
-    ::oapi/format "point"
-    :decode/json decode-point
-    :decode/string decode-point
-    :encode/json point->json
-    :encode/string point->str}})
-
-(sm/register! schema:point)
+  (sm/register!
+   {:type ::point
+    :pred valid-point?
+    :type-properties
+    {:title "point"
+     :description "Point"
+     :error/message "expected a valid point"
+     :gen/gen (->> (sg/tuple (sg/small-int) (sg/small-int))
+                   (sg/fmap #(apply pos->Point %)))
+     ::oapi/type "string"
+     ::oapi/format "point"
+     :decode/json decode-point
+     :decode/string decode-point
+     :encode/json point->json
+     :encode/string point->str}}))
 
 (defn point-like?
   [{:keys [x y] :as v}]
@@ -469,6 +467,13 @@
   (assert (point? p) "point instance expected")
   (and ^boolean (mth/almost-zero? (dm/get-prop p :x))
        ^boolean (mth/almost-zero? (dm/get-prop p :y))))
+
+(defn zero?
+  [p]
+  (let [x (dm/get-prop p :x)
+        y (dm/get-prop p :y)]
+    (and ^boolean (== 0 x)
+         ^boolean (== 0 y))))
 
 (defn lerp
   "Calculates a linear interpolation between two points given a tvalue"

@@ -14,6 +14,7 @@
    [app.common.geom.shapes.transforms :as gsht]
    [app.common.math :as mth :refer [close?]]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [clojure.test :as t]))
 
@@ -30,7 +31,7 @@
    (if (= type :path)
      (cts/setup-shape
       (into {:type :path
-             :content (:content params default-path)}
+             :content (path/content (:content params default-path))}
             params))
      (cts/setup-shape
       (into {:type type
@@ -113,11 +114,8 @@
     (let [modifiers    (ctm/resize-modifiers (gpt/point 0 0) (gpt/point 0 0))
           shape-before (create-test-shape :rect {:modifiers modifiers})
           shape-after  (gsh/transform-shape shape-before)]
-
-      (t/is (close? (get-in shape-before [:selrect :width])
-                    (get-in shape-after  [:selrect :width])))
-      (t/is (close? (get-in shape-before [:selrect :height])
-                    (get-in shape-after  [:selrect :height])))))
+      (t/is (close? 0.01 (get-in shape-after  [:selrect :width])))
+      (t/is (close? 0.01 (get-in shape-after  [:selrect :height])))))
 
   (t/testing "Transform shape with rotation modifiers"
     (t/are [type]

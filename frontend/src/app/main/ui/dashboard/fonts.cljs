@@ -29,6 +29,11 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
+(def ^:private accept-font-types
+  (str (str/join "," cm/font-types)
+       ;; A workaround to solve a problem with chrome input selector
+       ",.ttf,application/font-woff,woff,.otf"))
+
 (defn- use-page-title
   [team section]
   (mf/with-effect [team]
@@ -180,7 +185,7 @@
                  :tab-index "0"}
         [:span (tr "labels.add-custom-font")]
         [:& file-uploader {:input-id "font-upload"
-                           :accept cm/str-font-types
+                           :accept accept-font-types
                            :multi true
                            :ref input-ref
                            :on-selected on-selected}]]

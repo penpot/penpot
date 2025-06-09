@@ -480,8 +480,7 @@
         JOIN team AS t ON (t.id = tpr.team_id)
        WHERE tpr.is_owner IS TRUE
          AND tpr.profile_id = ?
-         AND (t.deleted_at IS NULL OR
-              t.deleted_at > now())
+         AND t.deleted_at IS NULL
    )
    SELECT tpr.team_id AS id,
           count(tpr.profile_id) - 1 AS participants

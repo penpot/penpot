@@ -8,6 +8,20 @@ pub enum Layout {
     GridLayout(LayoutData, GridData),
 }
 
+impl Layout {
+    pub fn scale_content(&mut self, value: f32) {
+        match self {
+            Layout::FlexLayout(layout_data, _) => {
+                layout_data.scale_content(value);
+            }
+            Layout::GridLayout(layout_data, grid_data) => {
+                layout_data.scale_content(value);
+                grid_data.scale_content(value);
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum FlexDirection {
     Row,
@@ -184,6 +198,12 @@ impl GridTrack {
             value: f32::from_le_bytes(raw.value),
         }
     }
+
+    pub fn scale_content(&mut self, value: f32) {
+        if self.track_type == GridTrackType::Fixed {
+            self.value *= value;
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -260,6 +280,17 @@ pub struct LayoutData {
     pub column_gap: f32,
 }
 
+impl LayoutData {
+    pub fn scale_content(&mut self, value: f32) {
+        self.padding_top *= value;
+        self.padding_right *= value;
+        self.padding_bottom *= value;
+        self.padding_left *= value;
+        self.row_gap *= value;
+        self.column_gap *= value;
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum AlignSelf {
     Auto,
@@ -312,26 +343,21 @@ pub struct FlexData {
 
 impl FlexData {
     pub fn is_reverse(&self) -> bool {
-        match &self.direction {
-            FlexDirection::RowReverse | FlexDirection::ColumnReverse => true,
-            _ => false,
-        }
+        matches!(
+            &self.direction,
+            FlexDirection::RowReverse | FlexDirection::ColumnReverse
+        )
     }
 
     pub fn is_row(&self) -> bool {
-        match &self.direction {
-            FlexDirection::RowReverse | FlexDirection::Row => true,
-            _ => false,
-        }
+        matches!(
+            &self.direction,
+            FlexDirection::RowReverse | FlexDirection::Row
+        )
     }
-}
 
-impl FlexData {
     pub fn is_wrap(&self) -> bool {
-        match self.wrap_type {
-            WrapType::Wrap => true,
-            _ => false,
-        }
+        matches!(self.wrap_type, WrapType::Wrap)
     }
 }
 
@@ -351,6 +377,11 @@ impl GridData {
             columns: vec![],
             cells: vec![],
         }
+    }
+
+    pub fn scale_content(&mut self, value: f32) {
+        self.rows.iter_mut().for_each(|t| t.scale_content(value));
+        self.columns.iter_mut().for_each(|t| t.scale_content(value));
     }
 }
 
@@ -426,4 +457,17 @@ pub struct LayoutItem {
     pub is_absolute: bool,
     pub z_index: i32,
     pub align_self: Option<AlignSelf>,
+}
+
+impl LayoutItem {
+    pub fn scale_content(&mut self, value: f32) {
+        self.margin_top *= value;
+        self.margin_right *= value;
+        self.margin_bottom *= value;
+        self.margin_left *= value;
+        self.max_h = self.max_h.map(|max_h| max_h * value);
+        self.min_h = self.max_h.map(|max_h| max_h * value);
+        self.max_w = self.max_h.map(|max_h| max_h * value);
+        self.min_w = self.max_h.map(|max_h| max_h * value);
+    }
 }

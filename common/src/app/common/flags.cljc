@@ -116,6 +116,7 @@
     :terms-and-privacy-checkbox
     ;; Only for developtment.
     :tiered-file-data-storage
+    :token-units
     :transit-readable-response
     :user-feedback
     ;; TODO: remove this flag.
@@ -126,7 +127,8 @@
     :render-wasm-dpr
     :hide-release-modal
     :subscriptions
-    :subscriptions-old})
+    :subscriptions-old
+    :frontend-binary-fills})
 
 (def all-flags
   (set/union email login varia))

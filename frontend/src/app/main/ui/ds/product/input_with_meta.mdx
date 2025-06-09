@@ -1,0 +1,42 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC */ }
+  
+import { Canvas, Meta } from '@storybook/blocks';
+import * as InputWithMetaStories from "./input_with_meta.stories";
+
+<Meta title="Product/InputWithMeta" />
+
+# InputWithMeta
+
+The `input-with-meta*` acts as an input with an optional addition of a meta text that is only an indicator, and an event which is triggered when the focus is lost.
+
+<Canvas of={InputWithMetaStories.Default} />
+
+## Technical notes
+
+* You need to pass the mandatory string property `value`.
+* You can pass the optional string property `meta`.
+* You can pass the optional int property `max-length`.
+* You can pass a function property `on-blur` that will be called with the blur event when the component loses focus (including when the user presses enter or esc).
+
+```clj
+[:> input-with-meta* {:value value
+                      :meta meta
+                      :max-length max-length
+                      :on-blur on-blur}]
+```
+
+## Usage guidelines (design)
+
+### When to use
+
+When we have an element that can be editable, but doesn't change its appearance on hover, and adds an extra meta text that isn't editable (it's just an indicator).
+
+### Interaction / Behavior
+
+* The component starts on "display" mode, showing the value and the meta text.
+* Once the user clicks on it, the input goes into "active" mode and the only thing that remains and can be editable is the value (the meta text is hidden).
+* If the user presses enter or esc, the component goes back to "display" mode.

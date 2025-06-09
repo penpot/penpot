@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
+   [app.common.text :as txt]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
@@ -42,34 +43,36 @@
   (ptk/reify ::apply-token
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [tokens (some-> (dsh/lookup-file-data state)
-                                (get :tokens-lib)
-                                (ctob/get-active-themes-set-tokens))]
-        (->> (rx/from (sd/resolve-tokens+ tokens))
-             (rx/mapcat
-              (fn [resolved-tokens]
-                (let [undo-id (js/Symbol)
-                      objects (dsh/lookup-page-objects state)
+      ;; We do not allow to apply tokens while text editor is open.
+      (when (empty? (get state :workspace-editor-state))
+        (when-let [tokens (some-> (dsh/lookup-file-data state)
+                                  (get :tokens-lib)
+                                  (ctob/get-tokens-in-active-sets))]
+          (->> (sd/resolve-tokens tokens)
+               (rx/mapcat
+                (fn [resolved-tokens]
+                  (let [undo-id (js/Symbol)
+                        objects (dsh/lookup-page-objects state)
 
-                      shape-ids (or (->> (select-keys objects shape-ids)
-                                         (filter (fn [[_ shape]] (not= (:type shape) :group)))
-                                         (keys))
-                                    [])
+                        shape-ids (or (->> (select-keys objects shape-ids)
+                                           (filter (fn [[_ shape]] (not= (:type shape) :group)))
+                                           (keys))
+                                      [])
 
-                      resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
-                      tokenized-attributes (cft/attributes-map attributes token)]
-                  (rx/of
-                   (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
-                   (dwu/start-undo-transaction undo-id)
-                   (dwsh/update-shapes shape-ids (fn [shape]
-                                                   (cond-> shape
-                                                     attributes-to-remove
-                                                     (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
-                                                     :always
-                                                     (update :applied-tokens merge tokenized-attributes))))
-                   (when on-update-shape
-                     (on-update-shape resolved-value shape-ids attributes))
-                   (dwu/commit-undo-transaction undo-id))))))))))
+                        resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
+                        tokenized-attributes (cft/attributes-map attributes token)]
+                    (rx/of
+                     (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
+                     (dwu/start-undo-transaction undo-id)
+                     (dwsh/update-shapes shape-ids (fn [shape]
+                                                     (cond-> shape
+                                                       attributes-to-remove
+                                                       (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
+                                                       :always
+                                                       (update :applied-tokens merge tokenized-attributes))))
+                     (when on-update-shape
+                       (on-update-shape resolved-value shape-ids attributes))
+                     (dwu/commit-undo-transaction undo-id)))))))))))
 
 (defn unapply-token
   "Removes `attributes` that match `token` for `shape-ids`.
@@ -328,7 +331,22 @@
             (dwsl/update-layout-child shape-ids props {:ignore-touched true
                                                        :page-id page-id}))))))))
 
-;; Map token types to different properties used along the cokde ---------------------------------------------------------
+(defn update-line-height
+  ([value shape-ids attributes] (update-line-height value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id] ; The attributes param is
+                                         ; needed to have the same
+                                         ; arity that other update
+                                         ; functions
+   (let [update-node? (fn [node]
+                        (or (txt/is-text-node? node)
+                            (txt/is-paragraph-node? node)))]
+     (when (number? value)
+       (dwsh/update-shapes shape-ids
+                           #(txt/update-text-content % update-node? d/txt-merge {:line-height value})
+                           {:ignore-touched true
+                            :page-id page-id})))))
+
+;; Map token types to different properties used along the cokde ---------------------------------------------
 
 ;; FIXME: the values should be lazy evaluated, probably a function,
 ;; becasue on future we will need to translate that labels and that
@@ -389,6 +407,15 @@
     :modal {:key :tokens/opacity
             :fields [{:label "Opacity"
                       :key :opacity}]}}
+
+   :number
+   {:title "Number"
+    :attributes ctt/rotation-keys
+    :all-attributes ctt/number-keys
+    :on-update-shape update-rotation
+    :modal {:key :tokens/number
+            :fields [{:label "Number"
+                      :key :number}]}}
 
    :rotation
    {:title "Rotation"

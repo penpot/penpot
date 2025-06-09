@@ -36,7 +36,6 @@ We want to hold our UI code to the same quality standards of the rest of the cod
 
 ```clojure
 (mf/defc primary-button*
-  {::mf/props :obj}
   [{:keys [children] :rest props}]
   [:> "button" props children])
 ```
@@ -69,7 +68,6 @@ For instance, here the user would be in total control of the <code class="langua
 
 ```clojure
 (mf/defc button*
-  {::mf/props :obj}
   [{:keys [icon children] :rest props}]
   [:> "button" props
      icon
@@ -80,7 +78,6 @@ However, we might want to control the aspect of the icons, or limit which icons 
 
 ```clojure
 (mf/defc button*
-  {::mf/props :obj}
   [{:keys [icon children] :rest props}]
   (assert (or (nil? icon) (contains? valid-icon-list icon) "expected valid icon id"))
   [:> "button" props
@@ -116,7 +113,6 @@ This is achieved by accepting a <code class="language-clojure">class</code> prop
 
 ```clojure
 (mf/defc button*
-  {::mf/props :obj}
   [{:keys [children class] :rest props}]
   (let [class (dm/str class " " (stl/css :primary-button))
     props (mf/spread-props props {:class class})]
@@ -131,7 +127,6 @@ Nested styles for DOM elements that are not instantiated by our component should
 
 ```clojure
 (mf/defc button*
-  {::mf/props :obj}
   [{:keys [children] :rest props}]
   (let  [props (mf/spread-props props {:class (stl/css :primary-button)})]
     ;; note that we are NOT instantiating a <svg> here.
@@ -156,11 +151,10 @@ Nested styles for DOM elements that are not instantiated by our component should
 
 ```clojure
 (mf/defc button*
-  {::mf/props :obj}
   [{:keys [icon children class] :rest props}]
   (let [props (mf/spread-props props {:class (stl/css :button)})]
     [:> "button" props
-     (when icon [:> icon* {:icon-id icon :size "m"}])
+     (when icon [:> icon* {:icon-id icon :size "m" :class (stl/css :icon)}])
      [:span {:class (stl/css :label-wrapper)} children]]))
 
 ;; later in code
@@ -205,6 +199,167 @@ Remember that nesting selector increases specificity, and it's usually not neede
   fill: var(--icon-color);
 }
 ```
+Note: Thanks to CSS Modules, identical class names defined in different files are scoped locally and do not cause naming collisions.
+
+### Use CSS logical properties
+
+The [logical properties](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_logical_properties_and_values) define styles relative to the content’s writing mode (e.g., inline, block) instead of physical directions (left, right, etc). This improves support for right-to-left (RTL) languages and enhances layout flexibility.
+
+❌ **AVOID: Physical properties**
+
+```scss
+.btn {
+  padding-left: var(--sp-xs);
+}
+```
+
+✅ **DO: Use direction‐relative equivalents**
+
+```scss
+.btn {
+  padding-inline-start: var(--sp-xs);
+}
+```
+
+Note: Although `width` and `height` are physical properties, their use is allowed in CSS files. They remain more readable and intuitive than their logical counterparts (`inline-size`, `block-size`) in many contexts. Since our layouts are not vertically-sensitive, we don't gain practical benefits from using logical properties here.
+
+### Use named DS variables
+
+Avoid hardcoded values like `px`, `rem`, or raw SASS variables `($s-*)`. Use semantic, named variables provided by the Design System to ensure consistency and scalability.
+
+#### Spacing (margins, paddings, gaps...)
+Use variables from `frontend/src/app/main/ui/ds/spacing.scss`. These are predefined and approved by the design team — **do not add or modify values without design approval**.
+
+#### Fixed dimensions
+For fixed dimensions (e.g., modals' widths) defined by design and not layout-driven, use or define variables in `frontend/src/app/main/ui/ds/_sizes.scss`. To use them:
+
+```scss
+@use "../_sizes.scss" as *;
+```
+Note: Since these values haven't been semantically defined yet, we’re temporarily using SASS variables instead of named CSS custom properties.
+
+#### Border Widths
+Use border thickness variables from `frontend/src/app/main/ui/ds/_borders.scss`. To import:
+
+```scss
+@use "../_borders.scss" as *;
+```
+
+Avoid using sass variables defined on `frontend/resources/styles/common/refactor/spacing.scss` that are deprecated.
+
+❌ **AVOID: Using sass unnamed variables or hardcoded values**
+
+```scss
+.btn {
+  padding: $s-24;
+}
+
+.icon {
+  width: 16px;
+}
+```
+
+✅ **DO: Use DS variables**
+
+```scss
+.btn {
+  padding: var(--sp-xl);
+}
+
+.icon {
+  width: var(--sp-l);
+}
+```
+
+### Use Proper Typography Components
+
+Replace plain text tags with `text*` or `heading*` components from the Design System to ensure visual consistency and accessibility.
+
+❌ **AVOID: Using text wrappers**
+
+```clojure
+  [:h2 {:class (stl/css :modal-title)} title]
+  [:div {:class (stl/css :modal-content)}
+  "Content"]
+```
+
+✅ **DO: Use spacing named variables**
+
+```clojure
+...
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]] 
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]
+...
+
+  [:> heading* {:level 2
+                :typography t/headline-medium
+                :class (stl/css :modal-title)} 
+    title]
+  [:> text* {:as "div" 
+             :typography t/body-medium  
+             :class (stl/css :modal-content)}
+    "Content"]
+```
+
+When applying typography in SCSS, use the proper mixin from the Design System.
+
+❌ **AVOID: Deprecated mixins**
+
+```scss
+.class {
+  @include headlineLargeTypography;
+}
+```
+
+✅ **DO: Use the DS mixin**
+```scss
+@use "../ds/typography.scss" as t;
+
+.class {
+  @include t.use-typography("body-small");
+}
+```
+You can find the full list of available typography tokens in [Storybook](https://design.penpot.app/storybook/?path=/docs/foundations-typography--docs).
+If the design you are implementing doesn't match any of them, ask a designer.
+
+
+### Use custom properties within components
+
+Reduce the need for one-off SASS variables by leveraging [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascading_variables/Using_CSS_custom_properties) in your component styles. This keeps component theming flexible and composable.
+
+For instance, this is how we handle the styles of <code class="language-clojure">\<Toast></code>, which have a different style depending on the level of the message (default, info, error, etc.)
+
+```scss
+.toast {
+  // common styles for all toasts
+  // ...
+
+  --toast-bg-color: var(--color-background-primary);
+  --toast-icon-color: var(--color-foreground-secondary);
+  // ... more variables here
+
+  background-color: var(--toast-bg-color);
+}
+
+.toast-icon {
+  color: var(--toast-bg-color);
+}
+
+.toast-info {
+  --toast-bg-color: var(--color-background-info);
+  --toast-icon-color: var(--color-accent-info);
+  // ... override more variables here
+}
+
+.toast-error {
+  --toast-bg-color: var(--color-background-error);
+  --toast-icon-color: var(--color-accent-error);
+  // ... override more variables here
+}
+
+// ... more variants here
+```
 
 ## Semantics and accessibility
 
@@ -243,7 +398,7 @@ Please refer to the [Rumext User Guide](https://funcool.github.io/rumext/latest/
 
 Some things to have in mind:
 
-- When you want to use JavaScript props, use the meta <code class="language-clojure">{::mf/props :obj}</code>. In this case, avoid using <code class="language-clojure">?</code> for boolean props, since they don't get a clean translation to JavaScript.
+- Avoid using <code class="language-clojure">?</code> for boolean props, since they don't get a clean translation to JavaScript.
 - You can use type hints such as <code class="language-clojure">^boolean</code> to get JS semantics.
 - Split big components into smaller ones. You can mark components as private with the <code class="language-clojure">::mf/private true</code> meta.
 
@@ -261,7 +416,6 @@ We just need to use `:rest ` when declaring the component props.
 
 ```clojure
 (mf/defc button*
-  {::mf/props :obj}
   [{:keys [children] :rest other}]
   [:> "button" other children])
 ```
@@ -270,7 +424,6 @@ If we need to augment this props object, we can use <code class="language-clojur
 
 ```clojure
 (mf/defc button*
-  {::mf/props :obj}
   [{:keys [children class] :rest props}]
   (let [class (dm/str class " " (stl/css :button))
         props (mf/spread-props props {:class class})]
@@ -295,7 +448,6 @@ It's faster to use a JS Object for props instead of a native Clojure map, becaus
 
 ```clojure
 (mf/defc icon*
-  {::mf/props :obj}
   [props]
   ;; ...
   )
@@ -327,7 +479,6 @@ This creates a brand new function every render. Instead, create the function on 
  )
 
 (mf/defc login-button
-  {::mf/props :obj}
   []
   [:button {:on-click login} "Login"])
 
@@ -341,7 +492,6 @@ When we do this inside of a component, a brand new function is created in every 
 
 ```clojure
 (mf/defc login-button
-  {::mf/props :obj}
   []
   (let [click-handler (fn []
                        ;; ...
@@ -357,7 +507,6 @@ When we do this inside of a component, a brand new function is created in every 
  )
 
 (mf/defc login-button
-  {::mf/props :obj}
   []
   [:button {:on-click login} "Login"])
 ```
@@ -424,7 +573,6 @@ Often we need to access values from props. It's best if we destructure them (bec
 
 ```clojure
 (defc icon
-  {::mf/props :obj}
   [{:keys [size img] :as props]
   [:svg {:width size
          :height size
@@ -437,7 +585,6 @@ Often we need to access values from props. It's best if we destructure them (bec
 
 ```clojure
 (defc icon
-  {::mf/props :obj}
   [props]
   [:svg {:width (unchecked-get props "size")
          :height (unchecked-get props "size")
@@ -454,7 +601,6 @@ We can avoid multiple calls to <code class="language-clojure">(deref)</code> if 
 
 ```clojure
 (defc accordion
-  {::mf/props :obj}
   [{:keys [^boolean default-open title children] :as props]
 
   (let [
@@ -516,40 +662,8 @@ We use three **levels of tokens**:
 
 ### Implementing variants
 
-We can leverage component tokens to easily implement variants, by overriding their values in each component variant.
+We can leverage component tokens to easily implement variants as explained [here](/technical-guide/developer/ui/#use-custom-properties-within-components).
 
-For instance, this is how we handle the styles of <code class="language-clojure">\<Toast></code>, which have a different style depending on the level of the message (default, info, error, etc.)
-
-```scss
-.toast {
-  // common styles for all toasts
-  // ...
-
-  --toast-bg-color: var(--color-background-primary);
-  --toast-icon-color: var(--color-foreground-secondary);
-  // ... more variables here
-
-  background-color: var(--toast-bg-color);
-}
-
-.toast-icon {
-  color: var(--toast-bg-color);
-}
-
-.toast-info {
-  --toast-bg-color: var(--color-background-info);
-  --toast-icon-color: var(--color-accent-info);
-  // ... override more variables here
-}
-
-.toast-error {
-  --toast-bg-color: var(--color-background-error);
-  --toast-icon-color: var(--color-accent-error);
-  // ... override more variables here
-}
-
-// ... more variants here
-```
 
 ### Using icons and SVG assets
 

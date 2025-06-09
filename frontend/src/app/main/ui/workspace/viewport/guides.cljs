@@ -272,8 +272,8 @@
 (mf/defc guide*
   {::mf/wrap [mf/memo]
    ::mf/props :obj}
-  [{:keys [guide is-hover on-guide-change get-hover-frame vbox zoom hover-frame disabled-guides frame-modifier]}]
-
+  [{:keys [guide is-hover on-guide-change get-hover-frame vbox zoom
+           hover-frame disabled-guides frame-modifier frame-transform]}]
   (let [axis (:axis guide)
 
         handle-change-position
@@ -293,7 +293,14 @@
                 frame]} (use-guide handle-change-position get-hover-frame zoom guide)
 
         base-frame (or frame hover-frame)
-        frame (gsh/transform-shape base-frame frame-modifier)
+
+        frame
+        (cond-> base-frame
+          (some? frame-modifier)
+          (gsh/transform-shape frame-modifier)
+
+          (some? frame-transform)
+          (gsh/apply-transform frame-transform))
 
         move-vec (gpt/to-vec (gpt/point (:x base-frame) (:y base-frame))
                              (gpt/point (:x frame) (:y frame)))
@@ -472,7 +479,11 @@
          (fn [guide]
            (if (guide-inside-vbox? zoom vbox guide)
              (st/emit! (dw/update-guides guide))
-             (st/emit! (dw/remove-guide guide)))))]
+             (st/emit! (dw/remove-guide guide)))))
+
+        frame-modifiers
+        (-> (group-by :id modifiers)
+            (update-vals (comp :transform first)))]
 
     (mf/with-effect [hover-frame]
       (mf/set-ref-val! hover-frame-ref hover-frame))
@@ -490,15 +501,15 @@
                           :get-hover-frame get-hover-frame
                           :disabled-guides disabled-guides}]
 
-     (for [current guides]
-       (when (or (nil? (:frame-id current))
+     (for [{:keys [id frame-id] :as guide} guides]
+       (when (or (nil? frame-id)
                  (empty? focus)
-                 (contains? focus (:frame-id current)))
-         [:> guide* {:key (dm/str "guide-" (:id current))
-                     :guide current
+                 (contains? focus frame-id))
+         [:> guide* {:key (dm/str "guide-" id)
+                     :guide guide
                      :vbox vbox
                      :zoom zoom
-                     :frame-modifier (dm/get-in modifiers [(:frame-id current) :modifiers])
+                     :frame-transform (get frame-modifiers frame-id)
                      :get-hover-frame get-hover-frame
                      :on-guide-change on-guide-change
                      :disabled-guides disabled-guides}]))]))

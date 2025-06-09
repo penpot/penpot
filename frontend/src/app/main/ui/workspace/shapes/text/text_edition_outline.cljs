@@ -8,35 +8,52 @@
   (:require
    [app.common.geom.shapes :as gsh]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.features :as features]
    [app.main.refs :as refs]
+   [app.main.store :as st]
+   [app.render-wasm.api :as wasm.api]
    [rumext.v2 :as mf]))
 
 (mf/defc text-edition-outline
   [{:keys [shape zoom modifiers]}]
-  (let [modifiers (get-in modifiers [(:id shape) :modifiers])
+  (if (features/active-feature? @st/state "render-wasm/v1")
+    (let [transform (gsh/transform-str shape)
+          {:keys [id x y grow-type]} shape
+          {:keys [width height]} (if (= :fixed grow-type) shape (wasm.api/text-dimensions id))]
+      [:rect.main.viewport-selrect
+       {:x x
+        :y y
+        :width width
+        :height height
+        :transform transform
+        :style {:stroke "var(--color-accent-tertiary)"
+                :stroke-width (/ 1 zoom)
+                :fill "none"}}])
 
-        text-modifier-ref
-        (mf/use-memo (mf/deps (:id shape)) #(refs/workspace-text-modifier-by-id (:id shape)))
+    (let [modifiers (get-in modifiers [(:id shape) :modifiers])
 
-        text-modifier
-        (mf/deref text-modifier-ref)
+          text-modifier-ref
+          (mf/use-memo (mf/deps (:id shape)) #(refs/workspace-text-modifier-by-id (:id shape)))
 
-        shape (cond-> shape
-                (some? modifiers)
-                (gsh/transform-shape modifiers)
+          text-modifier
+          (mf/deref text-modifier-ref)
 
-                (some? text-modifier)
-                (dwt/apply-text-modifier text-modifier))
+          shape (cond-> shape
+                  (some? modifiers)
+                  (gsh/transform-shape modifiers)
 
-        transform (gsh/transform-str shape)
-        {:keys [x y width height]} shape]
+                  (some? text-modifier)
+                  (dwt/apply-text-modifier text-modifier))
 
-    [:rect.main.viewport-selrect
-     {:x x
-      :y y
-      :width width
-      :height height
-      :transform transform
-      :style {:stroke "var(--color-accent-tertiary)"
-              :stroke-width (/ 1 zoom)
-              :fill "none"}}]))
+          transform (gsh/transform-str shape)
+          {:keys [x y width height]} shape]
+
+      [:rect.main.viewport-selrect
+       {:x x
+        :y y
+        :width width
+        :height height
+        :transform transform
+        :style {:stroke "var(--color-accent-tertiary)"
+                :stroke-width (/ 1 zoom)
+                :fill "none"}}])))

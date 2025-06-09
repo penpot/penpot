@@ -16,6 +16,7 @@
    [app.common.logging :as log]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.variants :as clv]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -49,7 +50,6 @@
    [app.main.store :as st]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
-   [app.util.storage :as storage]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -118,11 +118,8 @@
                    (assoc :name (or (get-in color [:image :name])
                                     (:color color)
                                     (uc/gradient-type->string (get-in color [:gradient :type]))))
-                   (d/without-nils))]
-
-     (dm/assert!
-      "expect valid color structure"
-      (ctc/check-color color))
+                   (d/without-nils)
+                   (ctc/check-library-color))]
 
      (ptk/reify ::add-color
        ev/Event
@@ -136,22 +133,6 @@
             (when rename?
               (fn [state] (assoc-in state [:workspace-local :color-for-rename] (:id color))))
             (dch/commit-changes changes))))))))
-
-(defn add-recent-color
-  [color]
-  (assert (ctc/check-recent-color color)
-          "expected valid recent color structure")
-
-  (ptk/reify ::add-recent-color
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [file-id (:current-file-id state)]
-        (update state :recent-colors ctc/add-recent-color file-id color)))
-
-    ptk/EffectEvent
-    (effect [_ state _]
-      (let [recent-colors (:recent-colors state)]
-        (swap! storage/user assoc :recent-colors recent-colors)))))
 
 (def clear-color-for-rename
   (ptk/reify ::clear-color-for-rename
@@ -175,16 +156,10 @@
 
 (defn update-color
   [color file-id]
-  (let [color (d/without-nils color)]
+  (assert (uuid? file-id) "expected a uuid instance for `file-id`")
 
-    (dm/assert!
-     "expected valid color data structure"
-     (ctc/check-color color))
-
-    (dm/assert!
-     "expected file-id"
-     (uuid? file-id))
-
+  (let [color (-> (d/without-nils color)
+                  (ctc/check-library-color))]
     (ptk/reify ::update-color
       ptk/WatchEvent
       (watch [it state _]
@@ -193,15 +168,10 @@
 (defn update-color-data
   "Update color data without affecting the path location"
   [color file-id]
-  (let [color (d/without-nils color)]
+  (assert (uuid? file-id) "expected a uuid instance for `file-id`")
 
-    (dm/assert!
-     "expected valid color data structure"
-     (ctc/check-color color))
-
-    (dm/assert!
-     "expected file-id"
-     (uuid? file-id))
+  (let [color (-> (d/without-nils color)
+                  (ctc/check-library-color))]
 
     (ptk/reify ::update-color-data
       ptk/WatchEvent
@@ -212,17 +182,10 @@
 ;; FIXME: revisit why file-id is passed on the event
 (defn rename-color
   [file-id id new-name]
-  (dm/assert!
-   "expected valid uuid for `id`"
-   (uuid? id))
 
-  (dm/assert!
-   "expected valid uuid for `file-id`"
-   (uuid? file-id))
-
-  (dm/assert!
-   "expected valid string for `new-name`"
-   (string? new-name))
+  (assert (uuid? id) "expected valid uuid instance for `id`")
+  (assert (uuid? file-id) "expected a uuid instance for `file-id`")
+  (assert (string? new-name) "expected a string instance for `new-name`")
 
   (ptk/reify ::rename-color
     ptk/WatchEvent
@@ -231,14 +194,16 @@
         (if (str/empty? new-name)
           (rx/empty)
           (let [data   (dsh/lookup-file-data state)
-                color  (get-in data [:colors id])
-                color  (assoc color :name new-name)
-                color  (d/without-nils color)]
+                color  (-> (ctc/get-color data id)
+                           (assoc :name new-name)
+                           (d/without-nils)
+                           (ctc/check-library-color))]
             (update-color* it state color file-id)))))))
 
 (defn delete-color
   [{:keys [id] :as params}]
-  (dm/assert! (uuid? id))
+  (assert (uuid? id) "expected valid uuid instance for `id`")
+
   (ptk/reify ::delete-color
     ev/Event
     (-data [_] {:id id})
@@ -251,22 +216,20 @@
                         (pcb/delete-color id))]
         (rx/of (dch/commit-changes changes))))))
 
+;; FIXME: this should be deleted
 (defn add-media
   [media]
-  (dm/assert!
-   "expected valid media object"
-   (ctf/check-media-object! media))
+  (let [media (ctf/check-file-media media)]
+    (ptk/reify ::add-media
+      ev/Event
+      (-data [_] media)
 
-  (ptk/reify ::add-media
-    ev/Event
-    (-data [_] media)
-
-    ptk/WatchEvent
-    (watch [it _ _]
-      (let [obj     (select-keys media [:id :name :width :height :mtype])
-            changes (-> (pcb/empty-changes it)
-                        (pcb/add-media obj))]
-        (rx/of (dch/commit-changes changes))))))
+      ptk/WatchEvent
+      (watch [it _ _]
+        (let [obj     (select-keys media [:id :name :width :height :mtype])
+              changes (-> (pcb/empty-changes it)
+                          (pcb/add-media obj))]
+          (rx/of (dch/commit-changes changes)))))))
 
 (defn rename-media
   [id new-name]
@@ -296,10 +259,7 @@
 
 (defn delete-media
   [{:keys [id]}]
-  (dm/assert!
-   "expected valid uuid for `id`"
-   (uuid? id))
-
+  (assert (uuid? id) "expected valid uuid for `id`")
   (ptk/reify ::delete-media
     ev/Event
     (-data [_] {:id id})
@@ -315,11 +275,8 @@
 (defn add-typography
   ([typography] (add-typography typography true))
   ([typography edit?]
-   (let [typography (update typography :id #(or % (uuid/next)))]
-     (dm/assert!
-      "expected valid typography"
-      (ctt/check-typography! typography))
-
+   (let [typography (-> (update typography :id #(or % (uuid/next)))
+                        (ctt/check-typography))]
      (ptk/reify ::add-typography
        ev/Event
        (-data [_] typography)
@@ -348,16 +305,12 @@
 
 (defn update-typography
   [typography file-id]
-
-  (dm/assert!
-   "expected valid typography and file-id"
-   (and (ctt/check-typography! typography)
-        (uuid? file-id)))
-
-  (ptk/reify ::update-typography
-    ptk/WatchEvent
-    (watch [it state _]
-      (do-update-tipography it state typography file-id))))
+  (assert (uuid? file-id) "expected valid uuid for `file-id`")
+  (let [typography (ctt/check-typography typography)]
+    (ptk/reify ::update-typography
+      ptk/WatchEvent
+      (watch [it state _]
+        (do-update-tipography it state typography file-id)))))
 
 (defn rename-typography
   [file-id id new-name]
@@ -407,7 +360,7 @@
      (watch [it state _]
        (let [file-id  (:current-file-id state)
              page-id  (:current-page-id state)
-             objects  (dsh/lookup-page-objects state page-id)
+             objects  (dsh/lookup-page-objects state file-id page-id)
              shapes   (dwg/shapes-for-grouping objects selected)
              parents  (into #{} (map :parent-id) shapes)]
          (when-not (empty? shapes)
@@ -991,7 +944,7 @@
 
 (defn component-swap
   "Swaps a component with another one"
-  [shape file-id id-new-component]
+  [shape file-id id-new-component keep-touched?]
   (dm/assert! (uuid? id-new-component))
   (dm/assert! (uuid? file-id))
   (ptk/reify ::component-swap
@@ -999,12 +952,13 @@
     (watch [it state _]
       ;; First delete shapes so we have space in the layout otherwise we can have problems
       ;; in the grid creating new rows/columns to make space
-      (let [libraries (dsh/lookup-libraries state)
-            page      (dsh/lookup-page state)
-            objects   (:objects page)
-            parent    (get objects (:parent-id shape))
+      (let [libraries   (dsh/lookup-libraries state)
+            page        (dsh/lookup-page state)
+            objects     (:objects page)
+            parent      (get objects (:parent-id shape))
 
-            ldata     (dsh/lookup-file-data state file-id)
+            ldata       (dsh/lookup-file-data state file-id)
+            orig-shapes (when keep-touched? (cfh/get-children-with-self objects (:id shape)))
 
             ;; If the target parent is a grid layout we need to pass the target cell
             target-cell (when (ctl/grid-layout? parent)
@@ -1021,7 +975,11 @@
             [new-shape all-parents changes]
             (-> (pcb/empty-changes it (:id page))
                 (pcb/set-undo-group undo-group)
-                (cll/generate-component-swap objects shape ldata page libraries id-new-component index target-cell keep-props-values))]
+                (cll/generate-component-swap objects shape ldata page libraries id-new-component index target-cell keep-props-values))
+
+            changes (if keep-touched?
+                      (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries)
+                      changes)]
 
         (rx/of
          (dwu/start-undo-transaction undo-id)
@@ -1050,7 +1008,7 @@
                   :undo-id undo-id)
         (rx/concat
          (rx/of (dwu/start-undo-transaction undo-id))
-         (rx/map #(component-swap % file-id id-new-component) (rx/from shapes))
+         (rx/map #(component-swap % file-id id-new-component false) (rx/from shapes))
          (rx/of (dwu/commit-undo-transaction undo-id))
          (rx/of (dwsp/open-specialized-panel :component-swap)))))))
 

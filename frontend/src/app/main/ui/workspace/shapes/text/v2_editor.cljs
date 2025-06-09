@@ -16,9 +16,13 @@
    [app.config :as cf]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.features :as features]
+   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
+   [app.main.ui.hooks :as h]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.globals :as global]
    [app.util.keyboard :as kbd]
@@ -33,6 +37,20 @@
     (let [editor-root (.-root editor)
           result (.-textContent editor-root)]
       (when (not= result "") result))))
+
+(defn- get-fonts
+  [content]
+  (let [extract-fn (juxt :font-id :font-variant-id)
+        default    (extract-fn txt/default-text-attrs)]
+    (->> (tree-seq map? :children content)
+         (into #{default} (keep extract-fn)))))
+
+(defn- load-fonts!
+  [fonts]
+  (->> fonts
+       (run! (fn [[font-id variant-id]]
+               (when (some? font-id)
+                 (fonts/ensure-loaded! font-id variant-id))))))
 
 (defn- initialize-event-handlers
   "Internal editor events handler initializer/destructor"
@@ -69,7 +87,10 @@
         on-blur
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content update-name? (gen-name instance))))
+            (st/emit! (dwt/v2-update-text-shape-content shape-id content
+                                                        :update-name? update-name?
+                                                        :name (gen-name instance)
+                                                        :finalize? true)))
 
           (let [container-node (mf/ref-val container-ref)]
             (dom/set-style! container-node "opacity" 0)))
@@ -87,7 +108,7 @@
         on-needs-layout
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content true)))
+            (st/emit! (dwt/v2-update-text-shape-content shape-id content :update-name? true)))
           ;; FIXME: We need to find a better way to trigger layout changes.
           #_(st/emit!
              (dwt/v2-update-text-shape-position-data shape-id [])))
@@ -95,7 +116,7 @@
         on-change
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content true))))]
+            (st/emit! (dwt/v2-update-text-shape-content shape-id content :update-name? true))))]
 
     (.addEventListener ^js global/document "keyup" on-key-up)
     (.addEventListener ^js instance "blur" on-blur)
@@ -134,7 +155,14 @@
 
         ;; This reference is to the container
         container-ref (mf/use-ref nil)
-        selection-ref (mf/use-ref nil)]
+        selection-ref (mf/use-ref nil)
+
+        fonts
+        (-> (mf/use-memo (mf/deps content) #(get-fonts content))
+            (h/use-equal-memo))]
+
+    (mf/with-effect [fonts]
+      (load-fonts! fonts))
 
     ;; WARN: we explicitly do not pass content on effect dependency
     ;; array because we only need to initialize this once with initial
@@ -232,16 +260,24 @@
                 (some? modifiers)
                 (gsh/transform-shape modifiers))
 
-        bounds (gst/shape->rect shape)
+        [x y width height]
+        (if (features/active-feature? @st/state "render-wasm/v1")
+          (let [{:keys [max-width height]} (wasm.api/text-dimensions shape-id)
+                {:keys [x y]} (:selrect shape)]
 
-        x      (mth/min (dm/get-prop bounds :x)
-                        (dm/get-prop shape :x))
-        y      (mth/min (dm/get-prop bounds :y)
-                        (dm/get-prop shape :y))
-        width  (mth/max (dm/get-prop bounds :width)
-                        (dm/get-prop shape :width))
-        height (mth/max (dm/get-prop bounds :height)
-                        (dm/get-prop shape :height))
+            [x y max-width height])
+
+          (let [bounds (gst/shape->rect shape)
+                x      (mth/min (dm/get-prop bounds :x)
+                                (dm/get-prop shape :x))
+                y      (mth/min (dm/get-prop bounds :y)
+                                (dm/get-prop shape :y))
+                width  (mth/max (dm/get-prop bounds :width)
+                                (dm/get-prop shape :width))
+                height (mth/max (dm/get-prop bounds :height)
+                                (dm/get-prop shape :height))]
+            [x y width height]))
+
         style
         (cond-> #js {:pointerEvents "all"}
 

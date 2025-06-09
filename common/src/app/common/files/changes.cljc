@@ -16,7 +16,6 @@
    [app.common.schema.desc-native :as smd]
    [app.common.schema.generators :as sg]
    [app.common.types.color :as ctc]
-   [app.common.types.colors-list :as ctcl]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
@@ -24,6 +23,7 @@
    [app.common.types.grid :as ctg]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.tokens-lib :as ctob]
@@ -265,7 +265,7 @@
       [:id ::sm/uuid]
       ;; All props are optional, background can be nil because is the
       ;; way to remove already set background
-      [:background {:optional true} [:maybe ::ctc/rgb-color]]
+      [:background {:optional true} [:maybe ctc/schema:hex-color]]
       [:name {:optional true} :string]]]
 
     [:set-plugin-data schema:set-plugin-data-change]
@@ -291,12 +291,12 @@
     [:add-color
      [:map {:title "AddColorChange"}
       [:type [:= :add-color]]
-      [:color ::ctc/color]]]
+      [:color ctc/schema:library-color]]]
 
     [:mod-color
      [:map {:title "ModColorChange"}
       [:type [:= :mod-color]]
-      [:color ::ctc/color]]]
+      [:color ctc/schema:library-color]]]
 
     [:del-color
      [:map {:title "DelColorChange"}
@@ -310,12 +310,12 @@
     [:add-media
      [:map {:title "AddMediaChange"}
       [:type [:= :add-media]]
-      [:object ::ctf/media-object]]]
+      [:object ctf/schema:media]]]
 
     [:mod-media
      [:map {:title "ModMediaChange"}
       [:type [:= :mod-media]]
-      [:object ::ctf/media-object]]]
+      [:object ctf/schema:media]]]
 
     [:del-media
      [:map {:title "DelMediaChange"}
@@ -377,7 +377,7 @@
     [:update-active-token-themes
      [:map {:title "UpdateActiveTokenThemes"}
       [:type [:= :update-active-token-themes]]
-      [:theme-ids [:set :string]]]]
+      [:theme-paths [:set :string]]]]
 
     [:rename-token-set-group
      [:map {:title "RenameTokenSetGroup"}
@@ -425,7 +425,12 @@
       [:type [:= :set-token]]
       [:set-name :string]
       [:token-name :string]
-      [:token [:maybe ctob/schema:token-attrs]]]]]])
+      [:token [:maybe ctob/schema:token-attrs]]]]
+
+    [:set-base-font-size
+     [:map {:title "ModBaseFontSize"}
+      [:type [:= :set-base-font-size]]
+      [:base-font-size :string]]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
@@ -732,20 +737,22 @@
 
           (update-group [group objects]
             (let [lookup   (d/getf objects)
-                  children (->> group :shapes (map lookup))]
+                  children (get group :shapes)]
               (cond
                 ;; If the group is empty we don't make any changes. Will be removed by a later process
                 (empty? children)
                 group
 
                 (= :bool (:type group))
-                (gsh/update-bool-selrect group children objects)
+                (path/update-bool-shape group objects)
 
                 (:masked-group group)
-                (set-mask-selrect group children)
+                (->> (map lookup children)
+                     (set-mask-selrect group))
 
                 :else
-                (gsh/update-group-selrect group children))))]
+                (->> (map lookup children)
+                     (gsh/update-group-selrect group)))))]
 
     (if page-id
       (d/update-in-when data [:pages-index page-id :objects] reg-objects)
@@ -918,15 +925,15 @@
 
 (defmethod process-change :add-color
   [data {:keys [color]}]
-  (ctcl/add-color data color))
+  (ctc/add-color data color))
 
 (defmethod process-change :mod-color
   [data {:keys [color]}]
-  (ctcl/set-color data color))
+  (ctc/set-color data color))
 
 (defmethod process-change :del-color
   [data {:keys [id]}]
-  (ctcl/delete-color data id))
+  (ctc/delete-color data id))
 
 ;; DEPRECATED: remove before 2.3
 (defmethod process-change :add-recent-color
@@ -1043,9 +1050,9 @@
                                      (ctob/make-token-theme (merge prev-token-theme theme)))))))))
 
 (defmethod process-change :update-active-token-themes
-  [data {:keys [theme-ids]}]
+  [data {:keys [theme-paths]}]
   (update data :tokens-lib #(-> % (ctob/ensure-tokens-lib)
-                                (ctob/set-active-themes theme-ids))))
+                                (ctob/set-active-themes theme-paths))))
 
 (defmethod process-change :rename-token-set-group
   [data {:keys [set-group-path set-group-fname]}]
@@ -1065,6 +1072,13 @@
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
                                 (ctob/move-set-group from-path to-path before-path before-group))))
+
+;; === Base font size
+
+(defmethod process-change :set-base-font-size
+  [data {:keys [base-font-size]}]
+  (ctf/set-base-font-size data base-font-size))
+
 
 ;; === Operations
 

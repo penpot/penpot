@@ -11,6 +11,7 @@
    [app.common.schema :as sm]
    [app.db :as db]
    [app.db.sql :as-alias sql]
+   [app.features.logical-deletion :as ldel]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as webhooks]
    [app.rpc :as-alias rpc]
@@ -253,9 +254,10 @@
 ;; --- MUTATION: Delete Project
 
 (defn- delete-project
-  [conn project-id]
-  (let [project (db/update! conn :project
-                            {:deleted-at (dt/now)}
+  [conn team project-id]
+  (let [delay   (ldel/get-deletion-delay team)
+        project (db/update! conn :project
+                            {:deleted-at (dt/in-future delay)}
                             {:id project-id}
                             {::db/return-keys true})]
 
@@ -272,7 +274,6 @@
 
     project))
 
-
 (def ^:private schema:delete-project
   [:map {:title "delete-project"}
    [:id ::sm/uuid]])
@@ -284,7 +285,10 @@
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id id] :as params}]
   (check-edition-permissions! conn profile-id id)
-  (let [project (delete-project conn id)]
+  (let [team    (teams/get-team conn
+                                :profile-id profile-id
+                                :project-id id)
+        project (delete-project conn team id)]
     (rph/with-meta (rph/wrap)
       {::audit/props {:team-id (:team-id project)
                       :name (:name project)

@@ -79,19 +79,31 @@ connect to penpot by browsing to http://localhost:3449 .
 ### Frontend
 
 The frontend build process is located on the tmux **window 0** and
-**window 1**. On the **window 0** we have the gulp process responsible
-of watching and building styles, fonts, icon-spreads and templates.
+**window 1**. On **window 0** we have the gulp process responsible
+for watching and building styles, fonts, icon-spreads and templates.
 
-On the **window 1** we can found the **shadow-cljs** process that is
-responsible on watch and build frontend clojurescript code.
+On **window 1** we can find the **shadow-cljs** process that is
+responsible for watching and building frontend clojurescript code.
 
-Additionally to the watch process you probably want to be able open a REPL
-process on the frontend application, for this case you can split the window
-and execute this:
+In addition to the watch process you probably want to be able to open a REPL
+process on the frontend application. In order to do this you can split the
+window (`Ctrl+b "`) and execute:
 
 ```bash
+cd penpot/frontend
 npx shadow-cljs cljs-repl main
 ```
+
+In order to have the REPL working you need to have an active browser session
+with the penpot application opened (otherwise, you will get the error
+`No application has connected to the REPL server.`).
+
+Finally, in case you want to connect to the REPL from your IDE, you can set it
+up to use nREPL with the port `3447` and the host `localhost` (you can see the
+port in the startup message of the shadow-cljs process in **window 1**). You
+will also need to call `(shadow/repl :main)` in the REPL to start the connection,
+as explained [here](https://shadow-cljs.github.io/docs/UsersGuide.html#_server_options).
+
 
 ### Storybook
 

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>WASM + WebGL2 Canvas</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script type="module">
+    import initWasmModule from '/js/render_wasm.js';
+    import {
+      init, addShapeSolidFill, assignCanvas, hexToU32ARGB, getRandomInt, getRandomColor,
+      getRandomFloat, useShape, setShapeChildren, setupInteraction, set_parent
+    } from './js/lib.js';
+
+    const canvas = document.getElementById("canvas");
+    canvas.width =  window.innerWidth;
+    canvas.height = window.innerHeight;
+    const shapes = 10;
+
+    initWasmModule().then(Module => {
+      init(Module);
+      assignCanvas(canvas);
+      Module._set_canvas_background(hexToU32ARGB("#FABADA", 1));
+      Module._set_view(1, 0, 0);
+      Module._init_shapes_pool(shapes + 1);
+      setupInteraction(canvas);
+
+      useShape("00000000-0000-0000-0000-000000000000");
+      const group_id = "cbf2e110-ef85-8081-8006-2d4d7cb97d4a";
+      setShapeChildren([group_id, "cbf2e110-ef85-8081-8006-2d4d7cb97d4d"]);
+
+      useShape("cbf2e110-ef85-8081-8006-2d4d7cb97d4d");
+      set_parent("00000000-0000-0000-0000-000000000000");
+      Module._set_shape_type(3);
+      Module._set_shape_selrect(100, 100, 200, 200);
+      addShapeSolidFill(hexToU32ARGB("#aabbcc", 1));
+      
+      const group_children = [];
+
+      let uuid = "a822d9e3-16c5-802c-8006-2d6d04f9c3e5";
+      group_children.push(uuid);
+      useShape(uuid);
+      set_parent(group_id);
+      Module._set_shape_type(3);
+      Module._set_shape_selrect(319, 144, 544, 332);
+      addShapeSolidFill(hexToU32ARGB("#0c44ea", 1));
+
+
+      uuid = "a822d9e3-16c5-802c-8006-2d6d06e88e19";
+      group_children.push(uuid);
+      useShape(uuid);
+      set_parent(group_id);
+      Module._set_shape_type(6);
+      Module._set_shape_selrect(98, 214, 426, 475);
+      addShapeSolidFill(hexToU32ARGB("#B1B2B5", 1));
+
+      useShape(group_id);
+      set_parent("00000000-0000-0000-0000-000000000000");
+      Module._set_shape_type(1);
+      Module._set_shape_selrect(319, 144, 544, 332);
+      Module._set_shape_masked_group(true);
+      setShapeChildren(group_children);
+
+      Module._render(Date.now());
+    });
+    
+  </script>
+</body>
+</html>

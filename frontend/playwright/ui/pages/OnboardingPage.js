@@ -9,7 +9,7 @@ export class OnboardingPage extends BaseWebSocketPage {
   async fillOnboardingInputsStep1() {
     await this.page.getByText("Personal").click();
     await this.page.getByText("Select option").click();
-    await this.page.getByText("Testing before self-hosting").click();
+    await this.page.getByText("Product Managment").click();
 
     await this.submitButton.click();
   }
@@ -21,24 +21,8 @@ export class OnboardingPage extends BaseWebSocketPage {
   }
 
   async fillOnboardingInputsStep3() {
-    await this.page.getByText("Select option").first().click();
-    await this.page.getByText("Product Managment").click();
-    await this.page.getByText("Select option").first().click();
-    await this.page.getByText("Director").click();
-    await this.page.getByText("Select option").click();
-    await this.page.getByText("11-30").click();
-
-    await this.submitButton.click();
-  }
-
-  async fillOnboardingInputsStep4() {
     await this.page.getByText("Other").click();
     await this.page.getByPlaceholder("Other (specify)").fill("Another");
-    await this.submitButton.click();
-  }
-
-  async fillOnboardingInputsStep5() {
-    await this.page.getByText("Event").click();
   }
 }
 

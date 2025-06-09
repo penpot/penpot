@@ -12,17 +12,26 @@
 
 .modal-container {
   position: relative;
-  display: grid;
-  grid-template-columns: 1fr $s-32 1fr;
-  gap: $s-24;
   width: $s-908;
-  height: $s-632;
+  max-height: $s-800;
+  height: 100%;
   padding-inline: $s-100;
   padding-block-start: $s-40;
-  padding-block-end: $s-72;
+  padding-block-end: $s-40;
   border-radius: $br-8;
   background-color: var(--modal-background-color);
   border: $s-2 solid var(--modal-border-color);
+  display: flex;
+  flex-direction: column;
+  gap: $s-24;
+}
+
+.modal-sections {
+  display: grid;
+  grid-template-columns: 1fr $s-32 1fr;
+  gap: $s-24;
+  height: 100%;
+  overflow: hidden;
 }
 
 .paginator {
@@ -41,19 +50,21 @@
   grid-template-columns: 1fr;
   grid-template-rows: $s-32 auto auto 1fr;
   gap: $s-16;
-  max-height: $s-512;
-  padding-block-start: $s-44;
+  overflow: auto;
 }
 
 .modal-title {
   @include bigTitleTipography;
   color: var(--modal-title-foreground-color);
-  margin-bottom: $s-8;
 }
 
 .modal-subtitle {
   @include medTitleTipography;
   color: var(--modal-title-foreground-color);
+}
+
+.invite-subtitle {
+  padding-top: $s-16;
 }
 
 .modal-text {
@@ -107,9 +118,8 @@
 // SEPARATOR
 .separator {
   width: $s-8;
-  height: $s-420;
+  height: 100%;
   border-radius: $br-8;
-  margin-block-start: $s-92;
   opacity: 42%;
   background-color: var(--modal-separator-backogrund-color);
 }
@@ -120,8 +130,12 @@
   grid-template-columns: 1fr;
   grid-template-rows: 1fr auto;
   gap: $s-24;
-  max-height: $s-512;
-  margin-block-start: $s-92;
+  overflow: hidden;
+}
+
+.first-block {
+  overflow: auto;
+  flex-grow: 1;
 }
 
 .first-block,
@@ -162,7 +176,6 @@
   grid-template-rows: auto auto 1fr;
   gap: $s-16;
   max-height: $s-512;
-  margin-block-start: $s-92;
 }
 
 .modal-form-invitations {

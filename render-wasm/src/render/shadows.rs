@@ -8,7 +8,7 @@ use skia_safe::{textlayout::Paragraph, Paint};
 pub fn render_fill_drop_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
     if shape.has_fills() {
         for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
-            render_fill_drop_shadow(render_state, &shape, &shadow, antialias);
+            render_fill_drop_shadow(render_state, shape, shadow, antialias);
         }
     }
 }
@@ -26,7 +26,7 @@ fn render_fill_drop_shadow(
 pub fn render_fill_inner_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
     if shape.has_fills() {
         for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
-            render_fill_inner_shadow(render_state, &shape, &shadow, antialias);
+            render_fill_inner_shadow(render_state, shape, shadow, antialias);
         }
     }
 }
@@ -52,7 +52,7 @@ pub fn render_stroke_drop_shadows(
             let filter = shadow.get_drop_shadow_filter();
             strokes::render(
                 render_state,
-                &shape,
+                shape,
                 stroke,
                 Some(SurfaceId::Strokes), // FIXME
                 filter.as_ref(),
@@ -73,7 +73,7 @@ pub fn render_stroke_inner_shadows(
             let filter = shadow.get_inner_shadow_filter();
             strokes::render(
                 render_state,
-                &shape,
+                shape,
                 stroke,
                 Some(SurfaceId::Strokes), // FIXME
                 filter.as_ref(),
@@ -86,11 +86,11 @@ pub fn render_stroke_inner_shadows(
 pub fn render_text_drop_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
-    paragraphs: &[Paragraph],
+    paragraphs: &[Vec<Paragraph>],
     antialias: bool,
 ) {
     for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
-        render_text_drop_shadow(render_state, &shape, &shadow, &paragraphs, antialias);
+        render_text_drop_shadow(render_state, shape, shadow, paragraphs, antialias);
     }
 }
 
@@ -98,15 +98,15 @@ pub fn render_text_drop_shadow(
     render_state: &mut RenderState,
     shape: &Shape,
     shadow: &Shadow,
-    paragraphs: &[Paragraph],
+    paragraphs: &[Vec<Paragraph>],
     antialias: bool,
 ) {
-    let paint = &shadow.get_drop_shadow_paint(antialias);
+    let paint = shadow.get_drop_shadow_paint(antialias);
 
     text::render(
         render_state,
         shape,
-        &paragraphs,
+        paragraphs,
         Some(SurfaceId::DropShadows),
         Some(paint),
     );
@@ -115,11 +115,11 @@ pub fn render_text_drop_shadow(
 pub fn render_text_inner_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
-    paragraphs: &[Paragraph],
+    paragraphs: &[Vec<Paragraph>],
     antialias: bool,
 ) {
     for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
-        render_text_inner_shadow(render_state, &shape, &shadow, &paragraphs, antialias);
+        render_text_inner_shadow(render_state, shape, shadow, paragraphs, antialias);
     }
 }
 
@@ -127,15 +127,15 @@ pub fn render_text_inner_shadow(
     render_state: &mut RenderState,
     shape: &Shape,
     shadow: &Shadow,
-    paragraphs: &[Paragraph],
+    paragraphs: &[Vec<Paragraph>],
     antialias: bool,
 ) {
-    let paint = &shadow.get_inner_shadow_paint(antialias);
+    let paint = shadow.get_inner_shadow_paint(antialias);
 
     text::render(
         render_state,
         shape,
-        &paragraphs,
+        paragraphs,
         Some(SurfaceId::InnerShadows),
         Some(paint),
     );

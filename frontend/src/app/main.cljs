@@ -23,11 +23,10 @@
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.delete-shared]
    [app.main.ui.routes :as rt]
-   [app.main.worker :as worker]
+   [app.main.worker :as mw]
    [app.plugins :as plugins]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
-   [app.util.theme :as theme]
    [beicon.v2.core :as rx]
    [debug]
    [features]
@@ -91,9 +90,8 @@
 
 (defn ^:export init
   []
-  (worker/init!)
+  (mw/init!)
   (i18n/init! cf/translations)
-  (theme/init! cf/themes)
   (cur/init-styles)
   (thr/init!)
   (init-ui)

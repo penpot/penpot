@@ -30,9 +30,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [data (dsh/lookup-file-data state)]
-        (->> (rx/from (-> (get data :tokens-lib)
-                          (ctob/get-active-themes-set-tokens)
-                          (sd/resolve-tokens+)))
+        (->> (get data :tokens-lib)
+             (ctob/get-tokens-in-active-sets)
+             (sd/resolve-tokens)
              (rx/mapcat #(rx/of (end))))))))
 
 (defn stop-on

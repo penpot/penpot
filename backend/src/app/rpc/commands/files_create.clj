@@ -55,8 +55,8 @@
                                :features features
                                :ignore-sync-until ignore-sync-until
                                :modified-at modified-at
-                               :deleted-at deleted-at
-                               :create-page create-page
+                               :deleted-at deleted-at}
+                              {:create-page create-page
                                :page-id page-id})
           file (-> (bfc/insert-file! cfg file)
                    (bfc/decode-row))]
@@ -111,18 +111,21 @@
                         ::quotes/profile-id profile-id
                         ::quotes/project-id project-id})
 
-    ;; FIXME: IMPORTANT: this code can have race
-    ;; conditions, because we have no locks for updating
-    ;; team so, creating two files concurrently can lead
-    ;; to lost team features updating
+    ;; FIXME: IMPORTANT: this code can have race conditions, because
+    ;; we have no locks for updating team so, creating two files
+    ;; concurrently can lead to lost team features updating
 
-    ;; When newly computed features does not match exactly with
-    ;; the features defined on team row, we update it
-    (when (not= features (:features team))
-      (let [features (db/create-array conn "text" features)]
+    (when-let [features (-> features
+                            (set/difference (:features team))
+                            (set/difference cfeat/no-team-inheritable-features)
+                            (not-empty))]
+      (let [features (->> features
+                          (set/union (:features team))
+                          (db/create-array conn "text"))]
         (db/update! conn :team
                     {:features features}
-                    {:id team-id})))
+                    {:id (:id team)}
+                    {::db/return-keys false})))
 
     (-> (create-file cfg params)
         (vary-meta assoc ::audit/props {:team-id team-id}))))

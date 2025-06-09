@@ -162,6 +162,9 @@
         handle-paste-props
         (mf/use-callback #(st/emit! (dw/paste-selected-props)))
 
+        handle-copy-svg
+        (mf/use-callback #(st/emit! (dw/copy-selected-svg)))
+
         handle-copy-text
         (mf/use-callback #(st/emit! (dw/copy-selected-text)))
 
@@ -205,6 +208,8 @@
                        :on-click handle-copy-css}]
       [:> menu-entry* {:title (tr "workspace.shape.menu.copy-css-nested")
                        :on-click handle-copy-css-nested}]
+      [:> menu-entry* {:title (tr "workspace.shape.menu.copy-svg")
+                       :on-click handle-copy-svg}]
 
       [:> menu-separator* {}]
 

@@ -13,7 +13,7 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.text :as txt]
-   [app.common.types.colors-list :as ctcl]
+   [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
@@ -80,7 +80,7 @@
         _ (thf/validate-file! file')
 
         ;; Get
-        colors' (ctcl/colors-seq (ctf/file-data file'))
+        colors' (ctc/colors-seq (ctf/file-data file'))
         shape1' (ths/get-shape file' :shape1)
         fill'   (first (:fills shape1'))]
 

@@ -20,11 +20,13 @@ path = "src/main.rs"
 base64 = "0.22.1"
 gl = "0.14.0"
 indexmap = "2.7.1"
-skia-safe = { version = "0.81.0", default-features = false, features = ["gl", "svg", "textlayout", "binary-cache"]}
-uuid = { version = "1.11.0", features = ["v4"] }
-
-[dev-dependencies]
-cargo-watch = "8.5.3"
+skia-safe = { version = "0.81.0", default-features = false, features = [
+  "gl",
+  "svg",
+  "textlayout",
+  "binary-cache",
+] }
+uuid = { version = "1.11.0", features = ["v4", "js"] }
 
 [profile.release]
 opt-level = "s"

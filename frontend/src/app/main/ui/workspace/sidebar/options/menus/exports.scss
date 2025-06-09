@@ -16,8 +16,9 @@
 }
 
 .element-set-content {
-  @include flexColumn;
-  margin: $s-4 0 $s-8 0;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  gap: var(--sp-xs);
 }
 
 .multiple-exports {
@@ -32,18 +33,18 @@
 
 .element-group {
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  column-gap: $s-4;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
 }
 
 .input-wrapper {
-  grid-column: span 8;
+  grid-column: span 7;
   display: grid;
   grid-template-columns: subgrid;
 }
 
 .format-select {
-  grid-column: span 3;
+  grid-column: span 2;
   padding: 0;
 
   .dropdown-upwards {
@@ -72,6 +73,6 @@
 .export-btn {
   @extend .button-secondary;
   @include uppercaseTitleTipography;
+  grid-column: 1 / span 8;
   height: $s-32;
-  width: $s-252;
 }

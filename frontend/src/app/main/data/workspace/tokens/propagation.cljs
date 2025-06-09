@@ -32,6 +32,7 @@
    ctt/stroke-width-keys dwta/update-stroke-width
    ctt/sizing-keys dwta/update-shape-dimensions
    ctt/opacity-keys dwta/update-opacity
+   #{:line-height} dwta/update-line-height
    #{:x :y} dwta/update-shape-position
    #{:p1 :p2 :p3 :p4} dwta/update-layout-padding
    #{:m1 :m2 :m3 :m4} dwta/update-layout-item-margin
@@ -125,6 +126,7 @@
 (defn- actionize-shapes-update-info [page-id shapes-update-info]
   (mapcat (fn [[attrs update-infos]]
             (let [action (some attribute-actions-map attrs)]
+              (assert (fn? action) "missing action function on attributes->shape-update")
               (map
                (fn [[v shape-ids]]
                  (action v shape-ids attrs page-id))
@@ -185,12 +187,11 @@
     (watch [_ state _]
       (when-let [tokens-lib (-> (dsh/lookup-file-data state)
                                 (get :tokens-lib))]
-        (let [tokens (-> (ctob/get-active-themes-set-tokens tokens-lib)
-                         (sd/resolve-tokens+))]
-          (->> (rx/from tokens)
-               (rx/mapcat (fn [sd-tokens]
-                            (let [undo-id (js/Symbol)]
-                              (rx/concat
-                               (rx/of (dwu/start-undo-transaction undo-id :timeout false))
-                               (propagate-tokens state sd-tokens)
-                               (rx/of (dwu/commit-undo-transaction undo-id))))))))))))
+        (->> (ctob/get-tokens-in-active-sets tokens-lib)
+             (sd/resolve-tokens)
+             (rx/mapcat (fn [sd-tokens]
+                          (let [undo-id (js/Symbol)]
+                            (rx/concat
+                             (rx/of (dwu/start-undo-transaction undo-id :timeout false))
+                             (propagate-tokens state sd-tokens)
+                             (rx/of (dwu/commit-undo-transaction undo-id)))))))))))

@@ -1,4 +1,4 @@
-FROM nginxinc/nginx-unprivileged:1.27.1
+FROM nginxinc/nginx-unprivileged:1.28.0
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 USER root
@@ -11,6 +11,7 @@ RUN set -ex; \
 ADD ./bundle-frontend/ /var/www/app/
 ADD ./files/config.js /var/www/app/js/config.js
 ADD ./files/nginx.conf /etc/nginx/nginx.conf.template
+ADD ./files/nginx-proxies.conf /etc/nginx/nginx-proxies.conf
 ADD ./files/resolvers.conf /etc/nginx/overrides.d/resolvers.conf.template
 ADD ./files/nginx-mime.types /etc/nginx/mime.types
 ADD ./files/nginx-entrypoint.sh /entrypoint.sh

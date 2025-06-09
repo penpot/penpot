@@ -13,7 +13,6 @@
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as cfv]
    [app.db :as db]
-   [app.features.components-v2 :as feat.comp-v2]
    [app.main :as main]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-snapshot :as fsnap]
@@ -62,6 +61,27 @@
                 {:id id})
     team))
 
+(def ^:private sql:get-and-lock-team-files
+  "SELECT f.id
+     FROM file AS f
+     JOIN project AS p ON (p.id = f.project_id)
+    WHERE p.team_id = ?
+      AND p.deleted_at IS NULL
+      AND f.deleted_at IS NULL
+      FOR UPDATE")
+
+(defn get-team
+  [conn team-id]
+  (-> (db/get conn :team {:id team-id}
+              {::db/remove-deleted false
+               ::db/check-deleted false})
+      (update :features db/decode-pgarray #{})))
+
+(defn get-and-lock-team-files
+  [conn team-id]
+  (transduce (map :id) conj []
+             (db/plan conn [sql:get-and-lock-team-files team-id])))
+
 (defn reset-file-data!
   "Hardcode replace of the data of one file."
   [system id data]
@@ -96,7 +116,7 @@
 (defn take-team-snapshot!
   [system team-id label]
   (let [conn (db/get-connection system)]
-    (->> (feat.comp-v2/get-and-lock-team-files conn team-id)
+    (->> (get-and-lock-team-files conn team-id)
          (reduce (fn [result file-id]
                    (let [file (fsnap/get-file-snapshots system file-id)]
                      (fsnap/create-file-snapshot! system file
@@ -108,19 +128,16 @@
 (defn restore-team-snapshot!
   [system team-id label]
   (let [conn (db/get-connection system)
-        ids  (->> (feat.comp-v2/get-and-lock-team-files conn team-id)
+        ids  (->> (get-and-lock-team-files conn team-id)
                   (into #{}))
 
         snap (search-file-snapshots conn ids label)
 
-        ids' (into #{} (map :file-id) snap)
-        team (-> (feat.comp-v2/get-team conn team-id)
-                 (update :features disj "components/v2"))]
+        ids' (into #{} (map :file-id) snap)]
 
     (when (not= ids ids')
       (throw (RuntimeException. "no uniform snapshot available")))
 
-    (feat.comp-v2/update-team! conn team)
     (reduce (fn [result {:keys [file-id id]}]
               (fsnap/restore-file-snapshot! system file-id id)
               (inc result))
@@ -129,13 +146,9 @@
 
 (defn process-file!
   [system file-id update-fn & {:keys [label validate? with-libraries?] :or {validate? true} :as opts}]
-  (let [conn  (db/get-connection system)
-        file  (bfc/get-file system file-id ::db/for-update true)
+  (let [file  (bfc/get-file system file-id ::db/for-update true)
         libs  (when with-libraries?
-                (->> (files/get-file-libraries conn file-id)
-                     (into [file] (map (fn [{:keys [id]}]
-                                         (bfc/get-file system id))))
-                     (d/index-by :id)))
+                (bfc/get-resolved-file-libraries system file))
 
         file' (when file
                 (if with-libraries?

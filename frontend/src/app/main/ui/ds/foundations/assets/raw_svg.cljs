@@ -19,6 +19,7 @@
 (def ^:svg-id loader "loader")
 (def ^:svg-id logo-error-screen "logo-error-screen")
 (def ^:svg-id login-illustration "login-illustration")
+(def ^:svg-id logo-subscription "logo-subscription")
 (def ^:svg-id marketing-arrows "marketing-arrows")
 (def ^:svg-id marketing-exchange "marketing-exchange")
 (def ^:svg-id marketing-file "marketing-file")
@@ -33,7 +34,6 @@
 (def raw-svg-list "A collection of all raw SVG assets" (collect-raw-svgs))
 
 (mf/defc raw-svg*
-  {::mf/props :obj}
   [{:keys [id] :rest props}]
   (assert (contains? raw-svg-list id) "invalid raw svg id")
   [:> "svg" props

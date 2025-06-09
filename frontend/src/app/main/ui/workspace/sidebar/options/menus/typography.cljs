@@ -322,12 +322,13 @@
        (let [size-options [8 9 10 11 12 14 16 18 24 36 48 72]
              size-options (if (= font-size :multiple) (into [""] size-options) size-options)]
          [:& editable-select
-          {:value (attr->string font-size)
+          {:value (if (= font-size :multiple) :multiple (attr->string font-size))
            :class (stl/css :font-size-select)
+           :aria-label (tr "inspect.attributes.typography.font-size")
            :input-class (stl/css :numeric-input)
            :options size-options
            :type "number"
-           :placeholder "--"
+           :placeholder (tr "settings.multiple")
            :min 3
            :max 1000
            :on-change on-font-size-change

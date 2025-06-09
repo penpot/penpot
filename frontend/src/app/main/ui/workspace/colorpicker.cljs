@@ -12,6 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.types.fill :as types.fill]
    [app.config :as cfg]
    [app.main.data.event :as-alias ev]
    [app.main.data.modal :as modal]
@@ -20,6 +21,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
@@ -132,6 +134,7 @@
         on-fill-image-success
         (mf/use-fn
          (fn [image]
+           ;; FIXME: revisit
            (st/emit! (dc/update-colorpicker-color
                       {:image (-> (select-keys image [:id :width :height :mtype :name])
                                   (assoc :keep-aspect-ratio true))}
@@ -198,10 +201,9 @@
          (fn [_ color]
            (if (and (some? (:color color)) (some? (:gradient data)))
              (handle-change-color {:hex (:color color) :alpha (:opacity color)})
-             (do
-               (st/emit!
-                (dwl/add-recent-color color)
-                (dc/apply-color-from-colorpicker color))
+             (let [color (d/without-qualified color)]
+               (st/emit! (dc/add-recent-color color)
+                         (dc/apply-color-from-colorpicker color))
                (on-change color)))))
 
         on-add-library-color
@@ -336,6 +338,8 @@
          (fn [value]
            (st/emit! (dc/update-colorpicker-gradient-opacity (/ value 100)))))
 
+        cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
+
         tabs
         #js [#js {:aria-label (tr "workspace.libraries.colors.rgba")
                   :icon ic/rgba
@@ -416,6 +420,7 @@
             {:value (-> data :opacity opacity->string)
              :on-change handle-change-gradient-opacity
              :default 100
+             :data-testid "opacity-global-input"
              :min 0
              :max 100}]])
 
@@ -435,7 +440,7 @@
       (when (= selected-mode :gradient)
         [:> gradients*
          {:type (:type state)
-          :stops (:stops state)
+          :stops (if cap-stops? (vec (take types.fill/MAX-GRADIENT-STOPS (:stops state))) (:stops state))
           :editing-stop (:editing-stop state)
           :on-stop-edit-start handle-stop-edit-start
           :on-stop-edit-finish handle-stop-edit-finish

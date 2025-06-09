@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -x
 
+_BUILD_NAME="${_BUILD_NAME:-render_wasm}"
+
 _SCRIPT_DIR=$(dirname $0);
 pushd $_SCRIPT_DIR;
 
@@ -11,9 +13,9 @@ export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-bi
 
 cargo build $_CARGO_PARAMS
 
-cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.js ../frontend/resources/public/js/
-cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.wasm ../frontend/resources/public/js/
+cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.js ../frontend/resources/public/js/$_BUILD_NAME.js
+cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.wasm ../frontend/resources/public/js/$_BUILD_NAME.wasm
 
-sed -i "s/render_wasm.wasm/render_wasm.wasm?version=develop/g" ../frontend/resources/public/js/render_wasm.js;
+sed -i "s/render_wasm.wasm/$_BUILD_NAME.wasm?version=develop/g" ../frontend/resources/public/js/$_BUILD_NAME.js;
 
 popd

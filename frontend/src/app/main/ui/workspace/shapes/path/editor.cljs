@@ -8,24 +8,24 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as gsp]
-   [app.common.svg.path.command :as upc]
-   [app.common.svg.path.shapes-to-path :as ups]
+   [app.common.types.path :as path]
+   [app.common.types.path.helpers :as path.helpers]
+   [app.common.types.path.segment :as path.segment]
    [app.main.data.workspace.path :as drp]
+   [app.main.refs :as refs]
    [app.main.snap :as snap]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.workspace.shapes.path.common :as pc]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
-   [app.util.path.format :as upf]
    [clojure.set :refer [map-invert]]
    [goog.events :as events]
-   [rumext.v2 :as mf])
-  (:import goog.events.EventType))
+   [okulary.core :as l]
+   [rumext.v2 :as mf]))
 
 (def point-radius 5)
 (def point-radius-selected 4)
@@ -38,16 +38,31 @@
 (def path-preview-dasharray 4)
 (def path-snap-stroke-width 1)
 
-(mf/defc path-point [{:keys [position zoom edit-mode hover? selected? preview? start-path? last-p? new-point? curve?]}]
+(def accent-color "var(--color-accent-tertiary)")
+(def secondary-color "var(--color-accent-quaternary)")
+(def black-color "var(--app-black)")
+(def white-color "var(--app-white)")
+(def gray-color "var(--df-secondary)")
+
+(mf/defc path-point*
+  {::mf/private true}
+  [{:keys [position zoom edit-mode is-hover is-selected is-preview is-start-path is-last is-new is-curve]}]
   (let [{:keys [x y]} position
 
+        is-draw (= edit-mode :draw)
+        is-move (= edit-mode :move)
+
+        is-active
+        (or ^boolean is-selected
+            ^boolean is-hover)
+
         on-enter
-        (mf/use-callback
+        (mf/use-fn
          (fn [_]
            (st/emit! (drp/path-pointer-enter position))))
 
         on-leave
-        (mf/use-callback
+        (mf/use-fn
          (fn [_]
            (st/emit! (drp/path-pointer-leave position))))
 
@@ -56,132 +71,173 @@
           (dom/stop-propagation event)
           (dom/prevent-default event)
 
-          (when (and new-point? (some? (meta position)))
+          ;; FIXME: revisit this, using meta here breaks equality checks
+          (when (and is-new (some? (meta position)))
             (st/emit! (drp/create-node-at-position (meta position))))
 
-          (let [shift? (kbd/shift? event)
-                mod?   (kbd/mod? event)]
+          (let [is-shift (kbd/shift? event)
+                is-mod   (kbd/mod? event)]
             (cond
-              last-p?
+              is-last
               (st/emit! (drp/reset-last-handler))
 
-              (and (= edit-mode :move) mod? (not curve?))
+              (and is-move is-mod (not is-curve))
               (st/emit! (drp/make-curve position))
 
-              (and (= edit-mode :move) mod? curve?)
+              (and is-move is-mod is-curve)
               (st/emit! (drp/make-corner position))
 
-              (= edit-mode :move)
+              is-move
               ;; If we're dragging a selected item we don't change the selection
-              (st/emit! (drp/start-move-path-point position shift?))
+              (st/emit! (drp/start-move-path-point position is-shift))
 
-              (and (= edit-mode :draw) start-path?)
+              (and is-draw is-start-path)
               (st/emit! (drp/start-path-from-point position))
 
-              (and (= edit-mode :draw) (not start-path?))
+              (and is-draw (not is-start-path))
               (st/emit! (drp/close-path-drag-start position)))))]
 
     [:g.path-point
      [:circle.path-point
       {:cx x
        :cy y
-       :r (if (or selected? hover?) (/ point-radius zoom) (/ point-radius-selected zoom))
+       :r (if ^boolean is-active
+            (/ point-radius zoom)
+            (/ point-radius-selected zoom))
        :style {:stroke-width (/ point-radius-stroke-width zoom)
-               :stroke (cond (or selected? hover?) pc/black-color
-                             preview? pc/secondary-color
-                             :else pc/accent-color)
-               :fill (cond selected? pc/accent-color
-                           :else pc/white-color)}}]
+               :stroke (cond ^boolean is-active black-color
+                             ^boolean is-preview secondary-color
+                             :else accent-color)
+               :fill (cond is-selected accent-color
+                           :else white-color)}}]
      [:circle {:cx x
                :cy y
                :r (/ point-radius-active-area zoom)
                :on-pointer-down on-pointer-down
                :on-pointer-enter on-enter
                :on-pointer-leave on-leave
-               :pointer-events (when-not preview? "visible")
-               :class (cond (= edit-mode :draw) (cur/get-static "pen-node")
-                            (= edit-mode :move) (cur/get-static "pointer-node"))
+               :pointer-events (when-not ^boolean is-preview "visible")
+               :class (cond ^boolean is-draw (cur/get-static "pen-node")
+                            ^boolean is-move (cur/get-static "pointer-node"))
                :style {:stroke-width 0
                        :fill "none"}}]]))
 
-(mf/defc path-handler [{:keys [index prefix point handler zoom selected? hover? edit-mode snap-angle?]}]
-  (when (and point handler)
-    (let [{:keys [x y]} handler
-          on-enter
-          (fn [_]
-            (st/emit! (drp/path-handler-enter index prefix)))
+;; FIXME: is-selected prop looks unused
 
-          on-leave
-          (fn [_]
-            (st/emit! (drp/path-handler-leave index prefix)))
+(mf/defc path-handler*
+  {::mf/private true}
+  [{:keys [index prefix point handler zoom is-selected is-hover edit-mode snap-angle]}]
+  (let [x       (dm/get-prop handler :x)
+        y       (dm/get-prop handler :y)
+        is-draw (= edit-mode :draw)
+        is-move (= edit-mode :move)
 
-          on-pointer-down
-          (fn [event]
-            (dom/stop-propagation event)
-            (dom/prevent-default event)
+        is-active
+        (or ^boolean is-selected
+            ^boolean is-hover)
 
-            (cond
-              (= edit-mode :move)
-              (st/emit! (drp/start-move-handler index prefix))))]
+        on-enter
+        (mf/use-fn
+         (mf/deps index prefix)
+         (fn [_] (st/emit! (drp/path-handler-enter index prefix))))
 
-      [:g.handler {:pointer-events (if (= edit-mode :draw) "none" "visible")}
+        on-leave
+        (mf/use-fn
+         (mf/deps index prefix)
+         (fn [_] (st/emit! (drp/path-handler-leave index prefix))))
+
+        on-pointer-down
+        (mf/use-fn
+         (mf/deps index prefix is-move)
+         (fn [event]
+           (dom/stop-propagation event)
+           (dom/prevent-default event)
+
+           (when ^boolean is-move
+             (st/emit! (drp/start-move-handler index prefix)))))]
+
+    [:g.handler {:pointer-events (if ^boolean is-draw "none" "visible")}
+     [:line
+      {:x1 (:x point)
+       :y1 (:y point)
+       :x2 x
+       :y2 y
+       :style {:stroke (if ^boolean is-hover
+                         black-color
+                         gray-color)
+               :stroke-width (/ point-radius-stroke-width zoom)}}]
+
+     (when ^boolean snap-angle
        [:line
         {:x1 (:x point)
          :y1 (:y point)
          :x2 x
          :y2 y
-         :style {:stroke (if hover? pc/black-color pc/gray-color)
-                 :stroke-width (/ point-radius-stroke-width zoom)}}]
+         :style {:stroke secondary-color
+                 :stroke-width (/ point-radius-stroke-width zoom)}}])
 
-       (when snap-angle?
-         [:line
-          {:x1 (:x point)
-           :y1 (:y point)
-           :x2 x
-           :y2 y
-           :style {:stroke pc/secondary-color
-                   :stroke-width (/ point-radius-stroke-width zoom)}}])
+     [:rect
+      {:x (- x (/ handler-side 2 zoom))
+       :y (- y (/ handler-side 2 zoom))
+       :width (/ handler-side zoom)
+       :height (/ handler-side zoom)
 
-       [:rect
-        {:x (- x (/ handler-side 2 zoom))
-         :y (- y (/ handler-side 2 zoom))
-         :width (/ handler-side zoom)
-         :height (/ handler-side zoom)
+       :style {:stroke-width (/ handler-stroke-width zoom)
+               :stroke (cond ^boolean is-active black-color
+                             :else accent-color)
+               :fill (cond ^boolean is-selected accent-color
+                           :else white-color)}}]
+     [:circle {:cx x
+               :cy y
+               :r (/ point-radius-active-area zoom)
+               :on-pointer-down on-pointer-down
+               :on-pointer-enter on-enter
+               :on-pointer-leave on-leave
+               :class (when ^boolean is-move
+                        (cur/get-static "pointer-move"))
+               :style {:fill "none"
+                       :stroke-width 0}}]]))
 
-         :style {:stroke-width (/ handler-stroke-width zoom)
-                 :stroke (cond (or selected? hover?) pc/black-color
-                               :else pc/accent-color)
-                 :fill (cond selected? pc/accent-color
-                             :else pc/white-color)}}]
-       [:circle {:cx x
-                 :cy y
-                 :r (/ point-radius-active-area zoom)
-                 :on-pointer-down on-pointer-down
-                 :on-pointer-enter on-enter
-                 :on-pointer-leave on-leave
-                 :class (when (= edit-mode :move) (cur/get-static "pointer-move"))
-                 :style {:fill "none"
-                         :stroke-width 0}}]])))
+(mf/defc path-preview*
+  {::mf/private true}
+  [{:keys [zoom segment from]}]
 
-(mf/defc path-preview [{:keys [zoom command from]}]
-  [:g.preview {:style {:pointer-events "none"}}
-   (when (not= :move-to (:command command))
-     [:path {:style {:fill "none"
-                     :stroke pc/black-color
-                     :stroke-width (/ handler-stroke-width zoom)
-                     :stroke-dasharray (/ path-preview-dasharray zoom)}
-             :d (upf/format-path [{:command :move-to
-                                   :params {:x (:x from)
-                                            :y (:y from)}}
-                                  command])}])
-   [:& path-point {:position (:params command)
-                   :preview? true
-                   :zoom zoom}]])
+  (let [path
+        (when (not= :move-to (:command segment))
+          (let [segments [{:command :move-to
+                           :params from}]
+                segments (conj segments segment)]
+            (path/content segments)))
 
-(mf/defc path-snap [{:keys [selected points zoom]}]
-  (let [ranges       (mf/use-memo (mf/deps selected points) #(snap/create-ranges points selected))
-        snap-matches (snap/get-snap-delta-match selected ranges (/ 1 zoom))
-        matches      (concat (second (:x snap-matches)) (second (:y snap-matches)))]
+        position
+        (mf/with-memo [segment]
+          ;; FIXME: use a helper from common for this
+          (gpt/point (:params segment)))]
+
+    [:g.preview {:style {:pointer-events "none"}}
+     (when (some? path)
+       [:path {:style {:fill "none"
+                       :stroke black-color
+                       :stroke-width (/ handler-stroke-width zoom)
+                       :stroke-dasharray (/ path-preview-dasharray zoom)}
+               :d (str path)}])
+
+     [:> path-point* {:position position
+                      :is-preview true
+                      :zoom zoom}]]))
+
+(mf/defc path-snap*
+  {::mf/private true}
+  [{:keys [selected points zoom]}]
+  (let [ranges
+        (mf/with-memo [selected points]
+          (snap/create-ranges points selected))
+
+        snap-matches
+        (snap/get-snap-delta-match selected ranges (/ 1 zoom))
+
+        matches
+        (concat (second (:x snap-matches)) (second (:y snap-matches)))]
 
     [:g.snap-paths
      (for [[idx [from to]] (d/enumerate matches)]
@@ -190,14 +246,14 @@
                :y1 (:y from)
                :x2 (:x to)
                :y2 (:y to)
-               :style {:stroke pc/secondary-color
+               :style {:stroke secondary-color
                        :stroke-width (/ path-snap-stroke-width zoom)}}])]))
 
-(defn matching-handler? [content node handlers]
+(defn- matching-handler? [content node handlers]
   (when (= 2 (count handlers))
     (let [[[i1 p1] [i2 p2]] handlers
-          p1 (upc/handler->point content i1 p1)
-          p2 (upc/handler->point content i2 p2)
+          p1 (path.segment/get-handler-point content i1 p1)
+          p2 (path.segment/get-handler-point content i2 p2)
 
           v1 (gpt/to-vec node p1)
           v2 (gpt/to-vec node p2)
@@ -205,12 +261,19 @@
           angle (gpt/angle-with-other v1 v2)]
       (<= (- 180 angle) 0.1))))
 
-(mf/defc path-editor
+(defn- make-edit-path-ref [id]
+  (let [get-fn #(dm/get-in % [:edit-path id])]
+    (l/derived get-fn refs/workspace-local)))
+
+(mf/defc path-editor*
   [{:keys [shape zoom]}]
 
-  (let [editor-ref (mf/use-ref nil)
-        edit-path-ref (pc/make-edit-path-ref (:id shape))
-        hover-point (mf/use-state nil)
+  (let [shape-id      (dm/get-prop shape :id)
+        edit-path-ref (mf/with-memo [shape-id]
+                        (make-edit-path-ref shape-id))
+
+        hover-point   (mf/use-state nil)
+        editor-ref    (mf/use-ref nil)
 
         {:keys [edit-mode
                 drag-handler
@@ -224,141 +287,171 @@
                 hover-handlers
                 hover-points
                 snap-toggled]
-         :as edit-path} (mf/deref edit-path-ref)
+         :as edit-path}
+        (mf/deref edit-path-ref)
 
-        selected-points (or selected-points #{})
+        selected-points
+        (or selected-points #{})
 
-        shape (cond-> shape
-                (not= :path (:type shape))
-                (ups/convert-to-path {})
+        shape
+        (mf/with-memo [shape]
+          (cond-> shape
+            (not (cfh/path-shape? shape))
+            (path/convert-to-path)))
 
-                :always
-                hooks/use-equal-memo)
+        base-content
+        (get shape :content)
 
-        base-content (:content shape)
-        base-points (mf/use-memo (mf/deps base-content) #(->> base-content gsp/content->points))
+        base-points
+        (mf/with-memo [base-content]
+          (path/get-points base-content))
 
-        content (upc/apply-content-modifiers base-content content-modifiers)
-        content-points (mf/use-memo (mf/deps content) #(->> content gsp/content->points))
+        content
+        (mf/with-memo [base-content content-modifiers]
+          (path/apply-content-modifiers base-content content-modifiers))
+
+        content-points
+        (mf/with-memo [content]
+          (path/get-points content))
 
         point->base (->> (map hash-map content-points base-points) (reduce merge))
         base->point (map-invert point->base)
 
-        points (into #{} content-points)
+        points
+        (mf/with-memo [content-points]
+          (into #{} content-points))
 
-        last-p (->> content last upc/command->point)
-        handlers (upc/content->handlers content)
+        last-p
+        (->> content last path.helpers/segment->point)
 
-        start-p? (not (some? last-point))
+        handlers
+        (mf/with-memo [content]
+          (path.segment/get-handlers content))
 
-        [snap-selected snap-points]
-        (cond
-          (some? drag-handler) [#{drag-handler} points]
-          (some? preview) [#{(upc/command->point preview)} points]
-          (some? moving-handler) [#{moving-handler} points]
-          :else
-          [(->> selected-points (map base->point) (into #{}))
-           (->> points (remove selected-points) (into #{}))])
+        is-path-start
+        (not (some? last-point))
 
-        show-snap? (and snap-toggled
-                        (or (some? drag-handler)
-                            (some? preview)
-                            (some? moving-handler)
-                            moving-nodes))
+        show-snap?
+        (and ^boolean snap-toggled
+             (or (some? drag-handler)
+                 (some? preview)
+                 (some? moving-handler)
+                 moving-nodes))]
 
-        handle-double-click-outside
-        (fn [_]
-          (when (= edit-mode :move)
-            (st/emit! :interrupt)))]
-
-    (mf/use-layout-effect
-     (mf/deps edit-mode)
-     (fn []
-       (let [keys [(events/listen (dom/get-root) EventType.DBLCLICK handle-double-click-outside)]]
-         #(doseq [key keys]
-            (events/unlistenByKey key)))))
+    (mf/with-layout-effect [edit-mode]
+      (let [key (events/listen (dom/get-root) "dblclick"
+                               #(when (= edit-mode :move)
+                                  (st/emit! :interrupt)))]
+        #(events/unlistenByKey key)))
 
     (hooks/use-stream
      ms/mouse-position
-     (mf/deps shape zoom)
+     (mf/deps base-content zoom)
      (fn [position]
-       (when-let [point (gsp/path-closest-point shape position)]
+       (when-let [point (path.segment/closest-point base-content position (/ 0.01 zoom))]
          (reset! hover-point (when (< (gpt/distance position point) (/ 10 zoom)) point)))))
 
     [:g.path-editor {:ref editor-ref}
-     [:path {:d (upf/format-path content)
+     [:path {:d (.toString content)
              :style {:fill "none"
-                     :stroke pc/accent-color
+                     :stroke accent-color
                      :strokeWidth (/ 1 zoom)}}]
      (when (and preview (not drag-handler))
-       [:& path-preview {:command preview
-                         :from last-p
-                         :zoom zoom}])
+       [:> path-preview* {:segment preview
+                          :from last-p
+                          :zoom zoom}])
 
-     (when drag-handler
+     (when (and drag-handler last-p)
        [:g.drag-handler {:pointer-events "none"}
-        [:& path-handler {:point last-p
-                          :handler drag-handler
-                          :edit-mode edit-mode
-                          :zoom zoom}]])
+        [:> path-handler* {:point last-p
+                           :handler drag-handler
+                           :edit-mode edit-mode
+                           :zoom zoom}]])
 
      (when @hover-point
        [:g.hover-point
-        [:& path-point {:position @hover-point
-                        :edit-mode edit-mode
-                        :new-point? true
-                        :start-path? start-p?
-                        :zoom zoom}]])
+        [:> path-point* {:position @hover-point
+                         :edit-mode edit-mode
+                         :is-new true
+                         :is-start-path is-path-start
+                         :zoom zoom}]])
 
-     (for [[index position] (d/enumerate points)]
-       (let [show-handler?
+     (for [position points]
+       (let [pos-x (dm/get-prop position :x)
+             pos-y (dm/get-prop position :y)
+
+             show-handler?
              (fn [[index prefix]]
-               (let [handler-position (upc/handler->point content index prefix)]
+               ;; FIXME: get-handler-point is executed twice for each
+               ;; render, this can be optimized
+               (let [handler-position (path.segment/get-handler-point content index prefix)]
                  (not= position handler-position)))
 
-             pos-handlers (get handlers position)
-             point-selected? (contains? selected-points (get point->base position))
-             point-hover? (contains? hover-points (get point->base position))
-             last-p? (= last-point (get point->base position))
+             position-handlers
+             (->> (get handlers position)
+                  (filter show-handler?)
+                  (not-empty))
 
-             pos-handlers (->> pos-handlers (filter show-handler?))
-             curve? (boolean (seq pos-handlers))]
+             point-selected?
+             (contains? selected-points (get point->base position))
 
-         [:g.path-node {:key (dm/str index "-" (:x position) "-" (:y position))}
+             point-hover?
+             (contains? hover-points (get point->base position))
+
+             is-last
+             (= last-point (get point->base position))
+
+             is-curve
+             (boolean position-handlers)]
+
+         [:g.path-node {:key (dm/str pos-x "-" pos-y)}
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
-           (for [[hindex prefix] pos-handlers]
-             (let [handler-position (upc/handler->point content hindex prefix)
-                   handler-hover? (contains? hover-handlers [hindex prefix])
-                   moving-handler? (= handler-position moving-handler)
-                   matching-handler? (matching-handler? content position pos-handlers)]
-               [:& path-handler {:key (dm/str (dm/str index "-" (:x position) "-" (:y position)) "-" hindex "-" (d/name prefix))
-                                 :point position
-                                 :handler handler-position
-                                 :index hindex
-                                 :prefix prefix
-                                 :zoom zoom
-                                 :hover? handler-hover?
-                                 :snap-angle? (and moving-handler? matching-handler?)
-                                 :edit-mode edit-mode}]))]
-          [:& path-point {:position position
-                          :zoom zoom
-                          :edit-mode edit-mode
-                          :selected? point-selected?
-                          :hover? point-hover?
-                          :last-p? last-p?
-                          :start-path? start-p?
-                          :curve? curve?}]]))
+           (for [[hindex prefix] position-handlers]
+             (let [handler-position  (path.segment/get-handler-point content hindex prefix)
+                   handler-hover?    (contains? hover-handlers [hindex prefix])
+                   moving-handler?   (= handler-position moving-handler)
+                   matching-handler? (matching-handler? content position position-handlers)]
 
-     (when prev-handler
+               (when (and position handler-position)
+                 [:> path-handler*
+                  {:key (dm/str hindex "-" (d/name prefix))
+                   :point position
+                   :handler handler-position
+                   :index hindex
+                   :prefix prefix
+                   :zoom zoom
+                   :is-hover handler-hover?
+                   :snap-angle (and moving-handler? matching-handler?)
+                   :edit-mode edit-mode}])))]
+
+          [:> path-point* {:position position
+                           :zoom zoom
+                           :edit-mode edit-mode
+                           :is-selected point-selected?
+                           :is-hover point-hover?
+                           :is-last is-last
+                           :is-start-path is-path-start
+                           :is-curve is-curve}]]))
+
+     (when (and prev-handler last-p)
        [:g.prev-handler {:pointer-events "none"}
-        [:& path-handler {:point last-p
-                          :edit-mode edit-mode
-                          :handler prev-handler
-                          :zoom zoom}]])
+        [:> path-handler*
+         {:point last-p
+          :edit-mode edit-mode
+          :handler prev-handler
+          :zoom zoom}]])
 
-     (when show-snap?
-       [:g.path-snap {:pointer-events "none"}
-        [:& path-snap {:selected snap-selected
-                       :points snap-points
-                       :zoom zoom}]])]))
+     (when ^boolean show-snap?
+       (let [[snap-selected snap-points]
+             (cond
+               (some? drag-handler) [#{drag-handler} points]
+               (some? preview) [#{(path.helpers/segment->point preview)} points]
+               (some? moving-handler) [#{moving-handler} points]
+               :else
+               [(->> selected-points (map base->point) (into #{}))
+                (->> points (remove selected-points) (into #{}))])]
+         [:g.path-snap {:pointer-events "none"}
+          [:> path-snap* {:selected snap-selected
+                          :points snap-points
+                          :zoom zoom}]]))]))
 

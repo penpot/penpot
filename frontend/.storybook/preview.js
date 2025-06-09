@@ -18,6 +18,7 @@ const preview = {
   decorators: decorators,
   parameters: {
     controls: {
+      disableSaveFromUI: true,
       matchers: {
         color: /(background|color)$/i,
         date: /Date$/i,

@@ -23,15 +23,18 @@
 
 (def schema:variant-component
   ;; A component that is part of a variant set.
-  [:map
-   [:variant-id {:optional true} ::sm/uuid]
-   [:variant-properties {:optional true} [:vector schema:variant-property]]])
+  (sm/register!
+   ^{::sm/type ::variant-component}
+   [:map
+    [:variant-id {:optional true} ::sm/uuid]
+    [:variant-properties {:optional true} [:vector schema:variant-property]]]))
 
 (def schema:variant-shape
   ;; The root shape of the main instance of a variant component.
   [:map
    [:variant-id {:optional true} ::sm/uuid]
-   [:variant-name {:optional true} :string]])
+   [:variant-name {:optional true} :string]
+   [:variant-error {:optional true} :string]])
 
 (def schema:variant-container
   ;; is a board that contains all variant components of a variant set,
@@ -40,7 +43,6 @@
    [:is-variant-container {:optional true} :boolean]])
 
 (sm/register! ::variant-property schema:variant-property)
-(sm/register! ::variant-component schema:variant-component)
 (sm/register! ::variant-shape schema:variant-shape)
 (sm/register! ::variant-container schema:variant-container)
 
@@ -52,6 +54,7 @@
 
 (def property-prefix "Property")
 (def property-regex (re-pattern (str property-prefix "(\\d+)")))
+(def property-max-length 60)
 (def value-prefix "Value ")
 
 
@@ -105,8 +108,8 @@
      (add-new-props assigned remaining))))
 
 
-(defn properties-map-to-string
-  "Transforms a map of properties to a string of properties omitting the empty ones"
+(defn properties-map->formula
+  "Transforms a map of properties to a formula of properties omitting the empty ones"
   [properties]
   (->> properties
        (keep (fn [{:keys [name value]}]
@@ -115,21 +118,26 @@
        (str/join ", ")))
 
 
-(defn properties-string-to-map
-  "Transforms a string of properties to a map of properties"
+(defn properties-formula->map
+  "Transforms a formula of properties to a map of properties"
   [s]
   (->> (str/split s ",")
-       (mapv #(str/split % "="))
+       (mapv #(str/split % "=" 2))
+       (filter (fn [[_ v]] (not (str/blank? v))))
        (mapv (fn [[k v]]
                {:name (str/trim k)
                 :value (str/trim v)}))))
 
 
-(defn valid-properties-string?
-  "Checks if a string of properties has a processable format or not"
+(defn valid-properties-formula?
+  "Checks if a formula is valid"
   [s]
-  (let [pattern #"^([a-zA-Z0-9\s]+=[a-zA-Z0-9\s]+)(,\s*[a-zA-Z0-9\s]+=[a-zA-Z0-9\s]+)*$"]
-    (not (nil? (re-matches pattern s)))))
+  (->> (str/split s ",")
+       (mapv #(str/split % "=" 2))
+       (every? #(and (= 2 (count %))
+                     (not (str/blank? (first %)))
+                     (< (count (first %)) property-max-length)
+                     (< (count (second %)) property-max-length)))))
 
 
 (defn find-properties-to-remove

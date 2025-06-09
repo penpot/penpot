@@ -6,7 +6,6 @@
 
 (ns app.main.data.workspace.edition
   (:require
-   [app.common.data.macros :as dm]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.path.common :as dwpc]
    [beicon.v2.core :as rx]
@@ -17,8 +16,10 @@
 (declare clear-edition-mode)
 
 (defn start-edition-mode
+  "Mark a shape in edition mode"
   [id]
-  (dm/assert! (uuid? id))
+  (assert (uuid? id) "expected valid uuid for `id`")
+
   (ptk/reify ::start-edition-mode
     ptk/UpdateEvent
     (update [_ state]
@@ -26,8 +27,7 @@
         ;; Can only edit objects that exist
         (if (contains? objects id)
           (-> state
-              (assoc-in [:workspace-local :selected] #{id})
-              (assoc-in [:workspace-local :edition] id)
+              (update :workspace-local assoc :edition id)
               (dissoc :workspace-grid-edition))
           state)))
 

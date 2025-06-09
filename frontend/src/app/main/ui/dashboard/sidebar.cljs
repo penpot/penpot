@@ -21,12 +21,13 @@
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu
+                                                 dropdown-menu-item*]]
    [app.main.ui.components.link :refer [link]]
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
-   [app.main.ui.dashboard.subscription :as subscription]
+   [app.main.ui.dashboard.subscription :refer [subscription-sidebar* menu-team-icon*]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i :refer [icon-xref]]
    [app.util.dom :as dom]
@@ -330,8 +331,14 @@
         [:img {:src (cf/resolve-team-photo-url team-item)
                :class (stl/css :team-picture)
                :alt (:name team-item)}]
-        [:span {:class (stl/css :team-text)
-                :title (:name team-item)} (:name team-item)]
+
+        (if (and (contains? cf/flags :subscriptions)
+                 (or (= "unlimited" (:type (:subscription team-item))) (= "enterprise" (:type (:subscription team-item)))))
+          [:div  {:class (stl/css :team-text-with-icon)}
+           [:span {:class (stl/css :team-text) :title (:name team-item)} (:name team-item)]
+           [:> menu-team-icon* {:subscription-name (:type (:subscription team-item))}]]
+          [:span {:class (stl/css :team-text)
+                  :title (:name team-item)} (:name team-item)])
         (when (= (:id team-item) (:id team))
           tick-icon)])
 
@@ -645,19 +652,35 @@
 
         handle-close-team
         (fn []
-          (reset! show-teams-ddwn? false))]
+          (reset! show-teams-ddwn? false))
+        subscription          (:subscription team)
+        subscription-name     (:type subscription)]
 
     [:div {:class (stl/css :sidebar-team-switch)}
      [:div {:class (stl/css :switch-content)}
       [:button {:class (stl/css :current-team)
                 :on-click handle-show-team-click
                 :on-key-down handle-show-team-keydown}
-
-       (if (:is-default team)
+       (cond
+         (:is-default team)
          [:div {:class (stl/css :team-name)}
           [:span {:class (stl/css :penpot-icon)} i/logo-icon]
           [:span {:class (stl/css :team-text)} (tr "dashboard.default-team-name")]]
 
+         (and (contains? cf/flags :subscriptions)
+              (not (:is-default team))
+              (or (= "unlimited" subscription-name) (= "enterprise" subscription-name)))
+         [:div {:class (stl/css :team-name)}
+          [:img {:src (cf/resolve-team-photo-url team)
+                 :class (stl/css :team-picture)
+                 :alt (:name team)}]
+          [:div  {:class (stl/css :team-text-with-icon)}
+           [:span {:class (stl/css :team-text) :title (:name team)} (:name team)]
+           [:> menu-team-icon* {:subscription-name subscription-name}]]]
+
+
+         (and (not (:is-default team))
+              (or (not= "unlimited" subscription-name) (not= "enterprise" subscription-name)))
          [:div {:class (stl/css :team-name)}
           [:img {:src (cf/resolve-team-photo-url team)
                  :class (stl/css :team-picture)
@@ -964,7 +987,7 @@
 
     [:*
      (when (contains? cf/flags :subscriptions)
-       [:> subscription/sidebar*])
+       [:> subscription-sidebar* {:profile profile}])
 
      ;; TODO remove this block when subscriptions is full implemented
      (when (contains? cf/flags :subscriptions-old)
@@ -974,7 +997,7 @@
          [:span (tr "dashboard.upgrade-plan.penpot-free")]
          [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
         [:div {:class (stl/css :power-up)}
-         (tr "dashboard.upgrade-plan.power-up")]])
+         (tr "subscription.dashboard.upgrade-plan.power-up")]])
 
      (when (and team profile)
        [:& comments-section

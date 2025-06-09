@@ -102,14 +102,14 @@
                    node-editing?
                    ;; Handle path node area selection
                    (when-not read-only?
-                     (st/emit! (dwdp/handle-area-selection shift?)))
+                     (st/emit! (dwdp/handle-area-selection shift? (and shift? mod?))))
 
                    drawing-tool
                    (when-not read-only?
                      (st/emit! (dd/start-drawing drawing-tool)))
 
                    (or (not id) mod?)
-                   (st/emit! (dw/handle-area-selection shift?))
+                   (st/emit! (dw/handle-area-selection shift? (and shift? mod?) mod?))
 
                    (not drawing-tool)
                    (when-not read-only?
@@ -227,8 +227,9 @@
                           (dw/start-editing-selected))
 
                 (some? selected-shape)
-                (do (reset! hover selected-shape)
-                    (st/emit! (dw/select-shape (:id selected-shape))))
+                (do
+                  (reset! hover selected-shape)
+                  (st/emit! (dw/select-shape (:id selected-shape))))
 
                 (and (not selected-shape) (some? grid-layout-id) (not read-only?))
                 (st/emit! (dw/start-edition-mode grid-layout-id)))))))))))

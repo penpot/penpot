@@ -7,11 +7,11 @@
 (ns app.common.test-helpers.shapes
   (:require
    [app.common.colors :as clr]
+   [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.types.color :as ctc]
-   [app.common.types.colors-list :as ctcl]
    [app.common.types.container :as ctn]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
@@ -81,9 +81,16 @@
                                 (:id page)
                                 #(ctst/set-shape % (ctn/set-shape-attr shape attr val)))))))
 
-(defn sample-color
-  [label & {:keys [] :as params}]
-  (ctc/make-color (assoc params :id (thi/new-id! label))))
+(defn sample-library-color
+  [label & {:keys [name path color opacity gradient image]}]
+  (-> {:id (thi/new-id! label)
+       :name (or name color "Black")
+       :path path
+       :color (or color "#000000")
+       :opacity (or opacity 1)
+       :gradient gradient
+       :image image}
+      (d/without-nils)))
 
 (defn sample-fill-color
   [& {:keys [fill-color fill-opacity] :as params}]
@@ -101,8 +108,8 @@
 
 (defn add-sample-library-color
   [file label & {:keys [] :as params}]
-  (let [color (sample-color label params)]
-    (update file :data ctcl/add-color color)))
+  (let [color (sample-library-color label params)]
+    (update file :data ctc/add-color color)))
 
 (defn sample-typography
   [label & {:keys [] :as params}]

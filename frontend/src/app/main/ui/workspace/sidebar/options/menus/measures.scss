@@ -7,20 +7,25 @@
 @import "refactor/common-refactor.scss";
 
 .element-set {
-  @include flexColumn;
-  margin-bottom: $s-8;
+  display: grid;
+  margin-bottom: var(--sp-s);
+  // NOTE: this does not follow the 8-column grid and the size is not normalized,
+  --input-width: calc(var(--sp-xxxl) * 3.5 + 3 * var(--sp-xs) - var(--sp-xs) / 2);
+  grid-template-columns: var(--input-width) var(--input-width) var(--sp-xxxl);
+  gap: var(--sp-xs);
 }
 
 .presets {
   display: grid;
-  grid-template-columns: 1fr auto 38px;
-  align-items: flex-start;
-  gap: $s-4;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  gap: var(--sp-xs);
+  grid-column: 1 / -1;
 }
 
 .presets-wrapper {
   @extend .asset-element;
   position: relative;
+  grid-column: span 5;
   display: flex;
   height: $s-32;
   padding: $s-8;
@@ -41,6 +46,10 @@
       stroke: var(--input-foreground-color-active);
     }
   }
+}
+
+.radio-buttons {
+  grid-column: span 2;
 }
 
 .select-name {
@@ -108,22 +117,31 @@
   }
 }
 
-.size {
-  @include flexRow;
-  position: relative;
+.size,
+.position,
+.rotation-radius {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1/-1;
 }
 
 .height,
-.width {
+.width,
+.x-position,
+.y-position,
+.rotation {
   @extend .input-element;
   @include bodySmallTypography;
-  width: $s-108;
   .icon-text {
     padding-top: $s-1;
   }
   &.disabled {
     @extend .disabled-input;
   }
+}
+
+.border-radius {
+  grid-column: 2/-1;
 }
 
 .lock-size-btn {
@@ -139,39 +157,6 @@
 .lock-ratio-icon {
   @extend .button-icon;
   stroke: var(--icon-foreground);
-}
-
-.position {
-  @include flexRow;
-}
-
-.x-position,
-.y-position {
-  @extend .input-element;
-  @include bodySmallTypography;
-  width: $s-108;
-  .icon-text {
-    padding-top: $s-1;
-  }
-  &.disabled {
-    @extend .disabled-input;
-  }
-}
-
-.rotation-radius {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: $s-4;
-}
-
-.rotation {
-  @extend .input-element;
-  @include bodySmallTypography;
-  width: $s-108;
-  .icon-text {
-    padding-top: $s-1;
-  }
 }
 
 .clip-show {
@@ -190,8 +175,8 @@
 
 .clip-content-label {
   @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
+  height: var(--sp-xxxl);
+  width: var(--sp-xxxl);
   border-radius: $br-8;
 }
 

@@ -1,5 +1,3 @@
-use skia_safe as skia;
-
 #[cfg(target_arch = "wasm32")]
 mod emscripten;
 mod math;
@@ -9,18 +7,23 @@ mod performance;
 mod render;
 mod shapes;
 mod state;
+mod tiles;
 mod utils;
 mod uuid;
 mod view;
 mod wapi;
 mod wasm;
 
-use crate::mem::SerializableResult;
-use crate::shapes::{BoolType, ConstraintH, ConstraintV, StructureEntry, TransformEntry, Type};
-use crate::utils::uuid_from_u32_quartet;
-use crate::uuid::Uuid;
 use indexmap::IndexSet;
+use math::{Bounds, Matrix};
+use mem::SerializableResult;
+use shapes::{
+    BoolType, ConstraintH, ConstraintV, StructureEntry, StructureEntryType, TransformEntry, Type,
+};
+use skia_safe as skia;
 use state::State;
+use utils::uuid_from_u32_quartet;
+use uuid::Uuid;
 
 pub(crate) static mut STATE: Option<Box<State>> = None;
 
@@ -90,9 +93,19 @@ pub extern "C" fn set_canvas_background(raw_color: u32) {
 }
 
 #[no_mangle]
-pub extern "C" fn render(timestamp: i32) {
+pub extern "C" fn render(_: i32) {
     with_state!(state, {
-        state.start_render_loop(timestamp).expect("Error rendering");
+        state
+            .start_render_loop(performance::get_time())
+            .expect("Error rendering");
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn render_from_cache(_: i32) {
+    with_state!(state, {
+        let render_state = state.render_state();
+        render_state.render_from_cache();
     });
 }
 
@@ -136,17 +149,23 @@ pub extern "C" fn resize_viewbox(width: i32, height: i32) {
 pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     with_state!(state, {
         let render_state = state.render_state();
-        let zoom_changed = zoom != render_state.viewbox.zoom;
         render_state.viewbox.set_all(zoom, x, y);
-        if zoom_changed {
-            with_state!(state, {
-                if state.render_state.options.is_profile_rebuild_tiles() {
-                    state.rebuild_tiles();
-                } else {
-                    state.rebuild_tiles_shallow();
-                }
-            });
-        }
+        with_state!(state, {
+            // We can have renders in progress
+            state.render_state.cancel_animation_frame();
+            if state.render_state.options.is_profile_rebuild_tiles() {
+                state.rebuild_tiles();
+            } else {
+                state.rebuild_tiles_shallow();
+            }
+        });
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn init_shapes_pool(capacity: usize) {
+    with_state!(state, {
+        state.init_shapes_pool(capacity);
     });
 }
 
@@ -329,38 +348,6 @@ pub extern "C" fn set_shape_blur(blur_type: u8, hidden: bool, value: f32) {
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_path_content() {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let bytes = mem::bytes();
-        let raw_segments = bytes
-            .chunks(size_of::<shapes::RawPathData>())
-            .map(|data| shapes::RawPathData {
-                data: data.try_into().unwrap(),
-            })
-            .collect();
-        shape.set_path_segments(raw_segments).unwrap();
-    });
-}
-
-// Extracts a string from the bytes slice until the next null byte (0) and returns the result as a `String`.
-// Updates the `start` index to the end of the extracted string.
-fn extract_string(start: &mut usize, bytes: &[u8]) -> String {
-    match bytes[*start..].iter().position(|&b| b == 0) {
-        Some(pos) => {
-            let end = *start + pos;
-            let slice = &bytes[*start..end];
-            *start = end + 1; // Move the `start` pointer past the null byte
-                              // Call to unsafe function within an unsafe block
-            unsafe { String::from_utf8_unchecked(slice.to_vec()) }
-        }
-        None => {
-            *start = bytes.len(); // Move `start` to the end if no null byte is found
-            String::new()
-        }
-    }
-}
-
-#[no_mangle]
 pub extern "C" fn set_shape_corners(r1: f32, r2: f32, r3: f32, r4: f32) {
     with_current_shape!(state, |shape: &mut Shape| {
         shape.set_corners((r1, r2, r3, r4));
@@ -368,20 +355,7 @@ pub extern "C" fn set_shape_corners(r1: f32, r2: f32, r3: f32, r4: f32) {
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_path_attrs(num_attrs: u32) {
-    with_current_shape!(state, |shape: &mut Shape| {
-        let bytes = mem::bytes();
-        let mut start = 0;
-        for _ in 0..num_attrs {
-            let name = extract_string(&mut start, &bytes);
-            let value = extract_string(&mut start, &bytes);
-            shape.set_path_attr(name, value);
-        }
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn propagate_modifiers() -> *mut u8 {
+pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> *mut u8 {
     let bytes = mem::bytes();
 
     let entries: Vec<_> = bytes
@@ -390,8 +364,60 @@ pub extern "C" fn propagate_modifiers() -> *mut u8 {
         .collect();
 
     with_state!(state, {
-        let result = shapes::propagate_modifiers(state, entries);
+        let result = shapes::propagate_modifiers(state, &entries, pixel_precision);
         mem::write_vec(result)
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn get_selection_rect() -> *mut u8 {
+    let bytes = mem::bytes();
+
+    let entries: Vec<Uuid> = bytes
+        .chunks(16)
+        .map(|bytes| {
+            uuid_from_u32_quartet(
+                u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+                u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
+                u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+                u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
+            )
+        })
+        .collect();
+
+    with_state!(state, {
+        let bbs: Vec<_> = entries
+            .iter()
+            .flat_map(|id| {
+                let default = Matrix::default();
+                let modifier = state.modifiers.get(id).unwrap_or(&default);
+                state.shapes.get(id).map(|b| b.bounds().transform(modifier))
+            })
+            .collect();
+
+        let result_bound = if bbs.len() == 1 {
+            bbs[0]
+        } else {
+            Bounds::join_bounds(&bbs)
+        };
+
+        let width = result_bound.width();
+        let height = result_bound.height();
+        let center = result_bound.center();
+        let transform = result_bound.transform_matrix().unwrap_or(Matrix::default());
+
+        let mut bytes = vec![0; 40];
+        bytes[0..4].clone_from_slice(&width.to_le_bytes());
+        bytes[4..8].clone_from_slice(&height.to_le_bytes());
+        bytes[8..12].clone_from_slice(&center.x.to_le_bytes());
+        bytes[12..16].clone_from_slice(&center.y.to_le_bytes());
+        bytes[16..20].clone_from_slice(&transform[0].to_le_bytes());
+        bytes[20..24].clone_from_slice(&transform[3].to_le_bytes());
+        bytes[24..28].clone_from_slice(&transform[1].to_le_bytes());
+        bytes[28..32].clone_from_slice(&transform[4].to_le_bytes());
+        bytes[32..36].clone_from_slice(&transform[2].to_le_bytes());
+        bytes[36..40].clone_from_slice(&transform[5].to_le_bytes());
+        mem::write_bytes(bytes)
     })
 }
 
@@ -400,18 +426,30 @@ pub extern "C" fn set_structure_modifiers() {
     let bytes = mem::bytes();
 
     let entries: Vec<_> = bytes
-        .chunks(40)
+        .chunks(44)
         .map(|data| StructureEntry::from_bytes(data.try_into().unwrap()))
         .collect();
 
     with_state!(state, {
         for entry in entries {
-            state.structure.entry(entry.parent).or_insert_with(Vec::new);
-            state
-                .structure
-                .get_mut(&entry.parent)
-                .expect("Parent not found for entry")
-                .push(entry);
+            match entry.entry_type {
+                StructureEntryType::ScaleContent => {
+                    let Some(shape) = state.shapes.get(&entry.id) else {
+                        continue;
+                    };
+                    for id in shape.all_children_with_self(&state.shapes) {
+                        state.scale_content.insert(id, entry.value);
+                    }
+                }
+                _ => {
+                    state.structure.entry(entry.parent).or_insert_with(Vec::new);
+                    state
+                        .structure
+                        .get_mut(&entry.parent)
+                        .expect("Parent not found for entry")
+                        .push(entry);
+                }
+            }
         }
     });
 
@@ -422,6 +460,7 @@ pub extern "C" fn set_structure_modifiers() {
 pub extern "C" fn clean_modifiers() {
     with_state!(state, {
         state.structure.clear();
+        state.scale_content.clear();
         state.modifiers.clear();
     });
 }

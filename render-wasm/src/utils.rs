@@ -1,4 +1,8 @@
+use crate::skia::Image;
 use crate::uuid::Uuid;
+use crate::with_state;
+use crate::STATE;
+use std::collections::HashSet;
 
 pub fn uuid_from_u32_quartet(a: u32, b: u32, c: u32, d: u32) -> Uuid {
     let hi: u64 = ((a as u64) << 32) | b as u64;
@@ -17,4 +21,13 @@ pub fn uuid_to_u32_quartet(id: &Uuid) -> (u32, u32, u32, u32) {
 
 pub fn uuid_from_u32(id: [u32; 4]) -> Uuid {
     uuid_from_u32_quartet(id[0], id[1], id[2], id[3])
+}
+
+pub fn get_image(image_id: &Uuid) -> Option<&Image> {
+    with_state!(state, { state.render_state().images.get(image_id) })
+}
+
+// FIXME: move to a different place ?
+pub fn get_fallback_fonts() -> &'static HashSet<String> {
+    with_state!(state, { state.render_state().fonts().get_fallback() })
 }

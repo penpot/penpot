@@ -19,7 +19,8 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.token :as ctt]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [clojure.set :as set]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
@@ -62,9 +63,9 @@
 
 (defn get-container
   [file type id]
-  (dm/assert! (map? file))
-  (dm/assert! (contains? valid-container-types type))
-  (dm/assert! (uuid? id))
+  (assert (map? file))
+  (assert (contains? valid-container-types type))
+  (assert (uuid? id))
 
   (-> (if (= type :page)
         (ctpl/get-page file id)
@@ -534,8 +535,6 @@
   indicating if shape is touched or not."
   [shape attr val & {:keys [ignore-touched ignore-geometry]}]
   (let [group        (get ctk/sync-attrs attr)
-        token-groups (when (= attr :applied-tokens)
-                       (get-token-groups shape val))
         shape-val    (get shape attr)
 
         ignore?
@@ -566,22 +565,30 @@
           (gsh/close-attrs? attr val shape-val))
 
         touched?
-        (and group (not equal?) (not (and ignore-geometry is-geometry?)))]
+        (and group
+             (not equal?)
+             (not (and ignore-geometry is-geometry?)))
 
+        token-groups (if (= attr :applied-tokens)
+                       (get-token-groups shape val)
+                       #{})
+
+        groups (cond-> token-groups
+                 (and group (not equal?))
+                 (set/union #{group}))]
     (cond-> shape
       ;; Depending on the origin of the attribute change, we need or not to
       ;; set the "touched" flag for the group the attribute belongs to.
       ;; In some cases we need to ignore touched only if the attribute is
       ;; geometric (position, width or transformation).
       (and in-copy?
-           (or (and group (not equal?)) (seq token-groups))
-           (not ignore?) (not (and ignore-geometry is-geometry?)))
+           (not-empty groups)
+           (not ignore?)
+           (not (and ignore-geometry is-geometry?)))
       (-> (update :touched (fn [touched]
                              (reduce #(ctk/set-touched-group %1 %2)
                                      touched
-                                     (if group
-                                       (cons group token-groups)
-                                       token-groups))))
+                                     groups)))
           (dissoc :remote-synced))
 
       (nil? val)

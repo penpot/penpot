@@ -20,6 +20,7 @@
    [app.db :as db]
    [app.features.fdata :as feat.fdata]
    [app.features.file-migrations :as feat.fmigr]
+   [app.features.logical-deletion :as ldel]
    [app.http.errors :as errors]
    [app.loggers.audit :as audit]
    [app.loggers.webhooks :as webhooks]
@@ -177,12 +178,19 @@
                                             :stored-revn (:revn file)}))
 
                       ;; When newly computed features does not match exactly with
-                      ;; the features defined on team row, we update it.
-                      (when (not= features (:features team))
-                        (let [features (db/create-array conn "text" features)]
+                      ;; the features defined on team row, we update it
+                      (when-let [features (-> features
+                                              (set/difference (:features team))
+                                              (set/difference cfeat/no-team-inheritable-features)
+                                              (not-empty))]
+                        (let [features (->> features
+                                            (set/union (:features team))
+                                            (db/create-array conn "text"))]
                           (db/update! conn :team
                                       {:features features}
-                                      {:id (:id team)})))
+                                      {:id (:id team)}
+                                      {::db/return-keys false})))
+
 
                       (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
 
@@ -202,7 +210,7 @@
 
   Only intended for internal use on this module."
   [{:keys [::db/conn ::wrk/executor ::timestamp] :as cfg}
-   {:keys [profile-id file features changes session-id skip-validate] :as params}]
+   {:keys [profile-id file team features changes session-id skip-validate] :as params}]
 
   (let [;; Retrieve the file data
         file  (feat.fmigr/resolve-applied-migrations cfg file)
@@ -236,7 +244,7 @@
                    :created-at timestamp
                    :updated-at timestamp
                    :deleted-at (if (::snapshot-data file)
-                                 (dt/plus timestamp (cf/get-deletion-delay))
+                                 (dt/plus timestamp (ldel/get-deletion-delay team))
                                  (dt/plus timestamp (dt/duration {:hours 1})))
                    :file-id (:id file)
                    :revn (:revn file)
@@ -333,6 +341,7 @@
                                     (-> data
                                         (blob/decode)
                                         (assoc :id (:id file)))))
+          libs (delay (bfc/get-resolved-file-libraries cfg file))
 
           ;; For avoid unnecesary overhead of creating multiple pointers
           ;; and handly internally with objects map in their worst
@@ -343,7 +352,7 @@
                  (-> file
                      (update :data feat.fdata/process-pointers deref)
                      (update :data feat.fdata/process-objects (partial into {}))
-                     (fmg/migrate-file))
+                     (fmg/migrate-file libs))
                  file)
 
           file (apply update-fn cfg file args)
@@ -372,13 +381,6 @@
 
       (bfc/encode-file cfg file))))
 
-(defn- get-file-libraries
-  "A helper for preload file libraries, mainly used for perform file
-  semantical and structural validation"
-  [{:keys [::db/conn] :as cfg} file]
-  (->> (files/get-file-libraries conn (:id file))
-       (into [file] (map #(bfc/get-file cfg (:id %))))
-       (d/index-by :id)))
 
 (defn- soft-validate-file-schema!
   [file]
@@ -404,7 +406,7 @@
         (when (and (or (contains? cf/flags :file-validation)
                        (contains? cf/flags :soft-file-validation))
                    (not skip-validate))
-          (get-file-libraries cfg file))
+          (bfc/get-resolved-file-libraries cfg file))
 
 
         ;; The main purpose of this atom is provide a contextual state

@@ -33,6 +33,8 @@ struct TrackData {
     anchor_end: Point,
 }
 
+// FIXME: We might be able to simplify these arguments
+#[allow(clippy::too_many_arguments)]
 fn calculate_tracks(
     is_column: bool,
     shape: &Shape,
@@ -40,7 +42,7 @@ fn calculate_tracks(
     grid_data: &GridData,
     layout_bounds: &Bounds,
     cells: &Vec<GridCell>,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, &mut Shape>,
     bounds: &HashMap<Uuid, Bounds>,
 ) -> Vec<TrackData> {
     let layout_size = if is_column {
@@ -61,11 +63,11 @@ fn calculate_tracks(
     set_flex_multi_span(is_column, &mut tracks, cells, shapes, bounds);
     set_fr_value(is_column, shape, layout_data, &mut tracks, layout_size);
     stretch_tracks(is_column, shape, layout_data, &mut tracks, layout_size);
-    assign_anchors(is_column, layout_data, &layout_bounds, &mut tracks);
-    return tracks;
+    assign_anchors(is_column, layout_data, layout_bounds, &mut tracks);
+    tracks
 }
 
-fn init_tracks(track: &Vec<GridTrack>, size: f32) -> Vec<TrackData> {
+fn init_tracks(track: &[GridTrack], size: f32) -> Vec<TrackData> {
     track
         .iter()
         .map(|t| {
@@ -103,9 +105,9 @@ fn min_size(column: bool, shape: &Shape, bounds: &HashMap<Uuid, Bounds>) -> f32 
 // Go through cells to adjust auto sizes for span=1. Base is the max of its children
 fn set_auto_base_size(
     column: bool,
-    tracks: &mut Vec<TrackData>,
+    tracks: &mut [TrackData],
     cells: &Vec<GridCell>,
-    shapes: &HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, &mut Shape>,
     bounds: &HashMap<Uuid, Bounds>,
 ) {
     for cell in cells {
@@ -146,7 +148,7 @@ fn track_index(is_column: bool, c: &GridCell) -> (usize, usize) {
     }
 }
 
-fn has_flex(is_column: bool, cell: &GridCell, tracks: &mut Vec<TrackData>) -> bool {
+fn has_flex(is_column: bool, cell: &GridCell, tracks: &mut [TrackData]) -> bool {
     let (start, end) = track_index(is_column, cell);
     (start..end).any(|i| tracks[i].track_type == GridTrackType::Flex)
 }
@@ -154,9 +156,9 @@ fn has_flex(is_column: bool, cell: &GridCell, tracks: &mut Vec<TrackData>) -> bo
 // Adjust multi-spaned cells with no flex columns
 fn set_auto_multi_span(
     column: bool,
-    tracks: &mut Vec<TrackData>,
-    cells: &Vec<GridCell>,
-    shapes: &HashMap<Uuid, Shape>,
+    tracks: &mut [TrackData],
+    cells: &[GridCell],
+    shapes: &HashMap<Uuid, &mut Shape>,
     bounds: &HashMap<Uuid, Bounds>,
 ) {
     // Remove groups with flex (will be set in flex_multi_span)
@@ -193,11 +195,11 @@ fn set_auto_multi_span(
         let (start, end) = track_index(column, cell);
 
         // Distribute the size between the tracks that already have a set value
-        for i in start..end {
-            dist = dist - tracks[i].size;
+        for track in tracks[start..end].iter() {
+            dist -= track.size;
 
-            if tracks[i].track_type == GridTrackType::Auto {
-                num_auto = num_auto + 1;
+            if track.track_type == GridTrackType::Auto {
+                num_auto += 1;
             }
         }
 
@@ -206,19 +208,19 @@ fn set_auto_multi_span(
             let rest = dist / num_auto as f32;
 
             // Distribute the space between auto tracks
-            for i in start..end {
-                if tracks[i].track_type == GridTrackType::Auto {
+            for track in tracks[start..end].iter_mut() {
+                if track.track_type == GridTrackType::Auto {
                     // dist = dist - track[i].size;
-                    let new_size = if tracks[i].size + rest < tracks[i].max_size {
-                        tracks[i].size + rest
+                    let new_size = if track.size + rest < track.max_size {
+                        track.size + rest
                     } else {
-                        num_auto = num_auto - 1;
-                        tracks[i].max_size
+                        num_auto -= 1;
+                        track.max_size
                     };
 
-                    let aloc = new_size - tracks[i].size;
-                    dist = dist - aloc;
-                    tracks[i].size = tracks[i].size + aloc;
+                    let aloc = new_size - track.size;
+                    dist -= aloc;
+                    track.size += aloc;
                 }
             }
         }
@@ -228,9 +230,9 @@ fn set_auto_multi_span(
 // Adjust multi-spaned cells with flex columns
 fn set_flex_multi_span(
     column: bool,
-    tracks: &mut Vec<TrackData>,
-    cells: &Vec<GridCell>,
-    shapes: &HashMap<Uuid, Shape>,
+    tracks: &mut [TrackData],
+    cells: &[GridCell],
+    shapes: &HashMap<Uuid, &mut Shape>,
     bounds: &HashMap<Uuid, Bounds>,
 ) {
     // Remove groups without flex
@@ -269,16 +271,16 @@ fn set_flex_multi_span(
         let (start, end) = track_index(column, cell);
 
         // Distribute the size between the tracks that already have a set value
-        for i in start..end {
-            dist = dist - tracks[i].size;
+        for track in tracks[start..end].iter() {
+            dist -= track.size;
 
-            match tracks[i].track_type {
+            match track.track_type {
                 GridTrackType::Flex => {
-                    num_flex = num_flex + tracks[i].value;
-                    num_auto = num_auto + 1;
+                    num_flex += track.value;
+                    num_auto += 1;
                 }
                 GridTrackType::Auto => {
-                    num_auto = num_auto + 1;
+                    num_auto += 1;
                 }
                 _ => {}
             }
@@ -289,15 +291,15 @@ fn set_flex_multi_span(
             continue;
         }
 
-        let rest = dist / num_flex as f32;
+        let rest = dist / num_flex;
 
         // Distribute the space between flex tracks in proportion to the division
-        for i in start..end {
-            if tracks[i].track_type == GridTrackType::Flex {
-                let new_size = f32::min(tracks[i].size + rest, tracks[i].max_size);
-                let aloc = new_size - tracks[i].size;
-                dist = dist - aloc;
-                tracks[i].size = tracks[i].size + aloc;
+        for track in tracks[start..end].iter_mut() {
+            if track.track_type == GridTrackType::Flex {
+                let new_size = f32::min(track.size + rest, track.max_size);
+                let aloc = new_size - track.size;
+                dist -= aloc;
+                track.size += aloc;
             }
         }
 
@@ -305,20 +307,20 @@ fn set_flex_multi_span(
         while dist > MIN_SIZE && num_auto > 0 {
             let rest = dist / num_auto as f32;
 
-            for i in start..end {
-                if tracks[i].track_type == GridTrackType::Auto
-                    || tracks[i].track_type == GridTrackType::Flex
+            for track in tracks[start..end].iter_mut() {
+                if track.track_type == GridTrackType::Auto
+                    || track.track_type == GridTrackType::Flex
                 {
-                    let new_size = if tracks[i].size + rest < tracks[i].max_size {
-                        tracks[i].size + rest
+                    let new_size = if track.size + rest < track.max_size {
+                        track.size + rest
                     } else {
-                        num_auto = num_auto - 1;
-                        tracks[i].max_size
+                        num_auto -= 1;
+                        track.max_size
                     };
 
-                    let aloc = new_size - tracks[i].size;
-                    dist = dist - aloc;
-                    tracks[i].size = tracks[i].size + aloc;
+                    let aloc = new_size - track.size;
+                    dist -= aloc;
+                    track.size += aloc;
                 }
             }
         }
@@ -330,13 +332,13 @@ fn set_fr_value(
     column: bool,
     shape: &Shape,
     layout_data: &LayoutData,
-    tracks: &mut Vec<TrackData>,
+    tracks: &mut [TrackData],
     layout_size: f32,
 ) {
     let tot_gap: f32 = if column {
-        layout_data.column_gap * (tracks.len() - 1) as f32
+        layout_data.column_gap * (tracks.len() as f32 - 1.0)
     } else {
-        layout_data.row_gap * (tracks.len() - 1) as f32
+        layout_data.row_gap * (tracks.len() as f32 - 1.0)
     };
 
     // Total size already used
@@ -380,12 +382,13 @@ fn stretch_tracks(
     column: bool,
     shape: &Shape,
     layout_data: &LayoutData,
-    tracks: &mut Vec<TrackData>,
+    tracks: &mut [TrackData],
     layout_size: f32,
 ) {
-    if (column
-        && (layout_data.justify_content != JustifyContent::Stretch
-            || shape.is_layout_horizontal_auto()))
+    if (tracks.is_empty()
+        || column
+            && (layout_data.justify_content != JustifyContent::Stretch
+                || shape.is_layout_horizontal_auto()))
         || (!column
             && (layout_data.align_content != AlignContent::Stretch
                 || shape.is_layout_vertical_auto()))
@@ -459,7 +462,11 @@ fn assign_anchors(
         )
     };
 
-    let tot_gap = gap * (tracks.len() - 1) as f32;
+    let tot_gap = if tracks.is_empty() {
+        0.0
+    } else {
+        gap * (tracks.len() - 1) as f32
+    };
     let tot_size = tot_track_length + tot_gap;
     let padding = padding_start + padding_end;
     let pad_size = size - padding;
@@ -481,7 +488,7 @@ fn assign_anchors(
         _ => (padding_start + 0.0, gap),
     };
 
-    cursor = cursor + (v * real_margin);
+    cursor += v * real_margin;
 
     for track in tracks {
         track.anchor_start = cursor;
@@ -509,10 +516,10 @@ fn cell_bounds(
 fn create_cell_data<'a>(
     layout_bounds: &Bounds,
     children: &IndexSet<Uuid>,
-    shapes: &'a HashMap<Uuid, Shape>,
+    shapes: &'a HashMap<Uuid, &mut Shape>,
     cells: &Vec<GridCell>,
-    column_tracks: &Vec<TrackData>,
-    row_tracks: &Vec<TrackData>,
+    column_tracks: &[TrackData],
+    row_tracks: &[TrackData],
 ) -> Vec<CellData<'a>> {
     let mut result = Vec::<CellData<'a>>::new();
 
@@ -614,11 +621,11 @@ fn child_position(
     cell.anchor + vv * vpos + hv * hpos
 }
 
-pub fn reflow_grid_layout<'a>(
+pub fn reflow_grid_layout(
     shape: &Shape,
     layout_data: &LayoutData,
     grid_data: &GridData,
-    shapes: &'a HashMap<Uuid, Shape>,
+    shapes: &HashMap<Uuid, &mut Shape>,
     bounds: &mut HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> VecDeque<Modifier> {
@@ -693,9 +700,9 @@ pub fn reflow_grid_layout<'a>(
         }
 
         let position = child_position(
-            &child,
+            child,
             &layout_bounds,
-            &layout_data,
+            layout_data,
             &child_bounds,
             child.layout_item,
             cell,
@@ -733,9 +740,7 @@ pub fn reflow_grid_layout<'a>(
             scale_height = auto_height / height;
         }
 
-        let parent_transform = layout_bounds
-            .transform_matrix()
-            .unwrap_or(Matrix::default());
+        let parent_transform = layout_bounds.transform_matrix().unwrap_or_default();
 
         let parent_transform_inv = &parent_transform.invert().unwrap();
         let origin = parent_transform_inv.map_point(layout_bounds.nw);
@@ -744,7 +749,7 @@ pub fn reflow_grid_layout<'a>(
         scale.post_translate(origin);
         scale.post_concat(&parent_transform);
         scale.pre_translate(-origin);
-        scale.pre_concat(&parent_transform_inv);
+        scale.pre_concat(parent_transform_inv);
 
         let layout_bounds_after = layout_bounds.transform(&scale);
         result.push_back(Modifier::parent(shape.id, scale));

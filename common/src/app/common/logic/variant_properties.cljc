@@ -60,6 +60,17 @@
         (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
 
 
+(defn generate-set-variant-error
+  [changes component-id value]
+  (let [data      (pcb/get-library-data changes)
+        component (ctcl/get-component data component-id true)
+        main-id   (:main-instance-id component)]
+    (-> changes
+        (pcb/update-shapes [main-id] (if (str/blank? value)
+                                       #(dissoc % :variant-error)
+                                       #(assoc % :variant-error value))))))
+
+
 (defn generate-add-new-property
   [changes variant-id & {:keys [fill-values? property-name]}]
   (let [data               (pcb/get-library-data changes)
@@ -112,9 +123,10 @@
   (reduce generate-make-shape-no-variant changes shapes))
 
 
-(defn- generate-new-properties-from-variant
+(defn- create-new-properties-from-variant
   [shape min-props data container-name base-properties]
   (let [component (ctcl/get-component data (:component-id shape) true)
+
         add-name? (not= (:name component) container-name)
         props     (ctv/merge-properties base-properties
                                         (:variant-properties component))
@@ -127,7 +139,7 @@
       (ctv/add-new-prop props (:name component))
       props)))
 
-(defn- generate-new-properties-from-non-variant
+(defn- create-new-properties-from-non-variant
   [shape min-props container-name base-properties]
   (let [;; Remove container name from shape name if present
         shape-name (ctv/remove-prefix (:name shape) container-name)]
@@ -155,14 +167,14 @@
         [cpath cname]  (cfh/parse-path-name (:name variant-container))
         container-name (:name variant-container)
 
-        generate-new-properties
+        create-new-properties
         (fn [shape min-props]
           (if (ctk/is-variant? shape)
-            (generate-new-properties-from-variant shape min-props data container-name base-props)
-            (generate-new-properties-from-non-variant shape min-props container-name base-props)))
+            (create-new-properties-from-variant shape min-props data container-name base-props)
+            (create-new-properties-from-non-variant shape min-props container-name base-props)))
 
         total-props    (reduce (fn [m shape]
-                                 (max m (count (generate-new-properties shape num-base-props))))
+                                 (max m (count (create-new-properties shape num-base-props))))
                                0
                                shapes)
 
@@ -180,19 +192,21 @@
                                                   :name (:name variant-container)))]
     (reduce
      (fn [changes shape]
-       (if (or (zero? num-base-props)
-               (= variant-id (:variant-id shape)))
-         changes ;; do nothing more if we aren't changing the parent or there are no base props
-         (let [props               (generate-new-properties shape total-props)
-               variant-name        (ctv/properties-to-name props)]
-           (-> (pcb/update-component changes
-                                     (:component-id shape)
-                                     #(assoc % :variant-id variant-id
-                                             :variant-properties props
-                                             :name cname
-                                             :path cpath)
-                                     {:apply-changes-local-library? true})
-               (pcb/update-shapes [(:id shape)]
-                                  #(assoc % :variant-name variant-name))))))
+       (let [component (ctcl/get-component data (:component-id shape) true)]
+         (if (or (zero? num-base-props)                  ;; do nothing if there are no base props
+                 (and (= variant-id (:variant-id shape)) ;; or we are only moving the shape inside its parent (it is
+                      (not (:deleted component))))       ;; the same parent and the component isn't deleted)
+           changes
+           (let [props               (create-new-properties shape total-props)
+                 variant-name        (ctv/properties-to-name props)]
+             (-> (pcb/update-component changes
+                                       (:component-id shape)
+                                       #(assoc % :variant-id variant-id
+                                               :variant-properties props
+                                               :name cname
+                                               :path cpath)
+                                       {:apply-changes-local-library? true})
+                 (pcb/update-shapes [(:id shape)]
+                                    #(assoc % :variant-name variant-name)))))))
      changes
      shapes)))

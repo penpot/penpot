@@ -13,6 +13,7 @@
    [app.worker.export]
    [app.worker.impl :as impl]
    [app.worker.import]
+   [app.worker.index]
    [app.worker.messages :as wm]
    [app.worker.selection]
    [app.worker.snaps]

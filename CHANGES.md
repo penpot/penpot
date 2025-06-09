@@ -1,5 +1,47 @@
 # CHANGELOG
 
+## 2.8.0 (Next / Unreleased)
+
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+**Penpot Library**
+
+The initial prototype is completly reworked for provide a more consistent API
+and to have proper validation and params decoding. All the details can be found
+on [its own changelog](library/CHANGES.md)
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features & Enhancements
+
+- Optimize profile setup flow for better user experience [Taiga #10028](https://tree.taiga.io/project/penpot/us/10028)
+- Rewrite path shape data PathData encoding [Taiga #8542](https://tree.taiga.io/project/penpot/us/8542?milestone=441308)
+- Update base image for Docker Backend and Exporter to Ubuntu 24.04
+- Update base image for Docker Frontend to Nginx 1.28.0
+- Allow multi file token import [Github #27](https://github.com/tokens-studio/penpot/issues/27)
+- Create `input*` wrapper component, and `label*`, `input-field*` and `hint-message*` components [Taiga #10713](https://tree.taiga.io/project/penpot/us/10713)
+- Deselect layers (and path nodes) with Ctrl+Shift+Drag [Github #2509](https://github.com/penpot/penpot/issues/2509)
+- Copy to SVG from contextual menu [Github #838](https://github.com/penpot/penpot/issues/838)
+- Add styles for Inkeep Chat at workspace [Taiga #10708](https://tree.taiga.io/project/penpot/us/10708)
+- Add configuration for air gapped installations with Docker
+- Support system color scheme [Github #5030](https://github.com/penpot/penpot/issues/5030)
+- Persist ruler visibility across files and reloads [GitHub #4586](https://github.com/penpot/penpot/issues/4586)
+- Update google fonts (at 2025/05/19) [Taiga 10792](https://tree.taiga.io/project/penpot/us/10792)
+- Add tooltip component to DS [Taiga 9220](https://tree.taiga.io/project/penpot/us/9220)
+- Allow multi file token export [Taiga #10144](https://tree.taiga.io/project/penpot/us/10144)
+
+### :bug: Bugs fixed
+
+- Fix getCurrentUser for plugins api [Taiga #11057](https://tree.taiga.io/project/penpot/issue/11057)
+- Fix spacing / sizes of different elements in the measurements section of the design tab [Taiga #11076](https://tree.taiga.io/project/penpot/issue/11076)
+- Fix selection of short paths [Github #4472](https://github.com/penpot/penpot/issues/4472)
+- Fix element positioning on the right side to adjust to grid [#11073](https://tree.taiga.io/project/penpot/issue/11073)
+- Fix palette is over sidebar [#11160](https://tree.taiga.io/project/penpot/issue/11160)
+- Fix font size input not displaying "mixed" when multiple texts are selected [Taiga #11177](https://tree.taiga.io/project/penpot/issue/11177)
+
+
 ## 2.7.2
 
 ### :bug: Bugs fixed

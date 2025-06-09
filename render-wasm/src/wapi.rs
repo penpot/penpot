@@ -24,12 +24,13 @@ macro_rules! cancel_animation_frame {
         }
 
         {
+            let frame_id = $frame_id;
             #[cfg(target_arch = "wasm32")]
             unsafe {
-                wapi_cancelAnimationFrame($frame_id)
+                wapi_cancelAnimationFrame(frame_id)
             };
             #[cfg(not(target_arch = "wasm32"))]
-            let _ = $frame_id;
+            let _ = frame_id;
         }
     };
 }

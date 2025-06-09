@@ -11,7 +11,6 @@
    [app.common.types.color :as ctc]
    [app.main.data.event :as ev]
    [app.main.data.workspace.colors :as mdc]
-   [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
@@ -34,25 +33,29 @@
         (mf/use-fn
          (mf/deps color selected)
          (fn [event]
-           (st/emit! (dwl/add-recent-color color)
+           (st/emit! (mdc/add-recent-color color)
                      (mdc/apply-color-from-palette color (kbd/alt? event))
                      (when (not= selected :recent)
                        (ptk/data-event ::ev/event
                                        {::ev/name "use-library-color"
                                         ::ev/origin "color-palette"
-                                        :external-library (not= selected :file)})))))]
+                                        :external-library (not= selected :file)})))))
+        title
+        (uc/get-color-name color)]
+
     [:button {:class (stl/css-case
                       :color-cell true
                       :is-not-library-color (nil? (:id color))
                       :no-text (<= size 64))
-              :title (uc/get-color-name color)
-              :aria-label (uc/get-color-name color)
+              :title title
+              :aria-label title
               :type "button"
               :on-click select-color}
      [:> swatch* {:background color :size "medium"}]
      [:& cb/color-name {:color color :size size :origin :palette}]]))
 
 (mf/defc palette*
+  {::mf/wrap [mf/memo]}
   [{:keys [colors size width selected]}]
   (let [state        (mf/use-state #(do {:show-menu false}))
         offset-step  (cond
@@ -121,9 +124,11 @@
       (when (not= 0 (:offset @state))
         (swap! state assoc :offset 0)))
 
-    [:div {:class (stl/css-case :color-palette true
-                                :no-text (< size 64))
-           :style #js {"--bullet-size" (dm/str bullet-size "px") "--color-cell-width" (dm/str color-cell-width "px")}}
+    [:div {:class (stl/css-case
+                   :color-palette true
+                   :no-text (< size 64))
+           :style #js {"--bullet-size" (dm/str bullet-size "px")
+                       "--color-cell-width" (dm/str color-cell-width "px")}}
 
      (when show-arrows?
        [:button {:class (stl/css :left-arrow)
@@ -154,14 +159,25 @@
 (mf/defc recent-colors-palette*
   {::mf/private true}
   [props]
-  (let [colors (mf/deref refs/recent-colors)
-
-        colors (mf/with-memo [colors]
-                 (->> (reverse colors)
-                      (filter ctc/valid-color?)
-                      (vec)))
+  (let [libraries  (mf/deref refs/files)
+        colors     (mf/deref refs/recent-colors)
+        colors     (mf/with-memo [colors libraries]
+                     (->> (reverse colors)
+                          (filter ctc/valid-color?)
+                          (map (fn [{:keys [ref-id ref-file] :as color}]
+                                 ;; For make the UI consistent we need to ensure that a
+                                 ;; library color looks exactly as it is actually and not
+                                 ;; how it was saved first time
+                                 (if (and ref-id ref-file)
+                                   (let [fdata (dm/get-in libraries [ref-file :data])]
+                                     (or (some-> (ctc/get-color fdata ref-id)
+                                                 (ctc/library-color->color ref-file))
+                                         (dissoc color :ref-id :ref-file)))
+                                   color)))
+                          (vec)))
 
         props  (mf/spread-props props {:colors colors})]
+
     [:> palette* props]))
 
 (defn- make-library-colors-ref
@@ -178,9 +194,9 @@
         colors     (mf/deref colors-ref)
         colors     (mf/with-memo [colors file-id]
                      (->> (vals colors)
-                          (filter ctc/valid-color?)
-                          (map #(assoc % :file-id file-id))
+                          (filter ctc/valid-library-color?)
                           (sort-by :name)
+                          (map #(ctc/library-color->color % file-id))
                           (vec)))
         props      (mf/spread-props props {:colors colors})]
 

@@ -18,19 +18,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def schema:component
-  [:merge
-   [:map
-    [:id ::sm/uuid]
-    [:name :string]
-    [:path {:optional true} [:maybe :string]]
-    [:modified-at {:optional true} ::sm/inst]
-    [:objects {:gen/max 10 :optional true} ::ctp/objects]
-    [:main-instance-id ::sm/uuid]
-    [:main-instance-page ::sm/uuid]
-    [:plugin-data {:optional true} ::ctpg/plugin-data]]
-   ::ctv/variant-component])
-
-(sm/register! ::component schema:component)
+  (sm/register!
+   ^{::sm/type ::component}
+   [:merge
+    [:map
+     [:id ::sm/uuid]
+     [:name :string]
+     [:path {:optional true} [:maybe :string]]
+     [:modified-at {:optional true} ::sm/inst]
+     [:objects {:gen/max 10 :optional true} ctp/schema:objects]
+     [:main-instance-id ::sm/uuid]
+     [:main-instance-page ::sm/uuid]
+     [:plugin-data {:optional true} ctpg/schema:plugin-data]]
+    ctv/schema:variant-component]))
 
 (def check-component
   (sm/check-fn schema:component))
@@ -287,7 +287,7 @@
 
 (defn get-component-root
   [component]
-  (if (true? (:main-instance-id component))
+  (if (some? (:main-instance-id component))
     (get-in component [:objects (:main-instance-id component)])
     (get-in component [:objects (:id component)])))
 

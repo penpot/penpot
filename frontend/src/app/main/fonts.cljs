@@ -26,7 +26,7 @@
 (log/set-level! :info)
 
 (def google-fonts
-  (preload-gfonts "fonts/gfonts.2023.07.07.json"))
+  (preload-gfonts "fonts/gfonts.2025.05.19.json"))
 
 (def local-fonts
   [{:id "sourcesanspro"
@@ -214,15 +214,15 @@
          (nil? font)
          (p/resolved font-id)
 
-        ;; Font already loaded, we just continue
+         ;; Font already loaded, we just continue
          (contains? @loaded font-id)
          (p/resolved font-id)
 
-        ;; Font is currently downloading. We attach the caller to the promise
+         ;; Font is currently downloading. We attach the caller to the promise
          (contains? @loading font-id)
          (get @loading font-id)
 
-        ;; First caller, we create the promise and then wait
+         ;; First caller, we create the promise and then wait
          :else
          (let [on-load (fn [resolve]
                          (swap! loaded conj font-id)

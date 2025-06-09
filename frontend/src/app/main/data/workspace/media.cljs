@@ -10,12 +10,11 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.common.files.builder :as fb]
    [app.common.files.changes-builder :as pcb]
-   [app.common.logging :as log]
+   [app.common.files.shapes-builder :as sb]
    [app.common.math :as mth]
+   [app.common.media :as media]
    [app.common.schema :as sm]
-   [app.common.svg.shapes-builder :as csvg.shapes-builder]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -35,6 +34,9 @@
    [potok.v2.core :as ptk]
    [promesa.core :as p]
    [tubax.core :as tubax]))
+
+(def accept-image-types
+  (str/join "," media/image-types))
 
 (defn- optimize
   [input]
@@ -137,7 +139,7 @@
                  (= (.-type blob) "image/svg+xml")))
 
           (prepare-blob [blob]
-            (let [name (or name (if (dmm/file? blob) (fb/strip-image-extension (.-name blob)) "blob"))]
+            (let [name (or name (if (dmm/file? blob) (media/strip-image-extension (.-name blob)) "blob"))]
               {:file-id file-id
                :name name
                :is-local local?
@@ -274,20 +276,6 @@
 
 ;; --- Upload File Media objects
 
-(defn load-and-parse-svg
-  "Load the contents of a media-obj of type svg, and parse it
-  into a clojure structure."
-  [media-obj]
-  (let [path (cf/resolve-file-media media-obj)]
-    (->> (http/send! {:method :get :uri path :mode :no-cors})
-         (rx/map :body)
-         (rx/map #(vector (:name media-obj) %))
-         (rx/merge-map svg->clj)
-         (rx/catch  ; When error downloading media-obj, skip it and continue with next one
-          #(log/error :msg (str "Error downloading " (:name media-obj) " from " path)
-                      :hint (ex-message %)
-                      :error %)))))
-
 (defn create-shapes-svg
   "Convert svg elements into penpot shapes."
   [file-id objects pos svg-data]
@@ -299,7 +287,7 @@
         process-svg
         (fn [svg-data]
           (let [[root-svg-shape children]
-                (csvg.shapes-builder/create-svg-shapes svg-data pos objects uuid/zero nil #{} false)
+                (sb/create-svg-shapes svg-data pos objects uuid/zero nil #{} false)
 
                 frame-shape
                 (cts/setup-shape
