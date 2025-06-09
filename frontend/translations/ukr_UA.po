@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-28 14:01+0000\n"
-"Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
-"Language-Team: Ukrainian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ukr_UA/>\n"
+"PO-Revision-Date: 2025-06-09 09:13+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
+"frontend/ukr_UA/>\n"
 "Language: ukr_UA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4333,7 +4333,7 @@ msgid "subscription.dashboard.power-up.enterprise.description"
 msgstr "Поліпшена безпека, журнал активності, виділена підтримка та більше."
 
 #: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.professional.bottom-description"
 msgstr ""
 "Отримайте додаткові редактори та сховище, резервне копіювання файлів та "
@@ -4349,7 +4349,7 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Підписатись"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr "Насолоджуєтесь пробним періодом? Отримайте повний доступ назавжди."
 
@@ -4369,11 +4369,11 @@ msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Безлімітний план"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-description"
 msgstr ""
-"Отримайте поліпшену безпеку, журнал активності, виділену підтримку та "
-"більше разом з **Корпоративним планом**"
+"Отримайте поліпшену безпеку, журнал активності, виділену підтримку та більше "
+"разом з **Корпоративним планом**"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4454,6 +4454,7 @@ msgid "subscription.settings.section-plan"
 msgstr "Ваша підписка"
 
 #: src/app/main/ui/settings/subscription.cljs:278
+#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Ви підтримуєте нас з %s"
 
@@ -5475,6 +5476,7 @@ msgid "workspace.options.fill"
 msgstr "Заповнити"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:158
+#, fuzzy
 msgid "workspace.options.fill.add-fill"
 msgstr "Додати колір заливки"
 
@@ -7327,6 +7329,7 @@ msgid "workspace.tokens.tools"
 msgstr "Інструменти"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:45
+#, fuzzy
 msgid "workspace.tokens.unknown-token-type"
 msgstr "Пропущені токени"
 
