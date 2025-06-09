@@ -14,9 +14,10 @@ on [its own changelog](library/CHANGES.md)
 
 ### :heart: Community contributions (Thank you!)
 
-### :sparkles: New features
+### :sparkles: New features & Enhancements
 
 - Optimize profile setup flow for better user experience [Taiga #10028](https://tree.taiga.io/project/penpot/us/10028)
+- Rewrite path shape data PathData encoding [Taiga #8542](https://tree.taiga.io/project/penpot/us/8542?milestone=441308)
 - Update base image for Docker Backend and Exporter to Ubuntu 24.04
 - Update base image for Docker Frontend to Nginx 1.28.0
 - Allow multi file token import [Github #27](https://github.com/tokens-studio/penpot/issues/27)
@@ -32,6 +33,7 @@ on [its own changelog](library/CHANGES.md)
 - Allow multi file token export [Taiga #10144](https://tree.taiga.io/project/penpot/us/10144)
 
 ### :bug: Bugs fixed
+
 - Fix getCurrentUser for plugins api [Taiga #11057](https://tree.taiga.io/project/penpot/issue/11057)
 - Fix spacing / sizes of different elements in the measurements section of the design tab [Taiga #11076](https://tree.taiga.io/project/penpot/issue/11076)
 - Fix selection of short paths [Github #4472](https://github.com/penpot/penpot/issues/4472)
