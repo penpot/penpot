@@ -8,6 +8,12 @@ export class WasmWorkspacePage extends WorkspacePage {
       "enable-feature-render-wasm",
       "enable-render-wasm-dpr",
     ]);
+
+    await page.addInitScript(() => {
+      document.addEventListener("wasm:set-objects-finished", () => {
+        window.wasmSetObjectsFinished = true;
+      });
+    });
   }
 
   constructor(page) {
@@ -15,10 +21,11 @@ export class WasmWorkspacePage extends WorkspacePage {
     this.canvas = page.getByTestId("canvas-wasm-shapes");
   }
 
-  async waitForCanvasRender() {
-    // FIXME: temp workaround. We will need to wait for set-objects to fully finish
+  async waitForFirstRender() {
     await expect(this.pageName).toHaveText("Page 1");
     await this.canvas.waitFor({ state: "visible" });
-    await this.page.waitForTimeout(3000);
+    await this.page.waitForFunction(() => {
+      return window.wasmSetObjectsFinished;
+    });
   }
 }

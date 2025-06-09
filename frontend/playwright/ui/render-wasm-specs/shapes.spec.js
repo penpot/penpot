@@ -20,7 +20,7 @@ test("Renders a file with basic shapes, boards and groups", async ({
     id: "53a7ff09-2228-81d3-8006-4b5eac177245",
     pageId: "53a7ff09-2228-81d3-8006-4b5eac177246",
   });
-  await workspace.waitForCanvasRender();
+  await workspace.waitForFirstRender();
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
@@ -32,11 +32,11 @@ test("Renders a file with solid, gradient and image fills", async ({
   await workspace.setupEmptyFile();
   await workspace.mockAsset(
     "1ebcea38-f1bf-8101-8006-4c8fd68e7c84",
-    "render-wasm/penguins.jpg",
+    "render-wasm/assets/penguins.jpg",
   );
   await workspace.mockAsset(
     "1ebcea38-f1bf-8101-8006-4c8f579da49c",
-    "render-wasm/penguins.jpg",
+    "render-wasm/assets/penguins.jpg",
   );
   await workspace.mockGetFile("render-wasm/get-file-shapes-fills.json");
 
@@ -44,7 +44,7 @@ test("Renders a file with solid, gradient and image fills", async ({
     id: "1ebcea38-f1bf-8101-8006-4c8ec4a9bffe",
     pageId: "1ebcea38-f1bf-8101-8006-4c8ec4a9bfff",
   });
-  await workspace.waitForCanvasRender();
+  await workspace.waitForFirstRender();
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
