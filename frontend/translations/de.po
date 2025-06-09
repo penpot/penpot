@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-21 08:44+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"PO-Revision-Date: 2025-06-05 12:09+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -7089,3 +7089,31 @@ msgstr "Automatisch gespeicherte Versionen werden für %s Tage aufbewahrt."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+#: src/app/main/ui/dashboard/import.cljs:481
+msgid "dashboard.import.import-error.disclaimer"
+msgstr "Nicht alle Dateien wurden importiert"
+
+#: src/app/main/ui/dashboard/import.cljs:485
+msgid "dashboard.import.import-error.message1"
+msgstr "Die folgenden Dateien sind fehlerhaft:"
+
+#: src/app/main/errors.cljs:266
+msgid "errors.deprecated.contact.text"
+msgstr "kontaktieren Sie uns"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:152, src/app/main/data/workspace/tokens/library_edit.cljs:182
+msgid "errors.token-set-already-exists"
+msgstr "Ein Set mit dem gleichen Namen existiert bereits"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variants"
+msgstr "Eigenschaften der Varianten"
+
+#: src/app/main/ui/workspace/tokens/sets_context_menu.cljs:63
+msgid "labels.duplicate"
+msgstr "Duplizieren"
+
+#: src/app/main/ui/dashboard/import.cljs:294
+msgid "labels.error"
+msgstr "Fehler"

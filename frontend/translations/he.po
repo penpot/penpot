@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-21 08:44+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"PO-Revision-Date: 2025-06-03 14:04+0000\n"
+"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -6802,7 +6802,6 @@ msgid "workspace.tokens.opacity-range"
 msgstr "שקיפות צריכה להיות בין 0 ל־100% או 0 ו־1 (כלומר 50% או 0.5)."
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:124
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "ערך מקורי: %s"
 
@@ -6824,7 +6823,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "שגיאות הפניה: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/tokens/form.cljs:219, src/app/main/ui/workspace/tokens/form.cljs:223, src/app/main/ui/workspace/tokens/token_pill.cljs:125
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "ערך פתור: %s"
 
@@ -6876,7 +6874,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "רשימת ערכות עיצוב"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:573, src/app/main/ui/workspace/tokens/form.cljs:574
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "תיאור"
 
@@ -7235,3 +7232,338 @@ msgstr "גרסאות שנשמרו אוטומטית תישמרנה למשך %s י
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+#: src/app/main/ui/dashboard/import.cljs:481
+msgid "dashboard.import.import-error.disclaimer"
+msgstr "לא כל הקבצים יובאו"
+
+#: src/app/main/ui/dashboard/import.cljs:485
+msgid "dashboard.import.import-error.message1"
+msgstr "בקבצים הבאים יש שגיאות:"
+
+#: src/app/main/ui/dashboard/import.cljs:490
+msgid "dashboard.import.import-error.message2"
+msgstr "קבצים עם שגיאות לא יועברו."
+
+#: src/app/main/errors.cljs:157
+msgid "errors.internal-assertion-error"
+msgstr "שגיאת טענה פנימית"
+
+#: src/app/main/errors.cljs:186
+msgid "errors.svg-parser.invalid-svg"
+msgstr "ה־SVG שגוי או פגום"
+
+#: src/app/main/data/tokens.cljs:
+#, unused
+msgid "errors.token-set-doesnt-exists"
+msgstr "אי אפשר לשכפל ערכה לא ידועה"
+
+#: src/app/main/ui/dashboard/import.cljs:294
+msgid "labels.error"
+msgstr "שגיאה"
+
+#: src/app/main/ui/dashboard/subscription.cljs:51
+msgid "subscription.dashboard.power-up.professional.top-title"
+msgstr "תוכנית מקצועית"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:131
+msgid "subscription.dashboard.power-up.subscribe"
+msgstr "הרשמה"
+
+#: src/app/main/errors.cljs:267
+msgid "errors.deprecated.contact.after"
+msgstr "כדי שנוכל לעזור לך."
+
+#: src/app/main/errors.cljs:195
+msgid "errors.comment-error"
+msgstr "אירעה שגיאה עם ההערה"
+
+#: src/app/main/ui/dashboard/subscription.cljs:77
+msgid "subscription.dashboard.power-up.enterprise.description"
+msgstr "אבטחה מתקדמת, יומני פעילות, תמיכה ייעודית ועוד."
+
+#: src/app/main/errors.cljs:266
+msgid "errors.deprecated.contact.text"
+msgstr "ליצור איתנו קשר"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variants"
+msgstr "מאפייני הגוונים"
+
+#: src/app/main/ui/workspace/tokens/sets_context_menu.cljs:63
+msgid "labels.duplicate"
+msgstr "שכפול"
+
+#: src/app/main/ui/dashboard/subscription.cljs:76
+msgid "subscription.dashboard.power-up.enterprise-plan"
+msgstr "תוכנית מסחרית"
+
+#: src/app/main/errors.cljs:173
+msgid "errors.internal-worker-error"
+msgstr "משהו השתבש עם מנגנון הדפדפן."
+
+#: src/app/main/errors.cljs:264
+msgid "errors.deprecated"
+msgstr ""
+"זה קובץ ישן שמשתמש בסוג של משאבי Penpot שאינם נתמכים עוד ואי אפשר לפתוח "
+"אותו, מתנצלים."
+
+#: src/app/main/errors.cljs:265
+msgid "errors.deprecated.contact.before"
+msgstr "למרות ש־Penpot לא תומך יותר בסוג המשאבים הזה, אפשר"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:24
+msgid "workspace.tokens.invalid-json-token-name-detail"
+msgstr ""
+"„%s” אינו שם תקף לאסימון.\n"
+"שמות האסימונים יכולים להכיל אותיות וספרות מופרדים בתווי . ואסור שיתחילו "
+"בדולר ($)."
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:93
+msgid "workspace.tokens.setting-description"
+msgstr "כאן אפשר להגדיר את גודל הכתב הבסיסי, שמגדיר את הערך של 1rem:"
+
+#: src/app/main/ui/dashboard/subscription.cljs:62
+msgid "subscription.dashboard.power-up.trial.top-description"
+msgstr "עורכים נוספים, אחסון וגרסה נשמרת אוטומטית, גיבוי קבצים ועוד."
+
+#: src/app/main/ui/dashboard/subscription.cljs:61
+msgid "subscription.dashboard.power-up.trial.top-title"
+msgstr "תוכנית לא מוגבלת (ניסיון)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:67
+msgid "subscription.dashboard.power-up.unlimited-plan"
+msgstr "תוכנית לא מוגבלת"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:23
+msgid "workspace.tokens.invalid-json-token-name"
+msgstr "שגיאת ייבוא: שם אסימון שגוי ב־JSON."
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:85
+msgid "workspace.tokens.settings"
+msgstr "הגדרות אסימונים"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:65, src/app/main/data/workspace/tokens/warnings.cljs:19
+msgid "workspace.tokens.stroke-width-range"
+msgstr "עובי הקו חייב להיות גדול או שווה ל־0."
+
+#: src/app/main/data/style_dictionary.cljs:296
+msgid "workspace.tokens.unknown-token-type-section"
+msgstr "הסוג ‚%s’ לא נתמך (%s)\n"
+
+#: src/app/main/data/style_dictionary.cljs:294
+msgid "workspace.tokens.unknown-token-type"
+msgstr "אסימונים שנפסחו"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:332
+msgid "workspace.tokens.inactive-set-description"
+msgstr ""
+"הסדרה הזאת לא פעילה. יש להחליף את ערכת העיצוב או להפעיל את הסדרה הזאת כדי "
+"לראות את השינויים באשנב"
+
+#: src/app/main/ui/dashboard/subscription.cljs:68
+msgid "subscription.dashboard.power-up.unlimited.top-description"
+msgstr "עורכים נוספים, אחסון וגרסאות שמורות אוטומטית, גיבוי קבצים ועוד."
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:90
+msgid "workspace.tokens.base-font-size"
+msgstr "גודל כתב בסיס"
+
+#: src/app/main/ui/dashboard/team.cljs:753
+msgid "labels.no-invitations-gather-people"
+msgstr "אוספים יחד את האנשים ויוצרים דברים מדהימים."
+
+#: src/app/main/ui/settings/subscription.cljs:57, src/app/main/ui/settings/subscription.cljs:106
+msgid "subscription.settings.professional.storage"
+msgstr "10 ג״ב של אחסון ו־7 ימים של גרסאות שמורות אוטומטית"
+
+#: src/app/main/ui/settings/subscription.cljs:61
+msgid "subscription.settings.unlimited-trial"
+msgstr "ללא הגבלה (התנסות)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:778
+msgid "workspace.options.component.unlinked"
+msgstr "לא מקושר"
+
+#: src/app/main/ui/settings/subscription.cljs:84, src/app/main/ui/settings/subscription.cljs:129
+msgid "subscription.settings.enterprise.security"
+msgstr "אבטחה מתקדמת"
+
+#: src/app/main/ui/settings/subscription.cljs:83, src/app/main/ui/settings/subscription.cljs:128
+msgid "subscription.settings.enterprise.support"
+msgstr "תמיכה ייעודית"
+
+#: src/app/main/ui/settings/subscription.cljs:103, src/app/main/ui/settings/subscription.cljs:114
+msgid "subscription.settings.price-editor-month"
+msgstr "עורך לחודש"
+
+#: src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:105
+msgid "subscription.settings.professional.teams-editors"
+msgstr "אין הגבלה על צוותים של עד 8 עורכים"
+
+#: src/app/main/ui/settings/subscription.cljs:126
+msgid "subscription.settings.price-organization-month"
+msgstr "ארגון לחודש"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:341
+msgid "workspace.tokens.inactive-set"
+msgstr "לא פעילה"
+
+#: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:44, src/app/main/ui/settings/subscription.cljs:47
+msgid "subscription.labels"
+msgstr "מינוי"
+
+#: src/app/main/ui/settings/subscription.cljs:67, src/app/main/ui/settings/subscription.cljs:76, src/app/main/ui/settings/subscription.cljs:86
+msgid "subscription.settings.manage-your-subscription"
+msgstr "ניהול המינוי שלך"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:488
+msgid "workspace.shape.menu.restore-variant"
+msgstr "שחזור הגוון"
+
+#: src/app/main/ui/settings/subscription.cljs:66, src/app/main/ui/settings/subscription.cljs:75, src/app/main/ui/settings/subscription.cljs:118
+msgid "subscription.settings.unlimited.storage"
+msgstr "25 ג״ב של אחסון ו־30 יום של גרסאות שמורות אוטומטית וגיבוי קבצים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
+msgid "workspace.options.component.variant.malformed.multi"
+msgstr "לחלק מההגוונים יש שמות שגויים"
+
+#: src/app/main/ui/settings/subscription.cljs:70, src/app/main/ui/settings/subscription.cljs:111
+msgid "subscription.settings.unlimited"
+msgstr "ללא הגבלה"
+
+#: src/app/main/ui/workspace/context_menu.cljs:207
+msgid "workspace.shape.menu.copy-svg"
+msgstr "העתקה כ־SVG"
+
+#: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:68, src/app/main/ui/ds/notifications/shared/notification_pill.cljs:73
+msgid "workspace.notification-pill.detail"
+msgstr "פרטים"
+
+#: src/app/main/ui/dashboard/subscription.cljs:53
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr ""
+"אפשר לקבל הרשאות לעורכים נוספים ואחסון, גיבוי קבצים ועוד עם ה**תוכנית הבלתי "
+"מוגבלת**"
+
+#: src/app/main/ui/dashboard/subscription.cljs:63
+msgid "subscription.dashboard.power-up.trial.bottom-description"
+msgstr "הניסיון מצליח עד כה? אפשר לקבל גישה מלאה לתמיד."
+
+#: src/app/main/ui/dashboard/subscription.cljs:69
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-description"
+msgstr ""
+"קבלת אבטחה מתקדמת, יומני פעילות, תמיכה ייעודית ועוד עם **התוכנית המסחרית**"
+
+#: src/app/main/ui/dashboard/subscription.cljs:70
+msgid "subscription.dashboard.power-up.unlimited.cta"
+msgstr "כדאי להציץ"
+
+#: src/app/main/ui/settings/subscription.cljs:63
+msgid "subscription.settings.benefits.all-professional-benefits"
+msgstr "כל היתרונות של תוכנית מקצועית וגם:"
+
+#: src/app/main/ui/settings/subscription.cljs:72
+msgid "subscription.settings.benefits.all-unlimited-benefits"
+msgstr "כל יתרונות התוכנית הבלתי מוגבלת וגם:"
+
+#: src/app/main/ui/settings/subscription.cljs:80, src/app/main/ui/settings/subscription.cljs:123
+msgid "subscription.settings.enterprise"
+msgstr "מסחרי"
+
+#: src/app/main/ui/settings/subscription.cljs:85, src/app/main/ui/settings/subscription.cljs:130
+msgid "subscription.settings.enterprise.logs"
+msgstr "יומני פעילות"
+
+#: src/app/main/ui/settings/subscription.cljs:96
+msgid "subscription.settings.member-since"
+msgstr "חברות ב־Penpot מאז %s"
+
+#: src/app/main/ui/settings/subscription.cljs:99
+msgid "subscription.settings.other-plans"
+msgstr "תוכניות אחרות ב־Penpot"
+
+#: src/app/main/ui/settings/subscription.cljs:54, src/app/main/ui/settings/subscription.cljs:101
+msgid "subscription.settings.professional"
+msgstr "מקצועי"
+
+#: src/app/main/ui/settings/subscription.cljs:55, src/app/main/ui/settings/subscription.cljs:104
+msgid "subscription.settings.professional.projects-files"
+msgstr "אין הגבלה על מיזמים, קבצים וטיוטות"
+
+#: src/app/main/ui/settings/subscription.cljs:51
+msgid "subscription.settings.section-plan"
+msgstr "המינוי שלך"
+
+#: src/app/main/ui/settings/subscription.cljs:92
+msgid "subscription.settings.support-us-since"
+msgstr "בחרת לתמוך בנו מאז %s"
+
+#: src/app/main/ui/settings/subscription.cljs:119
+msgid "subscription.settings.ulimited.try-it-free"
+msgstr "אפשר להתנסות בחינם למשך 14 ימים"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:174
+msgid "workspace.assets.components.num-variants"
+msgstr "%s הגוונים"
+
+#: src/app/main/ui/settings/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:73, src/app/main/ui/settings/subscription.cljs:116
+msgid "subscription.settings.unlimited.teams"
+msgstr "אין הגבלה על צוותים, ללא תלות בגודלם"
+
+#: src/app/main/ui/settings/subscription.cljs:65, src/app/main/ui/settings/subscription.cljs:74, src/app/main/ui/settings/subscription.cljs:117
+msgid "subscription.settings.unlimited.bill"
+msgstr "חשבון חודשי מוגבל"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:746
+msgid "workspace.options.component.variant"
+msgstr "הגוון"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "איתור הגוונים שגויים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.malformed.single"
+msgstr "להגוון הזה יש שם שגוי. כדאי לנסות את המבנה הבא:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:311
+msgid "workspace.options.component.variant.malformed.structure"
+msgstr "[מאפיין]=[ערך], [מאפיין]=[ערך]"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:44
+msgid "workspace.tokens.base-font-size.error"
+msgstr "גודל הכתב הבסיסי חייב להיות ערך בפיקסלים או ללא יחידות."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:160
+msgid "workspace.tokens.choose-file"
+msgstr "בחירת קובץ"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:165
+msgid "workspace.tokens.choose-folder"
+msgstr "בחירת תיקייה"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:37
+msgid "workspace.tokens.empty-input"
+msgstr "ערך האסימון לא יכול להישאר ריק"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:132
+msgid "workspace.tokens.import-multiple-files"
+msgstr "בריבוי קבצים, שם / נתיב הקובץ הם השמות המוגדרים."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:128
+msgid "workspace.tokens.import-tokens"
+msgstr "ייבוא אסימונים"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:138
+msgid "workspace.tokens.import-warning"
+msgstr ""
+"ייבוא אסימונים ידרוס את כל האסימונים הנוכחיים, הסדרות וערכות העיצוב שלך."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:131
+msgid "workspace.tokens.import-single-file"
+msgstr ""
+"בקובץ JSON בודד, המפתחות ברמה העליונה חייבים להיות שמות הסדרה של האסימונים."

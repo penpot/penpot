@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-21 08:44+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Italian "
-"<https://hosted.weblate.org/projects/penpot/frontend/it/>\n"
+"PO-Revision-Date: 2025-05-23 18:01+0000\n"
+"Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
+"Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
+"it/>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4495,7 +4495,7 @@ msgstr "Gestisci libreria"
 
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:294
 msgid "workspace.assets.not-found"
-msgstr "Nessun asset trovato"
+msgstr "Nessuna risorsa trovata"
 
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:111
 msgid "workspace.assets.open-library"
@@ -4511,7 +4511,7 @@ msgstr "Rinomina gruppo"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs:176
 msgid "workspace.assets.search"
-msgstr "Cerca asset"
+msgstr "Cerca risorse"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 #, unused
@@ -5114,7 +5114,7 @@ msgstr "Sostituisci componente"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:594
 msgid "workspace.options.component.swap.empty"
-msgstr "Non ci sono ancora asset in questa libreria"
+msgstr "Non ci sono ancora risorse in questa libreria"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
 msgid "workspace.options.constraints"
@@ -6297,11 +6297,11 @@ msgstr ""
 
 #: src/app/main/ui/workspace/plugins.cljs:258
 msgid "workspace.plugins.permissions.library-read"
-msgstr "Leggere le tue librerie e asset."
+msgstr "Leggere le tue librerie e risorse."
 
 #: src/app/main/ui/workspace/plugins.cljs:252
 msgid "workspace.plugins.permissions.library-write"
-msgstr "Leggere e modificare le tue librerie e asset."
+msgstr "Leggere e modificare le tue librerie e risorse."
 
 #: src/app/main/ui/workspace/plugins.cljs:311
 msgid "workspace.plugins.permissions.title"
@@ -6561,7 +6561,7 @@ msgstr "Mostra"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:471
 msgid "workspace.shape.menu.show-in-assets"
-msgstr "Mostra nel pannello degli asset"
+msgstr "Mostra nel pannello delle risorse"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:492, src/app/main/ui/workspace/sidebar/assets/components.cljs:577
 msgid "workspace.shape.menu.show-main"
@@ -6695,7 +6695,7 @@ msgstr "Assi"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:337
 msgid "workspace.tokens.back-to-themes"
-msgstr "Torna alla lista temi"
+msgstr "Torna all'elenco dei temi"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:241
 msgid "workspace.tokens.color"
@@ -6926,7 +6926,7 @@ msgstr "Il set di token non è attivo"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:143
 msgid "workspace.tokens.sets-hint"
-msgstr "Modifica tema e gestisci set"
+msgstr "Modifica il tema e gestisci i set"
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:210
 msgid "workspace.tokens.size"
@@ -6944,7 +6944,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:45, src/app/main/ui/workspace/tokens/modals/themes.cljs:94
 msgid "workspace.tokens.themes-list"
-msgstr "Lista temi"
+msgstr "Elenco temi"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:573, src/app/main/ui/workspace/tokens/form.cljs:574
 #, fuzzy
@@ -6995,7 +6995,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/sidebar.cljs:137, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
-msgstr "Asset"
+msgstr "Risorse"
 
 #: src/app/main/ui/workspace/palette.cljs:166, src/app/main/ui/workspace/palette.cljs:167
 msgid "workspace.toolbar.color-palette"
@@ -7091,7 +7091,7 @@ msgstr "cerchi"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:110
 msgid "workspace.undo.entry.multiple.color"
-msgstr "colori"
+msgstr "risorse colore"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:111
 msgid "workspace.undo.entry.multiple.component"
@@ -7111,7 +7111,7 @@ msgstr "gruppi"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:115
 msgid "workspace.undo.entry.multiple.media"
-msgstr "asset grafici"
+msgstr "risorse grafiche"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:116
 msgid "workspace.undo.entry.multiple.multiple"
@@ -7139,7 +7139,7 @@ msgstr "testi"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:122
 msgid "workspace.undo.entry.multiple.typography"
-msgstr "asset tipografici"
+msgstr "risorse tipografiche"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:143
 msgid "workspace.undo.entry.new"
@@ -7175,7 +7175,7 @@ msgstr "immagine"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:130
 msgid "workspace.undo.entry.single.media"
-msgstr "asset grafico"
+msgstr "risorsa grafica"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:131
 msgid "workspace.undo.entry.single.multiple"
@@ -7203,7 +7203,7 @@ msgstr "testo"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:137
 msgid "workspace.undo.entry.single.typography"
-msgstr "asset tipografico"
+msgstr "risorsa tipografica"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:147
 msgid "workspace.undo.entry.unknown"
@@ -7339,3 +7339,356 @@ msgstr "Clicca per chiudere il tracciato"
 
 #~ msgid "onboarding.slide.1.desc1"
 #~ msgstr "Crea interazioni complete per imitare al meglio il prodotto finale."
+
+#: src/app/main/errors.cljs:264
+msgid "errors.deprecated"
+msgstr ""
+"Spiacenti! Questo è un file obsoleto che utilizza un tipo di risorsa Penpot "
+"non più supportato e non può essere aperto."
+
+#: src/app/main/errors.cljs:265
+msgid "errors.deprecated.contact.before"
+msgstr "Anche se Penpot non supporta più questo tipo di risorse, puoi"
+
+#: src/app/main/errors.cljs:267
+msgid "errors.deprecated.contact.after"
+msgstr "e cercheremo di aiutarti."
+
+#: src/app/main/ui/dashboard/import.cljs:294
+msgid "labels.error"
+msgstr "Errore"
+
+#: src/app/main/ui/dashboard/import.cljs:481
+msgid "dashboard.import.import-error.disclaimer"
+msgstr "Non tutti i file sono stati importati"
+
+#: src/app/main/ui/dashboard/import.cljs:485
+msgid "dashboard.import.import-error.message1"
+msgstr "I seguenti file presentano errori:"
+
+#: src/app/main/ui/dashboard/import.cljs:490
+msgid "dashboard.import.import-error.message2"
+msgstr "I file con errori non verranno caricati."
+
+#: src/app/main/errors.cljs:266
+msgid "errors.deprecated.contact.text"
+msgstr "contattarci"
+
+#: src/app/main/errors.cljs:157
+msgid "errors.internal-assertion-error"
+msgstr "Errore di asserzione interna"
+
+#: src/app/main/errors.cljs:173
+msgid "errors.internal-worker-error"
+msgstr "Qualcosa è andato storto con il web worker."
+
+#: src/app/main/errors.cljs:186
+msgid "errors.svg-parser.invalid-svg"
+msgstr "L'SVG non è valido o è danneggiato"
+
+#: src/app/main/data/tokens.cljs:
+#, unused
+msgid "errors.token-set-doesnt-exists"
+msgstr "Impossibile duplicare un set sconosciuto"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variants"
+msgstr "Proprietà delle varianti"
+
+#: src/app/main/ui/workspace/tokens/sets_context_menu.cljs:63
+msgid "labels.duplicate"
+msgstr "Duplica"
+
+#: src/app/main/ui/dashboard/team.cljs:753
+msgid "labels.no-invitations-gather-people"
+msgstr "Raduna le persone e costruite grandi cose insieme."
+
+#: src/app/main/ui/dashboard/subscription.cljs:51
+msgid "subscription.dashboard.power-up.professional.top-title"
+msgstr "Piano Professional"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:131
+msgid "subscription.dashboard.power-up.subscribe"
+msgstr "Iscriviti"
+
+#: src/app/main/ui/dashboard/subscription.cljs:63
+msgid "subscription.dashboard.power-up.trial.bottom-description"
+msgstr "Ti sta piacendo la prova? Sblocca l’accesso completo per sempre."
+
+#: src/app/main/ui/dashboard/subscription.cljs:70
+msgid "subscription.dashboard.power-up.unlimited.cta"
+msgstr "Dai un'occhiata"
+
+#: src/app/main/ui/dashboard/subscription.cljs:69
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-description"
+msgstr ""
+"Ottieni sicurezza avanzata, registro delle attività, supporto dedicato e "
+"altro ancora con il **Piano Enterprise**"
+
+#: src/app/main/ui/dashboard/subscription.cljs:61
+msgid "subscription.dashboard.power-up.trial.top-title"
+msgstr "Piano Unlimited (prova)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:53
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr ""
+"Ottieni editor e spazio di archiviazione aggiuntivi, backup dei file e altro "
+"ancora con il **Piano Unlimited**"
+
+#: src/app/main/ui/dashboard/subscription.cljs:67
+msgid "subscription.dashboard.power-up.unlimited-plan"
+msgstr "Piano Unlimited"
+
+#: src/app/main/ui/settings/subscription.cljs:63
+msgid "subscription.settings.benefits.all-professional-benefits"
+msgstr "Tutti i vantaggi del piano Professional e:"
+
+#: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:44, src/app/main/ui/settings/subscription.cljs:47
+msgid "subscription.labels"
+msgstr "Abbonamento"
+
+#: src/app/main/ui/settings/subscription.cljs:80, src/app/main/ui/settings/subscription.cljs:123
+msgid "subscription.settings.enterprise"
+msgstr "Enterprise"
+
+#: src/app/main/ui/settings/subscription.cljs:85, src/app/main/ui/settings/subscription.cljs:130
+msgid "subscription.settings.enterprise.logs"
+msgstr "Registri delle attività"
+
+#: src/app/main/ui/settings/subscription.cljs:84, src/app/main/ui/settings/subscription.cljs:129
+msgid "subscription.settings.enterprise.security"
+msgstr "Sicurezza avanzata"
+
+#: src/app/main/ui/settings/subscription.cljs:83, src/app/main/ui/settings/subscription.cljs:128
+msgid "subscription.settings.enterprise.support"
+msgstr "Supporto dedicato"
+
+#: src/app/main/ui/settings/subscription.cljs:72
+msgid "subscription.settings.benefits.all-unlimited-benefits"
+msgstr "Tutti i vantaggi del piano Unlimited e:"
+
+#: src/app/main/ui/dashboard/subscription.cljs:68
+msgid "subscription.dashboard.power-up.unlimited.top-description"
+msgstr ""
+"Editor, spazio di archiviazione versioni salvate automaticamente aggiuntivi, "
+"file di backup e altro ancora."
+
+#: src/app/main/ui/settings/subscription.cljs:96
+msgid "subscription.settings.member-since"
+msgstr "Membro Penpot dal %s"
+
+#: src/app/main/ui/settings/subscription.cljs:99
+msgid "subscription.settings.other-plans"
+msgstr "Altri piani Penpot"
+
+#: src/app/main/ui/settings/subscription.cljs:103, src/app/main/ui/settings/subscription.cljs:114
+msgid "subscription.settings.price-editor-month"
+msgstr "editor per mese"
+
+#: src/app/main/ui/settings/subscription.cljs:126
+msgid "subscription.settings.price-organization-month"
+msgstr "organizzazione per mese"
+
+#: src/app/main/ui/settings/subscription.cljs:55, src/app/main/ui/settings/subscription.cljs:104
+msgid "subscription.settings.professional.projects-files"
+msgstr "Progetti, file e bozze illimitati"
+
+#: src/app/main/ui/settings/subscription.cljs:57, src/app/main/ui/settings/subscription.cljs:106
+msgid "subscription.settings.professional.storage"
+msgstr ""
+"10GB di spazio di archiviazione e versioni salvate automaticamente per 7 "
+"giorni"
+
+#: src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:105
+msgid "subscription.settings.professional.teams-editors"
+msgstr "Team illimitati fino ad 8 editor"
+
+#: src/app/main/ui/settings/subscription.cljs:51
+msgid "subscription.settings.section-plan"
+msgstr "Il tuo abbonamento"
+
+#: src/app/main/ui/settings/subscription.cljs:92
+msgid "subscription.settings.support-us-since"
+msgstr "Ci supporti dal %s"
+
+#: src/app/main/ui/settings/subscription.cljs:119
+msgid "subscription.settings.ulimited.try-it-free"
+msgstr "Provalo gratuitamente per 14 giorno"
+
+#: src/app/main/ui/settings/subscription.cljs:70, src/app/main/ui/settings/subscription.cljs:111
+msgid "subscription.settings.unlimited"
+msgstr "Illimitato"
+
+#: src/app/main/ui/settings/subscription.cljs:65, src/app/main/ui/settings/subscription.cljs:74, src/app/main/ui/settings/subscription.cljs:117
+msgid "subscription.settings.unlimited.bill"
+msgstr "Fattura mensile con tetto massimo"
+
+#: src/app/main/ui/settings/subscription.cljs:66, src/app/main/ui/settings/subscription.cljs:75, src/app/main/ui/settings/subscription.cljs:118
+msgid "subscription.settings.unlimited.storage"
+msgstr ""
+"25GB di spazio di archiviazione, versioni salvate automaticamente per 30 "
+"giorni e backup dei file"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:174
+msgid "workspace.assets.components.num-variants"
+msgstr "%s Varianti"
+
+#: src/app/main/ui/settings/subscription.cljs:61
+msgid "subscription.settings.unlimited-trial"
+msgstr "Unlimited (prova)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:746
+msgid "workspace.options.component.variant"
+msgstr "Variante"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "Individua le varianti non valide"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
+msgid "workspace.options.component.variant.malformed.multi"
+msgstr "Alcune varianti hanno nomi non validi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.malformed.single"
+msgstr ""
+"Questa variante ha un nome non valido. Prova ad usare la seguente struttura:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:311
+msgid "workspace.options.component.variant.malformed.structure"
+msgstr "[proprietà]=[valore], [proprietà]=[valore]"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:488
+msgid "workspace.shape.menu.restore-variant"
+msgstr "Ripristina variante"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:90
+msgid "workspace.tokens.base-font-size"
+msgstr "Dimensione base del carattere"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:44
+msgid "workspace.tokens.base-font-size.error"
+msgstr ""
+"La dimensione base del carattere deve essere un valore in pixel o senza "
+"unità."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:165
+msgid "workspace.tokens.choose-folder"
+msgstr "Scegli cartella"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:37
+msgid "workspace.tokens.empty-input"
+msgstr "Il valore del token non può essere vuoto"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:132
+msgid "workspace.tokens.import-multiple-files"
+msgstr "In più file, il nome/percorso del file corrisponde al nome del set."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:131
+msgid "workspace.tokens.import-single-file"
+msgstr ""
+"In un singolo file JSON, le chiavi di primo livello devono corrispondere ai "
+"nomi dei set di token."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:128
+msgid "workspace.tokens.import-tokens"
+msgstr "Importa token"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:138
+msgid "workspace.tokens.import-warning"
+msgstr ""
+"L'importazione dei token sovrascriverà tutti i tuoi attuali token, set e "
+"temi."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:341
+msgid "workspace.tokens.inactive-set"
+msgstr "Inattivo"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:332
+msgid "workspace.tokens.inactive-set-description"
+msgstr ""
+"Questo set non è attivo. Cambia tema o attiva questo set per vedere "
+"modifiche nell'anteprima"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:23
+msgid "workspace.tokens.invalid-json-token-name"
+msgstr "Errore di importazione: nome token non valido nel JSON."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:24
+msgid "workspace.tokens.invalid-json-token-name-detail"
+msgstr ""
+"\"%s\" non è un nome token valido\n"
+"I nomi dei token devono contenere solo lettere e cifre, separate dal "
+"carattere . e non devono iniziare con il simbolo $."
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:93
+msgid "workspace.tokens.setting-description"
+msgstr ""
+"Qui puoi configurare la dimensione base del carattere, che definisce il "
+"valore di 1rem:"
+
+#: src/app/main/data/style_dictionary.cljs:294
+msgid "workspace.tokens.unknown-token-type"
+msgstr "Token saltati"
+
+#: src/app/main/data/style_dictionary.cljs:296
+msgid "workspace.tokens.unknown-token-type-section"
+msgstr "Il tipo '%s' non è supportato (%s)\n"
+
+#: src/app/main/ui/dashboard/subscription.cljs:76
+msgid "subscription.dashboard.power-up.enterprise-plan"
+msgstr "Piano Enterprise"
+
+#: src/app/main/ui/dashboard/subscription.cljs:62
+msgid "subscription.dashboard.power-up.trial.top-description"
+msgstr ""
+"Editor, spazio di archiviazione e versioni salvate automaticamente "
+"aggiuntivi, file di backup e altro ancora."
+
+#: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:68, src/app/main/ui/ds/notifications/shared/notification_pill.cljs:73
+msgid "workspace.notification-pill.detail"
+msgstr "Dettagli"
+
+#: src/app/main/errors.cljs:195
+msgid "errors.comment-error"
+msgstr "Si è verificato un errore con il commento"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:160
+msgid "workspace.tokens.choose-file"
+msgstr "Scegli file"
+
+#: src/app/main/ui/workspace/context_menu.cljs:207
+msgid "workspace.shape.menu.copy-svg"
+msgstr "Copia come SVG"
+
+#: src/app/main/ui/dashboard/subscription.cljs:77
+msgid "subscription.dashboard.power-up.enterprise.description"
+msgstr ""
+"Sicurezza avanzata, registro delle attività, supporto dedicato e altro "
+"ancora."
+
+#: src/app/main/ui/settings/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:73, src/app/main/ui/settings/subscription.cljs:116
+msgid "subscription.settings.unlimited.teams"
+msgstr "Team illimitati, indipendentemente dalle dimensioni del tuo team"
+
+#: src/app/main/ui/settings/subscription.cljs:67, src/app/main/ui/settings/subscription.cljs:76, src/app/main/ui/settings/subscription.cljs:86
+msgid "subscription.settings.manage-your-subscription"
+msgstr "Gestisci il tuo abbonamento"
+
+#: src/app/main/ui/settings/subscription.cljs:54, src/app/main/ui/settings/subscription.cljs:101
+msgid "subscription.settings.professional"
+msgstr "Professional"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:85
+msgid "workspace.tokens.settings"
+msgstr "Impostazioni token"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:778
+msgid "workspace.options.component.unlinked"
+msgstr "Scollegato"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:65, src/app/main/data/workspace/tokens/warnings.cljs:19
+msgid "workspace.tokens.stroke-width-range"
+msgstr "La larghezza della traccia deve essere maggiore o uguale a 0."
