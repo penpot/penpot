@@ -44,5 +44,7 @@
 
     (mf/with-effect [system-theme profile-theme]
       (set-color-scheme
-       (if (= profile-theme "system") system-theme
-           (d/nilv profile-theme "dark"))))))
+       (cond
+         (= profile-theme "system") system-theme
+         (= profile-theme "default") "dark"
+         :else (d/nilv profile-theme "dark"))))))

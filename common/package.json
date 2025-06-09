@@ -11,14 +11,14 @@
     "url": "https://github.com/penpot/penpot"
   },
   "dependencies": {
-    "luxon": "^3.4.4"
+    "luxon": "^3.6.1"
   },
   "devDependencies": {
-    "concurrently": "^9.0.1",
-    "nodemon": "^3.1.7",
+    "concurrently": "^9.1.2",
+    "nodemon": "^3.1.10",
     "shadow-cljs": "3.1.5",
     "source-map-support": "^0.5.21",
-    "ws": "^8.17.0"
+    "ws": "^8.18.2"
   },
   "scripts": {
     "fmt:clj:check": "cljfmt check --parallel=false src/ test/",

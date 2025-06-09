@@ -136,6 +136,38 @@ jobs:
             - ~/.cache/ms-playwright
           key: v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
 
+  test-library:
+    docker:
+      - image: penpotapp/devenv:latest
+
+    working_directory: ~/repo
+    resource_class: medium+
+
+    environment:
+      JAVA_OPTS: -Xmx6g
+      NODE_OPTIONS: --max-old-space-size=4096
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
+
+      - run:
+          name: Install dependencies and build
+          working_directory: "./library"
+          command: |
+            yarn install
+
+      - run:
+          name: Build and Test
+          working_directory: "./library"
+          command: |
+            ./scripts/build
+            yarn run test
+
   test-components:
     docker:
       - image: penpotapp/devenv:latest
@@ -282,6 +314,11 @@ workflows:
       - lint
       - test-frontend:
           requires:
+            - lint: success
+
+      - test-library:
+          requires:
+            - test-frontend: success
             - lint: success
 
       - test-components:

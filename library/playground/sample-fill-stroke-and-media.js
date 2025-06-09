@@ -80,7 +80,11 @@ import { Writable } from "stream";
   }
 
   {
-    let result = await penpot.exportAsBytes(context);
+    const onProgress = (opts) => {
+      console.log(`Procesing ${opts.item}/${opts.total}: ${opts.path}`);
+    };
+
+    let result = await penpot.exportAsBytes(context, {onProgress});
     await writeFile("sample-sync.zip", result);
   }
 

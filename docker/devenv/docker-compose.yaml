@@ -9,7 +9,7 @@ volumes:
   postgres_data_pg16:
   user_data:
   minio_data:
-  redis_data:
+  valkey_data:
 
 services:
   main:
@@ -98,12 +98,13 @@ services:
       - postgres_data_pg16:/var/lib/postgresql/data
 
   redis:
-    image: redis:7.2
-    hostname: "penpot-devenv-redis"
-    container_name: "penpot-devenv-redis"
+    image: valkey/valkey:8.1
+    hostname: "penpot-devenv-valkey"
+    container_name: "penpot-devenv-valkey"
     restart: always
+    command: valkey-server --save 120 1 --loglevel warning
     volumes:
-      - "redis_data:/data"
+      - "valkey_data:/data"
 
   mailer:
     image: sj26/mailcatcher:latest
