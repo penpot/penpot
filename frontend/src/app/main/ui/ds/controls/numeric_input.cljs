@@ -11,12 +11,10 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.main.constants :refer [max-input-length]]
-   [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
-   [app.util.array :as array]
+   [app.main.ui.formats :as fmt]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
    [app.util.simple-math :as smt]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -24,117 +22,112 @@
 (def ^:private schema:numeric-input
   [:map])
 
-
-(def listbox-id-index (atom 0))
-
 (mf/defc numeric-input*
   {::mf/forward-ref true
    ::mf/schema schema:numeric-input}
-  [{:keys [options id class min-value max-value max-length value nillable? default default-selected empty-to-end on-change] :rest props} ref]
-  (let [id (or id (mf/use-id))
+  [{:keys [id class min-value max-value  max-length value default on-change on-blur] :rest props} ref]
+  (let [default   (d/nilv default 0)
+        on-change (d/nilv on-change #(prn "on-change value" %))
 
-        max-length (d/nilv max-length max-input-length)
-        ref (or ref (mf/use-ref))
+        id          (or id (mf/use-id))
 
-        last-value*  (mf/use-var value)
+        max-length  (d/nilv max-length max-input-length)
+        ref         (or ref (mf/use-ref))
+
+        dirty-ref   (mf/use-ref false)
+
+        value       (when (not= :multiple value) (d/parse-double value default))
+
+        raw-value*  (mf/use-var (fmt/format-number (d/parse-double value default)))
+
+        last-value* (mf/use-var (d/parse-double value default))
 
         parse-value
         (mf/use-fn
-         (mf/deps min-value max-value value nillable? default)
-         (fn []
-           (when-let [node (mf/ref-val ref)]
-             (let [new-value (-> (dom/get-value node)
-                                 (str/strip-suffix ".")
-                                 (smt/expr-eval value))]
-               (cond
-                 (d/num? new-value)
-                 (-> new-value
-                     (d/max (/ sm/min-safe-int 2))
-                     (d/min (/ sm/max-safe-int 2))
-                     (cond-> (d/num? min-value)
-                       (d/max min-value))
-                     (cond-> (d/num? max-value)
-                       (d/min max-value)))
+         (mf/deps min-value max-value value default)
+         (fn [raw-value]
+           (let [new-value (-> raw-value
+                               (str/strip-suffix ".")
+                               (smt/expr-eval value))]
+             (cond
+               (d/num? new-value)
+               (-> new-value
+                   (d/max (/ sm/min-safe-int 2))
+                   (d/min (/ sm/max-safe-int 2))
+                   (cond-> (d/num? min-value)
+                     (d/max min-value))
+                   (cond-> (d/num? max-value)
+                     (d/min max-value)))
 
-                 nillable?
-                 default
+               :else nil))))
 
-                 :else value)))))
-        handle-change
+        store-raw-value
         (mf/use-fn
          (mf/deps parse-value)
-         (fn []
-                         ;; Store the last value inputed
-           (reset! last-value* (parse-value))))
+         (fn [event]
+           (let [text (dom/get-target-val event)]
+             (reset! raw-value* text))))
 
+        update-input
+        (mf/use-fn
+         (fn [new-value]
+           (when-let [node (mf/ref-val ref)]
+             (dom/set-value! node new-value))))
 
-      ;;  is-open*        (mf/use-state false)
-      ;;  is-open         (deref is-open*)
+        apply-value
+        (mf/use-fn
+         (mf/deps on-change update-input value)
+         (fn [raw-value]
+           (if-let [parsed (parse-value raw-value)]
+             (do
+               (reset! last-value* parsed)
+               (when (fn? on-change)
+                 (on-change parsed))
+               (reset! raw-value* (fmt/format-number parsed))
+               (update-input (fmt/format-number parsed)))
 
+             ;; Cuando falla el parseo, usaremos el valor anterior o el valor por defecto
+             (let [fallback-value (or @last-value* default)]
+               (reset! raw-value* (fmt/format-number fallback-value))
+               (update-input (fmt/format-number fallback-value))
+               (when (and (fn? on-change) (not= fallback-value value))
+                 (on-change fallback-value))))))
 
-      ;;  filter-value*   (mf/use-state "")
-      ;;  filter-value    (deref filter-value*)
+        on-blur
+        (mf/use-fn
+         (mf/deps parse-value)
+         (fn [e]
+           (apply-value @raw-value*)
+           (when (fn? on-blur)
+             (on-blur e))))
 
-      ;;  selected-value* (mf/use-state default-selected)
-      ;;  selected-value  (deref selected-value*)
+        handle-key-down
+        (mf/use-fn
+         (mf/deps apply-value update-input parse-value)
+         (fn [event]
+           (mf/set-ref-val! dirty-ref true)
+           (let [up?    (kbd/up-arrow? event)
+                 down?  (kbd/down-arrow? event)
+                 enter? (kbd/enter? event)
+                 esc?   (kbd/esc? event)
+                 node   (mf/ref-val ref)]
 
-      ;;  focused-value*  (mf/use-state nil)
-      ;;  focused-value   (deref focused-value*)
+             (when enter?
+               (apply-value @raw-value*)
+               (dom/blur! node))
 
-      ;;  combobox-ref        (mf/use-ref nil)
-      ;;  input-ref           (mf/use-ref nil)
-      ;;  options-nodes-refs  (mf/use-ref nil)
-      ;;  options-ref         (mf/use-ref nil)
+             (when esc?
+               (update-input (fmt/format-number @last-value*))
+               (dom/blur! node)))))
 
-      ;;  listbox-id-ref      (mf/use-ref (dm/str "listbox-" (swap! listbox-id-index inc)))
-      ;;  listbox-id          (mf/ref-val listbox-id-ref)
-
-
-      ;;  dropdown-options
-      ;;  (mf/use-memo
-      ;;   (mf/deps options filter-value)
-      ;;   (fn []
-      ;;     (->> options
-      ;;          (array/filter (fn [option]
-      ;;                          (let [lower-option (.toLowerCase (obj/get option "id"))
-      ;;                                lower-filter (.toLowerCase filter-value)]
-      ;;                            (.includes lower-option lower-filter)))))))
-
-
-      ;;  on-option-click
-      ;;  (mf/use-fn
-      ;;   (mf/deps on-change)
-      ;;   (fn [event]
-      ;;     (dom/stop-propagation event)
-      ;;     (let [node  (dom/get-current-target event)
-      ;;           id    (dom/get-data node "id")]
-      ;;       (reset! is-open* false)
-      ;;       (when (fn? on-change)
-      ;;         (on-change id)))))
-
-
-      ;;  set-option-ref
-      ;;  (mf/use-fn
-      ;;   (fn [node id]
-      ;;     (let [refs (or (mf/ref-val options-nodes-refs) #js {})
-      ;;           refs (if node
-      ;;                  (obj/set! refs id node)
-      ;;                  (obj/unset! refs id))]
-      ;;       (mf/set-ref-val! options-nodes-refs refs))))
         props (mf/spread-props props {:ref ref
                                       :type "text"
                                       :id id
-                                      :on-change handle-change
+                                      :default-value (fmt/format-number value)
+                                      :on-blur on-blur
+                                      :on-key-down handle-key-down
+                                      :on-change store-raw-value
                                       :max-length max-length})]
+
     [:div {:class (dm/str class " " (stl/css :input-wrapper))}
-     [:> input-field* props]
-    ;; (when (and is-open (seq dropdown-options))
-    ;;   [:> options-dropdown* {:on-click on-option-click
-    ;;                          :options dropdown-options
-    ;;                          :selected selected-value
-    ;;                          :focused focused-value
-    ;;                          :set-ref set-option-ref
-    ;;                          :id listbox-id
-    ;;                          :empty-to-end empty-to-end
-    ;;                          :data-testid "combobox-options"}])
-     ]))
+     [:> input-field* props]]))
