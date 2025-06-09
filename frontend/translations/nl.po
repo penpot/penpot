@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-25 04:01+0000\n"
-"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
-"Language-Team: Dutch "
-"<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
+"PO-Revision-Date: 2025-06-09 09:13+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
+">\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4325,7 +4325,7 @@ msgstr ""
 "en meer."
 
 #: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.professional.bottom-description"
 msgstr ""
 "Krijg extra editors en opslagruimte, back-up van bestanden en meer met het "
@@ -4341,7 +4341,7 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Abonneren"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr "Bevalt de proefperiode? Kies voor altijd volledige toegang."
 
@@ -4361,7 +4361,7 @@ msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Onbeperkt abonnement"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-description"
 msgstr ""
 "Profiteer van geavanceerde beveiliging, activiteitenlogboeken, speciale "
@@ -4448,6 +4448,7 @@ msgid "subscription.settings.section-plan"
 msgstr "Uw abonnement"
 
 #: src/app/main/ui/settings/subscription.cljs:278
+#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Je steunt ons sinds %s"
 
@@ -5466,6 +5467,7 @@ msgid "workspace.options.fill"
 msgstr "Vullen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:158
+#, fuzzy
 msgid "workspace.options.fill.add-fill"
 msgstr "Vulkleur toevoegen"
 
@@ -7323,6 +7325,7 @@ msgid "workspace.tokens.tools"
 msgstr "Hulpmiddelen"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:45
+#, fuzzy
 msgid "workspace.tokens.unknown-token-type"
 msgstr "Overgeslagen tokens"
 
