@@ -53,7 +53,7 @@
 
     :else
     (rx/throw
-     (ex-info "repository requet error"
+     (ex-info "repository request error"
               {:type :internal
                :code :repository-access-error
                :uri uri
