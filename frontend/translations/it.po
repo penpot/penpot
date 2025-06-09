@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-23 18:01+0000\n"
-"Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
-"Language-Team: Italian "
-"<https://hosted.weblate.org/projects/penpot/frontend/it/>\n"
+"PO-Revision-Date: 2025-06-09 09:13+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
+"it/>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4308,11 +4308,11 @@ msgstr ""
 "ancora."
 
 #: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.professional.bottom-description"
 msgstr ""
-"Ottieni editor e spazio di archiviazione aggiuntivi, backup dei file e "
-"altro ancora con il **Piano Unlimited**"
+"Ottieni editor e spazio di archiviazione aggiuntivi, backup dei file e altro "
+"ancora con il **Piano Unlimited**"
 
 #: src/app/main/ui/dashboard/subscription.cljs:59
 msgid "subscription.dashboard.power-up.professional.top-title"
@@ -4324,7 +4324,7 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Iscriviti"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr "Ti sta piacendo la prova? Sblocca l’accesso completo per sempre."
 
@@ -4344,7 +4344,7 @@ msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Piano Unlimited"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-description"
 msgstr ""
 "Ottieni sicurezza avanzata, registro delle attività, supporto dedicato e "
@@ -4433,6 +4433,7 @@ msgid "subscription.settings.section-plan"
 msgstr "Il tuo abbonamento"
 
 #: src/app/main/ui/settings/subscription.cljs:278
+#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Ci supporti dal %s"
 
@@ -5455,6 +5456,7 @@ msgid "workspace.options.fill"
 msgstr "Riempimento"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:158
+#, fuzzy
 msgid "workspace.options.fill.add-fill"
 msgstr "Aggiungi colore di riempimento"
 
@@ -7316,6 +7318,7 @@ msgid "workspace.tokens.tools"
 msgstr "Strumenti"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:45
+#, fuzzy
 msgid "workspace.tokens.unknown-token-type"
 msgstr "Token saltati"
 
