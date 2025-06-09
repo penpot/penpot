@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-05 12:09+0000\n"
-"Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"PO-Revision-Date: 2025-06-09 09:13+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -5164,6 +5164,7 @@ msgid "workspace.options.fill"
 msgstr "Fläche"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:158
+#, fuzzy
 msgid "workspace.options.fill.add-fill"
 msgstr "Füllfarbe hinzufügen"
 
