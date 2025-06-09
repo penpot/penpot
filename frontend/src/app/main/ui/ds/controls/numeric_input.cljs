@@ -19,22 +19,56 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
+(defn- clamp [val min-val max-val]
+  (-> val
+      (max min-val)
+      (min max-val)))
+
+(defn- increment [val step min-val max-val]
+  (clamp (+ val step) min-val max-val))
+
+(defn- decrement [val step min-val max-val]
+  (clamp (- val step) min-val max-val))
+
+(defn- parse-value
+  [raw-value last-value min-value max-value]
+  (let [new-value (-> raw-value
+                      (str/strip-suffix ".")
+                      (smt/expr-eval last-value))]
+    (cond
+      (d/num? new-value)
+      (-> new-value
+          (d/max (/ sm/min-safe-int 2))
+          (d/min (/ sm/max-safe-int 2))
+          (cond-> (d/num? min-value)
+            (d/max min-value))
+          (cond-> (d/num? max-value)
+            (d/min max-value)))
+
+      :else nil)))
+
 (def ^:private schema:numeric-input
   [:map])
 
 (mf/defc numeric-input*
   {::mf/forward-ref true
    ::mf/schema schema:numeric-input}
-  [{:keys [id class min-value max-value  max-length value default on-change on-blur on-focus select-on-focus?] :rest props} ref]
-  (let [default   (d/nilv default 0)
+  [{:keys [id class value default
+           min-value max-value max-length step
+           on-change on-blur on-focus select-on-focus?] :rest props} ref]
+  (let [;; Borrar
         on-change (d/nilv on-change #(prn "on-change value" %))
+
         select-on-focus? (d/nilv select-on-focus? true)
+        default   (d/nilv default 0)
+        step      (d/nilv step 1)
+        min-value (d/nilv min-value sm/min-safe-int)
+        max-value (d/nilv max-value sm/max-safe-int)
+        max-length  (d/nilv max-length max-input-length)
 
         id          (or id (mf/use-id))
 
-        max-length  (d/nilv max-length max-input-length)
         ref         (or ref (mf/use-ref))
-
         dirty-ref   (mf/use-ref false)
 
         value       (when (not= :multiple value) (d/parse-double value default))
@@ -42,25 +76,6 @@
         raw-value*  (mf/use-var (fmt/format-number (d/parse-double value default)))
 
         last-value* (mf/use-var (d/parse-double value default))
-
-        parse-value
-        (mf/use-fn
-         (mf/deps min-value max-value value default)
-         (fn [raw-value]
-           (let [new-value (-> raw-value
-                               (str/strip-suffix ".")
-                               (smt/expr-eval @last-value*))]
-             (cond
-               (d/num? new-value)
-               (-> new-value
-                   (d/max (/ sm/min-safe-int 2))
-                   (d/min (/ sm/max-safe-int 2))
-                   (cond-> (d/num? min-value)
-                     (d/max min-value))
-                   (cond-> (d/num? max-value)
-                     (d/min max-value)))
-
-               :else nil))))
 
         store-raw-value
         (mf/use-fn
@@ -79,7 +94,7 @@
         (mf/use-fn
          (mf/deps on-change update-input value)
          (fn [raw-value]
-           (if-let [parsed (parse-value raw-value)]
+           (if-let [parsed (parse-value raw-value @last-value* min-value max-value)]
              (do
                (reset! last-value* parsed)
                (when (fn? on-change)
@@ -112,15 +127,31 @@
                  down?  (kbd/down-arrow? event)
                  enter? (kbd/enter? event)
                  esc?   (kbd/esc? event)
-                 node   (mf/ref-val ref)]
+                 node   (mf/ref-val ref)
+                 parsed (parse-value @raw-value* @last-value* min-value max-value)
+                 current-value (or parsed default)]
 
-             (when enter?
-               (apply-value @raw-value*)
-               (dom/blur! node))
+             (cond
+               enter?
+               (do
+                 (apply-value @raw-value*)
+                 (dom/blur! node))
+               esc?
+               (do
+                 (update-input (fmt/format-number @last-value*))
+                 (dom/blur! node))
 
-             (when esc?
-               (update-input (fmt/format-number @last-value*))
-               (dom/blur! node)))))
+               up?
+               (let [new-val (increment current-value step min-value max-value)]
+                 (update-input (fmt/format-number new-val))
+                 (apply-value (dm/str new-val))
+                 (.preventDefault event))
+
+               down?
+               (let [new-val (decrement current-value step min-value max-value)]
+                 (update-input (fmt/format-number new-val))
+                 (apply-value (dm/str new-val))
+                 (.preventDefault event))))))
 
         handle-focus
         (mf/use-callback
