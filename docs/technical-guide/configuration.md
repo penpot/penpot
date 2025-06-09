@@ -353,9 +353,9 @@ If you are not using SMTP configuration and want to log the emails in the consol
 PENPOT_FLAGS: [...] enable-log-emails
 ```
 
-## Redis
+## Valkey
 
-The Redis configuration is very simple, just provide a valid redis URI. Redis is used
+The Valkey configuration is very simple, just provide a valid redis URI. Valkey is used
 mainly for websocket notifications coordination.
 
 ```bash
