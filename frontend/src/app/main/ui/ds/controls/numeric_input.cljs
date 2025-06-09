@@ -14,6 +14,7 @@
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
    [app.main.ui.formats :as fmt]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.simple-math :as smt]
    [cuerdas.core :as str]
@@ -60,11 +61,12 @@
         on-change (d/nilv on-change #(prn "on-change value" %))
 
         select-on-focus? (d/nilv select-on-focus? true)
-        default   (d/nilv default 0)
-        step      (d/nilv step 1)
-        min-value (d/nilv min-value sm/min-safe-int)
-        max-value (d/nilv max-value sm/max-safe-int)
-        max-length  (d/nilv max-length max-input-length)
+        default      (d/nilv default 0)
+        step         (d/nilv step 1)
+        min-value    (d/nilv min-value sm/min-safe-int)
+        max-value    (d/nilv max-value sm/max-safe-int)
+        max-length   (d/nilv max-length max-input-length)
+        is-multiple? (= :multiple value)
 
         id          (or id (mf/use-id))
 
@@ -73,7 +75,10 @@
 
         value       (when (not= :multiple value) (d/parse-double value default))
 
-        raw-value*  (mf/use-var (fmt/format-number (d/parse-double value default)))
+        raw-value*  (mf/use-var
+                     (if is-multiple?
+                       ""
+                       (fmt/format-number (d/parse-double value default))))
 
         last-value* (mf/use-var (d/parse-double value default))
 
@@ -171,6 +176,7 @@
         props (mf/spread-props props {:ref ref
                                       :type "text"
                                       :id id
+                                      :placeholder (when is-multiple? (tr "settings.multiple"))
                                       :default-value (fmt/format-number value)
                                       :on-blur on-blur
                                       :on-key-down handle-key-down
