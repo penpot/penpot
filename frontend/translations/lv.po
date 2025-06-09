@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-06 13:03+0000\n"
-"Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
-"Language-Team: Latvian "
-"<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
+"PO-Revision-Date: 2025-06-09 09:13+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
+"lv/>\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 "
-"<= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
+"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
 "X-Generator: Weblate 5.12-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
@@ -4312,11 +4312,11 @@ msgid "subscription.dashboard.power-up.enterprise.description"
 msgstr "Papildu drošība, darbību žurnāli, mērķēts atbalsts un vēl."
 
 #: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.professional.bottom-description"
 msgstr ""
-"Iegūsti papildu redaktorus un krātuvi, datņu rezerves kopēšanu un vēl ar "
-"**neierobežoto plānu**"
+"Iegūsti papildu redaktorus un krātuvi, datņu rezerves kopēšanu un vēl ar **"
+"neierobežoto plānu**"
 
 #: src/app/main/ui/dashboard/subscription.cljs:59
 msgid "subscription.dashboard.power-up.professional.top-title"
@@ -4328,7 +4328,7 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Abonēt"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr "Patīk izmēģinājuma laiks? Atslēdz nepārtrauktu pilnu piekļuvi!"
 
@@ -4348,11 +4348,11 @@ msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Neierobežots plāns"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-description"
 msgstr ""
-"Iegūsti izvērstu drošību, darbību žurnālus, mērķētu atbalstu un vēl ar "
-"**uzņēmējdarbības plānu**"
+"Iegūsti izvērstu drošību, darbību žurnālus, mērķētu atbalstu un vēl ar **"
+"uzņēmējdarbības plānu**"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4435,6 +4435,7 @@ msgid "subscription.settings.section-plan"
 msgstr "Tavs abonements"
 
 #: src/app/main/ui/settings/subscription.cljs:278
+#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Tu atbalsti mūs kopš %s"
 
@@ -5456,6 +5457,7 @@ msgid "workspace.options.fill"
 msgstr "Aizpildīšana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:158
+#, fuzzy
 msgid "workspace.options.fill.add-fill"
 msgstr "Pievienot aizpildījuma krāsu"
 
@@ -7309,6 +7311,7 @@ msgid "workspace.tokens.tools"
 msgstr "Rīki"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:45
+#, fuzzy
 msgid "workspace.tokens.unknown-token-type"
 msgstr "Izlaistās tekstvienības"
 
