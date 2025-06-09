@@ -48,3 +48,29 @@ test("Renders a file with solid, gradient and image fills", async ({
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Renders a file with strokes", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockAsset(
+    "202c1104-9385-81d3-8006-5074e4682cac",
+    "render-wasm/assets/penguins.jpg",
+  );
+  await workspace.mockAsset(
+    "202c1104-9385-81d3-8006-5074c50339b6",
+    "render-wasm/assets/penguins.jpg",
+  );
+  await workspace.mockAsset(
+    "202c1104-9385-81d3-8006-507560ce29e3",
+    "render-wasm/assets/penguins.jpg",
+  );
+  await workspace.mockGetFile("render-wasm/get-file-shapes-strokes.json");
+
+  await workspace.goToWorkspace({
+    id: "202c1104-9385-81d3-8006-507413ff2c99",
+    pageId: "202c1104-9385-81d3-8006-507413ff2c9a",
+  });
+  await workspace.waitForFirstRender();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});

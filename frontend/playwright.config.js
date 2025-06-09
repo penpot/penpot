@@ -61,8 +61,11 @@ export default defineConfig({
         deviceScaleFactor: 2,
       },
       testDir: "./playwright/ui/render-wasm-specs",
+      snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}.png",
       expect: {
-        toHaveScreenshot: { maxDiffPixelRatio: 0.005 },
+        toHaveScreenshot: {
+          maxDiffPixelRatio: 0.005,
+        },
       },
     },
   ],
