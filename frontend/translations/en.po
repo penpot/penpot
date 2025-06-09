@@ -7267,9 +7267,9 @@ msgstr "Invalid color value: %s"
 msgid "workspace.tokens.invalid-json"
 msgstr "Import Error: Invalid token data in JSON."
 
-#: src/app/main/data/workspace/tokens/errors.cljs:23
+#: src/app/main/ui/workspace/tokens/errors.cljs:16
 msgid "workspace.tokens.invalid-json-token-name"
-msgstr "Import Error: Invalid token name in in JSON."
+msgstr "Import Error: Invalid token name in JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:24
 msgid "workspace.tokens.invalid-json-token-name-detail"
