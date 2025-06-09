@@ -4,12 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.util.extends
-  "A dummy namespace for closure library and other global objects
-  extensions"
+(ns app.main.ui.ds.tooltip
   (:require
-   [promesa.impl :as pi])
-  (:import
-   goog.async.Deferred))
+   [app.common.data.macros :as dm]
+   [app.main.ui.ds.tooltip.tooltip :as impl]))
 
-(pi/extend-promise! Deferred)
+(dm/export impl/tooltip*)

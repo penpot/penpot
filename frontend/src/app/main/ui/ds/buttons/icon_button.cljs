@@ -6,12 +6,11 @@
 
 (ns app.main.ui.ds.buttons.icon-button
   (:require-macros
-   [app.common.data.macros :as dm]
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
-   [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
+   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:icon-button
@@ -34,22 +33,21 @@
         tooltip-id
         (mf/use-id)
 
-        class
-        (dm/str class " "
-                (stl/css-case :icon-button true
-                              :icon-button-primary (= variant "primary")
-                              :icon-button-secondary (= variant "secondary")
-                              :icon-button-ghost (= variant "ghost")
-                              :icon-button-action (= variant "action")
-                              :icon-button-destructive (= variant "destructive")))
+        button-class
+        (stl/css-case :icon-button true
+                      :icon-button-primary (identical? variant "primary")
+                      :icon-button-secondary (identical? variant "secondary")
+                      :icon-button-ghost (identical? variant "ghost")
+                      :icon-button-action (identical? variant "action")
+                      :icon-button-destructive (identical? variant "destructive"))
 
         props
         (mf/spread-props props
-                         {:class class
+                         {:class [class button-class]
                           :aria-labelledby tooltip-id})]
 
-    [:> tooltip* {:tooltip-content aria-label
+    [:> tooltip* {:content aria-label
                   :id tooltip-id}
-     [:> "button" props
+     [:> :button props
       [:> icon* {:icon-id icon :aria-hidden true :class icon-class}]
       children]]))
