@@ -33,6 +33,7 @@
    [app.plugins.format :as format]
    [app.plugins.history :as history]
    [app.plugins.library :as library]
+   [app.plugins.local-storage :as local-storage]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
    [app.plugins.shape :as shape]
@@ -84,6 +85,11 @@
     :theme
     {:this true
      :get #(.getTheme ^js %)}
+
+    :localStorage
+    {:this true
+     :get
+     (fn [_] (local-storage/local-storage-proxy plugin-id))}
 
     :selection
     {:this true

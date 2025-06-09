@@ -6696,6 +6696,9 @@ msgstr ""
 msgid "workspace.plugins.permissions.allow-download"
 msgstr "Comenzar descargas de ficheros."
 
+msgid "workspace.plugins.permissions.allow-localstorage"
+msgstr "Guardar datos en el navegador."
+
 #: src/app/main/ui/workspace/plugins.cljs:271
 msgid "workspace.plugins.permissions.comment-read"
 msgstr "Leer tus comentarios y respuestas."

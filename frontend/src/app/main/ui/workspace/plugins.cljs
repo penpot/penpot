@@ -275,7 +275,14 @@
      [:div {:class (stl/css :permissions-list-entry)}
       i/oauth-1
       [:p {:class (stl/css :permissions-list-text)}
-       (tr "workspace.plugins.permissions.allow-download")]])])
+       (tr "workspace.plugins.permissions.allow-download")]])
+
+   (cond
+     (contains? permissions "allow:localstorage")
+     [:div {:class (stl/css :permissions-list-entry)}
+      i/oauth-1
+      [:p {:class (stl/css :permissions-list-text)}
+       (tr "workspace.plugins.permissions.allow-localstorage")]])])
 
 (mf/defc plugins-permissions-dialog
   {::mf/register modal/components
