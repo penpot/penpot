@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-03 14:04+0000\n"
-"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"PO-Revision-Date: 2025-06-09 09:13+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4243,7 +4243,7 @@ msgid "subscription.dashboard.power-up.enterprise.description"
 msgstr "אבטחה מתקדמת, יומני פעילות, תמיכה ייעודית ועוד."
 
 #: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.professional.bottom-description"
 msgstr ""
 "אפשר לקבל הרשאות לעורכים נוספים ואחסון, גיבוי קבצים ועוד עם ה**תוכנית הבלתי "
@@ -4259,7 +4259,7 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "הרשמה"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr "הניסיון מצליח עד כה? אפשר לקבל גישה מלאה לתמיד."
 
@@ -4277,9 +4277,10 @@ msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "תוכנית לא מוגבלת"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-description"
-msgstr "קבלת אבטחה מתקדמת, יומני פעילות, תמיכה ייעודית ועוד עם **התוכנית המסחרית**"
+msgstr ""
+"קבלת אבטחה מתקדמת, יומני פעילות, תמיכה ייעודית ועוד עם **התוכנית המסחרית**"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4360,6 +4361,7 @@ msgid "subscription.settings.section-plan"
 msgstr "המינוי שלך"
 
 #: src/app/main/ui/settings/subscription.cljs:278
+#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "בחרת לתמוך בנו מאז %s"
 
@@ -5384,6 +5386,7 @@ msgid "workspace.options.fill"
 msgstr "מילוי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:158
+#, fuzzy
 msgid "workspace.options.fill.add-fill"
 msgstr "הוספת צבע מילוי"
 
@@ -7225,6 +7228,7 @@ msgid "workspace.tokens.tools"
 msgstr "כלים"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:45
+#, fuzzy
 msgid "workspace.tokens.unknown-token-type"
 msgstr "אסימונים שנפסחו"
 
