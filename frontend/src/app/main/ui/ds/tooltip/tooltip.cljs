@@ -148,7 +148,7 @@
              (ts/dispose! schedule)
              (mf/set-ref-val! schedule-ref nil))
            (when-let [tooltip (dom/get-element id)]
-             (let [trigger-rect (->> (dom/get-current-target event)
+             (let [trigger-rect (->> (dom/get-target event)
                                      (dom/get-bounding-rect))]
                (mf/set-ref-val!
                 schedule-ref

@@ -49,28 +49,27 @@
 
 (mf/defc theme-options
   [{:keys [active-theme-paths themes on-close]}]
-  (let []
-    (let [on-edit-click #(modal/show! :tokens/themes {})]
-      [:ul {:class (stl/css :theme-options :custom-select-dropdown)
-            :role "listbox"}
-       (for [[group themes] themes]
-         [:li {:key group
-               :aria-labelledby (dm/str group "-label")
-               :role "group"}
-          (when (seq group)
-            [:> text* {:as "span" :typography "headline-small" :class (stl/css :group) :id (dm/str (str/kebab group) "-label") :title group} group])
-          [:& themes-list {:themes themes
-                           :active-theme-paths active-theme-paths
-                           :on-close on-close
-                           :grouped? true}]])
-       [:li {:class (stl/css :separator)
-             :aria-hidden true}]
-       [:li {:class (stl/css-case :checked-element true
-                                  :checked-element-button true)
-             :role "option"
-             :on-click on-edit-click}
-        [:> text* {:as "span" :typography "body-small"} (tr "workspace.tokens.edit-themes")]
-        [:> icon* {:icon-id i/arrow-right :aria-hidden true}]]])))
+  (let [on-edit-click #(modal/show! :tokens/themes {})]
+    [:ul {:class (stl/css :theme-options :custom-select-dropdown)
+          :role "listbox"}
+     (for [[group themes] themes]
+       [:li {:key group
+             :aria-labelledby (dm/str group "-label")
+             :role "group"}
+        (when (seq group)
+          [:> text* {:as "span" :typography "headline-small" :class (stl/css :group) :id (dm/str (str/kebab group) "-label") :title group} group])
+        [:& themes-list {:themes themes
+                         :active-theme-paths active-theme-paths
+                         :on-close on-close
+                         :grouped? true}]])
+     [:li {:class (stl/css :separator)
+           :aria-hidden true}]
+     [:li {:class (stl/css-case :checked-element true
+                                :checked-element-button true)
+           :role "option"
+           :on-click on-edit-click}
+      [:> text* {:as "span" :typography "body-small"} (tr "workspace.tokens.edit-themes")]
+      [:> icon* {:icon-id i/arrow-right :aria-hidden true}]]]))
 
 (mf/defc theme-select
   [{:keys []}]
