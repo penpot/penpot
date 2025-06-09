@@ -24,15 +24,19 @@ export class BasePage {
   }
 
   static async mockAsset(page, assetId, assetFilename, options) {
-    const url = `**/assets/by-file-media-id/${assetId}`;
+    const ids = Array.isArray(assetId) ? assetId : [assetId];
 
-    return page.route(url, (route) =>
-      route.fulfill({
-        path: `playwright/data/${assetFilename}`,
-        status: 200,
-        ...options,
-      }),
-    );
+    for (const id of ids) {
+      const url = `**/assets/by-file-media-id/${id}`;
+
+      await page.route(url, (route) =>
+        route.fulfill({
+          path: `playwright/data/${assetFilename}`,
+          status: 200,
+          ...options,
+        }),
+      );
+    }
   }
 
   static async mockConfigFlags(page, flags) {

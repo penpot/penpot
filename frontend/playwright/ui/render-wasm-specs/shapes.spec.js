@@ -31,11 +31,10 @@ test("Renders a file with solid, gradient and image fills", async ({
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockAsset(
-    "1ebcea38-f1bf-8101-8006-4c8fd68e7c84",
-    "render-wasm/assets/penguins.jpg",
-  );
-  await workspace.mockAsset(
-    "1ebcea38-f1bf-8101-8006-4c8f579da49c",
+    [
+      "1ebcea38-f1bf-8101-8006-4c8fd68e7c84",
+      "1ebcea38-f1bf-8101-8006-4c8f579da49c",
+    ],
     "render-wasm/assets/penguins.jpg",
   );
   await workspace.mockGetFile("render-wasm/get-file-shapes-fills.json");
@@ -53,15 +52,11 @@ test("Renders a file with strokes", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockAsset(
-    "202c1104-9385-81d3-8006-5074e4682cac",
-    "render-wasm/assets/penguins.jpg",
-  );
-  await workspace.mockAsset(
-    "202c1104-9385-81d3-8006-5074c50339b6",
-    "render-wasm/assets/penguins.jpg",
-  );
-  await workspace.mockAsset(
-    "202c1104-9385-81d3-8006-507560ce29e3",
+    [
+      "202c1104-9385-81d3-8006-5074e4682cac",
+      "202c1104-9385-81d3-8006-5074c50339b6",
+      "202c1104-9385-81d3-8006-507560ce29e3",
+    ],
     "render-wasm/assets/penguins.jpg",
   );
   await workspace.mockGetFile("render-wasm/get-file-shapes-strokes.json");
