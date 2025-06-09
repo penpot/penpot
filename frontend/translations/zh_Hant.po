@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-21 08:44+0000\n"
+"PO-Revision-Date: 2025-06-09 09:13+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Chinese (Traditional Han script) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hant/>\n"
+"Language-Team: Chinese (Traditional Han script) <https://hosted.weblate.org/"
+"projects/penpot/frontend/zh_Hant/>\n"
 "Language: zh_Hant\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4772,6 +4772,7 @@ msgid "workspace.options.fill"
 msgstr "填充"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:158
+#, fuzzy
 msgid "workspace.options.fill.add-fill"
 msgstr "新增填充顏色"
 
