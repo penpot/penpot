@@ -25,6 +25,15 @@
    {:command :curve-to :params {:c1x 368.0 :c1y 737.0 :c2x 310.0 :c2y 681.0 :x 264.0 :y 634.0}}
    {:command :close-path :params {}}])
 
+(def sample-content-square
+  [{:command :move-to, :params {:x 0, :y 0}}
+   {:command :line-to, :params {:x 10, :y 0}}
+   {:command :line-to, :params {:x 10, :y 10}}
+   {:command :line-to, :params {:x 10, :y 0}}
+   {:command :line-to, :params {:x 0, :y 10}}
+   {:command :line-to, :params {:x 0, :y 0}}
+   {:command :close-path :params {}}])
+
 (def sample-content-large
   [{:command :move-to :params {:x 480.0 :y 839.0}}
    {:command :line-to :params {:x 439.0 :y 802.0}}
@@ -179,6 +188,42 @@
     (t/is (= (vec result1) result2))
     (t/is (= result2 result3))))
 
+(t/deftest path-transform-3
+  (let [matrix  (gmt/rotate-matrix 42 (gpt/point 0 0))
+        content (path/content sample-content-square)
+
+        result1 (path/transform-content content matrix)
+        result2 (transform-plain-content sample-content-square matrix)
+        result3 (transform-plain-content content matrix)]
+
+    (t/is (= (count result1) (count result2)))
+    (doseq [[seg-a seg-b] (map vector result1 result2)]
+      (t/is (= (:command seg-a)
+               (:command seg-b)))
+
+      (let [params-a (get seg-a :params)
+            params-b (get seg-b :params)]
+
+        (t/is (mth/close? (get params-a :x 0)
+                          (get params-b :x 0)))
+        (t/is (mth/close? (get params-a :y 0)
+                          (get params-b :y 0)))))
+
+
+    (doseq [[seg-a seg-b] (map vector result1 result3)]
+      (t/is (= (:command seg-a)
+               (:command seg-b)))
+
+      (let [params-a (get seg-a :params)
+            params-b (get seg-b :params)]
+
+        (t/is (mth/close? (get params-a :x 0)
+                          (get params-b :x 0)))
+        (t/is (mth/close? (get params-a :y 0)
+                          (get params-b :y 0)))))))
+
+
+
 (defn- content->points
   "Given a content return all points.
 
@@ -277,15 +322,6 @@
     (t/is (= result1 expect))
     (t/is (= result2 expect))
     (t/is (= result3 expect))))
-
-(def sample-content-square
-  [{:command :move-to, :params {:x 0, :y 0}}
-   {:command :line-to, :params {:x 10, :y 0}}
-   {:command :line-to, :params {:x 10, :y 10}}
-   {:command :line-to, :params {:x 10, :y 0}}
-   {:command :line-to, :params {:x 0, :y 10}}
-   {:command :line-to, :params {:x 0, :y 0}}
-   {:command :close-path :params {}}])
 
 (t/deftest points-to-content
   (let [initial  [(gpt/point 0.0 0.0)

@@ -65,34 +65,34 @@
   (let [t (buf/read-short buffer offset)]
     (case t
       (1 2)
-      (let [x (buf/read-float buffer (+ offset 20))
-            y (buf/read-float buffer (+ offset 24))
-            x (+ (* x a) (* y c) e)
-            y (+ (* x b) (* y d) f)]
-        (buf/write-float buffer (+ offset 20) x)
-        (buf/write-float buffer (+ offset 24) y))
+      (let [x  (buf/read-float buffer (+ offset 20))
+            y  (buf/read-float buffer (+ offset 24))
+            x' (+ (* x a) (* y c) e)
+            y' (+ (* x b) (* y d) f)]
+        (buf/write-float buffer (+ offset 20) x')
+        (buf/write-float buffer (+ offset 24) y'))
 
       3
-      (let [c1x (buf/read-float buffer (+ offset 4))
-            c1y (buf/read-float buffer (+ offset 8))
-            c2x (buf/read-float buffer (+ offset 12))
-            c2y (buf/read-float buffer (+ offset 16))
-            x   (buf/read-float buffer (+ offset 20))
-            y   (buf/read-float buffer (+ offset 24))
+      (let [c1x  (buf/read-float buffer (+ offset 4))
+            c1y  (buf/read-float buffer (+ offset 8))
+            c2x  (buf/read-float buffer (+ offset 12))
+            c2y  (buf/read-float buffer (+ offset 16))
+            x    (buf/read-float buffer (+ offset 20))
+            y    (buf/read-float buffer (+ offset 24))
 
-            c1x (+ (* c1x a) (* c1y c) e)
-            c1y (+ (* c1x b) (* c1y d) f)
-            c2x (+ (* c2x a) (* c2y c) e)
-            c2y (+ (* c2x b) (* c2y d) f)
-            x   (+ (* x a) (* y c) e)
-            y   (+ (* x b) (* y d) f)]
+            c1x' (+ (* c1x a) (* c1y c) e)
+            c1y' (+ (* c1x b) (* c1y d) f)
+            c2x' (+ (* c2x a) (* c2y c) e)
+            c2y' (+ (* c2x b) (* c2y d) f)
+            x'   (+ (* x a) (* y c) e)
+            y'   (+ (* x b) (* y d) f)]
 
-        (buf/write-float buffer (+ offset 4) c1x)
-        (buf/write-float buffer (+ offset 8) c1y)
-        (buf/write-float buffer (+ offset 12) c2x)
-        (buf/write-float buffer (+ offset 16) c2y)
-        (buf/write-float buffer (+ offset 20) x)
-        (buf/write-float buffer (+ offset 24) y))
+        (buf/write-float buffer (+ offset 4) c1x')
+        (buf/write-float buffer (+ offset 8) c1y')
+        (buf/write-float buffer (+ offset 12) c2x')
+        (buf/write-float buffer (+ offset 16) c2y')
+        (buf/write-float buffer (+ offset 20) x')
+        (buf/write-float buffer (+ offset 24) y'))
 
       nil)))
 
