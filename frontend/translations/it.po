@@ -1069,10 +1069,6 @@ msgstr "Nessun limite alla creatività"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Gratis"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:977, src/app/main/ui/dashboard/subscription.cljs:54
-msgid "dashboard.upgrade-plan.power-up"
-msgstr "Migliora"
-
 #: src/app/main/ui/dashboard/team.cljs:924
 msgid "dashboard.webhooks.active"
 msgstr "È attivo"
@@ -7542,23 +7538,6 @@ msgstr "Unlimited (prova)"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:746
 msgid "workspace.options.component.variant"
 msgstr "Variante"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
-msgid "workspace.options.component.variant.malformed.locate"
-msgstr "Individua le varianti non valide"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
-msgid "workspace.options.component.variant.malformed.multi"
-msgstr "Alcune varianti hanno nomi non validi"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
-msgid "workspace.options.component.variant.malformed.single"
-msgstr ""
-"Questa variante ha un nome non valido. Prova ad usare la seguente struttura:"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:311
-msgid "workspace.options.component.variant.malformed.structure"
-msgstr "[proprietà]=[valore], [proprietà]=[valore]"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:488
 msgid "workspace.shape.menu.restore-variant"

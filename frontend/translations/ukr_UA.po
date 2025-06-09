@@ -1072,10 +1072,6 @@ msgstr "Без обмежень на креативність"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Безкоштовний"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:977, src/app/main/ui/dashboard/subscription.cljs:54
-msgid "dashboard.upgrade-plan.power-up"
-msgstr "Підсилити"
-
 #: src/app/main/ui/dashboard/team.cljs:924
 msgid "dashboard.webhooks.active"
 msgstr "Активний"
@@ -7621,22 +7617,6 @@ msgstr "Безліч команд з безліччю учасників"
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:174
 msgid "workspace.assets.components.num-variants"
 msgstr "%s Варіантів"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
-msgid "workspace.options.component.variant.malformed.locate"
-msgstr "Виявити помилкові варіанти"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
-msgid "workspace.options.component.variant.malformed.multi"
-msgstr "Деякі варіанти мають помилкове імʼя"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
-msgid "workspace.options.component.variant.malformed.single"
-msgstr "Цей варіант має помилкове імʼя. Спробуйте використати таку структуру:"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:311
-msgid "workspace.options.component.variant.malformed.structure"
-msgstr ""
 
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:160
 msgid "workspace.tokens.choose-file"

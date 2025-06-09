@@ -1041,10 +1041,6 @@ msgstr "ללא מגבלות על יצירתיות"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot חינמי"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:977, src/app/main/ui/dashboard/subscription.cljs:54
-msgid "dashboard.upgrade-plan.power-up"
-msgstr "חיזוק"
-
 #: src/app/main/ui/dashboard/team.cljs:924
 msgid "dashboard.webhooks.active"
 msgstr "פעילה"
@@ -7425,10 +7421,6 @@ msgstr "שחזור הגוון"
 msgid "subscription.settings.unlimited.storage"
 msgstr "25 ג״ב של אחסון ו־30 יום של גרסאות שמורות אוטומטית וגיבוי קבצים"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
-msgid "workspace.options.component.variant.malformed.multi"
-msgstr "לחלק מההגוונים יש שמות שגויים"
-
 #: src/app/main/ui/settings/subscription.cljs:70, src/app/main/ui/settings/subscription.cljs:111
 msgid "subscription.settings.unlimited"
 msgstr "ללא הגבלה"
@@ -7521,18 +7513,6 @@ msgstr "חשבון חודשי מוגבל"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:746
 msgid "workspace.options.component.variant"
 msgstr "הגוון"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
-msgid "workspace.options.component.variant.malformed.locate"
-msgstr "איתור הגוונים שגויים"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
-msgid "workspace.options.component.variant.malformed.single"
-msgstr "להגוון הזה יש שם שגוי. כדאי לנסות את המבנה הבא:"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:311
-msgid "workspace.options.component.variant.malformed.structure"
-msgstr "[מאפיין]=[ערך], [מאפיין]=[ערך]"
 
 #: src/app/main/ui/workspace/tokens/modals/settings.cljs:44
 msgid "workspace.tokens.base-font-size.error"

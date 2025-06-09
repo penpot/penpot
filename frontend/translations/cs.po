@@ -1021,10 +1021,6 @@ msgstr "Kreativitě se meze nekladou"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Free"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:977, src/app/main/ui/dashboard/subscription.cljs:54
-msgid "dashboard.upgrade-plan.power-up"
-msgstr "Power up"
-
 #: src/app/main/ui/dashboard/team.cljs:924
 msgid "dashboard.webhooks.active"
 msgstr "Je aktivní"

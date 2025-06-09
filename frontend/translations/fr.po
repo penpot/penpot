@@ -1080,10 +1080,6 @@ msgstr "Aucune limite à la créativité"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Gratuit"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:977, src/app/main/ui/dashboard/subscription.cljs:54
-msgid "dashboard.upgrade-plan.power-up"
-msgstr "Booster"
-
 #: src/app/main/ui/dashboard/team.cljs:924
 msgid "dashboard.webhooks.active"
 msgstr "Actif"
@@ -7551,15 +7547,6 @@ msgstr "éditeur par mois"
 msgid "subscription.settings.price-organization-month"
 msgstr "organisation par mois"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:311
-#, fuzzy
-msgid "workspace.options.component.variant.malformed.structure"
-msgstr "[property]=[value], [property]=[value]"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
-msgid "workspace.options.component.variant.malformed.multi"
-msgstr "Le nom de certaines variantes n'est pas valide"
-
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:131
 msgid "workspace.tokens.import-single-file"
 msgstr ""
@@ -7599,16 +7586,6 @@ msgstr "Équipes illimités, quelle que soit la taille de votre équipe"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:746
 msgid "workspace.options.component.variant"
 msgstr "Variante"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
-msgid "workspace.options.component.variant.malformed.locate"
-msgstr "Chercher des variantes non valides"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
-msgid "workspace.options.component.variant.malformed.single"
-msgstr ""
-"Le nom de cette variante n'est pas valide. Essayez d'utiliser la structure "
-"suivante  :"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:488
 msgid "workspace.shape.menu.restore-variant"

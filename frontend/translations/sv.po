@@ -1015,10 +1015,6 @@ msgstr "Inga gränser för kreativitet"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Gratis Penpot"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:977, src/app/main/ui/dashboard/subscription.cljs:54
-msgid "dashboard.upgrade-plan.power-up"
-msgstr "Starta upp"
-
 #: src/app/main/ui/dashboard/team.cljs:924
 msgid "dashboard.webhooks.active"
 msgstr "Är aktiv"

@@ -989,10 +989,6 @@ msgstr "Снять библиотеку с публикации"
 msgid "dashboard.update-settings"
 msgstr "Обновить настройки"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:977, src/app/main/ui/dashboard/subscription.cljs:54
-msgid "dashboard.upgrade-plan.power-up"
-msgstr "Расширить"
-
 #: src/app/main/ui/dashboard/team.cljs:924
 msgid "dashboard.webhooks.active"
 msgstr "Активен"

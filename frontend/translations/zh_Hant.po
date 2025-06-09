@@ -976,10 +976,6 @@ msgstr "無建立限制"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot 免費"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:977, src/app/main/ui/dashboard/subscription.cljs:54
-msgid "dashboard.upgrade-plan.power-up"
-msgstr "提升"
-
 #: src/app/main/ui/dashboard/team.cljs:924
 msgid "dashboard.webhooks.active"
 msgstr "正在生效"

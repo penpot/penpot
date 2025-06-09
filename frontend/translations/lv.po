@@ -1065,10 +1065,6 @@ msgstr "Nav ierobežojumu radošumam"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Bezmaksas Penpot"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:977, src/app/main/ui/dashboard/subscription.cljs:54
-msgid "dashboard.upgrade-plan.power-up"
-msgstr "Palielināt jaudu"
-
 #: src/app/main/ui/dashboard/team.cljs:924
 msgid "dashboard.webhooks.active"
 msgstr "Ir aktīvs"
@@ -7446,10 +7442,6 @@ msgstr "Informācija"
 msgid "workspace.options.component.unlinked"
 msgstr "Atsaistīta"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:311
-msgid "workspace.options.component.variant.malformed.structure"
-msgstr "[īpašība]=[vērtība], [īpašība]=[vērtība]"
-
 #: src/app/main/ui/workspace/context_menu.cljs:207
 msgid "workspace.shape.menu.copy-svg"
 msgstr "Ievietot starpliktuvē kā SVG"
@@ -7620,18 +7612,6 @@ msgstr "Atjaunot variantu"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:746
 msgid "workspace.options.component.variant"
 msgstr "Variants"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
-msgid "workspace.options.component.variant.malformed.locate"
-msgstr "Atrast nederīgos variantus"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
-msgid "workspace.options.component.variant.malformed.single"
-msgstr "Šim variantam ir nederīgs nosaukums. Jāmēģina izmantot šāda uzbūve:"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
-msgid "workspace.options.component.variant.malformed.multi"
-msgstr "Dažiem variantiem ir nederīgi nosaukumi"
 
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:131
 msgid "workspace.tokens.import-single-file"

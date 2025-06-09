@@ -1068,10 +1068,6 @@ msgstr "Onbeperkte creativiteit"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Free"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:977, src/app/main/ui/dashboard/subscription.cljs:54
-msgid "dashboard.upgrade-plan.power-up"
-msgstr "Power up"
-
 #: src/app/main/ui/dashboard/team.cljs:924
 msgid "dashboard.webhooks.active"
 msgstr "Is actief"
@@ -7325,10 +7321,6 @@ msgstr "Klik om het pad te sluiten"
 msgid "labels.no-invitations-gather-people"
 msgstr "Verzamel je mensen en bouw samen geweldige dingen."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
-msgid "workspace.options.component.variant.malformed.locate"
-msgstr "Ongeldige varianten opsporen"
-
 #: src/app/main/ui/workspace/context_menu.cljs:207
 msgid "workspace.shape.menu.copy-svg"
 msgstr "Kopiëren als SVG"
@@ -7539,20 +7531,6 @@ msgstr "Niet gekoppeld"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:746
 msgid "workspace.options.component.variant"
 msgstr "Variant"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
-msgid "workspace.options.component.variant.malformed.multi"
-msgstr "Sommige varianten hebben ongeldige namen"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
-msgid "workspace.options.component.variant.malformed.single"
-msgstr ""
-"Deze variant heeft een ongeldige naam. Probeer de volgende structuur te "
-"gebruiken:"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:311
-msgid "workspace.options.component.variant.malformed.structure"
-msgstr "[eigenschap]=[waarde], [eigenschap]=[waarde]"
 
 #: src/app/main/ui/workspace/tokens/modals/settings.cljs:90
 msgid "workspace.tokens.base-font-size"
