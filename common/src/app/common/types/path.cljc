@@ -104,11 +104,36 @@
     (impl/path-data
      (reduce apply-to-index (vec content) modifiers))))
 
+(defn- transform-content-legacy
+  [content transform]
+  (if (some? transform)
+    (let [set-tr
+          (fn [params px py]
+            (let [tr-point (-> (gpt/point (get params px) (get params py))
+                               (gpt/transform transform))]
+              (assoc params
+                     px (:x tr-point)
+                     py (:y tr-point))))
+
+          transform-params
+          (fn [{:keys [x c1x c2x] :as params}]
+            (cond-> params
+              (some? x)   (set-tr :x :y)
+              (some? c1x) (set-tr :c1x :c1y)
+              (some? c2x) (set-tr :c2x :c2y)))]
+
+      (into []
+            (map #(update % :params transform-params))
+            content))
+    content))
+
 (defn transform-content
   "Applies a transformation matrix over content and returns a new
   content as PathData instance."
   [content transform]
-  (segment/transform-content content transform))
+  #_(segment/transform-content content transform)
+  (some-> (transform-content-legacy (vec content) transform)
+          (impl/from-plain)))
 
 (defn move-content
   [content move-vec]
