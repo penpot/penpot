@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-06 13:03+0000\n"
-"Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2025-06-09 09:13+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4337,7 +4337,7 @@ msgid "subscription.dashboard.power-up.enterprise.description"
 msgstr "Sécurité avancée, journaux d'activité, assistance dédiée et plus encore."
 
 #: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.professional.bottom-description"
 msgstr ""
 "Éditeurs et stockage supplémentaires, sauvegarde des fichiers et bien plus "
@@ -4368,11 +4368,11 @@ msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Abonnement Illimité"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-description"
 msgstr ""
-"Sécurité avancée, journaux d'activité, assistance dédiée et bien plus "
-"encore more sont inclus dans le **forfait Entreprise**"
+"Sécurité avancée, journaux d'activité, assistance dédiée et bien plus encore "
+"more sont inclus dans le **forfait Entreprise**"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
 #, unused
@@ -4446,6 +4446,7 @@ msgid "subscription.settings.section-plan"
 msgstr "Votre abonnement"
 
 #: src/app/main/ui/settings/subscription.cljs:278
+#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Vous nous soutenez depuis %s"
 
@@ -5456,6 +5457,7 @@ msgid "workspace.options.fill"
 msgstr "Remplissage"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:158
+#, fuzzy
 msgid "workspace.options.fill.add-fill"
 msgstr "Ajouter une couleur de remplissage"
 
