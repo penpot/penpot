@@ -248,7 +248,7 @@
           heap (mem/get-heap-u8)
           dview (js/DataView. (.-buffer heap))]
 
-    ;; write fill data to heap
+      ;; write fill data to heap
       (loop [fills (seq fills)
              current-offset offset]
         (when-not (empty? fills)
@@ -256,10 +256,10 @@
                 new-offset (sr-fills/write-fill! current-offset dview fill)]
             (recur (rest fills) new-offset))))
 
-    ;; send fills to wasm
+      ;; send fills to wasm
       (h/call wasm/internal-module "_set_shape_fills")
 
-    ;; load images for image fills if not cached
+      ;; load images for image fills if not cached
       (keep (fn [fill]
               (let [image         (:fill-image fill)
                     id            (dm/get-prop image :id)
@@ -801,6 +801,28 @@
     (clear-drawing-cache)
     (request-render "set-objects")
     (process-pending pending)))
+
+(defn clear-focus-mode
+  []
+  (h/call wasm/internal-module "_clear_focus_mode")
+  (clear-drawing-cache)
+  (request-render "clear-focus-mode"))
+
+(defn set-focus-mode
+  [entries]
+  (let [offset (mem/alloc-bytes-32 (* (count entries) 16))
+        heapu32 (mem/get-heap-u32)]
+
+    (loop [entries (seq entries)
+           current-offset  offset]
+      (when-not (empty? entries)
+        (let [id (first entries)]
+          (sr/heapu32-set-uuid id heapu32 current-offset)
+          (recur (rest entries) (+ current-offset (mem/ptr8->ptr32 16))))))
+
+    (h/call wasm/internal-module "_set_focus_mode")
+    (clear-drawing-cache)
+    (request-render "set-focus-mode")))
 
 (defn set-structure-modifiers
   [entries]
