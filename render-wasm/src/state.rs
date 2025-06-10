@@ -120,7 +120,7 @@ impl<'a> State<'a> {
             &self.structure,
             &self.scale_content,
             timestamp,
-            full
+            full,
         )?;
         Ok(())
     }

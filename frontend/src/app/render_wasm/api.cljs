@@ -99,7 +99,7 @@
 ;; This should never be called from the outside.
 (defn- render
   ([timestamp]
-   (render timestamp true))
+   (render timestamp false))
 
   ([timestamp full]
    (h/call wasm/internal-module "_render" timestamp full)
