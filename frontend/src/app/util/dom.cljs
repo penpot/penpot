@@ -421,17 +421,16 @@
      :height (.-height ^js rect)}))
 
 (defn is-bounding-rect-outside?
-  [rect]
-  (let [{:keys [left top right bottom]} rect
-        {:keys [width height]} (get-window-size)]
-    (or (< left 0)
-        (< top 0)
-        (> right width)
-        (> bottom height))))
+  [{:keys [left top right bottom]} {:keys [width height]}]
+  (or (< left 0)
+      (< top 0)
+      (> right width)
+      (> bottom height)))
 
 (defn is-element-outside?
   [element]
-  (is-bounding-rect-outside? (get-bounding-rect element)))
+  (is-bounding-rect-outside? (get-bounding-rect element)
+                             (get-window-size)))
 
 (defn bounding-rect->rect
   [rect]
