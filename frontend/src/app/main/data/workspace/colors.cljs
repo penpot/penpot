@@ -778,7 +778,8 @@
   [{:keys [type current-color stops gradient opacity] :as state}]
   (cond
     (= type :color)
-    (clear-color-components current-color)
+    (-> (clear-color-components current-color)
+        (dissoc :offset))
 
     (= type :image)
     (clear-image-components current-color)
