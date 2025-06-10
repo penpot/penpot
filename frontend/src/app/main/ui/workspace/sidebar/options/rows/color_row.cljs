@@ -19,7 +19,7 @@
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.color-input :refer [color-input*]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
-   [app.main.ui.components.reorder-handler :refer [reorder-handler]]
+   [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
@@ -212,7 +212,7 @@
 
      ;; Drag handler
      (when (some? on-reorder)
-       [:& reorder-handler {:ref dref}])
+       [:> reorder-handler* {:ref dref}])
 
      [:div {:class (stl/css :color-info)}
       [:div {:class (stl/css-case :color-name-wrapper true
