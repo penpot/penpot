@@ -15,7 +15,7 @@
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu variant-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
@@ -117,9 +117,11 @@
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
 
-     [:& fill-menu {:ids ids
-                    :type shape-type
-                    :values (select-keys shape fill-attrs-shape)}]
+     [:> fill/fill-menu*
+      {:ids ids
+       :type shape-type
+       :values shape}]
+
      [:& stroke-menu {:ids ids
                       :type shape-type
                       :values stroke-values}]
