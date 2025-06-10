@@ -32,11 +32,14 @@
   (clamp (- val step) min-val max-val))
 
 (defn- parse-value
-  [raw-value last-value min-value max-value]
+  [raw-value last-value min-value max-value nillable]
   (let [new-value (-> raw-value
                       (str/strip-suffix ".")
                       (smt/expr-eval last-value))]
     (cond
+      (and nillable (nil? raw-value))
+      nil
+
       (d/num? new-value)
       (-> new-value
           (d/max (/ sm/min-safe-int 2))
@@ -54,17 +57,19 @@
 (mf/defc numeric-input*
   {::mf/forward-ref true
    ::mf/schema schema:numeric-input}
-  [{:keys [id class value default
-           min-value max-value max-length step
-           on-change on-blur on-focus select-on-focus?] :rest props} ref]
+  [{:keys [id class value default placeholder
+           min max max-length step
+           is-selected-on-focus nillable
+           on-change on-blur on-focus] :rest props} ref]
   (let [;; Borrar
         on-change (d/nilv on-change #(prn "on-change value" %))
 
-        select-on-focus? (d/nilv select-on-focus? true)
-        default      (d/nilv default 0)
-        step         (d/nilv step 1)
-        min-value    (d/nilv min-value sm/min-safe-int)
-        max-value    (d/nilv max-value sm/max-safe-int)
+        nillable     (d/nilv nillable false)
+        select-on-focus (d/nilv is-selected-on-focus true)
+        default      (d/parse-double default (when-not nillable 0))
+        step         (d/parse-double step 1)
+        min          (d/parse-double min sm/min-safe-int)
+        max          (d/parse-double max sm/max-safe-int)
         max-length   (d/nilv max-length max-input-length)
         is-multiple? (= :multiple value)
 
@@ -73,11 +78,20 @@
         ref         (or ref (mf/use-ref))
         dirty-ref   (mf/use-ref false)
 
-        value       (when (not= :multiple value) (d/parse-double value default))
+        value       (cond
+                      is-multiple? nil
+                      (and nillable (nil? value)) nil
+                      :else (d/parse-double value default))
 
         raw-value*  (mf/use-var
-                     (if is-multiple?
+                     (cond
+                       is-multiple?
                        ""
+
+                       (and nillable (nil? value))
+                       ""
+
+                       :else
                        (fmt/format-number (d/parse-double value default))))
 
         last-value* (mf/use-var (d/parse-double value default))
@@ -97,9 +111,9 @@
 
         apply-value
         (mf/use-fn
-         (mf/deps on-change update-input value)
+         (mf/deps on-change update-input value nillable)
          (fn [raw-value]
-           (if-let [parsed (parse-value raw-value @last-value* min-value max-value)]
+           (if-let [parsed (parse-value raw-value @last-value* min max nillable)]
              (do
                (reset! last-value* parsed)
                (when (fn? on-change)
@@ -108,11 +122,20 @@
                (update-input (fmt/format-number parsed)))
 
              ;; Cuando falla el parseo, usaremos el valor anterior o el valor por defecto
-             (let [fallback-value (or @last-value* default)]
-               (reset! raw-value* (fmt/format-number fallback-value))
-               (update-input (fmt/format-number fallback-value))
-               (when (and (fn? on-change) (not= fallback-value value))
-                 (on-change fallback-value))))))
+             (if (and nillable (empty? raw-value))
+               (do
+                 (reset! last-value* nil)
+                 (reset! raw-value* "")
+                 (update-input "")
+                 (when (fn? on-change)
+                   (on-change nil)))
+
+               ;; Si no es nillable, usamos el valor por defecto 
+               (let [fallback-value (or @last-value* default)]
+                 (reset! raw-value* (fmt/format-number fallback-value))
+                 (update-input (fmt/format-number fallback-value))
+                 (when (and (fn? on-change) (not= fallback-value value))
+                   (on-change fallback-value)))))))
 
         on-blur
         (mf/use-fn
@@ -133,7 +156,7 @@
                  enter? (kbd/enter? event)
                  esc?   (kbd/esc? event)
                  node   (mf/ref-val ref)
-                 parsed (parse-value @raw-value* @last-value* min-value max-value)
+                 parsed (parse-value @raw-value* @last-value* min max nillable)
                  current-value (or parsed default)]
 
              (cond
@@ -147,27 +170,27 @@
                  (dom/blur! node))
 
                up?
-               (let [new-val (increment current-value step min-value max-value)]
+               (let [new-val (increment current-value step min max)]
                  (update-input (fmt/format-number new-val))
                  (apply-value (dm/str new-val))
                  (.preventDefault event))
 
                down?
-               (let [new-val (decrement current-value step min-value max-value)]
+               (let [new-val (decrement current-value step min max)]
                  (update-input (fmt/format-number new-val))
                  (apply-value (dm/str new-val))
                  (.preventDefault event))))))
 
         handle-focus
         (mf/use-callback
-         (mf/deps on-focus select-on-focus?)
+         (mf/deps on-focus select-on-focus)
          (fn [event]
            (let [target (dom/get-target event)]
              (when (fn? on-focus)
                (mf/set-ref-val! dirty-ref true)
                (on-focus event))
 
-             (when select-on-focus?
+             (when select-on-focus
                (dom/select-text! target)
                ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
                (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))
@@ -176,7 +199,9 @@
         props (mf/spread-props props {:ref ref
                                       :type "text"
                                       :id id
-                                      :placeholder (when is-multiple? (tr "settings.multiple"))
+                                      :placeholder (if is-multiple?
+                                                     (tr "settings.multiple")
+                                                     placeholder)
                                       :default-value (fmt/format-number value)
                                       :on-blur on-blur
                                       :on-key-down handle-key-down

@@ -12,14 +12,35 @@ export default {
   title: "Controls/Numeric Input",
   component: Components.NumericInput,
   argTypes: {
-
+    placeholder: {
+      control: { type: "text" },
+    },
+    disabled: {
+      control: { type: "boolean" },
+    },
+    nillable: {
+      control: { type: "boolean" },
+    },
+    min: {
+      control: { type: "number" },
+    },
+    max: {
+      control: { type: "number" },
+    },
+    step: {
+      control: { type: "number" },
+    },
   },
   args: {
+    placeholder: "--",
+    disabled: false,
+    nillable: false,
   },
   parameters: {
     controls: { exclude: ["id"] },
   },
-  render: ({ ...args }) => <NumericInput  { ...args }/>,
+
+  render: ({ ...args }) => <NumericInput {...args} />,
 };
 
 export const Default = {};
