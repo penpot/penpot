@@ -19,9 +19,7 @@ use options::RenderOptions;
 use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
-use crate::shapes::{
-    modified_children_ids, Corners, Fill, Shape, StrokeKind, StructureEntry, Type,
-};
+use crate::shapes::{modified_children_ids, Corners, Fill, Shape, StructureEntry, Type};
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
@@ -225,6 +223,14 @@ impl RenderState {
         self.surfaces.reset(self.background_color);
     }
 
+    pub fn get_canvas_at(&mut self, surface_id: SurfaceId) -> &skia::Canvas {
+        self.surfaces.canvas(surface_id)
+    }
+
+    pub fn restore_canvas(&mut self, surface_id: SurfaceId) {
+        self.surfaces.canvas(surface_id).restore();
+    }
+
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect) {
         let tile_rect = self.get_current_aligned_tile_bounds();
         self.surfaces.cache_current_tile_texture(
@@ -405,7 +411,13 @@ impl RenderState {
                 let paragraphs = text_content.get_skia_paragraphs(self.fonts.font_collection());
 
                 shadows::render_text_drop_shadows(self, &shape, &paragraphs, antialias);
-                text::render(self, &shape, &paragraphs, None, None);
+                text::render(self, &shape, &paragraphs, None);
+
+                if shape.has_inner_strokes() {
+                    // Inner strokes paints need the text fill to apply correctly their blend modes
+                    // (e.g., SrcATop, DstOver)
+                    text::render(self, &shape, &paragraphs, Some(SurfaceId::Strokes));
+                }
 
                 for stroke in shape.strokes().rev() {
                     let stroke_paragraphs = text_content.get_skia_stroke_paragraphs(
@@ -414,21 +426,15 @@ impl RenderState {
                         self.fonts.font_collection(),
                     );
                     shadows::render_text_drop_shadows(self, &shape, &stroke_paragraphs, antialias);
-                    if stroke.kind == StrokeKind::Inner {
-                        // Inner strokes must be rendered on the Fills surface because their blend modes
-                        // (e.g., SrcATop, DstOver) rely on the text fill already being present underneath.
-                        // Rendering them on a separate surface would break this blending and result in incorrect visuals as
-                        // black color background.
-                        text::render(self, &shape, &stroke_paragraphs, None, None);
-                    } else {
-                        text::render(
-                            self,
-                            &shape,
-                            &stroke_paragraphs,
-                            Some(SurfaceId::Strokes),
-                            None,
-                        );
-                    }
+                    strokes::render(
+                        self,
+                        &shape,
+                        stroke,
+                        None,
+                        None,
+                        Some(&stroke_paragraphs),
+                        antialias,
+                    );
                     shadows::render_text_inner_shadows(self, &shape, &stroke_paragraphs, antialias);
                 }
 
@@ -458,7 +464,7 @@ impl RenderState {
 
                 for stroke in shape.strokes().rev() {
                     shadows::render_stroke_drop_shadows(self, &shape, stroke, antialias);
-                    strokes::render(self, &shape, stroke, None, None, antialias);
+                    strokes::render(self, &shape, stroke, None, None, None, antialias);
                     shadows::render_stroke_inner_shadows(self, &shape, stroke, antialias);
                 }
 
