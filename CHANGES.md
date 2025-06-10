@@ -12,6 +12,13 @@ The initial prototype is completly reworked for provide a more consistent API
 and to have proper validation and params decoding. All the details can be found
 on [its own changelog](library/CHANGES.md)
 
+**Penpot migrate from Redis to Valkey**
+
+As [Valkey](https://valkey.io/) is an opne-souce fork of [Redis](https://redis.io/)
+version 7.2.4, this version of Penpot will be compatible with Redis but may diverge 
+in future versions. Therefore, **migration from Redis to ValKey is recommended for all 
+on-premises instances** that want to keep up to date.
+
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features & Enhancements

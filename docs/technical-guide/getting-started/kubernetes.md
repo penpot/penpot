@@ -72,7 +72,7 @@ argument to helm install. For example,
 ```bash
 helm install my-release \
   --set global.postgresqlEnabled=true \
-  --set global.redisEnabled=true \
+  --set global.valkeyEnabled=true \
   --set persistence.assets.enabled=true \
   penpot/penpot
 ```
