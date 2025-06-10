@@ -995,6 +995,21 @@
   ;; TODO: perform corresponding cleaning
   (h/call wasm/internal-module "_clean_up"))
 
+(defn show-grid
+  [id]
+  (let [buffer (uuid/get-u32 id)]
+    (h/call wasm/internal-module "_show_grid"
+            (aget buffer 0)
+            (aget buffer 1)
+            (aget buffer 2)
+            (aget buffer 3)))
+  (request-render "show-grid"))
+
+(defn clear-grid
+  []
+  (h/call wasm/internal-module "_hide_grid")
+  (request-render "clear-grid"))
+
 (defonce module
   (delay
     (if (exists? js/dynamicImport)

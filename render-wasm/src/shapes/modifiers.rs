@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 mod common;
 mod constraints;
 mod flex_layout;
-mod grid_layout;
+pub mod grid_layout;
 
 use common::GetBounds;
 
