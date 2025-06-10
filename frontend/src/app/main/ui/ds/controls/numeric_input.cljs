@@ -18,6 +18,7 @@
    [app.util.keyboard :as kbd]
    [app.util.simple-math :as smt]
    [cuerdas.core :as str]
+   [goog.events :as events]
    [rumext.v2 :as mf]))
 
 (defn- clamp [val min-val max-val]
@@ -122,6 +123,7 @@
                (update-input (fmt/format-number parsed)))
 
              ;; Cuando falla el parseo, usaremos el valor anterior o el valor por defecto
+
              (if (and nillable (empty? raw-value))
                (do
                  (reset! last-value* nil)
@@ -164,6 +166,7 @@
                (do
                  (apply-value @raw-value*)
                  (dom/blur! node))
+
                esc?
                (do
                  (update-input (fmt/format-number @last-value*))
@@ -173,13 +176,13 @@
                (let [new-val (increment current-value step min max)]
                  (update-input (fmt/format-number new-val))
                  (apply-value (dm/str new-val))
-                 (.preventDefault event))
+                 (dom/prevent-default event))
 
                down?
                (let [new-val (decrement current-value step min max)]
                  (update-input (fmt/format-number new-val))
                  (apply-value (dm/str new-val))
-                 (.preventDefault event))))))
+                 (dom/prevent-default event))))))
 
         handle-focus
         (mf/use-callback
@@ -195,6 +198,23 @@
                ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
                (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))
 
+        handle-mouse-wheel
+        (mf/use-fn
+         (fn [event]
+           (when-let [node (mf/ref-val ref)]
+             (when (dom/active? node)
+               (let [inc? (->> (dom/get-delta-position event)
+                               :y
+                               (neg?))
+                     parsed (parse-value @raw-value* @last-value* min max nillable)
+                     current-value (or parsed default)
+                     new-val (if inc?
+                               (increment current-value step min max)
+                               (decrement current-value step min max))]
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (update-input (fmt/format-number new-val))
+                 (apply-value (dm/str new-val)))))))
 
         props (mf/spread-props props {:ref ref
                                       :type "text"
@@ -208,6 +228,10 @@
                                       :on-focus handle-focus
                                       :on-change store-raw-value
                                       :max-length max-length})]
+    (mf/with-layout-effect [handle-mouse-wheel]
+      (when-let [node (mf/ref-val ref)]
+        (let [key (events/listen node "wheel" handle-mouse-wheel #js {:passive false})]
+          #(events/unlistenByKey key))))
 
     [:div {:class (dm/str class " " (stl/css :input-wrapper))}
      [:> input-field* props]]))
