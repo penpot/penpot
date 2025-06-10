@@ -176,10 +176,10 @@
         (t/is (= (-> (. shape -exports) (aget 0) (aget "type")) "pdf"))
         (t/is (= (-> (. shape -exports) (aget 0) (aget "scale")) 2))
         (t/is (= (-> (. shape -exports) (aget 0) (aget "suffix")) "test"))
-        (t/is (= (get-in @store (get-shape-path :exports)) [{:type :pdf :scale 2 :suffix "test"}]))
+        (t/is (= (get-in @store (get-shape-path :exports)) [{:type :pdf :scale 2 :suffix "test" :skip-children false}]))
 
         (set! (.-exports shape) #js [#js {:type 10 :scale 2 :suffix "test"}])
-        (t/is (= (get-in @store (get-shape-path :exports)) [{:type :pdf :scale 2 :suffix "test"}])))
+        (t/is (= (get-in @store (get-shape-path :exports)) [{:type :pdf :scale 2 :suffix "test" :skip-children false}])))
 
       (t/testing " - flipX"
         (set! (.-flipX shape) true)

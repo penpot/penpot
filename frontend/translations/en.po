@@ -6670,6 +6670,9 @@ msgstr ""
 msgid "workspace.plugins.permissions.allow-download"
 msgstr "Start file downloads."
 
+msgid "workspace.plugins.permissions.allow-localstorage"
+msgstr "Store data in the browser."
+
 #: src/app/main/ui/workspace/plugins.cljs:271
 msgid "workspace.plugins.permissions.comment-read"
 msgstr "Read your comments and replies."
