@@ -320,6 +320,12 @@
         (wasm.api/initialize base-objects zoom vbox background)
         (reset! initialized? true)))
 
+    (mf/with-effect [focus]
+      (when (and @canvas-init? @initialized?)
+        (if (empty? focus)
+          (wasm.api/clear-focus-mode)
+          (wasm.api/set-focus-mode focus))))
+
     (mf/with-effect [vbox zoom]
       (when (and @canvas-init? initialized?)
         (wasm.api/set-view-box zoom vbox)))
