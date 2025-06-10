@@ -163,6 +163,33 @@ pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
 }
 
 #[no_mangle]
+pub extern "C" fn clear_focus_mode() {
+    with_state!(state, {
+        state.clear_focus_mode();
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn set_focus_mode() {
+    let bytes = mem::bytes();
+
+    let entries: Vec<Uuid> = bytes
+        .chunks(16)
+        .map(|bytes| {
+            uuid_from_u32_quartet(
+                u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+                u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
+                u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+                u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
+            )
+        })
+        .collect();
+    with_state!(state, {
+        state.set_focus_mode(entries);
+    });
+}
+
+#[no_mangle]
 pub extern "C" fn init_shapes_pool(capacity: usize) {
     with_state!(state, {
         state.init_shapes_pool(capacity);
