@@ -62,7 +62,7 @@ impl State {
             &self.structure,
             &self.scale_content,
             timestamp,
-            full
+            full,
         )?;
         Ok(())
     }

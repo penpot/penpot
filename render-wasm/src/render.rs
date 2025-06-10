@@ -693,14 +693,20 @@ impl RenderState {
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
-        timestamp: i32
+        timestamp: i32,
     ) -> Result<(), String> {
         performance::begin_measure!("process_animation_frame");
         if self.render_in_progress {
             if self.render_is_full {
                 self.render_shape_tree_full(tree, modifiers, structure, scale_content, timestamp)?;
             } else {
-                self.render_shape_tree_partial(tree, modifiers, structure, scale_content, timestamp)?;
+                self.render_shape_tree_partial(
+                    tree,
+                    modifiers,
+                    structure,
+                    scale_content,
+                    timestamp,
+                )?;
             }
             self.flush_and_submit();
 
@@ -895,7 +901,13 @@ impl RenderState {
         scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(bool, bool), String> {
-        let result = self.render_shape_tree_full_uncached(tree, modifiers, structure, scale_content, timestamp);
+        let result = self.render_shape_tree_full_uncached(
+            tree,
+            modifiers,
+            structure,
+            scale_content,
+            timestamp,
+        );
 
         let (is_empty, should_stop_rendering) = result?;
         if should_stop_rendering {
@@ -921,11 +933,12 @@ impl RenderState {
     ) -> Result<(bool, bool), String> {
         let mut iteration = 0;
         let mut is_empty = true;
-        let scale = self.get_scale();
-        let tile_hashmap = &self.tiles;
         println!("render_shape_tree_full_uncached::while::start");
         while let Some(node_render_state) = self.pending_nodes.pop() {
-            println!("render_shape_tree_full_uncached::while::pop {}", self.pending_nodes.len());
+            println!(
+                "render_shape_tree_full_uncached::while::pop {}",
+                self.pending_nodes.len()
+            );
             let NodeRenderState {
                 id: node_id,
                 visited_children,
@@ -940,19 +953,20 @@ impl RenderState {
                     .to_string(),
             )?;
 
-            let tiles = tile_hashmap.get_tiles_of(node_id);
             // If the shape is not in the tile set, then we update
             // it.
-            if tiles.is_none() {
+            if self.tiles.get_tiles_of(node_id).is_none() {
                 self.update_tile_for(element);
             }
 
+            let tiles = self.tiles.get_tiles_of(node_id).as_mut().unwrap();
             // We need to iterate over every tile of the element.
-            for tile in tiles.unwrap() {
-                println!("render_shape_tree_full_uncached::while::start {} {}", tile.0, tile.1);
-                self.current_tile = Some(*tile);
-                self.render_area = tiles::get_tile_rect(*tile, scale);
-
+            for tile in tiles.iter() {
+                println!(
+                    "render_shape_tree_full_uncached::for::start {} {}",
+                    tile.0, tile.1
+                );
+                self.update_render_context(*tile);
                 if visited_children {
                     if !visited_mask {
                         if let Type::Group(group) = element.shape_type {
@@ -994,7 +1008,7 @@ impl RenderState {
 
                     let is_visible = transformed_element.extrect().intersects(self.render_area)
                         && !transformed_element.hidden
-                        && !transformed_element.visually_insignificant(scale);
+                        && !transformed_element.visually_insignificant(self.get_scale_mut());
 
                     if self.options.is_debug_visible() {
                         debug::render_debug_shape(self, &transformed_element, is_visible);
@@ -1016,6 +1030,7 @@ impl RenderState {
                 } else {
                     self.apply_drawing_to_render_canvas(Some(element));
                 }
+                println!("render_shape_tree_full_uncached::for::end");
             }
 
             // Set the node as visited_children before processing children
