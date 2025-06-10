@@ -8,6 +8,7 @@ test.describe("Subscriptions: dashboard", () => {
     page,
   }) => {
     await DashboardPage.init(page);
+    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -45,6 +46,7 @@ test.describe("Subscriptions: dashboard", () => {
     page,
   }) => {
     await DashboardPage.init(page);
+    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -82,6 +84,7 @@ test.describe("Subscriptions: Team members and invitations", () => {
     page,
   }) => {
     await DashboardPage.init(page);
+    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -130,6 +133,7 @@ test.describe("Subscriptions: Team members and invitations", () => {
     page,
   }) => {
     await DashboardPage.init(page);
+    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -185,6 +189,7 @@ test.describe("Subscriptions: Team members and invitations", () => {
     page,
   }) => {
     await DashboardPage.init(page);
+    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -231,6 +236,7 @@ test.describe("Subscriptions: Team members and invitations", () => {
     page,
   }) => {
     await DashboardPage.init(page);
+    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -277,6 +283,7 @@ test.describe("Subscriptions: Team members and invitations", () => {
     page,
   }) => {
     await DashboardPage.init(page);
+    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -327,6 +334,7 @@ test.describe("Subscriptions: Team members and invitations", () => {
     page,
   }) => {
     await DashboardPage.init(page);
+    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -383,6 +391,7 @@ test.describe("Subscriptions: Team members and invitations", () => {
     page,
   }) => {
     await DashboardPage.init(page);
+    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -441,6 +450,7 @@ test.describe("Subscriptions: workspace", () => {
     page,
   }) => {
     await WorkspacePage.init(page);
+    await WorkspacePage.mockConfigFlags(page, ["enable-subscriptions"]);
 
     const workspacePage = new WorkspacePage(page);
     await workspacePage.setupEmptyFile();
@@ -465,6 +475,7 @@ test.describe("Subscriptions: workspace", () => {
     page,
   }) => {
     await WorkspacePage.init(page);
+    await WorkspacePage.mockConfigFlags(page, ["enable-subscriptions"]);
 
     const workspacePage = new WorkspacePage(page);
     await workspacePage.setupEmptyFile();
@@ -489,6 +500,8 @@ test.describe("Subscriptions: workspace", () => {
     page,
   }) => {
     await WorkspacePage.init(page);
+    await WorkspacePage.mockConfigFlags(page, ["enable-subscriptions"]);
+
     const workspacePage = new WorkspacePage(page);
     await workspacePage.setupEmptyFile();
 
@@ -514,6 +527,8 @@ test.describe("Subscriptions: workspace", () => {
     page,
   }) => {
     await WorkspacePage.init(page);
+    await WorkspacePage.mockConfigFlags(page, ["enable-subscriptions"]);
+
     const workspacePage = new WorkspacePage(page);
     await workspacePage.setupEmptyFile();
 
@@ -551,6 +566,8 @@ test.describe("Subscriptions: workspace", () => {
     page,
   }) => {
     await WorkspacePage.init(page);
+    await WorkspacePage.mockConfigFlags(page, ["enable-subscriptions"]);
+
     const workspacePage = new WorkspacePage(page);
     await workspacePage.setupEmptyFile();
 
@@ -590,6 +607,8 @@ test.describe("Subscriptions: profile", () => {
     page,
   }) => {
     await SubscriptionProfilePage.init(page);
+    await SubscriptionProfilePage.mockConfigFlags(page, ["enable-subscriptions"]);
+
     await SubscriptionProfilePage.mockRPC(
       page,
       "get-profile",
@@ -621,6 +640,8 @@ test.describe("Subscriptions: profile", () => {
     page,
   }) => {
     await SubscriptionProfilePage.init(page);
+    await SubscriptionProfilePage.mockConfigFlags(page, ["enable-subscriptions"]);
+
     await SubscriptionProfilePage.mockRPC(
       page,
       "get-profile",
@@ -656,6 +677,8 @@ test.describe("Subscriptions: profile", () => {
     page,
   }) => {
     await SubscriptionProfilePage.init(page);
+    await SubscriptionProfilePage.mockConfigFlags(page, ["enable-subscriptions"]);
+
     await SubscriptionProfilePage.mockRPC(
       page,
       "get-profile",
