@@ -698,8 +698,10 @@
                        false)
         rotation     (dm/get-prop shape :rotation)
         transform    (dm/get-prop shape :transform)
-        fills        (if (= type :group)
-                       [] (dm/get-prop shape :fills))
+
+        ;; Groups from imported SVG's can have their own fills
+        fills        (dm/get-prop shape :fills)
+
         strokes      (if (= type :group)
                        [] (dm/get-prop shape :strokes))
         children     (dm/get-prop shape :shapes)

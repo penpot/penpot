@@ -608,7 +608,7 @@ impl Shape {
 
     pub fn visually_insignificant(&self, scale: f32) -> bool {
         let extrect = self.extrect();
-        extrect.width() * scale < MIN_VISIBLE_SIZE || extrect.height() * scale < MIN_VISIBLE_SIZE
+        extrect.width() * scale < MIN_VISIBLE_SIZE && extrect.height() * scale < MIN_VISIBLE_SIZE
     }
 
     pub fn should_use_antialias(&self, scale: f32) -> bool {
