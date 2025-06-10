@@ -8,6 +8,7 @@
   (:require
    ["ua-parser-js" :as ua]
    [app.common.data :as d]
+   [app.common.files.helpers :as cfh]
    [app.common.json :as json]
    [app.common.logging :as l]
    [app.config :as cf]
@@ -242,3 +243,39 @@
                            (l/error :hint "error on event batching stream" :cause cause))
                          (fn []
                            (l/debug :hitn "events batching stream terminated")))))))))
+
+;; ---- HELPERS
+
+(defn get-parent-type
+  "Returns the type of the parent of the shape, or Empty if parent is Root Frame"
+  [objects shape]
+  (let [parent (get objects (:parent-id shape))]
+    (if (cfh/root? parent)
+      "Empty"
+      (:type parent))))
+
+(defn frame-has-layout
+  "Returns true if the provided frame has a layout."
+  [objects parent-id]
+  (let [parent (get objects parent-id)]
+    (boolean (and parent (:layout parent)))))
+
+(defn get-shape-event-name
+  "Returns the event name corresponding to a shape type, or nil if no match."
+  [shape]
+  (cond
+    (cfh/frame-shape? shape)    "create-board"
+    (cfh/image-shape? shape)    "create-image"
+    (cfh/path-shape? shape)     "create-path"
+    (cfh/circle-shape? shape)   "create-circle"
+    (cfh/rect-shape? shape)     "create-rectangle"
+    (cfh/text-shape? shape)     "create-text"
+    :else                        nil))
+
+(defn get-selected-type
+  "Returns the type of the shape if only one, or multiple if more than one"
+  [objects selected]
+  (if (= 1 (count selected))
+    (let [shape (get objects (first selected))]
+      (:type shape))
+    "multiple"))

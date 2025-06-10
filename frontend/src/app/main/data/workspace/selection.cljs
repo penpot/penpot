@@ -485,17 +485,17 @@
                             (ptk/event ::ev/event
                                        {::ev/name "use-library-component"
                                         ::ev/origin "duplicate"
-                                        :parent-type (cfh/get-parent-type objects shape)
+                                        :parent-type (ev/get-parent-type objects shape)
                                         :external-library (not= file-id (:component-file shape))})
-                            (when (cfh/get-shape-event-name shape)
-                              (if (cfh/get-parent-layout objects shape)
+                            (when-let [event-name (ev/get-shape-event-name shape)]
+                              (if (ev/frame-has-layout objects (:parent-id shape))
                                 (ptk/event ::ev/event
                                            {::ev/name "layout-add-element"
                                             :element-type (:type shape)
                                             :source "duplicate"})
                                 (ptk/event ::ev/event
-                                           {::ev/name (cfh/get-shape-event-name shape)
-                                            :parent-type (cfh/get-parent-type objects shape)
+                                           {::ev/name event-name
+                                            :parent-type (ev/get-parent-type objects shape)
                                             :source "duplicate"}))))))
                   (rx/from))
             ;; Warning: This order is important for the focus mode.

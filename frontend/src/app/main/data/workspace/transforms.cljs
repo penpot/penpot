@@ -1087,13 +1087,13 @@
         (rx/concat
          (let [shapes  (mapv #(get objects %) ids)
                moved-count (count (filter #(not= (:parent-id %) frame-id) shapes))
-               emit-layout-event? (and (cfh/get-parent-layout objects {:parent-id frame-id})
+               emit-layout-event? (and (ev/frame-has-layout objects frame-id)
                                        (pos? moved-count))]
            (when emit-layout-event?
              (rx/of (ptk/event ::ev/event
                                {::ev/name "layout-add-element"
                                 :source "move-shapes-to-frame"
-                                :element-type (cfh/get-selected-type objects ids)
+                                :element-type (ev/get-selected-type objects ids)
                                 :moved moved-count}))))
 
          (when (and (some? frame-id) (d/not-empty? changes))
