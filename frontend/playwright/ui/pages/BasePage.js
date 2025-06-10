@@ -23,6 +23,33 @@ export class BasePage {
     );
   }
 
+  static async mockAsset(page, assetId, assetFilename, options) {
+    const ids = Array.isArray(assetId) ? assetId : [assetId];
+
+    for (const id of ids) {
+      const url = `**/assets/by-file-media-id/${id}`;
+
+      await page.route(url, (route) =>
+        route.fulfill({
+          path: `playwright/data/${assetFilename}`,
+          status: 200,
+          ...options,
+        }),
+      );
+    }
+  }
+
+  static async mockConfigFlags(page, flags) {
+    const url = "**/js/config.js?ts=*";
+    return await page.route(url, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/javascript",
+        body: `var penpotFlags = "${flags.join(" ")}";`,
+      }),
+    );
+  }
+
   #page = null;
 
   constructor(page) {
@@ -38,14 +65,11 @@ export class BasePage {
   }
 
   async mockConfigFlags(flags) {
-    const url = "**/js/config.js?ts=*";
-    return await this.page.route(url, (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/javascript",
-        body: `var penpotFlags = "${flags.join(" ")}";`,
-      }),
-    );
+    return BasePage.mockConfigFlags(this.page, flags);
+  }
+
+  async mockAsset(assetId, assetFilename, options) {
+    return BasePage.mockAsset(this.page, assetId, assetFilename, options);
   }
 }
 

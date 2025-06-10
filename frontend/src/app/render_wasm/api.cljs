@@ -766,13 +766,17 @@
 
 (defn process-pending
   [pending]
-  (when-let [pending (-> (d/index-by :key :callback pending) vals)]
-    (->> (rx/from pending)
-         (rx/mapcat (fn [callback] (callback)))
-         (rx/reduce conj [])
-         (rx/subs! (fn [_]
-                     (clear-drawing-cache)
-                     (request-render "set-objects"))))))
+  (let [event (js/CustomEvent. "wasm:set-objects-finished")
+        pending (-> (d/index-by :key :callback pending) vals)]
+    (if (not-empty? pending)
+      (->> (rx/from pending)
+           (rx/mapcat (fn [callback] (callback)))
+           (rx/reduce conj [])
+           (rx/subs! (fn [_]
+                       (clear-drawing-cache)
+                       (request-render "set-objects")
+                       (.dispatchEvent ^js js/document event))))
+      (.dispatchEvent ^js js/document event))))
 
 (defn process-object
   [shape]
