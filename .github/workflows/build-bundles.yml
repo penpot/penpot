@@ -1,0 +1,201 @@
+name: Build and Upload Penpot Bundles non-prod
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - staging
+    types:
+      - closed
+  workflow_dispatch:
+    inputs:
+      zip_mode:
+        # zip_mode defines how the build artifacts are packaged:
+        # - 'individual': creates one ZIP file per component (frontend, backend, exporter)
+        # - 'all': creates a single ZIP containing all components
+        description: 'Bundle packaging mode'
+        required: false
+        default: 'individual'
+        type: choice
+        options:
+          - individual
+          - all
+
+jobs:
+  build-bundles:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    name: Build and Upload Penpot Bundles
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Read zip mode input or fallback to 'individual'
+      - name: Determine ZIP_MODE
+        run: echo "ZIP_MODE=${{ github.event.inputs.zip_mode || 'individual' }}" >> $GITHUB_ENV
+
+      - name: Extract short commit hash
+        id: vars
+        run: echo "commit_hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Determine S3 prefix based on branch
+        id: prefix
+        run: |
+          BRANCH="${{ github.base_ref || github.ref_name }}"
+          echo "prefix=$BRANCH" >> $GITHUB_OUTPUT
+
+      # Set up Docker Buildx for multi-arch build
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build Penpot CI Builder Image
+      - name: Build Penpot CI Builder Image
+        run: |
+          docker build \
+            --build-arg EXTERNAL_UID=1000 \
+            --build-arg EXTERNAL_GID=1000 \
+            -t penpotapp/penpot-ci-builder:latest \
+            -f docker/devenv/Dockerfile \
+            docker/devenv
+
+      # Run manage.sh build-bundle from host
+      - name: Run manage.sh build-bundle from host
+        run: ./manage.sh build-bundle
+
+      # Zip the bundles
+      - name: Create zip bundles
+        run: |
+          echo "📦 Packaging Penpot bundles..."
+          mkdir -p zips temp
+          if [[ "$ZIP_MODE" == "all" ]]; then
+            mkdir -p temp/penpot-all/{penpot-frontend,penpot-backend,penpot-exporter}
+            cp -r bundles/frontend/* temp/penpot-all/penpot-frontend/
+            cp -r bundles/backend/* temp/penpot-all/penpot-backend/
+            cp -r bundles/exporter/* temp/penpot-all/penpot-exporter/
+            cd temp
+            zip -r ../zips/penpot-all-bundles.zip penpot-all
+          else
+            for component in frontend backend exporter; do
+              name="penpot-${component}"
+              mkdir -p temp/${name}
+              cp -r bundles/${component}/* temp/${name}/
+            done
+            cd temp
+            for name in penpot-frontend penpot-backend penpot-exporter; do
+              zip -r ../zips/${name}.zip ${name}
+            done
+          fi
+
+      # Upload unified bundle
+      - name: Upload unified bundle
+        if: ${{ env.ZIP_MODE == 'all' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: penpot-all-bundles
+          path: zips/penpot-all-bundles.zip
+
+      # Upload frontend bundle
+      - name: Upload frontend bundle
+        if: ${{ env.ZIP_MODE == 'individual' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: penpot-frontend
+          path: zips/penpot-frontend.zip
+
+      # Upload backend bundle
+      - name: Upload backend bundle
+        if: ${{ env.ZIP_MODE == 'individual' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: penpot-backend
+          path: zips/penpot-backend.zip
+
+      # Upload exporter bundle
+      - name: Upload exporter bundle
+        if: ${{ env.ZIP_MODE == 'individual' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: penpot-exporter
+          path: zips/penpot-exporter.zip
+
+      # Upload the bundles to S3
+      - name: Upload bundles to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          PREFIX=${{ steps.prefix.outputs.prefix }}
+          if [[ "$ZIP_MODE" == "all" ]]; then
+            FILE=penpot-all-bundles.zip
+            HASHED=penpot-all-bundles-${{ steps.vars.outputs.commit_hash }}.zip
+            cp zips/$FILE zips/$HASHED
+            aws s3 cp zips/$HASHED s3://${{ secrets.S3_BUCKET }}/$PREFIX/$HASHED
+            aws s3 cp zips/$FILE s3://${{ secrets.S3_BUCKET }}/$PREFIX/penpot-all-bundles-latest.zip
+          else
+            for name in penpot-frontend penpot-backend penpot-exporter; do
+              HASHED=${name}-${{ steps.vars.outputs.commit_hash }}.zip
+              LATEST=${name}-latest.zip
+              cp zips/${name}.zip zips/$HASHED
+              aws s3 cp zips/$HASHED s3://${{ secrets.S3_BUCKET }}/$PREFIX/$HASHED
+              aws s3 cp zips/${name}.zip s3://${{ secrets.S3_BUCKET }}/$PREFIX/$LATEST
+            done
+          fi
+
+      # Generate presigned S3 URLs
+      - name: Generate presigned URLs
+        id: presign
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          PREFIX=${{ steps.prefix.outputs.prefix }}
+          echo "" > urls.txt
+          echo "📥 Download links valid for 24h:" >> urls.txt
+          if [[ "$ZIP_MODE" == "all" ]]; then
+            FILE=penpot-all-bundles-${{ steps.vars.outputs.commit_hash }}.zip
+            LINK=$(aws s3 presign s3://${{ secrets.S3_BUCKET }}/$PREFIX/$FILE --expires-in 86400)
+            printf -- "- [%s](%s)\n" "$FILE" "$LINK" >> urls.txt
+          else
+            for name in penpot-frontend penpot-backend penpot-exporter; do
+              FILE=$name-${{ steps.vars.outputs.commit_hash }}.zip
+              LINK=$(aws s3 presign s3://${{ secrets.S3_BUCKET }}/$PREFIX/$FILE --expires-in 86400)
+              printf -- "- [%s](%s)\n" "$FILE" "$LINK" >> urls.txt
+            done
+          fi
+
+      # Notify Mattermost with bundle info and presigned URLs
+      - name: Notify Mattermost
+        run: |
+          LINKS=$(cat urls.txt)
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            TITLE="${{ github.event.pull_request.title }}"
+            FROM="${{ github.head_ref }}"
+            TO="${{ github.base_ref }}"
+            TEXT=$(cat <<EOF
+          📦 *Penpot bundle generated*
+          📄 PR: $TITLE
+          🔁 From: \`$FROM\` to \`$TO\`
+          $LINKS
+          EOF
+          )
+                    else
+                      BRANCH="${{ github.ref_name }}"
+                      TEXT=$(cat <<EOF
+          📦 *Penpot bundle generated manually*
+          📄 Triggered from branch: \`$BRANCH\`
+          $LINKS
+          EOF
+          )
+                    fi
+                    jq -n --arg text "$TEXT" '{text: $text}' | curl -X POST -H 'Content-Type: application/json' -d @- ${{ secrets.MATTERMOST_WEBHOOK }}
+
+      # Print artifact summary in logs
+      - name: Print artifact summary URL
+        run: |
+          echo "📦 Artifacts available at:"
+          echo "🔗 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
