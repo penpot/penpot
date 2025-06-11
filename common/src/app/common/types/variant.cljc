@@ -139,7 +139,6 @@
                      (< (count (first %)) property-max-length)
                      (< (count (second %)) property-max-length)))))
 
-
 (defn find-properties-to-remove
   "Compares two property maps to find which properties should be removed"
   [prev-props upd-props]
@@ -159,6 +158,35 @@
   [prev-props upd-props]
   (let [prev-names (set (map :name prev-props))]
     (filterv #(not (contains? prev-names (:name %))) upd-props)))
+
+
+(defn add-number-to-repeated-prop-names
+  "Adds an incremental number to each repeated property name"
+  [props]
+  (->> (map-indexed vector props)
+       (mapv (fn [[idx prop]]
+               (->> (mapv :name props)
+                    (take idx)
+                    (filter #(= % (:name prop)))
+                    (count)
+                    (assoc prop :num))))
+       (mapv (fn [prop]
+               (let [num       (:num prop)
+                     name-base (:name prop)
+                     name      (if (= num 0) name-base (str name-base " (" num ")"))]
+                 (assoc (dissoc prop :num) :name name))))))
+
+
+(defn add-number-to-repeated-item
+  "Adds a number to an item if it already exists in a list"
+  ([prop-names name-base]
+   (add-number-to-repeated-item prop-names name-base 0))
+
+  ([prop-names name-base num]
+   (let [name (if (= num 0) name-base (str name-base " (" num ")"))]
+     (if (some #(= name %) prop-names)
+       (add-number-to-repeated-item prop-names name-base (inc num))
+       name))))
 
 
 (defn find-index-for-property-name

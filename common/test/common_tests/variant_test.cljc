@@ -131,3 +131,26 @@
       (t/is (= (ctv/same-variant? components-2) false))
       (t/is (= (ctv/same-variant? components-3) false))
       (t/is (= (ctv/same-variant? components-4) false)))))
+
+
+(t/deftest add-number-to-repeated-item
+  (let [names ["border" "color" "color (1)" "size"]]
+
+    (t/testing "add-number-to-repeated-item"
+      (t/is (= (ctv/add-number-to-repeated-item names "background") "background"))
+      (t/is (= (ctv/add-number-to-repeated-item names "border")     "border (1)"))
+      (t/is (= (ctv/add-number-to-repeated-item names "color")      "color (2)")))))
+
+
+(t/deftest add-number-to-repeated-prop-names
+  (let [props          [{:name "color"     :value "yellow"}
+                        {:name "color"     :value "blue"}
+                        {:name "color"     :value "red"}
+                        {:name "border"    :value "yes"}]
+        numbered-props [{:name "color"     :value "yellow"}
+                        {:name "color (1)" :value "blue"}
+                        {:name "color (2)" :value "red"}
+                        {:name "border"    :value "yes"}]]
+
+    (t/testing "add-number-to-repeated-prop-names"
+      (t/is (= (ctv/add-number-to-repeated-prop-names props) numbered-props)))))
