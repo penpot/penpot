@@ -368,7 +368,8 @@
                                     (update pos assoc :value val))
                    valid-comps  (->> variant-components
                                      (remove #(= (:id %) component-id))
-                                     (filter #(= (dm/get-in % [:variant-properties pos :value]) val)))
+                                     (filter #(= (dm/get-in % [:variant-properties pos :value]) val))
+                                     (reverse))
                    nearest-comp (apply min-key #(ctv/distance target-props (:variant-properties %)) valid-comps)]
                (when nearest-comp
                  (st/emit! (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true)))))))]
