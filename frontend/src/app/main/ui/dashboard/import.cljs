@@ -467,6 +467,7 @@
        (when (and (= :analyze status) errors?)
          [:& context-notification
           {:level :warning
+           :class (stl/css :context-notification-error)
            :content (tr "dashboard.import.import-warning")}])
 
        (when (= :import-success status)
@@ -480,12 +481,12 @@
            :class (stl/css :context-notification-error)
            :content (tr "dashboard.import.import-error.disclaimer")}])
 
-       (if (= :import-error status)
+       (if (or (= :import-error status) (and (= :analyze status) errors?))
          [:div {:class (stl/css :import-error-disclaimer)}
           [:div (tr "dashboard.import.import-error.message1")]
           [:ul {:class (stl/css :import-error-list)}
            (for [entry entries]
-             (when (= :import-error (:status entry))
+             (when (contains? #{:import-error :analyze-error} (:status entry))
                [:li {:class (stl/css :import-error-list-enry)} (:name entry)]))]
           [:div (tr "dashboard.import.import-error.message2")]]
 
