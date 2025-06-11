@@ -27,6 +27,10 @@
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
+(defn px-unit-value [value]
+  #js {:value value
+       :unit "px"})
+
 (def calc-config
   (let [rem-px-base-size 16
         rem->px #(* % rem-px-base-size)
