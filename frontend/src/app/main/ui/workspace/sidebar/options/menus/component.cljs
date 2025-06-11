@@ -237,6 +237,7 @@
           [:div {:class (stl/css  :counter)} (str size "/300")])]])))
 
 
+;; FIXME: translation strings ...
 (defn- get-variant-error-message
   "Generate error message depending on the selected variants"
   [errors]
@@ -252,16 +253,17 @@
 
     :else nil))
 
-
 (defn- get-variant-options
   "Get variant options for a given property name"
   [prop-name prop-vals]
-  (->> (filter #(= (:name %) prop-name) prop-vals)
+  (->> (d/seek #(= (:name %) prop-name) prop-vals)
        first
        :value
-       (map (fn [val] {:id val
-                       :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
-
+       (map (fn [val]
+              {:id val
+               :label (if (str/blank? val)
+                        (str "(" (tr "labels.empty") ")")
+                        val)}))))
 
 (mf/defc component-variant-main-instance*
   [{:keys [components shapes data]}]

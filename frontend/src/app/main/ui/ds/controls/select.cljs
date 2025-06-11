@@ -10,7 +10,7 @@
    [app.main.style :as stl])
   (:require
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list] :as i]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -19,21 +19,6 @@
    [rumext.v2 :as mf]))
 
 (def listbox-id-index (atom 0))
-
-(def ^:private schema:select-option
-  [:and
-   [:map {:title "option"}
-    [:id :string]
-    [:icon {:optional true}
-     [:and :string [:fn #(contains? icon-list %)]]]
-    [:label {:optional true} :string]
-    [:aria-label {:optional true} :string]]
-   [:fn {:error/message "invalid data: missing required props"}
-    (fn [option]
-      (or (and (contains? option :icon)
-               (or (contains? option :label)
-                   (contains? option :aria-label)))
-          (contains? option :label)))]])
 
 (defn- get-option
   [options id]
@@ -197,16 +182,16 @@
       [:span {:class (stl/css-case :select-header true
                                    :header-icon (some? icon))}
        (when icon
-         [:> icon* {:icon-id icon
-                    :size "s"
-                    :aria-hidden true}])
+         [:> i/icon* {:icon-id icon
+                      :size "s"
+                      :aria-hidden true}])
        [:span {:class (stl/css-case :header-label true
                                     :header-label-dimmed empty-selected-value?)}
         (if empty-selected-value? "--" label)]]
-      [:> icon* {:icon-id i/arrow
-                 :class (stl/css :arrow)
-                 :size "m"
-                 :aria-hidden true}]]
+      [:> i/icon* {:icon-id i/arrow
+                   :class (stl/css :arrow)
+                   :size "m"
+                   :aria-hidden true}]]
 
      (when is-open
        [:> options-dropdown* {:on-click on-option-click
