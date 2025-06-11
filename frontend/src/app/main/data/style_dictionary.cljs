@@ -12,9 +12,11 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.warnings :as wtw]
+   [app.util.array :as array]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -25,6 +27,24 @@
 
 ;; === Style Dictionary
 
+(defn check-and-evaluate-math [^js token ^js platform-config]
+  (.-value token))
+
+(def wrapped-math-transform
+  "A wrapper around `sd-transforms/checkAndEvaluateMath` with custom rules for which math expressions to allow:
+  - Allows rem/px addition & subtraction by converting rems to px
+  - Disallows multiplication or division for different units (e.g.: 1px * 1rem)"
+  {:type "value"
+   :transitive true
+   :name "penpot/math-transform"
+   :transform check-and-evaluate-math})
+
+(def penpot-transform-group
+  {:name "penpot"
+   :transforms (array/concat [(:name wrapped-math-transform)]
+                             (->> (sd-transforms/getTransforms #js {:platform "none"})
+                                  (array/filter #(not= % "ts/resolveMath"))))})
+
 (def setup-style-dictionary
   "Initiates the StyleDictionary instance.
   Setup transforms from tokens-studio used to parse and resolved token values."
@@ -33,19 +53,26 @@
     (.registerFormat sd #js {:name "custom/json"
                              :format (fn [^js res]
                                        (.-tokens (.-dictionary res)))})
+    (.registerTransformGroup sd (clj->js penpot-transform-group))
     sd))
 
 (def default-config
-  {:platforms {:json
-               {:transformGroup "tokens-studio"
-                ;; Required: The StyleDictionary API is focused on files even when working in the browser
-                :files [{:format "custom/json" :destination "penpot"}]}}
-   :preprocessors ["tokens-studio"]
-   ;; Silences style dictionary logs and errors
-   ;; We handle token errors in the UI
-   :log {:verbosity "silent"
-         :warnings "silent"
-         :errors {:brokenReferences "console"}}})
+  (cond-> {:platforms {:json
+                       {:transformGroup "tokens-studio"
+                        ;; Required: The StyleDictionary API is focused on files even when working in the browser
+                        :files [{:format "custom/json" :destination "penpot"}]}}
+           :preprocessors ["tokens-studio"]
+           ;; Silences style dictionary logs and errors
+           ;; We handle token errors in the UI
+           :log {:verbosity "silent"
+                 :warnings "silent"
+                 :errors {:brokenReferences "console"}}}
+    (contains? cf/flags :token-units)
+    (assoc-in [:platforms :json :transformGroup] (:name penpot-transform-group))))
+
+(def form-config
+  (-> default-config
+      (assoc-in [:platforms :json :options :has-error-on-unitless-dimension] true)))
 
 (defn- parse-sd-token-color-value
   "Parses `value` of a color `sd-token` into a map like `{:value 1 :unit \"px\"}`.
@@ -70,7 +97,9 @@
   [value]
   (let [number? (or (number? value)
                     (numeric-string? value))
-        parsed-value  (cft/parse-token-value value)
+        parsed-value  (if (contains? cf/flags :token-units)
+                        (cft/parse-token-value-with-rem value)
+                        (cft/parse-token-value value))
         out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
                           (<= (:value parsed-value) sm/min-safe-int))]
 
@@ -96,7 +125,9 @@
   "Parses `value` of a number `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (let [parsed-value  (cft/parse-token-value value)
+  (let [parsed-value  (if (contains? cf/flags :token-units)
+                        (cft/parse-token-value-with-rem value)
+                        (cft/parse-token-value value))
         out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
                           (<= (:value parsed-value) sm/min-safe-int))]
     (if (and parsed-value (not out-of-bounds))
@@ -212,7 +243,12 @@
                               :else
                               (assoc origin-token
                                      :resolved-value (:value parsed-token-value)
-                                     :unit (:unit parsed-token-value)))]
+                                     :unit (:unit parsed-token-value)))
+           sd-errors (.-errors sd-token)
+           sd-warnings (.-warnings sd-token)
+           output-token (cond-> output-token
+                          sd-errors (update :errors d/concat-vec sd-errors)
+                          sd-warnings (update :warnings d/concat-vec sd-warnings))]
        (assoc acc (:name output-token) output-token)))
    {} sd-tokens))
 
@@ -272,9 +308,11 @@
 
   So to get back the original token from the resolved sd-token (see my updates for what an sd-token is) we include a temporary :id for the token that we pass to StyleDictionary,
   this way after the resolving computation we can restore any token, even clashing ones with the same :name path by just looking up that :id in the ids map."
-  [tokens]
-  (let [{:keys [tokens-tree ids]} (ctob/backtrace-tokens-tree tokens)]
-    (resolve-tokens-tree tokens-tree  #(get ids (sd-token-uuid %)))))
+  [tokens & {:keys [sd-config]}]
+  (let [{:keys [tokens-tree ids]} (ctob/backtrace-tokens-tree tokens)
+        sd-config (or sd-config default-config)
+        sd (StyleDictionary. sd-config)]
+    (resolve-tokens-tree tokens-tree #(get ids (sd-token-uuid %)) sd)))
 
 (defn resolve-tokens-with-verbose-errors [tokens]
   (resolve-tokens-tree

@@ -1043,6 +1043,13 @@
   [file-data]
   (get-in file-data [:options :base-font-size] BASE-FONT-SIZE))
 
+(defn get-base-font-size-int
+  "Retrieve the base font size value or token reference as int of px."
+  [file-data]
+  (-> (get-base-font-size file-data)
+      (str/strip-suffix #"px")
+      (d/parse-double)))
+
 (defn set-base-font-size
   [file-data base-font-size]
   (assoc-in file-data [:options :base-font-size] base-font-size))
