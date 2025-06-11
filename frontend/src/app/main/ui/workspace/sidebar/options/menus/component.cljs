@@ -253,47 +253,17 @@
 
     :else nil))
 
-
-(defn- get-variant-duplicated-warning-message
-  "Receive a list of booleans, one for each selected variant, indicating if that variant
-   is duplicated, and generate a warning message accordingly"
-  [duplicated-map]
-  (cond
-    (and (= (count duplicated-map) 1) (some? (first duplicated-map)))
-    (tr "workspace.options.component.variant.duplicated.single.one")
-
-    (and (seq duplicated-map) (every? some? duplicated-map))
-    (tr "workspace.options.component.variant.duplicated.single.all")
-
-    (and (seq duplicated-map) (some some? duplicated-map))
-    (tr "workspace.options.component.variant.duplicated.single.some")
-
-    :else nil))
-
-
-(defn- get-component-ids-with-duplicated-variant-props-and-values
-  "Get a list of component ids whose property names and values are duplicated"
-  [components]
-  (let [duplicated-props (->> components
-                              (map :variant-properties)
-                              frequencies
-                              (filter #(> (val %) 1))
-                              keys
-                              set)]
-    (->> components
-         (filter #(duplicated-props (:variant-properties %)))
-         (map :main-instance-id))))
-
-
 (defn- get-variant-options
   "Get variant options for a given property name"
   [prop-name prop-vals]
-  (->> (filter #(= (:name %) prop-name) prop-vals)
+  (->> (d/seek #(= (:name %) prop-name) prop-vals)
        first
        :value
-       (map (fn [val] {:id val
-                       :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
-
+       (map (fn [val]
+              {:id val
+               :label (if (str/blank? val)
+                        (str "(" (tr "labels.empty") ")")
+                        val)}))))
 
 (mf/defc component-variant-main-instance*
   [{:keys [components shapes data]}]
