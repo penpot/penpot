@@ -35,20 +35,20 @@
   (let [rem-px-base-size 16
         rem->px #(* % rem-px-base-size)
         conversions (clj->js [;; rem + px
-                              [["px"  "+" "rem"]  (fn [px rem] #js {:value (+ (.-value px) (rem->px (.-value rem))) :unit "px"})]
-                              [["rem" "+" "px"]   (fn [rem px] #js {:value (+ (.-value px) (rem->px (.-value rem))) :unit "px"})]
+                              [["px"  "+" "rem"]  (fn [px rem] (px-unit-value (+ (.-value px) (rem->px (.-value rem)))))]
+                              [["rem" "+" "px"]   (fn [rem px] (px-unit-value (+ (.-value px) (rem->px (.-value rem)))))]
                               ;; rem - px
-                              [["rem" "-" "px"]   (fn [rem px] #js {:value (- (rem->px (.-value rem)) (.-value px)) :unit "px"})]
-                              [["px"  "-" "rem"]  (fn [px rem] #js {:value (- (.-value px) (rem->px (.-value rem))) :unit "px"})]
+                              [["rem" "-" "px"]   (fn [rem px] (px-unit-value (- (rem->px (.-value rem)) (.-value px))))]
+                              [["px"  "-" "rem"]  (fn [px rem] (px-unit-value (- (.-value px) (rem->px (.-value rem)))))]
                               ;; rem * px
-                              [["rem" "*" "px"]   (fn [rem px] #js {:value (* (rem->px (.-value rem)) (.-value px)) :unit "px"})]
-                              [["px"  "*" "rem"]  (fn [px rem] #js {:value (* (rem->px (.-value rem)) (.-value px)) :unit "px"})]
+                              [["rem" "*" "px"]   (fn [rem px] (px-unit-value (* (rem->px (.-value rem)) (.-value px))))]
+                              [["px"  "*" "rem"]  (fn [px rem] (px-unit-value (* (rem->px (.-value rem)) (.-value px))))]
                               ;; rem / px
-                              [["rem" "/" "px"]   (fn [rem px] #js {:value (/ (rem->px (.-value rem)) (.-value px)) :unit "px"})]
-                              [["px"  "/" "rem"]  (fn [px rem] #js {:value (/ (.-value px) (rem->px (.-value rem))) :unit "px"})]
+                              [["rem" "/" "px"]   (fn [rem px] (px-unit-value (/ (rem->px (.-value rem)) (.-value px))))]
+                              [["px"  "/" "rem"]  (fn [px rem] (px-unit-value (/ (.-value px) (rem->px (.-value rem)))))]
                               ;; number + px (unitless number will convert to px)
-                              [["px"  "+" ""]     (fn [px num] #js {:value (+ (.-value px) (.-value num)) :unit "px"})]
-                              [[""    "+" "px"]   (fn [num px] #js {:value (+ (.-value px) (.-value num)) :unit "px"})]])
+                              [["px"  "+" ""]     (fn [px num] (px-unit-value (+ (.-value px) (.-value num))))]
+                              [[""    "+" "px"]   (fn [num px] (px-unit-value (+ (.-value px) (.-value num))))]])
         config (addUnitConversions (createConfig) conversions)]
     config))
 
