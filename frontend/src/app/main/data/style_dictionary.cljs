@@ -7,7 +7,11 @@
 (ns app.main.data.style-dictionary
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
+   ["@tokens-studio/unit-calculator$config" :refer [addUnitConversions createConfig]]
+   ["@tokens-studio/unit-calculator$run" :as unit-calc]
+   ["@tokens-studio/unit-calculator$errors" :refer [IncompatibleUnitsError]]
    ["style-dictionary$default" :as sd]
+   [app.common.data :as d]
    [app.common.files.tokens :as cft]
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -23,12 +27,55 @@
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
+(def calc-config
+  (let [rem-px-base-size 16
+        rem->px #(* % rem-px-base-size)
+        conversions (clj->js [;; rem + px
+                              [["px"  "+" "rem"]  (fn [px rem] #js {:value (+ (.-value px) (rem->px (.-value rem))) :unit "px"})]
+                              [["rem" "+" "px"]   (fn [rem px] #js {:value (+ (.-value px) (rem->px (.-value rem))) :unit "px"})]
+                              ;; rem - px
+                              [["rem" "-" "px"]   (fn [rem px] #js {:value (- (rem->px (.-value rem)) (.-value px)) :unit "px"})]
+                              [["px"  "-" "rem"]  (fn [px rem] #js {:value (- (.-value px) (rem->px (.-value rem))) :unit "px"})]
+                              ;; rem * px
+                              [["rem" "*" "px"]   (fn [rem px] #js {:value (* (rem->px (.-value rem)) (.-value px)) :unit "px"})]
+                              [["px"  "*" "rem"]  (fn [px rem] #js {:value (* (rem->px (.-value rem)) (.-value px)) :unit "px"})]
+                              ;; rem / px
+                              [["rem" "/" "px"]   (fn [rem px] #js {:value (/ (rem->px (.-value rem)) (.-value px)) :unit "px"})]
+                              [["px"  "/" "rem"]  (fn [px rem] #js {:value (/ (.-value px) (rem->px (.-value rem))) :unit "px"})]
+                              ;; number + px (unitless number will convert to px)
+                              [["px"  "+" ""]     (fn [px num] #js {:value (+ (.-value px) (.-value num)) :unit "px"})]
+                              [[""    "+" "px"]   (fn [num px] #js {:value (+ (.-value px) (.-value num)) :unit "px"})]])
+        config (addUnitConversions (createConfig) conversions)]
+    config))
+
+(defn calc [expr]
+  (try
+    (when-let [result (-> (unit-calc expr calc-config)
+                          (.exec)
+                          (first))]
+      (str (.-value result) (.-unit result)))
+    (catch js/Error e
+      (let [data (cond
+                   (instance? IncompatibleUnitsError e) (.-values e))]
+        (js/console.log "ERROR" e data)))))
+
+(comment
+  (calc "1px + 1rem")  ;; => "17px"
+  (calc "1px + 1")     ;; => "2px"
+  (calc "1 + 1")       ;; => "2"
+  (calc "1rem * 2")    ;; => "2rem"
+  (calc "10 * 2")      ;; => "20"
+  (calc "1rem + 1rem") ;; => "2rem"
+
+  (calc "1rem + 1") ;; IncompatibleUnitsError
+  nil)
+
 (l/set-level! :debug)
 
 ;; === Style Dictionary
 
 (defn check-and-evaluate-math [^js token ^js platform-config]
-  (.-value token))
+  (calc (.-value token)))
 
 (def wrapped-math-transform
   "A wrapper around `sd-transforms/checkAndEvaluateMath` with custom rules for which math expressions to allow:
