@@ -3,7 +3,7 @@ var qn = (t) => {
 };
 var Kn = (t, e, r) => e.has(t) || qn("Cannot " + r);
 var at = (t, e, r) => (Kn(t, e, "read from private field"), r ? r.call(t) : e.get(t)), tn = (t, e, r) => e.has(t) ? qn("Cannot add the same private member more than once") : e instanceof WeakSet ? e.add(t) : e.set(t, r), fr = (t, e, r, n) => (Kn(t, e, "write to private field"), n ? n.call(t, r) : e.set(t, r), r);
-const x = globalThis, {
+const S = globalThis, {
   Array: na,
   ArrayBuffer: To,
   Date: oa,
@@ -74,7 +74,7 @@ const x = globalThis, {
   return n;
 }, {
   apply: ue,
-  construct: Sr,
+  construct: xr,
   get: ya,
   getOwnPropertyDescriptor: _a,
   has: Oo,
@@ -82,7 +82,7 @@ const x = globalThis, {
   ownKeys: qe,
   preventExtensions: ba,
   set: Mo
-} = la, { isArray: pt, prototype: ve } = na, { prototype: xr } = To, { prototype: jt } = $e, { prototype: Br } = RegExp, { prototype: cr } = Dt, { prototype: Ge } = _e, { prototype: Gr } = ze, { prototype: Lo } = Ut, { prototype: Vr } = Function, { prototype: Fo } = ca, { prototype: Do } = G(
+} = la, { isArray: pt, prototype: ve } = na, { prototype: Sr } = To, { prototype: jt } = $e, { prototype: Br } = RegExp, { prototype: cr } = Dt, { prototype: Ge } = _e, { prototype: Gr } = ze, { prototype: Lo } = Ut, { prototype: Vr } = Function, { prototype: Fo } = ca, { prototype: Do } = G(
   // eslint-disable-next-line no-empty-function, func-names
   function* () {
   }
@@ -95,9 +95,9 @@ const x = globalThis, {
 ), jo = (
   /** @type {any} */
   P(ve.flatMap)
-), Er = P(ve.pop), ne = P(ve.push), wa = P(ve.slice), Zo = P(ve.some), zo = P(ve.sort), Sa = P(ve[De]), xa = P(xr.slice), Ea = P(
+), Er = P(ve.pop), ne = P(ve.push), wa = P(ve.slice), Zo = P(ve.some), zo = P(ve.sort), xa = P(ve[De]), Sa = P(Sr.slice), Ea = P(
   // @ts-expect-error we know it is there on all conforming platforms
-  ee(xr, "byteLength").get
+  ee(Sr, "byteLength").get
 ), ka = P(Uo.set), pe = P(jt.set), Ke = P(jt.get), Wr = P(jt.has), Pa = P(jt.delete), Aa = P(jt.entries), Ta = P(jt[De]), In = P(cr.add);
 P(cr.delete);
 const Yn = P(cr.forEach), Cn = P(cr.has), Ia = P(cr[De]), Rn = P(Br.test), $n = P(Br.exec), Ca = P(Br[$o]), Bo = P(Ge.endsWith), Go = P(Ge.includes), Ra = P(Ge.indexOf);
@@ -404,7 +404,7 @@ const eo = new ze(), as = (t, e = t.name) => {
     });
   }
   y(t);
-}, Ce = (t = re`Assert failed`, e = x.Error, {
+}, Ce = (t = re`Assert failed`, e = S.Error, {
   errorName: r = void 0,
   cause: n = void 0,
   errors: o = void 0,
@@ -448,7 +448,7 @@ const Xa = (t) => {
 `);
   return Ho(e, " ") || r === -1 ? e : Nn(e, r + 1);
 }, Ir = {
-  getStackString: x.getStackString || Xa,
+  getStackString: S.getStackString || Xa,
   tagError: (t) => as(t),
   resetErrorTagNum: () => {
     yn = 0;
@@ -532,8 +532,8 @@ const Qa = (t) => ue(cs, t, []) !== void 0, ei = (t) => {
     });
   });
 }, ri = () => {
-  if (typeof x.harden == "function")
-    return x.harden;
+  if (typeof S.harden == "function")
+    return S.harden;
   const t = new Ut(), { harden: e } = {
     /**
      * @template T
@@ -752,7 +752,7 @@ function lt(t) {
     cause: !1
   };
 }
-function Se(t) {
+function xe(t) {
   return {
     // Properties of the TypedArray Constructors
     "[[Proto]]": "%TypedArray%",
@@ -760,7 +760,7 @@ function Se(t) {
     prototype: t
   };
 }
-function xe(t) {
+function Se(t) {
   return {
     // Properties of the TypedArray Prototype Objects
     "[[Proto]]": "%TypedArrayPrototype%",
@@ -1471,39 +1471,39 @@ const so = {
     with: a
   },
   // The TypedArray Constructors
-  BigInt64Array: Se("%BigInt64ArrayPrototype%"),
-  BigUint64Array: Se("%BigUint64ArrayPrototype%"),
+  BigInt64Array: xe("%BigInt64ArrayPrototype%"),
+  BigUint64Array: xe("%BigUint64ArrayPrototype%"),
   // https://github.com/tc39/proposal-float16array
-  Float16Array: Se("%Float16ArrayPrototype%"),
-  Float32Array: Se("%Float32ArrayPrototype%"),
-  Float64Array: Se("%Float64ArrayPrototype%"),
-  Int16Array: Se("%Int16ArrayPrototype%"),
-  Int32Array: Se("%Int32ArrayPrototype%"),
-  Int8Array: Se("%Int8ArrayPrototype%"),
-  Uint16Array: Se("%Uint16ArrayPrototype%"),
-  Uint32Array: Se("%Uint32ArrayPrototype%"),
-  Uint8ClampedArray: Se("%Uint8ClampedArrayPrototype%"),
+  Float16Array: xe("%Float16ArrayPrototype%"),
+  Float32Array: xe("%Float32ArrayPrototype%"),
+  Float64Array: xe("%Float64ArrayPrototype%"),
+  Int16Array: xe("%Int16ArrayPrototype%"),
+  Int32Array: xe("%Int32ArrayPrototype%"),
+  Int8Array: xe("%Int8ArrayPrototype%"),
+  Uint16Array: xe("%Uint16ArrayPrototype%"),
+  Uint32Array: xe("%Uint32ArrayPrototype%"),
+  Uint8ClampedArray: xe("%Uint8ClampedArrayPrototype%"),
   Uint8Array: {
-    ...Se("%Uint8ArrayPrototype%"),
+    ...xe("%Uint8ArrayPrototype%"),
     // https://github.com/tc39/proposal-arraybuffer-base64
     fromBase64: a,
     // https://github.com/tc39/proposal-arraybuffer-base64
     fromHex: a
   },
-  "%BigInt64ArrayPrototype%": xe("BigInt64Array"),
-  "%BigUint64ArrayPrototype%": xe("BigUint64Array"),
+  "%BigInt64ArrayPrototype%": Se("BigInt64Array"),
+  "%BigUint64ArrayPrototype%": Se("BigUint64Array"),
   // https://github.com/tc39/proposal-float16array
-  "%Float16ArrayPrototype%": xe("Float16Array"),
-  "%Float32ArrayPrototype%": xe("Float32Array"),
-  "%Float64ArrayPrototype%": xe("Float64Array"),
-  "%Int16ArrayPrototype%": xe("Int16Array"),
-  "%Int32ArrayPrototype%": xe("Int32Array"),
-  "%Int8ArrayPrototype%": xe("Int8Array"),
-  "%Uint16ArrayPrototype%": xe("Uint16Array"),
-  "%Uint32ArrayPrototype%": xe("Uint32Array"),
-  "%Uint8ClampedArrayPrototype%": xe("Uint8ClampedArray"),
+  "%Float16ArrayPrototype%": Se("Float16Array"),
+  "%Float32ArrayPrototype%": Se("Float32Array"),
+  "%Float64ArrayPrototype%": Se("Float64Array"),
+  "%Int16ArrayPrototype%": Se("Int16Array"),
+  "%Int32ArrayPrototype%": Se("Int32Array"),
+  "%Int8ArrayPrototype%": Se("Int8Array"),
+  "%Uint16ArrayPrototype%": Se("Uint16Array"),
+  "%Uint32ArrayPrototype%": Se("Uint32Array"),
+  "%Uint8ClampedArrayPrototype%": Se("Uint8ClampedArray"),
   "%Uint8ArrayPrototype%": {
-    ...xe("Uint8Array"),
+    ...Se("Uint8Array"),
     // https://github.com/tc39/proposal-arraybuffer-base64
     setFromBase64: a,
     // https://github.com/tc39/proposal-arraybuffer-base64
@@ -2031,7 +2031,7 @@ const ms = (t) => {
     finalIntrinsics: s,
     isPseudoNative: i
   };
-  return y(c), n(us), n(hs(x, ds)), c;
+  return y(c), n(us), n(hs(S, ds)), c;
 }, ii = (t, e) => {
   const { addIntrinsics: r, finalIntrinsics: n } = ms(e);
   return r(hs(t, fs)), n();
@@ -2123,7 +2123,7 @@ function ci(t, e, r) {
     const m = p["[[Proto]]"];
     i(f, h, m), typeof h == "function" && e(h);
     for (const A of qe(h)) {
-      const S = s(f, A), w = `${f}.${S}`, R = u(h, p, S);
+      const x = s(f, A), w = `${f}.${x}`, R = u(h, p, x);
       (!R || !l(w, h, A, R)) && ls(h, A, R === !1, w, r);
     }
   }
@@ -2190,7 +2190,7 @@ function ui(t = "safe") {
   }, o = ({ powers: c = "none" } = {}) => {
     let l;
     return c === "original" ? l = function(...d) {
-      return new.target === void 0 ? ue(e, void 0, d) : Sr(e, d, new.target);
+      return new.target === void 0 ? ue(e, void 0, d) : xr(e, d, new.target);
     } : l = function(...d) {
       if (new.target === void 0)
         throw _(
@@ -2200,7 +2200,7 @@ function ui(t = "safe") {
         throw _(
           "secure mode Calling new %SharedDate%() with no arguments throws"
         );
-      return Sr(e, d, new.target);
+      return xr(e, d, new.target);
     }, B(l, {
       length: { value: 7 },
       prototype: {
@@ -2274,7 +2274,7 @@ function fi(t = "safe") {
     throw _(`unrecognized regExpTaming ${t}`);
   const e = Xe.prototype, r = (s = {}) => {
     const i = function(...l) {
-      return new.target === void 0 ? Xe(...l) : Sr(Xe, l, new.target);
+      return new.target === void 0 ? Xe(...l) : xr(Xe, l, new.target);
     };
     if (B(i, {
       length: { value: 2 },
@@ -2479,7 +2479,7 @@ function mi(t, e, { warn: r }, n = []) {
   const o = new Dt(n);
   function s(d, f, h, p) {
     if ("value" in p && p.configurable) {
-      const { value: m } = p, A = Cn(o, h), { get: S, set: w } = ee(
+      const { value: m } = p, A = Cn(o, h), { get: x, set: w } = ee(
         {
           get [h]() {
             return m;
@@ -2501,13 +2501,13 @@ function mi(t, e, { warn: r }, n = []) {
         },
         h
       );
-      D(S, "originalValue", {
+      D(x, "originalValue", {
         value: m,
         writable: !1,
         enumerable: !1,
         configurable: !1
       }), D(f, h, {
-        get: S,
+        get: x,
         set: w,
         enumerable: p.enumerable,
         configurable: p.configurable
@@ -2527,13 +2527,13 @@ function mi(t, e, { warn: r }, n = []) {
       const m = ee(f, p);
       if (!m || m.get || m.set)
         continue;
-      const A = `${d}.${_e(p)}`, S = h[p];
-      if (S === !0)
+      const A = `${d}.${_e(p)}`, x = h[p];
+      if (x === !0)
         i(A, f, p);
-      else if (S === "*")
+      else if (x === "*")
         c(A, m.value);
-      else if (ke(S))
-        l(A, m.value, S);
+      else if (ke(x))
+        l(A, m.value, x);
       else
         throw _(`Unexpected override enablement plan ${A}`);
     }
@@ -2619,7 +2619,7 @@ ${o}
       configurable: !1
     }
   }), G(Ee) === Ee.prototype || ao`Function prototype is the same accross compartments`, G(e) === Ee.prototype || ao`Function constructor prototype is the same accross compartments`, e;
-}, Si = (t) => {
+}, xi = (t) => {
   D(
     t,
     fa,
@@ -2701,11 +2701,11 @@ ${o}
       configurable: !0
     });
   }
-}, { Fail: xi, quote: bs } = Y, ws = new Ur(
+}, { Fail: Si, quote: bs } = Y, ws = new Ur(
   Mn,
   y({
     get(t, e) {
-      xi`Please report unexpected scope handler trap: ${bs(_e(e))}`;
+      Si`Please report unexpected scope handler trap: ${bs(_e(e))}`;
     }
   })
 ), Ei = {
@@ -2715,7 +2715,7 @@ ${o}
     throw Wt(`${_e(e)} is not defined`);
   },
   has(t, e) {
-    return e in x;
+    return e in S;
   },
   // note: this is likely a bug of safari
   // https://bugs.webkit.org/show_bug.cgi?id=195534
@@ -2736,18 +2736,18 @@ ${o}
   ownKeys(t) {
     return [];
   }
-}, Ss = y(
+}, xs = y(
   H(
     ws,
     Be(Ei)
   )
 ), ki = new Ur(
   Mn,
-  Ss
-), xs = (t) => {
+  xs
+), Ss = (t) => {
   const e = {
     // inherit scopeTerminator behavior
-    ...Ss,
+    ...xs,
     // Redirect set properties to the globalObject.
     set(o, s, i) {
       return Mo(t, s, i);
@@ -2767,7 +2767,7 @@ ${o}
     r
   );
 };
-y(xs);
+y(Ss);
 const { Fail: Pi } = Y, Ai = () => {
   const t = H(null), e = y({
     eval: {
@@ -2978,7 +2978,7 @@ const Ni = (t) => {
   globalTransforms: r = [],
   sloppyGlobalsMode: n = !1
 }) => {
-  const o = n ? xs(t) : ki, s = Ai(), { evalScope: i } = s, c = y({
+  const o = n ? Ss(t) : ki, s = Ai(), { evalScope: i } = s, c = y({
     evalScope: i,
     moduleLexicals: e,
     globalObject: t,
@@ -3028,7 +3028,7 @@ function Li(t = "safe") {
     throw _(`unrecognized domainTaming ${t}`);
   if (t === "unsafe")
     return;
-  const e = x.process || void 0;
+  const e = S.process || void 0;
   if (typeof e == "object") {
     const r = ee(e, "domain");
     if (r !== void 0 && r.get !== void 0)
@@ -3044,7 +3044,7 @@ function Li(t = "safe") {
   }
 }
 const Fi = () => {
-  const t = {}, e = x.ModuleSource;
+  const t = {}, e = S.ModuleSource;
   if (e !== void 0) {
     let n = function() {
     };
@@ -3142,38 +3142,38 @@ y(dt);
 const zn = (t, e) => {
   if (!t)
     return;
-  const { getStackString: r, tagError: n, takeMessageLogArgs: o, takeNoteLogArgsArray: s } = e, i = (S, w) => de(S, (T) => Kr(T) ? (ne(w, T), `(${n(T)})`) : T), c = (S, w, R, T, j) => {
+  const { getStackString: r, tagError: n, takeMessageLogArgs: o, takeNoteLogArgsArray: s } = e, i = (x, w) => de(x, (T) => Kr(T) ? (ne(w, T), `(${n(T)})`) : T), c = (x, w, R, T, j) => {
     const I = n(w), L = R === dt.MESSAGE ? `${I}:` : `${I} ${R}`, Z = i(T, j);
-    t[S](L, ...Z);
-  }, l = (S, w, R = void 0) => {
+    t[x](L, ...Z);
+  }, l = (x, w, R = void 0) => {
     if (w.length === 0)
       return;
     if (w.length === 1 && R === void 0) {
-      f(S, w[0]);
+      f(x, w[0]);
       return;
     }
     let T;
     w.length === 1 ? T = "Nested error" : T = `Nested ${w.length} errors`, R !== void 0 && (T = `${T} under ${R}`), t.group(T);
     try {
       for (const j of w)
-        f(S, j);
+        f(x, j);
     } finally {
       t.groupEnd();
     }
-  }, u = new Ut(), d = (S) => (w, R) => {
+  }, u = new Ut(), d = (x) => (w, R) => {
     const T = [];
-    c(S, w, dt.NOTE, R, T), l(S, T, n(w));
-  }, f = (S, w) => {
+    c(x, w, dt.NOTE, R, T), l(x, T, n(w));
+  }, f = (x, w) => {
     if (lr(u, w))
       return;
     const R = n(w);
     qr(u, w);
     const T = [], j = o(w), I = s(
       w,
-      d(S)
+      d(x)
     );
-    j === void 0 ? t[S](`${R}:`, w.message) : c(
-      S,
+    j === void 0 ? t[x](`${R}:`, w.message) : c(
+      x,
       w,
       dt.MESSAGE,
       j,
@@ -3182,24 +3182,24 @@ const zn = (t, e) => {
     let L = r(w);
     typeof L == "string" && L.length >= 1 && !Bo(L, `
 `) && (L += `
-`), t[S](L), w.cause && c(S, w, dt.CAUSE, [w.cause], T), w.errors && c(S, w, dt.ERRORS, w.errors, T);
+`), t[x](L), w.cause && c(x, w, dt.CAUSE, [w.cause], T), w.errors && c(x, w, dt.ERRORS, w.errors, T);
     for (const Z of I)
-      c(S, w, dt.NOTE, Z, T);
-    l(S, T, R);
-  }, h = de(jn, ([S, w]) => {
+      c(x, w, dt.NOTE, Z, T);
+    l(x, T, R);
+  }, h = de(jn, ([x, w]) => {
     const R = (...T) => {
       const j = [], I = i(T, j);
-      t[S] && t[S](...I), l(S, j);
+      t[x] && t[x](...I), l(x, j);
     };
-    return D(R, "name", { value: S }), [S, y(R)];
+    return D(R, "name", { value: x }), [x, y(R)];
   }), p = et(
     Zn,
-    ([S, w]) => S in t
-  ), m = de(p, ([S, w]) => {
+    ([x, w]) => x in t
+  ), m = de(p, ([x, w]) => {
     const R = (...T) => {
-      t[S](...T);
+      t[x](...T);
     };
-    return D(R, "name", { value: S }), [S, y(R)];
+    return D(R, "name", { value: x }), [x, y(R)];
   }), A = bt([...h, ...m]);
   return (
     /** @type {VirtualConsole} */
@@ -3293,13 +3293,13 @@ const fo = (t) => {
   const s = (
     /** @type {VirtualConsole} */
     // eslint-disable-next-line no-nested-ternary
-    typeof x.console < "u" ? x.console : typeof x.print == "function" ? (
+    typeof S.console < "u" ? S.console : typeof S.print == "function" ? (
       // Make a good-enough console for eshost (including only functions that
       // log at a specific level with no special argument interpretation).
       // https://console.spec.whatwg.org/#logging
       ((u) => y({ debug: u, log: u, info: u, warn: u, error: u }))(
         // eslint-disable-next-line no-undef
-        po(x.print)
+        po(S.print)
       )
     ) : void 0
   );
@@ -3311,7 +3311,7 @@ const fo = (t) => {
   const i = (
     /** @type {VirtualConsole} */
     t === "unsafe" ? s : zn(s, o)
-  ), c = x.process || void 0;
+  ), c = S.process || void 0;
   if (e !== "none" && typeof c == "object" && typeof c.on == "function") {
     let u;
     if (e === "platform" || e === "exit") {
@@ -3328,7 +3328,7 @@ const fo = (t) => {
     });
     d && (c.on("unhandledRejection", d.unhandledRejectionHandler), c.on("rejectionHandled", d.rejectionHandledHandler), c.on("exit", d.processTerminationHandler));
   }
-  const l = x.window || void 0;
+  const l = S.window || void 0;
   if (e !== "none" && typeof l == "object" && typeof l.addEventListener == "function" && l.addEventListener("error", (u) => {
     u.preventDefault(), i.error("SES_UNCAUGHT_EXCEPTION:", u.error), (e === "exit" || e === "abort") && (l.location.href = "about:blank");
   }), r !== "none" && typeof l == "object" && typeof l.addEventListener == "function") {
@@ -3444,8 +3444,8 @@ const fo = (t) => {
     if (lr(f, p))
       return p;
     const m = {
-      prepareStackTrace(A, S) {
-        return he(l, A, { callSites: S }), p(A, Gi(S));
+      prepareStackTrace(A, x) {
+        return he(l, A, { callSites: x }), p(A, Gi(x));
       }
     };
     return qr(f, m.prepareStackTrace), m.prepareStackTrace;
@@ -3486,7 +3486,7 @@ function nc(t = "safe", e = "concise") {
   const r = le.prototype, { captureStackTrace: n } = le, o = typeof n == "function" ? "v8" : "unknown", s = (l = {}) => {
     const u = function(...f) {
       let h;
-      return new.target === void 0 ? h = ue(le, this, f) : h = Sr(le, f, new.target), o === "v8" && ue(n, le, [h, u]), h;
+      return new.target === void 0 ? h = ue(le, this, f) : h = xr(le, f, new.target), o === "v8" && ue(n, le, [h, u]), h;
     };
     return B(u, {
       length: { value: 1 },
@@ -3850,7 +3850,7 @@ function* lc(t, e, r, n, o, s, i) {
       );
       return pe(f, n, w), w;
     }
-    const S = Bt(
+    const x = Bt(
       t,
       e,
       r,
@@ -3860,7 +3860,7 @@ function* lc(t, e, r, n, o, s, i) {
       s,
       i
     );
-    return pe(f, n, S), S;
+    return pe(f, n, x), x;
   } else
     throw Ce(
       re`module descriptor must be a string or object for specifier ${U(
@@ -3967,7 +3967,7 @@ const It = (t, e, r, n, o, s, i) => {
       o
     )}`
   });
-}, { quote: xt } = Y, hc = () => {
+}, { quote: St } = Y, hc = () => {
   let t = !1;
   const e = H(null, {
     // Make this appear like an ESM module namespace object.
@@ -3987,7 +3987,7 @@ const It = (t, e, r, n, o, s, i) => {
       get(r, n, o) {
         if (!t)
           throw _(
-            `Cannot get property ${xt(
+            `Cannot get property ${St(
               n
             )} of module exports namespace, the module has not yet begun to execute`
           );
@@ -3995,13 +3995,13 @@ const It = (t, e, r, n, o, s, i) => {
       },
       set(r, n, o) {
         throw _(
-          `Cannot set property ${xt(n)} of module exports namespace`
+          `Cannot set property ${St(n)} of module exports namespace`
         );
       },
       has(r, n) {
         if (!t)
           throw _(
-            `Cannot check property ${xt(
+            `Cannot check property ${St(
               n
             )}, the module has not yet begun to execute`
           );
@@ -4009,7 +4009,7 @@ const It = (t, e, r, n, o, s, i) => {
       },
       deleteProperty(r, n) {
         throw _(
-          `Cannot delete property ${xt(n)}s of module exports namespace`
+          `Cannot delete property ${St(n)}s of module exports namespace`
         );
       },
       ownKeys(r) {
@@ -4022,7 +4022,7 @@ const It = (t, e, r, n, o, s, i) => {
       getOwnPropertyDescriptor(r, n) {
         if (!t)
           throw _(
-            `Cannot get own property descriptor ${xt(
+            `Cannot get own property descriptor ${St(
               n
             )}, the module has not yet begun to execute`
           );
@@ -4050,7 +4050,7 @@ const It = (t, e, r, n, o, s, i) => {
       },
       defineProperty(r, n, o) {
         throw _(
-          `Cannot define property ${xt(n)} of module exports namespace`
+          `Cannot define property ${St(n)} of module exports namespace`
         );
       },
       apply(r, n, o) {
@@ -4131,15 +4131,15 @@ const It = (t, e, r, n, o, s, i) => {
       const p = [];
       D(c, f, {
         get: () => h,
-        set: (S) => {
-          h = S;
+        set: (x) => {
+          h = x;
           for (const w of p)
-            w(S);
+            w(x);
         },
         enumerable: !0,
         configurable: !1
-      }), u[f] = (S) => {
-        ne(p, S), S(h);
+      }), u[f] = (x) => {
+        ne(p, x), x(h);
       };
     }), u["*"] = (f) => {
       f(c);
@@ -4178,7 +4178,7 @@ const It = (t, e, r, n, o, s, i) => {
     __reexportMap__: h = {},
     __needsImportMeta__: p = !1,
     __syncModuleFunctor__: m
-  } = i, A = z(t, o), { __shimTransforms__: S, importMetaHook: w } = A, { exportsProxy: R, exportsTarget: T, activate: j } = Bn(
+  } = i, A = z(t, o), { __shimTransforms__: x, importMetaHook: w } = A, { exportsProxy: R, exportsTarget: T, activate: j } = Bn(
     o,
     A,
     e,
@@ -4231,7 +4231,7 @@ const It = (t, e, r, n, o, s, i) => {
               `binding ${mr(we)} not yet initialized`
             );
           return ie;
-        }, St = y((Ie) => {
+        }, xt = y((Ie) => {
           ie = Ie, ge = !1;
           for (const en of te)
             en(Ie);
@@ -4245,14 +4245,14 @@ const It = (t, e, r, n, o, s, i) => {
         ae = {
           get: Ae,
           notify: (Ie) => {
-            Ie !== St && (ne(te, Ie), ge || Ie(ie));
+            Ie !== xt && (ne(te, Ie), ge || Ie(ie));
           }
         }, be[W] = ae, q && D(L, W, {
           get: Ae,
           set: Te,
           enumerable: !0,
           configurable: !1
-        }), se[W] = St;
+        }), se[W] = xt;
       }
       I[we] = {
         get: ae.get,
@@ -4274,13 +4274,13 @@ const It = (t, e, r, n, o, s, i) => {
       ie.execute();
       const { notifiers: ge } = ie;
       for (const [te, Ae] of ae) {
-        const St = ge[te];
-        if (!St)
+        const xt = ge[te];
+        if (!xt)
           throw ir(
             `The requested module '${q}' does not provide an export named '${te}'`
           );
         for (const Te of Ae)
-          St(Te);
+          xt(Te);
       }
       if (Hr(l, q))
         for (const [te, Ae] of me(
@@ -4312,7 +4312,7 @@ const It = (t, e, r, n, o, s, i) => {
   let wt;
   m !== void 0 ? wt = m : wt = Fs(A, u, {
     globalObject: o.globalThis,
-    transforms: S,
+    transforms: x,
     __moduleShimLexicals__: L
   });
   let Pe = !1, st;
@@ -4352,7 +4352,7 @@ const It = (t, e, r, n, o, s, i) => {
         o
       )}`
     );
-  return xc(t, e, i);
+  return Sc(t, e, i);
 };
 function _c(t) {
   return typeof t.__syncModuleProgram__ == "string";
@@ -4374,7 +4374,7 @@ function wc(t, e) {
     r
   )}, for module ${X(e)}`;
 }
-function Sc(t, e) {
+function xc(t, e) {
   ke(t) || ft`Invalid module source: must be of type object, got ${X(
     t
   )}, for module ${X(e)}`;
@@ -4387,11 +4387,11 @@ function Sc(t, e) {
     o
   )}, for module ${X(e)}`;
 }
-const xc = (t, e, r) => {
+const Sc = (t, e, r) => {
   const { compartment: n, moduleSpecifier: o, resolvedImports: s, moduleSource: i } = r, { instances: c } = z(t, n);
   if (Wr(c, o))
     return Ke(c, o);
-  Sc(i, o);
+  xc(i, o);
   const l = new $e();
   let u;
   if (_c(i))
@@ -4545,7 +4545,7 @@ const Ec = (...t) => {
       modules: r
     };
   }
-}, Sn = (t, e, r, n = void 0) => {
+}, xn = (t, e, r, n = void 0) => {
   function o(...s) {
     if (new.target === void 0)
       throw _(
@@ -4562,9 +4562,9 @@ const Ec = (...t) => {
       importNowHook: p,
       moduleMapHook: m,
       importMetaHook: A,
-      __noNamespaceBox__: S = !1
+      __noNamespaceBox__: x = !1
     } = Ec(...s), w = [...c, ...l], R = { __proto__: null, ...u }, T = { __proto__: null, ...d }, j = new $e(), I = new $e(), L = new $e(), Z = {};
-    Si(Z), _s(Z);
+    xi(Z), _s(Z);
     const { safeEvaluate: se } = Un({
       globalObject: Z,
       globalTransforms: w,
@@ -4596,7 +4596,7 @@ const Ec = (...t) => {
       deferredExports: L,
       instances: I,
       parentCompartment: n,
-      noNamespaceBox: S
+      noNamespaceBox: x
     });
   }
   return o.prototype = Vn, o;
@@ -4608,10 +4608,10 @@ function kc() {
   return arguments;
 }
 const Pc = () => {
-  const t = Ee.prototype.constructor, e = ee(kc(), "callee"), r = e && e.get, n = Na(new _e()), o = G(n), s = Br[$o] && Ca(/./), i = s && G(s), c = Sa([]), l = G(c), u = G(sa), d = Ta(new $e()), f = G(d), h = Ia(new Dt()), p = G(h), m = G(l);
+  const t = Ee.prototype.constructor, e = ee(kc(), "callee"), r = e && e.get, n = Na(new _e()), o = G(n), s = Br[$o] && Ca(/./), i = s && G(s), c = xa([]), l = G(c), u = G(sa), d = Ta(new $e()), f = G(d), h = Ia(new Dt()), p = G(h), m = G(l);
   function* A() {
   }
-  const S = dn(A), w = S.prototype;
+  const x = dn(A), w = x.prototype;
   async function* R() {
   }
   const T = dn(
@@ -4628,7 +4628,7 @@ const Pc = () => {
     "%AsyncGeneratorPrototype%": I,
     "%AsyncIteratorPrototype%": L,
     "%Generator%": w,
-    "%InertGeneratorFunction%": S,
+    "%InertGeneratorFunction%": x,
     "%IteratorPrototype%": m,
     "%MapIteratorPrototype%": f,
     "%RegExpStringIteratorPrototype%": i,
@@ -4638,22 +4638,22 @@ const Pc = () => {
     "%TypedArray%": u,
     "%InertCompartment%": Gn
   };
-  return x.Iterator && (J["%IteratorHelperPrototype%"] = G(
+  return S.Iterator && (J["%IteratorHelperPrototype%"] = G(
     // eslint-disable-next-line @endo/no-polymorphic-call
-    x.Iterator.from([]).take(0)
+    S.Iterator.from([]).take(0)
   ), J["%WrapForValidIteratorPrototype%"] = G(
     // eslint-disable-next-line @endo/no-polymorphic-call
-    x.Iterator.from({
+    S.Iterator.from({
       next() {
         return { value: void 0 };
       }
     })
-  )), x.AsyncIterator && (J["%AsyncIteratorHelperPrototype%"] = G(
+  )), S.AsyncIterator && (J["%AsyncIteratorHelperPrototype%"] = G(
     // eslint-disable-next-line @endo/no-polymorphic-call
-    x.AsyncIterator.from([]).take(0)
+    S.AsyncIterator.from([]).take(0)
   ), J["%WrapForValidAsyncIteratorPrototype%"] = G(
     // eslint-disable-next-line @endo/no-polymorphic-call
-    x.AsyncIterator.from({ next() {
+    S.AsyncIterator.from({ next() {
     } })
   )), J;
 }, Us = (t, e) => {
@@ -4734,10 +4734,10 @@ const Ac = () => {
     }
   });
 }, Rc = () => {
-  if (typeof xr.transfer == "function")
+  if (typeof Sr.transfer == "function")
     return {};
-  const t = x.structuredClone;
-  return typeof t != "function" ? {} : (D(xr, "transfer", {
+  const t = S.structuredClone;
+  return typeof t != "function" ? {} : (D(Sr, "transfer", {
     // @ts-expect-error
     value: {
       /**
@@ -4753,7 +4753,7 @@ const Ac = () => {
           const o = new To(r), s = new mn(this), i = new mn(o);
           return ka(i, s), t(this, { transfer: [this] }), o;
         } else {
-          const o = xa(this, 0, r);
+          const o = Sa(this, 0, r);
           return t(this, { transfer: [this] }), o;
         }
       }
@@ -4790,13 +4790,13 @@ const Ac = () => {
     return gr(vo);
   if (t !== "platform" && t !== "console")
     throw new _(`Invalid lockdown reporting option: ${t}`);
-  if (t === "console" || x.window === x || x.importScripts !== void 0)
+  if (t === "console" || S.window === S || S.importScripts !== void 0)
     return console;
-  if (x.console !== void 0) {
-    const e = x.console, r = Wo(e.error, e);
+  if (S.console !== void 0) {
+    const e = S.console, r = Wo(e.error, e);
     return gr(r);
   }
-  return x.print !== void 0 ? gr(x.print) : gr(vo);
+  return S.print !== void 0 ? gr(S.print) : gr(vo);
 }, bo = (t, e, r) => {
   const { warn: n, error: o, groupCollapsed: s, groupEnd: i } = e;
   let c = !1;
@@ -4823,7 +4823,7 @@ const $c = ri(), Nc = () => {
       `        eval("SES_changed = true");
         return SES_changed;
       `
-    )(Ko, !1), t || delete x.SES_changed;
+    )(Ko, !1), t || delete S.SES_changed;
   } catch {
     t = !0;
   }
@@ -4871,7 +4871,7 @@ const $c = ri(), Nc = () => {
     __hardenTaming__: m = ce("LOCKDOWN_HARDEN_TAMING", "safe"),
     dateTaming: A = "safe",
     // deprecated
-    mathTaming: S = "safe",
+    mathTaming: x = "safe",
     // deprecated
     ...w
   } = t;
@@ -4883,20 +4883,20 @@ const $c = ri(), Nc = () => {
   Y.fail(
     wo`Already locked down at ${yr} (SES_ALREADY_LOCKED_DOWN)`,
     _
-  ), yr = _("Prior lockdown (SES_ALREADY_LOCKED_DOWN)"), yr.stack, Nc(), x.Function.prototype.constructor !== x.Function && // @ts-ignore harden is absent on globalThis type def.
-  typeof x.harden == "function" && // @ts-ignore lockdown is absent on globalThis type def.
-  typeof x.lockdown == "function" && x.Date.prototype.constructor !== x.Date && typeof x.Date.now == "function" && // @ts-ignore does not recognize that Date constructor is a special
+  ), yr = _("Prior lockdown (SES_ALREADY_LOCKED_DOWN)"), yr.stack, Nc(), S.Function.prototype.constructor !== S.Function && // @ts-ignore harden is absent on globalThis type def.
+  typeof S.harden == "function" && // @ts-ignore lockdown is absent on globalThis type def.
+  typeof S.lockdown == "function" && S.Date.prototype.constructor !== S.Date && typeof S.Date.now == "function" && // @ts-ignore does not recognize that Date constructor is a special
   // Function.
   // eslint-disable-next-line @endo/no-polymorphic-call
-  Zr(x.Date.prototype.constructor.now(), NaN))
+  Zr(S.Date.prototype.constructor.now(), NaN))
     throw _(
       "Already locked down but not by this SES instance (SES_MULTIPLE_INSTANCES)"
     );
   Li(d);
   const I = Ns(), { addIntrinsics: L, completePrototypes: Z, finalIntrinsics: se } = ms(T), J = Us($c, m);
-  L({ harden: J }), L(li()), L(ui(A)), L(nc(e, u)), L(di(S)), L(fi(s)), L(Ac()), L(Rc()), L(Fi()), L(Pc()), Z();
+  L({ harden: J }), L(li()), L(ui(A)), L(nc(e, u)), L(di(x)), L(fi(s)), L(Ac()), L(Rc()), L(Fi()), L(Pc()), Z();
   const be = se(), Me = { __proto__: null };
-  typeof x.Buffer == "function" && (Me.Buffer = x.Buffer);
+  typeof S.Buffer == "function" && (Me.Buffer = S.Buffer);
   let dr;
   e === "safe" && (dr = be["%InitialGetStackString%"]);
   const zt = Zi(
@@ -4905,13 +4905,13 @@ const $c = ri(), Nc = () => {
     o,
     dr
   );
-  if (x.console = /** @type {Console} */
+  if (S.console = /** @type {Console} */
   zt.console, typeof /** @type {any} */
   zt.console._times == "object" && (Me.SafeMap = G(
     // eslint-disable-next-line no-underscore-dangle
     /** @type {any} */
     zt.console._times
-  )), (e === "unsafe" || e === "unsafe-debug") && x.assert === Y && (x.assert = Xr(void 0, !0)), vi(be, i), Ic(be), bo(
+  )), (e === "unsafe" || e === "unsafe-debug") && S.assert === Y && (S.assert = Xr(void 0, !0)), vi(be, i), Ic(be), bo(
     "SES Removing unpermitted intrinsics",
     T,
     (Pe) => ci(
@@ -4919,21 +4919,21 @@ const $c = ri(), Nc = () => {
       I,
       Pe
     )
-  ), _s(x), vs(x, {
+  ), _s(S), vs(S, {
     intrinsics: be,
     newGlobalPropertyNames: ro,
-    makeCompartmentConstructor: Sn,
+    makeCompartmentConstructor: xn,
     markVirtualizedNativeFunction: I
   }), f === "noEval")
     wn(
-      x,
+      S,
       Fa,
       I
     );
   else if (f === "safeEval") {
-    const { safeEvaluate: Pe } = Un({ globalObject: x });
+    const { safeEvaluate: Pe } = Un({ globalObject: S });
     wn(
-      x,
+      S,
       Pe,
       I
     );
@@ -4960,43 +4960,43 @@ const $c = ri(), Nc = () => {
       hostIntrinsics: Me,
       globals: {
         // Harden evaluators
-        Function: x.Function,
-        eval: x.eval,
+        Function: S.Function,
+        eval: S.eval,
         // @ts-ignore Compartment does exist on globalThis
-        Compartment: x.Compartment,
+        Compartment: S.Compartment,
         // Harden Symbol
-        Symbol: x.Symbol
+        Symbol: S.Symbol
       }
     };
     for (const st of Nt(ro))
-      Pe.globals[st] = x[st];
+      Pe.globals[st] = S[st];
     return J(Pe), J;
   };
 };
-x.lockdown = (t) => {
+S.lockdown = (t) => {
   const e = Zs(t);
-  x.harden = e();
+  S.harden = e();
 };
-x.repairIntrinsics = (t) => {
+S.repairIntrinsics = (t) => {
   const e = Zs(t);
-  x.hardenIntrinsics = () => {
-    x.harden = e();
+  S.hardenIntrinsics = () => {
+    S.harden = e();
   };
 };
 const Oc = Ns(), Mc = js("none");
-x.Compartment = Sn(
-  Sn,
+S.Compartment = xn(
+  xn,
   // Any reporting that would need to be done should have already been done
   // during `lockdown()`.
   // See https://github.com/endojs/endo/pull/2624#discussion_r1840979770
-  ii(x, Mc),
+  ii(S, Mc),
   Oc
 );
-x.assert = Y;
+S.assert = Y;
 const Lc = Ms(Ir), Fc = ha(
   "MAKE_CAUSAL_CONSOLE_FROM_LOGGER_KEY_FOR_SES_AVA"
 );
-x[Fc] = Lc;
+S[Fc] = Lc;
 const Dc = (t, e = t, r) => {
   let n = { x: 0, y: 0 }, o = { x: 0, y: 0 }, s = { x: 0, y: 0 };
   const i = (u) => {
@@ -5148,14 +5148,14 @@ var F;
   }
   t.joinValues = n, t.jsonStringifyReplacer = (o, s) => typeof s == "bigint" ? s.toString() : s;
 })(F || (F = {}));
-var xn;
+var Sn;
 (function(t) {
   t.mergeShapes = (e, r) => ({
     ...e,
     ...r
     // second overwrites first
   });
-})(xn || (xn = {}));
+})(Sn || (Sn = {}));
 const b = F.arrayToEnum([
   "string",
   "nan",
@@ -5443,7 +5443,7 @@ class je {
     return this._cachedPath.length || (this._key instanceof Array ? this._cachedPath.push(...this._path, ...this._key) : this._cachedPath.push(...this._path, this._key)), this._cachedPath;
   }
 }
-const So = (t, e) => {
+const xo = (t, e) => {
   if (yt(e))
     return { success: !0, data: e.value };
   if (!t.common.issues.length)
@@ -5530,7 +5530,7 @@ class O {
       data: e,
       parsedType: He(e)
     }, s = this._parseSync({ data: e, path: o.path, parent: o });
-    return So(o, s);
+    return xo(o, s);
   }
   "~validate"(e) {
     var r, n;
@@ -5584,7 +5584,7 @@ class O {
       data: e,
       parsedType: He(e)
     }, o = this._parse({ data: e, path: n.path, parent: n }), s = await (qt(o) ? o : Promise.resolve(o));
-    return So(n, s);
+    return xo(n, s);
   }
   refine(e, r) {
     const n = (o) => typeof r == "string" || typeof r > "u" ? { message: r } : typeof r == "function" ? r(o) : r;
@@ -7942,7 +7942,7 @@ var C;
 })(C || (C = {}));
 const gl = (t, e = {
   message: `Input not instance of ${t.name}`
-}) => Ks((r) => r instanceof t, e), Ys = Re.create, Js = tt.create, yl = Dr.create, _l = rt.create, Xs = Kt.create, vl = _t.create, bl = Mr.create, wl = Yt.create, Sl = Jt.create, xl = Lt.create, El = mt.create, kl = Ye.create, Pl = Lr.create, Al = Ne.create, Tl = V.create, Il = V.strictCreate, Cl = Xt.create, Rl = Qr.create, $l = Qt.create, Nl = Ze.create, Ol = er.create, Ml = Fr.create, Ll = vt.create, Fl = Ct.create, Dl = tr.create, Ul = rr.create, jl = nt.create, Zl = nr.create, zl = Ft.create, xo = Oe.create, Bl = Ue.create, Gl = ot.create, Vl = Oe.createWithPreprocess, Hl = ur.create, Wl = () => Ys().optional(), ql = () => Js().optional(), Kl = () => Xs().optional(), Yl = {
+}) => Ks((r) => r instanceof t, e), Ys = Re.create, Js = tt.create, yl = Dr.create, _l = rt.create, Xs = Kt.create, vl = _t.create, bl = Mr.create, wl = Yt.create, xl = Jt.create, Sl = Lt.create, El = mt.create, kl = Ye.create, Pl = Lr.create, Al = Ne.create, Tl = V.create, Il = V.strictCreate, Cl = Xt.create, Rl = Qr.create, $l = Qt.create, Nl = Ze.create, Ol = er.create, Ml = Fr.create, Ll = vt.create, Fl = Ct.create, Dl = tr.create, Ul = rr.create, jl = nt.create, Zl = nr.create, zl = Ft.create, So = Oe.create, Bl = Ue.create, Gl = ot.create, Vl = Oe.createWithPreprocess, Hl = ur.create, Wl = () => Ys().optional(), ql = () => Js().optional(), Kl = () => Xs().optional(), Yl = {
   string: (t) => Re.create({ ...t, coerce: !0 }),
   number: (t) => tt.create({ ...t, coerce: !0 }),
   boolean: (t) => Kt.create({
@@ -7972,7 +7972,7 @@ var K = /* @__PURE__ */ Object.freeze({
     return F;
   },
   get objectUtil() {
-    return xn;
+    return Sn;
   },
   ZodParsedType: b,
   getParsedType: He,
@@ -8024,13 +8024,13 @@ var K = /* @__PURE__ */ Object.freeze({
     return C;
   },
   coerce: Yl,
-  any: xl,
+  any: Sl,
   array: Al,
   bigint: _l,
   boolean: Xs,
   date: vl,
   discriminatedUnion: Rl,
-  effect: xo,
+  effect: So,
   enum: jl,
   function: Fl,
   instanceof: gl,
@@ -8041,7 +8041,7 @@ var K = /* @__PURE__ */ Object.freeze({
   nan: yl,
   nativeEnum: Zl,
   never: kl,
-  null: Sl,
+  null: xl,
   nullable: Gl,
   number: Js,
   object: Tl,
@@ -8057,7 +8057,7 @@ var K = /* @__PURE__ */ Object.freeze({
   strictObject: Il,
   string: Ys,
   symbol: bl,
-  transformer: xo,
+  transformer: So,
   tuple: Nl,
   undefined: wl,
   union: Cl,
@@ -8134,7 +8134,7 @@ async function tu(t, e, r, n) {
     }), l = [], p = [];
   }, A = () => {
     m(), u.forEach(clearTimeout), u.clear(), c && (c.removeEventListener("close", A), c.remove(), c = null), i = !0, r();
-  }, S = async () => {
+  }, x = async () => {
     if (!s) {
       s = !0;
       return;
@@ -8144,7 +8144,7 @@ async function tu(t, e, r, n) {
     const se = t.theme, J = Qs(e.host, L);
     (c == null ? void 0 : c.getAttribute("iframe-src")) !== J && (c = eu(I, J, se, Z, d), c.setTheme(se), c.addEventListener("close", A, {
       once: !0
-    }), c.addEventListener("load", S));
+    }), c.addEventListener("load", x));
   }, R = (I) => {
     l.push(I);
   }, T = (I, L, Z) => {
@@ -8354,6 +8354,9 @@ function nu(t) {
       },
       generateStyle(n, o) {
         return e("content:read"), t.context.generateStyle(n, o);
+      },
+      generateFontFaces(n) {
+        return e("content:read"), t.context.generateFontFaces(n);
       },
       openViewer() {
         e("content:read"), t.context.openViewer();
