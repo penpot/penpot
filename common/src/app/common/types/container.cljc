@@ -18,6 +18,7 @@
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.text :as cttx]
    [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
@@ -569,13 +570,16 @@
              (not equal?)
              (not (and ignore-geometry is-geometry?)))
 
+        content-diff-type (when (and (= (:type shape) :text) (= attr :content))
+                            (cttx/get-diff-type (:content shape) val))
+
         token-groups (if (= attr :applied-tokens)
                        (get-token-groups shape val)
                        #{})
 
         groups (cond-> token-groups
                  (and group (not equal?))
-                 (set/union #{group}))]
+                 (set/union #{group} content-diff-type))]
     (cond-> shape
       ;; Depending on the origin of the attribute change, we need or not to
       ;; set the "touched" flag for the group the attribute belongs to.
