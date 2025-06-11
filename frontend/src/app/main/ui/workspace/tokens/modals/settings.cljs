@@ -93,6 +93,7 @@
 
         [:> input* {:type "text"
                     :placeholder "16"
+                    :auto-focus true
                     :default-value base-font-size
                     :hint-message hint-message
                     :hint-type (if is-valid "hint" "error")

@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
    [app.common.text :as txt]
+   [app.common.types.file :as ctf]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
@@ -22,6 +23,7 @@
    [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.tokens.prepare-value :as wtpv]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
@@ -48,31 +50,35 @@
         (when-let [tokens (some-> (dsh/lookup-file-data state)
                                   (get :tokens-lib)
                                   (ctob/get-tokens-in-active-sets))]
-          (->> (sd/resolve-tokens tokens)
-               (rx/mapcat
-                (fn [resolved-tokens]
-                  (let [undo-id (js/Symbol)
-                        objects (dsh/lookup-page-objects state)
+          (let [base-font-size (-> (dsh/lookup-file-data state)
+                                   (ctf/get-base-font-size-int))]
+            (->> (sd/resolve-tokens tokens {:base-font-size base-font-size})
+                 (rx/mapcat
+                  (fn [resolved-tokens]
+                    (let [undo-id (js/Symbol)
+                          objects (dsh/lookup-page-objects state)
 
-                        shape-ids (or (->> (select-keys objects shape-ids)
-                                           (filter (fn [[_ shape]] (not= (:type shape) :group)))
-                                           (keys))
-                                      [])
+                          shape-ids (or (->> (select-keys objects shape-ids)
+                                             (filter (fn [[_ shape]] (not= (:type shape) :group)))
+                                             (keys))
+                                        [])
 
-                        resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
-                        tokenized-attributes (cft/attributes-map attributes token)]
-                    (rx/of
-                     (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
-                     (dwu/start-undo-transaction undo-id)
-                     (dwsh/update-shapes shape-ids (fn [shape]
-                                                     (cond-> shape
-                                                       attributes-to-remove
-                                                       (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
-                                                       :always
-                                                       (update :applied-tokens merge tokenized-attributes))))
-                     (when on-update-shape
-                       (on-update-shape resolved-value shape-ids attributes))
-                     (dwu/commit-undo-transaction undo-id)))))))))))
+
+                          resolved-value (-> (get resolved-tokens (:name token))
+                                             (wtpv/resolved-value-for-shape-update base-font-size))
+                          tokenized-attributes (cft/attributes-map attributes token)]
+                      (rx/of
+                       (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
+                       (dwu/start-undo-transaction undo-id)
+                       (dwsh/update-shapes shape-ids (fn [shape]
+                                                       (cond-> shape
+                                                         attributes-to-remove
+                                                         (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
+                                                         :always
+                                                         (update :applied-tokens merge tokenized-attributes))))
+                       (when on-update-shape
+                         (on-update-shape resolved-value shape-ids attributes))
+                       (dwu/commit-undo-transaction undo-id))))))))))))
 
 (defn unapply-token
   "Removes `attributes` that match `token` for `shape-ids`.

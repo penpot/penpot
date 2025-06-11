@@ -7317,8 +7317,16 @@ msgstr "Tema"
 msgid "workspace.tokens.label.theme-placeholder"
 msgstr "Añade un Tema (p. ej. Claro)"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:53
-msgid "workspace.tokens.missing-references"
+#: src/app/main/ui/workspace/tokens/errors.cljs:55
+msgid "workspace.token.invalid-math-expr"
+msgstr "Sintaxis no válida: La fórmula puede producir resultados inesperados debido al uso incorrecto de unidades. Por favor añade una fórmula válida."
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:59
+msgid "workspace.token.dimension-value-needs-unit"
+msgstr "Valor no válido: Debe incluir px o rems."
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:37
+msgid "workspace.token.missing-references"
 msgstr "Referéncias de tokens no encontradas:"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:149

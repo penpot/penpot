@@ -14,6 +14,7 @@
    [app.common.files.tokens :as cft]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.color :as dwtc]
+   [app.main.data.workspace.tokens.prepare-value :as wtpv]
    [app.main.refs :as refs]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
@@ -104,7 +105,7 @@
 
 (defn- generate-tooltip
   "Generates a tooltip for a given token"
-  [is-viewer shape theme-token token half-applied no-valid-value ref-not-in-active-set]
+  [{:keys [is-viewer shape theme-token token half-applied no-valid-value ref-not-in-active-set base-font-size]}]
   (let [{:keys [name value type resolved-value]} token
         resolved-value-theme (:resolved-value theme-token)
         resolved-value (or resolved-value-theme resolved-value)
@@ -122,7 +123,7 @@
 
         base-title (dm/str "Token: " name "\n"
                            (tr "workspace.tokens.original-value" value) "\n"
-                           (tr "workspace.tokens.resolved-value" resolved-value))]
+                           (tr "workspace.tokens.resolved-value" (wtpv/resolve-value-preview (assoc token :resolved-value resolved-value) base-font-size)))]
 
     (cond
       ;; If there are errors, show the appropriate message
@@ -187,6 +188,8 @@
         half-applied?
         (and applied? (not full-applied?))
 
+        base-font-size (mf/deref refs/token-base-font-size)
+
         ;; FIXME: move to context or props
         can-edit? (:can-edit (deref refs/permissions))
 
@@ -245,12 +248,18 @@
 
         on-hover
         (mf/use-fn
-         (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set)
+         (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set base-font-size)
          (fn [event]
            (let [node  (dom/get-current-target event)
                  theme-token (get active-theme-tokens name)
-                 title (generate-tooltip is-viewer? (first selected-shapes) theme-token token
-                                         half-applied? no-valid-value ref-not-in-active-set)]
+                 title (generate-tooltip {:is-viewer is-viewer?
+                                          :shape (first selected-shapes)
+                                          :theme-token theme-token
+                                          :token token
+                                          :half-applied half-applied?
+                                          :no-valid-value no-valid-value
+                                          :ref-not-in-active-set ref-not-in-active-set
+                                          :base-font-size base-font-size})]
              (dom/set-attribute! node "title" title))))]
 
     [:button {:class (stl/css-case

@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.main.data.changes :as dch]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -22,4 +23,5 @@
                         (pcb/with-file-data file-data)
                         (pcb/set-base-font-size base-font-size))]
         (rx/of
-         (dch/commit-changes changes))))))
+         (dch/commit-changes changes)
+         (dwtp/propagate-workspace-tokens))))))

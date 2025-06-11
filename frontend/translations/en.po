@@ -7329,8 +7329,16 @@ msgstr "Max. size"
 msgid "workspace.tokens.min-size"
 msgstr "Min. size"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:53
-msgid "workspace.tokens.missing-references"
+#: src/app/main/ui/workspace/tokens/errors.cljs:55
+msgid "workspace.token.invalid-math-expr"
+msgstr "Invalid syntax: This formula may produce unexpected results due to incorrect use of units. Please enter a valid formula"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:59
+msgid "workspace.token.dimension-value-needs-unit"
+msgstr "Invalid Value: It must include either px or rem"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:37
+msgid "workspace.token.missing-references"
 msgstr "Missing token references: "
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:149

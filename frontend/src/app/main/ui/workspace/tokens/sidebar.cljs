@@ -257,6 +257,7 @@
   (let [objects         (mf/deref refs/workspace-page-objects)
         selected        (mf/deref refs/selected-shapes)
         open-status     (mf/deref ref:token-type-open-status)
+        base-font-size  (mf/deref refs/token-base-font-size)
 
         selected-shapes
         (mf/with-memo [selected objects]
@@ -270,7 +271,7 @@
 
         ;; Resolve tokens as second step
         active-theme-tokens'
-        (sd/use-resolved-tokens* active-theme-tokens)
+        (sd/use-resolved-tokens* active-theme-tokens {:base-font-size base-font-size})
 
         ;; This only checks for the currently explicitly selected set
         ;; name, it is ephimeral and can be nil
@@ -292,7 +293,7 @@
           (merge active-theme-tokens selected-token-set-tokens))
 
         tokens
-        (sd/use-resolved-tokens* tokens)
+        (sd/use-resolved-tokens* tokens {:base-font-size base-font-size})
 
         tokens-by-type
         (mf/with-memo [tokens selected-token-set-tokens]

@@ -27,6 +27,22 @@
                         {:value parsed-value
                          :unit unit}))))
 
+(def parseable-token-value-regexp-with-rem
+  "Regexp that can be used to parse a number value out of resolved token value.
+  This regexp also trims whitespace around the value."
+  #"^\s*(-?[0-9]+\.?[0-9]*)(rem|px|%)?\s*$")
+
+(defn parse-token-value-with-rem
+  "Parses a resolved value and separates the unit from the value.
+  Returns a map of {:value `number` :unit `string`}."
+  [value]
+  (cond
+    (number? value) {:value value}
+    (string? value) (when-let [[_ value unit] (re-find parseable-token-value-regexp-with-rem value)]
+                      (when-let [parsed-value (d/parse-double value)]
+                        {:value parsed-value
+                         :unit unit}))))
+
 ;; FIXME: looks very redundant function
 (defn token-identifier
   [{:keys [name] :as _token}]

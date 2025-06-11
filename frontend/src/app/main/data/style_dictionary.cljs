@@ -7,23 +7,67 @@
 (ns app.main.data.style-dictionary
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
+   ["@tokens-studio/unit-calculator" :as unit-calculator]
    ["style-dictionary$default" :as sd]
+   [app.common.data :as d]
    [app.common.files.tokens :as cft]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.warnings :as wtw]
+   [app.util.array :as array]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
+
+(defn make-config [base-font-size]
+  (unit-calculator/presets.penpot #js {:baseSize base-font-size}))
+
+(def memo-make-config (memoize make-config))
+
+(defn calc [expr base-font-size]
+  (try
+    (when-let [[result] (-> (unit-calculator/run expr (memo-make-config base-font-size))
+                            (.exec))]
+      (str (.-value result) (.-unit result)))
+    (catch js/Error e
+      (let [data (cond
+                   (instance? unit-calculator/errors.IncompatibleUnitsError e) (.-data e))]
+        (js/console.log e data)))))
+
 (l/set-level! :debug)
 
 ;; === Style Dictionary
+
+(defn set-base-font-size [cfg base-font-size]
+  (assoc-in cfg [:platforms :json :baseFontSize] base-font-size))
+
+(defn get-base-font-size [^js platform-config]
+  (.-baseFontSize platform-config))
+
+(defn check-and-evaluate-math [^js token ^js platform-config]
+  (calc (.-value token) (get-base-font-size platform-config)))
+
+(def wrapped-math-transform
+  "A wrapper around `sd-transforms/checkAndEvaluateMath` with custom rules for which math expressions to allow:
+  - Allows rem/px addition & subtraction by converting rems to px
+  - Disallows multiplication or division for different units (e.g.: 1px * 1rem)"
+  #js {:type "value"
+       :transitive true
+       :name "penpot/math-transform"
+       :filter #(not= (.-type ^js %) "color")
+       :transform check-and-evaluate-math})
+
+(def penpot-transform-group
+  #js {:name "penpot"
+       :transforms (->> (sd-transforms/getTransforms #js {:platform "none"})
+                        (array/map #(if (= % "ts/resolveMath") (.-name wrapped-math-transform) %)))})
 
 (def setup-style-dictionary
   "Initiates the StyleDictionary instance.
@@ -33,19 +77,27 @@
     (.registerFormat sd #js {:name "custom/json"
                              :format (fn [^js res]
                                        (.-tokens (.-dictionary res)))})
+    (.registerTransform sd wrapped-math-transform)
+    (.registerTransformGroup sd penpot-transform-group)
     sd))
 
 (def default-config
-  {:platforms {:json
-               {:transformGroup "tokens-studio"
-                ;; Required: The StyleDictionary API is focused on files even when working in the browser
-                :files [{:format "custom/json" :destination "penpot"}]}}
-   :preprocessors ["tokens-studio"]
-   ;; Silences style dictionary logs and errors
-   ;; We handle token errors in the UI
-   :log {:verbosity "silent"
-         :warnings "silent"
-         :errors {:brokenReferences "console"}}})
+  (cond-> {:platforms {:json
+                       {:transformGroup "tokens-studio"
+                        ;; Required: The StyleDictionary API is focused on files even when working in the browser
+                        :files [{:format "custom/json" :destination "penpot"}]}}
+           :preprocessors ["tokens-studio"]
+           ;; Silences style dictionary logs and errors
+           ;; We handle token errors in the UI
+           :log {:verbosity "silent"
+                 :warnings "silent"
+                 :errors {:brokenReferences "console"}}}
+    (contains? cf/flags :token-units)
+    (assoc-in [:platforms :json :transformGroup] (.-name penpot-transform-group))))
+
+(def form-config
+  (-> default-config
+      (assoc-in [:platforms :json :options :has-error-on-unitless-dimension] true)))
 
 (defn- parse-sd-token-color-value
   "Parses `value` of a color `sd-token` into a map like `{:value 1 :unit \"px\"}`.
@@ -70,7 +122,9 @@
   [value]
   (let [number? (or (number? value)
                     (numeric-string? value))
-        parsed-value  (cft/parse-token-value value)
+        parsed-value  (if (contains? cf/flags :token-units)
+                        (cft/parse-token-value-with-rem value)
+                        (cft/parse-token-value value))
         out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
                           (<= (:value parsed-value) sm/min-safe-int))]
 
@@ -96,7 +150,9 @@
   "Parses `value` of a number `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (let [parsed-value  (cft/parse-token-value value)
+  (let [parsed-value  (if (contains? cf/flags :token-units)
+                        (cft/parse-token-value-with-rem value)
+                        (cft/parse-token-value value))
         out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
                           (<= (:value parsed-value) sm/min-safe-int))]
     (if (and parsed-value (not out-of-bounds))
@@ -212,7 +268,12 @@
                               :else
                               (assoc origin-token
                                      :resolved-value (:value parsed-token-value)
-                                     :unit (:unit parsed-token-value)))]
+                                     :unit (:unit parsed-token-value)))
+           sd-errors (.-errors sd-token)
+           sd-warnings (.-warnings sd-token)
+           output-token (cond-> output-token
+                          sd-errors (update :errors d/concat-vec sd-errors)
+                          sd-warnings (update :warnings d/concat-vec sd-warnings))]
        (assoc acc (:name output-token) output-token)))
    {} sd-tokens))
 
@@ -257,9 +318,12 @@
   (uuid (.-uuid (.-id ^js sd-token))))
 
 (defn resolve-tokens
-  [tokens]
-  (let [tokens-tree (ctob/tokens-tree tokens)]
-    (resolve-tokens-tree tokens-tree #(get tokens (sd-token-name %)))))
+  [tokens & {:keys [sd-config base-font-size]}]
+  (let [tokens-tree (ctob/tokens-tree tokens)
+        sd (-> (or sd-config default-config)
+               (set-base-font-size base-font-size)
+               (StyleDictionary.))]
+    (resolve-tokens-tree tokens-tree #(get tokens (sd-token-name %)) sd)))
 
 (defn resolve-tokens-interactive
   "Interactive check of resolving tokens.
@@ -272,9 +336,12 @@
 
   So to get back the original token from the resolved sd-token (see my updates for what an sd-token is) we include a temporary :id for the token that we pass to StyleDictionary,
   this way after the resolving computation we can restore any token, even clashing ones with the same :name path by just looking up that :id in the ids map."
-  [tokens]
-  (let [{:keys [tokens-tree ids]} (ctob/backtrace-tokens-tree tokens)]
-    (resolve-tokens-tree tokens-tree  #(get ids (sd-token-uuid %)))))
+  [tokens & {:keys [sd-config base-font-size]}]
+  (let [{:keys [tokens-tree ids]} (ctob/backtrace-tokens-tree tokens)
+        sd (-> (or sd-config default-config)
+               (set-base-font-size base-font-size)
+               (StyleDictionary.))]
+    (resolve-tokens-tree tokens-tree #(get ids (sd-token-uuid %)) sd)))
 
 (defn resolve-tokens-with-verbose-errors [tokens]
   (resolve-tokens-tree
@@ -291,7 +358,7 @@
 
   This hook will return the unresolved tokens as state until they are processed,
   then the state will be updated with the resolved tokens."
-  [tokens & {:keys [cache-atom interactive?]
+  [tokens & {:keys [cache-atom interactive? base-font-size]
              :or {cache-atom !tokens-cache}
              :as config}]
   (let [tokens-state (mf/use-state (get @cache-atom tokens))]
@@ -299,7 +366,7 @@
     ;; FIXME: this with effect with trigger all the time because
     ;; `config` will be always a different instance
 
-    (mf/with-effect [tokens config]
+    (mf/with-effect [tokens config base-font-size]
       (let [cached (get @cache-atom tokens)]
         (cond
           (nil? tokens) nil
@@ -309,8 +376,8 @@
           (some? cached) (reset! tokens-state cached)
           ;; No cached entry, start processing
           :else (let [resolved-tokens-s (if interactive?
-                                          (resolve-tokens-interactive tokens)
-                                          (resolve-tokens tokens))]
+                                          (resolve-tokens-interactive tokens {:base-font-size base-font-size})
+                                          (resolve-tokens tokens {:base-font-size base-font-size}))]
                   (swap! cache-atom assoc tokens resolved-tokens-s)
                   (rx/sub! resolved-tokens-s (fn [resolved-tokens]
                                                (swap! cache-atom assoc tokens resolved-tokens)
@@ -323,14 +390,14 @@
 
   This is a cache-less, simplified version of use-resolved-tokens
   hook."
-  [tokens & {:keys [interactive?]}]
+  [tokens & {:keys [interactive? base-font-size]}]
   (let [state* (mf/use-state tokens)]
-    (mf/with-effect [tokens interactive?]
+    (mf/with-effect [tokens interactive? base-font-size]
       (if (seq tokens)
         (let [tpoint  (dt/tpoint-ms)
               tokens-s  (if interactive?
-                          (resolve-tokens-interactive tokens)
-                          (resolve-tokens tokens))]
+                          (resolve-tokens-interactive tokens {:base-font-size base-font-size})
+                          (resolve-tokens tokens {:base-font-size base-font-size}))]
 
           (-> tokens-s
               (rx/sub! (fn [resolved-tokens]
