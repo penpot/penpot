@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2.9.0 (Unreleased)
+
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features & Enhancements
+
+- On components overrides, separate the content of the text from the rest of properties [Taiga #7434](https://tree.taiga.io/project/penpot/us/7434)
+
+### :bug: Bugs fixed
+
 ## 2.8.0 (Next / Unreleased)
 
 ### :rocket: Epics and highlights
