@@ -5507,7 +5507,31 @@ msgstr "Desvinculado"
 msgid "workspace.options.component.variant"
 msgstr "Variante"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:988
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "Localizar variantes duplicadas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "Algunas variantes tienen propiedades y valores idénticos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.adjust"
+msgstr "Ajusta los valores para que puedan ser encontradas."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr "Estas variantes tienen propiedades y valores idénticos."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr "Esta variante tiene propiedades y valores idénticos a los de otra variante."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr "Algunas de estas variantes tienen propiedades y valores idénticos."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
 msgid "workspace.options.component.variant.malformed.group.locate"
 msgstr "Localizar variantes no válidas"
 
