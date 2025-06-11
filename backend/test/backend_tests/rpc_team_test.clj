@@ -460,11 +460,14 @@
                   ::rpc/profile-id (:id profile1)}
         out      (th/command! params)]
 
+    ;; (th/print-result! out)
     (t/is (th/success? out))
-    (let [result (:result out)]
+    (let [[item1 :as result] (:result out)]
       (t/is (= 1 (count result)))
-      (t/is (= (:id team1) (-> result first :id)))
-      (t/is (not= (:default-team-id profile1) (-> result first :id))))))
+      (t/is (= (:id team1) (:id item1)))
+      (t/is (= 1 (:total-members item1)))
+      (t/is (= 1 (:total-editors item1)))
+      (t/is (not= (:default-team-id profile1) (:id item1))))))
 
 
 (t/deftest team-deletion-1
