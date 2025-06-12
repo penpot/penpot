@@ -33,7 +33,7 @@
 
 (defn calc [expr base-font-size]
   (try
-    (when-let [[result & rest] (-> (unit-calculator/run expr (make-config base-font-size))
+    (when-let [[result & rest] (-> (unit-calculator/run expr (memo-make-config base-font-size))
                                    (.exec))]
       (when (and (instance? unit-calculator/UnitValue result)
                  (nil? rest))
