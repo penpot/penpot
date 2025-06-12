@@ -252,9 +252,14 @@
          (fn [event]
            (let [node  (dom/get-current-target event)
                  theme-token (get active-theme-tokens name)
-                 title (generate-tooltip is-viewer? (first selected-shapes) theme-token token
-                                         half-applied? no-valid-value ref-not-in-active-set
-                                         base-font-size)]
+                 title (generate-tooltip {:is-viewer is-viewer?
+                                          :shape (first selected-shapes)
+                                          :theme-token theme-token
+                                          :token token
+                                          :half-applied half-applied?
+                                          :no-valid-value no-valid-value
+                                          :ref-not-in-active-set ref-not-in-active-set
+                                          :base-font-size base-font-size})]
              (dom/set-attribute! node "title" title))))]
 
     [:button {:class (stl/css-case
