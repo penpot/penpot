@@ -100,7 +100,7 @@
 (defn validate-token-value
   "Validates token value by resolving the value `input` using `StyleDictionary`.
   Returns a promise of either resolved tokens or rejects with an error state."
-  [{:keys [value name-value token tokens]}]
+  [{:keys [value name-value token tokens base-font-size]}]
   (let [;; When creating a new token we dont have a token name yet,
         ;; so we use a temporary token name that hopefully doesn't clash with any of the users token names
         token-name (if (str/empty? name-value) "__TOKEN_STUDIO_SYSTEM.TEMP" name-value)]
@@ -118,8 +118,7 @@
                       :always (update token-name #(ctob/make-token (merge % {:value value
                                                                              :name token-name
                                                                              :type (:type token)}))))]
-        (->> tokens'
-             (sd/resolve-tokens-interactive)
+        (->> (sd/resolve-tokens-interactive tokens' {:base-font-size base-font-size})
              (rx/mapcat
               (fn [resolved-tokens]
                 (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
@@ -131,11 +130,11 @@
   "Resolves a token values using `StyleDictionary`.
   This function is debounced as the resolving might be an expensive calculation.
   Uses a custom debouncing logic, as the resolve function is async."
-  [name-ref token tokens callback & {:keys [timeout] :or {timeout 160}}]
+  [name-ref token tokens callback base-font-size & {:keys [timeout] :or {timeout 160}}]
   (let [timeout-id-ref (mf/use-ref nil)
         debounced-resolver-callback
         (mf/use-fn
-         (mf/deps token callback tokens)
+         (mf/deps token callback tokens base-font-size)
          (fn [value]
            (let [timeout-id (js/Symbol)
                  ;; Dont execute callback when the timout-id-ref is outdated because this function got called again
@@ -147,7 +146,8 @@
                   (->> (validate-token-value {:value value
                                               :name-value @name-ref
                                               :token token
-                                              :tokens tokens})
+                                              :tokens tokens
+                                              :base-font-size base-font-size})
                        (rx/filter #(not (timeout-outdated-cb?)))
                        (rx/subs!
                         callback
@@ -353,7 +353,7 @@
              (when is-color-token (reset! color* (if error? nil v)))
              (reset! token-resolve-result* v))))
 
-        on-update-value-debounced (use-debonced-resolve-callback token-name-ref token active-theme-tokens set-resolve-value)
+        on-update-value-debounced (use-debonced-resolve-callback token-name-ref token active-theme-tokens set-resolve-value base-font-size)
         on-update-value (mf/use-fn
                          (mf/deps on-update-value-debounced)
                          (fn [e]
@@ -456,7 +456,8 @@
                (->> (validate-token-value {:value final-value
                                            :name-value final-name
                                            :token token
-                                           :tokens active-theme-tokens})
+                                           :tokens active-theme-tokens
+                                           :base-font-size base-font-size})
                     (rx/subs!
                      (fn []
                        (st/emit!
