@@ -7,9 +7,7 @@
 (ns app.main.data.style-dictionary
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
-   ["@tokens-studio/unit-calculator$config" :refer [addUnitConversions createConfig]]
-   ["@tokens-studio/unit-calculator$run" :as unit-calc]
-   ["@tokens-studio/unit-calculator$errors" :refer [IncompatibleUnitsError]]
+   ["@tokens-studio/unit-calculator" :as unit-calculator]
    ["style-dictionary$default" :as sd]
    [app.common.data :as d]
    [app.common.files.tokens :as cft]
@@ -32,35 +30,17 @@
        :unit "px"})
 
 (def calc-config
-  (let [rem-px-base-size 16
-        rem->px #(* % rem-px-base-size)
-        conversions (clj->js [;; rem + px
-                              [["px"  "+" "rem"]  (fn [px rem] (px-unit-value (+ (.-value px) (rem->px (.-value rem)))))]
-                              [["rem" "+" "px"]   (fn [rem px] (px-unit-value (+ (.-value px) (rem->px (.-value rem)))))]
-                              ;; rem - px
-                              [["rem" "-" "px"]   (fn [rem px] (px-unit-value (- (rem->px (.-value rem)) (.-value px))))]
-                              [["px"  "-" "rem"]  (fn [px rem] (px-unit-value (- (.-value px) (rem->px (.-value rem)))))]
-                              ;; rem * px
-                              [["rem" "*" "px"]   (fn [rem px] (px-unit-value (* (rem->px (.-value rem)) (.-value px))))]
-                              [["px"  "*" "rem"]  (fn [px rem] (px-unit-value (* (rem->px (.-value rem)) (.-value px))))]
-                              ;; rem / px
-                              [["rem" "/" "px"]   (fn [rem px] (px-unit-value (/ (rem->px (.-value rem)) (.-value px))))]
-                              [["px"  "/" "rem"]  (fn [px rem] (px-unit-value (/ (.-value px) (rem->px (.-value rem)))))]
-                              ;; number + px (unitless number will convert to px)
-                              [["px"  "+" ""]     (fn [px num] (px-unit-value (+ (.-value px) (.-value num))))]
-                              [[""    "+" "px"]   (fn [num px] (px-unit-value (+ (.-value px) (.-value num))))]])
-        config (addUnitConversions (createConfig) conversions)]
-    config))
+  (unit-calculator/presets.penpot {:baseSize 16}))
 
 (defn calc [expr]
   (try
-    (when-let [result (-> (unit-calc expr calc-config)
+    (when-let [result (-> (unit-calculator/run expr calc-config)
                           (.exec)
                           (first))]
       (str (.-value result) (.-unit result)))
     (catch js/Error e
       (let [data (cond
-                   (instance? IncompatibleUnitsError e) (.-values e))]
+                   (instance? unit-calculator/errors.IncompatibleUnitsError e) (.-values e))]
         (js/console.log "ERROR" e data)))))
 
 (comment
