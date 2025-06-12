@@ -37,8 +37,6 @@
    (.push ^js a v1 v2 v3 v4 v5 v6)
    a))
 
-(def concat garray/concat)
-
 (defn normalize-to-array
   "If `o` is an array, returns it as-is, if not, wrap into an array."
   [o]
