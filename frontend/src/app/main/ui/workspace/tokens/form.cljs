@@ -11,7 +11,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
-   [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.modal :as modal]
@@ -237,8 +236,7 @@
 (mf/defc form
   {::mf/wrap-props false}
   [{:keys [token token-type action selected-token-set-name on-display-colorpicker]}]
-  (let [file-data (deref refs/workspace-data)
-        base-font-size (ctf/get-base-font-size-int file-data)
+  (let [base-font-size (mf/deref refs/token-base-font-size)
         create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
         token-properties (dwta/get-token-properties token)
@@ -253,7 +251,8 @@
                               (assoc (:name token) token))
 
         resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:cache-atom form-token-cache-atom
-                                                                     :interactive? true})
+                                                                     :interactive? true
+                                                                     :base-font-size base-font-size})
         token-path (mf/use-memo
                     (mf/deps (:name token))
                     #(cft/token-name->path (:name token)))

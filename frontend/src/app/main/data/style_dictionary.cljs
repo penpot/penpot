@@ -25,16 +25,17 @@
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
-(defn px-unit-value [value]
-  #js {:value value
-       :unit "px"})
 
-(def calc-config
-  (unit-calculator/presets.penpot {:baseSize 16}))
+(defn make-config [base-font-size]
+  (unit-calculator/presets.penpot #js {:baseSize base-font-size}))
 
-(defn calc [expr]
+(def memo-make-config (memoize make-config))
+
+(defn calc [expr base-font-size]
+  (prn "expr" expr base-font-size)
+  (prn (make-config base-font-size))
   (try
-    (when-let [result (-> (unit-calculator/run expr calc-config)
+    (when-let [result (-> (unit-calculator/run expr (make-config base-font-size))
                           (.exec)
                           (first))]
       (str (.-value result) (.-unit result)))
@@ -44,37 +45,43 @@
         (js/console.log "ERROR" e data)))))
 
 (comment
-  (calc "1px + 1rem")  ;; => "17px"
-  (calc "1px + 1")     ;; => "2px"
-  (calc "1 + 1")       ;; => "2"
-  (calc "1rem * 2")    ;; => "2rem"
-  (calc "10 * 2")      ;; => "20"
-  (calc "1rem + 1rem") ;; => "2rem"
+  (calc "1px + 1rem" 16)
+  (calc "10" 16)
+  ;; (calc "1px + 1")     ;; => "2px"
+  ;; (calc "1 + 1")       ;; => "2"
+  ;; (calc "1rem * 2")    ;; => "2rem"
+  ;; (calc "10 * 2")      ;; => "20"
+  ;; (calc "1rem + 1rem") ;; => "2rem"
 
-  (calc "1rem + 1") ;; IncompatibleUnitsError
+  ;; (calc "1rem + 1") ;; IncompatibleUnitsError
   nil)
 
 (l/set-level! :debug)
 
 ;; === Style Dictionary
 
+(defn set-base-font-size [cfg base-font-size]
+  (assoc-in cfg [:platforms :json :baseFontSize] base-font-size))
+
+(defn get-base-font-size [^js platform-config]
+  (.-baseFontSize platform-config))
+
 (defn check-and-evaluate-math [^js token ^js platform-config]
-  (calc (.-value token)))
+  (calc (.-value token) (get-base-font-size platform-config)))
 
 (def wrapped-math-transform
   "A wrapper around `sd-transforms/checkAndEvaluateMath` with custom rules for which math expressions to allow:
   - Allows rem/px addition & subtraction by converting rems to px
   - Disallows multiplication or division for different units (e.g.: 1px * 1rem)"
-  {:type "value"
-   :transitive true
-   :name "penpot/math-transform"
-   :transform check-and-evaluate-math})
+  #js {:type "value"
+       :transitive true
+       :name "penpot/math-transform"
+       :transform check-and-evaluate-math})
 
 (def penpot-transform-group
-  {:name "penpot"
-   :transforms (array/concat [(:name wrapped-math-transform)]
-                             (->> (sd-transforms/getTransforms #js {:platform "none"})
-                                  (array/filter #(not= % "ts/resolveMath"))))})
+  #js {:name "penpot"
+       :transforms (->> (sd-transforms/getTransforms #js {:platform "none"})
+                        (array/map #(if (= % "ts/resolveMath") (.-name wrapped-math-transform) %)))})
 
 (def setup-style-dictionary
   "Initiates the StyleDictionary instance.
@@ -84,7 +91,8 @@
     (.registerFormat sd #js {:name "custom/json"
                              :format (fn [^js res]
                                        (.-tokens (.-dictionary res)))})
-    (.registerTransformGroup sd (clj->js penpot-transform-group))
+    (.registerTransform sd wrapped-math-transform)
+    (.registerTransformGroup sd penpot-transform-group)
     sd))
 
 (def default-config
@@ -99,7 +107,7 @@
                  :warnings "silent"
                  :errors {:brokenReferences "console"}}}
     (contains? cf/flags :token-units)
-    (assoc-in [:platforms :json :transformGroup] (:name penpot-transform-group))))
+    (assoc-in [:platforms :json :transformGroup] (.-name penpot-transform-group))))
 
 (def form-config
   (-> default-config
@@ -324,9 +332,14 @@
   (uuid (.-uuid (.-id ^js sd-token))))
 
 (defn resolve-tokens
-  [tokens]
-  (let [tokens-tree (ctob/tokens-tree tokens)]
-    (resolve-tokens-tree tokens-tree #(get tokens (sd-token-name %)))))
+  [tokens & {:keys [sd-config base-font-size]}]
+  (js/console.log "base-font-size" base-font-size)
+  (let [tokens-tree (ctob/tokens-tree tokens)
+        sd (-> (or sd-config default-config)
+               (set-base-font-size base-font-size)
+               (doto js/console.log)
+               (StyleDictionary.))]
+    (resolve-tokens-tree tokens-tree #(get tokens (sd-token-name %)) sd)))
 
 (defn resolve-tokens-interactive
   "Interactive check of resolving tokens.
@@ -339,10 +352,11 @@
 
   So to get back the original token from the resolved sd-token (see my updates for what an sd-token is) we include a temporary :id for the token that we pass to StyleDictionary,
   this way after the resolving computation we can restore any token, even clashing ones with the same :name path by just looking up that :id in the ids map."
-  [tokens & {:keys [sd-config]}]
+  [tokens & {:keys [sd-config base-font-size]}]
   (let [{:keys [tokens-tree ids]} (ctob/backtrace-tokens-tree tokens)
-        sd-config (or sd-config default-config)
-        sd (StyleDictionary. sd-config)]
+        sd (-> (or sd-config default-config)
+               (set-base-font-size base-font-size)
+               (StyleDictionary.))]
     (resolve-tokens-tree tokens-tree #(get ids (sd-token-uuid %)) sd)))
 
 (defn resolve-tokens-with-verbose-errors [tokens]
@@ -360,7 +374,7 @@
 
   This hook will return the unresolved tokens as state until they are processed,
   then the state will be updated with the resolved tokens."
-  [tokens & {:keys [cache-atom interactive?]
+  [tokens & {:keys [cache-atom interactive? base-font-size]
              :or {cache-atom !tokens-cache}
              :as config}]
   (let [tokens-state (mf/use-state (get @cache-atom tokens))]
@@ -368,7 +382,7 @@
     ;; FIXME: this with effect with trigger all the time because
     ;; `config` will be always a different instance
 
-    (mf/with-effect [tokens config]
+    (mf/with-effect [tokens config base-font-size]
       (let [cached (get @cache-atom tokens)]
         (cond
           (nil? tokens) nil
@@ -378,8 +392,8 @@
           (some? cached) (reset! tokens-state cached)
           ;; No cached entry, start processing
           :else (let [resolved-tokens-s (if interactive?
-                                          (resolve-tokens-interactive tokens)
-                                          (resolve-tokens tokens))]
+                                          (resolve-tokens-interactive tokens {:base-font-size base-font-size})
+                                          (resolve-tokens tokens {:base-font-size base-font-size}))]
                   (swap! cache-atom assoc tokens resolved-tokens-s)
                   (rx/sub! resolved-tokens-s (fn [resolved-tokens]
                                                (swap! cache-atom assoc tokens resolved-tokens)
@@ -392,14 +406,14 @@
 
   This is a cache-less, simplified version of use-resolved-tokens
   hook."
-  [tokens & {:keys [interactive?]}]
+  [tokens & {:keys [interactive? base-font-size]}]
   (let [state* (mf/use-state tokens)]
-    (mf/with-effect [tokens interactive?]
+    (mf/with-effect [tokens interactive? base-font-size]
       (if (seq tokens)
         (let [tpoint  (dt/tpoint-ms)
               tokens-s  (if interactive?
-                          (resolve-tokens-interactive tokens)
-                          (resolve-tokens tokens))]
+                          (resolve-tokens-interactive tokens {:base-font-size base-font-size})
+                          (resolve-tokens tokens {:base-font-size base-font-size}))]
 
           (-> tokens-s
               (rx/sub! (fn [resolved-tokens]
