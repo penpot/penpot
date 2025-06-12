@@ -2668,12 +2668,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tokens-studio/unit-calculator@npm:^0.0.2":
-  version: 0.0.2
-  resolution: "@tokens-studio/unit-calculator@npm:0.0.2"
+"@tokens-studio/unit-calculator@npm:^0.0.3":
+  version: 0.0.3
+  resolution: "@tokens-studio/unit-calculator@npm:0.0.3"
   bin:
     unit-calc: dist/cli.js
-  checksum: 10c0/f1f8aefe037683cc28bd773c2c7d064b2dc8eba2d0be75fc2b39857d8eef2829879c172e0bfefb2b9a5c69a1034ca03b7976957aff0321e519e27b76a22700b3
+  checksum: 10c0/82c1e0002df1d172e78b23dffd0f850dfca5306f582900d75345c72d5f8a8ec1858ee75c9a48733572a8d188a212e003bb893fa8ade671dffd821f0b52569805
   languageName: node
   linkType: hard
 
@@ -5967,7 +5967,7 @@ __metadata:
     "@storybook/test": "npm:^8.6.14"
     "@storybook/test-runner": "npm:^0.22.0"
     "@tokens-studio/sd-transforms": "npm:1.2.11"
-    "@tokens-studio/unit-calculator": "npm:^0.0.2"
+    "@tokens-studio/unit-calculator": "npm:^0.0.3"
     "@types/node": "npm:^22.15.21"
     "@zip.js/zip.js": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch"
     autoprefixer: "npm:^10.4.21"
