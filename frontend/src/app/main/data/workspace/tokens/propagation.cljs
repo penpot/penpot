@@ -191,8 +191,7 @@
                                 (get :tokens-lib))]
         (let [base-font-size (-> (dsh/lookup-file-data state)
                                  (ctf/get-base-font-size-int))]
-          (->> (ctob/get-tokens-in-active-sets tokens-lib)
-               (sd/resolve-tokens)
+          (->> (sd/resolve-tokens (ctob/get-tokens-in-active-sets tokens-lib) {:base-font-size base-font-size})
                (rx/mapcat (fn [sd-tokens]
                             (let [undo-id (js/Symbol)]
                               (rx/concat
