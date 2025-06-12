@@ -41,19 +41,7 @@
     (catch js/Error e
       (let [data (cond
                    (instance? unit-calculator/errors.IncompatibleUnitsError e) (.-data e))]
-        (js/console.log "ERROR" e data)))))
-
-(comment
-  (calc "1px + 1rem" 16)
-  (calc "10" 16)
-  ;; (calc "1px + 1")     ;; => "2px"
-  ;; (calc "1 + 1")       ;; => "2"
-  ;; (calc "1rem * 2")    ;; => "2rem"
-  ;; (calc "10 * 2")      ;; => "20"
-  ;; (calc "1rem + 1rem") ;; => "2rem"
-
-  ;; (calc "1rem + 1") ;; IncompatibleUnitsError
-  nil)
+        (js/console.log e data)))))
 
 (l/set-level! :debug)
 
