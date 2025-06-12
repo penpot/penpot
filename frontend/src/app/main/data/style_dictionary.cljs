@@ -40,7 +40,7 @@
         (str (.-value result) (.-unit result))))
     (catch js/Error e
       (let [data (cond
-                   (instance? unit-calculator/errors.IncompatibleUnitsError e) (.-values e))]
+                   (instance? unit-calculator/errors.IncompatibleUnitsError e) (.-data e))]
         (js/console.log "ERROR" e data)))))
 
 (comment
