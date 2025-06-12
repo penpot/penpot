@@ -32,8 +32,6 @@
 (def memo-make-config (memoize make-config))
 
 (defn calc [expr base-font-size]
-  (prn "expr" expr base-font-size)
-  (prn (make-config base-font-size))
   (try
     (when-let [result (-> (unit-calculator/run expr (make-config base-font-size))
                           (.exec)
@@ -333,11 +331,9 @@
 
 (defn resolve-tokens
   [tokens & {:keys [sd-config base-font-size]}]
-  (js/console.log "base-font-size" base-font-size)
   (let [tokens-tree (ctob/tokens-tree tokens)
         sd (-> (or sd-config default-config)
                (set-base-font-size base-font-size)
-               (doto js/console.log)
                (StyleDictionary.))]
     (resolve-tokens-tree tokens-tree #(get tokens (sd-token-name %)) sd)))
 
