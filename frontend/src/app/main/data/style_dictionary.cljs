@@ -63,6 +63,7 @@
   #js {:type "value"
        :transitive true
        :name "penpot/math-transform"
+       :filter #(not= (.-type ^js %) "color")
        :transform check-and-evaluate-math})
 
 (def penpot-transform-group
