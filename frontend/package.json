@@ -107,6 +107,7 @@
     "@penpot/svgo": "penpot/svgo#v3.1",
     "@penpot/text-editor": "portal:./text-editor",
     "@tokens-studio/sd-transforms": "1.2.11",
+    "@tokens-studio/unit-calculator": "^0.0.5",
     "@zip.js/zip.js": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch",
     "compression": "^1.8.0",
     "date-fns": "^4.1.0",

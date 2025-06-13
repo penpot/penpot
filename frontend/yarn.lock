@@ -2668,6 +2668,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tokens-studio/unit-calculator@npm:^0.0.5":
+  version: 0.0.5
+  resolution: "@tokens-studio/unit-calculator@npm:0.0.5"
+  bin:
+    unit-calc: dist/cli.js
+  checksum: 10c0/1a35fe843772cfd57cd86f79bbd4d22ea675164e6aa5e8a46188d5b705daaa2fd13f754050bd71868eb144aec9081f9c4811f4c2ffc6fe49fca76eaf7f04e4bc
+  languageName: node
+  linkType: hard
+
 "@trysound/sax@npm:0.2.0":
   version: 0.2.0
   resolution: "@trysound/sax@npm:0.2.0"
@@ -5958,6 +5967,7 @@ __metadata:
     "@storybook/test": "npm:^8.6.14"
     "@storybook/test-runner": "npm:^0.22.0"
     "@tokens-studio/sd-transforms": "npm:1.2.11"
+    "@tokens-studio/unit-calculator": "npm:^0.0.5"
     "@types/node": "npm:^22.15.21"
     "@zip.js/zip.js": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch"
     autoprefixer: "npm:^10.4.21"

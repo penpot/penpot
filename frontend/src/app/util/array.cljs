@@ -6,7 +6,7 @@
 
 (ns app.util.array
   "A collection of helpers for work with javascript arrays."
-  (:refer-clojure :exclude [conj! conj filter map reduce find sort])
+  (:refer-clojure :exclude [conj! conj filter map reduce find sort concat])
   (:require
    [cljs.core :as c]
    [goog.array :as garray]))
@@ -73,4 +73,3 @@
   [a]
   (garray/sort a compare)
   a)
-
