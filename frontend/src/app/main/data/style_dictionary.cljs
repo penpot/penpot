@@ -33,11 +33,9 @@
 
 (defn calc [expr base-font-size]
   (try
-    (when-let [[result & rest] (-> (unit-calculator/run expr (memo-make-config base-font-size))
-                                   (.exec))]
-      (when (and (instance? unit-calculator/UnitValue result)
-                 (nil? rest))
-        (str (.-value result) (.-unit result))))
+    (when-let [[result] (-> (unit-calculator/run expr (memo-make-config base-font-size))
+                            (.exec))]
+      (str (.-value result) (.-unit result)))
     (catch js/Error e
       (let [data (cond
                    (instance? unit-calculator/errors.IncompatibleUnitsError e) (.-data e))]
