@@ -104,8 +104,7 @@ pub extern "C" fn render(_: i32) {
 #[no_mangle]
 pub extern "C" fn render_from_cache(_: i32) {
     with_state!(state, {
-        let render_state = state.render_state();
-        render_state.render_from_cache();
+        state.render_from_cache();
     });
 }
 
@@ -689,6 +688,21 @@ pub extern "C" fn set_grid_cells() {
     });
 
     mem::free_bytes();
+}
+
+#[no_mangle]
+pub extern "C" fn show_grid(a: u32, b: u32, c: u32, d: u32) {
+    with_state!(state, {
+        let id = uuid_from_u32_quartet(a, b, c, d);
+        state.render_state.show_grid = Some(id);
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn hide_grid() {
+    with_state!(state, {
+        state.render_state.show_grid = None;
+    });
 }
 
 fn main() {

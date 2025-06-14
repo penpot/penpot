@@ -13,7 +13,6 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.features :as features]
@@ -329,6 +328,12 @@
       (when (and @canvas-init? initialized?)
         (wasm.api/set-canvas-background background)))
 
+    (mf/with-effect [@canvas-init? hover-grid? @hover-top-frame-id]
+      (when @canvas-init?
+        (if hover-grid?
+          (wasm.api/show-grid @hover-top-frame-id)
+          (wasm.api/clear-grid))))
+
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? read-only?)
@@ -639,25 +644,14 @@
            :zoom zoom}])
 
        [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
-        (when (or show-grid-editor? hover-grid?)
+        (when show-grid-editor?
           [:& grid-layout/editor
            {:zoom zoom
             :objects objects-modified
             :shape (or (get base-objects edition)
                        (get base-objects @hover-top-frame-id))
-            :view-only (not show-grid-editor?)}])
+            :view-only (not show-grid-editor?)}])]
 
-        (for [frame (ctt/get-frames objects)]
-          (when (and (ctl/grid-layout? frame)
-                     (empty? (:shapes frame))
-                     (not= edition (:id frame))
-                     (not= @hover-top-frame-id (:id frame)))
-            [:& grid-layout/editor
-             {:zoom zoom
-              :key (dm/str (:id frame))
-              :objects objects-modified
-              :shape frame
-              :view-only true}]))]
        [:g.scrollbar-wrapper {:clipPath "url(#clip-handlers)"}
         [:& scroll-bars/viewport-scrollbars
          {:objects base-objects
