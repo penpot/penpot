@@ -36,6 +36,7 @@
 
 (defn- hide-popover
   [node]
+  (dom/unset-css-property! node "block-size")
   (dom/unset-css-property! node "display")
   (.hidePopover ^js node))
 
