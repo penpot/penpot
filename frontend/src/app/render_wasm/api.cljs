@@ -739,7 +739,7 @@
     (when (and (some? content)
                (or (= type :path)
                    (= type :bool)))
-      (when (some? svg-attrs)
+      (when (seq svg-attrs)
         (set-shape-path-attrs svg-attrs))
       (set-shape-path-content content))
     (when (and (some? content) (= type :svg-raw))
