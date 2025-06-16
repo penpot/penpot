@@ -28,4 +28,25 @@ export class WasmWorkspacePage extends WorkspacePage {
       return window.wasmSetObjectsFinished;
     });
   }
+
+  static async mockGoogleFont(page, fontSlug, assetFilename, options = {}) {
+    const url = new RegExp(`/internal/gfonts/font/${fontSlug}`);
+    return await page.route(url, (route) =>
+      route.fulfill({
+        status: 200,
+        path: `playwright/data/${assetFilename}`,
+        contentType: "application/font-ttf",
+        ...options,
+      }),
+    );
+  }
+
+  async mockGoogleFont(fontSlug, assetFilename, options) {
+    return WasmWorkspacePage.mockGoogleFont(
+      this.page,
+      fontSlug,
+      assetFilename,
+      options,
+    );
+  }
 }

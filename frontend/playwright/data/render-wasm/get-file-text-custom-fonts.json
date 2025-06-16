@@ -1,0 +1,486 @@
+{
+    "~:features": {
+        "~#set": [
+            "fdata/path-data",
+            "plugins/runtime",
+            "design-tokens/v1",
+            "variants/v1",
+            "layout/grid",
+            "styles/v2",
+            "fdata/pointer-map",
+            "fdata/objects-map",
+            "render-wasm/v1",
+            "components/v2",
+            "fdata/shape-data-type"
+        ]
+    },
+    "~:team-id": "~u04868522-3ebf-81e8-8006-306b0c9b5f59",
+    "~:permissions": {
+        "~:type": "~:membership",
+        "~:is-owner": true,
+        "~:is-admin": true,
+        "~:can-edit": true,
+        "~:can-read": true,
+        "~:is-logged": true
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "Text: Custom Fonts",
+    "~:revn": 13,
+    "~:modified-at": "~m1750151641034",
+    "~:vern": 0,
+    "~:id": "~u434b0541-fa2f-802f-8006-59827d964a9b",
+    "~:is-shared": false,
+    "~:migrations": {
+        "~#ordered-set": [
+            "legacy-2",
+            "legacy-3",
+            "legacy-5",
+            "legacy-6",
+            "legacy-7",
+            "legacy-8",
+            "legacy-9",
+            "legacy-10",
+            "legacy-11",
+            "legacy-12",
+            "legacy-13",
+            "legacy-14",
+            "legacy-16",
+            "legacy-17",
+            "legacy-18",
+            "legacy-19",
+            "legacy-25",
+            "legacy-26",
+            "legacy-27",
+            "legacy-28",
+            "legacy-29",
+            "legacy-31",
+            "legacy-32",
+            "legacy-33",
+            "legacy-34",
+            "legacy-36",
+            "legacy-37",
+            "legacy-38",
+            "legacy-39",
+            "legacy-40",
+            "legacy-41",
+            "legacy-42",
+            "legacy-43",
+            "legacy-44",
+            "legacy-45",
+            "legacy-46",
+            "legacy-47",
+            "legacy-48",
+            "legacy-49",
+            "legacy-50",
+            "legacy-51",
+            "legacy-52",
+            "legacy-53",
+            "legacy-54",
+            "legacy-55",
+            "legacy-56",
+            "legacy-57",
+            "legacy-59",
+            "legacy-62",
+            "legacy-65",
+            "legacy-66",
+            "legacy-67",
+            "0001-remove-tokens-from-groups",
+            "0002-normalize-bool-content",
+            "0002-clean-shape-interactions",
+            "0003-fix-root-shape",
+            "0003-convert-path-content",
+            "0004-clean-shadow-and-colors",
+            "0005-deprecate-image-type",
+            "0006-fix-old-texts-fills",
+            "0007-clear-invalid-strokes-and-fills-v2",
+            "0008-fix-library-colors-opacity",
+            "0009-add-partial-text-touched-flags"
+        ]
+    },
+    "~:version": 67,
+    "~:project-id": "~u53a7ff09-2228-81d3-8006-4b5ea964593b",
+    "~:created-at": "~m1750081311326",
+    "~:data": {
+        "~:pages": [
+            "~u434b0541-fa2f-802f-8006-59827d964a9c"
+        ],
+        "~:pages-index": {
+            "~u434b0541-fa2f-802f-8006-59827d964a9c": {
+                "~:objects": {
+                    "~u00000000-0000-0000-0000-000000000000": {
+                        "~#shape": {
+                            "~:y": 0,
+                            "~:hide-fill-on-export": false,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:name": "Root Frame",
+                            "~:width": 0.01,
+                            "~:type": "~:frame",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 0.0,
+                                        "~:y": 0.0
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.01,
+                                        "~:y": 0.0
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.01,
+                                        "~:y": 0.01
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.0,
+                                        "~:y": 0.01
+                                    }
+                                }
+                            ],
+                            "~:r2": 0,
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:r3": 0,
+                            "~:r1": 0,
+                            "~:id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [],
+                            "~:x": 0,
+                            "~:proportion": 1.0,
+                            "~:r4": 0,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 0,
+                                    "~:y": 0,
+                                    "~:width": 0.01,
+                                    "~:height": 0.01,
+                                    "~:x1": 0,
+                                    "~:y1": 0,
+                                    "~:x2": 0.01,
+                                    "~:y2": 0.01
+                                }
+                            },
+                            "~:fills": [
+                                {
+                                    "~:fill-color": "#FFFFFF",
+                                    "~:fill-opacity": 1
+                                }
+                            ],
+                            "~:flip-x": null,
+                            "~:height": 0.01,
+                            "~:flip-y": null,
+                            "~:shapes": [
+                                "~u7d85a63e-18e7-809f-8006-59827fe8501e",
+                                "~u7d85a63e-18e7-809f-8006-59833ef5fcef"
+                            ]
+                        }
+                    },
+                    "~u7d85a63e-18e7-809f-8006-59827fe8501e": {
+                        "~#shape": {
+                            "~:y": 451.9999962296588,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "xgmgu1frox",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "custom-7d85a63e-18e7-809f-8006-5983057a9b7c",
+                                                        "~:key": "ee7vl7klqs",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "normal-400",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Nodesto Caps Condensed\"",
+                                                        "~:text": "Penpot & Dragons"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "center",
+                                                "~:font-id": "custom-7d85a63e-18e7-809f-8006-5983057a9b7c",
+                                                "~:key": "17bt2f4evfs",
+                                                "~:font-size": "72",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "normal-400",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "\"Nodesto Caps Condensed\""
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Penpot & Dragons",
+                            "~:width": 403.99995992417394,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 744.0000211580308,
+                                        "~:y": 451.9999962296588
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 1147.9999810822046,
+                                        "~:y": 451.9999962296588
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 1147.9999810822046,
+                                        "~:y": 537.9999971833331
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 744.0000211580308,
+                                        "~:y": 537.9999971833331
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:id": "~u7d85a63e-18e7-809f-8006-59827fe8501e",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:x": 744.0000211580307,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 744.0000211580307,
+                                    "~:y": 451.9999962296588,
+                                    "~:width": 403.99995992417394,
+                                    "~:height": 86.00000095367432,
+                                    "~:x1": 744.0000211580307,
+                                    "~:y1": 451.9999962296588,
+                                    "~:x2": 1147.9999810822046,
+                                    "~:y2": 537.9999971833331
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 86.00000095367432,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u7d85a63e-18e7-809f-8006-59833ef5fcef": {
+                        "~#shape": {
+                            "~:y": 537.9999971833331,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "xgmgu1frox",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "custom-7d85a63e-18e7-809f-8006-59832d696634",
+                                                        "~:key": "ee7vl7klqs",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "500",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "normal-500",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Mr Eaves SC Remake\"",
+                                                        "~:text": "Lorem Ipsum Dolors Sit Amet"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "center",
+                                                "~:font-id": "custom-7d85a63e-18e7-809f-8006-59832d696634",
+                                                "~:key": "17bt2f4evfs",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "500",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "normal-500",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "\"Mr Eaves SC Remake\""
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Penpot & Dragons",
+                            "~:width": 466.0000131576671,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 712.9999941849438,
+                                        "~:y": 537.9999971833331
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 1179.0000073426108,
+                                        "~:y": 537.9999971833331
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 1179.0000073426108,
+                                        "~:y": 580.9999976601703
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 712.9999941849438,
+                                        "~:y": 580.9999976601703
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:id": "~u7d85a63e-18e7-809f-8006-59833ef5fcef",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:x": 712.9999941849437,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 712.9999941849437,
+                                    "~:y": 537.9999971833331,
+                                    "~:width": 466.0000131576671,
+                                    "~:height": 43.00000047683716,
+                                    "~:x1": 712.9999941849437,
+                                    "~:y1": 537.9999971833331,
+                                    "~:x2": 1179.0000073426108,
+                                    "~:y2": 580.9999976601703
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 43.00000047683716,
+                            "~:flip-y": null
+                        }
+                    }
+                },
+                "~:id": "~u434b0541-fa2f-802f-8006-59827d964a9c",
+                "~:name": "Page 1"
+            }
+        },
+        "~:id": "~u434b0541-fa2f-802f-8006-59827d964a9b",
+        "~:options": {
+            "~:components-v2": true,
+            "~:base-font-size": "16px"
+        }
+    }
+}
