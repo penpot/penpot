@@ -91,10 +91,10 @@
            parent-id    (or parent-id (get selected-obj :parent-id))
            base-parent  (get objects parent-id)
 
-           layout-props
+           layout-attrs
            (when (and (= 1 (count selected))
                       (ctl/any-layout? base-parent))
-             (select-keys selected-obj ctl/layout-item-props))
+             (select-keys selected-obj ctl/layout-child-attrs))
 
            target-cell-id
            (if (and (nil? target-cell-id)
@@ -129,8 +129,8 @@
                      :parent-id parent-id
                      :shapes (into [] selected))
 
-              (some? layout-props)
-              (d/patch-object layout-props)
+              (some? layout-attrs)
+              (d/patch-object layout-attrs)
 
               ;; Frames from shapes will not be displayed in viewer and no clipped
               (or (not= frame-id uuid/zero) without-fill?)
