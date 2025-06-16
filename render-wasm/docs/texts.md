@@ -28,6 +28,18 @@ Penpot offers font handling for both Google Fonts and custom fonts, using Skia�
 - **Fallback Mechanism:** Skia requires explicit font data for proper Unicode rendering, so we cannot rely on browser fallback as with SVG. We detect the language used and automatically add the appropriate Noto Sans font as a fallback. If the user’s selected fonts cannot render the text, Skia’s fallback mechanism will try the next available font in the list.
 - **Emoji Support:** For emoji characters, we use Noto Color Emoji by default. Ideally in the future, users will be able to select custom emoji fonts instead of Noto Sans as default, as the code is ready for this scenario.
 
+## Texts as Paths
+
+In Skia, it's possible to render text as paths in different ways. However, to preserve paragraph properties, we need to convert text nodes to `TextBlob`, then convert them to `Path`, and finally render them. This is necessary to ensure each piece of text is rendered in its correct position within the paragraph layout. We achieve this by using **Line Metrics** and **Style Metrics**, which allow us to iterate through each text element and read its dimensions, position, and style properties.
+
+This feature is not currently activated, but it is explained step by step in [render-wasm/src/shapes/text_paths.rs](/render-wasm/src/shapes/text_paths.rs).
+
+1. Get the paragraph and set the layout width. This is important because the rest of the metrics depend on setting the layout correctly.
+2. Iterate through each line in the paragraph. Paragraph text style is retrieved through `LineMetrics`, which is why we go line by line.
+3. Get the styles present in the line for each text leaf. `StyleMetrics` contain the style for individual text leaves, which we convert to `TextBlob` and then to `Path`.
+4. Finally, `text::render` should paint all the paths on the canvas.
+
+
 ## References
 
 - [Noto: A typeface for the world](https://fonts.google.com/noto)
