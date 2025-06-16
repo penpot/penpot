@@ -237,8 +237,9 @@
           [:div {:class (stl/css  :counter)} (str size "/300")])]])))
 
 
-(defn- get-variant-malformed-message
-  "Generate warning message for malformed variants depending on the selected variants"
+(defn- get-variant-malformed-warning-message
+  "Receive a list of booleans, one for each selected variant, indicating if that variant
+   is malformed, and generate a warning message accordingly"
   [malformed-map]
   (cond
     (and (= (count malformed-map) 1) (some? (first malformed-map)))
@@ -253,8 +254,9 @@
     :else nil))
 
 
-(defn- get-variant-duplicated-message
-  "Generate warning message for duplicated variants depending on the selected variants"
+(defn- get-variant-duplicated-warning-message
+  "Receive a list of booleans, one for each selected variant, indicating if that variant
+   is duplicated, and generate a warning message accordingly"
   [duplicated-map]
   (cond
     (and (= (count duplicated-map) 1) (some? (first duplicated-map)))
@@ -309,14 +311,15 @@
                          (first properties-map))
 
         malformed-map   (mapv :variant-error shapes)
-        malformed-msg   (get-variant-malformed-message malformed-map)
+        malformed-msg   (get-variant-malformed-warning-message malformed-map)
 
         duplicated-ids  (->> (cfv/find-variant-components data objects variant-id)
-                             get-component-ids-with-duplicated-variant-props-and-values)
+                             get-component-ids-with-duplicated-variant-props-and-values
+                             set)
         duplicated-map  (->> components
                              (mapv :main-instance-id)
-                             (mapv (set duplicated-ids)))
-        duplicated-msg  (get-variant-duplicated-message duplicated-map)
+                             (mapv duplicated-ids))
+        duplicated-msg  (get-variant-duplicated-warning-message duplicated-map)
 
         prop-vals       (mf/with-memo [data objects variant-id]
                           (cfv/extract-properties-values data objects variant-id))
