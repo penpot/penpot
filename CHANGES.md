@@ -49,7 +49,7 @@ on-premises instances** that want to keep up to date.
 - Fix palette is over sidebar [#11160](https://tree.taiga.io/project/penpot/issue/11160)
 - Fix font size input not displaying "mixed" when multiple texts are selected [Taiga #11177](https://tree.taiga.io/project/penpot/issue/11177)
 - Misalignments at Create account [Taiga #11315](https://tree.taiga.io/project/penpot/issue/11315)
-
+- Fix issue with importing files where flex/grid is used [Taiga #11334](https://tree.taiga.io/project/penpot/issue/11334)
 
 ## 2.7.2
 
