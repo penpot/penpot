@@ -313,7 +313,7 @@
            :title "Shape"}
    [:group
     [:merge {:title "GroupShape"}
-     ctsl/schema:layout-attrs
+     ctsl/schema:layout-child-attrs
      schema:group-attrs
      schema:shape-generic-attrs
      schema:shape-geom-attrs
@@ -321,8 +321,8 @@
 
    [:frame
     [:merge {:title "FrameShape"}
+     ctsl/schema:layout-child-attrs
      ctsl/schema:layout-attrs
-     ::ctsl/layout-attrs
      schema:frame-attrs
      schema:shape-generic-attrs
      schema:shape-geom-attrs
@@ -332,14 +332,14 @@
 
    [:bool
     [:merge {:title "BoolShape"}
-     ctsl/schema:layout-attrs
+     ctsl/schema:layout-child-attrs
      schema:bool-attrs
      schema:shape-generic-attrs
      schema:shape-base-attrs]]
 
    [:rect
     [:merge {:title "RectShape"}
-     ctsl/schema:layout-attrs
+     ctsl/schema:layout-child-attrs
      schema:rect-attrs
      schema:shape-generic-attrs
      schema:shape-geom-attrs
@@ -347,7 +347,7 @@
 
    [:circle
     [:merge {:title "CircleShape"}
-     ctsl/schema:layout-attrs
+     ctsl/schema:layout-child-attrs
      schema:circle-attrs
      schema:shape-generic-attrs
      schema:shape-geom-attrs
@@ -355,7 +355,7 @@
 
    [:image
     [:merge {:title "ImageShape"}
-     ctsl/schema:layout-attrs
+     ctsl/schema:layout-child-attrs
      schema:image-attrs
      schema:shape-generic-attrs
      schema:shape-geom-attrs
@@ -363,7 +363,7 @@
 
    [:svg-raw
     [:merge {:title "SvgRawShape"}
-     ctsl/schema:layout-attrs
+     ctsl/schema:layout-child-attrs
      schema:svg-raw-attrs
      schema:shape-generic-attrs
      schema:shape-geom-attrs
@@ -371,14 +371,14 @@
 
    [:path
     [:merge {:title "PathShape"}
-     ctsl/schema:layout-attrs
+     ctsl/schema:layout-child-attrs
      schema:path-attrs
      schema:shape-generic-attrs
      schema:shape-base-attrs]]
 
    [:text
     [:merge {:title "TextShape"}
-     ctsl/schema:layout-attrs
+     ctsl/schema:layout-child-attrs
      schema:text-attrs
      schema:shape-generic-attrs
      schema:shape-geom-attrs
@@ -682,23 +682,6 @@
     :r3
     :r4})
 
-(def ^:private layout-extract-props
-  #{:layout
-    :layout-flex-dir
-    :layout-gap-type
-    :layout-gap
-    :layout-wrap-type
-    :layout-align-items
-    :layout-align-content
-    :layout-justify-items
-    :layout-justify-content
-    :layout-padding-type
-    :layout-padding
-    :layout-grid-dir
-    :layout-grid-rows
-    :layout-grid-columns
-    :layout-grid-cells})
-
 (defn extract-props
   "Retrieves an object with the 'pasteable' properties for a shape."
   [shape]
@@ -729,9 +712,8 @@
                       (assoc-props node txt/text-node-attrs)))
                   props)))
 
-          (extract-layout-props
-            [props shape]
-            (d/patch-object props (select-keys shape layout-extract-props)))]
+          (extract-layout-attrs [props shape]
+            (d/patch-object props (select-keys shape ctsl/layout-attrs)))]
 
     (let [;; For texts we don't extract the fill
           extract-props
@@ -739,7 +721,7 @@
       (-> shape
           (select-keys extract-props)
           (cond-> (cfh/text-shape? shape) (extract-text-props shape))
-          (cond-> (ctsl/any-layout? shape) (extract-layout-props shape))))))
+          (cond-> (ctsl/any-layout? shape) (extract-layout-attrs shape))))))
 
 (defn patch-props
   "Given the object of `extract-props` applies it to a shape. Adapt the shape if necesary"
@@ -764,7 +746,7 @@
                              (d/patch-object (select-keys props txt/text-node-attrs))))))))))
 
           (patch-layout-props [shape props]
-            (let [shape (d/patch-object shape (select-keys props layout-extract-props))]
+            (let [shape (d/patch-object shape (select-keys props ctsl/layout-attrs))]
               (cond-> shape
                 (ctsl/grid-layout? shape)
                 (ctsl/assign-cells objects))))]
