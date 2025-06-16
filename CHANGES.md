@@ -50,6 +50,7 @@ on-premises instances** that want to keep up to date.
 - Fix font size input not displaying "mixed" when multiple texts are selected [Taiga #11177](https://tree.taiga.io/project/penpot/issue/11177)
 - Misalignments at Create account [Taiga #11315](https://tree.taiga.io/project/penpot/issue/11315)
 - Fix issue with importing files where flex/grid is used [Taiga #11334](https://tree.taiga.io/project/penpot/issue/11334)
+- Fix wrong color in the export progress bar [Taiga #11299](https://tree.taiga.io/project/penpot/issue/11299)
 
 ## 2.7.2
 
