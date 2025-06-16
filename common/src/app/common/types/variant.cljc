@@ -174,7 +174,9 @@
                (let [num       (:num prop)
                      name-base (:name prop)
                      name      (if (= num 0) name-base (str name-base " (" num ")"))]
-                 (assoc (dissoc prop :num) :name name))))))
+                 (-> prop
+                     (dissoc :num)
+                     (assoc :name name)))))))
 
 
 (defn add-number-to-repeated-item
