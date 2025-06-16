@@ -38,6 +38,7 @@ on-premises instances** that want to keep up to date.
 - Update google fonts (at 2025/05/19) [Taiga 10792](https://tree.taiga.io/project/penpot/us/10792)
 - Add tooltip component to DS [Taiga 9220](https://tree.taiga.io/project/penpot/us/9220)
 - Allow multi file token export [Taiga #10144](https://tree.taiga.io/project/penpot/us/10144)
+- Add Serbian language
 
 ### :bug: Bugs fixed
 

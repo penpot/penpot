@@ -274,6 +274,7 @@ async function readTranslations() {
     "fa",
     "fr",
     "he",
+    "sr",
     "nb_NO",
     "pl",
     "pt_BR",
