@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
-   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -37,7 +36,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]
    [shadow.resource]))
 
@@ -384,7 +382,6 @@
         on-export
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/data-event ::ev/event {::ev/name "export-tokens"}))
            (modal/show! :tokens/export {})))
 
         on-modal-show
