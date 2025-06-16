@@ -16,6 +16,7 @@ $arrow-side: 12px;
   background-color: transparent;
   overflow: hidden;
   inline-size: fit-content;
+  block-size: fit-content;
 }
 
 .tooltip-arrow {
@@ -145,6 +146,7 @@ $arrow-side: 12px;
   border: $b-1 solid var(--color-accent-primary-muted);
   padding: var(--sp-s) var(--sp-m);
   grid-area: content;
+  block-size: fit-content;
 }
 
 .tooltip-trigger {

@@ -74,7 +74,7 @@ export const Corners = {
     >
       <Tooltip
         id="popover-example10"
-        content="This is the tooltip content, and must be shown in two lines."
+        content="This is the tooltip content, it's very long, and must be shown in three lines to check how it respond to different sizes."
         style={{
           placeSelf: "start start",
           width: "fit-content",
@@ -85,7 +85,7 @@ export const Corners = {
       </Tooltip>
       <Tooltip
         id="popover-example2"
-        content="This is the tooltip content, and must be shown in two lines."
+        content="This is the tooltip content, it's very long, and must be shown in three lines to check how it respond to different sizes."
         style={{
           alignSelf: "start",
           justifySelf: "center",
@@ -106,7 +106,7 @@ export const Corners = {
       </Tooltip>
       <Tooltip
         id="popover-example3"
-        content="This is the tooltip content, and must be shown in two lines."
+        content="This is the tooltip content, it's very long, and must be shown in three lines to check how it respond to different sizes."
         style={{
           alignSelf: "start",
           justifySelf: "end",
@@ -118,7 +118,7 @@ export const Corners = {
       </Tooltip>
       <Tooltip
         id="popover-example4"
-        content="This is the tooltip content, and must be shown in two lines."
+        content="This is the tooltip content, it's very long, and must be shown in three lines to check how it respond to different sizes."
         style={{
           alignSelf: "center",
           justifySelf: "start",
@@ -130,7 +130,7 @@ export const Corners = {
       </Tooltip>
       <Tooltip
         id="popover-example5"
-        content="This is the tooltip content, and must be shown in two lines."
+        content="This is the tooltip content, it's very long, and must be shown in three lines to check how it respond to different sizes."
         style={{
           alignSelf: "center",
           justifySelf: "center",
@@ -142,7 +142,7 @@ export const Corners = {
       </Tooltip>
       <Tooltip
         id="popover-example6"
-        content="This is the tooltip content, and must be shown in two lines."
+        content="This is the tooltip content, it's very long, and must be shown in three lines to check how it respond to different sizes."
         style={{
           alignSelf: "center",
           justifySelf: "end",
@@ -154,7 +154,7 @@ export const Corners = {
       </Tooltip>
       <Tooltip
         id="popover-example7"
-        content="This is the tooltip content, and must be shown in two lines."
+        content="This is the tooltip content, it's very long, and must be shown in three lines to check how it respond to different sizes."
         style={{
           alignSelf: "end",
           justifySelf: "start",
@@ -166,7 +166,7 @@ export const Corners = {
       </Tooltip>
       <Tooltip
         id="popover-example8"
-        content="This is the tooltip content, and must be shown in two lines."
+        content="This is the tooltip content, it's very long, and must be shown in three lines to check how it respond to different sizes."
         style={{
           alignSelf: "end",
           justifySelf: "center",
@@ -178,7 +178,7 @@ export const Corners = {
       </Tooltip>
       <Tooltip
         id="popover-example9"
-        content="This is the tooltip content, and must be shown in two lines."
+        content="This is the tooltip content, it's very long, and must be shown in three lines to check how it respond to different sizes."
         style={{
           alignSelf: "end",
           justifySelf: "end",
