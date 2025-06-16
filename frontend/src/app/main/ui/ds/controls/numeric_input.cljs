@@ -11,15 +11,20 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.main.constants :refer [max-input-length]]
+   [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
    [app.main.ui.formats :as fmt]
+   [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.object :as obj]
    [app.util.simple-math :as smt]
    [cuerdas.core :as str]
    [goog.events :as events]
    [rumext.v2 :as mf]))
+
+(def listbox-id-index (atom 0))
 
 (defn- clamp [val min-val max-val]
   (-> val
@@ -52,6 +57,16 @@
 
       :else nil)))
 
+(defn- get-option
+  [options id]
+  (or (array/find #(= id (obj/get % "id")) options)
+      (aget options 0)))
+
+(defn- get-selected-option-id
+  [options default]
+  (let [option (get-option options default)]
+    (obj/get option "id")))
+
 (def ^:private schema:numeric-input
   [:map])
 
@@ -61,9 +76,13 @@
   [{:keys [id class value default placeholder
            min max max-length step
            is-selected-on-focus nillable
+           options default-selected empty-to-end
            on-change on-blur on-focus] :rest props} ref]
+
   (let [;; Borrar
         on-change (d/nilv on-change #(prn "on-change value" %))
+        options2 #js[#js{:id "1" :key "asd" :label "Option 1"}
+                     #js{:id "2" :key "qlkñjlkj" :label "Option 2"}]
 
         nillable     (d/nilv nillable false)
         select-on-focus (d/nilv is-selected-on-focus true)
@@ -72,28 +91,66 @@
         min          (d/parse-double min sm/min-safe-int)
         max          (d/parse-double max sm/max-safe-int)
         max-length   (d/nilv max-length max-input-length)
+
         is-multiple? (= :multiple value)
 
-        id          (or id (mf/use-id))
+        wrapper-ref        (mf/use-ref nil)
+        selected-value*    (mf/use-state  #(get-selected-option-id options2 default-selected))
+        selected-value     (deref selected-value*)
 
-        ref         (or ref (mf/use-ref))
-        dirty-ref   (mf/use-ref false)
+        focused-value*     (mf/use-state nil)
+        focused-value      (deref focused-value*)
 
-        value       (cond
-                      is-multiple? nil
-                      (and nillable (nil? value)) nil
-                      :else (d/parse-double value default))
+        is-open*           (mf/use-state false)
+        is-open            (deref is-open*)
 
-        raw-value*  (mf/use-var
-                     (cond
-                       is-multiple?
-                       ""
+        listbox-id-ref     (mf/use-ref (dm/str "tokens-listbox-" (swap! listbox-id-index inc)))
+        options-nodes-refs (mf/use-ref nil)
+        options-ref        (mf/use-ref nil)
+        listbox-id         (mf/ref-val listbox-id-ref)
 
-                       (and nillable (nil? value))
-                       ""
+        set-option-ref
+        (mf/use-fn
+         (mf/deps options-nodes-refs)
+         (fn [node id]
+           (let [refs (or (mf/ref-val options-nodes-refs) #js {})
+                 refs (if node
+                        (obj/set! refs id node)
+                        (obj/unset! refs id))]
+             (mf/set-ref-val! options-nodes-refs refs))))
 
-                       :else
-                       (fmt/format-number (d/parse-double value default))))
+        on-option-click
+        (mf/use-fn
+         (mf/deps)
+         (fn [event]
+           (let [node  (dom/get-current-target event)
+                 id    (dom/get-data node "id")]
+             (reset! selected-value* id)
+             (reset! focused-value* nil)
+             (reset! is-open* false)
+            ;;  Apply token
+             (prn "tengo que aplicar el token" id))))
+
+        id           (or id (mf/use-id))
+
+        ref          (or ref (mf/use-ref))
+        dirty-ref    (mf/use-ref false)
+
+        value        (cond
+                       is-multiple? nil
+                       (and nillable (nil? value)) nil
+                       :else (d/parse-double value default))
+
+        raw-value*   (mf/use-var
+                      (cond
+                        is-multiple?
+                        ""
+
+                        (and nillable (nil? value))
+                        ""
+
+                        :else
+                        (fmt/format-number (d/parse-double value default))))
 
         last-value* (mf/use-var (d/parse-double value default))
 
@@ -143,6 +200,11 @@
         (mf/use-fn
          (mf/deps parse-value)
          (fn [e]
+           (let [target (.-relatedTarget e)
+                 outside? (not (.contains (mf/ref-val wrapper-ref) target))]
+             (when outside?
+               (reset! focused-value* nil)
+               (reset! is-open* false)))
            (when (mf/ref-val dirty-ref)
              (apply-value @raw-value*)
              (when (fn? on-blur)
@@ -150,18 +212,22 @@
 
         handle-key-down
         (mf/use-fn
-         (mf/deps apply-value update-input parse-value)
+         (mf/deps apply-value update-input parse-value options2)
          (fn [event]
            (mf/set-ref-val! dirty-ref true)
-           (let [up?    (kbd/up-arrow? event)
-                 down?  (kbd/down-arrow? event)
-                 enter? (kbd/enter? event)
-                 esc?   (kbd/esc? event)
-                 node   (mf/ref-val ref)
-                 parsed (parse-value @raw-value* @last-value* min max nillable)
+           (let [up?     (kbd/up-arrow? event)
+                 down?   (kbd/down-arrow? event)
+                 enter?  (kbd/enter? event)
+                 esc?    (kbd/esc? event)
+                 node    (mf/ref-val ref)
+                 tokens? (= (.-key event) "{")
+                 parsed  (parse-value @raw-value* @last-value* min max nillable)
                  current-value (or parsed default)]
 
              (cond
+               (and (some? options2) tokens?)
+               (reset! is-open* true)
+
                enter?
                (do
                  (apply-value @raw-value*)
@@ -170,6 +236,7 @@
                esc?
                (do
                  (update-input (fmt/format-number @last-value*))
+                 (reset! is-open* false)
                  (dom/blur! node))
 
                up?
@@ -216,22 +283,36 @@
                  (update-input (fmt/format-number new-val))
                  (apply-value (dm/str new-val)))))))
 
-        props (mf/spread-props props {:ref ref
-                                      :type "text"
-                                      :id id
-                                      :placeholder (if is-multiple?
-                                                     (tr "settings.multiple")
-                                                     placeholder)
-                                      :default-value (fmt/format-number value)
-                                      :on-blur on-blur
-                                      :on-key-down handle-key-down
-                                      :on-focus handle-focus
-                                      :on-change store-raw-value
-                                      :max-length max-length})]
+        props
+        (mf/spread-props props {:ref ref
+                                :type "text"
+                                :id id
+                                :placeholder (if is-multiple?
+                                               (tr "settings.multiple")
+                                               placeholder)
+                                :default-value (fmt/format-number value)
+                                :on-blur on-blur
+                                :on-key-down handle-key-down
+                                :on-focus handle-focus
+                                :on-change store-raw-value
+                                :max-length max-length})]
+
     (mf/with-layout-effect [handle-mouse-wheel]
       (when-let [node (mf/ref-val ref)]
         (let [key (events/listen node "wheel" handle-mouse-wheel #js {:passive false})]
           #(events/unlistenByKey key))))
 
-    [:div {:class (dm/str class " " (stl/css :input-wrapper))}
-     [:> input-field* props]]))
+    (mf/with-effect [options]
+      (mf/set-ref-val! options-ref options))
+
+    [:div {:class (dm/str class " " (stl/css :input-wrapper))
+           :ref wrapper-ref}
+     [:> input-field* props]
+     (when is-open
+       [:> options-dropdown* {:on-click on-option-click
+                              :id listbox-id
+                              :options options2
+                              :selected selected-value
+                              :focused focused-value
+                              :empty-to-end empty-to-end
+                              :set-ref set-option-ref}])]))
