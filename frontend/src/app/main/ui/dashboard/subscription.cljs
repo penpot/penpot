@@ -34,7 +34,7 @@
                                     :cta-without-dropdown (not has-dropdown))}
       [:div {:class (stl/css :content)}
        [:span {:class (stl/css :cta-title)} top-title]
-       [:span {:class (stl/css :cta-text)} top-description]]
+       [:span {:class (stl/css :cta-text) :data-testid "subscription-name"} top-description]]
       (when has-dropdown [:span {:class (stl/css :icon-dropdown)}  i/arrow])]
 
      (when (and has-dropdown show-data)
@@ -110,12 +110,13 @@
         "enterprise" (tr "subscription.settings.enterprise"))]
      (when (and is-owner (not= subscription-name "professional"))
        [:button {:class (stl/css :manage-subscription-link)
-                 :on-click go-to-manage-subscription}
+                 :on-click go-to-manage-subscription
+                 :data-testid "manage-subscription-link"}
         (tr "subscription.settings.manage-your-subscription")])]))
 
 (mf/defc menu-team-icon*
   [{:keys [subscription-name]}]
-  [:span {:class (stl/css :subscription-icon)}
+  [:span {:class (stl/css :subscription-icon) :data-testid "subscription-icon"}
    (case subscription-name
      "unlimited" i/character-u
      "enterprise" i/character-e)])
