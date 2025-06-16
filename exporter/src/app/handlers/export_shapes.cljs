@@ -47,7 +47,7 @@
 
 (s/def ::params
   (s/keys :req-un [::exports ::profile-id]
-          :opt-un [::wait ::name]))
+          :opt-un [::wait ::name ::skip-children]))
 
 (defn handler
   [{:keys [:request/auth-token] :as exchange} {:keys [exports] :as params}]
@@ -60,7 +60,7 @@
       (handle-multiple-export exchange (assoc params :exports exports)))))
 
 (defn- handle-single-export
-  [exchange {:keys [export wait profile-id name] :as params}]
+  [exchange {:keys [export wait profile-id name skip-children] :as params}]
   (let [topic       (str profile-id)
         resource    (rsc/create (:type export) (or name (:name export)))
 
@@ -90,7 +90,7 @@
                                            :resource-id (:id resource)
                                            :status "error"
                                            :cause (ex-message cause)})))
-
+        export      (assoc export :skip-children skip-children)
         proc        (-> (rd/render export on-progress)
                         (p/then (constantly resource))
                         (p/catch on-error))]
@@ -99,7 +99,7 @@
       (assoc exchange :response/body (dissoc resource :path)))))
 
 (defn- handle-multiple-export
-  [exchange {:keys [exports wait profile-id name] :as params}]
+  [exchange {:keys [exports wait profile-id name skip-children] :as params}]
   (let [resource    (rsc/create :zip (or name (-> exports first :name)))
         total       (count exports)
         topic       (str profile-id)
@@ -141,7 +141,8 @@
 
         proc        (-> (p/do
                           (p/loop [exports (seq exports)]
-                            (when-let [export (first exports)]
+                            (when-let [export (-> (first exports)
+                                                  (assoc :skip-children skip-children))]
                               (p/do
                                 (rd/render export append)
                                 (p/recur (rest exports)))))

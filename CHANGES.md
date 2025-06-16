@@ -26,6 +26,13 @@ The initial prototype is completly reworked for provide a more consistent API
 and to have proper validation and params decoding. All the details can be found
 on [its own changelog](library/CHANGES.md)
 
+**Penpot migrate from Redis to Valkey**
+
+As [Valkey](https://valkey.io/) is an opne-souce fork of [Redis](https://redis.io/)
+version 7.2.4, this version of Penpot will be compatible with Redis but may diverge 
+in future versions. Therefore, **migration from Redis to ValKey is recommended for all 
+on-premises instances** that want to keep up to date.
+
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features & Enhancements
@@ -45,6 +52,7 @@ on [its own changelog](library/CHANGES.md)
 - Update google fonts (at 2025/05/19) [Taiga 10792](https://tree.taiga.io/project/penpot/us/10792)
 - Add tooltip component to DS [Taiga 9220](https://tree.taiga.io/project/penpot/us/9220)
 - Allow multi file token export [Taiga #10144](https://tree.taiga.io/project/penpot/us/10144)
+- Add Serbian language
 
 ### :bug: Bugs fixed
 
@@ -54,7 +62,9 @@ on [its own changelog](library/CHANGES.md)
 - Fix element positioning on the right side to adjust to grid [#11073](https://tree.taiga.io/project/penpot/issue/11073)
 - Fix palette is over sidebar [#11160](https://tree.taiga.io/project/penpot/issue/11160)
 - Fix font size input not displaying "mixed" when multiple texts are selected [Taiga #11177](https://tree.taiga.io/project/penpot/issue/11177)
-
+- Misalignments at Create account [Taiga #11315](https://tree.taiga.io/project/penpot/issue/11315)
+- Fix issue with importing files where flex/grid is used [Taiga #11334](https://tree.taiga.io/project/penpot/issue/11334)
+- Fix wrong color in the export progress bar [Taiga #11299](https://tree.taiga.io/project/penpot/issue/11299)
 
 ## 2.7.2
 

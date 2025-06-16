@@ -38,6 +38,7 @@
   flex-direction: column;
   gap: var(--sp-m);
   padding-top: var(--sp-m);
+  max-width: calc(var(--modal-width) - var(--modal-padding) * 2);
 }
 
 .preview-label {
@@ -79,8 +80,10 @@
   flex-grow: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+  padding: var(--sp-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  padding: var(--sp-s);
 }
 
 .export-actions {
@@ -108,7 +111,6 @@
   overflow-x: auto;
   word-wrap: normal;
   white-space: pre;
-  max-width: calc(var(--modal-width) - var(--modal-padding) * 2);
 }
 
 .disabled-message {

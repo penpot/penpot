@@ -25,14 +25,17 @@
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.selection :as dws]
+   [app.main.fonts :refer [fetch-font-css]]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.main.ui.shapes.text.fontfaces :refer [shapes->fonts]]
    [app.plugins.events :as events]
    [app.plugins.file :as file]
    [app.plugins.fonts :as fonts]
    [app.plugins.format :as format]
    [app.plugins.history :as history]
    [app.plugins.library :as library]
+   [app.plugins.local-storage :as local-storage]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
    [app.plugins.shape :as shape]
@@ -41,7 +44,8 @@
    [app.plugins.viewport :as viewport]
    [app.util.code-gen :as cg]
    [app.util.object :as obj]
-   [beicon.v2.core :as rx]))
+   [beicon.v2.core :as rx]
+   [cuerdas.core :as str]))
 
 ;;
 ;; PLUGINS PUBLIC API - The plugins will able to access this functions
@@ -84,6 +88,11 @@
     :theme
     {:this true
      :get #(.getTheme ^js %)}
+
+    :localStorage
+    {:this true
+     :get
+     (fn [_] (local-storage/local-storage-proxy plugin-id))}
 
     :selection
     {:this true
@@ -427,6 +436,24 @@
                   shapes)]
             (cg/generate-style-code
              objects type shapes shapes-with-children {:with-prelude? prelude?})))))
+
+    :generateFontFaces
+    (fn [shapes]
+      (js/Promise.
+       (fn [resolve reject]
+         (let [objects (u/locate-objects)
+               all-children
+               (->> shapes
+                    (map #(obj/get % "$id"))
+                    (cfh/selected-with-children objects)
+                    (map (d/getf objects)))
+               fonts (shapes->fonts all-children)]
+           (->> (rx/from fonts)
+                (rx/merge-map fetch-font-css)
+                (rx/reduce conj [])
+                (rx/map #(str/join "\n" %))
+                (rx/first)
+                (rx/subs! #(resolve %) reject))))))
 
     :openViewer
     (fn []

@@ -14,9 +14,11 @@
   }
 }
 
-.checkbox-terms-and-privacy {
+.checkbox-terms-and-privacy,
+.checkbox-newsletter-updates {
   align-items: flex-start;
 }
+
 .register-form {
   gap: $s-24;
 }

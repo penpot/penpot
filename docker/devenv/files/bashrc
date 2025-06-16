@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+EMSDK_QUIET=1 . /usr/local/emsdk/emsdk_env.sh;
+
 alias l='ls --color -GFlh'
 alias rm='rm -r'
 alias ls='ls --color -F'
