@@ -35,6 +35,7 @@
            :content (tr "onboarding-v2.newsletter.updates")}])]
     [:div {:class (stl/css :fields-row :input-visible :newsletter-option-wrapper)}
      [:& fm/input {:name :accept-newsletter-updates
+                   :class (stl/css :checkbox-newsletter-updates)
                    :type "checkbox"
                    :default-checked false
                    :label updates-label}]]))
@@ -53,6 +54,7 @@
 
     [:div {:class (stl/css :fields-row :input-visible :accept-terms-and-privacy-wrapper)}
      [:& fm/input {:name :accept-terms-and-privacy
+                   :show-error false
                    :class (stl/css :checkbox-terms-and-privacy)
                    :type "checkbox"
                    :default-checked false

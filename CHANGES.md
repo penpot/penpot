@@ -47,6 +47,7 @@ on-premises instances** that want to keep up to date.
 - Fix element positioning on the right side to adjust to grid [#11073](https://tree.taiga.io/project/penpot/issue/11073)
 - Fix palette is over sidebar [#11160](https://tree.taiga.io/project/penpot/issue/11160)
 - Fix font size input not displaying "mixed" when multiple texts are selected [Taiga #11177](https://tree.taiga.io/project/penpot/issue/11177)
+- Misalignments at Create account [Taiga #11315](https://tree.taiga.io/project/penpot/issue/11315)
 
 
 ## 2.7.2
