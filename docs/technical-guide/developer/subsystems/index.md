@@ -1,5 +1,6 @@
 ---
-title: 3.8. Penpot subsystems
+title: 3.09. Penpot subsystems
+desc: Learn about architecture, data models, and subsystems. View Penpot's technical guide for self-hosting, configuration, and development insights. Free!
 ---
 
 # Penpot subsystems
@@ -12,4 +13,3 @@ implemented, over the whole app (backend, frontend or exporter), and points to
 the most relevant source files to look at to start exploring it. When some
 special considerations are needed (performance questions, limits, common
 "gotchas", historic reasons of some decisions, etc.) they are also noted.
-

@@ -1,5 +1,53 @@
 version: 2.1
+
 jobs:
+  lint:
+    docker:
+      - image: penpotapp/devenv:latest
+
+    working_directory: ~/repo
+    resource_class: medium+
+
+    steps:
+      - checkout
+
+      - run:
+          name: "fmt check"
+          working_directory: "."
+          command: |
+            yarn install
+            yarn run fmt:clj:check
+
+      - run:
+          name: "lint clj common"
+          working_directory: "."
+          command: |
+            yarn run lint:clj:common
+
+      - run:
+          name: "lint clj frontend"
+          working_directory: "."
+          command: |
+            yarn run lint:clj:frontend
+
+      - run:
+          name: "lint clj backend"
+          working_directory: "."
+          command: |
+            yarn run lint:clj:backend
+
+      - run:
+          name: "lint clj exporter"
+          working_directory: "."
+          command: |
+            yarn run lint:clj:exporter
+
+      - run:
+          name: "lint clj library"
+          working_directory: "."
+          command: |
+            yarn run lint:clj:library
+
   test-common:
     docker:
       - image: penpotapp/devenv:latest
@@ -17,15 +65,7 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "common/deps.edn"}}
-
-      - run:
-          name: "fmt check & linter"
-          working_directory: "./common"
-          command: |
-            yarn install
-            yarn run fmt:clj:check
-            yarn run lint:clj
+            - v1-dependencies-{{ checksum "common/deps.edn"}}-{{ checksum "common/yarn.lock" }}
 
       - run:
           name: "JVM tests"
@@ -37,12 +77,16 @@ jobs:
           name: "NODE tests"
           working_directory: "./common"
           command: |
+            yarn install
             yarn run test
 
       - save_cache:
           paths:
             - ~/.m2
-          key: v1-dependencies-{{ checksum "common/deps.edn"}}
+            - ~/.yarn
+            - ~/.gitlibs
+            - ~/.cache/ms-playwright
+          key: v1-dependencies-{{ checksum "common/deps.edn"}}-{{ checksum "common/yarn.lock" }}
 
   test-frontend:
     docker:
@@ -61,36 +105,68 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "frontend/deps.edn"}}
+            - v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
 
       - run:
-          name: "prepopulate linter cache"
-          working_directory: "./common"
+          name: "install dependencies"
+          working_directory: "./frontend"
+          # We install playwright here because the dependent tasks
+          # uses the same cache as this task so we prepopulate it
           command: |
             yarn install
-            yarn run lint:clj
+            yarn run playwright install chromium
 
       - run:
-          name: "fmt check & linter"
+          name: "lint scss on frontend"
           working_directory: "./frontend"
           command: |
-            yarn install
-            yarn run fmt:clj:check
-            yarn run fmt:js:check
             yarn run lint:scss
-            yarn run lint:clj
 
       - run:
           name: "unit tests"
           working_directory: "./frontend"
           command: |
-            yarn install
             yarn run test
 
       - save_cache:
           paths:
             - ~/.m2
-          key: v1-dependencies-{{ checksum "frontend/deps.edn"}}
+            - ~/.yarn
+            - ~/.gitlibs
+            - ~/.cache/ms-playwright
+          key: v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
+
+  test-library:
+    docker:
+      - image: penpotapp/devenv:latest
+
+    working_directory: ~/repo
+    resource_class: medium+
+
+    environment:
+      JAVA_OPTS: -Xmx6g
+      NODE_OPTIONS: --max-old-space-size=4096
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
+
+      - run:
+          name: Install dependencies and build
+          working_directory: "./library"
+          command: |
+            yarn install
+
+      - run:
+          name: Build and Test
+          working_directory: "./library"
+          command: |
+            ./scripts/build
+            yarn run test
 
   test-components:
     docker:
@@ -109,14 +185,14 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "frontend/deps.edn"}}
+            - v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
 
       - run:
           name: Install dependencies
           working_directory: "./frontend"
           command: |
-            yarn
-            npx playwright install --with-deps
+            yarn install
+            yarn run playwright install chromium
 
       - run:
           name: Build Storybook
@@ -148,7 +224,7 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "frontend/deps.edn"}}
+            - v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
 
       - run:
           name: "integration tests"
@@ -158,7 +234,7 @@ jobs:
             yarn run build:app:assets
             yarn run build:app
             yarn run build:app:libs
-            yarn run playwright install --with-deps chromium
+            yarn run playwright install chromium
             yarn run test:e2e -x --workers=4
 
   test-backend:
@@ -186,21 +262,6 @@ jobs:
             - v1-dependencies-{{ checksum "backend/deps.edn" }}
 
       - run:
-          name: "prepopulate linter cache"
-          working_directory: "./common"
-          command: |
-            yarn install
-            yarn run lint:clj
-
-      - run:
-          name: "fmt check & linter"
-          working_directory: "./backend"
-          command: |
-            yarn install
-            yarn run fmt:clj:check
-            yarn run lint:clj
-
-      - run:
           name: "tests"
           working_directory: "./backend"
           command: |
@@ -215,36 +276,8 @@ jobs:
       - save_cache:
           paths:
             - ~/.m2
+            - ~/.gitlibs
           key: v1-dependencies-{{ checksum "backend/deps.edn" }}
-
-  test-exporter:
-    docker:
-      - image: penpotapp/devenv:latest
-
-    working_directory: ~/repo
-    resource_class: medium+
-
-    environment:
-      JAVA_OPTS: -Xmx4g -Xms100m -XX:+UseSerialGC
-      NODE_OPTIONS: --max-old-space-size=4096
-
-    steps:
-      - checkout
-
-      - run:
-          name: "prepopulate linter cache"
-          working_directory: "./common"
-          command: |
-            yarn install
-            yarn run lint:clj
-
-      - run:
-          name: "fmt check & linter"
-          working_directory: "./exporter"
-          command: |
-            yarn install
-            yarn run fmt:clj:check
-            yarn run lint:clj
 
   test-render-wasm:
     docker:
@@ -278,10 +311,32 @@ jobs:
 workflows:
   penpot:
     jobs:
-      - test-frontend
-      - test-components
-      - test-integration
-      - test-backend
-      - test-common
-      - test-exporter
+      - lint
+      - test-frontend:
+          requires:
+            - lint: success
+
+      - test-library:
+          requires:
+            - test-frontend: success
+            - lint: success
+
+      - test-components:
+          requires:
+            - test-frontend: success
+            - lint: success
+
+      - test-integration:
+          requires:
+            - test-frontend: success
+            - lint: success
+
+      - test-backend:
+          requires:
+            - lint: success
+
+      - test-common:
+          requires:
+            - lint: success
+
       - test-render-wasm

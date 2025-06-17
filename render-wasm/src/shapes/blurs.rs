@@ -35,4 +35,8 @@ impl Blur {
             value,
         }
     }
+
+    pub fn scale_content(&mut self, value: f32) {
+        self.value *= value;
+    }
 }

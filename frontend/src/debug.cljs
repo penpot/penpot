@@ -27,7 +27,6 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shortcuts]
    [app.main.errors :as errors]
-   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.debug :as dbg]
@@ -180,7 +179,7 @@
   [state name]
   (let [objects (dsh/lookup-page-objects state)
         result  (or (d/seek (fn [shape] (= name (:name shape))) (vals objects))
-                    (get objects (uuid/uuid name)))]
+                    (get objects (uuid/parse name)))]
     result))
 
 (defn ^:export dump-object
@@ -223,12 +222,12 @@
 (defn ^:export select-by-object-id
   [object-id]
   (let [[_ page-id shape-id _] (str/split object-id #"/")]
-    (st/emit! (dcm/go-to-workspace :page-id (uuid/uuid page-id)))
-    (st/emit! (dws/select-shape (uuid/uuid shape-id)))))
+    (st/emit! (dcm/go-to-workspace :page-id (uuid/parse page-id)))
+    (st/emit! (dws/select-shape (uuid/parse shape-id)))))
 
 (defn ^:export select-by-id
   [shape-id]
-  (st/emit! (dws/select-shape (uuid/uuid shape-id))))
+  (st/emit! (dws/select-shape (uuid/parse shape-id))))
 
 (defn dump-tree'
   ([state] (dump-tree' state false false false))
@@ -256,7 +255,7 @@
          file       (dsh/lookup-file state)
          libraries  (get state :files)
          shape-id   (if (some? shape-id)
-                      (uuid/uuid shape-id)
+                      (uuid/parse shape-id)
                       (first (dsh/lookup-selected state)))]
      (if (some? shape-id)
        (ctf/dump-subtree file page-id shape-id libraries {:show-ids show-ids
@@ -370,7 +369,7 @@
    (let [file       (dsh/lookup-file @st/state)
          libraries  (get @st/state :files)]
      (try
-       (->> (if-let [shape-id (some-> shape-id parse-uuid)]
+       (->> (if-let [shape-id (some-> shape-id uuid/parse)]
               (let [page (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])]
                 (cfv/validate-shape shape-id file page libraries))
               (cfv/validate-file file libraries))
@@ -393,7 +392,7 @@
    (ptk/reify ::repair-current-file
      ptk/EffectEvent
      (effect [_ state _]
-       (let [features (features/get-team-enabled-features state)
+       (let [features (:features state)
              sid      (:session-id state)
 
              file     (dsh/lookup-file state)
@@ -427,10 +426,15 @@
   []
   (st/emit! (dw/find-components-norefs)))
 
+(defn- set-shape-ref*
+  [id shape-ref]
+  (ptk/reify ::set-shape-ref
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [shape-id (uuid/parse id)
+            shape-ref (uuid/parse shape-ref)]
+        (rx/of (dw/update-shape shape-id {:shape-ref shape-ref}))))))
+
 (defn ^:export set-shape-ref
   [id shape-ref]
-  (st/emit! (dw/set-shape-ref id shape-ref)))
-
-(defn ^:export enable-text-v2
-  []
-  (st/emit! (features/enable-feature "text-editor/v2")))
+  (st/emit! (set-shape-ref* id shape-ref)))

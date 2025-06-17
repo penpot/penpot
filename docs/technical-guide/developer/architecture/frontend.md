@@ -1,5 +1,6 @@
 ---
 title: Frontend app
+desc: Dive into the UI, data namespaces, ClojureScript, React, and worker app functionalities. View Penpot's frontend app architecture. Free to try!
 ---
 
 ### Frontend app

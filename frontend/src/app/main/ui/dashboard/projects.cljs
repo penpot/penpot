@@ -371,6 +371,7 @@
                                                           show-team-hero?
                                                           can-invite))}
           (for [{:keys [id] :as project} projects]
+            ;; FIXME: refactor this, looks inneficient
             (let [files (when recent-map
                           (->> (vals recent-map)
                                (filterv #(= id (:project-id %)))

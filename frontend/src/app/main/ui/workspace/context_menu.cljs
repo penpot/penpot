@@ -146,7 +146,7 @@
         do-cut            #(st/emit! (dw/copy-selected)
                                      (dw/delete-selected))
         do-paste          #(st/emit! (dw/paste-from-clipboard))
-        do-duplicate      #(st/emit! (dw/duplicate-selected true))
+        do-duplicate      #(st/emit! (dwv/duplicate-or-add-variant))
 
         enabled-paste-props* (mf/use-state false)
 
@@ -161,6 +161,9 @@
 
         handle-paste-props
         (mf/use-callback #(st/emit! (dw/paste-selected-props)))
+
+        handle-copy-svg
+        (mf/use-callback #(st/emit! (dw/copy-selected-svg)))
 
         handle-copy-text
         (mf/use-callback #(st/emit! (dw/copy-selected-text)))
@@ -205,6 +208,8 @@
                        :on-click handle-copy-css}]
       [:> menu-entry* {:title (tr "workspace.shape.menu.copy-css-nested")
                        :on-click handle-copy-css-nested}]
+      [:> menu-entry* {:title (tr "workspace.shape.menu.copy-svg")
+                       :on-click handle-copy-svg}]
 
       [:> menu-separator* {}]
 
@@ -555,7 +560,7 @@
         objects                    (deref refs/workspace-page-objects)
         can-make-component         (every? true? (map #(ctn/valid-shape-for-component? objects %) shapes))
         heads                      (filter ctk/instance-head? shapes)
-        components-menu-entries    (cmm/generate-components-menu-entries heads true)
+        components-menu-entries    (cmm/generate-components-menu-entries heads)
         variant-container?         (and single? (ctk/is-variant-container? (first shapes)))
         do-add-component           #(st/emit! (dwl/add-component))
         do-add-multiple-components #(st/emit! (dwl/add-multiple-components))

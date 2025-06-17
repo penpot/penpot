@@ -10,8 +10,8 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
-   [app.common.geom.shapes.path :as gsp]
-   [app.common.math :as mth]))
+   [app.common.math :as mth]
+   [app.common.types.path :as path]))
 
 (defn shape-stroke-margin
   [shape stroke-width]
@@ -104,7 +104,7 @@
    (let [strokes (:strokes shape)
 
          open-path?    (and ^boolean (cfh/path-shape? shape)
-                            ^boolean (gsp/open-path? shape))
+                            ^boolean (path/shape-with-open-path? shape))
 
          stroke-width
          (->> strokes

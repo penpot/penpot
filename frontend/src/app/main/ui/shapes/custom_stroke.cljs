@@ -13,6 +13,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.geom.shapes.text :as gst]
+   [app.common.types.path :as path]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.ui.context :as muc]
@@ -204,7 +205,7 @@
   {::mf/wrap-props false}
   [{:keys [shape stroke render-id index]}]
   (let [open-path?    (and ^boolean (cfh/path-shape? shape)
-                           ^boolean (gsh/open-path? shape))
+                           ^boolean (path/shape-with-open-path? shape))
         gradient      (:stroke-color-gradient stroke)
         alignment     (:stroke-alignment stroke :center)
         width         (:stroke-width stroke 0)
@@ -397,7 +398,7 @@
         has-stroke?     (and (> stroke-width 0)
                              (not= stroke-style :none))
         closed?         (or (not ^boolean (cfh/path-shape? shape))
-                            (not ^boolean (gsh/open-path? shape)))
+                            (not ^boolean (path/shape-with-open-path? shape)))
         inner?          (= :inner stroke-position)
         outer?          (= :outer stroke-position)]
 
@@ -496,7 +497,7 @@
                                        :style style})
 
         open-path?    (and ^boolean (cfh/path-shape? shape)
-                           ^boolean (gsh/open-path? shape))]
+                           ^boolean (path/shape-with-open-path? shape))]
     (when-not ^boolean (cfh/frame-shape? shape)
       (when (and (some? shape-blur)
                  (not ^boolean (:hidden shape-blur)))

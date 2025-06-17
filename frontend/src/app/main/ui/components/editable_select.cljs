@@ -20,7 +20,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc editable-select
-  [{:keys [value type options class on-change placeholder on-blur input-class] :as params}]
+  [{:keys [value type options class on-change placeholder on-blur input-class aria-label] :as params}]
   (let [state* (mf/use-state {:id (uuid/next)
                               :is-open? false
                               :current-value value
@@ -168,14 +168,16 @@
                            :on-change set-value
                            :on-focus handle-focus
                            :on-blur handle-blur
+                           :aria-label aria-label
                            :placeholder placeholder}]
-       [:input {:value (or (some-> current-value value->label) "")
+       [:input {:value (if (= value :multiple) nil (or (some-> current-value value->label) ""))
                 :class input-class
                 :on-change handle-change-input
                 :on-key-down handle-key-down
                 :on-focus handle-focus
                 :on-blur handle-blur
                 :placeholder placeholder
+                :aria-label aria-label
                 :type type}])
 
      [:span {:class (stl/css :dropdown-button)

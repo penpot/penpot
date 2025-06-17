@@ -16,9 +16,10 @@
    [app.common.types.file :as ctf]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace :as dw]
+   [app.main.data.plugins :as dp]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.format :as format]
@@ -125,7 +126,7 @@
      (fn [self value]
        (let [value (parser/parse-gradient value)]
          (cond
-           (not (sm/validate ::ctc/gradient value))
+           (not (sm/validate ctc/schema:gradient value))
            (u/display-not-valid :gradient value)
 
            (not (r/check-permission plugin-id "library:write"))
@@ -143,7 +144,7 @@
      (fn [self value]
        (let [value (parser/parse-image-data value)]
          (cond
-           (not (sm/validate ::ctc/image-color value))
+           (not (sm/validate ctc/schema:image value))
            (u/display-not-valid :image value)
 
            (not (r/check-permission plugin-id "library:write"))
@@ -226,7 +227,7 @@
         (u/display-not-valid :setPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :color id (keyword "plugin" (str plugin-id)) key value))))
+        (st/emit! (dp/set-plugin-data file-id :color id (keyword "plugin" (str plugin-id)) key value))))
 
     :getPluginDataKeys
     (fn []
@@ -265,7 +266,7 @@
         (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :color id (keyword "shared" namespace) key value))))
+        (st/emit! (dp/set-plugin-data file-id :color id (keyword "shared" namespace) key value))))
 
     :getSharedPluginDataKeys
     (fn [namespace]
@@ -561,7 +562,7 @@
         (u/display-not-valid :setPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :typography id (keyword "plugin" (str plugin-id)) key value))))
+        (st/emit! (dp/set-plugin-data file-id :typography id (keyword "plugin" (str plugin-id)) key value))))
 
     :getPluginDataKeys
     (fn []
@@ -600,7 +601,7 @@
         (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :typography id (keyword "shared" namespace) key value))))
+        (st/emit! (dp/set-plugin-data file-id :typography id (keyword "shared" namespace) key value))))
 
     :getSharedPluginDataKeys
     (fn [namespace]
@@ -641,7 +642,7 @@
          :else
          (let [component (u/proxy->library-component self)
                value (dm/str (d/nilv (:path component) "") " / " value)]
-           (st/emit! (dwl/rename-component-and-main-instance id value)))))}
+           (st/emit! (dwv/rename-comp-or-variant-and-main id value)))))}
 
     :path
     {:this true
@@ -706,7 +707,7 @@
         (u/display-not-valid :setPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :component id (keyword "plugin" (str plugin-id)) key value))))
+        (st/emit! (dp/set-plugin-data file-id :component id (keyword "plugin" (str plugin-id)) key value))))
 
     :getPluginDataKeys
     (fn []
@@ -745,7 +746,7 @@
         (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :component id (keyword "shared" namespace) key value))))
+        (st/emit! (dp/set-plugin-data file-id :component id (keyword "shared" namespace) key value))))
 
     :getSharedPluginDataKeys
     (fn [namespace]
@@ -871,7 +872,7 @@
         (u/display-not-valid :setPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :file (keyword "plugin" (str plugin-id)) key value))))
+        (st/emit! (dp/set-plugin-data file-id :file (keyword "plugin" (str plugin-id)) key value))))
 
     :getPluginDataKeys
     (fn []
@@ -907,7 +908,7 @@
         (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data file-id :file (keyword "shared" namespace) key value))))
+        (st/emit! (dp/set-plugin-data file-id :file (keyword "shared" namespace) key value))))
 
     :getSharedPluginDataKeys
     (fn [namespace]
@@ -969,7 +970,7 @@
 
              :else
              (let [file-id (:current-file-id @st/state)
-                   library-id (uuid/uuid library-id)]
+                   library-id (uuid/parse library-id)]
                (->> st/stream
                     (rx/filter (ptk/type? ::dwl/attach-library-finished))
                     (rx/take 1)

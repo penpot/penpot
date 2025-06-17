@@ -1,5 +1,6 @@
 ---
 title: Authentication
+desc: Dive into Penpot today! Learn about self-hosting, configuration, developer insights, authentication, and more. View Penpot's technical guide. Try it free.
 ---
 
 # User authentication

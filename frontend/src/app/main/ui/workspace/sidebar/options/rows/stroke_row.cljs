@@ -149,7 +149,7 @@
 
      ;; Stroke Color
      ;; FIXME: memorize stroke color
-     [:> color-row* {:color (ctc/stroke->shape-color stroke)
+     [:> color-row* {:color (ctc/stroke->color stroke)
                      :index index
                      :title title
                      :on-change on-color-change-refactor
@@ -176,7 +176,7 @@
          :select-on-focus select-on-focus
          :on-blur on-blur}]]
 
-      [:div {:class (stl/css :select-wrapper)
+      [:div {:class (stl/css :select-wrapper :stroke-alignment-select)
              :data-testid "stroke.alignment"}
        [:& select
         {:default-value stroke-alignment
@@ -184,7 +184,7 @@
          :on-change on-alignment-change}]]
 
       (when-not disable-stroke-style
-        [:div {:class (stl/css :select-wrapper)
+        [:div {:class (stl/css :select-wrapper :stroke-style-select)
                :data-testid "stroke.style"}
          [:& select
           {:default-value stroke-style

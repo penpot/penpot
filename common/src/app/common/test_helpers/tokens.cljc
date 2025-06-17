@@ -36,9 +36,9 @@
           (ctob/get-token token-name)))))
 
 (defn token-data-eq?
-  "Compare token data without comparing modified timestamp"
+  "Compare token data without comparing unstable fields."
   [t1 t2]
-  (= (dissoc t1 :modified-at) (dissoc t2 :modified-at)))
+  (= (dissoc t1 :id :modified-at) (dissoc t2 :id :modified-at)))
 
 (defn- set-stroke-width
   [shape stroke-width]

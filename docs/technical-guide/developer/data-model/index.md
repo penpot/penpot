@@ -1,5 +1,6 @@
 ---
-title: 3.2. Data model
+title: 3.02. Data model
+desc: Learn about self-hosting, configuration, developer tools, data models, architecture, and integrations. View Penpot's technical guide. Free to use!
 ---
 
 # Penpot Data Model

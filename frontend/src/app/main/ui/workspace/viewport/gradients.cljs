@@ -15,7 +15,10 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.points :as gsp]
    [app.common.math :as mth]
+   [app.common.types.fill :as types.fill]
+   [app.config :as cfg]
    [app.main.data.workspace.colors :as dc]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
@@ -131,6 +134,9 @@
 
         handler-state (mf/use-state {:display? false :offset 0 :hover nil})
 
+        cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
+        can-add-stop? (if cap-stops? (< (count stops) types.fill/MAX-GRADIENT-STOPS) true)
+
         endpoint-on-pointer-down
         (fn [position event]
           (dom/stop-propagation event)
@@ -164,7 +170,8 @@
         points-on-pointer-enter
         (mf/use-fn
          (fn []
-           (swap! handler-state assoc :display? true)))
+           (when can-add-stop?
+             (swap! handler-state assoc :display? true))))
 
         points-on-pointer-leave
         (mf/use-fn
@@ -177,17 +184,17 @@
          (fn [e]
            (dom/prevent-default e)
            (dom/stop-propagation e)
-
-           (let [raw-pt (dom/get-client-position e)
-                 position (uwvv/point->viewport raw-pt)
-                 lv (-> (gpt/to-vec from-p to-p) (gpt/unit))
-                 nv (gpt/normal-left lv)
-                 offset (-> (gsp/project-t position [from-p to-p] nv)
-                            (mth/precision 2))
-                 new-stop (cc/interpolate-gradient stops offset)
-                 stops (conj stops new-stop)
-                 stops (->> stops (sort-by :offset) (into []))]
-             (st/emit! (dc/update-colorpicker-stops stops)))))
+           (when can-add-stop?
+             (let [raw-pt (dom/get-client-position e)
+                   position (uwvv/point->viewport raw-pt)
+                   lv (-> (gpt/to-vec from-p to-p) (gpt/unit))
+                   nv (gpt/normal-left lv)
+                   offset (-> (gsp/project-t position [from-p to-p] nv)
+                              (mth/precision 2))
+                   new-stop (cc/interpolate-gradient stops offset)
+                   stops (conj stops new-stop)
+                   stops (->> stops (sort-by :offset) (into []))]
+               (st/emit! (dc/update-colorpicker-stops stops))))))
 
         points-on-pointer-move
         (mf/use-fn
@@ -354,7 +361,7 @@
                   :cx (:x width-p)
                   :cy (:y width-p)
                   :r (/ gradient-width-handler-radius-handler zoom)
-                  :fill "transpgarent"
+                  :fill "transparent"
                   :on-pointer-down (partial endpoint-on-pointer-down :width-p)
                   :on-pointer-enter (partial endpoint-on-pointer-enter :width-p)
                   :on-pointer-leave (partial endpoint-on-pointer-leave :width-p)
@@ -518,7 +525,10 @@
         shape        (mf/deref shape-ref)
         state        (mf/deref refs/colorpicker)
         gradient     (:gradient state)
-        stops        (:stops state)
+        cap-stops?   (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
+        stops        (if cap-stops?
+                       (vec (take types.fill/MAX-GRADIENT-STOPS (:stops state)))
+                       (:stops state))
         editing-stop (:editing-stop state)]
 
     (when (and (some? gradient) (= id (:shape-id gradient)))

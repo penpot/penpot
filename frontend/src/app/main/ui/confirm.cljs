@@ -9,6 +9,7 @@
   (:require
    [app.main.data.modal :as modal]
    [app.main.store :as st]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -76,7 +77,9 @@
        (when (and (string? scd-message) (not= scd-message ""))
          [:h3 {:class (stl/css :modal-scd-msg)} scd-message])
        (when (string? hint)
-         [:p {:class (stl/css :modal-hint)} hint])
+         [:> context-notification* {:level :info
+                                    :appearance :ghost}
+          hint])
        (when (> (count items) 0)
          [:*
           [:p {:class (stl/css :modal-subtitle)}

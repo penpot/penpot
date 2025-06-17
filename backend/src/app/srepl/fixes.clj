@@ -179,7 +179,7 @@
                       component-child (first component-children)]
                   (if (or (nil? child) (nil? component-child))
                     container
-                    (let [container (if (and (not (ctk/is-main-of? component-child child true))
+                    (let [container (if (and (not (ctk/is-main-of? component-child child))
                                              (nil? (ctk/get-swap-slot child))
                                              (ctk/instance-head? child))
                                       (let [slot (guess-swap-slot component-child component-container)]

@@ -19,8 +19,7 @@
    [:title :string]])
 
 (mf/defc cta*
-  {::mf/props :obj
-   ::mf/schema schema:cta}
+  {::mf/schema schema:cta}
   [{:keys [class title children] :rest props}]
 
   (let [class (d/append-class class (stl/css :cta))

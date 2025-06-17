@@ -19,7 +19,7 @@
 
 (def ^:private schema:notification
   [:map {:title "Notification"}
-   [:level [::sm/one-of #{:success :error :info :warning}]]
+   [:level {:optional true} [::sm/one-of #{:success :error :info :warning}]]
    [:status {:optional true}
     [::sm/one-of #{:visible :hide}]]
    [:position {:optional true}
@@ -129,15 +129,11 @@
           :timeout timeout})))
 
 (defn dialog
-  [& {:keys [content controls actions accept cancel position tag level links]
-      :or {controls :none position :floating level :info}}]
+  [& {:keys [content accept cancel tag links]}]
   (show (d/without-nils
          {:content content
-          :level level
-          :links links
-          :position position
-          :controls controls
-          :actions actions
+          :type :inline
           :accept accept
           :cancel cancel
+          :links links
           :tag tag})))

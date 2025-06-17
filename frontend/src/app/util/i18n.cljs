@@ -43,6 +43,7 @@
    {:label "Украї́нська мо́ва (community)" :value "uk"}
    {:label "Český jazyk (community)" :value "cs"}
    {:label "Latviešu valoda (community)" :value "lv"}
+   {:label "Српски (community)" :value "sr"}
    {:label "Føroyskt mál (community)" :value "fo"}
    {:label "Korean (community)" :value "ko"}
    {:label "עִבְרִית (community)" :value "he"}

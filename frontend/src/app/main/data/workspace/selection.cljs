@@ -22,13 +22,14 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as md]
    [app.main.data.workspace.collapse :as dwc]
+   [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.streams :as ms]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
    [beicon.v2.operators :as rxo]
@@ -53,13 +54,17 @@
       (assoc-in state [:workspace-local :selrect] selrect))))
 
 (defn handle-area-selection
-  [preserve?]
+  [append? remove? ignore-groups?]
   (ptk/reify ::handle-area-selection
     ptk/WatchEvent
     (watch [_ state stream]
       (let [zoom          (dm/get-in state [:workspace-local :zoom] 1)
             stopper       (mse/drag-stopper stream)
             init-position @ms/mouse-position
+
+            initial-set   (if (or append? remove?)
+                            (dsh/lookup-selected state)
+                            lks/empty-linked-set)
 
             init-selrect  (grc/make-rect
                            (dm/get-prop init-position :x)
@@ -90,7 +95,7 @@
                  (rx/take-until stopper))]
 
         (rx/concat
-         (if preserve?
+         (if (or append? remove?)
            (rx/empty)
            (rx/of (deselect-all)))
 
@@ -102,20 +107,14 @@
                (rx/buffer-time 100)
                (rx/map last)
                (rx/pipe (rxo/distinct-contiguous))
-               (rx/with-latest-from ms/keyboard-mod ms/keyboard-shift)
-               (rx/map
-                (fn [[_ mod? shift?]]
-                  (select-shapes-by-current-selrect shift? mod?))))
+               (rx/map #(select-shapes-by-current-selrect initial-set remove? ignore-groups?)))
 
           ;; The last "tick" from the mouse cannot be buffered so we are sure
           ;; a selection is returned. Without this we can have empty selections on
           ;; very fast movement
           (->> selrect-stream
                (rx/last)
-               (rx/with-latest-from ms/keyboard-mod ms/keyboard-shift)
-               (rx/map
-                (fn [[_ mod? shift?]]
-                  (select-shapes-by-current-selrect shift? mod? false)))))
+               (rx/map #(select-shapes-by-current-selrect initial-set remove? ignore-groups? false))))
 
          (->> (rx/of (update-selrect nil))
               ;; We need the async so the current event finishes before updating the selrect
@@ -305,8 +304,9 @@
      (watch [_ state _]
        (let [params-without-board (-> (rt/get-params state)
                                       (dissoc :board-id))]
-         (rx/of ::dwsp/interrupt)
-         (rx/of (rt/nav :workspace params-without-board {::rt/replace true}))))
+         (rx/of ::dwsp/interrupt
+                (dwe/clear-edition-mode)
+                (rt/nav :workspace params-without-board {::rt/replace true}))))
 
      ptk/UpdateEvent
      (update [_ state]
@@ -323,22 +323,23 @@
 ;; --- Select Shapes (By selrect)
 
 (defn select-shapes-by-current-selrect
-  ([preserve? ignore-groups?]
-   (select-shapes-by-current-selrect preserve? ignore-groups? true))
-  ([preserve? ignore-groups? buffered?]
+  "Sends the current selection rectangle to the worker to compute the selection,
+  and sends its result to select-shapes for storage in the state."
+  ([initial-set remove? ignore-groups?]
+   (select-shapes-by-current-selrect initial-set remove? ignore-groups? true))
+
+  ([initial-set remove? ignore-groups? buffered?]
    (ptk/reify ::select-shapes-by-current-selrect
      ptk/WatchEvent
      (watch [_ state _]
        (let [page-id     (:current-page-id state)
-             objects     (dsh/lookup-page-objects state)
-             selected    (dsh/lookup-selected state)
-             initial-set (if preserve?
-                           selected
-                           lks/empty-linked-set)
+             objects     (dsh/lookup-page-objects state page-id)
              selrect     (dm/get-in state [:workspace-local :selrect])
              blocked?    (fn [id] (dm/get-in objects [id :blocked] false))
-
-             ask-worker (if buffered? uw/ask-buffered! uw/ask!)]
+             ask-worker  (if buffered? mw/ask-buffered! mw/ask!)
+             filter-objs (comp
+                          (filter (complement blocked?))
+                          (remove (partial cfh/hidden-parent? objects)))]
 
          (if (some? selrect)
            (->> (ask-worker
@@ -351,9 +352,9 @@
                   :using-selrect? true})
                 (rx/filter some?)
                 (rx/map #(cfh/clean-loops objects %))
-                (rx/map #(into initial-set (comp
-                                            (filter (complement blocked?))
-                                            (remove (partial cfh/hidden-parent? objects))) %))
+                (rx/map (if remove?
+                          #(apply disj initial-set %)
+                          #(into initial-set filter-objs %)))
                 (rx/map select-shapes))
            (rx/empty)))))))
 

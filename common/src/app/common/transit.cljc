@@ -208,9 +208,13 @@
   ([data] (encode-str data nil))
   ([data opts]
    #?(:cljs
-      (let [t (:type opts :json)
-            w (t/writer t {:handlers @write-handler-map})]
-        (t/write w data))
+      (let [type   (:type opts :json)
+            params {:handlers @write-handler-map}
+            params (if (:with-meta opts)
+                     (assoc params :transform t/write-meta)
+                     params)
+            writer (t/writer type params)]
+        (t/write writer data))
       :clj
       (->> (encode data opts)
            (bytes->str)))))
@@ -219,9 +223,10 @@
   ([data] (decode-str data nil))
   ([data opts]
    #?(:cljs
-      (let [t (:type opts :json)
-            r (t/reader t {:handlers @read-handler-map})]
-        (t/read r data))
+      (let [type   (:type opts :json)
+            params {:handlers @read-handler-map}
+            reader (t/reader type params)]
+        (t/read reader data))
       :clj
       (-> (str->bytes data)
           (decode opts)))))

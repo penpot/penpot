@@ -9,6 +9,7 @@
   extensions"
   (:require
    [promesa.impl :as pi])
-  (:import goog.async.Deferred))
+  (:import
+   goog.async.Deferred))
 
 (pi/extend-promise! Deferred)

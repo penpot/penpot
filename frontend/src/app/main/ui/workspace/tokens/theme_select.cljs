@@ -11,7 +11,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
-   [app.main.data.tokens :as wdt]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -31,7 +31,7 @@
                  selected? (get active-theme-paths theme-id)
                  select-theme (fn [e]
                                 (dom/stop-propagation e)
-                                (st/emit! (wdt/toggle-token-theme-active? group name))
+                                (st/emit! (dwtl/toggle-token-theme-active? group name))
                                 (on-close))]]
        [:li {:key theme-id
              :role "option"
@@ -41,36 +41,38 @@
                      :sub-item grouped?
                      :is-selected selected?)
              :on-click select-theme}
-        [:> text* {:as "span" :typography "body-small" :class (stl/css :label)} name]
+        [:> text* {:as "span" :typography "body-small" :class (stl/css :label) :title name} name]
         [:> icon* {:icon-id i/tick
                    :aria-hidden true
                    :class (stl/css-case :check-icon true
                                         :check-icon-visible selected?)}]])]))
 
+(defn- open-tokens-theme-modal
+  []
+  (modal/show! :tokens/themes {}))
+
 (mf/defc theme-options
   [{:keys [active-theme-paths themes on-close]}]
-  (let []
-    (let [on-edit-click #(modal/show! :tokens/themes {})]
-      [:ul {:class (stl/css :theme-options :custom-select-dropdown)
-            :role "listbox"}
-       (for [[group themes] themes]
-         [:li {:key group
-               :aria-labelledby (dm/str group "-label")
-               :role "group"}
-          (when (seq group)
-            [:> text* {:as "span" :typography "headline-small" :class (stl/css :group) :id (dm/str group "-label")} group])
-          [:& themes-list {:themes themes
-                           :active-theme-paths active-theme-paths
-                           :on-close on-close
-                           :grouped? true}]])
-       [:li {:class (stl/css :separator)
-             :aria-hidden true}]
-       [:li {:class (stl/css-case :checked-element true
-                                  :checked-element-button true)
-             :role "option"
-             :on-click on-edit-click}
-        [:> text* {:as "span" :typography "body-small"} (tr "workspace.token.edit-themes")]
-        [:> icon* {:icon-id i/arrow-right :aria-hidden true}]]])))
+  [:ul {:class (stl/css :theme-options :custom-select-dropdown)
+        :role "listbox"}
+   (for [[group themes] themes]
+     [:li {:key group
+           :aria-labelledby (dm/str group "-label")
+           :role "group"}
+      (when (seq group)
+        [:> text* {:as "span" :typography "headline-small" :class (stl/css :group) :id (dm/str (str/kebab group) "-label") :title group} group])
+      [:& themes-list {:themes themes
+                       :active-theme-paths active-theme-paths
+                       :on-close on-close
+                       :grouped? true}]])
+   [:li {:class (stl/css :separator)
+         :aria-hidden true}]
+   [:li {:class (stl/css-case :checked-element true
+                              :checked-element-button true)
+         :role "option"
+         :on-click open-tokens-theme-modal}
+    [:> text* {:as "span" :typography "body-small"} (tr "workspace.tokens.edit-themes")]
+    [:> icon* {:icon-id i/arrow-right :aria-hidden true}]]])
 
 (mf/defc theme-select
   [{:keys []}]
@@ -81,12 +83,12 @@
         can-edit?  (:can-edit (deref refs/permissions))
         ;; Data
         current-label (cond
-                        (> active-themes-count 1) (tr "workspace.token.active-themes" active-themes-count)
+                        (> active-themes-count 1) (tr "workspace.tokens.active-themes" active-themes-count)
                         (= active-themes-count 1) (some->> (first active-theme-paths)
-                                                           (ctob/split-token-theme-path)
+                                                           (ctob/split-theme-path)
                                                            (remove empty?)
                                                            (str/join " / "))
-                        :else (tr "workspace.token.no-active-theme"))
+                        :else (tr "workspace.tokens.no-active-theme"))
 
         ;; State
         state* (mf/use-state
@@ -111,7 +113,6 @@
                         :is-open? true
                         :rect rect))))))]
 
-    ;; TODO: This element should be accessible by keyboard
     [:div {:on-click on-open-dropdown
            :disabled (not can-edit?)
            :aria-expanded is-open?

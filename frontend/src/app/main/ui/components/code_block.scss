@@ -4,9 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../ds/typography.scss" as t;
 @import "refactor/common-refactor.scss";
 
 .code-display {
+  @include t.use-typography("code-font");
   user-select: text;
   border-radius: $br-8;
   margin-top: $s-8;

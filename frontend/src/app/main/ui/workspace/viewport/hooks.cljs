@@ -28,7 +28,7 @@
    [app.main.ui.workspace.shapes.frame.dynamic-modifiers :as sfd]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.utils :as utils]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -206,7 +206,7 @@
 
              (if (mf/ref-val hover-disabled-ref)
                (rx/of nil)
-               (->> (uw/ask-buffered!
+               (->> (mw/ask-buffered!
                      {:cmd :selection/query
                       :page-id page-id
                       :rect rect
@@ -472,16 +472,23 @@
 (defn setup-shortcuts
   [path-editing? drawing-path? text-editing? grid-editing?]
   (hooks/use-shortcuts ::workspace wsc/shortcuts)
-  (mf/use-effect
-   (mf/deps path-editing? drawing-path? grid-editing?)
-   (fn []
-     (cond
-       grid-editing?
-       (do (st/emit! (dsc/push-shortcuts ::grid gsc/shortcuts))
-           #(st/emit! (dsc/pop-shortcuts ::grid)))
-       (or drawing-path? path-editing?)
-       (do (st/emit! (dsc/push-shortcuts ::path psc/shortcuts))
-           #(st/emit! (dsc/pop-shortcuts ::path)))
-       text-editing?
-       (do (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts))
-           #(st/emit! (dsc/pop-shortcuts ::text)))))))
+
+  (mf/with-effect [path-editing? drawing-path? grid-editing?]
+    (cond
+      grid-editing?
+      (do
+        (st/emit! (dsc/push-shortcuts ::grid gsc/shortcuts))
+        (fn []
+          (st/emit! (dsc/pop-shortcuts ::grid))))
+
+      (or drawing-path? path-editing?)
+      (do
+        (st/emit! (dsc/push-shortcuts ::path psc/shortcuts))
+        (fn []
+          (st/emit! (dsc/pop-shortcuts ::path))))
+
+      text-editing?
+      (do
+        (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts))
+        (fn []
+          (st/emit! (dsc/pop-shortcuts ::text)))))))

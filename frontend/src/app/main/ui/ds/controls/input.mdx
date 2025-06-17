@@ -1,3 +1,9 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC */ }
+
 import { Canvas, Meta } from '@storybook/blocks';
 import * as InputStories from "./input.stories";
 
@@ -5,12 +11,9 @@ import * as InputStories from "./input.stories";
 
 # Input
 
-The `input*` component is a wrapper to the HTML `<input>` element with custom styling
-and additional elements that adds context and, in some cases, adds extra
-functionality.
+The `input*` component is a wrapper composed of `label*`, `input-field*`, and `hint-message*` components, functioning as a form element that adapts its UI based on configuration, making it suitable for different areas of the interface.
 
 <Canvas of={InputStories.Default} />
-
 
 ## Technical notes
 
@@ -29,7 +32,30 @@ These are available in the `app.main.ds.foundations.assets.icon` namespace.
 [:> input* {:icon i/effects}]
 ```
 
-<Canvas of={InputStories.WithIcon} />
+## Destructuring the component
+
+The `input*` component is composed of `label*`, `input-field*`, and `hint-message*` components. If you only need some of these components or require them to be broken down, you can build them as a group of components.
+
+```clj
+[:> label* {:for id :is-optional true} label]
+[:> input-field* {:id id}]
+[:> hint-message* {:id id :message message :type "warning}]
+```
+
+<Canvas of={InputStories.Composable} />
+
+#### `input-field*` slots
+
+The `input-field*` offers two slots where developers can include external components as properties.
+
+- **slot-start**: adds a component to the beginning of the input
+- **slot-end**: adds a component to the end of the input
+
+```clj
+[:> input-field* {:id id :slot-start component-one :slot-end component-two}]
+```
+
+<Canvas of={InputStories.Slots} />
 
 ## Usage guidelines (design)
 

@@ -1,0 +1,45 @@
+{:deps {:aliases [:dev]}
+ :http {:port #shadow/env ["HTTP_PORT" :as :int :default 4448]}
+ :dev-http {#shadow/env ["DEV_PORT" :as :int :default 8889] "classpath:public"}
+ :nrepl false
+ :socket-repl false
+ :cache-dir #shadow/env ["CACHE" :default ".shadow-cljs"]
+
+ :builds
+ {:library
+  {:target :esm
+   :runtime :custom
+   :output-dir "target/library"
+   :devtools {:autoload false}
+
+   :modules
+   {:penpot
+    {:exports {BuilderError lib.builder/BuilderError
+               createBuildContext lib.builder/create-build-context
+               exportAsBytes lib.export/export-bytes
+               exportAsBlob lib.export/export-blob
+               exportStream lib.export/export-stream
+               }}}
+
+   :js-options
+   {:entry-keys ["module" "browser" "main"]
+    :export-conditions ["module" "import", "browser" "require" "default"]
+    ;; :js-provider :import
+    ;; :external-index "target/library/dependencies.js"
+    ;; :external-index-format :esm
+    }
+
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :advanced]
+     :pretty-print false
+     :source-map true
+     :elide-asserts true
+     :anon-fn-naming-policy :off
+     :source-map-detail-level :all}}}}}

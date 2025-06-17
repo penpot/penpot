@@ -7,6 +7,7 @@
 (ns app.worker.selection
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.files.indices :as cfi]
    [app.common.geom.point :as gpt]
@@ -189,8 +190,16 @@
           (let [padding (->> (:strokes shape)
                              (map :stroke-width)
                              (reduce d/max 5))
+                ;; For paths that fit within a 5x5 box, there won't be any intersection
+                ;; when the cursor is around the center. We need to adjust the padding
+                ;; to make a narrower box in that case.
+                ;; FIXME: this should be a function of the zoom level as well, or use
+                ;;   pixel distances
+                width   (dm/get-in shape [:selrect :width] 1)
+                height  (dm/get-in shape [:selrect :height] 1)
+                padding (min padding (/ (max width height) 2))
                 center  (grc/rect->center rect)
-                rect    (grc/center->rect center  padding)]
+                rect    (grc/center->rect center padding)]
             (gsh/overlaps-path? shape rect false)))
 
         overlaps?

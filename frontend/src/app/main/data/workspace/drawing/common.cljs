@@ -11,11 +11,12 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -65,6 +66,10 @@
                    (-> (assoc :height 17 :width 4 :grow-type :auto-width)
                        (cts/setup-shape))
 
+                   (or (cfh/path-shape? shape)
+                       (cfh/bool-shape? shape))
+                   (update :content path/content)
+
                    :always
                    (dissoc :initialized? :click-draw?))]
 
@@ -77,7 +82,7 @@
               (rx/of (dwsh/add-shape shape {:no-select? (= tool :curve)}))
               (if (cfh/frame-shape? shape)
                 (rx/concat
-                 (->> (uw/ask! {:cmd :selection/query
+                 (->> (mw/ask! {:cmd :selection/query
                                 :page-id page-id
                                 :rect (:selrect shape)
                                 :include-frames? true

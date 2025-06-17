@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.main.constants :refer [max-input-length]]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -41,8 +42,7 @@
   (let [color        (mf/with-memo [color file-id]
                        (cond-> color
                          (:value color) (assoc :color (:value color) :opacity 1)
-                         (:value color) (dissoc :value)
-                         :always        (assoc :file-id file-id)))
+                         (:value color) (dissoc :value)))
 
         color-id    (:id color)
 
@@ -77,7 +77,6 @@
            (let [name  (cfh/merge-path-item (:path color) (:name color))
                  color (-> attrs
                            (assoc :id (:id color))
-                           (assoc :file-id file-id)
                            (assoc :name name))]
              (st/emit! (dwl/update-color color file-id)))))
 
@@ -176,7 +175,7 @@
 
         on-click
         (mf/use-fn
-         (mf/deps color on-asset-click read-only?)
+         (mf/deps color on-asset-click read-only? file-id)
          (fn [event]
            (when-not read-only?
              (st/emit! (ptk/data-event ::ev/event
@@ -185,8 +184,7 @@
                                         :external-library (not local?)}))
 
              (when-not (on-asset-click event (:id color))
-               (st/emit! (dwl/add-recent-color color)
-                         (dc/apply-color-from-palette color (kbd/alt? event)))))))]
+               (st/emit! (dc/apply-color-from-assets file-id color (kbd/alt? event)))))))]
 
     (mf/with-effect [editing?]
       (when editing?
@@ -220,6 +218,7 @@
          :on-blur input-blur
          :on-key-down input-key-down
          :auto-focus true
+         :max-length max-input-length
          :default-value (cfh/merge-path-item (:path color) (:name color))}]
 
        [:div {:title (if (= (:name color) default-name)

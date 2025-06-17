@@ -6,10 +6,11 @@
 
 (ns app.main.ui.ds.buttons.icon-button
   (:require-macros
-   [app.common.data.macros :as dm]
    [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
+   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:icon-button
@@ -23,15 +24,30 @@
     [:maybe [:enum "primary" "secondary" "ghost" "destructive" "action"]]]])
 
 (mf/defc icon-button*
-  {::mf/props :obj
-   ::mf/schema schema:icon-button}
+  {::mf/schema schema:icon-button
+   ::mf/memo true}
   [{:keys [class icon icon-class variant aria-label children] :rest props}]
-  (let [variant (or variant "primary")
-        class (dm/str class " " (stl/css-case :icon-button true
-                                              :icon-button-primary (= variant "primary")
-                                              :icon-button-secondary (= variant "secondary")
-                                              :icon-button-ghost (= variant "ghost")
-                                              :icon-button-action (= variant "action")
-                                              :icon-button-destructive (= variant "destructive")))
-        props (mf/spread-props props {:class class :title aria-label})]
-    [:> "button" props [:> icon* {:icon-id icon :aria-label aria-label :class icon-class}] children]))
+  (let [variant
+        (d/nilv variant "primary")
+
+        tooltip-id
+        (mf/use-id)
+
+        button-class
+        (stl/css-case :icon-button true
+                      :icon-button-primary (identical? variant "primary")
+                      :icon-button-secondary (identical? variant "secondary")
+                      :icon-button-ghost (identical? variant "ghost")
+                      :icon-button-action (identical? variant "action")
+                      :icon-button-destructive (identical? variant "destructive"))
+
+        props
+        (mf/spread-props props
+                         {:class [class button-class]
+                          :aria-labelledby tooltip-id})]
+
+    [:> tooltip* {:content aria-label
+                  :id tooltip-id}
+     [:> :button props
+      [:> icon* {:icon-id icon :aria-hidden true :class icon-class}]
+      children]]))

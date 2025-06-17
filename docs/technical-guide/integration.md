@@ -1,5 +1,6 @@
 ---
 title: 4. Integration Guide
+desc: Connect Penpot with other apps using webhooks and access tokens! Learn from Penpot's integration guide for seamless workflows. Try Penpot - It's free.
 ---
 
 # Integration Guide

@@ -8,10 +8,12 @@
 
 .modal-overlay {
   @extend .modal-overlay-base;
+
   &.transparent {
     background-color: transparent;
   }
 }
+
 .modal-container {
   @extend .modal-container-base;
 }
@@ -34,10 +36,6 @@
   margin-bottom: $s-24;
 }
 
-.modal-hint {
-  @include bodyLargeTypography;
-}
-
 .action-buttons {
   @extend .modal-action-btns;
 }
@@ -48,6 +46,7 @@
 
 .accept-btn {
   @extend .modal-accept-btn;
+
   &.danger {
     @extend .modal-danger-btn;
   }
@@ -59,4 +58,16 @@
   @include bodyLargeTypography;
   color: var(--modal-text-foreground-color);
   line-height: 1.5;
+}
+
+.link {
+  color: var(--color-accent-primary);
+}
+
+.link::before {
+  content: " ";
+}
+
+.link::after {
+  content: " ";
 }

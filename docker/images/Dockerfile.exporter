@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
@@ -32,8 +32,8 @@ RUN set -ex; \
       netpbm \
       poppler-utils \
       potrace \
-      gconf-service \
-      libasound2 \
+      dconf-service \
+      libasound2t64 \
       libatk1.0-0 \
       libatk-bridge2.0-0 \
       libatomic1 \
@@ -43,7 +43,6 @@ RUN set -ex; \
       libexpat1 \
       libfontconfig1 \
       libgcc1 \
-      libgconf-2-4 \
       libgdk-pixbuf2.0-0 \
       libglib2.0-0 \
       libgtk-3-0 \

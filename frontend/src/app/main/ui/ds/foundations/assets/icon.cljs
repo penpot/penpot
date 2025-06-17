@@ -113,6 +113,7 @@
 (def ^:icon-id corner-top "corner-top")
 (def ^:icon-id corner-top-left "corner-top-left")
 (def ^:icon-id corner-top-right "corner-top-right")
+(def ^:icon-id crown "crown")
 (def ^:icon-id curve "curve")
 (def ^:icon-id delete "delete")
 (def ^:icon-id delete-text "delete-text")
@@ -134,6 +135,7 @@
 (def ^:icon-id exit "exit")
 (def ^:icon-id expand "expand")
 (def ^:icon-id external-link "external-link")
+(def ^:icon-id eye-off "eye-off")
 (def ^:icon-id feedback "feedback")
 (def ^:icon-id fill-content "fill-content")
 (def ^:icon-id filter "filter")
@@ -145,6 +147,7 @@
 (def ^:icon-id flex-vertical "flex-vertical")
 (def ^:icon-id flip-horizontal "flip-horizontal")
 (def ^:icon-id flip-vertical "flip-vertical")
+(def ^:icon-id folder "folder")
 (def ^:icon-id gap-horizontal "gap-horizontal")
 (def ^:icon-id gap-vertical "gap-vertical")
 (def ^:icon-id graphics "graphics")
@@ -202,6 +205,7 @@
 (def ^:icon-id msg-neutral "msg-neutral")
 (def ^:icon-id msg-success "msg-success")
 (def ^:icon-id msg-warning "msg-warning")
+(def ^:icon-id number "number")
 (def ^:icon-id open-link "open-link")
 (def ^:icon-id padding-bottom "padding-bottom")
 (def ^:icon-id padding-extended "padding-extended")
@@ -228,6 +232,7 @@
 (def ^:icon-id row-reverse "row-reverse")
 (def ^:icon-id search "search")
 (def ^:icon-id separate-nodes "separate-nodes")
+(def ^:icon-id settings "settings")
 (def ^:icon-id shown "shown")
 (def ^:icon-id size-horizontal "size-horizontal")
 (def ^:icon-id size-vertical "size-vertical")
@@ -296,8 +301,7 @@
     [:maybe [:enum "s" "m"]]]])
 
 (mf/defc icon*
-  {::mf/props :obj
-   ::mf/schema schema:icon}
+  {::mf/schema schema:icon}
   [{:keys [icon-id size class] :rest props}]
   (let [class (dm/str (or class "") " " (stl/css :icon))
         props (mf/spread-props props {:class class :width icon-size-m :height icon-size-m})

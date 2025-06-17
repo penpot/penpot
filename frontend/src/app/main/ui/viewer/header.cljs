@@ -198,9 +198,7 @@
              :on-click toggle-fullscreen}
       i/expand]
 
-     (when (and
-            (:in-team permissions)
-            (:is-admin permissions))
+     (when (:in-team permissions)
        [:button {:on-click open-share-dialog
                  :class (stl/css :share-btn)}
         (tr "labels.share")])

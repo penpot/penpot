@@ -8,12 +8,14 @@
 (ns app.main.ui.workspace.sidebar.assets.common
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.spec :as us]
    [app.common.thumbnails :as thc]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.variant :as ctv]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
@@ -322,7 +324,7 @@
         :is-hidden is-hidden}])))
 
 (defn generate-components-menu-entries
-  [shapes components-v2]
+  [shapes]
   (let [multi               (> (count shapes) 1)
         copies              (filter ctk/in-component-copy? shapes)
 
@@ -350,13 +352,13 @@
 
         touched-not-dangling (filter #(and (cfh/component-touched? objects (:id %))
                                            (find-component % false)) copies)
-        can-reset-overrides? (or (not components-v2) (seq touched-not-dangling))
+        can-reset-overrides? (seq touched-not-dangling)
 
 
         ;; For when it's only one shape
         shape               (first shapes)
         id                  (:id shape)
-        main-instance?      (if components-v2 (ctk/main-instance? shape) true)
+        main-instance?      (ctk/main-instance? shape)
 
         component-id        (:component-id shape)
         library-id          (:component-file shape)
@@ -372,16 +374,34 @@
 
         can-update-main?    (and (not multi)
                                  (not is-dangling?)
-                                 (or (not components-v2)
-                                     (and (not main-instance?)
-                                          (not (ctn/has-any-copy-parent? objects shape))
-                                          (cfh/component-touched? objects (:id shape)))))
+                                 (and (not main-instance?)
+                                      (not (ctn/has-any-copy-parent? objects shape))
+                                      (cfh/component-touched? objects (:id shape))))
 
         can-detach? (and (seq copies)
                          (every? #(not (ctn/has-any-copy-parent? objects %)) copies))
 
         variants? (features/use-feature "variants/v1")
 
+        same-variant? (ctv/same-variant? shapes)
+
+        is-restorable-variant?
+        ;; A shape is a restorable variant if its component is deleted, is a variant,
+        ;; and the variant-container in which it will be restored still exists
+        (fn [shape]
+          (let [component (find-component shape true)
+                main      (ctk/get-component-root component)
+                objects   (dm/get-in libraries [(:component-file shape)
+                                                :data
+                                                :pages-index
+                                                (:main-instance-page component)
+                                                :objects])
+
+                parent    (get objects (:parent-id main))]
+            (and (:deleted component) (ctk/is-variant? component) parent)))
+
+        restorable-variants? (and variants?
+                                  (every? is-restorable-variant? restorable-copies))
 
         do-detach-component
         #(st/emit! (dwl/detach-components (map :id copies)))
@@ -447,10 +467,10 @@
            (when (= 1 (count comps-to-restore))
              (ts/schedule 1000 do-show-component)))
 
-        menu-entries [(when (and (not multi) main-instance?)
+        menu-entries [(when (and (or (not multi) same-variant?) main-instance?)
                         {:title (tr "workspace.shape.menu.show-in-assets")
                          :action do-show-in-assets})
-                      (when (and (not multi) main-instance? local-component? lacks-annotation? components-v2)
+                      (when (and (not multi) main-instance? local-component? lacks-annotation?)
                         {:title (tr "workspace.shape.menu.create-annotation")
                          :action do-create-annotation})
                       (when can-detach?
@@ -462,8 +482,11 @@
                       (when can-reset-overrides?
                         {:title (tr "workspace.shape.menu.reset-overrides")
                          :action do-reset-component})
-                      (when (and (seq restorable-copies) components-v2)
-                        {:title (tr "workspace.shape.menu.restore-main")
+                      (when (seq restorable-copies)
+                        {:title
+                         (if restorable-variants?
+                           (tr "workspace.shape.menu.restore-variant")
+                           (tr "workspace.shape.menu.restore-main"))
                          :action do-restore-component})
                       (when can-show-component?
                         {:title (tr "workspace.shape.menu.show-main")
@@ -471,7 +494,7 @@
                       (when can-update-main?
                         {:title (tr "workspace.shape.menu.update-main")
                          :action do-update-component})
-                      (when (and variants? (not multi) main-instance?)
+                      (when (and variants? (or (not multi) same-variant?) main-instance?)
                         {:title (tr "workspace.shape.menu.add-variant")
                          :shortcut :create-component
                          :action do-add-variant})]]

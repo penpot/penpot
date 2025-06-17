@@ -15,7 +15,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
-   [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -23,10 +23,10 @@
    [app.main.ui.flex-controls :as mfc]
    [app.main.ui.hooks :as ui-hooks]
    [app.main.ui.measurements :as msr]
+   [app.main.ui.workspace.shapes.path.editor :refer [path-editor*]]
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
    [app.main.ui.workspace.shapes.text.v2-editor :as editor-v2]
-   [app.main.ui.workspace.shapes.text.viewport-texts-html :as stvh]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
    [app.main.ui.workspace.viewport.debug :as wvd]
@@ -51,28 +51,25 @@
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
    [app.util.debug :as dbg]
+   [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
+   [okulary.core :as l]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 ;; --- Viewport
 
+(def workspace-wasm-modifiers
+  (l/derived :workspace-wasm-modifiers st/state))
+
 (defn apply-modifiers-to-selected
-  [selected objects text-modifiers modifiers]
-  (reduce
-   (fn [objects id]
-     (update
-      objects id
-      (fn [shape]
-        (cond-> shape
-          (and (cfh/text-shape? shape) (contains? text-modifiers id))
-          (dwm/apply-text-modifier (get text-modifiers id))
-
-          (contains? modifiers id)
-          (gsh/transform-shape (dm/get-in modifiers [id :modifiers]))))))
-
-   objects
-   selected))
+  [selected objects modifiers]
+  (->> modifiers
+       (filter #(contains? selected (:id %)))
+       (reduce
+        (fn [objects {:keys [id transform]}]
+          (update objects id gsh/apply-transform transform))
+        objects)))
 
 (mf/defc viewport*
   [{:keys [selected wglobal wlocal layout file page palete-size]}]
@@ -98,25 +95,29 @@
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
 
         ;; DEREFS
-
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
+        wasm-modifiers    (mf/deref workspace-wasm-modifiers)
 
+        workspace-editor-state (mf/deref refs/workspace-editor-state)
+
+        file-id           (get file :id)
         objects           (get page :objects)
         page-id           (get page :id)
         background        (get page :background clr/canvas)
+        guides            (get page :guides)
 
         base-objects      (ui-hooks/with-focus-objects objects focus)
 
-        modifiers         (mf/deref refs/workspace-modifiers)
-        text-modifiers    (mf/deref refs/workspace-text-modifier)
+        objects-modified
+        (mf/with-memo
+          [base-objects wasm-modifiers]
+          (binding [cts/*wasm-sync* false]
+            (apply-modifiers-to-selected selected base-objects wasm-modifiers)))
 
-        objects-modified  (mf/with-memo [base-objects text-modifiers modifiers]
-                            (binding [cts/*wasm-sync* false]
-                              (apply-modifiers-to-selected selected base-objects text-modifiers modifiers)))
-
-        selected-shapes   (keep (d/getf objects-modified) selected)
-
+        selected-shapes   (->> selected
+                               (into [] (keep (d/getf objects-modified)))
+                               (not-empty))
         ;; STATE
         alt?              (mf/use-state false)
         shift?            (mf/use-state false)
@@ -139,6 +140,7 @@
          on-viewport-ref] (create-viewport-ref)
 
         canvas-ref        (mf/use-ref nil)
+        text-editor-ref   (mf/use-ref nil)
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -168,14 +170,18 @@
 
         editing-shape     (when edition (get base-objects edition))
 
+        edit-path         (get edit-path edition)
+        edit-path-mode    (get edit-path :edit-mode)
+
         create-comment?   (= :comments drawing-tool)
-        drawing-path?     (or (and edition (= :draw (get-in edit-path [edition :edit-mode])))
-                              (and (some? drawing-obj) (= :path (:type drawing-obj))))
-        node-editing?     (and edition (= :path (get-in base-objects [edition :type])))
-        text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
+        drawing-path?     (or (= edit-path-mode :draw)
+                              (= :path (get drawing-obj :type)))
+
+        node-editing?     (cfh/path-shape? editing-shape)
+        text-editing?     (cfh/text-shape? editing-shape)
         grid-editing?     (and edition (ctl/grid-layout? base-objects edition))
 
-        mode-inspect?       (= options-mode :inspect)
+        mode-inspect?     (= options-mode :inspect)
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
@@ -278,6 +284,7 @@
     ;;       canvas, even though we are not using `page-id` inside the hook.
     ;;       We think moving this out to a handler will make the render code
     ;;       harder to follow through.
+
     (mf/with-effect [page-id]
       (when-let [canvas (mf/ref-val canvas-ref)]
         (->> wasm.api/module
@@ -288,13 +295,22 @@
         (fn []
           (wasm.api/clear-canvas))))
 
+    (mf/with-effect [show-text-editor? workspace-editor-state edition]
+      (let [active-editor-state (get workspace-editor-state edition)]
+        (when (and show-text-editor? active-editor-state)
+          (let [content (-> active-editor-state
+                            (ted/get-editor-current-content)
+                            (ted/export-content))]
+            (wasm.api/use-shape edition)
+            (wasm.api/set-shape-text-content content)
+            (let [dimension (wasm.api/text-dimensions)]
+              (st/emit! (dwt/resize-text-editor edition dimension))
+              (wasm.api/clear-drawing-cache)
+              (wasm.api/request-render "content"))))))
+
     (mf/with-effect [vport]
       (when @canvas-init?
         (wasm.api/resize-viewbox (:width vport) (:height vport))))
-
-    (mf/with-effect [@canvas-init?  base-objects]
-      (when (and @canvas-init? @initialized?)
-        (wasm.api/set-objects base-objects)))
 
     (mf/with-effect [@canvas-init? preview-blend]
       (when (and @canvas-init? preview-blend)
@@ -324,26 +340,17 @@
 
     [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
      (when (:can-edit permissions)
-       [:& top-bar/top-bar {:layout layout}])
+       [:> top-bar/top-bar* {:layout layout
+                             :selected selected-shapes
+                             :edit-path edit-path
+                             :drawing drawing
+                             :edition edition
+                             :is-read-only read-only?}])
      [:div {:class (stl/css :viewport-overlays)}
-      ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
-      ;; inside a foreign object "dummy" so this awkward behaviour is take into account
-      [:svg {:style {:top 0 :left 0 :position "fixed" :width "100%" :height "100%" :opacity (when-not (dbg/enabled? :html-text) 0)}}
-       [:foreignObject {:x 0 :y 0 :width "100%" :height "100%"}
-        [:div {:style {:pointer-events (when-not (dbg/enabled? :html-text) "none")
-                       ;; some opacity because to debug auto-width events will fill the screen
-                       :opacity 0.6}}
-         (when (and (:can-edit permissions) (not read-only?))
-           [:& stvh/viewport-texts
-            {:key (dm/str "texts-" page-id)
-             :page-id page-id
-             :objects objects
-             :modifiers modifiers
-             :edition edition}])]]]
-
       (when show-comments?
         [:> comments/comments-layer* {:vbox vbox
                                       :page-id page-id
+                                      :file-id file-id
                                       :vport vport
                                       :zoom zoom}])
 
@@ -354,6 +361,7 @@
                                          :viewport-ref viewport-ref}])]
 
      [:canvas {:id "render"
+               :data-testid "canvas-wasm-shapes"
                :ref canvas-ref
                :class (stl/css :render-shapes)
                :key (dm/str "render" page-id)
@@ -372,7 +380,6 @@
        :class (dm/str @cursor (when drawing-tool " drawing") " " (stl/css :viewport-controls))
        :style {:touch-action "none"}
        :fill "none"
-
        :on-click         on-click
        :on-context-menu  on-context-menu
        :on-double-click  on-double-click
@@ -398,9 +405,9 @@
        (when show-text-editor?
          (if (features/active-feature? @st/state "text-editor/v2")
            [:& editor-v2/text-editor {:shape editing-shape
-                                      :modifiers modifiers}]
+                                      :ref text-editor-ref}]
            [:& editor-v1/text-editor-svg {:shape editing-shape
-                                          :modifiers modifiers}]))
+                                          :ref text-editor-ref}]))
 
        (when show-frame-outline?
          (let [outlined-frame-id
@@ -413,8 +420,7 @@
             [:& outline/shape-outlines
              {:objects base-objects
               :hover #{outlined-frame-id}
-              :zoom zoom
-              :modifiers modifiers}]
+              :zoom zoom}]
 
             (when (ctl/any-layout? outlined-frame)
               [:g.ghost-outline
@@ -430,23 +436,22 @@
            :hover #{(:id @hover) @frame-hover}
            :highlighted highlighted
            :edition edition
-           :zoom zoom
-           :modifiers modifiers}])
+           :zoom zoom}])
 
-       (when show-selection-handlers?
-         [:& selection/selection-area
+       (when (and show-selection-handlers?
+                  selected-shapes)
+         [:> selection/area*
           {:shapes selected-shapes
            :zoom zoom
            :edition edition
-           :disable-handlers (or drawing-tool edition @space? @mod?)
+           :disabled (or drawing-tool edition @space? @mod?)
            :on-move-selected on-move-selected
            :on-context-menu on-menu-selected}])
 
        (when show-text-editor?
          [:& text-edition-outline
           {:shape (get base-objects edition)
-           :zoom zoom
-           :modifiers modifiers}])
+           :zoom zoom}])
 
        (when show-measures?
          [:& msr/measurement
@@ -506,7 +511,7 @@
            :on-frame-select on-frame-select}])
 
        (when show-draw-area?
-         [:& drawarea/draw-area
+         [:> drawarea/draw-area*
           {:shape drawing-obj
            :zoom zoom
            :tool drawing-tool}])
@@ -570,10 +575,10 @@
          [:> guides/viewport-guides*
           {:zoom zoom
            :vbox vbox
-           :guides (:guides page)
+           :guides guides
            :hover-frame guide-frame
            :disabled-guides disabled-guides?
-           :modifiers modifiers}])
+           :modifiers wasm-modifiers}])
 
        ;; DEBUG LAYOUT DROP-ZONES
        (when (dbg/enabled? :layout-drop-zones)
@@ -608,12 +613,16 @@
 
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}
-          [:& selection/selection-handlers
-           {:selected selected
-            :shapes selected-shapes
-            :zoom zoom
-            :edition edition
-            :disable-handlers (or drawing-tool edition @space?)}]
+          (when-not text-editing?
+            (if editing-shape
+              [:> path-editor* {:shape editing-shape
+                                :zoom zoom}]
+              (when selected-shapes
+                [:> selection/handlers*
+                 {:selected selected
+                  :shapes selected-shapes
+                  :zoom zoom
+                  :disabled (or drawing-tool @space?)}])))
 
           (when show-prototypes?
             [:& interactions/interactions
@@ -633,8 +642,7 @@
         (when (or show-grid-editor? hover-grid?)
           [:& grid-layout/editor
            {:zoom zoom
-            :objects base-objects
-            :modifiers modifiers
+            :objects objects-modified
             :shape (or (get base-objects edition)
                        (get base-objects @hover-top-frame-id))
             :view-only (not show-grid-editor?)}])
@@ -647,8 +655,7 @@
             [:& grid-layout/editor
              {:zoom zoom
               :key (dm/str (:id frame))
-              :objects base-objects
-              :modifiers modifiers
+              :objects objects-modified
               :shape frame
               :view-only true}]))]
        [:g.scrollbar-wrapper {:clipPath "url(#clip-handlers)"}

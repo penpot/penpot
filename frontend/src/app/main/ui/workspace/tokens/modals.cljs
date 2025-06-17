@@ -138,9 +138,9 @@
   [properties]
   [:& token-update-create-modal properties])
 
-(mf/defc numeric-modal
+(mf/defc number-modal
   {::mf/register modal/components
-   ::mf/register-as :tokens/numeric}
+   ::mf/register-as :tokens/number}
   [properties]
   [:& token-update-create-modal properties])
 

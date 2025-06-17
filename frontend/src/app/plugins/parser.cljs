@@ -13,7 +13,7 @@
 
 (defn parse-id
   [id]
-  (when id (uuid/uuid id)))
+  (when id (uuid/parse id)))
 
 (defn parse-keyword
   [kw]
@@ -253,7 +253,8 @@
     (d/without-nils
      {:type (-> (obj/get export "type") parse-keyword)
       :scale (obj/get export "scale" 1)
-      :suffix (obj/get export "suffix" "")})))
+      :suffix (obj/get export "suffix" "")
+      :skip-children (obj/get export "skipChildren" false)})))
 
 (defn parse-exports
   [^js exports]

@@ -22,8 +22,7 @@
    [:type {:optional true} [:maybe [:enum 1 2]]]])
 
 (mf/defc empty-placeholder*
-  {::mf/props :obj
-   ::mf/schema schema:empty-placeholder}
+  {::mf/schema schema:empty-placeholder}
   [{:keys [class title subtitle type children] :rest props}]
 
   (let [class (dm/str class " " (stl/css :empty-placeholder))

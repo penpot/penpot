@@ -1,5 +1,6 @@
 ---
 title: 2. Penpot Configuration
+desc: Learn about self-hosting, configuration via environment variables, and authentication providers. Try Penpot - It's free! See Penpot's technical guide.
 ---
 
 # Penpot Configuration
@@ -352,9 +353,9 @@ If you are not using SMTP configuration and want to log the emails in the consol
 PENPOT_FLAGS: [...] enable-log-emails
 ```
 
-## Redis
+## Valkey
 
-The Redis configuration is very simple, just provide a valid redis URI. Redis is used
+The Valkey configuration is very simple, just provide a valid redis URI. Valkey is used
 mainly for websocket notifications coordination.
 
 ```bash
@@ -365,7 +366,7 @@ PENPOT_REDIS_URI: redis://localhost/0
 PENPOT_REDIS_URI: redis://localhost/0
 ```
 
-If you are using the official docker compose file, this is already configurRed.
+If you are using the official docker compose file, this is already configured.
 
 ## Demo environment
 
@@ -390,6 +391,22 @@ verification process:
 ```bash
 PENPOT_FLAGS: disable-email-verification enable-demo-warning
 ```
+
+## Air gapped environments
+
+The current Penpot installation defaults to several external proxies:
+- to Github, from where the libraries and templates are downloaded
+- to Google, from where the google-fonts are downloaded.
+
+This is implemented as specific locations in the penpot-front Nginx. If your organization needs to install Penpot
+in a 100% air-gapped environment, you can use the following configuration:
+
+```bash
+PENPOT_FLAGS: enable-air-gapped-conf
+```
+
+When Penpot starts, it will leave out the Nginx configuration related to external requests. This means that,
+with this flag enabled, the Penpot configuration will disable as well the libraries and templates dashboard and the use of Google fonts.
 
 ## Backend
 

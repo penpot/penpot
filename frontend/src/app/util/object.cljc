@@ -6,7 +6,7 @@
 
 (ns app.util.object
   "A collection of helpers for work with javascript objects."
-  (:refer-clojure :exclude [set! new get merge clone contains? array? into-array reify])
+  (:refer-clojure :exclude [set! new get merge clone contains? array? into-array reify class])
   #?(:cljs (:require-macros [app.util.object]))
   (:require
    [clojure.core :as c]))
@@ -92,6 +92,51 @@
      [^js obj]
      (when (some? obj)
        (js* "Object.entries(~{}).reduce((a, [k,v]) => (v == null ? a : (a[k]=v, a)), {}) " obj))))
+
+#?(:cljs
+   (defn plain-object?
+     ^boolean
+     [o]
+     (and (some? o)
+          (identical? (.getPrototypeOf js/Object o)
+                      (.-prototype js/Object)))))
+
+;; EXPERIMENTAL: unsafe, does not checks and not validates the input,
+;; should be improved over time, for now it works for define a class
+;; extending js/Error that is more than enought for a first, quick and
+;; dirty macro impl for generating classes.
+
+(defmacro class
+  "Create a class instance"
+  [& {:keys [name extends constructor]}]
+
+  (let [params
+        (if (and constructor (= 'fn (first constructor)))
+          (into [] (drop 1) (second constructor))
+          [])
+
+        constructor-sym
+        (symbol name)
+
+        constructor
+        (if constructor
+          constructor
+          `(fn ~name [~'this]
+             (.call ~extends ~'this)))]
+
+    `(let [konstructor# ~constructor
+           extends# ~extends
+           ~constructor-sym
+           (fn ~constructor-sym ~params
+             (cljs.core/this-as ~'this
+                                (konstructor# ~'this ~@params)))]
+
+       (set! (.-prototype ~constructor-sym)
+             (js/Object.create (.-prototype extends#)))
+       (set! (.-constructor (.-prototype ~constructor-sym))
+             konstructor#)
+
+       ~constructor-sym)))
 
 (defmacro add-properties!
   "Adds properties to an object using `.defineProperty`"

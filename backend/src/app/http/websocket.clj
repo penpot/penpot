@@ -273,7 +273,7 @@
 
 (defn- http-handler
   [cfg {:keys [params ::session/profile-id] :as request}]
-  (let [session-id (some-> params :session-id sm/parse-uuid)]
+  (let [session-id (some-> params :session-id uuid/parse*)]
     (when-not (uuid? session-id)
       (ex/raise :type :validation
                 :code :missing-session-id

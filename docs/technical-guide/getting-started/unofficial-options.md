@@ -1,5 +1,6 @@
 ---
 title: 1.5 Unofficial self-host options
+desc: Find guides for Docker, Kubernetes, and more in Penpot's Technical Guide for self-hosting options! Discover unofficial self-host options too.
 ---
 
 # Unofficial self-host options

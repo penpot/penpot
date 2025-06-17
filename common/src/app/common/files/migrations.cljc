@@ -16,28 +16,30 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.text :as gsht]
    [app.common.logging :as l]
    [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.common.svg :as csvg]
    [app.common.text :as txt]
-   [app.common.types.color :as ctc]
+   [app.common.types.color :as types.color]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.fill :as types.fill]
+   [app.common.types.path :as path]
+   [app.common.types.path.segment :as path.segment]
    [app.common.types.shape :as cts]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.shadow :as ctss]
+   [app.common.types.text :as cttx]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
 
 #?(:cljs (l/set-level! :info))
 
-(declare ^:private available-migrations)
-(declare ^:private migration-up-index)
-(declare ^:private migration-down-index)
+(declare available-migrations)
 
 (def version cfd/version)
 
@@ -49,24 +51,30 @@
   [file]
   (or (nil? (:version file))
       (not= cfd/version (:version file))
-      (not= available-migrations (:migrations file))))
+      (boolean
+       (->> (:migrations file #{})
+            (set/difference available-migrations)
+            (not-empty)))))
 
 (def xf:map-name
   (map :name))
 
 (defn migrate
-  [{:keys [id] :as file}]
+  [{:keys [id] :as file} libs]
 
   (let [diff
         (set/difference available-migrations (:migrations file))
 
+        data (-> (:data file)
+                 (assoc :libs libs))
+
         data
-        (reduce migrate-data (:data file) diff)
+        (reduce migrate-data data diff)
 
         data
         (-> data
             (assoc :id id)
-            (dissoc :version))]
+            (dissoc :version :libs))]
 
     (-> file
         (assoc :data data)
@@ -85,7 +93,7 @@
     result))
 
 (defn migrate-file
-  [file]
+  [file libs]
   (binding [cfeat/*new* (atom #{})]
     (let [version (or (:version file)
                       (-> file :data :version))]
@@ -96,13 +104,13 @@
                     (if (nil? migrations)
                       (generate-migrations-from-version version)
                       migrations)))
-          (update :features (fnil into #{}) (deref cfeat/*new*))
           ;; NOTE: in some future we can consider to apply
           ;; a migration to the whole database and remove
           ;; this code from this function that executes on
           ;; each file migration operation
           (update :features cfeat/migrate-legacy-features)
-          (migrate)))))
+          (migrate libs)
+          (update :features (fnil into #{}) (deref cfeat/*new*))))))
 
 (defn migrated?
   [file]
@@ -119,16 +127,16 @@
                                (into [] shapes)
                                shapes))))
           (update-page [page]
-            (update page :objects update-vals update-object))]
+            (update page :objects d/update-vals update-object))]
 
-    (update data :pages-index update-vals update-page)))
+    (update data :pages-index d/update-vals update-page)))
 
 (defmethod migrate-data "legacy-3"
   [data _]
   (letfn [(migrate-path [shape]
             (if-not (contains? shape :content)
-              (let [content (gsp/segments->content (:segments shape) (:close? shape))
-                    selrect (gsh/content->selrect content)
+              (let [content (path.segment/points->content (:segments shape) :close (:close? shape))
+                    selrect (path.segment/content->selrect content)
                     points  (grc/rect->points selrect)]
                 (-> shape
                     (dissoc :segments)
@@ -172,9 +180,9 @@
               (fix-empty-points)))
 
           (update-page [page]
-            (update page :objects update-vals update-object))]
+            (update page :objects d/update-vals update-object))]
 
-    (update data :pages-index update-vals update-page)))
+    (update data :pages-index d/update-vals update-page)))
 
 ;; Put the id of the local file in :component-file in instances of
 ;; local components
@@ -187,9 +195,9 @@
               object))
 
           (update-page [page]
-            (update page :objects update-vals update-object))]
+            (update page :objects d/update-vals update-object))]
 
-    (update data :pages-index update-vals update-page)))
+    (update data :pages-index d/update-vals update-page)))
 
 ;; Fixes issues with selrect/points for shapes with width/height =
 ;; 0 (line-like paths)
@@ -199,7 +207,7 @@
             (if (= (:type shape) :path)
               (let [{:keys [width height]} (grc/points->rect (:points shape))]
                 (if (or (mth/almost-zero? width) (mth/almost-zero? height))
-                  (let [selrect (gsh/content->selrect (:content shape))
+                  (let [selrect (path.segment/content->selrect (:content shape))
                         points (grc/rect->points selrect)
                         transform (gmt/matrix)
                         transform-inv (gmt/matrix)]
@@ -212,11 +220,11 @@
               shape))
 
           (update-container [container]
-            (update container :objects update-vals fix-line-paths))]
+            (update container :objects d/update-vals fix-line-paths))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 ;; Remove interactions pointing to deleted frames
 (defmethod migrate-data "legacy-7"
@@ -227,9 +235,9 @@
                              (filterv #(get-in page [:objects (:destination %)]) interactions))))
 
           (update-page [page]
-            (update page :objects update-vals (partial update-object page)))]
+            (update page :objects d/update-vals (partial update-object page)))]
 
-    (update data :pages-index update-vals update-page)))
+    (update data :pages-index d/update-vals update-page)))
 
 ;; Remove groups without any shape, both in pages and components
 (defmethod migrate-data "legacy-8"
@@ -269,8 +277,8 @@
                   (assoc container :objects objects)))))]
 
     (-> data
-        (update :pages-index update-vals clean-container)
-        (update :components update-vals clean-container))))
+        (update :pages-index d/update-vals clean-container)
+        (d/update-when :components d/update-vals clean-container))))
 
 (defmethod migrate-data "legacy-9"
   [data _]
@@ -304,7 +312,7 @@
   [data _]
   (letfn [(update-page [page]
             (d/update-in-when page [:objects uuid/zero] dissoc :points :selrect))]
-    (update data :pages-index update-vals update-page)))
+    (update data :pages-index d/update-vals update-page)))
 
 (defmethod migrate-data "legacy-11"
   [data _]
@@ -318,7 +326,7 @@
             (update page :objects (fn [objects]
                                     (update-vals objects (partial update-object objects)))))]
 
-    (update data :pages-index update-vals update-page)))
+    (update data :pages-index d/update-vals update-page)))
 
 (defmethod migrate-data "legacy-12"
   [data _]
@@ -328,9 +336,9 @@
               (assoc :size nil)))
 
           (update-page [page]
-            (d/update-in-when page [:options :saved-grids] update-vals update-grid))]
+            (d/update-in-when page [:options :saved-grids] d/update-vals update-grid))]
 
-    (update data :pages-index update-vals update-page)))
+    (update data :pages-index d/update-vals update-page)))
 
 ;; Add rx and ry to images
 (defmethod migrate-data "legacy-13"
@@ -348,9 +356,9 @@
               (fix-radius)))
 
           (update-page [page]
-            (update page :objects update-vals update-object))]
+            (update page :objects d/update-vals update-object))]
 
-    (update data :pages-index update-vals update-page)))
+    (update data :pages-index d/update-vals update-page)))
 
 (defmethod migrate-data "legacy-14"
   [data _]
@@ -380,8 +388,8 @@
               container))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-16"
   [data _]
@@ -423,11 +431,11 @@
               (assign-fills)))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-17"
   [data _]
@@ -452,11 +460,11 @@
               (assoc :fills [])))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 ;; Remove position-data to solve a bug with the text positioning
 (defmethod migrate-data "legacy-18"
@@ -467,11 +475,11 @@
               (dissoc :position-data)))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-19"
   [data _]
@@ -483,11 +491,11 @@
               (dissoc :position-data)))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-25"
   [data _]
@@ -499,10 +507,10 @@
                   (update :selrect grc/make-rect)
                   (cts/create-shape))))
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-26"
   [data _]
@@ -515,11 +523,11 @@
               (assoc :transform-inverse (gmt/matrix))))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-27"
   [data _]
@@ -546,11 +554,11 @@
                   (dissoc :saved-component-root?))))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-28"
   [data _]
@@ -575,8 +583,8 @@
             (d/update-when container :objects #(update-vals % (partial update-object %))))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-29"
   [data _]
@@ -607,11 +615,11 @@
                 (update :content #(txt/transform-nodes invalid-node? fix-node %)))))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-31"
   [data _]
@@ -622,10 +630,10 @@
                   (dissoc :use-for-thumbnail?))))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-32"
   [data _]
@@ -640,11 +648,11 @@
                 object)))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-33"
   [data _]
@@ -662,9 +670,9 @@
               object))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
     (-> data
-        (update :pages-index update-vals update-container))))
+        (update :pages-index d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-34"
   [data _]
@@ -674,10 +682,10 @@
               (dissoc object :x :y :width :height)
               object))
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-36"
   [data _]
@@ -687,8 +695,8 @@
                                                   (dissoc objects nil)
                                                   objects))))]
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-37"
   [data _]
@@ -716,11 +724,11 @@
                 shape)))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-shape))]
+            (d/update-when container :objects d/update-vals update-shape))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-39"
   [data _]
@@ -738,11 +746,11 @@
               shape))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-shape))]
+            (d/update-when container :objects d/update-vals update-shape))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-40"
   [data _]
@@ -762,11 +770,11 @@
               shape))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-shape))]
+            (d/update-when container :objects d/update-vals update-shape))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-41"
   [data _]
@@ -795,11 +803,11 @@
               shape))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-shape))]
+            (d/update-when container :objects d/update-vals update-shape))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-42"
   [data _]
@@ -812,14 +820,14 @@
               object))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (def ^:private valid-fill?
-  (sm/lazy-validator ::cts/fill))
+  (sm/lazy-validator types.fill/schema:fill))
 
 (defmethod migrate-data "legacy-43"
   [data _]
@@ -841,14 +849,11 @@
               object))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
-
-(def ^:private valid-shadow?
-  (sm/lazy-validator ::ctss/shadow))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-44"
   [data _]
@@ -861,14 +866,14 @@
 
           (update-object [object]
             (let [xform (comp (map fix-shadow)
-                              (filter valid-shadow?))]
+                              (filter ctss/valid-shadow?))]
               (d/update-when object :shadow #(into [] xform %))))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-45"
   [data _]
@@ -881,9 +886,9 @@
                      :parent-id parent-id)))
 
           (update-container [container]
-            (d/update-when container :objects update-vals fix-shape))]
+            (d/update-when container :objects d/update-vals fix-shape))]
     (-> data
-        (update :pages-index update-vals update-container))))
+        (update :pages-index d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-46"
   [data _]
@@ -891,10 +896,10 @@
             (dissoc object :thumbnail))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-47"
   [data _]
@@ -915,9 +920,9 @@
                 shape)))
 
           (update-page [page]
-            (d/update-when page :objects update-vals (partial fix-shape page)))]
+            (d/update-when page :objects d/update-vals (partial fix-shape page)))]
     (-> data
-        (update :pages-index update-vals update-page))))
+        (update :pages-index d/update-vals update-page))))
 
 (defmethod migrate-data "legacy-48"
   [data _]
@@ -929,9 +934,9 @@
                 shape)))
 
           (update-page [page]
-            (d/update-when page :objects update-vals fix-shape))]
+            (d/update-when page :objects d/update-vals fix-shape))]
     (-> data
-        (update :pages-index update-vals update-page))))
+        (update :pages-index d/update-vals update-page))))
 
 ;; Remove hide-in-viewer for shapes that are origin or destination of an interaction
 (defmethod migrate-data "legacy-49"
@@ -949,9 +954,9 @@
                                     (mapcat :interactions)
                                     (map :destination)
                                     (set))]
-              (update page :objects update-vals (partial update-object destinations))))]
+              (update page :objects d/update-vals (partial update-object destinations))))]
 
-    (update data :pages-index update-vals update-page)))
+    (update data :pages-index d/update-vals update-page)))
 
 ;; This migration mainly fixes paths with curve-to segments
 ;; without :c1x :c1y :c2x :c2y properties. Additionally, we found a
@@ -994,20 +999,17 @@
 
         update-container
         (fn [page]
-          (d/update-when page :objects update-vals update-shape))]
+          (d/update-when page :objects d/update-vals update-shape))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
-
-(def ^:private valid-color?
-  (sm/lazy-validator ::ctc/color))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-51"
   [data _]
   (let [update-colors
         (fn [colors]
-          (into {} (filter #(-> % val valid-color?) colors)))]
+          (into {} (filter #(-> % val types.color/valid-color?) colors)))]
     (update data :colors update-colors)))
 
 (defmethod migrate-data "legacy-52"
@@ -1018,9 +1020,9 @@
               shape))
 
           (update-page [page]
-            (d/update-when page :objects update-vals update-shape))]
+            (d/update-when page :objects d/update-vals update-shape))]
 
-    (update data :pages-index update-vals update-page)))
+    (update data :pages-index d/update-vals update-page)))
 
 
 (defmethod migrate-data "legacy-53"
@@ -1036,15 +1038,15 @@
 
           (update-shape [shape]
             (let [xform (comp (map fix-shadow)
-                              (filter valid-shadow?))]
+                              (filter ctss/valid-shadow?))]
               (d/update-when shape :shadow #(into [] xform %))))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-shape))]
+            (d/update-when container :objects d/update-vals update-shape))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 ;; This migration moves page options to the page level
 (defmethod migrate-data "legacy-55"
@@ -1096,11 +1098,11 @@
                   (update :content (partial txt/transform-nodes identity fix-fills)))))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 
 (defmethod migrate-data "legacy-57"
@@ -1127,7 +1129,7 @@
     (-> data
         (update :pages (fn [pages] (into [] (remove nil?) pages)))
         (update :pages-index dissoc nil)
-        (update :pages-index update-vals update-page))))
+        (update :pages-index d/update-vals update-page))))
 
 (defmethod migrate-data "legacy-59"
   [data _]
@@ -1138,11 +1140,11 @@
             (d/update-when shape :touched #(into #{} (map fix-touched) %)))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-shape))]
+            (d/update-when container :objects d/update-vals update-shape))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-62"
   [data _]
@@ -1175,7 +1177,7 @@
           ;; so the relevant objects are inside the component
           (d/update-when component :objects remove-cycles))]
 
-    (update data :components update-vals update-component)))
+    (d/update-when data :components d/update-vals update-component)))
 
 (defmethod migrate-data "legacy-65"
   [data _]
@@ -1186,14 +1188,14 @@
         update-page
         (fn [page]
           (-> (update-object page)
-              (update :objects update-vals update-object)))]
+              (update :objects d/update-vals update-object)))]
 
     (-> data
         (update-object)
-        (d/update-when :pages-index update-vals update-page)
-        (d/update-when :colors update-vals update-object)
-        (d/update-when :typographies update-vals update-object)
-        (d/update-when :components update-vals update-object))))
+        (update :pages-index d/update-vals update-page)
+        (d/update-when :colors d/update-vals update-object)
+        (d/update-when :typographies d/update-vals update-object)
+        (d/update-when :components d/update-vals update-object))))
 
 (defmethod migrate-data "legacy-66"
   [data _]
@@ -1207,11 +1209,11 @@
               object))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "legacy-67"
   [data _]
@@ -1219,11 +1221,11 @@
             (d/update-when object :shadow #(into [] (reverse %))))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "0001-remove-tokens-from-groups"
   [data _]
@@ -1237,8 +1239,33 @@
               (dissoc :applied-tokens)))
 
           (update-page [page]
-            (d/update-when page :objects update-vals update-object))]
-    (update data :pages-index update-vals update-page)))
+            (d/update-when page :objects d/update-vals update-object))]
+
+    (update data :pages-index d/update-vals update-page)))
+
+(defmethod migrate-data "0002-clean-shape-interactions"
+  [data _]
+  (let [decode-fn   (sm/decoder ctsi/schema:interaction sm/json-transformer)
+        validate-fn (sm/validator ctsi/schema:interaction)
+
+        xform
+        (comp
+         (map decode-fn)
+         (filter validate-fn))
+
+        update-object
+        (fn [object]
+          (d/update-when object :interactions
+                         (fn [interactions]
+                           (into [] xform interactions))))
+
+        update-container
+        (fn [container]
+          (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "0002-normalize-bool-content"
   [data _]
@@ -1247,16 +1274,234 @@
             ;; rollback, we still need to perform an other migration
             ;; for properly delete the bool-content prop from shapes
             ;; once the know the migration was OK
-            (if-let [content (:bool-content object)]
-              (assoc object :content content)
+            (if (cfh/bool-shape? object)
+              (if-let [content (:bool-content object)]
+                (assoc object :content content)
+                object)
+              (dissoc object :bool-content :bool-type)))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
+(defmethod migrate-data "0003-fix-root-shape"
+  [data _]
+  (letfn [(update-object [shape]
+            (if (= (:id shape) uuid/zero)
+              (-> shape
+                  (assoc :parent-id uuid/zero)
+                  (assoc :frame-id uuid/zero)
+                  ;; We explicitly dissoc them and let the shape-setup
+                  ;; to regenerate it with valid values.
+                  (dissoc :selrect)
+                  (dissoc :points)
+                  (cts/setup-shape))
+              shape))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container)
+        (d/without-nils))))
+
+(defmethod migrate-data "0003-convert-path-content"
+  [data _]
+  (some-> cfeat/*new* (swap! conj "fdata/path-data"))
+
+  (letfn [(update-object [object]
+            (if (or (cfh/bool-shape? object)
+                    (cfh/path-shape? object))
+              (update object :content path/content)
               object))
 
           (update-container [container]
             (d/update-when container :objects update-vals update-object))]
 
     (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
+(defmethod migrate-data "0004-clean-shadow-and-colors"
+  [data _]
+  (letfn [(clean-shadow [shadow]
+            (update shadow :color (fn [color]
+                                    (let [ref-id   (get color :id)
+                                          ref-file (get color :file-id)]
+                                      (-> (d/without-qualified color)
+                                          (select-keys [:opacity :color :gradient :image :ref-id :ref-file])
+                                          (cond-> ref-id
+                                            (assoc :ref-id ref-id))
+                                          (cond-> ref-file
+                                            (assoc :ref-file ref-file)))))))
+
+          (update-object [object]
+            (d/update-when object :shadow #(mapv clean-shadow %)))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))
+
+          (clean-library-color [color]
+            (dissoc color :file-id))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container)
+        (d/update-when :colors d/update-vals clean-library-color))))
+
+(defmethod migrate-data "0005-deprecate-image-type"
+  [data _]
+  (letfn [(update-object [object]
+            (if (cfh/image-shape? object)
+              (let [metadata (:metadata object)
+                    fills (into [{:fill-image (assoc metadata :keep-aspect-ratio false)
+                                  :opacity    1}]
+                                (:fills object))]
+                (-> object
+                    (assoc :fills fills)
+                    (dissoc :metadata)
+                    (assoc :type :rect)))
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
+(defmethod migrate-data "0006-fix-old-texts-fills"
+  [data _]
+  (letfn [(fix-fills [node]
+            (let [fills (if (and (not (seq (:fills node)))
+                                 (or (some? (:fill-color node))
+                                     (some? (:fill-opacity node))
+                                     (some? (:fill-color-gradient node))))
+                          [(d/without-nils (select-keys node [:fill-color :fill-opacity :fill-color-gradient
+                                                              :fill-color-ref-id :fill-color-ref-file]))]
+                          (:fills node))]
+              (-> node
+                  (assoc :fills fills)
+                  (dissoc :fill-color :fill-opacity :fill-color-gradient
+                          :fill-color-ref-id :fill-color-ref-file))))
+
+          (update-object [object]
+            (if (cfh/text-shape? object)
+              (update object :content (partial txt/transform-nodes identity fix-fills))
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
+(def ^:private valid-stroke?
+  (sm/lazy-validator cts/schema:stroke))
+
+(defmethod migrate-data "0007-clear-invalid-strokes-and-fills-v2"
+  [data _]
+  (letfn [(clear-color-image [image]
+            (select-keys image types.color/image-attrs))
+
+          (clear-color-gradient [gradient]
+            (select-keys gradient types.color/gradient-attrs))
+
+          (clear-stroke [stroke]
+            (-> stroke
+                (select-keys cts/stroke-attrs)
+                (d/update-when :stroke-color-gradient clear-color-gradient)
+                (d/update-when :stroke-image clear-color-image)
+                (d/update-when :stroke-style #(if (#{:svg :none} %) :solid %))))
+
+          (fix-strokes [strokes]
+            (->> (map clear-stroke strokes)
+                 (filterv valid-stroke?)))
+
+          ;; Fixes shapes with nested :fills in the :fills attribute
+          ;; introduced in a migration `0006-fix-old-texts-fills` when
+          ;; txt/transform-nodes with identity pred was broken
+          (remove-nested-fills [[fill :as fills]]
+            (if (and (= 1 (count fills))
+                     (contains? fill :fills))
+              (:fills fill)
+              fills))
+
+          (clear-fill [fill]
+            (-> fill
+                (select-keys types.fill/fill-attrs)
+                (d/update-when :fill-image clear-color-image)
+                (d/update-when :fill-color-gradient clear-color-gradient)))
+
+          (fix-fills [fills]
+            (->> fills
+                 (remove-nested-fills)
+                 (map clear-fill)
+                 (filterv valid-fill?)))
+
+          (fix-object [object]
+            (-> object
+                (d/update-when :strokes fix-strokes)
+                (d/update-when :fills fix-fills)))
+
+          (fix-text-content [content]
+            (->> content
+                 (txt/transform-nodes txt/is-content-node? fix-object)
+                 (txt/transform-nodes txt/is-paragraph-set-node? #(dissoc % :fills))))
+
+          (update-shape [object]
+            (-> object
+                (fix-object)
+                ;; The text shape also can has strokes and fils on the
+                ;; text fragments so we need to fix them there
+                (cond-> (cfh/text-shape? object)
+                  (update :content fix-text-content))))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
+(defmethod migrate-data "0008-fix-library-colors-opacity"
+  [data _]
+  (letfn [(update-color [color]
+            (if (and (contains? color :opacity)
+                     (nil? (get color :opacity)))
+              (assoc color :opacity 1)
+              color))]
+    (d/update-when data :colors d/update-vals update-color)))
+
+(defmethod migrate-data "0009-add-partial-text-touched-flags"
+  [data _]
+  (letfn [(update-object [page object]
+            (if (and (cfh/text-shape? object)
+                     (ctk/in-component-copy? object))
+              (let [file            {:id (:id data) :data data}
+                    libs            (when (:libs data)
+                                      (deref (:libs data)))
+                    ref-shape       (ctf/find-ref-shape file page libs object
+                                                        {:include-deleted? true :with-context? true})
+                    partial-touched (when ref-shape
+                                      (cttx/get-diff-type (:content object) (:content ref-shape)))]
+                (if (seq partial-touched)
+                  (update object :touched (fn [touched]
+                                            (reduce #(ctk/set-touched-group %1 %2)
+                                                    touched
+                                                    partial-touched)))
+                  object))
+              object))
+
+          (update-page [page]
+            (d/update-when page :objects d/update-vals (partial update-object page)))]
+
+    (update data :pages-index d/update-vals update-page)))
 
 (def available-migrations
   (into (d/ordered-set)
@@ -1313,4 +1558,13 @@
          "legacy-66"
          "legacy-67"
          "0001-remove-tokens-from-groups"
-         "0002-normalize-bool-content"]))
+         "0002-normalize-bool-content"
+         "0002-clean-shape-interactions"
+         "0003-fix-root-shape"
+         "0003-convert-path-content"
+         "0004-clean-shadow-and-colors"
+         "0005-deprecate-image-type"
+         "0006-fix-old-texts-fills"
+         "0007-clear-invalid-strokes-and-fills-v2"
+         "0008-fix-library-colors-opacity"
+         "0009-add-partial-text-touched-flags"]))

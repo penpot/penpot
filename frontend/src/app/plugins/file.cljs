@@ -11,12 +11,12 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.exports.files :as exports.files]
+   [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.versions :as dwv]
-   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [app.plugins.format :as format]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
@@ -164,7 +164,7 @@
         (u/display-not-valid :setPluginData "Plugin doesn't have 'content:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data id :file (keyword "plugin" (str plugin-id)) key value))))
+        (st/emit! (dp/set-plugin-data id :file (keyword "plugin" (str plugin-id)) key value))))
 
     :getPluginDataKeys
     (fn []
@@ -200,7 +200,7 @@
         (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'content:write' permission")
 
         :else
-        (st/emit! (dw/set-plugin-data id :file (keyword "shared" namespace) key value))))
+        (st/emit! (dp/set-plugin-data id :file (keyword "shared" namespace) key value))))
 
     :getSharedPluginDataKeys
     (fn [namespace]
@@ -237,7 +237,7 @@
 
              :else
              (let [file       (u/locate-file id)
-                   features   (features/get-team-enabled-features @st/state)
+                   features   (:features @st/state)
                    team-id    (:current-team-id @st/state)
                    format     (case format
                                 "zip"    :legacy-zip
@@ -245,7 +245,7 @@
                                 (if (contains? cf/flags :export-file-v3)
                                   :binfile-v3
                                   :binfile-v1))]
-               (->> (uw/ask-many!
+               (->> (mw/ask-many!
                      {:cmd :export-files
                       :format format
                       :type type

@@ -11,7 +11,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.svg.path.command :as upc]))
+   [app.common.types.path :as path]))
 
 (defn lookup-profile
   ([state]
@@ -64,15 +64,15 @@
    (-> (lookup-page state file-id page-id)
        (get :objects))))
 
-(defn process-selected-shapes
+(defn process-selected
   ([objects selected]
-   (process-selected-shapes objects selected nil))
+   (process-selected objects selected nil))
 
   ([objects selected {:keys [omit-blocked?] :or {omit-blocked? false}}]
    (letfn [(selectable? [id]
              (and (contains? objects id)
                   (or (not omit-blocked?)
-                      (not (get-in objects [id :blocked] false)))))]
+                      (not (dm/get-in objects [id :blocked] false)))))]
      (let [selected (->> selected (cfh/clean-loops objects))]
        (into (d/ordered-set)
              (filter selectable?)
@@ -95,7 +95,7 @@
   ([state page-id options]
    (let [objects  (lookup-page-objects state page-id)
          selected (dm/get-in state [:workspace-local :selected])]
-     (process-selected-shapes objects selected options))))
+     (process-selected objects selected options))))
 
 (defn lookup-shape
   ([state id]
@@ -157,7 +157,7 @@
                                   shape)
                       modifiers (dm/get-in content-modifiers [id :content-modifiers])
                       shape     (if (some? modifiers)
-                                  (update shape :content upc/apply-content-modifiers modifiers)
+                                  (update shape :content path/apply-content-modifiers modifiers)
                                   shape)]
                   (assoc result id shape))
                 result))

@@ -24,9 +24,10 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as ds-i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.options.menus.border-radius :refer  [border-radius-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.border-radius :refer  [border-radius-menu*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [clojure.set :as set]
@@ -65,11 +66,6 @@
     :rect    rect-options
     :svg-raw generic-options
     :text    generic-options))
-
-(def ^:private clip-content-icon (i/icon-xref :clip-content (stl/css :checkbox-button)))
-(def ^:private play-icon (i/icon-xref :play (stl/css :checkbox-button)))
-(def ^:private locked-icon (i/icon-xref :detach (stl/css :lock-ratio-icon)))
-(def ^:private unlocked-icon (i/icon-xref :detached (stl/css :lock-ratio-icon)))
 
 (defn select-measure-keys
   "Consider some shapes can be drawn from bottom to top or from left to right"
@@ -328,7 +324,9 @@
 
         [:& radio-buttons {:selected (or (d/name orientation) "")
                            :on-change on-orientation-change
-                           :name "frame-otientation"}
+                           :name "frame-orientation"
+                           :wide true
+                           :class (stl/css :radio-buttons)}
          [:& radio-button {:icon i/size-vertical
                            :value "vert"
                            :id "size-vertical"}]
@@ -338,7 +336,6 @@
         [:> icon-button*
          {:variant "ghost"
           :aria-label (tr "workspace.options.fit-content")
-          :title (tr "workspace.options.fit-content")
           :on-pointer-down handle-fit-content
           :icon "fit-content"}]])
      (when (options :size)
@@ -365,14 +362,13 @@
                              :disabled disabled-height-sizing?
                              :class (stl/css :numeric-input)
                              :value (:height values)}]]
-        [:button {:class (stl/css-case
-                          :lock-size-btn true
-                          :selected (true? proportion-lock)
-                          :disabled (= proportion-lock :multiple))
-                  :on-click on-proportion-lock-change}
-         (if proportion-lock
-           locked-icon
-           unlocked-icon)]])
+
+        [:> icon-button* {:variant "ghost"
+                          :icon (if proportion-lock "lock" "unlock")
+                          :class (stl/css-case :selected (true? proportion-lock))
+                          :disabled (= proportion-lock :multiple)
+                          :aria-label (if proportion-lock (tr "workspace.options.size.unlock") (tr "workspace.options.size.lock"))
+                          :on-click on-proportion-lock-change}]])
      (when (options :position)
        [:div {:class (stl/css :position)}
         [:div {:class (stl/css-case :x-position true
@@ -412,7 +408,7 @@
              :class (stl/css :numeric-input)
              :value (:rotation values)}]])
         (when (options :radius)
-          [:& border-radius-menu {:ids ids :ids-with-children ids-with-children :values values :shape shape}])])
+          [:> border-radius-menu* {:class (stl/css :border-radius) :ids ids :ids-with-children ids-with-children :values values :shape shape}])])
      (when (or (options :clip-content) (options :show-in-viewer))
        [:div {:class (stl/css :clip-show)}
         (when (options :clip-content)
@@ -428,7 +424,8 @@
                     :title (tr "workspace.options.clip-content")
                     :class (stl/css-case  :clip-content-label true
                                           :selected (not (:show-content values)))}
-            clip-content-icon]])
+
+            [:> ds-i/icon* {:icon-id ds-i/clip-content}]]])
         (when (options :show-in-viewer)
           [:div {:class (stl/css :show-in-viewer)}
            [:input {:type "checkbox"
@@ -442,5 +439,4 @@
                     :title (tr "workspace.options.show-in-viewer")
                     :class (stl/css-case  :clip-content-label true
                                           :selected (not (:hide-in-viewer values)))}
-            [:span {:class (stl/css :icon)}
-             play-icon]]])])]))
+            [:> ds-i/icon* {:icon-id ds-i/play}]]])])]))

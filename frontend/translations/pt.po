@@ -1,6 +1,418 @@
 msgid ""
 msgstr ""
-"X-Generator: Weblate\n"
+"PO-Revision-Date: 2025-06-05 09:01+0000\n"
+"Last-Translator: Anderson Paulo <anderson.pr10@gmail.com>\n"
+"Language-Team: Portuguese "
+"<https://hosted.weblate.org/projects/penpot/frontend/pt/>\n"
+"Language: pt\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: Weblate 5.12-dev\n"
+
+#: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
+msgid "auth.already-have-account"
+msgstr "Já tem uma conta?"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:231
+msgid "auth.check-mail"
+msgstr "Verifique seu e-mail"
+
+#: src/app/main/ui/auth/register.cljs:277
+#, unused
+msgid "auth.check-your-email"
+msgstr ""
+"Verifique seu e-mail e clique no link para verificar e começar a usar o "
+"Penpot."
+
+#: src/app/main/ui/auth/recovery.cljs:67
+msgid "auth.confirm-password"
+msgstr "Confirme sua senha"
+
+#: src/app/main/ui/auth/register.cljs:220
+msgid "auth.create-demo-account"
+msgstr "Criar conta de demonstração"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+#, unused
+msgid "auth.create-demo-profile"
+msgstr "Quer só experimentar?"
+
+#: src/app/main/ui/auth/login.cljs:43
+msgid "auth.demo-warning"
+msgstr ""
+"Este é um serviço DEMONSTRAÇÃO, NÃO USE para trabalho real, os projetos "
+"serão apagados periodicamente."
+
+#: src/app/main/ui/auth/login.cljs:189, src/app/main/ui/viewer/login.cljs:84
+msgid "auth.forgot-password"
+msgstr "Esqueceu sua senha?"
+
+#: src/app/main/ui/auth/register.cljs:153, src/app/main/ui/auth/register.cljs:321
+msgid "auth.fullname"
+msgstr "Nome completo"
+
+#: src/app/main/ui/auth/login.cljs:282
+msgid "auth.login-account-title"
+msgstr "Entrar na minha conta"
+
+#: src/app/main/ui/auth/register.cljs:212, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:101
+msgid "auth.login-here"
+msgstr "Faça login aqui."
+
+#: src/app/main/ui/auth/login.cljs:195
+msgid "auth.login-submit"
+msgstr "Login"
+
+#: src/app/main/ui/auth/login.cljs:285
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot é a ferramenta de design de código aberto e gratuita para "
+"colaboração em design e código"
+
+#: src/app/main/ui/auth/login.cljs:222
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs:228
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
+
+#: src/app/main/ui/auth/login.cljs:216
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/auth/login.cljs:201
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
+
+#: src/app/main/ui/auth/login.cljs:234, src/app/main/ui/auth/login.cljs:255
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID"
+
+#: src/app/main/ui/auth/recovery.cljs:60
+msgid "auth.new-password"
+msgstr "Digite uma nova senha"
+
+#: src/app/main/ui/auth/recovery.cljs:36
+msgid "auth.notifications.password-changed-successfully"
+msgstr "Senha alterada com sucesso"
+
+#: src/app/main/ui/auth/recovery_request.cljs:50
+msgid "auth.notifications.profile-not-verified"
+msgstr ""
+"O perfil não está verificado, por favor verifique o perfil antes de "
+"continuar."
+
+#: src/app/main/ui/auth/recovery_request.cljs:33
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Link de recuperação de senha enviado para o seu e-mail."
+
+#: src/app/main/ui/auth/verify_token.cljs:49
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Entrou para a equipe com sucesso"
+
+#: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/register.cljs:167
+msgid "auth.password"
+msgstr "Senha"
+
+#: src/app/main/ui/auth/register.cljs:166
+msgid "auth.password-length-hint"
+msgstr "Pelo menos 8 caracteres"
+
+#: src/app/main/ui/auth/register.cljs:254
+msgid "auth.privacy-policy"
+msgstr "Política de Privacidade"
+
+#: src/app/main/ui/auth/recovery_request.cljs:82
+msgid "auth.recovery-request-submit"
+msgstr "Recuperar senha"
+
+#: src/app/main/ui/auth/recovery_request.cljs:95
+msgid "auth.recovery-request-subtitle"
+msgstr "Enviaremos um e-mail com instruções"
+
+#: src/app/main/ui/auth/recovery_request.cljs:94
+msgid "auth.recovery-request-title"
+msgstr "Esqueceu sua senha?"
+
+#: src/app/main/ui/auth/recovery.cljs:71
+msgid "auth.recovery-submit"
+msgstr "Altere sua senha"
+
+#: src/app/main/ui/auth/login.cljs:298, src/app/main/ui/static.cljs:141, src/app/main/ui/viewer/login.cljs:87
+msgid "auth.register"
+msgstr "Ainda não tem uma conta?"
+
+#: src/app/main/ui/auth/register.cljs:344
+msgid "auth.register-account-tagline"
+msgstr "Informe como deseja ser chamado no painel e nos e-mails."
+
+#: src/app/main/ui/auth/register.cljs:343
+msgid "auth.register-account-title"
+msgstr "Seu nome"
+
+#: src/app/main/ui/auth/login.cljs:302, src/app/main/ui/auth/register.cljs:178, src/app/main/ui/auth/register.cljs:330, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:91
+msgid "auth.register-submit"
+msgstr "Criar uma conta"
+
+#: src/app/main/ui/auth/register.cljs:124
+#, unused
+msgid "auth.register-tagline"
+msgstr ""
+"Com uma conta gratuita do Penpot, você pode criar equipes ilimitadas e "
+"colaborar com outros designers e desenvolvedores em quantos projetos "
+"quiser. "
+
+#: src/app/main/ui/auth/register.cljs:199
+msgid "auth.register-title"
+msgstr "Criar uma conta"
+
+#: src/app/main/ui/auth.cljs
+#, unused
+msgid "auth.sidebar-tagline"
+msgstr "A solução de código aberto para design e prototipagem."
+
+#: src/app/main/ui/auth/register.cljs:50
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr "Concordo com os [termos de serviço](%s) e a [política de privacidade](%s)."
+
+#: src/app/main/ui/auth/register.cljs:246, src/app/main/ui/dashboard/sidebar.cljs:1083, src/app/main/ui/workspace/main_menu.cljs:155
+msgid "auth.terms-of-service"
+msgstr "Termos de serviço"
+
+#, unused
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Ao criar uma nova conta, você concorda com nossos termos de serviço e "
+"política de privacidade."
+
+#: src/app/main/ui/auth/register.cljs:232
+msgid "auth.verification-email-sent"
+msgstr "Enviamos um e-mail de verificação para"
+
+#: src/app/main/ui/auth/login.cljs:172, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:160
+msgid "auth.work-email"
+msgstr "E-mail profissional"
+
+#: src/app/main/ui/onboarding/questions.cljs
+#, unused
+msgid "branding-illustrations-marketing-pieces"
+msgstr "...branding, ilustrações, materiais de marketing, etc."
+
+#: src/app/main/ui/comments.cljs:530
+msgid "comments.mentions.not-found"
+msgstr "Nenhuma pessoa encontrada para @%s"
+
+#: src/app/main/ui/workspace/libraries.cljs:308
+msgid "common.publish"
+msgstr "Publicar"
+
+#: src/app/main/ui/viewer/share_link.cljs:306, src/app/main/ui/viewer/share_link.cljs:316
+msgid "common.share-link.all-users"
+msgstr "Todos os usuários do Penpot"
+
+#: src/app/main/ui/viewer/share_link.cljs:200
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Tem certeza de que deseja remover este link? Se fizer isso, ele não estará "
+"mais disponível para ninguém"
+
+#: src/app/main/ui/viewer/share_link.cljs:261, src/app/main/ui/viewer/share_link.cljs:291
+msgid "common.share-link.current-tag"
+msgstr "(atual)"
+
+#: src/app/main/ui/viewer/share_link.cljs:209, src/app/main/ui/viewer/share_link.cljs:216
+msgid "common.share-link.destroy-link"
+msgstr "Excluir link"
+
+#: src/app/main/ui/viewer/share_link.cljs:223
+msgid "common.share-link.get-link"
+msgstr "Obter link"
+
+#: src/app/main/ui/viewer/share_link.cljs:139
+msgid "common.share-link.link-copied-success"
+msgstr "Link copiado com sucesso"
+
+#: src/app/main/ui/viewer/share_link.cljs:233
+msgid "common.share-link.manage-ops"
+msgstr "Gerenciar permissões"
+
+#: src/app/main/ui/viewer/share_link.cljs:279
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "Página compartilhada"
+msgstr[1] "%s páginas compartilhadas"
+
+#: src/app/main/ui/viewer/share_link.cljs:300
+msgid "common.share-link.permissions-can-comment"
+msgstr "Pode comentar"
+
+#: src/app/main/ui/viewer/share_link.cljs:310
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Pode inspecionar o código"
+
+#: src/app/main/ui/viewer/share_link.cljs:195
+msgid "common.share-link.permissions-hint"
+msgstr "Qualquer pessoa com o link terá acesso"
+
+#: src/app/main/ui/viewer/share_link.cljs:243
+msgid "common.share-link.permissions-pages"
+msgstr "Páginas compartilhadas"
+
+#: src/app/main/ui/viewer/share_link.cljs:185
+msgid "common.share-link.placeholder"
+msgstr "O link compartilhável aparecerá aqui"
+
+#: src/app/main/ui/viewer/share_link.cljs:305, src/app/main/ui/viewer/share_link.cljs:315
+msgid "common.share-link.team-members"
+msgstr "Somente membros da equipe"
+
+#: src/app/main/ui/viewer/share_link.cljs:173
+msgid "common.share-link.title"
+msgstr "Compartilhar protótipos"
+
+#: src/app/main/ui/viewer/share_link.cljs:271
+msgid "common.share-link.view-all"
+msgstr "Selecionar tudo"
+
+#: src/app/main/ui/workspace/libraries.cljs:304
+msgid "common.unpublish"
+msgstr "Despublicar"
+
+#: src/app/main/ui/dashboard/projects.cljs:91
+msgid "dasboard.team-hero.management"
+msgstr "Gestão da equipe"
+
+#: src/app/main/ui/dashboard/projects.cljs:90
+msgid "dasboard.team-hero.text"
+msgstr ""
+"O Penpot foi feito para equipes. Convide membros para trabalharem juntos em "
+"projetos e arquivos"
+
+#: src/app/main/ui/dashboard/projects.cljs:88
+msgid "dasboard.team-hero.title"
+msgstr "Monte sua equipe!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.tutorial-hero.info"
+msgstr "Aprenda o básico no Penpot enquanto se diverte com este tutorial prático."
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.tutorial-hero.start"
+msgstr "Começar o tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.tutorial-hero.title"
+msgstr "Tutorial prático"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Explore o Penpot e conheça suas principais funcionalidades."
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Começar o tour"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Apresentação da interface"
+
+#: src/app/main/ui/settings/access_tokens.cljs:104
+msgid "dashboard.access-tokens.copied-success"
+msgstr "Token copiado"
+
+#: src/app/main/ui/settings/access_tokens.cljs:190
+msgid "dashboard.access-tokens.create"
+msgstr "Gerar novo token"
+
+#: src/app/main/ui/settings/access_tokens.cljs:65
+msgid "dashboard.access-tokens.create.success"
+msgstr "Token de acesso criado com sucesso."
+
+#: src/app/main/ui/settings/access_tokens.cljs:288
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Pressione o botão \"Gerar novo token\" para criar um."
+
+#: src/app/main/ui/settings/access_tokens.cljs:287
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "Você ainda não tem tokens."
+
+#: src/app/main/ui/settings/access_tokens.cljs:136
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "180 dias"
+
+#: src/app/main/ui/settings/access_tokens.cljs:133
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "30 dias"
+
+#: src/app/main/ui/settings/access_tokens.cljs:134
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "60 dias"
+
+#: src/app/main/ui/settings/access_tokens.cljs:135
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "90 dias"
+
+#: src/app/main/ui/settings/access_tokens.cljs:132
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "Nunca"
+
+#: src/app/main/ui/settings/access_tokens.cljs:270
+msgid "dashboard.access-tokens.expired-on"
+msgstr "Expirado em %s"
+
+#: src/app/main/ui/settings/access_tokens.cljs:271
+msgid "dashboard.access-tokens.expires-on"
+msgstr "Expira em %s"
+
+#: src/app/main/ui/settings/access_tokens.cljs:269
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "Sem data de expiração"
+
+#: src/app/main/ui/settings/access_tokens.cljs:185
+msgid "dashboard.access-tokens.personal"
+msgstr "Tokens de acesso pessoal"
+
+#: src/app/main/ui/settings/access_tokens.cljs:186
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Tokens de acesso pessoal funcionam como uma alternativa ao nosso sistema de "
+"autenticação por login e senha, e podem ser usados para permitir que um "
+"aplicativo acesse a API interna do Penpot"
+
+#: src/app/main/ui/settings/access_tokens.cljs:143
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "O token expirará em %s"
+
+#: src/app/main/ui/settings/access_tokens.cljs:144
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "O token não tem data de expiração"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:41
+msgid "dashboard.add-file"
+msgstr "Adicionar arquivo"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/workspace/main_menu.cljs:615
+msgid "dashboard.add-shared"
+msgstr "Adicionar como Biblioteca Compartilhada"
+
+#: src/app/main/ui/settings/profile.cljs:75
+msgid "dashboard.change-email"
+msgstr "Alterar e-mail"
+
+#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:524, src/app/main/data/workspace/pages.cljs:164
+msgid "dashboard.copy-suffix"
+msgstr "(copiar)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:352
+msgid "dashboard.create-new-team"
+msgstr "Criar nova equipe"

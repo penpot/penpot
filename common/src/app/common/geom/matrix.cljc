@@ -126,21 +126,20 @@
       o)))
 
 (def schema:matrix
-  {:type :map
-   :pred valid-matrix?
-   :type-properties
-   {:title "matrix"
-    :description "Matrix instance"
-    :error/message "expected a valid matrix instance"
-    :gen/gen (matrix-generator)
-    :decode/json decode-matrix
-    :decode/string decode-matrix
-    :encode/json matrix->json
-    :encode/string matrix->str
-    ::oapi/type "string"
-    ::oapi/format "matrix"}})
-
-(sm/register! ::matrix schema:matrix)
+  (sm/register!
+   {:type ::matrix
+    :pred valid-matrix?
+    :type-properties
+    {:title "matrix"
+     :description "Matrix instance"
+     :error/message "expected a valid matrix instance"
+     :gen/gen (matrix-generator)
+     :decode/json decode-matrix
+     :decode/string decode-matrix
+     :encode/json matrix->json
+     :encode/string matrix->str
+     ::oapi/type "string"
+     ::oapi/format "matrix"}}))
 
 ;; FIXME: deprecated
 (s/def ::a ::us/safe-float)

@@ -21,6 +21,6 @@
       (let [file  {:data {:sum 1}
                    :id 1
                    :migrations (d/ordered-set "test/1")}
-            file' (cfm/migrate file)]
+            file' (cfm/migrate file nil)]
         (t/is (= cfm/available-migrations (:migrations file')))
         (t/is (= 3 (:sum (:data file'))))))))

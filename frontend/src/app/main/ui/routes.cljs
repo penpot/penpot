@@ -34,6 +34,7 @@
     ["/password"      :settings-password]
     ["/feedback"      :settings-feedback]
     ["/options"       :settings-options]
+    ["/subscriptions" :settings-subscription]
     ["/access-tokens" :settings-access-tokens]
     ["/notifications" :settings-notifications]]
 
@@ -82,7 +83,7 @@
   (binding [storage/*sync* true]
     (when (some? template)
       (swap! storage/session assoc
-             :template-url template))
+             :template template))
     (when (some? plugin)
       (swap! storage/session assoc
              :plugin-url plugin))))

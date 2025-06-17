@@ -92,7 +92,9 @@ test.describe("Tokens: Tokens Tab", () => {
       await setupEmptyTokensFile(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
-    await tokensTabPanel.getByTitle("Add token: Color").click();
+    await tokensTabPanel
+      .getByRole("button", { name: "Add Token: Color" })
+      .click();
 
     // Create color token with mouse
 
@@ -129,7 +131,9 @@ test.describe("Tokens: Tokens Tab", () => {
 
     // Create token referencing the previous one with keyboard
 
-    await tokensTabPanel.getByTitle("Add token: Color").click();
+    await tokensTabPanel
+      .getByRole("button", { name: "Add Token: Color" })
+      .click();
     await expect(tokensUpdateCreateModal).toBeVisible();
 
     await nameField.click();
@@ -171,7 +175,9 @@ test.describe("Tokens: Tokens Tab", () => {
       await setupEmptyTokensFile(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
-    await tokensTabPanel.getByTitle("Add token: Dimensions").click();
+    await tokensTabPanel
+      .getByRole("button", { name: "Add token: Dimensions" })
+      .click();
 
     await expect(tokensUpdateCreateModal).toBeVisible();
 
@@ -277,11 +283,15 @@ test.describe("Tokens: Tokens Tab", () => {
 
     await tokenThemeUpdateCreateModal.getByLabel("Theme").fill("Changed");
 
-    const lightDarkSetGroup = tokenThemeUpdateCreateModal.getByRole("button", {
-      name: "LightDark",
-      exact: true,
-    });
+    const lightDarkSetGroup = tokenThemeUpdateCreateModal.getByTestId(
+      "tokens-set-group-item",
+      {
+        name: "LightDark",
+        exact: true,
+      },
+    );
     await expect(lightDarkSetGroup).toBeVisible();
+
     const lightSet = tokenThemeUpdateCreateModal.getByRole("button", {
       name: "light",
       exact: true,
@@ -347,7 +357,9 @@ test.describe("Tokens: Tokens Tab", () => {
       await setupEmptyTokensFile(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
-    await tokensTabPanel.getByTitle("Add token: Color").click();
+    await tokensTabPanel
+      .getByRole("button", { name: "Add Token: Color" })
+      .click();
 
     // Create grouped color token with mouse
 
@@ -369,6 +381,61 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(tokensTabPanel.getByLabel("color.dark.primary")).toBeEnabled();
+  });
+
+  test("User changes color token color while keeping custom color space", async ({
+    page,
+  }) => {
+    const { workspacePage, tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+      await setupEmptyTokensFile(page);
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+    await tokensTabPanel
+      .getByRole("button", { name: "Add Token: Color" })
+      .click();
+
+    await expect(tokensUpdateCreateModal).toBeVisible();
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    const valueField = tokensUpdateCreateModal.getByLabel("Value");
+
+    await valueField.click();
+    await valueField.fill("hsv(1,1,1)");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: #ff0400"),
+    ).toBeVisible();
+
+    const colorBullet = tokensUpdateCreateModal.getByTestId(
+      "token-form-color-bullet",
+    );
+    await colorBullet.click();
+
+    const valueSaturationSelector = tokensUpdateCreateModal.getByTestId(
+      "value-saturation-selector",
+    );
+    await expect(valueSaturationSelector).toBeVisible();
+
+    // Check if color space doesnt get overwritten when changing color via the picker
+    // Not testing for exact value to avoid flakiness of px click
+    await valueSaturationSelector.click({ position: { x: 100, y: 100 } });
+    await expect(valueField).not.toHaveValue("hsv(1,1,1)");
+    await expect(valueField).toHaveValue(/^hsv.*$/);
+
+    // Clearing the input field should pick hex
+    await valueField.fill("");
+    await expect(
+      tokensUpdateCreateModal.getByText("Token value cannot be empty"),
+    ).toBeVisible();
+    await valueSaturationSelector.click({ position: { x: 50, y: 50 } });
+    await expect(valueField).toHaveValue(/^#[A-Fa-f\d]+$/);
+
+    // Changing opacity for hex values converts to rgba
+    const sliderOpacity = tokensUpdateCreateModal.getByTestId("slider-opacity");
+    await sliderOpacity.click({ position: { x: 50, y: 0 } });
+    await expect(valueField).toHaveValue(/^rgba(.*)$/);
+
+    // Changing color now will stay in rgba
+    await valueSaturationSelector.click({ position: { x: 0, y: 0 } });
+    await expect(valueField).toHaveValue(/^rgba(.*)$/);
   });
 
   test("User duplicate color token", async ({ page }) => {
@@ -558,6 +625,45 @@ test.describe("Tokens: Sets Tab", () => {
     ]);
   });
 
+  test("User can create & edit sets and set groups with an identical name", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokenContextMenuForSet } =
+      await setupEmptyTokensFile(page);
+
+    const tokensTabButton = tokenThemesSetsSidebar
+      .getByRole("button", { name: "Add set" })
+      .click();
+
+    await createSet(tokenThemesSetsSidebar, "core/colors");
+    await createSet(tokenThemesSetsSidebar, "core");
+    await assertSetsList(tokenThemesSetsSidebar, ["core", "colors", "core"]);
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "core" })
+      .nth(0)
+      .dblclick();
+    await changeSetInput(tokenThemesSetsSidebar, "core-group-renamed");
+    await assertSetsList(tokenThemesSetsSidebar, [
+      "core-group-renamed",
+      "colors",
+      "core",
+    ]);
+
+    await page.keyboard.press(`ControlOrMeta+z`);
+    await assertSetsList(tokenThemesSetsSidebar, ["core", "colors", "core"]);
+
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "core" })
+      .nth(1)
+      .dblclick();
+    await changeSetInput(tokenThemesSetsSidebar, "core-set-renamed");
+    await assertSetsList(tokenThemesSetsSidebar, [
+      "core",
+      "colors",
+      "core-set-renamed",
+    ]);
+  });
+
   test("Fold/Unfold set", async ({ page }) => {
     const { tokenThemesSetsSidebar, tokenSetGroupItems } =
       await setupTokensFile(page);
@@ -575,7 +681,11 @@ test.describe("Tokens: Sets Tab", () => {
       .filter({ hasText: "LightDark" })
       .first();
 
-    await setGroup.getByRole("button").filter({ title: "Collapse" }).click();
+    const setCollapsable = await setGroup
+      .getByTestId("tokens-set-group-collapse")
+      .first();
+
+    await setCollapsable.click();
 
     await expect(darkSet).toHaveCount(0);
   });
@@ -727,10 +837,10 @@ test.describe("Tokens: Themes modal", () => {
         .getByRole("button", { name: "colors.black" })
         .click({ button: "right" });
       await tokenContextMenuForToken.getByText("Fill").click();
-      const inputColor = await workspacePage.page
-        .getByPlaceholder("Mixed")
-        .nth(2);
 
+      const inputColor = workspacePage.page.getByRole("textbox", {
+        name: "Color",
+      });
       await expect(inputColor).toHaveValue("000000");
     });
   });

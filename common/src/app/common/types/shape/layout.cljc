@@ -43,7 +43,6 @@
 ;; :layout-item-absolute    ;; boolean
 ;; :layout-item-z-index     ;; int
 
-
 (def layout-types
   #{:flex :grid})
 
@@ -74,49 +73,6 @@
 (def justify-items-types
   #{:start :end :center :stretch})
 
-(def layout-item-props
-  [:layout-item-margin
-   :layout-item-margin-type
-   :layout-item-h-sizing
-   :layout-item-v-sizing
-   :layout-item-max-h
-   :layout-item-min-h
-   :layout-item-max-w
-   :layout-item-min-w
-   :layout-item-absolute
-   :layout-item-z-index])
-
-(sm/register!
- ^{::sm/type ::layout-attrs}
- [:map {:title "LayoutAttrs"}
-  [:layout {:optional true} [::sm/one-of layout-types]]
-  [:layout-flex-dir {:optional true} [::sm/one-of flex-direction-types]]
-  [:layout-gap {:optional true}
-   [:map
-    [:row-gap {:optional true} ::sm/safe-number]
-    [:column-gap {:optional true} ::sm/safe-number]]]
-  [:layout-gap-type {:optional true} [::sm/one-of gap-types]]
-  [:layout-wrap-type {:optional true} [::sm/one-of wrap-types]]
-  [:layout-padding-type {:optional true} [::sm/one-of padding-type]]
-  [:layout-padding {:optional true}
-   [:map
-    [:p1 ::sm/safe-number]
-    [:p2 ::sm/safe-number]
-    [:p3 ::sm/safe-number]
-    [:p4 ::sm/safe-number]]]
-  [:layout-justify-content {:optional true} [::sm/one-of justify-content-types]]
-  [:layout-justify-items {:optional true} [::sm/one-of justify-items-types]]
-  [:layout-align-content {:optional true} [::sm/one-of align-content-types]]
-  [:layout-align-items {:optional true} [::sm/one-of align-items-types]]
-
-  [:layout-grid-dir {:optional true} [::sm/one-of grid-direction-types]]
-  [:layout-grid-rows {:optional true}
-   [:vector {:gen/max 2} ::grid-track]]
-  [:layout-grid-columns {:optional true}
-   [:vector {:gen/max 2} ::grid-track]]
-  [:layout-grid-cells {:optional true}
-   [:map-of {:gen/max 5} ::sm/uuid ::grid-cell]]])
-
 ;; Grid types
 (def grid-track-types
   #{:percent :flex :auto :fixed})
@@ -130,29 +86,59 @@
 (def grid-cell-justify-self-types
   #{:auto :start :center :end :stretch})
 
-(sm/register!
- ^{::sm/type ::grid-cell}
- [:map {:title "GridCell"}
-  [:id ::sm/uuid]
-  [:area-name {:optional true} :string]
-  [:row ::sm/safe-int]
-  [:row-span ::sm/safe-int]
-  [:column ::sm/safe-int]
-  [:column-span ::sm/safe-int]
-  [:position {:optional true} [::sm/one-of grid-position-types]]
-  [:align-self {:optional true} [::sm/one-of grid-cell-align-self-types]]
-  [:justify-self {:optional true} [::sm/one-of grid-cell-justify-self-types]]
-  [:shapes
-   [:vector {:gen/max 1} ::sm/uuid]]])
+(def ^:private schema:grid-cell
+  [:map {:title "GridCell"}
+   [:id ::sm/uuid]
+   [:area-name {:optional true} :string]
+   [:row ::sm/safe-int]
+   [:row-span ::sm/safe-int]
+   [:column ::sm/safe-int]
+   [:column-span ::sm/safe-int]
+   [:position {:optional true} [::sm/one-of grid-position-types]]
+   [:align-self {:optional true} [::sm/one-of grid-cell-align-self-types]]
+   [:justify-self {:optional true} [::sm/one-of grid-cell-justify-self-types]]
+   [:shapes
+    [:vector {:gen/max 1} ::sm/uuid]]])
 
-(sm/register!
- ^{::sm/type ::grid-track}
- [:map {:title "GridTrack"}
-  [:type [::sm/one-of grid-track-types]]
-  [:value {:optional true} [:maybe ::sm/safe-number]]])
+(def ^:private schema:grid-track
+  [:map {:title "GridTrack"}
+   [:type [::sm/one-of grid-track-types]]
+   [:value {:optional true} [:maybe ::sm/safe-number]]])
 
-(def check-grid-track!
-  (sm/check-fn ::grid-track))
+(def schema:layout-attrs
+  [:map {:title "LayoutAttrs"}
+   [:layout {:optional true} [::sm/one-of layout-types]]
+   [:layout-flex-dir {:optional true} [::sm/one-of flex-direction-types]]
+   [:layout-gap {:optional true}
+    [:map
+     [:row-gap {:optional true} ::sm/safe-number]
+     [:column-gap {:optional true} ::sm/safe-number]]]
+   [:layout-gap-type {:optional true} [::sm/one-of gap-types]]
+   [:layout-wrap-type {:optional true} [::sm/one-of wrap-types]]
+   [:layout-padding-type {:optional true} [::sm/one-of padding-type]]
+   [:layout-padding {:optional true}
+    [:map
+     [:p1 ::sm/safe-number]
+     [:p2 ::sm/safe-number]
+     [:p3 ::sm/safe-number]
+     [:p4 ::sm/safe-number]]]
+   [:layout-justify-content {:optional true} [::sm/one-of justify-content-types]]
+   [:layout-justify-items {:optional true} [::sm/one-of justify-items-types]]
+   [:layout-align-content {:optional true} [::sm/one-of align-content-types]]
+   [:layout-align-items {:optional true} [::sm/one-of align-items-types]]
+   [:layout-grid-dir {:optional true} [::sm/one-of grid-direction-types]]
+   [:layout-grid-rows {:optional true}
+    [:vector {:gen/max 2} schema:grid-track]]
+   [:layout-grid-columns {:optional true}
+    [:vector {:gen/max 2} schema:grid-track]]
+   [:layout-grid-cells {:optional true}
+    [:map-of {:gen/max 5} ::sm/uuid schema:grid-cell]]])
+
+(def ^:private check-grid-track
+  (sm/check-fn schema:grid-track))
+
+(def layout-attrs
+  (sm/keys schema:layout-attrs))
 
 ;; LAYOUT CHILDREN
 
@@ -168,25 +154,27 @@
 (def item-align-self-types
   #{:start :end :center :stretch})
 
-(sm/register!
- ^{::sm/type ::layout-child-attrs}
- [:map {:title "LayoutChildAttrs"}
-  [:layout-item-margin-type {:optional true} [::sm/one-of item-margin-types]]
-  [:layout-item-margin {:optional true}
-   [:map
-    [:m1 {:optional true} ::sm/safe-number]
-    [:m2 {:optional true} ::sm/safe-number]
-    [:m3 {:optional true} ::sm/safe-number]
-    [:m4 {:optional true} ::sm/safe-number]]]
-  [:layout-item-max-h {:optional true} ::sm/safe-number]
-  [:layout-item-min-h {:optional true} ::sm/safe-number]
-  [:layout-item-max-w {:optional true} ::sm/safe-number]
-  [:layout-item-min-w {:optional true} ::sm/safe-number]
-  [:layout-item-h-sizing {:optional true} [::sm/one-of item-h-sizing-types]]
-  [:layout-item-v-sizing {:optional true} [::sm/one-of item-v-sizing-types]]
-  [:layout-item-align-self {:optional true} [::sm/one-of item-align-self-types]]
-  [:layout-item-absolute {:optional true} :boolean]
-  [:layout-item-z-index {:optional true} ::sm/safe-number]])
+(def schema:layout-child-attrs
+  [:map {:title "LayoutChildAttrs"}
+   [:layout-item-margin-type {:optional true} [::sm/one-of item-margin-types]]
+   [:layout-item-margin {:optional true}
+    [:map
+     [:m1 {:optional true} ::sm/safe-number]
+     [:m2 {:optional true} ::sm/safe-number]
+     [:m3 {:optional true} ::sm/safe-number]
+     [:m4 {:optional true} ::sm/safe-number]]]
+   [:layout-item-max-h {:optional true} ::sm/safe-number]
+   [:layout-item-min-h {:optional true} ::sm/safe-number]
+   [:layout-item-max-w {:optional true} ::sm/safe-number]
+   [:layout-item-min-w {:optional true} ::sm/safe-number]
+   [:layout-item-h-sizing {:optional true} [::sm/one-of item-h-sizing-types]]
+   [:layout-item-v-sizing {:optional true} [::sm/one-of item-v-sizing-types]]
+   [:layout-item-align-self {:optional true} [::sm/one-of item-align-self-types]]
+   [:layout-item-absolute {:optional true} :boolean]
+   [:layout-item-z-index {:optional true} ::sm/safe-number]])
+
+(def layout-child-attrs
+  (sm/keys schema:layout-child-attrs))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS
@@ -194,8 +182,6 @@
 
 (def valid-layouts
   #{:flex :grid})
-
-(sm/register! ::layout [::sm/one-of valid-layouts])
 
 (defn flex-layout?
   ([objects id]
@@ -755,9 +741,7 @@
   ([type parent value]
    (add-grid-track type parent value nil))
   ([type parent value index]
-   (dm/assert!
-    "expected a valid grid definition for `value`"
-    (check-grid-track! value))
+   (assert (check-grid-track value))
 
    (let [[tracks-prop tracks-prop-other prop prop-other prop-span prop-span-other]
          (if (= type :column)

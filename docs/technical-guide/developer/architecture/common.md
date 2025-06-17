@@ -1,5 +1,6 @@
 ---
 title: Common code
+desc: Learn about architecture, data models, and development environments. See Penpot's technical guide for developers. Dive into common code.
 ---
 
 # Common code

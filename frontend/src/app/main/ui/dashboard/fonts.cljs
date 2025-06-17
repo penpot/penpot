@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.media :as cm]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.fonts :as df]
    [app.main.data.modal :as modal]
@@ -27,6 +28,11 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
+
+(def ^:private accept-font-types
+  (str (str/join "," cm/font-types)
+       ;; A workaround to solve a problem with chrome input selector
+       ",.ttf,application/font-woff,woff,.otf"))
 
 (defn- use-page-title
   [team section]
@@ -121,7 +127,7 @@
          (fn [event]
            (let [id   (-> (dom/get-current-target event)
                           (dom/get-data "id")
-                          (parse-uuid))
+                          (uuid/parse))
                  item (get fonts id)]
              (on-upload* item))))
 
@@ -132,7 +138,7 @@
            (let [target (dom/get-current-target event)
                  id     (-> target
                             (dom/get-data "id")
-                            (parse-uuid))
+                            (uuid/parse))
                  name   (dom/get-value target)]
              (when-not (str/blank? name)
                (swap! fonts* df/rename-and-regroup id name installed-fonts)))))
@@ -143,7 +149,7 @@
            (let [target (dom/get-current-target event)
                  id     (-> target
                             (dom/get-data "id")
-                            (parse-uuid))
+                            (uuid/parse))
                  name   (dom/get-value target)]
              (swap! fonts* update id assoc :font-family-tmp name))))
 
@@ -153,7 +159,7 @@
          (fn [event]
            (let [id (-> (dom/get-current-target event)
                         (dom/get-data "id")
-                        (parse-uuid))]
+                        (uuid/parse))]
              (swap! fonts* dissoc id))))
 
         on-upload-all
@@ -179,7 +185,7 @@
                  :tab-index "0"}
         [:span (tr "labels.add-custom-font")]
         [:& file-uploader {:input-id "font-upload"
-                           :accept cm/str-font-types
+                           :accept accept-font-types
                            :multi true
                            :ref input-ref
                            :on-selected on-selected}]]
@@ -344,7 +350,7 @@
          (fn [event]
            (let [id      (-> (dom/get-current-target event)
                              (dom/get-data "id")
-                             (parse-uuid))
+                             (uuid/parse))
                  options {:type :confirm
                           :title (tr "modals.delete-font-variant.title")
                           :message (tr "modals.delete-font-variant.message")

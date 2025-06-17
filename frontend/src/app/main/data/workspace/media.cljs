@@ -10,12 +10,11 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.common.files.builder :as fb]
    [app.common.files.changes-builder :as pcb]
-   [app.common.logging :as log]
+   [app.common.files.shapes-builder :as sb]
    [app.common.math :as mth]
+   [app.common.media :as media]
    [app.common.schema :as sm]
-   [app.common.svg.shapes-builder :as csvg.shapes-builder]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -24,7 +23,6 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.media :as dmm]
    [app.main.data.notifications :as ntf]
-   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.svg-upload :as svg]
    [app.main.repo :as rp]
@@ -36,6 +34,9 @@
    [potok.v2.core :as ptk]
    [promesa.core :as p]
    [tubax.core :as tubax]))
+
+(def accept-image-types
+  (str/join "," media/image-types))
 
 (defn- optimize
   [input]
@@ -138,7 +139,7 @@
                  (= (.-type blob) "image/svg+xml")))
 
           (prepare-blob [blob]
-            (let [name (or name (if (dmm/file? blob) (fb/strip-image-extension (.-name blob)) "blob"))]
+            (let [name (or name (if (dmm/file? blob) (media/strip-image-extension (.-name blob)) "blob"))]
               {:file-id file-id
                :name name
                :is-local local?
@@ -235,16 +236,6 @@
             (rx/catch #(handle-media-error % on-error))
             (rx/finalize #(st/emit! (ntf/hide :tag :media-loading))))))))
 
-;; Deprecated in components-v2
-(defn upload-media-asset
-  [params]
-  (let [params (assoc params
-                      :force-media true
-                      :local? false
-                      :on-image #(st/emit! (dwl/add-media %))
-                      :on-svg #(st/emit! (dwl/add-media %)))]
-    (process-media-objects params)))
-
 (defn upload-media-workspace
   [{:keys [position file-id] :as params}]
   (let [params (assoc params
@@ -285,20 +276,6 @@
 
 ;; --- Upload File Media objects
 
-(defn load-and-parse-svg
-  "Load the contents of a media-obj of type svg, and parse it
-  into a clojure structure."
-  [media-obj]
-  (let [path (cf/resolve-file-media media-obj)]
-    (->> (http/send! {:method :get :uri path :mode :no-cors})
-         (rx/map :body)
-         (rx/map #(vector (:name media-obj) %))
-         (rx/merge-map svg->clj)
-         (rx/catch  ; When error downloading media-obj, skip it and continue with next one
-          #(log/error :msg (str "Error downloading " (:name media-obj) " from " path)
-                      :hint (ex-message %)
-                      :error %)))))
-
 (defn create-shapes-svg
   "Convert svg elements into penpot shapes."
   [file-id objects pos svg-data]
@@ -310,7 +287,7 @@
         process-svg
         (fn [svg-data]
           (let [[root-svg-shape children]
-                (csvg.shapes-builder/create-svg-shapes svg-data pos objects uuid/zero nil #{} false)
+                (sb/create-svg-shapes svg-data pos objects uuid/zero nil #{} false)
 
                 frame-shape
                 (cts/setup-shape
@@ -378,7 +355,7 @@
 
 (defn- add-shapes-and-component
   [it file-data page name [shape children]]
-  (let [[component-shape component-shapes updated-shapes]
+  (let [[component-shape updated-shapes]
         (ctn/convert-shape-in-component shape children (:id file-data))
 
         changes (-> (pcb/empty-changes it)
@@ -389,7 +366,6 @@
                     (pcb/add-component (:id component-shape)
                                        ""
                                        name
-                                       component-shapes
                                        updated-shapes
                                        (:id shape)
                                        (:id page)))]

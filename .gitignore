@@ -30,6 +30,7 @@
 /*.zip
 /.clj-kondo/.cache
 /_dump
+/notes
 /backend/*.md
 /backend/*.sql
 /backend/*.txt
@@ -68,6 +69,8 @@
 /vendor/**/target
 /vendor/svgclean/bundle*.js
 /web
+/library/target/
+
 clj-profiler/
 node_modules
 /test-results/

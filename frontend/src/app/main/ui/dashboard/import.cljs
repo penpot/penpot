@@ -15,13 +15,12 @@
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.errors :as errors]
-   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -162,29 +161,35 @@
 
 (defn- analyze-entries
   [state entries]
-  (->> (uw/ask-many!
-        {:cmd :analyze-import
-         :files entries
-         :features @features/features-ref})
-       (rx/mapcat #(rx/delay emit-delay (rx/of %)))
-       (rx/filter some?)
-       (rx/subs!
-        (fn [message]
-          (swap! state update-with-analyze-result message)))))
+  (let [features (get @st/state :features)]
+    (->> (mw/ask-many!
+          {:cmd :analyze-import
+           :files entries
+           :features features})
+         (rx/mapcat #(rx/delay emit-delay (rx/of %)))
+         (rx/filter some?)
+         (rx/subs!
+          (fn [message]
+            (when (some? (:error message))
+              (st/emit! (ptk/data-event ::ev/event {::ev/name "import-files-error"
+                                                    :error (:error message)})))
+            (swap! state update-with-analyze-result message))))))
 
 (defn- import-files
   [state project-id entries]
   (st/emit! (ptk/data-event ::ev/event {::ev/name "import-files"
                                         :num-files (count entries)}))
-  (->> (uw/ask-many!
-        {:cmd :import-files
-         :project-id project-id
-         :files entries
-         :features @features/features-ref})
-       (rx/filter (comp uuid? :file-id))
-       (rx/subs!
-        (fn [message]
-          (swap! state update-entry-status message)))))
+
+  (let [features (get @st/state :features)]
+    (->> (mw/ask-many!
+          {:cmd :import-files
+           :project-id project-id
+           :files entries
+           :features features})
+         (rx/filter (comp uuid? :file-id))
+         (rx/subs!
+          (fn [message]
+            (swap! state update-entry-status message))))))
 
 (mf/defc import-entry*
   {::mf/props :obj
@@ -289,7 +294,7 @@
 
        import-error?
        [:div {:class (stl/css :error-message)}
-        (tr "dashboard.import.import-error")]
+        (tr "labels.error")]
 
        (and (not import-success?) (some? progress))
        [:div {:class (stl/css :progress-message)} (parse-progress-message progress)])
@@ -441,7 +446,12 @@
 
         (and (seq entries)
              (every? #(= :import-success (:status %)) entries))
-        (reset! status* :import-success)))
+        (reset! status* :import-success)
+
+        (and (seq entries)
+             (and (every? #(not= :import-ready (:status %)) entries)
+                  (some #(= :import-error (:status %)) entries)))
+        (reset! status* :import-error)))
 
     ;; Run analyze operation on component mount
     (mf/with-effect []
@@ -460,6 +470,7 @@
        (when (and (= :analyze status) errors?)
          [:& context-notification
           {:level :warning
+           :class (stl/css :context-notification-error)
            :content (tr "dashboard.import.import-warning")}])
 
        (when (= :import-success status)
@@ -467,15 +478,30 @@
           {:level (if (zero? import-success-total) :warning :success)
            :content (tr "dashboard.import.import-message" (i18n/c import-success-total))}])
 
-       (for [entry entries]
-         [:> import-entry* {:edition edition
-                            :key (dm/str (:uri entry) "/" (:file-id entry))
-                            :entry entry
-                            :entries entries
-                            :on-edit on-edit
-                            :on-change on-entry-change
-                            :on-delete on-entry-delete
-                            :can-be-deleted (> (count entries) 1)}])
+       (when (= :import-error status)
+         [:& context-notification
+          {:level :error
+           :class (stl/css :context-notification-error)
+           :content (tr "dashboard.import.import-error.disclaimer")}])
+
+       (if (or (= :import-error status) (and (= :analyze status) errors?))
+         [:div {:class (stl/css :import-error-disclaimer)}
+          [:div (tr "dashboard.import.import-error.message1")]
+          [:ul {:class (stl/css :import-error-list)}
+           (for [entry entries]
+             (when (contains? #{:import-error :analyze-error} (:status entry))
+               [:li {:class (stl/css :import-error-list-enry)} (:name entry)]))]
+          [:div (tr "dashboard.import.import-error.message2")]]
+
+         (for [entry entries]
+           [:> import-entry* {:edition edition
+                              :key (dm/str (:uri entry) "/" (:file-id entry))
+                              :entry entry
+                              :entries entries
+                              :on-edit on-edit
+                              :on-change on-entry-change
+                              :on-delete on-entry-delete
+                              :can-be-deleted (> (count entries) 1)}]))
 
        (when (some? template)
          [:> import-entry* {:entry (assoc template :status status)
@@ -497,6 +523,7 @@
                    :on-click on-continue}])
 
         (when (or (= :import-success status)
+                  (= :import-error status)
                   (= :import-progress status))
           [:input {:class (stl/css :accept-btn)
                    :type "button"

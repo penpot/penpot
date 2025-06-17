@@ -1,0 +1,78 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC */ }
+
+import { Canvas, Meta } from '@storybook/blocks';
+import * as Tooltip from "./tooltip.stories";
+
+<Meta title= "Tooltip" />
+
+# Tooltip
+
+A tooltip is a floating text area that provides helpful or contextual information on hover and focus.
+
+<Canvas of={Tooltip.Default} />
+
+## Technical notes
+
+The tooltip component accepts a `placement` prop that defines the preferred position of the tooltip relative to its trigger. Possible values are:
+
+```
+"top" | "bottom" | "left" | "right" | "top-right" | "bottom-right" | "bottom-left" | "top-left"
+```
+The component will attempt to use the specified `placement` but may fall back to others if there isn’t enough space.
+If `placement` is not provided, the tooltip will default to "top".
+
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.tooltip.tooltip :as tlp])
+
+   [:> tlp/tooltip* {:id "test-tooltip"
+                     :placement "bottom"
+                     :content "Tooltip content"}
+   [:div  "Trigger component"]])
+```
+
+Tooltip content can include HTML elements:
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.tooltip.tooltip :as tlp])
+
+   [:> tlp/tooltip* {:id "test-tooltip"
+                     :placement "bottom"
+                     :content (mf/html [:span "Tooltip content"])}
+   [:div  "Trigger component"]])
+```
+
+### Accessibility
+
+The tooltip requires an `id` prop, which is used to associate the trigger with the tooltip content via the `aria-describedby` attribute.
+This ensures screen readers can announce the tooltip content when the trigger is focused.
+
+Tooltips should not contain interactive elements like buttons, links, or form inputs, since users cannot interact with them via mouse or keyboard.
+
+
+## Usage guidelines (design)
+### Where to use
+
+Use a tooltip as a way for users to see more information before they select an element, go to a new page, or trigger an action on the page.
+
+### When to use
+
+- When users need help making a decision
+- When you need to provide more information for icons or icon buttons without labels
+- When you need to define new or unfamiliar UI elements that are not described directly in the user interface
+
+### Interaction / Behaviour
+
+Tooltips are triggered on hover or keyboard focus
+
+They automatically disappear on mouse leave or blur
+
+Tooltip positioning is dynamically adjusted to stay within the viewport
+
+A small delay is applied before showing the tooltip to avoid accidental triggers, the duration of this delay is configurable by default it is 300ms.

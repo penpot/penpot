@@ -1,6 +1,7 @@
 ---
 layout: layouts/plugins.njk
 title: 4. API
+desc: Create, deploy, and use the Penpot plugin API with our comprehensive documentation. Get started today and expand Penpot's capabilities.
 ---
 
 # Penpot plugins API

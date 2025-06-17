@@ -18,10 +18,12 @@ export default {
   component: Combobox,
   argTypes: {
     disabled: { control: "boolean" },
+    maxLength: { control: "number" },
     hasError: { control: "boolean" },
   },
   args: {
     disabled: false,
+    maxLength: 10,
     hasError: false,
     placeholder: "Select a month",
     options: [
@@ -112,9 +114,10 @@ export const TestInteractions = {
       return options;
     };
 
-    await userEvent.clear(input);
+    await step("Toggle dropdown when clicking on arrow", async () => {
+      await userEvent.clear(input);
+      await userEvent.keyboard("{Escape}");
 
-    await step("Toggle dropdown on click arrow button", async () => {
       await userEvent.click(button);
 
       await waitOptionsPresent();
@@ -125,7 +128,24 @@ export const TestInteractions = {
       expect(combobox).toHaveAttribute("aria-expanded", "false");
     });
 
-    await step("Aria controls is set correctly", async () => {
+    await step("Open dropdown when clicking on input", async () => {
+      await userEvent.clear(input);
+      await userEvent.keyboard("{Escape}");
+
+      await userEvent.click(input);
+
+      await waitOptionsPresent();
+      expect(combobox).toHaveAttribute("aria-expanded", "true");
+
+      await userEvent.keyboard("{Escape}");
+      await waitOptionNotPresent();
+      expect(combobox).toHaveAttribute("aria-expanded", "false");
+    });
+
+    await step("Aria controls set", async () => {
+      await userEvent.clear(input);
+      await userEvent.keyboard("{Escape}");
+
       await userEvent.click(button);
 
       const ariaControls = combobox.getAttribute("aria-controls");
@@ -136,6 +156,9 @@ export const TestInteractions = {
     });
 
     await step("Navigation keys", async () => {
+      await userEvent.clear(input);
+      await userEvent.keyboard("{Escape}");
+
       // Arrow down
       await userEvent.click(input);
       await waitOptionsPresent();
@@ -176,32 +199,19 @@ export const TestInteractions = {
       await userEvent.clear(input);
     });
 
-    await step("Toggle dropdown with arrow down and ESC", async () => {
-      userEvent.click(input);
-
-      await waitOptionsPresent();
-
-      await userEvent.keyboard("{Escape}");
-      expect(combobox).toHaveAttribute("aria-expanded", "false");
-      await waitOptionNotPresent();
-
-      await userEvent.keyboard("{ArrowDown}");
-      await waitOptionsPresent();
-      expect(combobox).toHaveAttribute("aria-expanded", "true");
-
-      await userEvent.keyboard("{Escape}");
-      await waitOptionNotPresent();
-      expect(combobox).toHaveAttribute("aria-expanded", "false");
-    });
-
     await step("Filter with 'Ju' and select July", async () => {
+      await userEvent.clear(input);
+      await userEvent.keyboard("{Escape}");
+
+      await userEvent.click(input);
+
       await userEvent.type(input, "Ju");
 
       const options = await canvas.findAllByTestId("dropdown-option");
       expect(options).toHaveLength(2);
 
-      await userEvent.keyboard("{ArrowDown}");
-      await userEvent.keyboard("{ArrowDown}");
+      await userEvent.keyboard("[ArrowDown]");
+      await userEvent.keyboard("[ArrowDown]");
 
       await userEvent.keyboard("{Enter}");
 
@@ -209,7 +219,10 @@ export const TestInteractions = {
       expect(lastValue).toBe("July");
     });
 
-    await step("Close dropdown when focus out", async () => {
+    await step("Close dropdown when focusing out", async () => {
+      await userEvent.clear(input);
+      await userEvent.keyboard("{Escape}");
+
       await userEvent.click(button);
 
       await waitOptionsPresent();

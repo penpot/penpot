@@ -102,14 +102,14 @@
                    node-editing?
                    ;; Handle path node area selection
                    (when-not read-only?
-                     (st/emit! (dwdp/handle-area-selection shift?)))
+                     (st/emit! (dwdp/handle-area-selection shift? (and shift? mod?))))
 
                    drawing-tool
                    (when-not read-only?
                      (st/emit! (dd/start-drawing drawing-tool)))
 
                    (or (not id) mod?)
-                   (st/emit! (dw/handle-area-selection shift?))
+                   (st/emit! (dw/handle-area-selection shift? (and shift? mod?) mod?))
 
                    (not drawing-tool)
                    (when-not read-only?
@@ -227,8 +227,9 @@
                           (dw/start-editing-selected))
 
                 (some? selected-shape)
-                (do (reset! hover selected-shape)
-                    (st/emit! (dw/select-shape (:id selected-shape))))
+                (do
+                  (reset! hover selected-shape)
+                  (st/emit! (dw/select-shape (:id selected-shape))))
 
                 (and (not selected-shape) (some? grid-layout-id) (not read-only?))
                 (st/emit! (dw/start-edition-mode grid-layout-id)))))))))))
@@ -468,10 +469,7 @@
    (fn [event]
      (dom/prevent-default event)
      (let [point (gpt/point (.-clientX event) (.-clientY event))
-           viewport-coord (uwvv/point->viewport point)
-           asset-id     (-> (dnd/get-data event "text/asset-id") uuid/uuid)
-           asset-name   (dnd/get-data event "text/asset-name")
-           asset-type   (dnd/get-data event "text/asset-type")]
+           viewport-coord (uwvv/point->viewport point)]
        (cond
          (dnd/has-type? event "penpot/shape")
          (let [shape   (dnd/get-data event "penpot/shape")
@@ -515,25 +513,6 @@
                         (assoc params :uris uris)
                         (assoc params :blobs (map wapi/data-uri->blob data)))]
            (st/emit! (dwm/upload-media-workspace params)))
-
-         ;; Will trigger when the user drags an SVG asset from the assets panel
-         (and (dnd/has-type? event "text/asset-id") (= asset-type "image/svg+xml"))
-         (let [path (cfg/resolve-file-media {:id asset-id})
-               params {:file-id (:id file)
-                       :position viewport-coord
-                       :uris [path]
-                       :name asset-name
-                       :mtype asset-type}]
-           (st/emit! (dwm/upload-media-workspace params)))
-
-         ;; Will trigger when the user drags an image from the assets SVG
-         (dnd/has-type? event "text/asset-id")
-         (let [params {:file-id (:id file)
-                       :object-id asset-id
-                       :name asset-name}]
-           (st/emit! (dwm/clone-media-object
-                      (with-meta params
-                        {:on-success #(st/emit! (dwm/image-uploaded % viewport-coord))}))))
 
          ;; Will trigger when the user drags a file from their file explorer into the viewport
          ;; Or the user pastes an image

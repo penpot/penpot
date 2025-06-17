@@ -155,10 +155,10 @@
    [["" {:middleware [[mw/server-timing]
                       [mw/params]
                       [mw/format-response]
-                      [mw/parse-request]
-                      [mw/errors errors/handle]
                       [session/soft-auth cfg]
                       [actoken/soft-auth cfg]
+                      [mw/parse-request]
+                      [mw/errors errors/handle]
                       [mw/restrict-methods]]}
 
      (::mtx/routes cfg)

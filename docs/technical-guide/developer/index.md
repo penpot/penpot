@@ -1,5 +1,6 @@
 ---
 title: 3. Developer Guide
+desc: Dive into architecture, data models, and more. Start building today! See Penpot's technical guide for self-hosting, configuration, and developer insights.
 ---
 
 # Developer Guide

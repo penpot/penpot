@@ -1,0 +1,56 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../_borders.scss" as *;
+@use "../spacing.scss" as *;
+@use "../_sizes.scss" as *;
+@use "../typography.scss" as t;
+
+.input-with-meta-container {
+  --input-meta-value: var(--color-foreground-primary);
+  --input-meta-data: var(--color-foreground-secondary);
+  --input-meta-background: var(--color-background-tertiary);
+
+  @include t.use-typography("body-small");
+  border-radius: $br-8;
+  background-color: var(--input-meta-background);
+  padding: var(--sp-s);
+  width: 99%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-s);
+  overflow: hidden;
+  white-space: nowrap;
+  height: $sz-32;
+
+  &:hover {
+    --input-meta-background: var(--color-background-quaternary);
+    cursor: text;
+  }
+}
+
+.input-with-meta-edit-container {
+  width: 99%;
+  border-radius: $br-8;
+  height: $sz-32;
+}
+
+.input-with-meta-value,
+.input-with-meta-data {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.input-with-meta-value {
+  color: var(--input-meta-value);
+  min-width: 0;
+}
+
+.input-with-meta-data {
+  color: var(--input-meta-data);
+  min-width: 0;
+}

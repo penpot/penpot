@@ -12,7 +12,6 @@
    [rumext.v2 :as mf]))
 
 (mf/defc story-grid*
-  {::mf/props :obj}
   [{:keys [children size style] :rest other}]
   (let [class (stl/css :story-grid)
         size  (or size 16)
@@ -22,21 +21,18 @@
     [:> "article" props children]))
 
 (mf/defc story-grid-cell*
-  {::mf/props :obj}
   [{:keys [children] :rest other}]
   (let [class (stl/css :story-grid-cell)
         props (mf/spread-props other {:class class})]
     [:> "article" props children]))
 
 (mf/defc story-header*
-  {::mf/props :obj}
   [{:keys [children] :rest other}]
   (let [class (stl/css :story-header)
         props (mf/spread-props other {:class class})]
     [:> "header" props children]))
 
 (mf/defc story-grid-row*
-  {::mf/props :obj}
   [{:keys [children] :rest other}]
   (let [class (stl/css :story-grid-row)
         props (mf/spread-props other {:class class})]

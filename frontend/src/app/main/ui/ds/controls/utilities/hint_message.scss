@@ -1,0 +1,27 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../typography.scss" as *;
+@use "../../colors.scss" as *;
+
+.hint-message {
+  --hint-color: var(--color-foreground-secondary);
+
+  @include use-typography("body-small");
+  color: var(--hint-color);
+}
+
+.type-hint {
+  --hint-color: var(--color-foreground-secondary);
+}
+
+.type-warning {
+  --hint-color: var(--color-accent-warning);
+}
+
+.type-error {
+  --hint-color: var(--color-foreground-error);
+}

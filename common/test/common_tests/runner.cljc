@@ -7,9 +7,9 @@
 (ns common-tests.runner
   (:require
    [clojure.test :as t]
+   [common-tests.buffer-test]
    [common-tests.colors-test]
    [common-tests.data-test]
-   [common-tests.files-builder-test]
    [common-tests.files-changes-test]
    [common-tests.files-migrations-test]
    [common-tests.geom-point-test]
@@ -29,6 +29,7 @@
    [common-tests.logic.swap-and-reset-test]
    [common-tests.logic.swap-as-override-test]
    [common-tests.logic.token-test]
+   [common-tests.media-test]
    [common-tests.pages-helpers-test]
    [common-tests.record-test]
    [common-tests.schema-test]
@@ -38,10 +39,11 @@
    [common-tests.time-test]
    [common-tests.types.absorb-assets-test]
    [common-tests.types.components-test]
+   [common-tests.types.fill-test]
    [common-tests.types.modifiers-test]
+   [common-tests.types.path-data-test]
    [common-tests.types.shape-decode-encode-test]
    [common-tests.types.shape-interactions-test]
-   [common-tests.types.shape-path-data-test]
    [common-tests.types.tokens-lib-test]
    [common-tests.uuid-test]))
 
@@ -56,9 +58,9 @@
 (defn -main
   [& args]
   (t/run-tests
+   'common-tests.buffer-test
    'common-tests.colors-test
    'common-tests.data-test
-   'common-tests.files-builder-test
    'common-tests.files-changes-test
    'common-tests.files-migrations-test
    'common-tests.geom-point-test
@@ -78,6 +80,7 @@
    'common-tests.logic.swap-and-reset-test
    'common-tests.logic.swap-as-override-test
    'common-tests.logic.token-test
+   'common-tests.media-test
    'common-tests.pages-helpers-test
    'common-tests.record-test
    'common-tests.schema-test
@@ -85,11 +88,12 @@
    'common-tests.svg-test
    'common-tests.text-test
    'common-tests.time-test
-   'common-tests.types.modifiers-test
-   'common-tests.types.shape-interactions-test
-   'common-tests.types.shape-decode-encode-test
-   'common-tests.types.tokens-lib-test
-   'common-tests.types.components-test
    'common-tests.types.absorb-assets-test
-   'common-tests.types.shape-path-data-test
+   'common-tests.types.components-test
+   'common-tests.types.modifiers-test
+   'common-tests.types.path-data-test
+   'common-tests.types.fill-test
+   'common-tests.types.shape-decode-encode-test
+   'common-tests.types.shape-interactions-test
+   'common-tests.types.tokens-lib-test
    'common-tests.uuid-test))

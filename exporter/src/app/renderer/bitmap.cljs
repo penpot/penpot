@@ -17,7 +17,7 @@
    [promesa.core :as p]))
 
 (defn render
-  [{:keys [file-id page-id share-id token scale type objects] :as params} on-object]
+  [{:keys [file-id page-id share-id token scale type objects skip-children] :as params} on-object]
   (letfn [(prepare-options [uri]
             #js {:screen #js {:width bw/default-viewport-width
                               :height bw/default-viewport-height}
@@ -50,13 +50,14 @@
               (bw/eval! page (js* "() => document.body.style.background = 'transparent'"))
 
               ;; take the screnshot of requested objects, one by one
-              (p/run! (partial render-object page) objects)
+              (p/run (partial render-object page) objects)
               nil))]
     (p/let [params {:file-id file-id
                     :page-id page-id
                     :share-id share-id
                     :object-id (mapv :id objects)
-                    :route "objects"}
+                    :route "objects"
+                    :skip-children skip-children}
             uri    (-> (cf/get :public-uri)
                        (assoc :path "/render.html")
                        (assoc :query (u/map->query-string params)))]

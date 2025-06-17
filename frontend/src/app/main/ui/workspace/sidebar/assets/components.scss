@@ -157,6 +157,10 @@
   }
 }
 
+.enum-item-with-mark {
+  grid-template-columns: auto 1fr $s-24;
+}
+
 .item-name {
   @include bodySmallTypography;
   @include textEllipsis;
@@ -218,4 +222,27 @@
   border-radius: $s-8;
   background-color: var(--assets-item-background-color-drag);
   border: $s-2 solid var(--assets-item-border-color-drag);
+}
+
+.variant-mark {
+  background-color: var(--color-background-tertiary);
+  border-radius: $br-8;
+}
+
+.variant-mark-cell {
+  position: absolute;
+  right: $s-2;
+  top: $s-2;
+}
+
+.component-icon {
+  @include flexCenter;
+  height: $s-24;
+  width: $s-24;
+  order: 3;
+
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--color-accent-secondary);
+  }
 }

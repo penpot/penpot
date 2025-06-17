@@ -14,7 +14,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
-   [app.features.components-v2 :as feat.compv2]
    [app.features.fdata :as fdata]
    [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
@@ -110,7 +109,7 @@
 ;; --- MUTATION COMMAND: persist-temp-file
 
 (defn persist-temp-file
-  [{:keys [::db/conn] :as cfg} {:keys [id ::rpc/profile-id] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [id] :as params}]
   (let [file (files/get-file cfg id
                              :migrate? false
                              :lock-for-update? true)]
@@ -118,7 +117,6 @@
     (when (nil? (:deleted-at file))
       (ex/raise :type :validation
                 :code :cant-persist-already-persisted-file))
-
 
     (let [changes (->> (db/cursor conn
                                   (sql/select :file-change {:file-id id}
@@ -147,19 +145,6 @@
                    :revn 1
                    :data (blob/encode (:data file))}
                   {:id id})
-
-      (let [team          (teams/get-team conn :profile-id profile-id :project-id (:project-id file))
-            file-features (:features file)
-            team-features (cfeat/get-team-enabled-features cf/flags team)]
-        (when (and (contains? team-features "components/v2")
-                   (not (contains? file-features "components/v2")))
-          ;; Migrate components v2
-          (feat.compv2/migrate-file! cfg
-                                     (:id file)
-                                     :max-procs 2
-                                     :validate? true
-                                     :throw-on-validate? true)))
-
       nil)))
 
 (def ^:private schema:persist-temp-file

@@ -4,98 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../_borders.scss" as *;
-@use "../_sizes.scss" as *;
-@use "../typography.scss" as *;
+@use "../spacing.scss" as *;
 
-.container {
-  --input-bg-color: var(--color-background-tertiary);
-  --input-fg-color: var(--color-foreground-primary);
-  --input-icon-color: var(--color-foreground-secondary);
-  --input-outline-color: none;
-
-  display: inline-flex;
-  column-gap: var(--sp-xs);
-  align-items: center;
-  position: relative;
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
   inline-size: 100%;
-
-  background: var(--input-bg-color);
-  border-radius: $br-8;
-  padding: 0 var(--sp-s);
-  outline-offset: #{$b-1};
-  outline: $b-1 solid var(--input-outline-color);
-
-  &:hover {
-    --input-bg-color: var(--color-background-quaternary);
-  }
-
-  &:has(*:focus-visible) {
-    --input-bg-color: var(--color-background-primary);
-    --input-outline-color: var(--color-accent-primary);
-  }
-
-  &:has(*:disabled) {
-    --input-bg-color: var(--color-background-primary);
-    --input-outline-color: var(--color-background-quaternary);
-  }
-}
-
-.input-seamless {
-  --input-bg-color: none;
-  --input-outline-color: none;
-  --input-height: auto;
-  --input-margin: 0;
-
-  padding: 0;
-  border: none;
-
-  &:hover {
-    --input-bg-color: none;
-    --input-outline-color: none;
-  }
-
-  &:has(*:focus-visible) {
-    --input-bg-color: none;
-    --input-outline-color: none;
-  }
-}
-
-.input {
-  margin: var(--input-margin, unset); // remove settings from global css
-  padding: 0;
-  appearance: none;
-  height: var(--input-height, #{$sz-32});
-  border: none;
-  background: none;
-  inline-size: 100%;
-
-  @include use-typography("body-small");
-  color: var(--input-fg-color);
-
-  &:focus-visible {
-    outline: none;
-  }
-
-  &::selection {
-    background: var(--color-accent-select);
-  }
-
-  &::placeholder {
-    --input-fg-color: var(--color-foreground-secondary);
-  }
-
-  &:is(:autofill, :autofill:hover, :autofill:focus, :autofill:active) {
-    -webkit-text-fill-color: var(--input-fg-color);
-    -webkit-background-clip: text;
-    caret-color: var(--input-bg-color);
-  }
-}
-
-.input-with-icon {
-  margin-inline-start: var(--sp-xxs);
-}
-
-.icon {
-  color: var(--color-foreground-secondary);
 }

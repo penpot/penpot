@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @import "refactor/common-refactor.scss";
+@import "../ds/_sizes.scss";
 
 .element-options {
   display: flex;
@@ -19,5 +20,5 @@
 }
 
 .workspace-element-options {
-  height: calc(100vh - #{$s-164}); // TODO: Fix this hardcoded value
+  height: calc(100vh - #{$sz-200}); // TODO: Fix this hardcoded value
 }

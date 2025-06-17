@@ -17,7 +17,7 @@
    [app.common.math :as mth]
    [app.common.uuid :refer [zero]]
    [app.main.refs :as refs]
-   [app.main.worker :as uw]
+   [app.main.worker :as mw]
    [app.util.range-tree :as rt]
    [beicon.v2.core :as rx]
    [clojure.set :as set]))
@@ -84,7 +84,7 @@
   (let [value (get point coord)
         vbox @refs/vbox
         ranges [[(- value (/ 0.5 zoom)) (+ value (/ 0.5 zoom))]]]
-    (->> (uw/ask! {:cmd :snaps/range-query
+    (->> (mw/ask! {:cmd :snaps/range-query
                    :page-id page-id
                    :frame-id frame-id
                    :axis coord
@@ -101,7 +101,7 @@
                     (mapv #(vector (- % snap-accuracy)
                                    (+ % snap-accuracy))))
         vbox @refs/vbox]
-    (->> (uw/ask! {:cmd :snaps/range-query
+    (->> (mw/ask! {:cmd :snaps/range-query
                    :page-id page-id
                    :frame-id frame-id
                    :axis coord
@@ -217,7 +217,7 @@
 
 (defn select-shapes-area
   [page-id frame-id selected objects area]
-  (->> (uw/ask! {:cmd :selection/query
+  (->> (mw/ask! {:cmd :selection/query
                  :page-id page-id
                  :frame-id frame-id
                  :include-frames? true

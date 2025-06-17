@@ -6,24 +6,41 @@ else
     export _BUILD_MODE=${1:-debug};
 fi
 
+# 256 MB of initial heap to perform less
+# initial calls to memory grow.
+EM_INITIAL_HEAP=$((256 * 1024 * 1024))
+
+# 1.0 doubles the heap on every growth.
+EM_MEMORY_GROWTH_GEOMETRIC_STEP="0.8"
+
+# Malloc implementation to use.
+# - dlmalloc: a powerful general-purpose malloc.
+# - emmalloc: a simple and compact malloc designed for emscripten.
+# - emmalloc-debug: use emmalloc and add extra assertion checks.
+# - emmalloc-memvalidate: use emmalloc with assertions+heap consistency checking.
+# - emmalloc-verbose: use emmalloc with assertions + verbose logging.
+# - emmalloc-memvalidate-verbose: use emmalloc with assertions + heap consistency checking + verbose logging.
+# Default: dlmalloc
+EM_MALLOC="dlmalloc"
+
 EMCC_CFLAGS="--no-entry \
+    --js-library src/js/wapi.js \
     -sASSERTIONS=1 \
     -sALLOW_TABLE_GROWTH=1 \
     -sALLOW_MEMORY_GROWTH=1 \
+    -sINITIAL_HEAP=$EM_INITIAL_HEAP \
+    -sMEMORY_GROWTH_GEOMETRIC_STEP=$EM_MEMORY_GROWTH_GEOMETRIC_STEP \
     -sENVIRONMENT=web \
     -sERROR_ON_UNDEFINED_SYMBOLS=0 \
     -sMAX_WEBGL_VERSION=2 \
     -sMODULARIZE=1 \
     -sEXPORT_NAME=createRustSkiaModule \
-    -sEXPORTED_RUNTIME_METHODS=GL,stringToUTF8 \
+    -sEXPORTED_RUNTIME_METHODS=GL,stringToUTF8,HEAPU8,HEAPU32,HEAPF32 \
     -sEXPORT_ES6=1"
-
-EMSDK_QUIET=1 . /usr/local/emsdk/emsdk_env.sh;
-. /usr/local/cargo/env
 
 export EM_CACHE="/tmp/emsdk_cache";
 
-_CARGO_PARAMS="--target=wasm32-unknown-emscripten";
+_CARGO_PARAMS="${@:2}";
 
 if [ "$_BUILD_MODE" = "release" ]; then
     _CARGO_PARAMS="--release $_CARGO_PARAMS"
@@ -33,10 +50,9 @@ else
     #        -gseparate-dwarf
     #        -gsplit-dwarf
     #        -gsource-map
-    EMCC_CFLAGS="-g $EMCC_CFLAGS -sMALLOC=emmalloc-debug"
+    EMCC_CFLAGS="-g $EMCC_CFLAGS -sVERBOSE=1 -sMALLOC=$EM_MALLOC"
 fi
 
 export EMCC_CFLAGS;
 export _CARGO_PARAMS;
 
-export SKIA_BINARIES_URL="https://github.com/penpot/skia-binaries/releases/download/0.81.0-1/skia-binaries-24dee32a277b6c7b5357-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache.tar.gz"

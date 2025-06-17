@@ -15,6 +15,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
+   [app.loggers.audit :as audit]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.data.json :as json]
@@ -67,18 +68,27 @@
 (defmethod ig/init-key ::process-event-handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (l/dbg :hint "process webhook event" :name (:name props))
 
-    (when-let [items (lookup-webhooks cfg props)]
-      (l/trc :hint "webhooks found for event" :total (count items))
-      (db/tx-run! cfg (fn [cfg]
-                        (doseq [item items]
-                          (wrk/submit! (-> cfg
-                                           (assoc ::wrk/task :run-webhook)
-                                           (assoc ::wrk/queue :webhooks)
-                                           (assoc ::wrk/max-retries 3)
-                                           (assoc ::wrk/params {:event props
-                                                                :config item})))))))))
+    (let [items (lookup-webhooks cfg props)
+          event {::audit/profile-id (:profile-id props)
+                 ::audit/name "webhook"
+                 ::audit/type "trigger"
+                 ::audit/props {:name (get props :name)
+                                :event-id (get props :id)
+                                :total-affected (count items)}}]
+
+      (audit/insert! cfg event)
+
+      (when items
+        (l/trc :hint "webhooks found for event" :total (count items))
+        (db/tx-run! cfg (fn [cfg]
+                          (doseq [item items]
+                            (wrk/submit! (-> cfg
+                                             (assoc ::wrk/task :run-webhook)
+                                             (assoc ::wrk/queue :webhooks)
+                                             (assoc ::wrk/max-retries 3)
+                                             (assoc ::wrk/params {:event props
+                                                                  :config item}))))))))))
 ;; --- RUN
 
 (declare interpret-exception)

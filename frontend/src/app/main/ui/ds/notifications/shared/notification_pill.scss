@@ -83,3 +83,37 @@
   color: var(--notification-icon-color);
   margin-block-start: var(--notification-icon-margin);
 }
+
+.notification-pill {
+  display: grid;
+  max-height: 92vh;
+  overflow: hidden;
+}
+
+.with-detail {
+  grid-template-rows: auto 1fr;
+}
+
+.error-message {
+  display: flex;
+  gap: var(--sp-s);
+}
+
+.error-detail {
+  overflow: auto;
+}
+
+.error-detail-title {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.expand-icon {
+  --icon-fill-color: var(--color-foreground-primary);
+  --icon-stroke-color: var(--color-foreground-primary);
+}
+
+.error-detail-content {
+  padding-left: var(--sp-xxxl);
+}

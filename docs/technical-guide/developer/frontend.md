@@ -1,5 +1,6 @@
 ---
-title: 3.5. Frontend Guide
+title: 3.05. Frontend Guide
+desc: "See Penpot's technical guide: self-hosting, configuration, developer insights (architecture, data model), frontend, backend, and integrations & more!"
 ---
 
 # Frontend Guide

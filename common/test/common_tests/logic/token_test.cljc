@@ -1,3 +1,9 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
 (ns common-tests.logic.token-test
   (:require
    [app.common.files.changes-builder :as pcb]
@@ -30,7 +36,7 @@
           redo-lib (tht/get-tokens-lib redo)
           undo (thf/apply-undo-changes redo changes)
           undo-lib (tht/get-tokens-lib undo)]
-      (t/is (= #{ctob/hidden-token-theme-path} (ctob/get-active-theme-paths redo-lib)))
+      (t/is (= #{ctob/hidden-theme-path} (ctob/get-active-theme-paths redo-lib)))
       (t/is (= #{} (:sets (ctob/get-hidden-theme redo-lib))))
 
       ;; Undo
@@ -50,7 +56,7 @@
           redo-lib (tht/get-tokens-lib redo)
           undo (thf/apply-undo-changes redo changes)
           undo-lib (tht/get-tokens-lib undo)]
-      (t/is (= #{ctob/hidden-token-theme-path} (ctob/get-active-theme-paths redo-lib)))
+      (t/is (= #{ctob/hidden-theme-path} (ctob/get-active-theme-paths redo-lib)))
       (t/is (= #{} (:sets (ctob/get-hidden-theme redo-lib))))
 
       ;; Undo
@@ -59,8 +65,8 @@
   (t/testing "toggling an set with hidden theme already active will toggle set in hidden theme"
     (let [file (setup-file #(-> %
                                 (ctob/add-set (ctob/make-token-set :name "foo/bar"))
-                                (ctob/add-theme (ctob/make-hidden-token-theme))
-                                (ctob/set-active-themes #{ctob/hidden-token-theme-path})))
+                                (ctob/add-theme (ctob/make-hidden-theme))
+                                (ctob/set-active-themes #{ctob/hidden-theme-path})))
 
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
@@ -259,7 +265,7 @@
                                   :type :color})
           file (setup-file #(-> (ctob/add-set % (ctob/make-token-set :name set-name))
                                 (ctob/add-token-in-set set-name token)))
-          prev-token-set (-> file tht/get-tokens-lib :sets first)
+          prev-token-set (-> file tht/get-tokens-lib (ctob/get-set set-name))
           new-set-name "foo1"
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
@@ -293,7 +299,7 @@
           redo-lib (tht/get-tokens-lib redo)
           undo (thf/apply-undo-changes redo changes)
           undo-lib (tht/get-tokens-lib undo)]
-      (t/is (= #{ctob/hidden-token-theme-path} (ctob/get-active-theme-paths redo-lib)))
+      (t/is (= #{ctob/hidden-theme-path} (ctob/get-active-theme-paths redo-lib)))
       (t/is (= #{"foo/bar/baz" "foo/bar/baz/baz-child"} (:sets (ctob/get-hidden-theme redo-lib))))
 
       ;; Undo
@@ -317,7 +323,7 @@
           undo (thf/apply-undo-changes redo changes)
           undo-lib (tht/get-tokens-lib undo)]
       (t/is (= #{} (:sets (ctob/get-hidden-theme redo-lib))))
-      (t/is (= #{ctob/hidden-token-theme-path} (ctob/get-active-theme-paths redo-lib)))
+      (t/is (= #{ctob/hidden-theme-path} (ctob/get-active-theme-paths redo-lib)))
 
       ;; Undo
       (t/is (= #{"/theme"} (ctob/get-active-theme-paths undo-lib))))))

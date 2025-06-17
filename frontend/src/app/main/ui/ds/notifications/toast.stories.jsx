@@ -17,6 +17,12 @@ export default {
     children: {
       control: { type: "text" },
     },
+    detail: {
+      control: { type: "text" },
+    },
+    showDetail: {
+      control: { type: "boolean" },
+    },
   },
   args: {
     children: "Lorem ipsum",
@@ -37,6 +43,14 @@ export const WithLongerText = {
   args: {
     children:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent lorem ante, bibendum sed ex.",
+  },
+};
+
+export const WithDetail = {
+  args: {
+    detail:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent lorem ante, bibendum sed ex.",
+    showDetail: true,
   },
 };
 

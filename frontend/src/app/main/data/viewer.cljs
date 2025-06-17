@@ -184,11 +184,13 @@
       ptk/UpdateEvent
       (update [_ state]
         (let [team-id (:id team)
-              team    {:members users}]
+              team    (assoc team :members users)]
           (-> state
               (assoc :share-links share-links)
               (assoc :current-team-id team-id)
               (assoc :teams {team-id team})
+              (assoc :files (-> (d/index-by :id libraries)
+                                (assoc (:id file) file)))
               (assoc :viewer {:libraries (d/index-by :id libraries)
                               :users (d/index-by :id users)
                               :permissions permissions
@@ -246,7 +248,7 @@
 
 (defn fetch-comments
   [{:keys [thread-id]}]
-  (dm/assert! (uuid thread-id))
+  (assert (uuid? thread-id))
   (letfn [(fetched [comments state]
             (update state :comments assoc thread-id (d/index-by :id comments)))]
     (ptk/reify ::retrieve-comments
@@ -411,7 +413,7 @@
     (watch [_ state _]
       (let [params  (rt/get-params state)
             index   (some-> params :index parse-long)
-            page-id (some-> params :page-id parse-uuid)
+            page-id (some-> params :page-id uuid/parse)
 
             total   (count (get-in state [:viewer :pages page-id :frames]))]
 

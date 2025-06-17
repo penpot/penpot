@@ -22,8 +22,7 @@
    [:typography [:and :string [:fn #(valid-typography? (dm/str %))]]]])
 
 (mf/defc text*
-  {::mf/props :obj
-   ::mf/schema schema:text}
+  {::mf/schema schema:text}
   [{:keys [as typography children class] :rest props}]
 
   (let [as (if (or (empty? as) (nil? as)) "p" as)

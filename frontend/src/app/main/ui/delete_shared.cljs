@@ -11,6 +11,7 @@
    [app.main.data.modal :as modal]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -114,7 +115,9 @@
                       :key (dm/str file-id)}
                  [:span "- " file-name]])]]
             (when (and (string? hint) (not= hint ""))
-              [:h3 {:class (stl/css :modal-hint)} hint])]
+              [:> context-notification* {:level :info
+                                         :appearance :ghost}
+               hint])]
            [:*
             [:h3 {:class (stl/css :modal-msg)} no-files-msg]]))]
 

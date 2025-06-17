@@ -22,14 +22,13 @@
    :keyword])
 
 (def schema:plugin-data
-  [:map-of {:gen/max 5}
-   schema:keyword
+  (sm/register!
+   ^{::sm/type ::plugin-data}
    [:map-of {:gen/max 5}
-    schema:string
-    schema:string]])
-
-(sm/register! ::plugin-data schema:plugin-data)
-
+    schema:keyword
+    [:map-of {:gen/max 5}
+     schema:string
+     schema:string]]))
 
 (def ^:private schema:registry-entry
   [:map

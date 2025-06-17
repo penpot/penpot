@@ -21,9 +21,12 @@
 }
 
 .first-row {
-  @include flexRow;
-  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  gap: var(--sp-xs);
+
   .blur-info {
+    grid-column: span 6;
     display: flex;
     align-items: center;
     gap: $s-1;

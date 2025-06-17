@@ -1,49 +1,48 @@
-use skia_safe::{self as skia, Rect};
+use skia_safe::{self as skia, Paint, Rect};
 
-use super::Color;
-use uuid::Uuid;
-
-#[derive(Debug)]
-#[repr(C)]
-pub struct RawStopData {
-    color: [u8; 4],
-    offset: u8,
-}
-
-impl RawStopData {
-    pub fn color(&self) -> skia::Color {
-        skia::Color::from_argb(self.color[3], self.color[0], self.color[1], self.color[2])
-    }
-
-    pub fn offset(&self) -> f32 {
-        self.offset as f32 / 100.0
-    }
-
-    pub fn from_bytes(bytes: [u8; 5]) -> Self {
-        Self {
-            color: [bytes[0], bytes[1], bytes[2], bytes[3]],
-            offset: bytes[4],
-        }
-    }
-}
+pub use super::Color;
+use crate::utils::get_image;
+use crate::uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Gradient {
-    colors: Vec<Color>,
-    offsets: Vec<f32>,
-    opacity: f32,
     start: (f32, f32),
     end: (f32, f32),
+    opacity: u8,
     width: f32,
+    colors: Vec<Color>,
+    offsets: Vec<f32>,
 }
 
 impl Gradient {
-    pub fn add_stop(&mut self, color: Color, offset: f32) {
-        self.colors.push(color);
-        self.offsets.push(offset);
+    pub fn new(
+        start: (f32, f32),
+        end: (f32, f32),
+        opacity: u8,
+        width: f32,
+        stops: &[(Color, f32)],
+    ) -> Self {
+        let mut gradient = Gradient {
+            start,
+            end,
+            opacity,
+            colors: vec![],
+            offsets: vec![],
+            width,
+        };
+
+        gradient.add_stops(stops);
+        gradient
     }
 
-    fn to_linear_shader(&self, rect: &Rect) -> Option<skia::Shader> {
+    fn add_stops(&mut self, stops: &[(Color, f32)]) {
+        let colors = stops.iter().map(|(color, _)| *color);
+        let offsets = stops.iter().map(|(_, offset)| *offset);
+        self.colors.extend(colors);
+        self.offsets.extend(offsets);
+    }
+
+    pub fn to_linear_shader(&self, rect: &Rect) -> Option<skia::Shader> {
         let start = (
             rect.left + self.start.0 * rect.width(),
             rect.top + self.start.1 * rect.height(),
@@ -62,7 +61,7 @@ impl Gradient {
         )
     }
 
-    fn to_radial_shader(&self, rect: &Rect) -> Option<skia::Shader> {
+    pub fn to_radial_shader(&self, rect: &Rect) -> Option<skia::Shader> {
         let center = skia::Point::new(
             rect.left + self.start.0 * rect.width(),
             rect.top + self.start.1 * rect.height(),
@@ -100,11 +99,22 @@ impl Gradient {
 pub struct ImageFill {
     id: Uuid,
     opacity: u8,
-    height: i32,
     width: i32,
+    height: i32,
+    keep_aspect_ratio: bool,
 }
 
 impl ImageFill {
+    pub fn new(id: Uuid, opacity: u8, width: i32, height: i32, keep_aspect_ratio: bool) -> Self {
+        Self {
+            id,
+            opacity,
+            width,
+            height,
+            keep_aspect_ratio,
+        }
+    }
+
     pub fn size(&self) -> (i32, i32) {
         (self.width, self.height)
     }
@@ -112,55 +122,31 @@ impl ImageFill {
     pub fn id(&self) -> Uuid {
         self.id
     }
+
+    pub fn opacity(&self) -> u8 {
+        self.opacity
+    }
+
+    pub fn keep_aspect_ratio(&self) -> bool {
+        self.keep_aspect_ratio
+    }
 }
+
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub struct SolidColor(pub Color);
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Fill {
-    Solid(Color),
+    Solid(SolidColor),
     LinearGradient(Gradient),
     RadialGradient(Gradient),
     Image(ImageFill),
 }
 
 impl Fill {
-    pub fn new_linear_gradient(start: (f32, f32), end: (f32, f32), opacity: f32) -> Self {
-        Self::LinearGradient(Gradient {
-            start,
-            end,
-            opacity,
-            colors: vec![],
-            offsets: vec![],
-            width: 0.,
-        })
-    }
-    pub fn new_radial_gradient(
-        start: (f32, f32),
-        end: (f32, f32),
-        opacity: f32,
-        width: f32,
-    ) -> Self {
-        Self::RadialGradient(Gradient {
-            start,
-            end,
-            opacity,
-            colors: vec![],
-            offsets: vec![],
-            width,
-        })
-    }
-
-    pub fn new_image_fill(id: Uuid, opacity: u8, (width, height): (i32, i32)) -> Self {
-        Self::Image(ImageFill {
-            id,
-            opacity,
-            height,
-            width,
-        })
-    }
-
     pub fn to_paint(&self, rect: &Rect, anti_alias: bool) -> skia::Paint {
         match self {
-            Self::Solid(color) => {
+            Self::Solid(SolidColor(color)) => {
                 let mut p = skia::Paint::default();
                 p.set_color(*color);
                 p.set_style(skia::PaintStyle::Fill);
@@ -170,8 +156,8 @@ impl Fill {
             }
             Self::LinearGradient(gradient) => {
                 let mut p = skia::Paint::default();
-                p.set_shader(gradient.to_linear_shader(&rect));
-                p.set_alpha((gradient.opacity * 255.) as u8);
+                p.set_shader(gradient.to_linear_shader(rect));
+                p.set_alpha(gradient.opacity);
                 p.set_style(skia::PaintStyle::Fill);
                 p.set_anti_alias(anti_alias);
                 p.set_blend_mode(skia::BlendMode::SrcOver);
@@ -179,8 +165,8 @@ impl Fill {
             }
             Self::RadialGradient(gradient) => {
                 let mut p = skia::Paint::default();
-                p.set_shader(gradient.to_radial_shader(&rect));
-                p.set_alpha((gradient.opacity * 255.) as u8);
+                p.set_shader(gradient.to_radial_shader(rect));
+                p.set_alpha(gradient.opacity);
                 p.set_style(skia::PaintStyle::Fill);
                 p.set_anti_alias(anti_alias);
                 p.set_blend_mode(skia::BlendMode::SrcOver);
@@ -195,5 +181,81 @@ impl Fill {
                 p
             }
         }
+    }
+}
+
+pub fn get_fill_shader(fill: &Fill, bounding_box: &Rect) -> Option<skia::Shader> {
+    match fill {
+        Fill::Solid(SolidColor(color)) => Some(skia::shaders::color(*color)),
+        Fill::LinearGradient(gradient) => gradient.to_linear_shader(bounding_box),
+        Fill::RadialGradient(gradient) => gradient.to_radial_shader(bounding_box),
+        Fill::Image(image_fill) => {
+            let mut image_shader = None;
+            let image = get_image(&image_fill.id);
+            if let Some(image) = image {
+                let sampling_options =
+                    skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
+
+                // FIXME no image ratio applied, centered to the current rect
+                let tile_modes = (skia::TileMode::Clamp, skia::TileMode::Clamp);
+                let image_width = image_fill.width as f32;
+                let image_height = image_fill.height as f32;
+                let scale_x = bounding_box.width() / image_width;
+                let scale_y = bounding_box.height() / image_height;
+                let scale = scale_x.max(scale_y);
+                let scaled_width = image_width * scale;
+                let scaled_height = image_height * scale;
+                let pos_x = bounding_box.left() - (scaled_width - bounding_box.width()) / 2.0;
+                let pos_y = bounding_box.top() - (scaled_height - bounding_box.height()) / 2.0;
+
+                let mut matrix = skia::Matrix::new_identity();
+                matrix.pre_translate((pos_x, pos_y));
+                matrix.pre_scale((scale, scale), None);
+
+                let opacity = image_fill.opacity();
+                let alpha_color = skia::Color4f::new(1.0, 1.0, 1.0, opacity as f32 / 255.0);
+                let alpha_shader = skia::shaders::color(alpha_color.to_color());
+
+                image_shader = image.to_shader(tile_modes, sampling_options, &matrix);
+                if let Some(shader) = image_shader {
+                    image_shader = Some(skia::shaders::blend(
+                        skia::Blender::mode(skia::BlendMode::DstIn),
+                        shader,
+                        alpha_shader,
+                    ));
+                }
+            }
+            image_shader
+        }
+    }
+}
+
+pub fn merge_fills(fills: &[Fill], bounding_box: Rect) -> skia::Paint {
+    let mut combined_shader: Option<skia::Shader> = None;
+    let mut fills_paint = skia::Paint::default();
+
+    for fill in fills {
+        let shader = get_fill_shader(fill, &bounding_box);
+
+        if let Some(shader) = shader {
+            combined_shader = match combined_shader {
+                Some(existing_shader) => Some(skia::shaders::blend(
+                    skia::Blender::mode(skia::BlendMode::DstOver),
+                    existing_shader,
+                    shader,
+                )),
+                None => Some(shader),
+            };
+        }
+    }
+
+    fills_paint.set_shader(combined_shader.clone());
+    fills_paint
+}
+
+pub fn set_paint_fill(paint: &mut Paint, fill: &Fill, bounding_box: &Rect) {
+    let shader = get_fill_shader(fill, bounding_box);
+    if let Some(shader) = shader {
+        paint.set_shader(shader);
     }
 }

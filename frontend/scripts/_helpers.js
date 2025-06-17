@@ -237,18 +237,29 @@ async function renderTemplate(path, context = {}, partials = {}) {
   return mustache.render(content, context, partials);
 }
 
-const extension = {
-  useNewRenderer: true,
+const markedOptions = {
   renderer: {
     link(token) {
-      const href = token.href;
-      const text = token.text;
-      return `<a href="${href}" target="_blank">${text}</a>`;
-    },
-  },
-};
+      if (token.href === "mailto") {
+        return `<a href="mailto:${token.text}">${token.text}</a>`;
+      } else {
+        let target = "_blank";
 
-marked.use(extension);
+        if (token.text.endsWith("|target:self")) {
+          const index = token.text.indexOf("|target:self");
+          token.text = token.text.substring(0, index);
+          target = "_self";
+        }
+
+        const href = token.href;
+        const text = token.text;
+        return `<a href="${href}" target="${target}">${text}</a>`;
+      }
+    }
+  }
+}
+
+marked.use(markedOptions);
 
 async function readTranslations() {
   const langs = [
@@ -263,6 +274,7 @@ async function readTranslations() {
     "fa",
     "fr",
     "he",
+    "sr",
     "nb_NO",
     "pl",
     "pt_BR",
@@ -572,4 +584,17 @@ export async function copyAssets() {
 
   const end = process.hrtime(start);
   log.info("done: copy assets", `(${ppt(end)})`);
+}
+
+export async function copyWasmPlayground() {
+  const start = process.hrtime();
+  log.info("init: copy wasm playground");
+
+  await syncDirs(
+    "resources/wasm-playground/",
+    "resources/public/wasm-playground/",
+  );
+
+  const end = process.hrtime(start);
+  log.info("done: copy wasm playground", `(${ppt(end)})`);
 }

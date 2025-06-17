@@ -9,7 +9,6 @@
   (:require
    [app.common.schema :as sm]
    [app.main.data.modal :as modal]
-   [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
@@ -34,7 +33,6 @@
                (map #(hash-map :label (:name %) :value (str (:id %)))))
               members)
 
-        on-cancel   #(st/emit! (modal/hide))
         on-accept
         (fn [_]
           (let [member-id (get-in @form [:clean-data :member-id])]
@@ -45,7 +43,7 @@
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} (tr "modals.leave-and-reassign.title")]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click on-cancel} i/close]]
+                 :on-click modal/hide!} i/close]]
 
       [:div {:class (stl/css :modal-content)}
        [:p {:class (stl/css :modal-msg)}
@@ -64,7 +62,7 @@
         [:input {:class (stl/css :cancel-button)
                  :type "button"
                  :value (tr "labels.cancel")
-                 :on-click on-cancel}]
+                 :on-click modal/hide!}]
 
         [:input.accept-button
          {:type "button"

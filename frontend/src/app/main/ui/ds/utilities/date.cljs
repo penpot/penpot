@@ -28,8 +28,7 @@
    [:typography {:optional true} :string]])
 
 (mf/defc date*
-  {::mf/props :obj
-   ::mf/schema schema:date}
+  {::mf/schema schema:date}
   [{:keys [class date selected typography] :rest props}]
   (let [class (d/append-class class (stl/css-case :date true :is-selected selected))
         date (cond-> date (not (dt/datetime? date)) dt/datetime)

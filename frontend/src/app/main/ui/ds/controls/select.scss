@@ -11,6 +11,7 @@
 .select-wrapper {
   --select-icon-fg-color: var(--color-foreground-secondary);
   --select-fg-color: var(--color-foreground-primary);
+  --select-fg-color-dimmed: var(--color-foreground-secondary);
   --select-bg-color: var(--color-background-tertiary);
   --select-outline-color: none;
   --select-border-color: none;
@@ -78,6 +79,10 @@
   padding-inline-start: var(--sp-xxs);
   text-align: left;
   color: var(--select-fg-color);
+}
+
+.header-label-dimmed {
+  color: var(--select-fg-color-dimmed);
 }
 
 .header-icon {

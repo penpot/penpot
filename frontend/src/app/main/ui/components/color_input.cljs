@@ -33,6 +33,7 @@
         on-focus         (obj/get props "onFocus")
         select-on-focus? (d/nilv (unchecked-get props "selectOnFocus") true)
         class            (d/nilv (unchecked-get props "className") "color-input")
+        aria-label       (d/nilv (unchecked-get props "aria-label") (tr "inspect.attributes.color"))
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
@@ -136,6 +137,7 @@
                   (obj/set! "className" class)
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
+                  (obj/set! "aria-label" aria-label)
                   ;; (obj/set! "list" list-id)
                   (obj/set! "defaultValue" value)
                   (obj/set! "onKeyDown" handle-key-down)

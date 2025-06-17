@@ -1,11 +1,25 @@
 use crate::utils::uuid_from_u32_quartet;
-use uuid::Uuid;
+use crate::uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
 #[allow(dead_code)]
 pub enum Layout {
     FlexLayout(LayoutData, FlexData),
     GridLayout(LayoutData, GridData),
+}
+
+impl Layout {
+    pub fn scale_content(&mut self, value: f32) {
+        match self {
+            Layout::FlexLayout(layout_data, _) => {
+                layout_data.scale_content(value);
+            }
+            Layout::GridLayout(layout_data, grid_data) => {
+                layout_data.scale_content(value);
+                grid_data.scale_content(value);
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -44,7 +58,7 @@ impl GridDirection {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum AlignItems {
     Start,
     End,
@@ -64,7 +78,7 @@ impl AlignItems {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum AlignContent {
     Start,
     End,
@@ -90,7 +104,7 @@ impl AlignContent {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum JustifyItems {
     Start,
     End,
@@ -110,7 +124,7 @@ impl JustifyItems {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum JustifyContent {
     Start,
     End,
@@ -151,7 +165,7 @@ impl WrapType {
         }
     }
 }
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum GridTrackType {
     Percent,
     Flex,
@@ -173,8 +187,8 @@ impl GridTrackType {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GridTrack {
-    track_type: GridTrackType,
-    value: f32,
+    pub track_type: GridTrackType,
+    pub value: f32,
 }
 
 impl GridTrack {
@@ -184,17 +198,23 @@ impl GridTrack {
             value: f32::from_le_bytes(raw.value),
         }
     }
+
+    pub fn scale_content(&mut self, value: f32) {
+        if self.track_type == GridTrackType::Fixed {
+            self.value *= value;
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GridCell {
-    row: i32,
-    row_span: i32,
-    column: i32,
-    column_span: i32,
-    align_self: Option<AlignSelf>,
-    justify_self: Option<JustifySelf>,
-    shape: Option<Uuid>,
+    pub row: i32,
+    pub row_span: i32,
+    pub column: i32,
+    pub column_span: i32,
+    pub align_self: Option<AlignSelf>,
+    pub justify_self: Option<JustifySelf>,
+    pub shape: Option<Uuid>,
 }
 
 impl GridCell {
@@ -260,6 +280,17 @@ pub struct LayoutData {
     pub column_gap: f32,
 }
 
+impl LayoutData {
+    pub fn scale_content(&mut self, value: f32) {
+        self.padding_top *= value;
+        self.padding_right *= value;
+        self.padding_bottom *= value;
+        self.padding_left *= value;
+        self.row_gap *= value;
+        self.column_gap *= value;
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum AlignSelf {
     Auto,
@@ -312,26 +343,21 @@ pub struct FlexData {
 
 impl FlexData {
     pub fn is_reverse(&self) -> bool {
-        match &self.direction {
-            FlexDirection::RowReverse | FlexDirection::ColumnReverse => true,
-            _ => false,
-        }
+        matches!(
+            &self.direction,
+            FlexDirection::RowReverse | FlexDirection::ColumnReverse
+        )
     }
 
     pub fn is_row(&self) -> bool {
-        match &self.direction {
-            FlexDirection::RowReverse | FlexDirection::Row => true,
-            _ => false,
-        }
+        matches!(
+            &self.direction,
+            FlexDirection::RowReverse | FlexDirection::Row
+        )
     }
-}
 
-impl FlexData {
     pub fn is_wrap(&self) -> bool {
-        match self.wrap_type {
-            WrapType::Wrap => true,
-            _ => false,
-        }
+        matches!(self.wrap_type, WrapType::Wrap)
     }
 }
 
@@ -351,6 +377,11 @@ impl GridData {
             columns: vec![],
             cells: vec![],
         }
+    }
+
+    pub fn scale_content(&mut self, value: f32) {
+        self.rows.iter_mut().for_each(|t| t.scale_content(value));
+        self.columns.iter_mut().for_each(|t| t.scale_content(value));
     }
 }
 
@@ -426,4 +457,17 @@ pub struct LayoutItem {
     pub is_absolute: bool,
     pub z_index: i32,
     pub align_self: Option<AlignSelf>,
+}
+
+impl LayoutItem {
+    pub fn scale_content(&mut self, value: f32) {
+        self.margin_top *= value;
+        self.margin_right *= value;
+        self.margin_bottom *= value;
+        self.margin_left *= value;
+        self.max_h = self.max_h.map(|max_h| max_h * value);
+        self.min_h = self.max_h.map(|max_h| max_h * value);
+        self.max_w = self.max_h.map(|max_h| max_h * value);
+        self.min_w = self.max_h.map(|max_h| max_h * value);
+    }
 }

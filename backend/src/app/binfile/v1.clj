@@ -551,8 +551,8 @@
                      (cond-> (and (= idx 0) (some? name))
                        (assoc :name name))
                      (assoc :project-id project-id)
-                     (dissoc :thumbnails)
-                     (bfc/process-file))]
+                     (dissoc :thumbnails))
+            file  (bfc/process-file system file)]
 
         ;; All features that are enabled and requires explicit migration are
         ;; added to the state for a posterior migration step.

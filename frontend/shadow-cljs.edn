@@ -122,7 +122,11 @@
   :storybook
   {:target :esm
    :output-dir "target/storybook/"
-   :js-options {:js-provider :import}
+   :devtools {:enabled false}
+   :js-options
+   {:js-provider :import
+    :entry-keys ["module" "browser" "main"]
+    :export-conditions ["module" "import", "browser" "require" "default"]}
 
    :modules
    {:base
@@ -131,6 +135,7 @@
     :components
     {:exports {default app.main.ui.ds/default
                helpers app.main.ui.ds.helpers/default}
+     :prepend-js ";(globalThis.goog.provide = globalThis.goog.constructNamespace_);(globalThis.goog.require = globalThis.goog.module.get);"
      :depends-on #{:base}}}
 
    :compiler-options
@@ -148,27 +153,6 @@
    :modules
    {:test {:init-fn frontend-tests.runner/init
            :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}}
-
-  :lib-penpot
-  {:target :esm
-   :output-dir "resources/public/libs"
-
-   :modules
-   {:penpot {:exports {:renderPage app.libs.render/render-page-export
-                       :createFile app.libs.file-builder/create-file-export}}}
-
-   :compiler-options
-   {:output-feature-set :es2020
-    :output-wrapper false
-    :warnings {:fn-deprecated false}}
-
-   :release
-   {:compiler-options
-    {:fn-invoke-direct true
-     :source-map true
-     :elide-asserts true
-     :anon-fn-naming-policy :off
-     :source-map-detail-level :all}}}
 
   :bench
   {:target :node-script

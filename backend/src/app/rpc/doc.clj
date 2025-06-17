@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.json :as json]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as smdj]
@@ -19,7 +20,6 @@
    [app.http.sse :as-alias sse]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
-   [app.util.json :as json]
    [app.util.services :as sv]
    [app.util.template :as tmpl]
    [clojure.java.io :as io]
@@ -86,7 +86,7 @@
     (fn [request]
       (let [params  (:query-params request)
             pstyle  (:type params "js")
-            context (assoc context :param-style pstyle)]
+            context (assoc @context :param-style pstyle)]
 
         {::yres/status 200
          ::yres/body (-> (io/resource "app/templates/api-doc.tmpl")
@@ -178,8 +178,7 @@
     (fn [_]
       {::yres/status 200
        ::yres/headers {"content-type" "application/json; charset=utf-8"}
-       ::yres/body (json/encode context)})
-
+       ::yres/body (json/encode @context)})
     (fn [_]
       {::yres/status 404})))
 
@@ -209,7 +208,7 @@
 
 (defmethod ig/init-key ::routes
   [_ {:keys [::rpc/methods] :as cfg}]
-  [(let [context (prepare-doc-context methods)]
+  [(let [context (delay (prepare-doc-context methods))]
      [["/_doc"
        {:handler (doc-handler context)
         :allowed-methods #{:get}}]
@@ -217,7 +216,7 @@
        {:handler (doc-handler context)
         :allowed-methods #{:get}}]])
 
-   (let [context (prepare-openapi-context methods)]
+   (let [context (delay (prepare-openapi-context methods))]
      [["/openapi"
        {:handler (openapi-handler)
         :allowed-methods #{:get}}]

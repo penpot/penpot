@@ -13,7 +13,7 @@ This will automatically include {{requested-by|abbreviate:25}} in the team, so t
 
 Click the link below to provide team access:
 
-{{ public-uri }}/#/dashboard/members?team-id{{team-id}}&invite-email={{requested-by-email|urlescape}}
+{{ public-uri }}/#/dashboard/members?team-id={{team-id}}&invite-email={{requested-by-email|urlescape}}
 
 
 

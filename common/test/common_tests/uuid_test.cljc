@@ -18,6 +18,7 @@
   (let [uuid           (uuid/uuid "0227df82-63d7-8016-8005-48d9c0f33011")
         result-bytes   (uuid/get-bytes uuid)
         expected-bytes [2 39 -33 -126 99 -41 -128 22 -128 5 72 -39 -64 -13 48 17]]
+
     (t/testing "get-bytes"
       (let [data (uuid/get-bytes uuid)]
         (t/is (= (nth expected-bytes 0)  (aget data 0)))

@@ -22,8 +22,7 @@
     [:maybe [:enum "primary" "secondary" "ghost" "destructive"]]]])
 
 (mf/defc button*
-  {::mf/props :obj
-   ::mf/schema schema:button}
+  {::mf/schema schema:button}
   [{:keys [variant icon children class on-ref] :rest props}]
   (let [variant (or variant "primary")
         class (dm/str class " " (stl/css-case :button true

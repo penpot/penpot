@@ -107,8 +107,6 @@
 
         create?  (empty? path)
 
-        on-close (mf/use-fn #(modal/hide!))
-
         on-accept
         (mf/use-fn
          (mf/deps form)
@@ -127,7 +125,7 @@
           (tr "workspace.assets.create-group")
           (tr "workspace.assets.rename-group"))]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click on-close} i/close]]
+                 :on-click modal/hide!} i/close]]
 
       [:div {:class (stl/css :modal-content)}
        [:& fm/form {:form form :on-submit on-accept}
@@ -143,7 +141,7 @@
          {:class (stl/css :cancel-button)
           :type "button"
           :value (tr "labels.cancel")
-          :on-click on-close}]
+          :on-click modal/hide!}]
 
         [:input
          {:type "button"

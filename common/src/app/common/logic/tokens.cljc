@@ -20,15 +20,15 @@
   (let [prev-active-token-themes (ctob/get-active-theme-paths tokens-lib)
         active-token-set-names   (ctob/get-active-themes-set-names tokens-lib)
 
-        prev-hidden-token-theme  (ctob/get-hidden-theme tokens-lib)
+        prev-hidden-theme  (ctob/get-hidden-theme tokens-lib)
 
-        hidden-token-theme       (-> (some-> prev-hidden-token-theme (ctob/set-sets active-token-set-names))
-                                     (update-theme-fn))]
+        hidden-theme       (-> (some-> prev-hidden-theme (ctob/set-sets active-token-set-names))
+                               (update-theme-fn))]
     (-> changes
-        (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} prev-active-token-themes)
-        (pcb/set-token-theme (:group prev-hidden-token-theme)
-                             (:name prev-hidden-token-theme)
-                             hidden-token-theme))))
+        (pcb/update-active-token-themes #{(ctob/theme-path hidden-theme)} prev-active-token-themes)
+        (pcb/set-token-theme (:group prev-hidden-theme)
+                             (:name prev-hidden-theme)
+                             hidden-theme))))
 
 (defn generate-toggle-token-set
   "Toggle a token set at `set-name` in `tokens-lib` without modifying a

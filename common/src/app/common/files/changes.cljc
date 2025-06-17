@@ -16,7 +16,6 @@
    [app.common.schema.desc-native :as smd]
    [app.common.schema.generators :as sg]
    [app.common.types.color :as ctc]
-   [app.common.types.colors-list :as ctcl]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
@@ -24,10 +23,9 @@
    [app.common.types.grid :as ctg]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
-   [app.common.types.token :as cto]
-   [app.common.types.token-theme :as ctot]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as ctt]
@@ -49,14 +47,14 @@
      [:type [:= :assign]]
      ;; NOTE: the full decoding is happening on the handler because it
      ;; needs a proper context of the current shape and its type
-     [:value [:map-of :keyword :any]]
+     [:value [:map-of :keyword ::sm/any]]
      [:ignore-touched {:optional true} :boolean]
      [:ignore-geometry {:optional true} :boolean]]]
    [:set
     [:map {:title "SetOperation"}
      [:type [:= :set]]
      [:attr :keyword]
-     [:val :any]
+     [:val ::sm/any]
      [:ignore-touched {:optional true} :boolean]
      [:ignore-geometry {:optional true} :boolean]]]
    [:set-touched
@@ -240,9 +238,9 @@
       [:component-id {:optional true} ::sm/uuid]
       [:ignore-touched {:optional true} :boolean]
       [:parent-id ::sm/uuid]
-      [:shapes :any]
+      [:shapes ::sm/any]
       [:index {:optional true} [:maybe :int]]
-      [:after-shape {:optional true} :any]
+      [:after-shape {:optional true} ::sm/any]
       [:component-swap {:optional true} :boolean]]]
 
     [:reorder-children
@@ -252,14 +250,14 @@
       [:component-id {:optional true} ::sm/uuid]
       [:ignore-touched {:optional true} :boolean]
       [:parent-id ::sm/uuid]
-      [:shapes :any]]]
+      [:shapes ::sm/any]]]
 
     [:add-page
      [:map {:title "AddPageChange"}
       [:type [:= :add-page]]
       [:id {:optional true} ::sm/uuid]
       [:name {:optional true} :string]
-      [:page {:optional true} :any]]]
+      [:page {:optional true} ::sm/any]]]
 
     [:mod-page
      [:map {:title "ModPageChange"}
@@ -267,7 +265,7 @@
       [:id ::sm/uuid]
       ;; All props are optional, background can be nil because is the
       ;; way to remove already set background
-      [:background {:optional true} [:maybe ::ctc/rgb-color]]
+      [:background {:optional true} [:maybe ctc/schema:hex-color]]
       [:name {:optional true} :string]]]
 
     [:set-plugin-data schema:set-plugin-data-change]
@@ -293,12 +291,12 @@
     [:add-color
      [:map {:title "AddColorChange"}
       [:type [:= :add-color]]
-      [:color ::ctc/color]]]
+      [:color ctc/schema:library-color]]]
 
     [:mod-color
      [:map {:title "ModColorChange"}
       [:type [:= :mod-color]]
-      [:color ::ctc/color]]]
+      [:color ctc/schema:library-color]]]
 
     [:del-color
      [:map {:title "DelColorChange"}
@@ -312,12 +310,12 @@
     [:add-media
      [:map {:title "AddMediaChange"}
       [:type [:= :add-media]]
-      [:object ::ctf/media-object]]]
+      [:object ctf/schema:media]]]
 
     [:mod-media
      [:map {:title "ModMediaChange"}
       [:type [:= :mod-media]]
-      [:object ::ctf/media-object]]]
+      [:object ctf/schema:media]]]
 
     [:del-media
      [:map {:title "DelMediaChange"}
@@ -329,14 +327,14 @@
       [:type [:= :add-component]]
       [:id ::sm/uuid]
       [:name :string]
-      [:shapes {:optional true} [:vector {:gen/max 3} :any]]
+      [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
       [:path {:optional true} :string]]]
 
     [:mod-component
      [:map {:title "ModCompoenentChange"}
       [:type [:= :mod-component]]
       [:id ::sm/uuid]
-      [:shapes {:optional true} [:vector {:gen/max 3} :any]]
+      [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
       [:name {:optional true} :string]
       [:variant-id {:optional true} ::sm/uuid]
       [:variant-properties {:optional true} [:vector ::ctv/variant-property]]]]
@@ -345,7 +343,9 @@
      [:map {:title "DelComponentChange"}
       [:type [:= :del-component]]
       [:id ::sm/uuid]
-      [:main-instance {:optional true} :any]
+      ;; when it is an undo of a cut-paste, we need to undo the movement
+      ;; of the shapes so we need to move them delta
+      [:delta {:optional true} ::gpt/point]
       [:skip-undelete? {:optional true} :boolean]]]
 
     [:restore-component
@@ -377,7 +377,7 @@
     [:update-active-token-themes
      [:map {:title "UpdateActiveTokenThemes"}
       [:type [:= :update-active-token-themes]]
-      [:theme-ids [:set :string]]]]
+      [:theme-paths [:set :string]]]]
 
     [:rename-token-set-group
      [:map {:title "RenameTokenSetGroup"}
@@ -406,26 +406,31 @@
       [:type [:= :set-token-theme]]
       [:theme-name :string]
       [:group :string]
-      [:theme [:maybe ::ctot/token-theme]]]]
+      [:theme [:maybe ctob/schema:token-theme-attrs]]]]
 
     [:set-tokens-lib
      [:map {:title "SetTokensLib"}
       [:type [:= :set-tokens-lib]]
-      [:tokens-lib :any]]]
+      [:tokens-lib ::sm/any]]]
 
     [:set-token-set
      [:map {:title "SetTokenSetChange"}
       [:type [:= :set-token-set]]
       [:set-name :string]
       [:group? :boolean]
-      [:token-set [:maybe ::ctot/token-set]]]]
+      [:token-set [:maybe ctob/schema:token-set-attrs]]]]
 
     [:set-token
      [:map {:title "SetTokenChange"}
       [:type [:= :set-token]]
       [:set-name :string]
       [:token-name :string]
-      [:token [:maybe ::cto/token]]]]]])
+      [:token [:maybe ctob/schema:token-attrs]]]]
+
+    [:set-base-font-size
+     [:map {:title "ModBaseFontSize"}
+      [:type [:= :set-base-font-size]]
+      [:base-font-size :string]]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
@@ -732,20 +737,22 @@
 
           (update-group [group objects]
             (let [lookup   (d/getf objects)
-                  children (->> group :shapes (map lookup))]
+                  children (get group :shapes)]
               (cond
                 ;; If the group is empty we don't make any changes. Will be removed by a later process
                 (empty? children)
                 group
 
                 (= :bool (:type group))
-                (gsh/update-bool-selrect group children objects)
+                (path/update-bool-shape group objects)
 
                 (:masked-group group)
-                (set-mask-selrect group children)
+                (->> (map lookup children)
+                     (set-mask-selrect group))
 
                 :else
-                (gsh/update-group-selrect group children))))]
+                (->> (map lookup children)
+                     (gsh/update-group-selrect group)))))]
 
     (if page-id
       (d/update-in-when data [:pages-index page-id :objects] reg-objects)
@@ -918,15 +925,15 @@
 
 (defmethod process-change :add-color
   [data {:keys [color]}]
-  (ctcl/add-color data color))
+  (ctc/add-color data color))
 
 (defmethod process-change :mod-color
   [data {:keys [color]}]
-  (ctcl/set-color data color))
+  (ctc/set-color data color))
 
 (defmethod process-change :del-color
   [data {:keys [id]}]
-  (ctcl/delete-color data id))
+  (ctc/delete-color data id))
 
 ;; DEPRECATED: remove before 2.3
 (defmethod process-change :add-recent-color
@@ -959,8 +966,8 @@
   (ctkl/mod-component data params))
 
 (defmethod process-change :del-component
-  [data {:keys [id skip-undelete? main-instance]}]
-  (ctf/delete-component data id skip-undelete? main-instance))
+  [data {:keys [id skip-undelete? delta]}]
+  (ctf/delete-component data id skip-undelete? delta))
 
 (defmethod process-change :restore-component
   [data {:keys [id page-id]}]
@@ -1043,9 +1050,9 @@
                                      (ctob/make-token-theme (merge prev-token-theme theme)))))))))
 
 (defmethod process-change :update-active-token-themes
-  [data {:keys [theme-ids]}]
+  [data {:keys [theme-paths]}]
   (update data :tokens-lib #(-> % (ctob/ensure-tokens-lib)
-                                (ctob/set-active-themes theme-ids))))
+                                (ctob/set-active-themes theme-paths))))
 
 (defmethod process-change :rename-token-set-group
   [data {:keys [set-group-path set-group-fname]}]
@@ -1065,6 +1072,13 @@
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
                                 (ctob/move-set-group from-path to-path before-path before-group))))
+
+;; === Base font size
+
+(defmethod process-change :set-base-font-size
+  [data {:keys [base-font-size]}]
+  (ctf/set-base-font-size data base-font-size))
+
 
 ;; === Operations
 

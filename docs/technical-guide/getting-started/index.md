@@ -1,5 +1,6 @@
 ---
 title: 1. Self-hosting Guide
+desc: Customize your Penpot instance today. Learn how to install with Elestio, Docker, or Kubernetes from the technical guide for self-hosting options.
 ---
 
 # Self-hosting Guide

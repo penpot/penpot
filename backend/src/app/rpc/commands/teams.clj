@@ -17,6 +17,7 @@
    [app.db :as db]
    [app.db.sql :as sql]
    [app.email :as eml]
+   [app.features.logical-deletion :as ldel]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media :as media]
@@ -76,9 +77,10 @@
   (perms/make-check-fn has-read-permissions?))
 
 (defn decode-row
-  [{:keys [features] :as row}]
+  [{:keys [features subscription] :as row}]
   (cond-> row
-    (some? features) (assoc :features (db/decode-pgarray features #{}))))
+    (some? features) (assoc :features (db/decode-pgarray features #{}))
+    (some? subscription) (assoc :subscription (db/decode-transit-pgobject subscription))))
 
 ;; FIXME: move
 
@@ -113,29 +115,41 @@
 
 ;; --- Query: Teams
 
-(declare get-teams)
-
-(def ^:private schema:get-teams
-  [:map {:title "get-teams"}])
-
-(sv/defmethod ::get-teams
-  {::doc/added "1.17"
-   ::sm/params schema:get-teams}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (dm/with-open [conn (db/open pool)]
-    (get-teams conn profile-id)))
-
 (def sql:get-teams-with-permissions
-  "select t.*,
+  "SELECT t.*,
           tp.is_owner,
           tp.is_admin,
           tp.can_edit,
-          (t.id = ?) as is_default
-     from team_profile_rel as tp
-     join team as t on (t.id = tp.team_id)
-    where t.deleted_at is null
-      and tp.profile_id = ?
-    order by tp.created_at asc")
+          (t.id = ?) AS is_default
+     FROM team_profile_rel AS tp
+     JOIN team AS t ON (t.id = tp.team_id)
+    WHERE t.deleted_at IS null
+      AND tp.profile_id = ?
+    ORDER BY tp.created_at ASC")
+
+(def sql:get-teams-with-permissions-and-subscription
+  "SELECT t.*,
+          tp.is_owner,
+          tp.is_admin,
+          tp.can_edit,
+          (t.id = ?) AS is_default,
+
+          jsonb_build_object(
+            '~:type', COALESCE(p.props->'~:subscription'->>'~:type', 'professional'),
+            '~:status', CASE COALESCE(p.props->'~:subscription'->>'~:type', 'professional')
+                          WHEN 'professional' THEN 'active'
+                          ELSE COALESCE(p.props->'~:subscription'->>'~:status', 'incomplete')
+                       END
+          ) AS subscription
+     FROM team_profile_rel AS tp
+     JOIN team AS t ON (t.id = tp.team_id)
+     JOIN team_profile_rel AS tpr
+       ON (tpr.team_id = t.id AND tpr.is_owner IS true)
+     JOIN profile AS p
+       ON (tpr.profile_id = p.id)
+    WHERE t.deleted_at IS null
+      AND tp.profile_id = ?
+    ORDER BY tp.created_at ASC")
 
 (defn process-permissions
   [team]
@@ -150,13 +164,52 @@
         (dissoc :is-owner :is-admin :can-edit)
         (assoc :permissions permissions))))
 
+(def ^:private
+  xform:process-teams
+  (comp
+   (map decode-row)
+   (map process-permissions)))
+
 (defn get-teams
   [conn profile-id]
-  (let [profile (profile/get-profile conn profile-id)]
-    (->> (db/exec! conn [sql:get-teams-with-permissions (:default-team-id profile) profile-id])
-         (map decode-row)
-         (map process-permissions)
-         (vec))))
+  (let [profile (profile/get-profile conn profile-id)
+        sql     (if (contains? cf/flags :subscriptions)
+                  sql:get-teams-with-permissions-and-subscription
+                  sql:get-teams-with-permissions)]
+
+    (->> (db/exec! conn [sql (:default-team-id profile) profile-id])
+         (into [] xform:process-teams))))
+
+(def ^:private schema:get-teams
+  [:map {:title "get-teams"}])
+
+(sv/defmethod ::get-teams
+  {::doc/added "1.17"
+   ::sm/params schema:get-teams}
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  (dm/with-open [conn (db/open pool)]
+    (get-teams conn profile-id)))
+
+(def ^:private sql:get-owned-teams
+  "SELECT t.id, t.name,
+          (SELECT count(*) FROM team_profile_rel WHERE team_id=t.id) AS total_members
+     FROM team AS t
+     JOIN team_profile_rel AS tpr ON (tpr.team_id = t.id)
+    WHERE t.is_default IS false
+      AND tpr.is_owner IS true
+      AND tpr.profile_id = ?
+      AND t.deleted_at IS NULL")
+
+(defn- get-owned-teams
+  [cfg profile-id]
+  (->> (db/exec! cfg [sql:get-owned-teams profile-id])
+       (into [] (map decode-row))))
+
+(sv/defmethod ::get-owned-teams
+  {::doc/added "2.8.0"
+   ::sm/params schema:get-teams}
+  [cfg {:keys [::rpc/profile-id]}]
+  (get-owned-teams cfg profile-id))
 
 ;; --- Query: Team (by ID)
 
@@ -181,39 +234,43 @@
 (defn get-team
   [conn & {:keys [profile-id team-id project-id file-id] :as params}]
 
-  (dm/assert!
-   "connection or pool is mandatory"
-   (or (db/connection? conn)
-       (db/pool? conn)))
+  (assert (uuid? profile-id) "profile-id is mandatory")
+  (assert (or (db/connection? conn)
+              (db/pool? conn))
+          "connection or pool is mandatory")
 
-  (dm/assert!
-   "profile-id is mandatory"
-   (uuid? profile-id))
+  (let [{:keys [default-team-id] :as profile}
+        (profile/get-profile conn profile-id)
 
-  (let [{:keys [default-team-id] :as profile} (profile/get-profile conn profile-id)
-        result (cond
-                 (some? team-id)
-                 (let [sql (str "WITH teams AS (" sql:get-teams-with-permissions
-                                ") SELECT * FROM teams WHERE id=?")]
-                   (db/exec-one! conn [sql default-team-id profile-id team-id]))
+        sql
+        (if (contains? cf/flags :subscriptions)
+          sql:get-teams-with-permissions-and-subscription
+          sql:get-teams-with-permissions)
 
-                 (some? project-id)
-                 (let [sql (str "WITH teams AS (" sql:get-teams-with-permissions ") "
-                                "SELECT t.* FROM teams AS t "
-                                "  JOIN project AS p ON (p.team_id = t.id) "
-                                " WHERE p.id=?")]
-                   (db/exec-one! conn [sql default-team-id profile-id project-id]))
+        result
+        (cond
+          (some? team-id)
+          (let [sql (str "WITH teams AS (" sql ") "
+                         "SELECT * FROM teams WHERE id=?")]
+            (db/exec-one! conn [sql default-team-id profile-id team-id]))
 
-                 (some? file-id)
-                 (let [sql (str "WITH teams AS (" sql:get-teams-with-permissions ") "
-                                "SELECT t.* FROM teams AS t "
-                                "  JOIN project AS p ON (p.team_id = t.id) "
-                                "  JOIN file AS f ON (f.project_id = p.id) "
-                                " WHERE f.id=?")]
-                   (db/exec-one! conn [sql default-team-id profile-id file-id]))
+          (some? project-id)
+          (let [sql (str "WITH teams AS (" sql ") "
+                         "SELECT t.* FROM teams AS t "
+                         "  JOIN project AS p ON (p.team_id = t.id) "
+                         " WHERE p.id=?")]
+            (db/exec-one! conn [sql default-team-id profile-id project-id]))
 
-                 :else
-                 (throw (IllegalArgumentException. "invalid arguments")))]
+          (some? file-id)
+          (let [sql (str "WITH teams AS (" sql ") "
+                         "SELECT t.* FROM teams AS t "
+                         "  JOIN project AS p ON (p.team_id = t.id) "
+                         "  JOIN file AS f ON (f.project_id = p.id) "
+                         " WHERE f.id=?")]
+            (db/exec-one! conn [sql default-team-id profile-id file-id]))
+
+          :else
+          (throw (IllegalArgumentException. "invalid arguments")))]
 
     (when-not result
       (ex/raise :type :not-found
@@ -601,13 +658,13 @@
 
 (defn- delete-team
   "Mark a team for deletion"
-  [conn team-id]
+  [conn {:keys [id] :as team}]
 
-  (let [deleted-at (dt/now)
-        team       (db/update! conn :team
-                               {:deleted-at deleted-at}
-                               {:id team-id}
-                               {::db/return-keys true})]
+  (let [delay (ldel/get-deletion-delay team)
+        team  (db/update! conn :team
+                          {:deleted-at (dt/in-future delay)}
+                          {:id id}
+                          {::db/return-keys true})]
 
     (when (:is-default team)
       (ex/raise :type :validation
@@ -617,8 +674,8 @@
     (wrk/submit! {::db/conn conn
                   ::wrk/task :delete-object
                   ::wrk/params {:object :team
-                                :deleted-at deleted-at
-                                :id team-id}})
+                                :deleted-at (:deleted-at team)
+                                :id id}})
     team))
 
 (def ^:private schema:delete-team
@@ -630,12 +687,14 @@
    ::sm/params schema:delete-team
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id] :as params}]
-  (let [perms (get-permissions conn profile-id id)]
+  (let [team  (get-team conn :profile-id profile-id :team-id id)
+        perms (get team :permissions)]
+
     (when-not (:is-owner perms)
       (ex/raise :type :validation
                 :code :only-owner-can-delete-team))
 
-    (delete-team conn id)
+    (delete-team conn team)
     nil))
 
 ;; --- Mutation: Team Update Role

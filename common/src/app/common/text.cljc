@@ -121,30 +121,6 @@
    {:name "Source Sans Pro Regular"}
    (select-keys default-text-attrs typography-fields)))
 
-(defn transform-nodes
-  ([transform root]
-   (transform-nodes identity transform root))
-  ([pred transform root]
-   (walk/postwalk
-    (fn [item]
-      (if (and (map? item) (pred item))
-        (transform item)
-        item))
-    root)))
-
-(defn xform-nodes
-  "The same as transform but instead of receiving a funcion, receives
-  a transducer."
-  [xf root]
-  (let [rf (fn [_ v] v)]
-    (walk/postwalk
-     (fn [item]
-       (let [rf (xf rf)]
-         (if (map? item)
-           (d/nilv (rf nil item) item)
-           item)))
-     root)))
-
 (defn node-seq
   ([root] (node-seq identity root))
   ([match? root]
@@ -157,6 +133,10 @@
   (and (string? (:text node))
        (not= (:text node) "")))
 
+(defn is-paragraph-set-node?
+  [node]
+  (= "paragraph-set" (:type node)))
+
 (defn is-paragraph-node?
   [node]
   (= "paragraph" (:type node)))
@@ -164,6 +144,51 @@
 (defn is-root-node?
   [node]
   (= "root" (:type node)))
+
+(defn is-node?
+  [node]
+  (or ^boolean (is-text-node? node)
+      ^boolean (is-paragraph-node? node)
+      ^boolean (is-paragraph-set-node? node)
+      ^boolean (is-root-node? node)))
+
+(defn is-content-node?
+  "Only matches content nodes, ignoring the paragraph-set nodes."
+  [node]
+  (or ^boolean (is-text-node? node)
+      ^boolean (is-paragraph-node? node)
+      ^boolean (is-root-node? node)))
+
+(defn transform-nodes
+  ([transform root]
+   (transform-nodes identity transform root))
+  ([pred transform root]
+   (walk/postwalk
+    (fn [item]
+      (if (and (is-node? item) (pred item))
+        (transform item)
+        item))
+    root)))
+
+(defn xform-nodes
+  "The same as transform but instead of receiving a funcion, receives
+  a transducer."
+  [xf root]
+  (let [rf (fn [_ v] v)]
+    (walk/postwalk
+     (fn [item]
+       (let [rf (xf rf)]
+         (if (is-node? item)
+           (d/nilv (rf nil item) item)
+           item)))
+     root)))
+
+(defn update-text-content
+  [shape pred-fn update-fn attrs]
+  (let [update-attrs-fn #(update-fn % attrs)
+        transform   #(transform-nodes pred-fn update-attrs-fn %)]
+    (-> shape
+        (update :content transform))))
 
 (defn generate-shape-name
   [text]

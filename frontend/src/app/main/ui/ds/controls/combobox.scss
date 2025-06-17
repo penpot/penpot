@@ -8,7 +8,7 @@
 @use "../_sizes.scss" as *;
 @use "../typography.scss" as *;
 
-.combobox-wrapper {
+.wrapper {
   --combobox-icon-fg-color: var(--color-foreground-secondary);
   --combobox-fg-color: var(--color-foreground-primary);
   --combobox-bg-color: var(--color-background-tertiary);
@@ -25,6 +25,11 @@
 
   &:hover:not(.disabled) {
     --combobox-bg-color: var(--color-background-quaternary);
+  }
+
+  &:focus-within:not(.disabled) {
+    --combobox-outline-color: var(--color-accent-primary);
+    --combobox-bg-color: var(--color-background-primary);
   }
 }
 
@@ -44,20 +49,20 @@
   appearance: none;
 }
 
-.focused {
-  --combobox-outline-color: var(--color-accent-primary);
-  --combobox-bg-color: var(--color-background-primary);
-}
-
 .arrow {
   color: var(--combobox-icon-fg-color);
   transform: rotate(90deg);
 }
 
-.combobox-header {
+.header {
   display: grid;
   justify-items: start;
   gap: var(--sp-xs);
+}
+
+.header-icon {
+  grid-template-columns: auto 1fr;
+  color: var(--combobox-icon-fg-color);
 }
 
 .input {
@@ -75,11 +80,6 @@
     color: var(--input-placeholder-color);
     text-overflow: ellipsis;
   }
-}
-
-.header-icon {
-  grid-template-columns: auto 1fr;
-  color: var(--combobox-icon-fg-color);
 }
 
 .button-toggle-list {

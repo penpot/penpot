@@ -50,7 +50,8 @@
   [headers]
   (into {} (map vec) (seq (.entries ^js headers))))
 
-(def default-headers
+(defn default-headers
+  []
   {"x-frontend-version" (:full cfg/version)})
 
 (defn fetch
@@ -74,7 +75,7 @@
 
            headers       (cond-> headers
                            (not omit-default-headers)
-                           (d/merge default-headers))
+                           (merge (default-headers)))
 
            headers       (-update-headers body headers)
 

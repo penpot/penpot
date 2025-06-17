@@ -1,6 +1,7 @@
 ---
 layout: layouts/plugins.njk
 title: 3. Deployment
+desc: Deploy your free Penpot plugins! Learn about Netlify, Cloudflare, Surge & Penpot submission in this guide. Build and share your creations.
 ---
 
 # Deployment

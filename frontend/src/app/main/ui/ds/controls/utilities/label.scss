@@ -1,0 +1,33 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../typography.scss" as *;
+@use "../../colors.scss" as *;
+@use "../../spacing.scss" as *;
+
+.label {
+  --label-color: var(--color-foreground-primary);
+  --label-optional-color: var(--color-foreground-secondary);
+
+  @include use-typography("body-small");
+  color: var(--label-color);
+  display: flex;
+  gap: var(--sp-xs);
+  align-items: center;
+}
+
+.label-text,
+.label-optional {
+  line-height: inherit;
+}
+
+.label-text {
+  color: var(--label-color);
+}
+
+.label-optional {
+  color: var(--label-optional-color);
+}

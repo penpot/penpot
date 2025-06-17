@@ -8,15 +8,14 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.attrs :as attrs]
    [app.util.object :as obj]
-   [app.util.path.format :as upf]
    [clojure.set :as set]
    [rumext.v2 :as mf]))
 
@@ -32,7 +31,9 @@
 
         ;; NOTE: that we don't use mf/deref to avoid a repaint dependency here
         objects   (deref refs/workspace-page-objects)
-        color     (if (ctn/in-any-component? objects shape)
+        color     (if (or
+                       (ctn/in-any-component? objects shape)
+                       (ctk/is-variant-container? shape))
                     "var(--assets-component-hightlight)"
                     "var(--color-accent-tertiary)")
 
@@ -48,7 +49,7 @@
         path-data
         (mf/with-memo [path? content]
           (when (and ^boolean path? (some? content))
-            (d/nilv (ex/ignoring (upf/format-path content)) "")))
+            (.toString content)))
 
         border-attrs
         (attrs/get-border-props shape)

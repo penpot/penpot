@@ -63,14 +63,13 @@
   ;; when a user creates a new team just after signup.
   [props]
   (let [project-id (unchecked-get props "project-id")
-        close-fn   (mf/use-callback #(st/emit! (modal/hide)))
         profile    (mf/deref refs/profile)
         project-id (or project-id (:default-project-id profile))]
     [:div.modal-overlay
      [:div.modal-container.onboarding-templates
       [:div.modal-header
        [:div.modal-close-button
-        {:on-click close-fn
+        {:on-click modal/hide!
          :data-testid "close-templates-btn"} i/close]]
 
       [:div.modal-content

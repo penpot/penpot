@@ -24,6 +24,33 @@
 
 (set! *warn-on-reflection* true)
 
+(def schema:task
+  [:map {:title "Task"}
+   [:id ::sm/uuid]
+   [:queue :string]
+   [:name :string]
+   [:created-at ::sm/inst]
+   [:modified-at ::sm/inst]
+   [:scheduled-at {:optional true} ::sm/inst]
+   [:completed-at {:optional true} ::sm/inst]
+   [:error {:optional true} :string]
+   [:max-retries :int]
+   [:retry-num :int]
+   [:priority :int]
+   [:status [:enum "scheduled" "completed" "new" "retry" "failed"]]
+   [:label {:optional true} :string]
+   [:props :map]])
+
+(def schema:result
+  [:map {:title "TaskResult"}
+   [:status [:enum "retry" "failed" "completed"]]
+   [:error {:optional true} [:fn ex/exception?]]
+   [:inc-by {:optional true} :int]
+   [:delay {:optional true} :int]])
+
+(def valid-task-result?
+  (sm/validator schema:result))
+
 (defn- decode-task-row
   [{:keys [props] :as row}]
   (cond-> row
@@ -51,10 +78,11 @@
            :retry (:retry-num task))
     (let [tpoint  (dt/tpoint)
           task-fn (wrk/get-task registry (:name task))
-          result  (if task-fn
-                    (task-fn task)
-                    {:status :completed :task task})
-          elapsed (dt/format-duration (tpoint))]
+          result  (when task-fn (task-fn task))
+          elapsed (dt/format-duration (tpoint))
+          result  (if (valid-task-result? result)
+                    result
+                    {:status "completed"})]
 
       (when-not task-fn
         (l/wrn :hint "no task handler found" :name (:name task)))
@@ -76,7 +104,7 @@
         (if (and (< (:retry-num task)
                     (:max-retries task))
                  (= ::retry (:type edata)))
-          (cond-> {:status :retry :task task :error cause}
+          (cond-> {:status "retry" :error cause}
             (dt/duration? (:delay edata))
             (assoc :delay (:delay edata))
 
@@ -87,8 +115,8 @@
                    ::l/context (get-error-context cause task)
                    :cause cause)
             (if (>= (:retry-num task) (:max-retries task))
-              {:status :failed :task task :error cause}
-              {:status :retry :task task :error cause})))))))
+              {:status "failed" :error cause}
+              {:status "retry" :error cause})))))))
 
 (defn- run-task!
   [{:keys [::id ::timeout] :as cfg} task-id]
@@ -116,12 +144,17 @@
              :task-id task-id)
 
       :else
-      (run-task cfg task))))
+      (let [result (run-task cfg task)]
+        (with-meta result
+          {::task task})))))
 
 (defn- run-worker-loop!
   [{:keys [::db/pool ::rds/rconn ::timeout ::queue] :as cfg}]
-  (letfn [(handle-task-retry [{:keys [task error inc-by delay] :or {inc-by 1 delay 1000}}]
-            (let [explain (ex-message error)
+  (letfn [(handle-task-retry [{:keys [error inc-by delay] :or {inc-by 1 delay 1000} :as result}]
+            (let [explain (if (ex/exception? error)
+                            (ex-message error)
+                            (str error))
+                  task    (-> result meta ::task)
                   nretry  (+ (:retry-num task) inc-by)
                   now     (dt/now)
                   delay   (->> (iterate #(* % 2) delay) (take nretry) (last))]
@@ -134,8 +167,9 @@
                           {:id (:id task)})
               nil))
 
-          (handle-task-failure [{:keys [task error]}]
-            (let [explain (ex-message error)]
+          (handle-task-failure [{:keys [error] :as result}]
+            (let [task    (-> result meta ::task)
+                  explain (ex-message error)]
               (db/update! pool :task
                           {:error explain
                            :modified-at (dt/now)
@@ -143,8 +177,9 @@
                           {:id (:id task)})
               nil))
 
-          (handle-task-completion [{:keys [task]}]
-            (let [now (dt/now)]
+          (handle-task-completion [result]
+            (let [task (-> result meta ::task)
+                  now  (dt/now)]
               (db/update! pool :task
                           {:completed-at now
                            :modified-at now
@@ -168,10 +203,11 @@
           (process-result [{:keys [status] :as result}]
             (ex/try!
              (case status
-               :retry (handle-task-retry result)
-               :failed (handle-task-failure result)
-               :completed (handle-task-completion result)
-               nil)))
+               "retry"     (handle-task-retry result)
+               "failed"    (handle-task-failure result)
+               "completed" (handle-task-completion result)
+               (throw (IllegalArgumentException.
+                       (str "invalid status received: " status))))))
 
           (run-task-loop [task-id]
             (loop [result (run-task! cfg task-id)]

@@ -1,5 +1,6 @@
 ---
 title: Exporter app
+desc: Learn about self-hosting, configuration, architecture (backend, frontend), data model, and development environment. See Penpot's technical guide.
 ---
 
 # Exporter app

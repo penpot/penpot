@@ -1,5 +1,6 @@
 ---
-title: 3.1. Architecture
+title: 3.01. Architecture
+desc: Dive into architecture, backend, frontend, data models, and development environments. Contribute and self-host for free! See Penpot's technical guide.
 ---
 
 # Architecture

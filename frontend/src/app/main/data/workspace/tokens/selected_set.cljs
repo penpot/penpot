@@ -11,7 +11,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]))
 
-(defn get-selected-token-set-name [state]
+(defn- get-selected-token-set-name [state]
   (or (get-in state [:workspace-tokens :selected-token-set-name])
       (some-> (dsh/lookup-file-data state)
               (get :tokens-lib)
@@ -25,10 +25,10 @@
             (get :tokens-lib)
             (ctob/get-set set-name))))
 
-(defn get-selected-token-set-token [state token-name]
+(defn get-token-in-selected-set [state token-name]
   (some-> (get-selected-token-set state)
           (ctob/get-token token-name)))
 
-(defn get-selected-token-set-tokens [state]
+(defn get-all-tokens-in-selected-set [state]
   (some-> (get-selected-token-set state)
           :tokens))

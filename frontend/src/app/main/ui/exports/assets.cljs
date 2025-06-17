@@ -21,6 +21,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer  [tr c]]
    [app.util.strings :as ust]
+   [app.util.theme :as theme]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -208,8 +209,8 @@
   []
   (let [state             (mf/deref refs/export)
         profile           (mf/deref refs/profile)
-        theme             (or (:theme profile) "default")
-        is-default-theme? (= "default" theme)
+        theme             (or (:theme profile) theme/default)
+        is-default-theme? (= theme/default theme)
         error?            (:error state)
         healthy?          (:healthy? state)
         detail-visible?   (:detail-visible state)

@@ -5,10 +5,11 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.schema
-  (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean type])
+  (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean type keys])
   #?(:cljs (:require-macros [app.common.schema :refer [ignoring]]))
   (:require
    [app.common.data :as d]
+   [app.common.math :as mth]
    [app.common.pprint :as pp]
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
@@ -26,10 +27,6 @@
    [malli.registry :as mr]
    [malli.transform :as mt]
    [malli.util :as mu]))
-
-(defprotocol ILazySchema
-  (-validate [_ o])
-  (-explain [_ o]))
 
 (def default-options
   {:registry sr/default-registry})
@@ -49,10 +46,6 @@
 (defn type-properties
   [s]
   (m/type-properties s))
-
-(defn- lazy-schema?
-  [s]
-  (satisfies? ILazySchema s))
 
 (defn schema
   [s]
@@ -110,12 +103,35 @@
   (malli.error/error-value exp {:malli.error/mask-valid-values '...}))
 
 (defn optional-keys
-  [schema]
-  (mu/optional-keys schema default-options))
+  ([schema]
+   (mu/optional-keys schema nil default-options))
+  ([schema keys]
+   (mu/optional-keys schema keys default-options)))
+
+(defn required-keys
+  ([schema]
+   (mu/required-keys schema nil default-options))
+  ([schema keys]
+   (mu/required-keys schema keys default-options)))
 
 (defn transformer
   [& transformers]
   (apply mt/transformer transformers))
+
+(defn entries
+  "Get map entires of a map schema"
+  [schema]
+  (m/entries schema default-options))
+
+(def ^:private xf:map-key
+  (map key))
+
+(defn keys
+  "Given a map schema, return all keys as set"
+  [schema]
+  (->> (entries schema)
+       (into #{} xf:map-key)))
+
 
 ;; (defn key-transformer
 ;;   [& {:as opts}]
@@ -145,11 +161,30 @@
 ;;     :else
 ;;     o))
 
+(defn -transform-map-keys
+  ([f]
+   (let [xform (map (fn [[k v]] [(f k) v]))]
+     #(cond->> % (map? %) (into (empty %) xform))))
+  ([ks f]
+   (let [xform (map (fn [[k v]] [(cond-> k (contains? ks k) f) v]))]
+     #(cond->> % (map? %) (into (empty %) xform)))))
+
 (defn json-transformer
   []
-  (mt/transformer
-   (mt/json-transformer)
-   (mt/collection-transformer)))
+  (let [map-of-key-decoders (mt/-string-decoders)]
+    (mt/transformer
+     {:name :json
+      :decoders (-> (mt/-json-decoders)
+                    (assoc :map-of {:compile (fn [schema _]
+                                               (let [key-schema (some-> schema (m/children) (first))]
+                                                 (or (some-> key-schema (m/type) map-of-key-decoders
+                                                             (mt/-interceptor schema {}) (m/-intercepting)
+                                                             (m/-comp m/-keyword->string)
+                                                             (mt/-transform-if-valid key-schema)
+                                                             (-transform-map-keys))
+                                                     (-transform-map-keys m/-keyword->string))))}))
+      :encoders (mt/-json-encoders)}
+     (mt/collection-transformer))))
 
 (defn string-transformer
   []
@@ -191,8 +226,7 @@
 
 (defn lazy-validator
   [s]
-  (let [s   (schema s)
-        vfn (delay (validator s))]
+  (let [vfn (delay (validator s))]
     (fn [v] (@vfn v))))
 
 (defn lazy-explainer
@@ -201,6 +235,11 @@
     (fn [v] (@vfn v))))
 
 (defn lazy-decoder
+  [s transformer]
+  (let [vfn (delay (decoder (if (delay? s) (deref s) s) transformer))]
+    (fn [v] (@vfn v))))
+
+(defn decode-fn
   [s transformer]
   (let [vfn (delay (decoder (if (delay? s) (deref s) s) transformer))]
     (fn [v] (@vfn v))))
@@ -250,38 +289,36 @@
   ([s] (lookup sr/default-registry s))
   ([registry s] (schema (mr/schema registry s))))
 
-(defn- fast-check
-  "A fast path for checking process, assumes the ILazySchema protocol
-  implemented on the provided `s` schema. Sould not be used directly."
-  [s type code hint value]
-  (when-not ^boolean (-validate s value)
-    (let [explain (-explain s value)]
-      (throw (ex-info hint {:type type
-                            :code code
-                            :hint hint
-                            ::explain explain}))))
-  value)
-
-(declare ^:private lazy-schema)
-
 (defn check-fn
   "Create a predefined check function"
   [s & {:keys [hint type code]}]
-  (let [schema (if (lazy-schema? s) s (lazy-schema s))
-        hint   (or ^boolean hint "check error")
-        type   (or ^boolean type :assertion)
-        code   (or ^boolean code :data-validation)]
-    (partial fast-check schema type code hint)))
+  (let [s          (schema s)
+        validator* (delay (m/validator s))
+        explainer* (delay (m/explainer s))
+        hint       (or ^boolean hint "check error")
+        type       (or ^boolean type :assertion)
+        code       (or ^boolean code :data-validation)]
+
+    (fn [value]
+      (let [validate-fn @validator*]
+        (when-not ^boolean (validate-fn value)
+          (let [explain-fn @explainer*
+                explain    (explain-fn value)]
+            (throw (ex-info hint {:type type
+                                  :code code
+                                  :hint hint
+                                  ::explain explain}))))
+        value))))
 
 (defn check
   "A helper intended to be used on assertions for validate/check the
-  schema over provided data. Raises an assertion exception."
-  [s value & {:keys [hint type code]}]
-  (let [s      (if (lazy-schema? s) s (lazy-schema s))
-        hint   (or ^boolean hint "check error")
-        type   (or ^boolean type :assertion)
-        code   (or ^boolean code :data-validation)]
-    (fast-check s type code hint value)))
+  schema over provided data. Raises an assertion exception.
+
+  Use only on non-performance sensitive code, because it creates the
+  check-fn instance all the time it is invoked."
+  [s value & {:as opts}]
+  (let [check-fn (check-fn s opts)]
+    (check-fn value)))
 
 (defn type-schema
   [& {:as params}]
@@ -295,11 +332,14 @@
   ([params]
    (cond
      (map? params)
-     (let [type (get params :type)]
+     (let [mdata (meta params)
+           type  (or (get mdata ::id)
+                     (get mdata ::type)
+                     (get params :type))]
        (assert (qualified-keyword? type) "expected qualified keyword for `type`")
        (let [s (m/-simple-schema params)]
          (swap! sr/registry assoc type s)
-         nil))
+         s))
 
      (vector? params)
      (let [mdata (meta params)
@@ -307,97 +347,41 @@
                      (get mdata ::type))]
        (assert (qualified-keyword? type) "expected qualified keyword to be on metadata")
        (swap! sr/registry assoc type params)
-       nil)
+       params)
 
      (m/into-schema? params)
      (let [type (m/-type params)]
-       (swap! sr/registry assoc type params))
+       (swap! sr/registry assoc type params)
+       params)
 
      :else
      (throw (ex-info "Invalid Arguments" {}))))
 
   ([type params]
-   (let [s (if (map? params)
-             (cond
-               (= :set (:type params))
-               (m/-collection-schema params)
-
-               (= :vector (:type params))
-               (m/-collection-schema params)
-
-               :else
-               (m/-simple-schema params))
-             params)]
-
-     (swap! sr/registry assoc type s)
-     nil)))
-
-(defn- lazy-schema
-  "Create ans instance of ILazySchema"
-  [s]
-  (let [schema      (schema s)
-        validator   (delay (m/validator schema))
-        explainer   (delay (m/explainer schema))]
-
-    (reify
-      m/AST
-      (-to-ast [_ options] (m/-to-ast schema options))
-
-      m/EntrySchema
-      (-entries [_] (m/-entries schema))
-      (-entry-parser [_] (m/-entry-parser schema))
-
-      m/Cached
-      (-cache [_] (m/-cache schema))
-
-      m/LensSchema
-      (-keep [_] (m/-keep schema))
-      (-get [_ key default] (m/-get schema key default))
-      (-set [_ key value] (m/-set schema key value))
-
-      m/Schema
-      (-validator [_]
-        (m/-validator schema))
-      (-explainer [_ path]
-        (m/-explainer schema path))
-      (-parser [_]
-        (m/-parser schema))
-      (-unparser [_]
-        (m/-unparser schema))
-      (-transformer [_ transformer method options]
-        (m/-transformer schema transformer method options))
-      (-walk [_ walker path options]
-        (m/-walk schema walker path options))
-      (-properties [_]
-        (m/-properties schema))
-      (-options [_]
-        (m/-options schema))
-      (-children [_]
-        (m/-children schema))
-      (-parent [_]
-        (m/-parent schema))
-      (-form [_]
-        (m/-form schema))
-
-      ILazySchema
-      (-validate [_ o]
-        (@validator o))
-      (-explain [_ o]
-        (@explainer o)))))
+   (swap! sr/registry assoc type params)
+   params))
 
 ;; --- BUILTIN SCHEMAS
 
 (register! :merge (mu/-merge))
 (register! :union (mu/-union))
 
-(def uuid-rx
-  #"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-
-(defn parse-uuid
+(defn- parse-uuid
   [s]
-  (if (string? s)
-    (some->> (re-matches uuid-rx s) uuid/uuid)
-    s))
+  (if (uuid? s)
+    s
+    (if (str/empty? s)
+      nil
+      (try
+        (uuid/parse s)
+        (catch #?(:clj Exception :cljs :default) _cause
+          s)))))
+
+(defn- encode-uuid
+  [v]
+  (if (uuid? v)
+    (str v)
+    v))
 
 (register!
  {:type ::uuid
@@ -409,8 +393,8 @@
    :gen/gen (sg/uuid)
    :decode/string parse-uuid
    :decode/json parse-uuid
-   :encode/string str
-   :encode/json str
+   :encode/string encode-uuid
+   :encode/json encode-uuid
    ::oapi/type "string"
    ::oapi/format "uuid"}})
 
@@ -733,7 +717,10 @@
                  (fn [v]
                    (and (pred v)
                         (>= max v)))
-                 pred)]
+                 pred)
+
+          gen (or (get props :gen/gen)
+                  (sg/small-int :max max :min min))]
 
       {:pred pred
        :type-properties
@@ -741,7 +728,7 @@
         :description "int"
         :error/message "expected to be int/long"
         :error/code "errors.invalid-integer"
-        :gen/gen (sg/small-int :max max :min min)
+        :gen/gen gen
         :decode/string parse-long
         :decode/json parse-long
         ::oapi/type "integer"
@@ -799,9 +786,11 @@
                         (>= max v)))
                  pred)
 
-          gen  (sg/one-of
-                (sg/small-int :max max :min min)
-                (sg/small-double :max max :min min))]
+          gen  (or (get props :gen/gen)
+                   (sg/one-of
+                    (sg/small-int :max max :min min)
+                    (->> (sg/small-double :max max :min min)
+                         (sg/fmap #(mth/precision % 2)))))]
 
       {:pred pred
        :type-properties
@@ -816,7 +805,9 @@
 
 (register! ::safe-int [::int {:max max-safe-int :min min-safe-int}])
 (register! ::safe-double [::double {:max max-safe-int :min min-safe-int}])
-(register! ::safe-number [::number {:max max-safe-int :min min-safe-int}])
+(register! ::safe-number [::number {:gen/gen (sg/small-double)
+                                    :max max-safe-int
+                                    :min min-safe-int}])
 
 (defn parse-boolean
   [v]
@@ -856,7 +847,7 @@
                                     choices))]
                {:pred pred
                 :type-properties
-                {:title "contains"
+                {:title "contains any"
                  :description "contains predicate"}}))})
 
 (register!
@@ -866,7 +857,7 @@
   {:title "inst"
    :description "Satisfies Inst protocol"
    :error/message "should be an instant"
-   :gen/gen (->> (sg/small-int)
+   :gen/gen (->> (sg/small-int :min 0 :max 100000)
                  (sg/fmap (fn [v] (tm/parse-instant v))))
 
    :decode/string tm/parse-instant
@@ -875,6 +866,22 @@
    :encode/json tm/format-instant
    ::oapi/type "string"
    ::oapi/format "iso"}})
+
+(register!
+ {:type ::timestamp
+  :pred inst?
+  :type-properties
+  {:title "inst"
+   :description "Satisfies Inst protocol"
+   :error/message "should be an instant"
+   :gen/gen (->> (sg/small-int)
+                 (sg/fmap (fn [v] (tm/parse-instant v))))
+   :decode/string tm/parse-instant
+   :encode/string inst-ms
+   :decode/json tm/parse-instant
+   :encode/json inst-ms
+   ::oapi/type "string"
+   ::oapi/format "number"}})
 
 (register!
  {:type ::fn
@@ -1010,6 +1017,8 @@
      :type-properties
      {:title "agent"
       :description "instance of clojure agent"}}))
+
+(register! ::any (mu/update-properties :any assoc :gen/gen sg/any))
 
 ;; ---- PREDICATES
 

@@ -281,8 +281,8 @@
 
   (let [file (-> (read-obj cfg :file file-id)
                  (update :id bfc/lookup-index)
-                 (update :project-id bfc/lookup-index)
-                 (bfc/process-file))]
+                 (update :project-id bfc/lookup-index))
+        file (bfc/process-file cfg file)]
 
     (events/tap :progress
                 {:op :import

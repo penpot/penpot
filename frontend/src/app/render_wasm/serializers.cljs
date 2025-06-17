@@ -6,6 +6,7 @@
 
 (ns app.render-wasm.serializers
   (:require
+   [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -43,16 +44,41 @@
     (aset u32-arr 3 (aget buffer 3))
     (js/Uint8Array. (.-buffer u32-arr))))
 
-(defn matrix->u8
-  [{:keys [a b c d e f]}]
-  (let [f32-arr (js/Float32Array. 6)]
-    (aset f32-arr 0 a)
-    (aset f32-arr 1 b)
-    (aset f32-arr 2 c)
-    (aset f32-arr 3 d)
-    (aset f32-arr 4 e)
-    (aset f32-arr 5 f)
-    (js/Uint8Array. (.-buffer f32-arr))))
+(defn serialize-uuid
+  [id]
+  (try
+    (if (nil? id)
+      (do
+        [uuid/zero])
+      (let [as-uuid (uuid/uuid id)]
+        (uuid/get-u32 as-uuid)))
+    (catch :default _e
+      [uuid/zero])))
+
+(defn heapu32-set-u32
+  [value heap offset]
+  (aset heap offset value))
+
+(defn heapu32-set-uuid
+  [id heap offset]
+  (let [buffer (uuid/get-u32 id)]
+    (.set heap buffer offset)
+    buffer))
+
+(defn heapf32-set-matrix
+  [matrix heap offset]
+  (let [a (dm/get-prop matrix :a)
+        b (dm/get-prop matrix :b)
+        c (dm/get-prop matrix :c)
+        d (dm/get-prop matrix :d)
+        e (dm/get-prop matrix :e)
+        f (dm/get-prop matrix :f)]
+    (aset heap (+ offset 0) a)
+    (aset heap (+ offset 1) b)
+    (aset heap (+ offset 2) c)
+    (aset heap (+ offset 3) d)
+    (aset heap (+ offset 4) e)
+    (aset heap (+ offset 5) f)))
 
 (defn translate-shape-type
   [type]
@@ -251,3 +277,36 @@
     :inner-shadow 1
     0))
 
+(defn translate-structure-modifier-type
+  [type]
+  (case type
+    :remove-children 1
+    :add-children    2
+    :scale-content 3))
+
+(defn translate-grow-type
+  [grow-type]
+  (case grow-type
+    :auto-width 1
+    :auto-height 2
+    0))
+
+(defn- serialize-enum
+  [value enum-map]
+  (get enum-map value 0))
+
+(defn serialize-text-align
+  [text-align]
+  (serialize-enum text-align {"left" 0 "center" 1 "right" 2 "justify" 3}))
+
+(defn serialize-text-transform
+  [text-transform]
+  (serialize-enum text-transform {"none" 0 "uppercase" 1 "lowercase" 2 "capitalize" 3}))
+
+(defn serialize-text-decoration
+  [text-decoration]
+  (serialize-enum text-decoration {"none" 0 "underline" 1 "line-through" 2 "overline" 3}))
+
+(defn serialize-text-direction
+  [text-direction]
+  (serialize-enum text-direction {"ltr" 0 "rtl" 1}))

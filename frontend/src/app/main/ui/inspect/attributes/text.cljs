@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.text :as txt]
+   [app.common.types.color :as types.color]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -33,14 +34,6 @@
         (fn [state]
           (get-in state [:viewer-libraries file-id :data :typographies]))]
     #(l/derived get-library st/state)))
-
-(defn fill->color [{:keys [fill-color fill-opacity fill-color-gradient fill-color-ref-id fill-color-ref-file fill-image]}]
-  {:color fill-color
-   :opacity fill-opacity
-   :gradient fill-color-gradient
-   :id fill-color-ref-id
-   :file-id fill-color-ref-file
-   :image fill-image})
 
 (defn copy-style-data
   [style & properties]
@@ -73,7 +66,7 @@
        (for [[idx fill] (map-indexed vector (:fills style))]
          [:& color-row {:key idx
                         :format @color-format
-                        :color (fill->color fill)
+                        :color (types.color/fill->color fill)
                         :copy-data (copy-style-data fill :fill-color :fill-color-gradient)
                         :on-change-format #(reset! color-format %)}]))
 

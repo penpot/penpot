@@ -46,6 +46,10 @@
     (update [_ state]
       (assoc state :router (create routes)))))
 
+(defn encode-url
+  [url]
+  (js/encodeURIComponent url))
+
 (defn match
   "Given routing tree and current path, return match with possibly
   coerced parameters. Return nil if no match found."

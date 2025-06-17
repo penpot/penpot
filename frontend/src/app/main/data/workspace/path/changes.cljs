@@ -8,10 +8,9 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
+   [app.common.types.path :as path]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
-   [app.main.data.workspace.path.common :refer [check-path-content!]]
-   [app.main.data.workspace.path.helpers :as helpers]
    [app.main.data.workspace.path.state :as st]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -20,31 +19,25 @@
   "Generates changes to update the new content of the shape"
   [it objects page-id shape old-content new-content]
 
-  (dm/assert!
-   "expected valid path content"
-   (and (check-path-content! old-content)
-        (check-path-content! new-content)))
+  (assert (path/check-path-content old-content))
+  (assert (path/check-path-content new-content))
 
   (let [shape-id (:id shape)
 
-        [old-points old-selrect]
-        (helpers/content->points+selrect shape old-content)
-
-        [new-points new-selrect]
-        (helpers/content->points+selrect shape new-content)
-
         ;; We set the old values so the update-shapes works
         objects
-        (-> objects
-            (update
-             shape-id
-             assoc
-             :content old-content
-             :selrect old-selrect
-             :points old-points))
+        (update objects shape-id
+                (fn [shape]
+                  (-> shape
+                      (assoc :content old-content)
+                      (path/update-geometry))))
 
-        changes (-> (pcb/empty-changes it page-id)
-                    (pcb/with-objects objects))]
+        changes
+        (-> (pcb/empty-changes it page-id)
+            (pcb/with-objects objects))
+
+        new-content
+        (path/content new-content)]
 
     (cond
       ;; https://tree.taiga.io/project/penpot/issue/2366
@@ -60,10 +53,9 @@
       (-> changes
           (pcb/update-shapes [shape-id]
                              (fn [shape]
-                               (assoc shape
-                                      :content new-content
-                                      :selrect new-selrect
-                                      :points new-points)))
+                               (-> shape
+                                   (assoc :content new-content)
+                                   (path/update-geometry))))
           (pcb/resize-parents [shape-id])))))
 
 (defn save-path-content
@@ -83,11 +75,12 @@
 
      ptk/WatchEvent
      (watch [it state _]
-       (let [objects     (dsh/lookup-page-objects state)
-             page-id     (:current-page-id state)
-             id          (get-in state [:workspace-local :edition])
-             old-content (get-in state [:workspace-local :edit-path id :old-content])
+       (let [page-id     (:current-page-id state)
+             objects     (dsh/lookup-page-objects state page-id)
+             id          (dm/get-in state [:workspace-local :edition])
+             old-content (dm/get-in state [:workspace-local :edit-path id :old-content])
              shape       (st/get-path state)]
+
          (if (and (some? old-content) (some? (:id shape)))
            (let [changes (generate-path-changes it objects page-id shape old-content (:content shape))]
              (rx/of (dch/commit-changes changes)))

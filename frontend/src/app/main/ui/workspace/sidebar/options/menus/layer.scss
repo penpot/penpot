@@ -6,25 +6,25 @@
 
 @import "refactor/common-refactor.scss";
 
-.element-set {
-  margin-bottom: $s-8;
-}
 .element-set-content {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  gap: var(--sp-xs);
   height: $s-32;
-  gap: $s-4;
+  margin-bottom: $s-8;
   .select {
-    width: $s-124;
+    grid-column: span 4;
     padding: 0;
   }
   .input {
     @extend .input-element;
     @include bodySmallTypography;
-    width: $s-60;
+    grid-column: span 2;
   }
   .actions {
-    display: flex;
-    gap: $s-4;
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: subgrid;
   }
 
   &.hidden {

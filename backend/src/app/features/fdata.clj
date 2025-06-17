@@ -9,7 +9,10 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.files.helpers :as cfh]
+   [app.common.files.migrations :as fmg]
    [app.common.logging :as l]
+   [app.common.types.path :as path]
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.storage :as sto]
@@ -30,7 +33,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn enable-objects-map
-  [file]
+  [file & _opts]
   (let [update-page
         (fn [page]
           (if (and (pmap/pointer-map? page)
@@ -136,10 +139,56 @@
 
 (defn enable-pointer-map
   "Enable the fdata/pointer-map feature on the file."
-  [file]
+  [file & _opts]
   (-> file
       (update :data (fn [fdata]
                       (-> fdata
                           (update :pages-index d/update-vals pmap/wrap)
                           (d/update-when :components pmap/wrap))))
       (update :features conj "fdata/pointer-map")))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PATH-DATA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn enable-path-data
+  "Enable the fdata/path-data feature on the file."
+  [file & _opts]
+  (letfn [(update-object [object]
+            (if (or (cfh/path-shape? object)
+                    (cfh/bool-shape? object))
+              (update object :content path/content)
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))]
+
+    (-> file
+        (update :data (fn [data]
+                        (-> data
+                            (update :pages-index d/update-vals update-container)
+                            (d/update-when :components d/update-vals update-container))))
+        (update :features conj "fdata/path-data"))))
+
+(defn disable-path-data
+  [file & _opts]
+  (letfn [(update-object [object]
+            (if (or (cfh/path-shape? object)
+                    (cfh/bool-shape? object))
+              (update object :content vec)
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))]
+
+    (when-let [conn db/*conn*]
+      (db/delete! conn :file-migration {:file-id (:id file)
+                                        :name "0003-convert-path-content"}))
+    (-> file
+        (update :data (fn [data]
+                        (-> data
+                            (update :pages-index d/update-vals update-container)
+                            (d/update-when :components d/update-vals update-container))))
+        (update :features disj "fdata/path-data")
+        (update :migrations disj "0003-convert-path-content")
+        (vary-meta update ::fmg/migrated disj "0003-convert-path-content"))))

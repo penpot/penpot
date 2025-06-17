@@ -12,21 +12,17 @@
    [app.plugins :as plugins]
    [app.util.timers :as tm]))
 
-(defn ^:export is-components-v2 []
-  (features/active-feature? @st/state "components/v2"))
-
 (defn ^:export grid []
   (tm/schedule-on-idle #(st/emit! (features/toggle-feature "layout/grid")))
   nil)
 
 (defn ^:export get-enabled []
-  (clj->js (features/get-enabled-features @st/state)))
+  (clj->js features/global-enabled-features))
 
 (defn ^:export get-team-enabled []
-  (clj->js (features/get-team-enabled-features @st/state)))
+  (clj->js (get @st/state :features)))
 
 (defn ^:export plugins []
   (st/emit! (features/enable-feature "plugins/runtime"))
   (plugins/init-plugins-runtime!)
   nil)
-

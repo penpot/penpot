@@ -53,6 +53,7 @@
   (* 1024 1024 100))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(declare get-resolved-file-libraries)
 
 (def file-attrs
   #{:id
@@ -143,11 +144,13 @@
    (reduce #(index-object %1 %2 attr) index coll)))
 
 (defn decode-row
-  "A generic decode row helper"
-  [{:keys [data features] :as row}]
-  (cond-> row
-    features (assoc :features (db/decode-pgarray features #{}))
-    data     (assoc :data (blob/decode data))))
+  [{:keys [data changes features] :as row}]
+  (when row
+    (cond-> row
+      features (assoc :features (db/decode-pgarray features #{}))
+      changes  (assoc :changes (blob/decode changes))
+      data     (assoc :data (blob/decode data)))))
+
 
 (defn decode-file
   "A general purpose file decoding function that resolves all external
@@ -156,7 +159,8 @@
   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
     (let [file (->> file
                     (feat.fmigr/resolve-applied-migrations cfg)
-                    (feat.fdata/resolve-file-data cfg))]
+                    (feat.fdata/resolve-file-data cfg))
+          libs (delay (get-resolved-file-libraries cfg file))]
 
       (-> file
           (update :features db/decode-pgarray #{})
@@ -164,7 +168,7 @@
           (update :data feat.fdata/process-pointers deref)
           (update :data feat.fdata/process-objects (partial into {}))
           (update :data assoc :id id)
-          (fmg/migrate-file)))))
+          (fmg/migrate-file libs)))))
 
 (defn get-file
   "Get file, resolve all features and apply migrations.
@@ -418,28 +422,35 @@
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])))
 
 (defn process-file
-  [{:keys [id] :as file}]
-  (-> file
-      (update :data (fn [fdata]
-                      (-> fdata
-                          (assoc :id id)
-                          (dissoc :recent-colors))))
-      (fmg/migrate-file)
-      (update :data (fn [fdata]
-                      (-> fdata
-                          (update :pages-index relink-shapes)
-                          (update :components relink-shapes)
-                          (update :media relink-media)
-                          (update :colors relink-colors)
-                          (d/without-nils))))))
+  [cfg {:keys [id] :as file}]
+  (let [libs (delay (get-resolved-file-libraries cfg file))]
+    (-> file
+        (update :data (fn [fdata]
+                        (-> fdata
+                            (assoc :id id)
+                            (dissoc :recent-colors))))
+        (update :data (fn [fdata]
+                        (-> fdata
+                            (update :pages-index relink-shapes)
+                            (update :components relink-shapes)
+                            (update :media relink-media)
+                            (update :colors relink-colors)
+                            (d/without-nils))))
+        (fmg/migrate-file libs)
+
+        ;; NOTE: this is necessary because when we just creating a new
+        ;; file from imported artifact or cloned file there are no
+        ;; migrations registered on the database, so we need to persist
+        ;; all of them, not only the applied
+        (vary-meta dissoc ::fmg/migrated))))
 
 (defn encode-file
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
-  (let [file (if (contains? (:features file) "fdata/objects-map")
+  [{:keys [::db/conn] :as cfg} {:keys [id features] :as file}]
+  (let [file (if (contains? features "fdata/objects-map")
                (feat.fdata/enable-objects-map file)
                file)
 
-        file (if (contains? (:features file) "fdata/pointer-map")
+        file (if (contains? features "fdata/pointer-map")
                (binding [pmap/*tracked* (pmap/create-tracked)]
                  (let [file (feat.fdata/enable-pointer-map file)]
                    (feat.fdata/persist-pointers! cfg id)
@@ -522,3 +533,49 @@
           (l/error :hint "file schema validation error" :cause result))))
 
     (insert-file! cfg file opts)))
+
+
+(def ^:private sql:get-file-libraries
+  "WITH RECURSIVE libs AS (
+     SELECT fl.*, flr.synced_at
+       FROM file AS fl
+       JOIN file_library_rel AS flr ON (flr.library_file_id = fl.id)
+      WHERE flr.file_id = ?::uuid
+    UNION
+     SELECT fl.*, flr.synced_at
+       FROM file AS fl
+       JOIN file_library_rel AS flr ON (flr.library_file_id = fl.id)
+       JOIN libs AS l ON (flr.file_id = l.id)
+   )
+   SELECT l.id,
+          l.features,
+          l.project_id,
+          p.team_id,
+          l.created_at,
+          l.modified_at,
+          l.deleted_at,
+          l.name,
+          l.revn,
+          l.vern,
+          l.synced_at,
+          l.is_shared
+     FROM libs AS l
+    INNER JOIN project AS p ON (p.id = l.project_id)
+    WHERE l.deleted_at IS NULL OR l.deleted_at > now();")
+
+(defn get-file-libraries
+  [conn file-id]
+  (into []
+        (comp
+         ;; FIXME: :is-indirect set to false to all rows looks
+         ;; completly useless
+         (map #(assoc % :is-indirect false))
+         (map decode-row))
+        (db/exec! conn [sql:get-file-libraries file-id])))
+
+(defn get-resolved-file-libraries
+  "A helper for preload file libraries"
+  [{:keys [::db/conn] :as cfg} file]
+  (->> (get-file-libraries conn (:id file))
+       (into [file] (map #(get-file cfg (:id %))))
+       (d/index-by :id)))

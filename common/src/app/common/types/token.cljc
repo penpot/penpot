@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.schema :as sm]
-   [app.common.schema.registry :as sr]
    [clojure.data :as data]
    [clojure.set :as set]
    [malli.util :as mu]))
@@ -17,16 +16,10 @@
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn merge-schemas
-  "Merge registered schemas."
-  [& schema-keys]
-  (let [schemas (map #(get @sr/registry %) schema-keys)]
-    (reduce sm/merge schemas)))
-
-(defn schema-keys
+(defn- schema-keys
   "Converts registed map schema into set of keys."
-  [registered-schema]
-  (->> (get @sr/registry registered-schema)
+  [schema]
+  (->> schema
        (sm/schema)
        (mu/keys)
        (into #{})))
@@ -40,7 +33,7 @@
    :border-radius "borderRadius"
    :color         "color"
    :dimensions    "dimension"
-   :numeric       "numeric"
+   :number        "number"
    :opacity       "opacity"
    :other         "other"
    :rotation      "rotation"
@@ -55,105 +48,86 @@
 (def token-types
   (into #{} (keys token-type->dtcg-token-type)))
 
-(defn valid-token-type?
-  [t]
-  (token-types t))
-
 (def token-name-ref
   [:and :string [:re #"^(?!\$)([a-zA-Z0-9-$_]+\.?)*(?<!\.)$"]])
 
-(defn valid-token-name-ref?
-  [n]
-  (string? n))
+(def ^:private schema:color
+  [:map
+   [:fill {:optional true} token-name-ref]
+   [:stroke-color {:optional true} token-name-ref]])
 
-;; TODO Move this to tokens-lib
-(sm/register!
- ^{::sm/type ::token}
- [:map {:title "Token"}
-  [:name token-name-ref]
-  [:type [::sm/one-of token-types]]
-  [:value :any]
-  [:description {:optional true} [:maybe :string]]
-  [:modified-at {:optional true} ::sm/inst]])
+(def color-keys (schema-keys schema:color))
 
-(sm/register!
- ^{::sm/type ::color}
- [:map
-  [:fill {:optional true} token-name-ref]
-  [:stroke-color {:optional true} token-name-ref]])
+(def ^:private schema:border-radius
+  [:map
+   [:r1 {:optional true} token-name-ref]
+   [:r2 {:optional true} token-name-ref]
+   [:r3 {:optional true} token-name-ref]
+   [:r4 {:optional true} token-name-ref]])
 
-(def color-keys (schema-keys ::color))
+(def border-radius-keys (schema-keys schema:border-radius))
 
-(sm/register!
- ^{::sm/type ::border-radius}
- [:map
-  [:r1 {:optional true} token-name-ref]
-  [:r2 {:optional true} token-name-ref]
-  [:r3 {:optional true} token-name-ref]
-  [:r4 {:optional true} token-name-ref]])
+(def ^:private schema:stroke-width
+  [:map
+   [:stroke-width {:optional true} token-name-ref]])
 
-(def border-radius-keys (schema-keys ::border-radius))
+(def stroke-width-keys (schema-keys schema:stroke-width))
 
-(sm/register!
- ^{::sm/type ::stroke-width}
- [:map
-  [:stroke-width {:optional true} token-name-ref]])
+(def ^:private schema:sizing
+  [:map
+   [:width {:optional true} token-name-ref]
+   [:height {:optional true} token-name-ref]
+   [:layout-item-min-w {:optional true} token-name-ref]
+   [:layout-item-max-w {:optional true} token-name-ref]
+   [:layout-item-min-h {:optional true} token-name-ref]
+   [:layout-item-max-h {:optional true} token-name-ref]])
 
-(def stroke-width-keys (schema-keys ::stroke-width))
+(def sizing-keys (schema-keys schema:sizing))
 
-(sm/register!
- ^{::sm/type ::sizing}
- [:map
-  [:width {:optional true} token-name-ref]
-  [:height {:optional true} token-name-ref]
-  [:layout-item-min-w {:optional true} token-name-ref]
-  [:layout-item-max-w {:optional true} token-name-ref]
-  [:layout-item-min-h {:optional true} token-name-ref]
-  [:layout-item-max-h {:optional true} token-name-ref]])
+(def ^:private schema:opacity
+  [:map
+   [:opacity {:optional true} token-name-ref]])
 
-(def sizing-keys (schema-keys ::sizing))
+(def opacity-keys (schema-keys schema:opacity))
 
-(sm/register!
- ^{::sm/type ::opacity}
- [:map
-  [:opacity {:optional true} token-name-ref]])
+(def ^:private schema:spacing
+  [:map
+   [:row-gap {:optional true} token-name-ref]
+   [:column-gap {:optional true} token-name-ref]
+   [:p1 {:optional true} token-name-ref]
+   [:p2 {:optional true} token-name-ref]
+   [:p3 {:optional true} token-name-ref]
+   [:p4 {:optional true} token-name-ref]
+   [:m1 {:optional true} token-name-ref]
+   [:m2 {:optional true} token-name-ref]
+   [:m3 {:optional true} token-name-ref]
+   [:m4 {:optional true} token-name-ref]
+   [:x {:optional true} token-name-ref]
+   [:y {:optional true} token-name-ref]])
 
-(def opacity-keys (schema-keys ::opacity))
+(def spacing-keys (schema-keys schema:spacing))
 
-(sm/register!
- ^{::sm/type ::spacing}
- [:map
-  [:row-gap {:optional true} token-name-ref]
-  [:column-gap {:optional true} token-name-ref]
-  [:p1 {:optional true} token-name-ref]
-  [:p2 {:optional true} token-name-ref]
-  [:p3 {:optional true} token-name-ref]
-  [:p4 {:optional true} token-name-ref]
-  [:m1 {:optional true} token-name-ref]
-  [:m2 {:optional true} token-name-ref]
-  [:m3 {:optional true} token-name-ref]
-  [:m4 {:optional true} token-name-ref]
-  [:x {:optional true} token-name-ref]
-  [:y {:optional true} token-name-ref]])
+(def ^:private schema:dimensions
+  [:merge
+   schema:sizing
+   schema:spacing
+   schema:stroke-width
+   schema:border-radius])
 
-(def spacing-keys (schema-keys ::spacing))
+(def dimensions-keys (schema-keys schema:dimensions))
 
-(sm/register!
- ^{::sm/type ::dimensions}
- [:merge
-  ::sizing
-  ::spacing
-  ::stroke-width
-  ::border-radius])
+(def ^:private schema:rotation
+  [:map
+   [:rotation {:optional true} token-name-ref]])
 
-(def dimensions-keys (schema-keys ::dimensions))
+(def rotation-keys (schema-keys schema:rotation))
 
-(sm/register!
- ^{::sm/type ::rotation}
- [:map
-  [:rotation {:optional true} token-name-ref]])
+(def ^:private schema:number
+  [:map
+   [:rotation {:optional true} token-name-ref]
+   [:line-height {:optional true} token-name-ref]])
 
-(def rotation-keys (schema-keys ::rotation))
+(def number-keys (schema-keys schema:number))
 
 (def all-keys (set/union color-keys
                          border-radius-keys
@@ -162,39 +136,53 @@
                          opacity-keys
                          spacing-keys
                          dimensions-keys
-                         rotation-keys))
+                         rotation-keys
+                         number-keys))
 
-(sm/register!
- ^{::sm/type ::tokens}
- [:map {:title "Applied Tokens"}])
+(def ^:private schema:tokens
+  [:map {:title "Applied Tokens"}])
 
-(sm/register!
- ^{::sm/type ::applied-tokens}
- [:merge
-  ::tokens
-  ::border-radius
-  ::sizing
-  ::spacing
-  ::rotation
-  ::dimensions])
+(def schema:applied-tokens
+  [:merge
+   schema:tokens
+   schema:border-radius
+   schema:sizing
+   schema:spacing
+   schema:rotation
+   schema:number
+   schema:dimensions])
 
 (defn shape-attr->token-attrs
   ([shape-attr] (shape-attr->token-attrs shape-attr nil))
   ([shape-attr changed-sub-attr]
    (cond
-     (= :fills shape-attr) #{:fill}
-     (and (= :strokes shape-attr) (nil? changed-sub-attr)) #{:stroke-width :stroke-color}
+     (= :fills shape-attr)
+     #{:fill}
+
+     (and (= :strokes shape-attr) (nil? changed-sub-attr))
+     #{:stroke-width :stroke-color}
+
      (= :strokes shape-attr)
      (cond
        (some #{:stroke-color} changed-sub-attr) #{:stroke-color}
        (some #{:stroke-width} changed-sub-attr) #{:stroke-width})
-     (and (= :layout-padding shape-attr) (seq changed-sub-attr)) changed-sub-attr
-     (and (= :layout-item-margin shape-attr) (seq changed-sub-attr)) changed-sub-attr
+
+     (= :layout-padding shape-attr)
+     (if (seq changed-sub-attr)
+       changed-sub-attr
+       #{:p1 :p2 :p3 :p4})
+
+     (= :layout-item-margin shape-attr)
+     (if (seq changed-sub-attr)
+       changed-sub-attr
+       #{:m1 :m2 :m3 :m4})
+
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}
      (spacing-keys shape-attr) #{shape-attr}
-     (rotation-keys shape-attr) #{shape-attr})))
+     (rotation-keys shape-attr) #{shape-attr}
+     (number-keys shape-attr) #{shape-attr})))
 
 (defn token-attr->shape-attr
   [token-attr]

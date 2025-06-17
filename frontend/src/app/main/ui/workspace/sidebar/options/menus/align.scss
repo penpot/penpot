@@ -7,19 +7,31 @@
 @import "refactor/common-refactor.scss";
 
 .align-options {
-  display: flex;
-  gap: $s-4;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
   height: $s-32;
-  margin: 0 calc(-1 * $s-2);
 }
-.align-group {
-  @include flexRow;
+.align-group-horizontal,
+.align-group-vertical {
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: center;
+  justify-items: center;
+}
+
+.align-group-horizontal {
+  grid-column: 1 / span 4;
+}
+
+.align-group-vertical {
+  grid-column: 5 / span 4;
 }
 
 .align-button {
   @extend .button-tertiary;
-  height: $s-28;
-  width: $s-28;
+  height: $s-32;
+  width: $s-32;
   padding: 0;
   border-radius: $br-8;
   svg {

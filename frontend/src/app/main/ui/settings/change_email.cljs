@@ -73,8 +73,6 @@
   (let [profile (mf/deref refs/profile)
         form    (fm/use-form :schema schema:email-change-form
                              :initial profile)
-        on-close
-        (mf/use-fn #(st/emit! (modal/hide)))
 
         on-submit
         (mf/use-fn
@@ -91,7 +89,7 @@
               :data-testid "change-email-title"}
          (tr "modals.change-email.title")]
         [:button {:class (stl/css :modal-close-btn)
-                  :on-click on-close} i/close]]
+                  :on-click modal/hide!} i/close]]
 
        [:div {:class (stl/css :modal-content)}
         [:& context-notification

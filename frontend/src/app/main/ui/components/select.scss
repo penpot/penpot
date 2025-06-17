@@ -54,6 +54,7 @@
 
 .dropdown-button {
   @include flexCenter;
+  margin-inline-end: var(--sp-xxs);
   svg {
     @extend .button-icon-small;
     transform: rotate(90deg);

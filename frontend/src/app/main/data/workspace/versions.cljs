@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as dwp]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.thumbnails :as th]
@@ -97,7 +98,8 @@
   (ptk/reify ::restore-version
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)]
+      (let [file-id (:current-file-id state)
+            team-id (:current-team-id state)]
         (rx/concat
          (rx/of ::dwp/force-persist
                 (dw/remove-layout-flag :document-history))
@@ -106,7 +108,7 @@
               (rx/take 1)
               (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
               (rx/tap #(th/clear-queue!))
-              (rx/map #(dw/initialize-workspace file-id)))
+              (rx/map #(dw/initialize-workspace team-id file-id)))
          (case origin
            :version
            (rx/of (ptk/event ::ev/event {::ev/name "restore-pin-version"}))
@@ -200,21 +202,23 @@
 
   (ptk/reify ::restore-version-from-plugins
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/concat
-       (rx/of (ptk/event ::ev/event {::ev/name "restore-version-plugin"})
-              ::dwp/force-persist)
+    (watch [_ state _]
+      (let [file    (dsh/lookup-file state file-id)
+            team-id (or (:team-id file) (:current-file-id state))]
+        (rx/concat
+         (rx/of (ptk/event ::ev/event {::ev/name "restore-version-plugin"})
+                ::dwp/force-persist)
 
-       ;; FIXME: we should abstract this
-       (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
-            (rx/filter #(or (nil? %) (= :saved %)))
-            (rx/take 1)
-            (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
-            (rx/map #(dw/initialize-workspace file-id)))
+         ;; FIXME: we should abstract this
+         (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
+              (rx/filter #(or (nil? %) (= :saved %)))
+              (rx/take 1)
+              (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
+              (rx/map #(dw/initialize-workspace team-id file-id)))
 
-       (->> (rx/of 1)
-            (rx/tap resolve)
-            (rx/ignore))))))
+         (->> (rx/of 1)
+              (rx/tap resolve)
+              (rx/ignore)))))))
 
 
 

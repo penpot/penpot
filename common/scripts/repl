@@ -2,16 +2,20 @@
 
 export PENPOT_FLAGS="enable-asserts enable-audit-log $PENPOT_FLAGS"
 
-export OPTIONS="
-       -A:dev \
-       -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
-       -J-Djdk.attach.allowAttachSelf \
-       -J-Dpolyglot.engine.WarnInterpreterOnly=false \
-       -J-XX:+EnableDynamicAgentLoading \
-       -J-XX:-OmitStackTraceInFastThrow \
-       -J-XX:+UnlockDiagnosticVMOptions \
-       -J-XX:+DebugNonSafepoints \
-       -J-Djdk.tracePinnedThreads=full"
+export JAVA_OPTS="\
+       -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
+       -Djdk.attach.allowAttachSelf \
+       -Dlog4j2.configurationFile=log4j2-devenv-repl.xml \
+       -Djdk.tracePinnedThreads=full \
+       -XX:+EnableDynamicAgentLoading \
+       -XX:-OmitStackTraceInFastThrow                    \
+       -XX:+UnlockDiagnosticVMOptions \
+       -XX:+DebugNonSafepoints \
+       --sun-misc-unsafe-memory-access=allow \
+       --enable-preview \
+       --enable-native-access=ALL-UNNAMED";
+
+export OPTIONS="-A:dev"
 
 export OPTIONS_EVAL="nil"
 # export OPTIONS_EVAL="(set! *warn-on-reflection* true)"

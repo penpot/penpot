@@ -16,7 +16,6 @@
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.shape-layout :as dwsl]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -163,7 +162,8 @@
   {::mf/props :obj
    ::mf/private true}
   [{:keys [value on-change]}]
-  [:& radio-buttons {:selected (d/name value)
+  [:& radio-buttons {:class (stl/css :direction-row-flex)
+                     :selected (d/name value)
                      :decode-fn keyword
                      :on-change on-change
                      :name "flex-direction"}
@@ -198,7 +198,8 @@
 (mf/defc align-row
   {::mf/props :obj}
   [{:keys [is-column value on-change]}]
-  [:& radio-buttons {:selected (d/name value)
+  [:& radio-buttons {:class (stl/css :align-row)
+                     :selected (d/name value)
                      :decode-fn keyword
                      :on-change on-change
                      :name "flex-align-items"}
@@ -218,7 +219,8 @@
 (mf/defc align-content-row
   {::mf/props :obj}
   [{:keys [is-column value on-change]}]
-  [:& radio-buttons {:selected (d/name value)
+  [:& radio-buttons {:class (stl/css :align-content-row)
+                     :selected (d/name value)
                      :decode-fn keyword
                      :on-change on-change
                      :name "flex-align-content"}
@@ -250,7 +252,8 @@
 (mf/defc justify-content-row
   {::mf/props :obj}
   [{:keys [is-column justify-content on-change]}]
-  [:& radio-buttons {:selected (d/name justify-content)
+  [:& radio-buttons {:class (stl/css :justify-content-row)
+                     :selected (d/name justify-content)
                      :on-change on-change
                      :name "flex-justify"}
    [:& radio-button {:value "start"
@@ -583,7 +586,8 @@
 (mf/defc direction-row-grid
   {::mf/props :obj}
   [{:keys [value on-change] :as props}]
-  [:& radio-buttons {:selected (d/name value)
+  [:& radio-buttons {:class (stl/css :direction-row-grid)
+                     :selected (d/name value)
                      :decode-fn keyword
                      :on-change on-change
                      :name "grid-direction"}
@@ -620,7 +624,8 @@
    ::mf/private true}
   [{:keys [is-column value on-change]}]
   (let [type (if ^boolean is-column "column" "row")]
-    [:& radio-buttons {:selected (d/name value)
+    [:& radio-buttons {:class (stl/css :align-grid-row)
+                       :selected (d/name value)
                        :decode-fn keyword
                        :on-change on-change
                        :name (dm/str "flex-align-items-" type)}
@@ -642,7 +647,8 @@
    ::mf/private :obj}
   [{:keys [is-column value on-change]}]
   (let [type (if ^boolean is-column "column" "row")]
-    [:& radio-buttons {:selected (d/name value)
+    [:& radio-buttons {:class (stl/css :justify-grid-row)
+                       :selected (d/name value)
                        :on-change on-change
                        :decode-fn keyword
                        :name (dm/str "grid-justify-items-" type)}
@@ -976,8 +982,6 @@
         grid-justify-content-row    (:layout-justify-content values)
         grid-justify-content-column (:layout-align-content values)
 
-        grid-enabled?  (features/use-feature "layout/grid")
-
         on-column-justify-change
         (mf/use-fn
          (mf/deps ids)
@@ -1007,24 +1011,22 @@
 
        (if (and (not multiple) (:layout values))
          [:div {:class (stl/css :title-actions)}
-          (when ^boolean grid-enabled?
-            [:*
-             [:> icon-button* {:variant "ghost"
-                               :aria-label (tr "workspace.shape.menu.add-layout")
-                               :on-click on-toggle-dropdown-visibility
-                               :icon "menu"}]
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.shape.menu.add-layout")
+                            :on-click on-toggle-dropdown-visibility
+                            :icon "menu"}]
 
-             [:& dropdown {:show show-dropdown?
-                           :on-close on-hide-dropdown}
-              [:div {:class (stl/css :layout-options)}
-               [:button {:class (stl/css :layout-option)
-                         :data-type "flex"
-                         :on-click on-add-layout}
-                "Flex layout"]
-               [:button {:class (stl/css :layout-option)
-                         :data-type "grid"
-                         :on-click on-add-layout}
-                "Grid layout"]]]])
+          [:& dropdown {:show show-dropdown?
+                        :on-close on-hide-dropdown}
+           [:div {:class (stl/css :layout-options)}
+            [:button {:class (stl/css :layout-option)
+                      :data-type "flex"
+                      :on-click on-add-layout}
+             "Flex layout"]
+            [:button {:class (stl/css :layout-option)
+                      :data-type "grid"
+                      :on-click on-add-layout}
+             "Grid layout"]]]
 
           (when has-layout?
             [:> icon-button* {:variant "ghost"
@@ -1033,29 +1035,23 @@
                               :icon "remove"}])]
 
          [:div {:class (stl/css :title-actions)}
-          (if ^boolean grid-enabled?
-            [:*
-             [:> icon-button* {:variant "ghost"
-                               :aria-label (tr "workspace.shape.menu.add-layout")
-                               :on-click on-toggle-dropdown-visibility
-                               :icon "add"}]
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.shape.menu.add-layout")
+                            :on-click on-toggle-dropdown-visibility
+                            :icon "add"}]
 
-             [:& dropdown {:show show-dropdown?
-                           :on-close on-hide-dropdown}
-              [:div {:class (stl/css :layout-options)}
-               [:button {:class (stl/css :layout-option)
-                         :data-type "flex"
-                         :on-click on-add-layout}
-                "Flex layout"]
-               [:button {:class (stl/css :layout-option)
-                         :data-type "grid"
-                         :on-click on-add-layout}
-                "Grid layout"]]]]
-
-            [:button {:class (stl/css :add-layout)
+          [:& dropdown {:show show-dropdown?
+                        :on-close on-hide-dropdown}
+           [:div {:class (stl/css :layout-options)}
+            [:button {:class (stl/css :layout-option)
                       :data-type "flex"
                       :on-click on-add-layout}
-             i/add])
+             "Flex layout"]
+            [:button {:class (stl/css :layout-option)
+                      :data-type "grid"
+                      :on-click on-add-layout}
+             "Grid layout"]]]
+
           (when has-layout?
             [:> icon-button* {:variant "ghost"
                               :aria-label (tr "workspace.shape.menu.delete")
@@ -1114,7 +1110,7 @@
                                :on-click open-grid-help
                                :icon "help"}]])
 
-          [:div {:class (stl/css :row :first-row)}
+          [:div {:class (stl/css :first-row)}
            [:div {:class (stl/css :direction-edit)}
             [:div {:class (stl/css :direction)}
              [:& direction-row-grid {:value saved-grid-dir
@@ -1135,10 +1131,10 @@
                                  :value grid-justify-content-row
                                  :on-change on-row-justify-change}]]
 
-          [:div {:class (stl/css :row)}
+          [:div {:class (stl/css :gap-row)}
            [:& gap-section {:on-change on-gap-change
                             :value (:layout-gap values)}]]
-          [:div {:class (stl/css :row :padding-section)}
+          [:div {:class (stl/css :padding-row)}
            [:& padding-section {:value (:layout-padding values)
                                 :type (:layout-padding-type values)
                                 :on-type-change on-padding-type-change
@@ -1292,7 +1288,7 @@
            (st/emit! (dwge/locate-board (first ids)))))]
 
     [:div {:class (stl/css :grid-layout-menu)}
-     [:div {:class (stl/css :row)}
+     [:div {:class (stl/css :grid-first-row)}
       [:div {:class (stl/css :grid-layout-menu-title)} "GRID LAYOUT"]
       [:> icon-button* {:variant "ghost"
                         :class (stl/css :help-button)
@@ -1331,17 +1327,17 @@
                         :on-click handle-locate-grid
                         :icon "locate"}]]
 
-     [:div {:class (stl/css :row)}
+     [:div {:class (stl/css :gap-row)}
       [:& gap-section {:on-change on-gap-change
                        :value (:layout-gap values)}]]
 
-     [:div {:class (stl/css :row :padding-section)}
+     [:div {:class (stl/css :padding-row :padding-section)}
       [:& padding-section {:value (:layout-padding values)
                            :type (:layout-padding-type values)
                            :on-type-change on-padding-type-change
                            :on-change on-padding-change}]]
 
-     [:div {:class (stl/css :row :grid-tracks-row)}
+     [:div {:class (stl/css :grid-tracks-row)}
       [:& grid-columns-row {:is-column true
                             :expanded? @columns-open?
                             :toggle toggle-columns-open

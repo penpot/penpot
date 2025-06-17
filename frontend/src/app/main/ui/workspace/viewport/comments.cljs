@@ -86,4 +86,5 @@
           {:draft draft
            :on-cancel on-draft-cancel
            :on-submit on-draft-submit
+           :viewport viewport
            :zoom zoom}])]]]))

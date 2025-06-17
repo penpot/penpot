@@ -1,5 +1,6 @@
 ---
 title: 1.3  Install with Docker
+desc: This Penpot technical guide covers self-hosting, Docker installation, configuration, updates, backups, and proxy setup with NGINX and Caddy. Try Penpot!
 ---
 
 <p class="advice">
@@ -151,9 +152,20 @@ Postgres database and another one for the assets uploaded by your users (images 
 clips). There may be more volumes if you enable other features, as explained in the file
 itself.
 
-## Configure the proxy
+## Configure the proxy and HTTPS
 
-Your host configuration needs to make a proxy to http://localhost:9001.
+We strongly recommend to use Penpot under HTTPS/SSL, which will require specific server configurations for DNS and SSL certificates.
+Besides, your host configuration needs to make a proxy to http://localhost:9001.
+
+<p class="advice">
+    If you plan to serve Penpot under different domain than `localhost` without HTTPS,
+    you need to disable the `secure` flag on cookies, with the `disable-secure-session-cookies` flag.
+    This is a configuration NOT recommended for production environments; as some browser APIs do
+    not work properly under non-https environments, this unsecure configuration
+    may limit the usage of Penpot; as an example, the clipboard does not work with HTTP.
+</p>
+
+Below, you can see three examples with three different proxys:
 
 ### Example with NGINX
 
@@ -200,6 +212,8 @@ server {
 }
 ```
 
+For full documentation, go to the [official website][2]
+
 ### Example with CADDY SERVER
 
 ```bash
@@ -212,4 +226,15 @@ penpot.mycompany.com {
 }
 ```
 
+For full documentation, go to the [official website][3]
+
+### Example with TRAEFIK
+
+In the [Penpot's docker-compose.yaml][4] file, there is a simple example with Traefik.
+For full documentation, go to the [official website][5]
+
 [1]: /technical-guide/configuration/
+[2]: https://nginx.org/en/docs/index.html
+[3]: https://caddyserver.com/docs/
+[4]: https://github.com/penpot/penpot/blob/develop/docker/images/docker-compose.yaml
+[5]: https://doc.traefik.io/traefik/

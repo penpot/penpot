@@ -29,8 +29,7 @@
    [:snapshots [:vector [:fn valid-date?]]]])
 
 (mf/defc autosaved-milestone*
-  {::mf/props :obj
-   ::mf/schema schema:milestone}
+  {::mf/schema schema:milestone}
   [{:keys [class active versionToggled label autosavedMessage snapshots
            onClickSnapshotMenu onToggleExpandSnapshots] :rest props}]
   (let [class (d/append-class class (stl/css-case :milestone true :is-selected active))

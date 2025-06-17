@@ -231,6 +231,7 @@
            :position-modifier modifier1
            :on-cancel on-draft-cancel
            :on-submit on-draft-submit
+           :viewport nil
            :zoom zoom}])]]]))
 
 (mf/defc comments-sidebar*

@@ -7,6 +7,7 @@
 (ns app.main.ui
   (:require
    [app.common.data :as d]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.team :as dtm]
@@ -27,8 +28,8 @@
    [app.main.ui.onboarding.team-choice :refer [onboarding-team-modal]]
    [app.main.ui.releases :refer [release-notes-modal]]
    [app.main.ui.static :as static]
-   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.theme :as theme]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
@@ -69,7 +70,7 @@
 (mf/defc dashboard-legacy-redirect*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [section team-id project-id search-term plugin-url template-url]}]
+  [{:keys [section team-id project-id search-term plugin-url template]}]
   (let [section (case section
                   :dashboard-legacy-search
                   :dashboard-search
@@ -97,7 +98,7 @@
                     :project-id project-id
                     :search-term search-term
                     :plugin plugin-url
-                    :template-url template-url}]
+                    :template template}]
         (st/emit! (rt/nav section (d/without-nils params)))))
 
     [:> loader*
@@ -166,7 +167,6 @@
         (and (contains? cf/flags :onboarding)
              (not (:onboarding-viewed props))
              (not (contains? props :onboarding-team-id))
-             (contains? props :newsletter-updates)
              (:is-default team))
 
         show-release-modal?
@@ -193,6 +193,7 @@
         :settings-password
         :settings-options
         :settings-feedback
+        :settings-subscription
         :settings-access-tokens
         :settings-notifications)
        [:? [:& settings-page {:route route}]]
@@ -212,11 +213,11 @@
         :dashboard-webhooks
         :dashboard-settings)
        (let [params        (get params :query)
-             team-id       (some-> params :team-id uuid)
-             project-id    (some-> params :project-id uuid)
+             team-id       (some-> params :team-id uuid/parse*)
+             project-id    (some-> params :project-id uuid/parse*)
              search-term   (some-> params :search-term)
              plugin-url    (some-> params :plugin)
-             template-url  (some-> params :template)]
+             template      (some-> params :template)]
          [:?
           #_[:& app.main.ui.releases/release-notes-modal {:version "2.5"}]
           #_[:& app.main.ui.onboarding/onboarding-templates-modal]
@@ -231,7 +232,7 @@
             [:& onboarding-newsletter]
 
             show-team-modal?
-            [:& onboarding-team-modal {:go-to-team? true}]
+            [:& onboarding-team-modal {:go-to-team true}]
 
             show-release-modal?
             [:& release-notes-modal {:version (:main cf/version)}])
@@ -243,13 +244,13 @@
                                :search-term search-term
                                :plugin-url plugin-url
                                :project-id project-id
-                               :template-url template-url}]]])
+                               :template template}]]])
 
        :workspace
        (let [params     (get params :query)
-             team-id    (some-> params :team-id uuid)
-             file-id    (some-> params :file-id uuid)
-             page-id    (some-> params :page-id uuid)
+             team-id    (some-> params :team-id uuid/parse*)
+             file-id    (some-> params :file-id uuid/parse*)
+             page-id    (some-> params :page-id uuid/parse*)
              layout     (some-> params :layout keyword)]
          [:? {}
           (when (cf/external-feature-flag "onboarding-03" "test")
@@ -257,11 +258,8 @@
               show-question-modal?
               [:& questions-modal]
 
-              show-newsletter-modal?
-              [:& onboarding-newsletter]
-
               show-team-modal?
-              [:& onboarding-team-modal {:go-to-team? false}]
+              [:& onboarding-team-modal {:go-to-team false}]
 
               show-release-modal?
               [:& release-notes-modal {:version (:main cf/version)}]))
@@ -276,15 +274,15 @@
        :viewer
        (let [params   (get params :query)
              index    (some-> (:index params) parse-long)
-             share-id (some-> (:share-id params) parse-uuid)
+             share-id (some-> (:share-id params) uuid/parse*)
              section  (or (some-> (:section params) keyword)
                           :interactions)
 
-             file-id  (some-> (:file-id params) parse-uuid)
-             page-id  (some-> (:page-id params) parse-uuid)
+             file-id  (some-> (:file-id params) uuid/parse*)
+             page-id  (some-> (:page-id params) uuid/parse*)
              imode    (or (some-> (:interactions-mode params) keyword)
                           :show-on-click)
-             frame-id (some-> (:frame-id params) parse-uuid)
+             frame-id (some-> (:frame-id params) uuid/parse*)
              share    (:share params)]
 
          [:? {}
@@ -300,9 +298,9 @@
 
 
        :workspace-legacy
-       (let [project-id (some-> params :path :project-id uuid)
-             file-id    (some-> params :path :file-id uuid)
-             page-id    (some-> params :query :page-id uuid)
+       (let [project-id (some-> params :path :project-id uuid/parse*)
+             file-id    (some-> params :path :file-id uuid/parse*)
+             page-id    (some-> params :query :page-id uuid/parse*)
              layout     (some-> params :query :layout keyword)]
 
          [:> workspace-legacy-redirect*
@@ -321,18 +319,18 @@
         :dashboard-legacy-team-invitations
         :dashboard-legacy-team-webhooks
         :dashboard-legacy-team-settings)
-       (let [team-id     (some-> params :path :team-id uuid)
-             project-id  (some-> params :path :project-id uuid)
+       (let [team-id     (some-> params :path :team-id uuid/parse*)
+             project-id  (some-> params :path :project-id uuid/parse*)
              search-term (some-> params :query :search-term)
              plugin-url  (some-> params :query :plugin)
-             template-url  (some-> params :template)]
+             template    (some-> params :template)]
          [:> dashboard-legacy-redirect*
           {:team-id team-id
            :section section
            :project-id project-id
            :search-term search-term
            :plugin-url plugin-url
-           :template-url template-url}])
+           :template template}])
 
        :viewer-legacy
        (let [{:keys [query-params path-params]} route
@@ -359,17 +357,16 @@
   []
   (let [route   (mf/deref refs/route)
         edata   (mf/deref refs/exception)
-        profile (mf/deref refs/profile)
-        theme   (or (:theme profile) "default")]
+        profile (mf/deref refs/profile)]
 
-    (mf/with-effect [theme]
-      (dom/set-html-theme-color theme))
+    ;; initialize themes
+    (theme/use-initialize profile)
 
     [:& (mf/provider ctx/current-route) {:value route}
      [:& (mf/provider ctx/current-profile) {:value profile}
       (if edata
         [:> static/exception-page* {:data edata :route route}]
         [:> error-boundary* {:fallback static/internal-error*}
-         [:& notifications/current-notification]
+         [:> notifications/current-notification*]
          (when route
            [:> page* {:route route :profile profile}])])]]))

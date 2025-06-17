@@ -49,6 +49,12 @@ export class WorkspacePage extends BaseWebSocketPage {
       "get-profiles-for-file-comments?file-id=*",
       "workspace/get-profile-for-file-comments.json",
     );
+
+    await BaseWebSocketPage.mockRPC(
+      page,
+      "update-profile-props",
+      "workspace/update-profile-empty.json",
+    );
   }
 
   static anyTeamId = "c7ce0794-0992-8105-8004-38e630f7920a";
@@ -70,6 +76,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     );
     this.toolbarOptions = page.getByTestId("toolbar-options");
     this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
+    this.ellipseShapeButton = page.getByRole("button", { name: "Ellipse (E)" });
     this.moveButton = page.getByRole("button", { name: "Move (V)" });
     this.boardButton = page.getByRole("button", { name: "Board (B)" });
     this.toggleToolbarButton = page.getByRole("button", {
@@ -171,6 +178,10 @@ export class WorkspacePage extends BaseWebSocketPage {
     );
   }
 
+  async mockGetFile(jsonFile) {
+    await this.mockRPC(/get\-file\?/, jsonFile);
+  }
+
   async setupFileWithComments() {
     await this.mockRPC(
       "get-comment-threads?file-id=*",
@@ -195,6 +206,13 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.viewport.hover({ position: { x, y } });
     await this.page.mouse.down();
     await this.viewport.hover({ position: { x: x + width, y: y + height } });
+    await this.page.mouse.up();
+  }
+
+  async clickAt(x, y) {
+    await this.page.waitForTimeout(100);
+    await this.viewport.hover({ position: { x, y } });
+    await this.page.mouse.down();
     await this.page.mouse.up();
   }
 
@@ -244,6 +262,9 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async clickAssets(clickOptions = {}) {
     await this.sidebar.getByText("Assets").click(clickOptions);
+  }
+  async clickLayers(clickOptions = {}) {
+    await this.sidebar.getByText("Layers").click(clickOptions);
   }
 
   async openLibrariesModal(clickOptions = {}) {

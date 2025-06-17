@@ -108,6 +108,7 @@
    [::ip-addr {:optional true} ::sm/text]
    [::props {:optional true} [:map-of :keyword :any]]
    [::context {:optional true} [:map-of :keyword :any]]
+   [::tracked-at {:optional true} ::sm/inst]
    [::webhooks/event? {:optional true} ::sm/boolean]
    [::webhooks/batch-timeout {:optional true} ::dt/duration]
    [::webhooks/batch-key {:optional true}
@@ -118,12 +119,12 @@
 
 (defn prepare-event
   [cfg mdata params result]
-  (let [resultm    (meta result)
-        request    (-> params meta ::http/request)
-        profile-id (or (::profile-id resultm)
-                       (:profile-id result)
-                       (::rpc/profile-id params)
-                       uuid/zero)
+  (let [resultm      (meta result)
+        request      (-> params meta ::http/request)
+        profile-id   (or (::profile-id resultm)
+                         (:profile-id result)
+                         (::rpc/profile-id params)
+                         uuid/zero)
 
         session-id   (get params ::rpc/external-session-id)
         event-origin (get params ::rpc/external-event-origin)
@@ -135,14 +136,14 @@
 
                          (clean-props))
 
-        token-id  (::actoken/id request)
-        context   (-> (::context resultm)
-                      (assoc :external-session-id session-id)
-                      (assoc :external-event-origin event-origin)
-                      (assoc :access-token-id (some-> token-id str))
-                      (d/without-nils))
+        token-id     (::actoken/id request)
+        context      (-> (::context resultm)
+                         (assoc :external-session-id session-id)
+                         (assoc :external-event-origin event-origin)
+                         (assoc :access-token-id (some-> token-id str))
+                         (d/without-nils))
 
-        ip-addr   (inet/parse-request request)]
+        ip-addr      (inet/parse-request request)]
 
     {::type (or (::type resultm)
                 (::rpc/type cfg))

@@ -1,6 +1,6 @@
 use std::fmt;
 
-use uuid::Uuid;
+use crate::uuid::Uuid;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum FontStyle {
@@ -38,6 +38,10 @@ pub struct FontFamily {
 impl FontFamily {
     pub fn new(id: Uuid, weight: u32, style: FontStyle) -> Self {
         Self { id, style, weight }
+    }
+
+    pub fn alias(&self) -> String {
+        format!("{}", self)
     }
 }
 

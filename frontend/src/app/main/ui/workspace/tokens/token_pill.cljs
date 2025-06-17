@@ -11,12 +11,13 @@
   (:require
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cft]
+   [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.color :as dwtc]
    [app.main.refs :as refs]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*]]
-   [app.main.ui.workspace.tokens.changes :as wtch]
-   [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -80,6 +81,7 @@
    :y "Y"})
 
 ;; Helper functions
+
 (defn partially-applied-attr
   "Translates partially applied attributes based on the dictionary."
   [app-token-keys is-applied {:keys [attributes all-attributes]}]
@@ -106,7 +108,7 @@
   (let [{:keys [name value type resolved-value]} token
         resolved-value-theme (:resolved-value theme-token)
         resolved-value (or resolved-value-theme resolved-value)
-        {:keys [title] :as token-props} (wtch/get-token-properties theme-token)
+        {:keys [title] :as token-props} (dwta/get-token-properties theme-token)
         applied-tokens (:applied-tokens shape)
         app-token-vals (set (vals applied-tokens))
         app-token-keys (keys applied-tokens)
@@ -119,21 +121,21 @@
         grouped-values (group-by dimensions-dictionary app-token-keys)
 
         base-title (dm/str "Token: " name "\n"
-                           (tr "workspace.token.original-value" value) "\n"
-                           (tr "workspace.token.resolved-value" resolved-value))]
+                           (tr "workspace.tokens.original-value" value) "\n"
+                           (tr "workspace.tokens.resolved-value" resolved-value))]
 
     (cond
       ;; If there are errors, show the appropriate message
       ref-not-in-active-set
-      (tr "workspace.token.ref-not-valid")
+      (tr "workspace.tokens.ref-not-valid")
 
       no-valid-value
-      (tr "workspace.token.value-not-valid")
+      (tr "workspace.tokens.value-not-valid")
 
       ;; If the token is applied and the user is a is-viewer, show the details
       (and is-applied? is-viewer)
       (->> [base-title
-            (tr "workspace.token.applied-to")
+            (tr "workspace.tokens.applied-to")
             (if (= :dimensions type)
               (translate-and-format grouped-values)
               (str "- " title ": " applied-to))]
@@ -156,21 +158,21 @@
 
 (defn- applied-all-attributes?
   [token selected-shapes attributes]
-  (let [ids-by-attributes (wtt/shapes-ids-by-applied-attributes token selected-shapes attributes)
+  (let [ids-by-attributes (cft/shapes-ids-by-applied-attributes token selected-shapes attributes)
         shape-ids         (into #{} xf:map-id selected-shapes)]
-    (wtt/shapes-applied-all? ids-by-attributes shape-ids attributes)))
+    (cft/shapes-applied-all? ids-by-attributes shape-ids attributes)))
 
 (mf/defc token-pill*
   {::mf/wrap [mf/memo]}
   [{:keys [on-click token on-context-menu selected-shapes active-theme-tokens]}]
-  (let [{:keys [name value errors]} token
+  (let [{:keys [name value errors type]} token
 
         has-selected?  (pos? (count selected-shapes))
-        is-reference?  (wtt/is-reference? token)
+        is-reference?  (cft/is-reference? token)
         contains-path? (str/includes? name ".")
 
         {:keys [attributes all-attributes]}
-        (get wtch/token-properties (:type token))
+        (get dwta/token-properties type)
 
         full-applied?
         (if has-selected?
@@ -179,7 +181,7 @@
 
         applied?
         (if has-selected?
-          (wtt/shapes-token-applied? token selected-shapes (d/nilv all-attributes attributes))
+          (cft/shapes-token-applied? token selected-shapes (d/nilv all-attributes attributes))
           false)
 
         half-applied?
@@ -201,10 +203,12 @@
             no-valid-value)
 
         color
-        (when (wtt/color-token? token)
-          (let [theme-token (get active-theme-tokens (:name token))]
-            (or (wtt/resolved-token-bullet-color theme-token)
-                (wtt/resolved-token-bullet-color token))))
+        (when (cft/color-token? token)
+          (let [theme-token (get active-theme-tokens name)]
+            (or (dwtc/resolved-token-bullet-color theme-token)
+                (dwtc/resolved-token-bullet-color token))))
+
+        number-token (= type :number)
 
         on-click
         (mf/use-fn
@@ -239,19 +243,19 @@
            (when (and can-edit? (not (seq errors)) on-click)
              (on-click event))))
 
-        ;; FIXME: missing deps
         on-hover
         (mf/use-fn
          (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set)
          (fn [event]
            (let [node  (dom/get-current-target event)
-                 theme-token (get active-theme-tokens (:name token))
+                 theme-token (get active-theme-tokens name)
                  title (generate-tooltip is-viewer? (first selected-shapes) theme-token token
                                          half-applied? no-valid-value ref-not-in-active-set)]
              (dom/set-attribute! node "title" title))))]
 
     [:button {:class (stl/css-case
                       :token-pill true
+                      :token-pill-no-icon (and number-token (not errors?))
                       :token-pill-default can-edit?
                       :token-pill-applied (and can-edit? has-selected? (or half-applied? full-applied?))
                       :token-pill-invalid (and can-edit? errors?)
@@ -264,8 +268,11 @@
                       :token-pill-invalid-applied-viewer (and is-viewer?
                                                               (and full-applied? errors?)))
               :type "button"
+              :on-focus on-hover
+
               :on-click on-click
               :on-mouse-enter on-hover
+
               :on-context-menu on-context-menu}
      (cond
        errors?
@@ -273,13 +280,12 @@
         {:icon-id "broken-link"
          :class (stl/css :token-pill-icon)}]
 
-       color
-       [:& color-bullet {:color color
-                         :mini true}]
-       :else
-       [:> token-status-icon*
-        {:icon-id token-status-id
-         :class (stl/css :token-pill-icon)}])
+       (not number-token)
+       (if color
+         [:& color-bullet {:color color :mini true}]
+         [:> token-status-icon*
+          {:icon-id token-status-id
+           :class (stl/css :token-pill-icon)}]))
 
      (if contains-path?
        (let [[first-part last-part] (cfh/split-by-last-period name)]

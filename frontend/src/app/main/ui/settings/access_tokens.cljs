@@ -169,12 +169,12 @@
            [:input {:class (stl/css :cancel-button)
                     :type "button"
                     :value (tr "labels.close")
-                    :on-click #(modal/hide!)}]
+                    :on-click modal/hide!}]
            [:*
             [:input {:class (stl/css :cancel-button)
                      :type "button"
                      :value (tr "labels.cancel")
-                     :on-click #(modal/hide!)}]
+                     :on-click modal/hide!}]
             [:> fm/submit-button*
              {:large? false :label (tr "modals.create-access-token.submit-label")}]])]]]]]))
 
@@ -210,7 +210,7 @@
            (swap! local assoc :menu-open true)))
 
         on-keydown
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-menu-click)
          (fn [event]
            (when (kbd/enter? event)

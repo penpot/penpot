@@ -70,3 +70,55 @@ test("[Taiga #9116] Copy CSS background color in the selected format in the INSP
   );
   expect(rgbaColorText).toContain("background: rgba(");
 });
+
+test("[Taiga #10630] [INSPECT] Style assets not being displayed on info tab", async ({
+  page,
+  context,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.goToWorkspace();
+  await workspacePage.mockRPC(
+    "link-file-to-library",
+    "workspace/link-file-to-library.json",
+  );
+
+  await workspacePage.mockRPC(
+    "unlink-file-from-library",
+    "workspace/unlink-file-from-library.json",
+  );
+
+  await workspacePage.mockRPC(
+    "get-team-shared-files?team-id=*",
+    "workspace/get-team-shared-libraries-non-empty.json",
+  );
+
+  await workspacePage.clickColorPalette();
+  await workspacePage.clickAssets();
+  await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
+  await workspacePage.openLibrariesModal();
+  await workspacePage.clickLibrary("Testing library 1");
+  await workspacePage.closeLibrariesModal();
+
+  await expect(
+    workspacePage.palette.getByRole("button", { name: "test-color-187cd5" }),
+  ).toBeVisible();
+
+  await workspacePage.clickLayers();
+
+  await workspacePage.rectShapeButton.click();
+  await workspacePage.clickWithDragViewportAt(128, 128, 200, 100);
+  await workspacePage.clickLeafLayer("Rectangle");
+  await workspacePage.palette
+    .getByRole("button", { name: "test-color-187cd5" })
+    .click();
+
+  const inspectButton = workspacePage.page.getByRole("tab", {
+    name: "Inspect",
+  });
+  await inspectButton.click();
+
+  const colorLibraryName = workspacePage.page.getByTestId("color-library-name");
+
+  await expect(colorLibraryName).toHaveText("test-color-187cd5");
+});

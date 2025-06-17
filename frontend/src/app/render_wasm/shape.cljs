@@ -6,9 +6,13 @@
 
 (ns app.render-wasm.shape
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
+   [app.common.types.shape.layout :as ctl]
    [app.render-wasm.api :as api]
+   [beicon.v2.core :as rx]
    [clojure.core :as c]
    [cuerdas.core :as str]))
 
@@ -106,50 +110,146 @@
 
 ;; --- SHAPE IMPL
 
-(defn- set-wasm-attrs
-  [self k v]
-  (when ^boolean shape/*wasm-sync*
-    (api/use-shape (:id self))
+(defn set-wasm-single-attr!
+  [shape k]
+  (let [v (get shape k)]
     (case k
       :parent-id    (api/set-parent-id v)
       :type         (api/set-shape-type v)
       :bool-type    (api/set-shape-bool-type v)
       :selrect      (api/set-shape-selrect v)
-      :show-content (if (= (:type self) :frame)
+      :show-content (if (= (:type shape) :frame)
                       (api/set-shape-clip-content (not v))
                       (api/set-shape-clip-content false))
       :rotation     (api/set-shape-rotation v)
       :transform    (api/set-shape-transform v)
-      :fills        (api/set-shape-fills v)
-      :strokes      (api/set-shape-strokes v)
+      :fills        (into [] (api/set-shape-fills v))
+      :strokes      (into [] (api/set-shape-strokes v))
       :blend-mode   (api/set-shape-blend-mode v)
       :opacity      (api/set-shape-opacity v)
       :hidden       (api/set-shape-hidden v)
       :shapes       (api/set-shape-children v)
       :blur         (api/set-shape-blur v)
+      :shadow       (api/set-shape-shadows v)
       :constraints-h (api/set-constraints-h v)
       :constraints-v (api/set-constraints-v v)
 
-      :svg-attrs    (when (= (:type self) :path)
-                      (api/set-shape-path-attrs v))
-      :masked-group (when (and (= (:type self) :group) (:masked-group self))
-                      (api/set-masked (:masked-group self)))
-      :content      (cond
-                      (= (:type self) :path)
-                      (api/set-shape-path-content v)
+      (:r1 :r2 :r3 :r4)
+      (api/set-shape-corners [(dm/get-prop shape :r1)
+                              (dm/get-prop shape :r2)
+                              (dm/get-prop shape :r3)
+                              (dm/get-prop shape :r4)])
 
-                      (= (:type self) :svg-raw)
-                      (api/set-shape-svg-raw-content (api/get-static-markup self)))
-      nil)
-    ;; when something synced with wasm
-    ;; is modified, we need to request
-    ;; a new render.
-    (api/clear-drawing-cache)
-    (api/request-render "set-wasm-attrs")))
+      :svg-attrs
+      (when (= (:type shape) :path)
+        (api/set-shape-path-attrs v))
+
+      :masked-group
+      (when (and (= (:type shape) :group) (:masked-group shape))
+        (api/set-masked (:masked-group shape)))
+
+      :content
+      (cond
+        (or (= (:type shape) :path)
+            (= (:type shape) :bool))
+        (api/set-shape-path-content v)
+
+        (= (:type shape) :svg-raw)
+        (api/set-shape-svg-raw-content (api/get-static-markup shape))
+
+        (= (:type shape) :text)
+        (api/set-shape-text v))
+
+      :grow-type
+      (api/set-shape-grow-type v)
+
+      (:layout-item-margin
+       :layout-item-margin-type
+       :layout-item-h-sizing
+       :layout-item-v-sizing
+       :layout-item-max-h
+       :layout-item-min-h
+       :layout-item-max-w
+       :layout-item-min-w
+       :layout-item-absolute
+       :layout-item-z-index)
+      (api/set-layout-child shape)
+
+      :layout-grid-rows
+      (api/set-grid-layout-rows v)
+
+      :layout-grid-columns
+      (api/set-grid-layout-columns v)
+
+      :layout-grid-cells
+      (api/set-grid-layout-cells v)
+
+      (:layout
+       :layout-flex-dir
+       :layout-gap-type
+       :layout-gap
+       :layout-align-items
+       :layout-align-content
+       :layout-justify-items
+       :layout-justify-content
+       :layout-wrap-type
+       :layout-padding-type
+       :layout-padding)
+      (cond
+        (ctl/grid-layout? shape)
+        (api/set-grid-layout-data shape)
+
+        (ctl/flex-layout? shape)
+        (api/set-flex-layout shape))
+
+      nil)))
+
+(defn set-wasm-multi-attrs!
+  [shape properties]
+  (api/use-shape (:id shape))
+  (let [result
+        (->> properties
+             (mapcat #(set-wasm-single-attr! shape %)))
+        pending (-> (d/index-by :key :callback result) vals)]
+    (if (and pending (seq pending))
+      (->> (rx/from pending)
+           (rx/mapcat (fn [callback] (callback)))
+           (rx/reduce conj [])
+           (rx/subs!
+            (fn [_]
+              (api/update-shape-tiles)
+              (api/clear-drawing-cache)
+              (api/request-render "set-wasm-attrs-pending"))))
+      (do
+        (api/update-shape-tiles)
+        (api/request-render "set-wasm-attrs")))))
+
+(defn set-wasm-attrs!
+  [shape k v]
+  (let [shape (assoc shape k v)]
+    (api/use-shape (:id shape))
+    (let [result (set-wasm-single-attr! shape k)
+          pending (-> (d/index-by :key :callback result) vals)]
+      ;; TODO: set-wasm-attrs is called twice with every set
+      (if (and pending (seq pending))
+        (->> (rx/from pending)
+             (rx/mapcat (fn [callback] (callback)))
+             (rx/reduce conj [])
+             (rx/subs!
+              (fn [_]
+                (api/update-shape-tiles)
+                (api/clear-drawing-cache)
+                (api/request-render "set-wasm-attrs-pending"))))
+        (do
+          (api/update-shape-tiles)
+          (api/request-render "set-wasm-attrs"))))))
 
 (defn- impl-assoc
   [self k v]
-  (set-wasm-attrs self k v)
+  (when ^boolean shape/*wasm-sync*
+    (binding [shape/*wasm-sync* false]
+      (set-wasm-attrs! self k v)))
+
   (case k
     :id
     (ShapeProxy. v
@@ -170,7 +270,10 @@
 
 (defn- impl-dissoc
   [self k]
-  (set-wasm-attrs self k nil)
+  (when ^boolean shape/*wasm-sync*
+    (binding [shape/*wasm-sync* false]
+      (set-wasm-attrs! self k nil)))
+
   (case k
     :id
     (ShapeProxy. nil

@@ -14,6 +14,7 @@
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
+   [beicon.v2.operators :as rxo]
    [potok.v2.core :as ptk]))
 
 (defn path-pointer-enter [position]
@@ -45,7 +46,7 @@
         (update-in state [:workspace-local :edit-path id :hover-handlers] disj [index prefix])))))
 
 (defn select-node-area
-  [shift?]
+  [initial-set remove?]
   (ptk/reify ::select-node-area
     ptk/UpdateEvent
     (update [_ state]
@@ -57,13 +58,12 @@
                               (partial gsh/has-point-rect? selrect)
                               (constantly false))
 
-            selected-points (dm/get-in state [:workspace-local :edit-path id :selected-points])
-            selected-points (or selected-points #{})
-
             xform           (comp (filter #(not (= (:command %) :close-path)))
                                   (map (comp gpt/point :params))
                                   (filter selected-point?))
-            positions       (into (if shift? selected-points #{}) xform content)]
+            positions       (if remove?
+                              (apply disj initial-set (into #{} xform content))
+                              (into initial-set xform content))]
 
         (cond-> state
           (some? id)
@@ -73,8 +73,8 @@
   (ptk/reify ::select-node
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (get-in state [:workspace-local :edition])
-            selected-points (or (get-in state [:workspace-local :edit-path id :selected-points]) #{})
+      (let [id              (dm/get-in state [:workspace-local :edition])
+            selected-points (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
             selected-points (cond
                               (and shift? (contains? selected-points position))
                               (disj selected-points position)
@@ -111,25 +111,42 @@
       (update state :workspace-local dissoc :selrect))))
 
 (defn handle-area-selection
-  [shift?]
+  [append? remove?]
   (letfn [(valid-rect? [zoom {width :width height :height}]
             (or (> width (/ 10 zoom)) (> height (/ 10 zoom))))]
 
     (ptk/reify ::handle-area-selection
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [zoom    (get-in state [:workspace-local :zoom] 1)
+        (let [id      (dm/get-in state [:workspace-local :edition])
+              zoom    (dm/get-in state [:workspace-local :zoom] 1)
               stopper (mse/drag-stopper stream)
-              from-p  @ms/mouse-position]
-          (rx/concat
-           (->> ms/mouse-position
-                (rx/map #(grc/points->rect [from-p %]))
-                (rx/filter (partial valid-rect? zoom))
-                (rx/map update-area-selection)
-                (rx/take-until stopper))
+              from-p  @ms/mouse-position
 
-           (rx/of (select-node-area shift?)
-                  (clear-area-selection))))))))
+              initial-set
+              (if (or append? remove?)
+                (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
+                #{})
+
+              selrect-stream
+              (->> ms/mouse-position
+                   (rx/map #(grc/points->rect [from-p %]))
+                   (rx/filter (partial valid-rect? zoom))
+                   (rx/take-until stopper))]
+
+          (rx/concat
+           (if (or append? remove?)
+             (rx/empty)
+             (rx/of (deselect-all)))
+           (rx/merge
+            (->> selrect-stream
+                 (rx/map update-area-selection))
+            (->> selrect-stream
+                 (rx/buffer-time 100)
+                 (rx/map last)
+                 (rx/pipe (rxo/distinct-contiguous))
+                 (rx/map #(select-node-area initial-set remove?))))
+           (rx/of (clear-area-selection))))))))
 
 (defn update-selection
   [point-change]
@@ -137,7 +154,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [id (st/get-path-id state)
-            selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
+            selected-points (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
             selected-points (into #{} (map point-change) selected-points)]
         (-> state
             (assoc-in [:workspace-local :edit-path id :selected-points] selected-points))))))

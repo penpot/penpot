@@ -607,6 +607,16 @@
   (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
   file)
 
+(defmethod repair-error :variant-bad-variant-name
+  [_ error file _]
+  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
+  file)
+
+(defmethod repair-error :variant-component-bad-name
+  [_ error file _]
+  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
+  file)
+
 (defmethod repair-error :default
   [_ error file _]
   (log/error :hint "Unknown error code, don't know how to repair" :code (:code error))

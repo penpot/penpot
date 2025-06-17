@@ -130,10 +130,6 @@
 .no-selection {
   @include bodySmallTypography;
   margin-bottom: $s-24;
-  .modal-hint {
-    @include bodySmallTypography;
-    color: var(--modal-text-foreground-color);
-  }
   .modal-link {
     @include bodyLargeTypography;
     text-decoration: none;
@@ -304,6 +300,7 @@
     }
     .file-name-label {
       @include bodyLargeTypography;
+      @include textEllipsis;
     }
   }
   &.loading {

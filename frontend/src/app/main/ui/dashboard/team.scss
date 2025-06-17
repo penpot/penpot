@@ -9,13 +9,14 @@
 
 // Dashboard team settings
 .dashboard-team-settings {
-  display: grid;
-  grid-template-rows: auto auto 1fr;
-  justify-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: $s-24;
   width: 100%;
   border-top: $s-1 solid var(--panel-border-color);
   overflow-y: auto;
+  padding-inline: $s-24;
 }
 
 .block {
@@ -23,12 +24,11 @@
   grid-auto-rows: min-content;
   gap: $s-8;
   max-width: $s-1000;
-  width: $s-1000;
+  width: 100%;
 }
 
 .info-block {
-  position: relative;
-  padding-top: $s-180;
+  margin-block-start: $s-16;
 }
 
 .block-label {
@@ -63,12 +63,11 @@
 
 .team-icon {
   --update-button-opacity: 0;
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   height: $s-120;
   width: $s-120;
   padding: $s-16;
+  margin-block-end: $s-32;
 
   &:hover {
     --update-button-opacity: 1;
@@ -76,6 +75,9 @@
 }
 
 .team-image {
+  position: absolute;
+  top: 0;
+  left: 0;
   border-radius: 50%;
   width: $s-120;
   height: $s-120;
@@ -86,8 +88,8 @@
   @include buttonStyle;
   @include flexCenter;
   position: absolute;
-  top: $s-16;
-  left: $s-16;
+  top: 0;
+  left: 0;
   height: 100%;
   width: 100%;
   z-index: $z-index-modal;
@@ -104,14 +106,20 @@
 
 // TEAM MEMBERS PAGE
 .dashboard-team-members {
-  display: grid;
-  justify-items: center;
+  display: flex;
+  justify-content: center;
   width: 100%;
   height: 100%;
-  padding-top: $s-20;
+  padding-inline-start: $s-20;
+  padding-block-start: $s-20;
   border-top: $s-1 solid var(--panel-border-color);
   overflow-y: auto;
   scrollbar-gutter: stable;
+}
+
+.dashboard-team-members.dashboard-top-cta {
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .team-members {
@@ -119,7 +127,7 @@
   grid-template-rows: auto 1fr;
   height: fit-content;
   max-width: $s-1000;
-  width: $s-1000;
+  width: 100%;
 }
 
 .table-header {
@@ -274,14 +282,20 @@
 
 // TEAM INVITATION PAGE
 .dashboard-team-invitations {
-  display: grid;
-  justify-items: center;
+  display: flex;
+  justify-content: center;
   width: 100%;
   height: 100%;
-  padding-top: $s-20;
+  padding-inline-start: $s-20;
+  padding-block-start: $s-20;
   border-top: $s-1 solid var(--panel-border-color);
   overflow-y: auto;
   scrollbar-gutter: stable;
+}
+
+.dashboard-team-invitations.dashboard-top-cta {
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .invitations {
@@ -289,7 +303,7 @@
   grid-template-rows: auto 1fr;
   height: fit-content;
   max-width: $s-1000;
-  width: $s-1000;
+  width: 100%;
 }
 
 .table-row-invitations {
@@ -308,6 +322,12 @@
   border: $s-1 solid var(--panel-border-color);
   border-radius: $br-8;
   color: var(--dashboard-list-text-foreground-color);
+}
+
+.btn-empty-invitations {
+  @extend .button-primary;
+  margin-block-start: $s-16;
+  padding-inline: $s-12;
 }
 
 .title-field-status {

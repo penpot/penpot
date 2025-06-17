@@ -4,7 +4,6 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../ds/typography.scss" as t;
 @use "../../../ds/_sizes.scss" as *;
 
 @import "refactor/common-refactor.scss";
@@ -32,8 +31,8 @@
 }
 
 .themes-modal-wrapper {
-  display: grid;
-  grid-template-rows: 0fr minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: $s-16;
   max-height: $s-688;
 }
@@ -68,6 +67,7 @@
 
 .button-footer {
   display: flex;
+  margin-left: auto;
   justify-content: flex-end;
   gap: $s-6;
 }
@@ -120,6 +120,15 @@
   gap: $s-4;
 }
 
+.group-title-icon {
+  flex-shrink: 0;
+}
+
+.group-title-name {
+  flex-grow: 1;
+  @include textEllipsis;
+}
+
 .theme-group-rows-wrapper {
   display: flex;
   flex-direction: column;
@@ -136,26 +145,26 @@
 }
 
 .theme-row {
-  display: flex;
   align-items: center;
-  gap: $s-12;
+  display: flex;
   justify-content: space-between;
+  gap: $s-16;
 }
 
-.theme-row-left {
-  display: flex;
-  align-items: center;
-  gap: $s-16;
+.theme-name-row {
+  @include textEllipsis;
+  flex-grow: 1;
 }
 
 .theme-name {
   color: var(--color-foreground-primary);
 }
 
-.theme-row-right {
-  display: flex;
+.theme-actions-row {
   align-items: center;
+  display: flex;
   gap: $s-6;
+  flex-shrink: 0;
 }
 
 .sets-count-button {
@@ -181,6 +190,7 @@
   border: $s-1 solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
   border-radius: $s-8;
   overflow-y: auto;
+  max-height: $s-452;
 }
 
 .sets-count-empty-button {
@@ -200,20 +210,4 @@
   display: grid;
   grid-template-columns: 0.6fr 1fr;
   gap: $s-12;
-}
-
-.label {
-  @include t.use-typography("body-small");
-  @include textEllipsis;
-}
-
-.main-label {
-  @include t.use-typography("body-small");
-  color: var(--color-foreground-primary);
-}
-
-.label-optional {
-  @include t.use-typography("body-small");
-  margin-inline-start: 1ex;
-  color: var(--color-foreground-secondary);
 }

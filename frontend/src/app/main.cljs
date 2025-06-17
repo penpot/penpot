@@ -15,7 +15,6 @@
    [app.main.data.profile :as dp]
    [app.main.data.websocket :as ws]
    [app.main.errors]
-   [app.main.features :as feat]
    [app.main.rasterizer :as thr]
    [app.main.store :as st]
    [app.main.ui :as ui]
@@ -24,11 +23,10 @@
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.delete-shared]
    [app.main.ui.routes :as rt]
-   [app.main.worker :as worker]
+   [app.main.worker :as mw]
    [app.plugins :as plugins]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
-   [app.util.theme :as theme]
    [beicon.v2.core :as rx]
    [debug]
    [features]
@@ -67,7 +65,6 @@
     (watch [_ _ stream]
       (rx/merge
        (rx/of (ev/initialize)
-              (feat/initialize)
               (dp/refresh-profile))
 
        ;; Watch for profile deletion events
@@ -93,9 +90,8 @@
 
 (defn ^:export init
   []
-  (worker/init!)
+  (mw/init!)
   (i18n/init! cf/translations)
-  (theme/init! cf/themes)
   (cur/init-styles)
   (thr/init!)
   (init-ui)

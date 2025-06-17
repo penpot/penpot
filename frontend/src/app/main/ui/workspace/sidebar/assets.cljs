@@ -75,8 +75,7 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [{:keys [size file-id]}]
-  (let [components-v2  (mf/use-ctx ctx/components-v2)
-        read-only?     (mf/use-ctx ctx/workspace-read-only?)
+  (let [read-only?     (mf/use-ctx ctx/workspace-read-only?)
         filters*       (mf/use-state
                         {:term ""
                          :section "all"
@@ -147,11 +146,6 @@
          {:name    (tr "workspace.assets.components")
           :id      "components"
           :handler on-section-filter-change}
-
-         (when (not components-v2)
-           {:name    (tr "workspace.assets.graphics")
-            :id      "graphics"
-            :handler on-section-filter-change})
 
          {:name    (tr "workspace.assets.colors")
           :id      "colors"

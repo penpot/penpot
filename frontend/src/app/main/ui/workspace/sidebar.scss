@@ -5,9 +5,10 @@
 // Copyright (c) KALEIDOS INC
 
 @import "refactor/common-refactor.scss";
+@import "../ds/_sizes.scss";
 
-$width-settings-bar: $s-276;
-$width-settings-bar-max: $s-500;
+$width-settings-bar: $sz-318;
+$width-settings-bar-max: $sz-500;
 
 .left-settings-bar {
   display: grid;
@@ -85,9 +86,16 @@ $width-settings-bar-max: $s-500;
 }
 
 .resize-area-horiz {
+  background-color: var(--panel-background-color);
   position: absolute;
   left: 0;
   width: 100%;
+  padding: $s-3 0 $s-1 0;
+  height: $s-6;
+  cursor: ns-resize;
+}
+
+.resize-handle-horiz {
   border-bottom: $s-2 solid var(--resize-area-border-color);
   cursor: ns-resize;
 }

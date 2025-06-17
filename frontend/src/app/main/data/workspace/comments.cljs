@@ -132,8 +132,9 @@
                (rx/ignore))))))))
 
 ;; Move comment threads that are inside a frame when that frame is moved"
-(defmethod ptk/resolve ::move-frame-comment-threads
-  [_ ids]
+
+(defn- move-frame-comment-threads
+  [ids transforms]
   (assert (sm/check-coll-of-uuid ids))
 
   (ptk/reify ::move-frame-comment-threads
@@ -148,14 +149,23 @@
             threads-position-map
             (get page :comment-thread-positions)
 
-            object-modifiers
-            (:workspace-modifiers state)
+            object-modifiers (:workspace-modifiers state)
 
             build-move-event
             (fn [comment-thread]
-              (let [frame     (get objects (:frame-id comment-thread))
-                    modifiers (get-in object-modifiers [(:frame-id comment-thread) :modifiers])
-                    frame'    (gsh/transform-shape frame modifiers)
+              (let [frame-id (:frame-id comment-thread)
+                    frame     (get objects frame-id)
+                    modifiers (get-in object-modifiers [frame-id :modifiers])
+                    transform (get transforms frame-id)
+
+                    frame'
+                    (cond-> frame
+                      (some? modifiers)
+                      (gsh/transform-shape modifiers)
+
+                      (some? transform)
+                      (gsh/apply-transform transform))
+
                     moved     (gpt/to-vec (gpt/point (:x frame) (:y frame))
                                           (gpt/point (:x frame') (:y frame')))
                     position  (get-in threads-position-map [(:id comment-thread) :position])
@@ -170,6 +180,13 @@
              (filter (comp frame-ids? :frame-id))
              (map build-move-event)
              (rx/from))))))
+
+(defmethod ptk/resolve ::move-frame-comment-threads
+  [_ ids-or-transforms]
+  (when (d/not-empty? ids-or-transforms)
+    (move-frame-comment-threads
+     (if (map? ids-or-transforms) (keys ids-or-transforms) ids-or-transforms)
+     (when (map? ids-or-transforms) ids-or-transforms))))
 
 (defn overlap-bubbles?
   "Detect if two bubbles overlap"

@@ -24,9 +24,11 @@
    [:blur ::sm/safe-number]
    [:spread ::sm/safe-number]
    [:hidden :boolean]
-   [:color ::ctc/color]])
-
-(sm/register! ::shadow schema:shadow)
+   [:color ctc/schema:color]])
 
 (def check-shadow
   (sm/check-fn schema:shadow))
+
+(def valid-shadow?
+  (sm/validator schema:shadow))
+

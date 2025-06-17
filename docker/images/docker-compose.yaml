@@ -52,7 +52,7 @@ services:
   ## penpot to the internet, or a different host than `localhost`.
 
   # traefik:
-  #   image: traefik:v2.9
+  #   image: traefik:v3.3
   #   networks:
   #     - penpot
   #   command:
@@ -87,29 +87,16 @@ services:
     networks:
       - penpot
 
-    labels:
-      - "traefik.enable=true"
+    # labels:
+      # - "traefik.enable=true"
 
-      ## HTTP: example of labels for the case where penpot will be exposed to the
-      ## internet with only HTTP (without HTTPS) using traefik.
+      # ## HTTPS: example of labels for the case where penpot will be exposed to the
+      # ## internet with HTTPS using traefik.
 
-      # - "traefik.http.routers.penpot-http.entrypoints=web"
-      # - "traefik.http.routers.penpot-http.rule=Host(`<DOMAIN_NAME>`)"
-      # - "traefik.http.services.penpot-http.loadbalancer.server.port=80"
-
-      ## HTTPS: example of labels for the case where penpot will be exposed to the
-      ## internet with HTTPS using traefik.
-
-      # - "traefik.http.middlewares.http-redirect.redirectscheme.scheme=https"
-      # - "traefik.http.middlewares.http-redirect.redirectscheme.permanent=true"
-      # - "traefik.http.routers.penpot-http.entrypoints=web"
-      # - "traefik.http.routers.penpot-http.rule=Host(`<DOMAIN_NAME>`)"
-      # - "traefik.http.routers.penpot-http.middlewares=http-redirect"
-      # - "traefik.http.routers.penpot-https.entrypoints=websecure"
       # - "traefik.http.routers.penpot-https.rule=Host(`<DOMAIN_NAME>`)"
-      # - "traefik.http.services.penpot-https.loadbalancer.server.port=80"
-      # - "traefik.http.routers.penpot-https.tls=true"
+      # - "traefik.http.routers.penpot-https.entrypoints=websecure"
       # - "traefik.http.routers.penpot-https.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.penpot-https.tls=true"
 
     environment:
       << : [*penpot-flags, *penpot-http-body-size]
@@ -124,14 +111,13 @@ services:
     depends_on:
       penpot-postgres:
         condition: service_healthy
-      penpot-redis:
+      penpot-valkey:
         condition: service_healthy
 
     networks:
       - penpot
 
-    ## Configuration envronment variables for the backend
-    ## container.
+    ## Configuration envronment variables for the backend container.
 
     environment:
       << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size]
@@ -162,10 +148,10 @@ services:
       PENPOT_DATABASE_USERNAME: penpot
       PENPOT_DATABASE_PASSWORD: penpot
 
-      ## Redis is used for the websockets notifications. Don't touch unless the redis
-      ## container has different parameters or different name.
+      ## Valkey (or previously redis) is used for the websockets notifications. Don't touch
+      ## unless the valkey container has different parameters or different name.
 
-      PENPOT_REDIS_URI: redis://penpot-redis/0
+      PENPOT_REDIS_URI: redis://penpot-valkey/0
 
       ## Default configuration for assets storage: using filesystem based with all files
       ## stored in a docker volume.
@@ -209,7 +195,7 @@ services:
     restart: always
 
     depends_on:
-      penpot-redis:
+      penpot-valkey:
         condition: service_healthy
 
     networks:
@@ -220,8 +206,8 @@ services:
       # communicate with the frontend.
       PENPOT_PUBLIC_URI: http://penpot-frontend:8080
 
-      ## Redis is used for the websockets notifications.
-      PENPOT_REDIS_URI: redis://penpot-redis/0
+      ## Valkey (or previowsly Redis) is used for the websockets notifications.
+      PENPOT_REDIS_URI: redis://penpot-valkey/0
 
   penpot-postgres:
     image: "postgres:15"
@@ -247,12 +233,12 @@ services:
       - POSTGRES_USER=penpot
       - POSTGRES_PASSWORD=penpot
 
-  penpot-redis:
-    image: redis:7.2
+  penpot-valkey:
+    image: valkey/valkey:8.1
     restart: always
 
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
       interval: 1s
       timeout: 3s
       retries: 5

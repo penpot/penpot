@@ -30,7 +30,9 @@
 }
 
 .actions {
-  @include flexRow;
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: span 2;
 }
 
 .shadow-element {
@@ -53,14 +55,17 @@
 }
 
 .basic-options {
-  @include flexRow;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  gap: var(--sp-xs);
 }
 
 .shadow-info {
+  grid-column: span 6;
   display: flex;
   align-items: center;
   gap: $s-1;
-  width: $s-188;
+
   .more-options {
     @extend .button-secondary;
     height: $s-32;
@@ -102,34 +107,46 @@
 }
 
 .shadow-advanced-options {
-  @include flexColumn;
-  width: $sz-252;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  gap: var(--sp-xs);
 }
 
 .first-row,
 .second-row {
-  @include flexRow;
-  .offset-x-input,
-  .blur-input,
-  .spread-input,
-  .offset-y-input {
-    @extend .input-element;
-    @include bodySmallTypography;
-    width: $s-60;
-    min-width: $s-60;
-    align-items: baseline;
-    input {
-      width: $s-32;
-    }
-  }
-  .blur-input,
-  .spread-input {
-    width: $s-92;
-    .input-label {
-      width: $s-44;
-    }
-  }
-  .spread-input {
-    gap: $s-8;
-  }
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.offset-x-input,
+.blur-input,
+.spread-input,
+.offset-y-input {
+  @extend .input-element;
+  @include bodySmallTypography;
+}
+
+.input-label {
+  width: $sz-48;
+}
+
+.offset-x-input {
+  grid-column: span 2;
+}
+
+.offset-y-input {
+  grid-column: span 2;
+}
+
+.blur-input {
+  grid-column: span 3;
+}
+
+.spread-input {
+  grid-column: span 3;
+}
+
+.shadow-color {
+  grid-column: span 6;
 }

@@ -98,7 +98,7 @@
 (defn encode
   [data & {:as opts}]
   #?(:clj (j/write-str data opts)
-     :cljs (.stringify js/JSON (->js data opts))))
+     :cljs (.stringify js/JSON (->js data opts) nil (:indent opts))))
 
 (defn decode
   [data & {:as opts}]

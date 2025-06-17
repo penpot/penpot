@@ -4,6 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../ds/spacing.scss" as *;
+@use "../ds/z-index.scss" as *;
+@use "../ds/_sizes.scss" as *;
+
 @import "refactor/common-refactor.scss";
 
 .palette-wrapper {
@@ -12,6 +16,12 @@
   left: 0;
   bottom: 0;
   padding-bottom: $s-4;
+
+  /** Aligns AI Chat button **/
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
 }
 
 .palettes {
@@ -163,4 +173,28 @@
   .handler {
     padding-bottom: $s-8;
   }
+}
+
+/** AI Chat button styles **/
+.help-btn {
+  z-index: var(--z-index-panels);
+  flex-shrink: 0;
+  @extend .button-secondary;
+  inline-size: $sz-40;
+  block-size: $sz-40;
+  border-radius: $br-circle;
+  border: none;
+  &.selected {
+    @extend .button-icon-selected;
+  }
+  &:hover {
+    border: none;
+  }
+}
+
+.icon-help {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+  inline-size: var(--sp-xxl);
+  block-size: var(--sp-xxl);
 }

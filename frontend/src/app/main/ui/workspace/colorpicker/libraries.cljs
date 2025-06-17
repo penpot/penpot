@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.color :as ctc]
+   [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
@@ -62,7 +63,7 @@
                    (if (or (= event "recent")
                            (= event "file"))
                      (keyword event)
-                     (parse-uuid event)))))
+                     (uuid/parse event)))))
 
         valid-color?
         (mf/use-fn
@@ -107,16 +108,15 @@
                           (filter valid-color?)
                           (map-indexed (fn [index color]
                                          (let [color (if (map? color) color {:color color})]
-                                           (assoc color ::id (dm/str index)))))
+                                           (vary-meta color assoc ::id (dm/str index)))))
                           (sort c/sort-colors))
                      (->> (dm/get-in libraries [file-id :data :colors])
                           (vals)
                           (filter valid-color?)
+                          (sort-by :name)
+                          (map #(ctc/library-color->color % file-id))
                           (map-indexed (fn [index color]
-                                         (-> color
-                                             (assoc :file-id file-id)
-                                             (assoc ::id (dm/str index)))))
-                          (sort-by :name)))]
+                                         (vary-meta color assoc ::id (dm/str index))))))]
 
         (reset! current-colors* colors)))
 
@@ -124,6 +124,7 @@
      [:div {:class (stl/css :select-wrapper)}
       [:& select
        {:class (stl/css :shadow-type-select)
+        :data-direction "up"
         :default-value (or (d/name selected) "recent")
         :options options
         :on-change on-library-change}]]
@@ -140,6 +141,6 @@
 
       (for [color current-colors]
         [:& cb/color-bullet
-         {:key (dm/str "color-" (::id color))
+         {:key (-> color meta ::id)
           :color color
           :on-click on-color-click}])]]))

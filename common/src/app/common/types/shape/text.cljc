@@ -7,6 +7,7 @@
 (ns app.common.types.shape.text
   (:require
    [app.common.schema :as sm]
+   [app.common.types.fill :refer [schema:fill]]
    [app.common.types.shape :as-alias shape]
    [app.common.types.shape.text.position-data :as-alias position-data]))
 
@@ -16,54 +17,56 @@
 
 (def node-types #{"root" "paragraph-set" "paragraph"})
 
-(sm/register!
- ^{::sm/type ::content}
- [:map
-  [:type [:= "root"]]
-  [:key {:optional true} :string]
-  [:children
-   {:optional true}
-   [:maybe
-    [:vector {:min 1 :gen/max 2 :gen/min 1}
-     [:map
-      [:type [:= "paragraph-set"]]
-      [:key {:optional true} :string]
-      [:children
-       [:vector {:min 1 :gen/max 2 :gen/min 1}
-        [:map
-         [:type [:= "paragraph"]]
-         [:key {:optional true} :string]
-         [:fills {:optional true}
-          [:maybe
-           [:vector {:gen/max 2} ::shape/fill]]]
-         [:font-family {:optional true} :string]
-         [:font-size {:optional true} :string]
-         [:font-style {:optional true} :string]
-         [:font-weight {:optional true} :string]
-         [:direction {:optional true} :string]
-         [:text-decoration {:optional true} :string]
-         [:text-transform {:optional true} :string]
-         [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
-         [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]
-         [:children
-          [:vector {:min 1 :gen/max 2 :gen/min 1}
-           [:map
-            [:text :string]
-            [:key {:optional true} :string]
-            [:fills {:optional true}
-             [:maybe
-              [:vector {:gen/max 2} ::shape/fill]]]
-            [:font-family {:optional true} :string]
-            [:font-size {:optional true} :string]
-            [:font-style {:optional true} :string]
-            [:font-weight {:optional true} :string]
-            [:direction {:optional true} :string]
-            [:text-decoration {:optional true} :string]
-            [:text-transform {:optional true} :string]
-            [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
-            [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]]]]]]]]]]]])
+(def schema:content
+  [:map
+   [:type [:= "root"]]
+   [:key {:optional true} :string]
+   [:children
+    {:optional true}
+    [:maybe
+     [:vector {:min 1 :gen/max 2 :gen/min 1}
+      [:map
+       [:type [:= "paragraph-set"]]
+       [:key {:optional true} :string]
+       [:children
+        [:vector {:min 1 :gen/max 2 :gen/min 1}
+         [:map
+          [:type [:= "paragraph"]]
+          [:key {:optional true} :string]
+          [:fills {:optional true}
+           [:maybe
+            [:vector {:gen/max 2}  schema:fill]]]
+          [:font-family {:optional true} :string]
+          [:font-size {:optional true} :string]
+          [:font-style {:optional true} :string]
+          [:font-weight {:optional true} :string]
+          [:direction {:optional true} :string]
+          [:text-decoration {:optional true} :string]
+          [:text-transform {:optional true} :string]
+          [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
+          [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]
+          [:children
+           [:vector {:min 1 :gen/max 2 :gen/min 1}
+            [:map
+             [:text :string]
+             [:key {:optional true} :string]
+             [:fills {:optional true}
+              [:maybe
+               [:vector {:gen/max 2} schema:fill]]]
+             [:font-family {:optional true} :string]
+             [:font-size {:optional true} :string]
+             [:font-style {:optional true} :string]
+             [:font-weight {:optional true} :string]
+             [:direction {:optional true} :string]
+             [:text-decoration {:optional true} :string]
+             [:text-transform {:optional true} :string]
+             [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
+             [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]]]]]]]]]]]])
 
+(sm/register! ::content schema:content)
 
+(def valid-content?
+  (sm/lazy-validator schema:content))
 
 (sm/register!
  ^{::sm/type ::position-data}
@@ -73,7 +76,7 @@
    [:y ::sm/safe-number]
    [:width ::sm/safe-number]
    [:height ::sm/safe-number]
-   [:fills [:vector {:gen/max 2} ::shape/fill]]
+   [:fills [:vector {:gen/max 2} schema:fill]]
    [:font-family {:optional true} :string]
    [:font-size {:optional true} :string]
    [:font-style {:optional true} :string]

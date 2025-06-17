@@ -147,9 +147,6 @@
 (def workspace-drawing
   (l/derived :workspace-drawing st/state))
 
-(def workspace-selrect-transform
-  (l/derived :workspace-selrect-transform st/state))
-
 (def workspace-tokens
   "All tokens related ephimeral state"
   (l/derived :workspace-tokens st/state))
@@ -162,14 +159,15 @@
      (let [objects  (dsh/lookup-page-objects state)
            selected (dm/get-in state [:workspace-local :selected])]
        {:objects objects :selected selected}))
-   st/state (fn [v1 v2]
-              (and (identical? (:objects v1) (:objects v2))
-                   (= (:selected v1) (:selected v2))))))
+   st/state
+   (fn [v1 v2]
+     (and (identical? (:objects v1) (:objects v2))
+          (= (:selected v1) (:selected v2))))))
 
 (def selected-shapes
   (l/derived
    (fn [{:keys [objects selected]}]
-     (dsh/process-selected-shapes objects selected))
+     (dsh/process-selected objects selected))
    selected-shapes-data =))
 
 (defn make-selected-ref
@@ -468,7 +466,7 @@
   (l/derived (fn [lib]
                (or
                 (some-> lib
-                        (ctob/delete-theme ctob/hidden-token-theme-group ctob/hidden-token-theme-name)
+                        (ctob/delete-theme ctob/hidden-theme-group ctob/hidden-theme-name)
                         (ctob/get-theme-tree))
                 []))
              tokens-lib))
@@ -477,7 +475,7 @@
   (l/derived #(or (some-> % ctob/get-themes) []) tokens-lib))
 
 (def workspace-token-themes-no-hidden
-  (l/derived #(remove ctob/hidden-temporary-theme? %) workspace-token-themes))
+  (l/derived #(remove ctob/hidden-theme? %) workspace-token-themes))
 
 (def selected-token-set-name
   (l/derived (l/key :selected-token-set-name) workspace-tokens))
@@ -500,20 +498,20 @@
    tokens-lib))
 
 (def workspace-active-theme-paths-no-hidden
-  (l/derived #(disj % ctob/hidden-token-theme-path) workspace-active-theme-paths))
+  (l/derived #(disj % ctob/hidden-theme-path) workspace-active-theme-paths))
 
 ;; FIXME: deprecated, it should not be implemented with ref (still used in form)
 (def workspace-active-theme-sets-tokens
-  (l/derived #(or (some-> % ctob/get-active-themes-set-tokens) {}) tokens-lib))
+  (l/derived #(or (some-> % ctob/get-tokens-in-active-sets) {}) tokens-lib))
 
-(def workspace-selected-token-set-token
+(def workspace-token-in-selected-set
   (fn [token-name]
     (l/derived
-     #(dwts/get-selected-token-set-token % token-name)
+     #(dwts/get-token-in-selected-set % token-name)
      st/state)))
 
-(def workspace-selected-token-set-tokens
-  (l/derived #(or (dwts/get-selected-token-set-tokens %) {}) st/state))
+(def workspace-all-tokens-in-selected-set
+  (l/derived #(or (dwts/get-all-tokens-in-selected-set %) {}) st/state))
 
 (def plugins-permissions-peek
   (l/derived (fn [state]

@@ -29,11 +29,8 @@
   {::mf/register modal/components
    ::mf/register-as :delete-account}
   []
-  (let [on-close
-        (mf/use-callback #(st/emit! (modal/hide)))
-
-        on-accept
-        (mf/use-callback
+  (let [on-accept
+        (mf/use-fn
          #(st/emit! (modal/hide)
                     (du/request-account-deletion
                      (with-meta {} {:on-error on-error}))))]
@@ -45,7 +42,7 @@
 
        [:h2 {:class (stl/css :modal-title)} (tr "modals.delete-account.title")]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click on-close} i/close]]
+                 :on-click modal/hide!} i/close]]
 
       [:div {:class (stl/css :modal-content)}
        [:& context-notification
@@ -55,7 +52,7 @@
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
         [:button {:class (stl/css :cancel-button)
-                  :on-click on-close}
+                  :on-click modal/hide!}
          (tr "modals.delete-account.cancel")]
         [:button {:class (stl/css-case :accept-button true
                                        :danger true)

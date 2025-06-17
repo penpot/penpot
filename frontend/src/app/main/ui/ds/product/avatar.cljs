@@ -24,8 +24,7 @@
     [:maybe [:enum "S" "M" "L"]]]])
 
 (mf/defc avatar*
-  {::mf/props :obj
-   ::mf/schema schema:avatar}
+  {::mf/schema schema:avatar}
 
   [{:keys [tag class name color url selected variant] :rest props}]
   (let [variant (or variant "S")

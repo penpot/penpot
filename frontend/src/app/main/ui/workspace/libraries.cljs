@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.types.colors-list :as ctcl]
+   [app.common.types.color :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.typographies-list :as ctyl]
@@ -228,7 +228,7 @@
          (fn [event]
            (let [library-id (some-> (dom/get-current-target event)
                                     (dom/get-data "library-id")
-                                    (parse-uuid))]
+                                    (uuid/parse))]
              (reset! selected library-id)
              (st/emit! (dwl/link-file-to-library file-id library-id)))))
 
@@ -238,7 +238,7 @@
          (fn [event]
            (let [library-id (some-> (dom/get-current-target event)
                                     (dom/get-data "library-id")
-                                    (parse-uuid))]
+                                    (uuid/parse))]
              (when (= library-id @selected)
                (reset! selected :file))
              (st/emit! (dwl/unlink-file-from-library file-id library-id)
@@ -407,7 +407,7 @@
                           (sort-by #(str/lower (:name %)))
                           (truncate :components))
         colors       (->> color-ids
-                          (map #(ctcl/get-color (:data library) %))
+                          (map #(ctc/get-color (:data library) %))
                           (sort-by #(str/lower (:name %)))
                           (truncate :colors))
         typographies (->> typography-ids
@@ -451,7 +451,7 @@
                           (when-not updating?
                             (let [library-id (some-> (dom/get-target event)
                                                      (dom/get-data "library-id")
-                                                     (parse-uuid))]
+                                                     (uuid/parse))]
                               (st/emit!
                                (dwl/set-updating-library true)
                                (dwl/sync-file file-id library-id))))))]

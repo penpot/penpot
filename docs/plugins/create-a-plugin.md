@@ -1,6 +1,7 @@
 ---
 layout: layouts/plugins.njk
 title: 2. Create a Plugin
+desc: Dive into Penpot plugin development! This guide covers creating plugins from scratch or using templates, libraries, API communication, & deployment.
 ---
 
 # Create a Plugin
@@ -34,9 +35,11 @@ Create your own app with the framework of your choice. See examples for each fra
 
 | Framework | Command                                                     | Version\* |
 | --------- | ----------------------------------------------------------- | --------- |
-| Angular   | ng new plugin-name                                          | 18.0.0    |
-| React     | npm create vite@latest plugin-name -- --template react-ts   | 18.2.0    |
-| Vue       | npm create vue@latest                                       | 3.4.21    |
+| Angular   | ng new plugin-name                                          | 19.2.2    |
+| React     | npm create vite@latest plugin-name -- --template react-ts   | 19.0.0    |
+| Vue       | npm create vue@latest                                       | 3.5.13    |
+| Svelte    | npm create svelte@latest                                    | 5.23.0    |
+
 
 _\*: version we used in the examples._
 

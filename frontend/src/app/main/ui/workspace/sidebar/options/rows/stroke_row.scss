@@ -29,24 +29,30 @@
 .stroke-options {
   display: grid;
   align-items: center;
-  gap: $s-4;
-  grid-template-columns: 1fr 2fr 2fr;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  gap: var(--sp-xs);
 
   .stroke-width-input-element {
     @extend .input-element;
     @include bodySmallTypography;
+    grid-column: span 2;
+  }
+
+  .stroke-alignment-select {
+    grid-column: span 3;
+  }
+
+  .stroke-style-select {
+    grid-column: span 3;
   }
 }
 .stroke-caps-options {
   display: grid;
-  align-items: center;
-  gap: $s-4;
-  grid-template-columns: 1fr auto 1fr;
+  --input-width: calc(var(--sp-xxxl) * 3.5 + 3 * var(--sp-xs) - var(--sp-xs) / 2);
+  grid-template-columns: var(--input-width) var(--sp-xxxl) var(--input-width);
+  gap: var(--sp-xs);
 }
 
-.cap-select {
-  width: 100%;
-}
 .stroke-cap-dropdown,
 .stroke-cap-dropdown-start {
   min-width: $s-124;
@@ -62,8 +68,8 @@
 }
 .swap-caps-btn {
   @extend .button-secondary;
-  height: $s-32;
-  width: $s-28;
+  height: var(--sp-xxxl);
+  width: var(--sp-xxxl);
   svg {
     @extend .button-icon;
   }

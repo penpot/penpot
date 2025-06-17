@@ -14,10 +14,10 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def ref:notification
+(def ^:private ref:notification
   (l/derived :notification st/state))
 
-(mf/defc current-notification
+(mf/defc current-notification*
   []
   (let [notification (mf/deref ref:notification)
         on-close     (mf/use-fn #(st/emit! (ntf/hide)))
@@ -27,7 +27,14 @@
                          (= :floating (:position notification)))
         toast?       (or (= :toast (:type notification))
                          (some? (:timeout notification)))
-        content     (or (:content notification) "")]
+        content     (or (:content notification) "")
+
+        show-detail* (mf/use-state false)
+
+        handle-toggle-detail
+        (mf/use-fn
+         (fn []
+           (swap! show-detail* not)))]
 
     (when notification
       (cond
@@ -35,7 +42,10 @@
         [:> toast*
          {:level (or (:level notification) :info)
           :type (:type notification)
-          :on-close on-close} content]
+          :detail (:detail notification)
+          :on-close on-close
+          :show-detail @show-detail*
+          :on-toggle-detail handle-toggle-detail} content]
 
         inline?
         [:& inline-notification
@@ -55,4 +65,5 @@
         [:> toast*
          {:level (or (:level notification) :info)
           :type (:type notification)
+          :detail (:detail notification)
           :on-close on-close} content]))))

@@ -13,6 +13,7 @@
    [app.worker.export]
    [app.worker.impl :as impl]
    [app.worker.import]
+   [app.worker.index]
    [app.worker.messages :as wm]
    [app.worker.selection]
    [app.worker.snaps]
@@ -135,15 +136,15 @@
          (rx/debounce 1)
 
          (rx/subs! (fn [[messages dropped last]]
-                    ;; Send back the dropped messages replies
+                     ;; Send back the dropped messages replies
                      (doseq [msg dropped]
                        (drop-message msg))
 
-                    ;; Process the message
+                     ;; Process the message
                      (doseq [msg (vals messages)]
                        (handle-message msg))
 
-                    ;; After process the buffer we send a clear
+                     ;; After process the buffer we send a clear
                      (when-not (= last ::clear)
                        (rx/push! buffer ::clear)))))))
 

@@ -117,6 +117,7 @@
   padding-right: 0 $s-8 $s-40 $s-8;
   transition: transform 400ms ease 300ms;
   z-index: $z-index-2;
+  pointer-events: none;
 }
 
 .reset-button {
@@ -126,6 +127,7 @@
   width: $s-28;
   margin-left: $s-8;
   background-color: var(--viewer-controls-background-color);
+  pointer-events: all;
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);

@@ -1,6 +1,10 @@
+use std::alloc::{alloc, Layout};
+use std::ptr;
 use std::sync::Mutex;
 
-static BUFFERU8: Mutex<Option<Box<Vec<u8>>>> = Mutex::new(None);
+const LAYOUT_ALIGN: usize = 4;
+
+static BUFFERU8: Mutex<Option<Vec<u8>>> = Mutex::new(None);
 
 #[no_mangle]
 pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
@@ -10,24 +14,29 @@ pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
         panic!("Bytes already allocated");
     }
 
-    let mut new_buffer = Box::new(vec![0u8; len]);
-    let ptr = new_buffer.as_mut_ptr();
-
-    *guard = Some(new_buffer);
-    ptr
+    unsafe {
+        let layout = Layout::from_size_align_unchecked(len, LAYOUT_ALIGN);
+        let ptr = alloc(layout);
+        if ptr.is_null() {
+            panic!("Allocation failed");
+        }
+        // TODO: Maybe this could be removed.
+        ptr::write_bytes(ptr, 0, len);
+        *guard = Some(Vec::from_raw_parts(ptr, len, len));
+        ptr
+    }
 }
 
-pub fn write_bytes(bytes: Vec<u8>) -> *mut u8 {
+pub fn write_bytes(mut bytes: Vec<u8>) -> *mut u8 {
     let mut guard = BUFFERU8.lock().unwrap();
 
     if guard.is_some() {
         panic!("Bytes already allocated");
     }
 
-    let mut new_buffer = Box::new(bytes);
-    let ptr = new_buffer.as_mut_ptr();
+    let ptr = bytes.as_mut_ptr();
 
-    *guard = Some(new_buffer);
+    *guard = Some(bytes);
     ptr
 }
 
@@ -40,10 +49,12 @@ pub extern "C" fn free_bytes() {
 
 pub fn bytes() -> Vec<u8> {
     let mut guard = BUFFERU8.lock().unwrap();
+    guard.take().expect("Buffer is not initialized")
+}
 
-    guard
-        .take()
-        .map_or_else(|| panic!("Buffer is not initialized"), |buffer| *buffer)
+pub fn bytes_or_empty() -> Vec<u8> {
+    let mut guard = BUFFERU8.lock().unwrap();
+    guard.take().unwrap_or_default()
 }
 
 pub trait SerializableResult {
@@ -61,14 +72,13 @@ pub trait SerializableResult {
 pub fn write_vec<T: SerializableResult>(result: Vec<T>) -> *mut u8 {
     let elem_size = size_of::<T::BytesType>();
     let bytes_len = 4 + result.len() * elem_size;
-    let mut result_bytes = Vec::<u8>::with_capacity(bytes_len);
+    let mut result_bytes = vec![0; bytes_len];
 
-    result_bytes.resize(bytes_len, 0);
     result_bytes[0..4].clone_from_slice(&result.len().to_le_bytes());
 
-    for i in 0..result.len() {
+    for (i, item) in result.iter().enumerate() {
         let base = 4 + i * elem_size;
-        result[i].clone_to_slice(&mut result_bytes[base..base + elem_size]);
+        item.clone_to_slice(&mut result_bytes[base..base + elem_size]);
     }
 
     write_bytes(result_bytes)

@@ -70,36 +70,23 @@
     visibility: visible;
   }
 }
+
 .one-line {
   max-height: $s-32;
 }
+
 .two-line {
   display: grid;
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: auto 1fr;
+  gap: $s-4;
 }
+
 .color-name-wrapper {
   @include bodySmallTypography;
   @include flexColumn;
   padding: $s-8 $s-4 $s-8 $s-8;
   height: $s-32;
   max-width: $s-80;
-
-  &.gradient-color {
-    color: var(--menu-foreground-color);
-    max-width: $s-124;
-  }
-  .color-name-library {
-    @include bodySmallTypography;
-    @include textEllipsis;
-    text-align: left;
-    height: $s-16;
-    color: var(--menu-foreground-color-rest);
-  }
-  .color-value-wrapper {
-    @include bodySmallTypography;
-    height: $s-16;
-    color: var(--menu-foreground-color);
-  }
 }
 
 .opacity-info {
@@ -152,6 +139,7 @@
 .color-name-library {
   @include inspectValue;
   color: var(--menu-foreground-color-rest);
+  word-break: break-word;
 }
 
 .image-download {

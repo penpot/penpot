@@ -42,6 +42,8 @@
    org.postgresql.util.PGInterval
    org.postgresql.util.PGobject))
 
+(def ^:dynamic *conn* nil)
+
 (declare open)
 (declare create-pool)
 
