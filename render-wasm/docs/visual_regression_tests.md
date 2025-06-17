@@ -5,10 +5,12 @@
 
 ## Run the tests
 
-The tests are located in their own Playwright project, `render-wasm`. To run them, go to the `frontend` dir and execute Playwright passing the `--project` flag:
+The tests are located in their own Playwright project, `render-wasm`.
+
+To run them, go to the `frontend` dir and execute Playwright passing the `--project` flag. To run them using the `--ui` flag, run the tests **out of the tmux window**. 
 
 ```zsh
-cd frontend
+cd penpot/frontend
 npx playwright test --ui --project=render-wasm
 ```
 
