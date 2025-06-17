@@ -13,6 +13,7 @@
    [app.main.constants :refer [max-input-length]]
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.formats :as fmt]
    [app.util.array :as array]
    [app.util.dom :as dom]
@@ -26,18 +27,27 @@
 
 (def listbox-id-index (atom 0))
 
-(defn- clamp [val min-val max-val]
+(defn- clamp
+  "Returns `min-val` if `val` is less than `min-val`, `max-val`
+   if greater than `max-val`, or `val` itself if within bounds."
+  [val min-val max-val]
   (-> val
       (max min-val)
       (min max-val)))
 
-(defn- increment [val step min-val max-val]
+(defn- increment
+  "Increments `val` by `step`, clamped to [`min-val`, `max-val`]."
+  [val step min-val max-val]
   (clamp (+ val step) min-val max-val))
 
-(defn- decrement [val step min-val max-val]
+(defn- decrement
+  "Decrements `val` by `step`, clamped to [`min-val`, `max-val`]."
+  [val step min-val max-val]
   (clamp (- val step) min-val max-val))
 
 (defn- parse-value
+  "Parses and clamps `raw-value` as a number within bounds;
+   returns nil if invalid or empty."
   [raw-value last-value min-value max-value nillable]
   (let [new-value (-> raw-value
                       (str/strip-suffix ".")
@@ -67,13 +77,14 @@
   (let [option (get-option options default)]
     (obj/get option "id")))
 
+;; TODO: Add schema props
 (def ^:private schema:numeric-input
   [:map])
 
 (mf/defc numeric-input*
   {::mf/forward-ref true
    ::mf/schema schema:numeric-input}
-  [{:keys [id class value default placeholder
+  [{:keys [id class value default placeholder icon
            min max max-length step
            is-selected-on-focus nillable
            options default-selected empty-to-end
@@ -81,60 +92,33 @@
 
   (let [;; Borrar
         on-change (d/nilv on-change #(prn "on-change value" %))
-        options2 #js[#js{:id "1" :key "asd" :label "Option 1"}
-                     #js{:id "2" :key "qlkñjlkj" :label "Option 2"}]
+        options #js[#js{:id "sizing-big-global" :key "asd" :label "sizing.big" :resolved-value "32"}
+                    #js{:id "sizing-medium-global" :key "qlkñjlkj" :label "sizing.medium" :resolved-value "23"}]
 
-        nillable     (d/nilv nillable false)
+        ;; Defautl props
+        nillable        (d/nilv nillable false)
         select-on-focus (d/nilv is-selected-on-focus true)
-        default      (d/parse-double default (when-not nillable 0))
-        step         (d/parse-double step 1)
-        min          (d/parse-double min sm/min-safe-int)
-        max          (d/parse-double max sm/max-safe-int)
-        max-length   (d/nilv max-length max-input-length)
+        default         (d/parse-double default (when-not nillable 0))
+        step            (d/parse-double step 1)
+        min             (d/parse-double min sm/min-safe-int)
+        max             (d/parse-double max sm/max-safe-int)
+        max-length      (d/nilv max-length max-input-length)
+        id              (or id (mf/use-id))
 
-        is-multiple? (= :multiple value)
+        ;; State and values
+        is-open*           (mf/use-state false)
+        is-open            (deref is-open*)
 
-        wrapper-ref        (mf/use-ref nil)
-        selected-value*    (mf/use-state  #(get-selected-option-id options2 default-selected))
+        is-token*          (mf/use-state false)
+        is-token           (deref is-token*)
+
+        selected-value*    (mf/use-state  #(get-selected-option-id options default-selected))
         selected-value     (deref selected-value*)
 
         focused-value*     (mf/use-state nil)
         focused-value      (deref focused-value*)
 
-        is-open*           (mf/use-state false)
-        is-open            (deref is-open*)
-
-        listbox-id-ref     (mf/use-ref (dm/str "tokens-listbox-" (swap! listbox-id-index inc)))
-        options-nodes-refs (mf/use-ref nil)
-        options-ref        (mf/use-ref nil)
-        listbox-id         (mf/ref-val listbox-id-ref)
-
-        set-option-ref
-        (mf/use-fn
-         (mf/deps options-nodes-refs)
-         (fn [node id]
-           (let [refs (or (mf/ref-val options-nodes-refs) #js {})
-                 refs (if node
-                        (obj/set! refs id node)
-                        (obj/unset! refs id))]
-             (mf/set-ref-val! options-nodes-refs refs))))
-
-        on-option-click
-        (mf/use-fn
-         (mf/deps)
-         (fn [event]
-           (let [node  (dom/get-current-target event)
-                 id    (dom/get-data node "id")]
-             (reset! selected-value* id)
-             (reset! focused-value* nil)
-             (reset! is-open* false)
-            ;;  Apply token
-             (prn "tengo que aplicar el token" id))))
-
-        id           (or id (mf/use-id))
-
-        ref          (or ref (mf/use-ref))
-        dirty-ref    (mf/use-ref false)
+        is-multiple?       (= :multiple value)
 
         value        (cond
                        is-multiple? nil
@@ -152,15 +136,28 @@
                         :else
                         (fmt/format-number (d/parse-double value default))))
 
-        last-value* (mf/use-var (d/parse-double value default))
+        last-value*  (mf/use-var (d/parse-double value default))
 
-        store-raw-value
+        ;; Refs
+        wrapper-ref        (mf/use-ref nil)
+        listbox-id-ref     (mf/use-ref (dm/str "tokens-listbox-" (swap! listbox-id-index inc)))
+        options-nodes-refs (mf/use-ref nil)
+        options-ref        (mf/use-ref nil)
+        ref                (or ref (mf/use-ref))
+        dirty-ref          (mf/use-ref false)
+        listbox-id         (mf/ref-val listbox-id-ref)
+
+        set-option-ref
         (mf/use-fn
-         (mf/deps parse-value)
-         (fn [event]
-           (let [text (dom/get-target-val event)]
-             (reset! raw-value* text))))
+         (mf/deps options-nodes-refs)
+         (fn [node id]
+           (let [refs (or (mf/ref-val options-nodes-refs) #js {})
+                 refs (if node
+                        (obj/set! refs id node)
+                        (obj/unset! refs id))]
+             (mf/set-ref-val! options-nodes-refs refs))))
 
+        ;; Callbacks
         update-input
         (mf/use-fn
          (fn [new-value]
@@ -196,6 +193,32 @@
                  (when (and (fn? on-change) (not= fallback-value value))
                    (on-change fallback-value)))))))
 
+        store-raw-value
+        (mf/use-fn
+         (mf/deps parse-value)
+         (fn [event]
+           (let [text (dom/get-target-val event)]
+             (reset! raw-value* text)
+             (reset! is-token* false))))
+
+
+        on-option-click
+        (mf/use-fn
+         (mf/deps options apply-value)
+         (fn [event]
+           (let [node   (dom/get-current-target event)
+                 id     (dom/get-data node "id")
+                 option (get-option options id)
+                 value  (obj/get option "resolved-value")]
+
+             (reset! selected-value* id)
+             (reset! focused-value* nil)
+             (reset! is-open* false)
+
+             (apply-value value)
+             (reset! is-token* true))))
+
+
         on-blur
         (mf/use-fn
          (mf/deps parse-value)
@@ -212,7 +235,7 @@
 
         handle-key-down
         (mf/use-fn
-         (mf/deps apply-value update-input parse-value options2)
+         (mf/deps apply-value update-input parse-value options)
          (fn [event]
            (mf/set-ref-val! dirty-ref true)
            (let [up?     (kbd/up-arrow? event)
@@ -225,7 +248,7 @@
                  current-value (or parsed default)]
 
              (cond
-               (and (some? options2) tokens?)
+               (and (some? options) tokens?)
                (reset! is-open* true)
 
                enter?
@@ -240,19 +263,25 @@
                  (dom/blur! node))
 
                up?
-               (let [new-val (increment current-value step min max)]
-                 (update-input (fmt/format-number new-val))
-                 (apply-value (dm/str new-val))
-                 (dom/prevent-default event))
+               (if is-open
+                 (prn "Handle up arrow in options dropdown")
+
+                 (let [new-val (increment current-value step min max)]
+                   (update-input (fmt/format-number new-val))
+                   (apply-value (dm/str new-val))
+                   (dom/prevent-default event)))
 
                down?
-               (let [new-val (decrement current-value step min max)]
-                 (update-input (fmt/format-number new-val))
-                 (apply-value (dm/str new-val))
-                 (dom/prevent-default event))))))
+               (if is-open
+                 (prn "Handle up arrow in options dropdown")
+
+                 (let [new-val (decrement current-value step min max)]
+                   (update-input (fmt/format-number new-val))
+                   (apply-value (dm/str new-val))
+                   (dom/prevent-default event)))))))
 
         handle-focus
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-focus select-on-focus)
          (fn [event]
            (let [target (dom/get-target event)]
@@ -295,6 +324,13 @@
                                 :on-key-down handle-key-down
                                 :on-focus handle-focus
                                 :on-change store-raw-value
+                                :slot-start (when icon
+                                              (mf/html [:> icon* {:icon-id icon
+                                                                  :class (stl/css :icon)}]))
+
+                                :slot-end (when is-token
+                                            (mf/html [:> icon* {:icon-id icon
+                                                                :class (stl/css :icon)}]))
                                 :max-length max-length})]
 
     (mf/with-layout-effect [handle-mouse-wheel]
@@ -308,10 +344,11 @@
     [:div {:class (dm/str class " " (stl/css :input-wrapper))
            :ref wrapper-ref}
      [:> input-field* props]
+
      (when is-open
        [:> options-dropdown* {:on-click on-option-click
                               :id listbox-id
-                              :options options2
+                              :options options
                               :selected selected-value
                               :focused focused-value
                               :empty-to-end empty-to-end

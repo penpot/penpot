@@ -11,4 +11,9 @@
   flex-direction: column;
   gap: var(--sp-xs);
   inline-size: 100%;
+  position: relative;
+}
+
+.icon {
+  color: var(--color-foreground-secondary);
 }

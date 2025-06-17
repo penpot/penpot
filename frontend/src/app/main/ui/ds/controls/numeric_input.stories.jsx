@@ -7,6 +7,7 @@ import * as React from "react";
 import Components from "@target/components";
 
 const { NumericInput } = Components;
+const { icons } = Components.meta;
 
 export default {
   title: "Controls/Numeric Input",
@@ -30,16 +31,20 @@ export default {
     step: {
       control: { type: "number" },
     },
+    icon: {
+      options: icons,
+      control: { type: "select" },
+    },
   },
   args: {
     placeholder: "--",
     disabled: false,
     nillable: false,
+    icon: "search",
   },
   parameters: {
     controls: { exclude: ["id"] },
   },
-
   render: ({ ...args }) => <NumericInput {...args} />,
 };
 
