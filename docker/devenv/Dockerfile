@@ -3,7 +3,7 @@ LABEL maintainer="Penpot <docker@penpot.app>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v22.14.0 \
+ENV NODE_VERSION=v22.16.0 \
     CLOJURE_VERSION=1.12.0.1501 \
     CLJKONDO_VERSION=2025.01.16 \
     BABASHKA_VERSION=1.12.196 \
@@ -98,6 +98,7 @@ RUN set -ex; \
         fonts-liberation \
         libnss3 \
         libgbm1 \
+        \
         xvfb \
         libfontconfig-dev \
         \
