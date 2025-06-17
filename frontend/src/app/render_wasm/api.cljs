@@ -98,6 +98,9 @@
 
 ;; This should never be called from the outside.
 (defn- render
+  ([]
+   (render (.now js/performance)))
+
   ([timestamp]
    (render timestamp false))
 
