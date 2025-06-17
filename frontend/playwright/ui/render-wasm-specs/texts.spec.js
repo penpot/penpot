@@ -9,9 +9,7 @@ test.beforeEach(async ({ page }) => {
   ]);
 });
 
-test("Renders a file with texts", async ({
-  page,
-}) => {
+test("Renders a file with texts", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("render-wasm/get-file-text.json");
@@ -24,9 +22,7 @@ test("Renders a file with texts", async ({
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-test("Updates a text font", async ({
-  page,
-}) => {
+test("Updates a text font", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("render-wasm/get-file-text.json");
@@ -41,5 +37,50 @@ test("Updates a text font", async ({
   await fontStyle.click();
   const boldOption = fontStyle.getByText("bold").first();
   await boldOption.click();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with texts that use google fonts", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-google-fonts.json");
+  await workspace.mockGoogleFont(
+    "ebgaramond",
+    "render-wasm/assets/ebgaramond.ttf",
+  );
+  await workspace.mockGoogleFont("firacode", "render-wasm/assets/firacode.ttf");
+
+  await workspace.goToWorkspace({
+    id: "434b0541-fa2f-802f-8006-5981e47bd732",
+    pageId: "434b0541-fa2f-802f-8006-5981e47bd733",
+  });
+  await workspace.waitForFirstRender();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with texts that use custom fonts", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-custom-fonts.json");
+  await workspace.mockRPC(
+    "get-font-variants?team-id=*",
+    "render-wasm/get-font-variants-custom-fonts.json",
+  );
+  await workspace.mockAsset(
+    "2d1ffeb6-e70b-4027-bbcc-910248ba45f8",
+    "render-wasm/assets/mreaves.ttf",
+  );
+  await workspace.mockAsset(
+    "69e76833-0816-49fa-8c7b-4b97c71c6f1a",
+    "render-wasm/assets/nodesto-condensed.ttf",
+  );
+
+  await workspace.goToWorkspace({
+    id: "434b0541-fa2f-802f-8006-59827d964a9b",
+    pageId: "434b0541-fa2f-802f-8006-59827d964a9c",
+  });
+  await workspace.waitForFirstRender();
+
   await expect(workspace.canvas).toHaveScreenshot();
 });

@@ -30,7 +30,7 @@ test("Renders a file with solid, gradient and image fills", async ({
 }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
-  await workspace.mockAsset(
+  await workspace.mockFileMediaAsset(
     [
       "1ebcea38-f1bf-8101-8006-4c8fd68e7c84",
       "1ebcea38-f1bf-8101-8006-4c8f579da49c",
@@ -51,7 +51,7 @@ test("Renders a file with solid, gradient and image fills", async ({
 test("Renders a file with strokes", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
-  await workspace.mockAsset(
+  await workspace.mockFileMediaAsset(
     [
       "202c1104-9385-81d3-8006-5074e4682cac",
       "202c1104-9385-81d3-8006-5074c50339b6",
@@ -64,6 +64,50 @@ test("Renders a file with strokes", async ({ page }) => {
   await workspace.goToWorkspace({
     id: "202c1104-9385-81d3-8006-507413ff2c99",
     pageId: "202c1104-9385-81d3-8006-507413ff2c9a",
+  });
+  await workspace.waitForFirstRender();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with mutliple strokes", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-multiple-strokes.json");
+
+  await workspace.goToWorkspace({
+    id: "c0939f58-37bc-805d-8006-51cc78297208",
+    pageId: "c0939f58-37bc-805d-8006-51cc78297209",
+  });
+  await workspace.waitForFirstRender();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with shapes with multiple fills", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-multiple-fills.json");
+
+  await workspace.goToWorkspace({
+    id: "c0939f58-37bc-805d-8006-51cd3a51c255",
+    pageId: "c0939f58-37bc-805d-8006-51cd3a51c256",
+  });
+  await workspace.waitForFirstRender();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+// TODO: update the screenshots for this test once Taiga #11325 is fixed
+// https://tree.taiga.io/project/penpot/task/11325
+test("Renders shapes taking into account blend modes", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-blend-modes.json");
+
+  await workspace.goToWorkspace({
+    id: "c0939f58-37bc-805d-8006-51cdf8e18e76",
+    pageId: "c0939f58-37bc-805d-8006-51cdf8e18e77",
   });
   await workspace.waitForFirstRender();
 
