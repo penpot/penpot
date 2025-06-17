@@ -54,9 +54,13 @@
                                   (ctob/add-token-in-set "test-token-set"
                                                          (ctob/make-token :name "token-dimensions"
                                                                           :type :dimensions
-                                                                          :value 100))))
+                                                                          :value 100))
+                                  (ctob/add-token-in-set "test-token-set"
+                                                         (ctob/make-token :name "token-font-size"
+                                                                          :type :font-size
+                                                                          :value 24))))
       (tho/add-frame :frame1)
-      (tho/add-text :text1 "Hello World")))
+      (tho/add-text :text1 "Hello World!")))
 
 (defn- apply-all-tokens
   [file]
@@ -68,19 +72,21 @@
       (tht/apply-token-to-shape :frame1 "token-color" [:stroke-color] [:stroke-color] "#00ff00")
       (tht/apply-token-to-shape :frame1 "token-color" [:fill] [:fill] "#00ff00")
       (tht/apply-token-to-shape :frame1 "token-dimensions" [:width :height] [:width :height] 100)
-      (tht/apply-token-to-shape :text1 "token-color" [:fill] [:fill] "#00ff00")))
+      (tht/apply-token-to-shape :text1 "token-font-size" [:font-size] [:font-size] 24)))
 
 (t/deftest apply-tokens-to-shape
   (let [;; ==== Setup
         file               (setup-file)
         page               (thf/current-page file)
         frame1             (ths/get-shape file :frame1)
+        text1              (ths/get-shape file :text1)
         token-radius       (tht/get-token file "test-token-set" "token-radius")
         token-rotation     (tht/get-token file "test-token-set" "token-rotation")
         token-opacity      (tht/get-token file "test-token-set" "token-opacity")
         token-stroke-width (tht/get-token file "test-token-set" "token-stroke-width")
         token-color        (tht/get-token file "test-token-set" "token-color")
         token-dimensions   (tht/get-token file "test-token-set" "token-dimensions")
+        token-font-size    (tht/get-token file "test-token-set" "token-font-size")
 
         ;; ==== Action
         changes (-> (-> (pcb/empty-changes nil)
@@ -114,13 +120,23 @@
                                                                                      :shape $
                                                                                      :attributes [:width :height]})))
                                                 (:objects page)
+                                                {})
+                    (cls/generate-update-shapes [(:id text1)]
+                                                (fn [shape]
+                                                  (as-> shape $
+                                                    (cto/maybe-apply-token-to-shape {:token token-font-size
+                                                                                     :shape $
+                                                                                     :attributes [:font-size]})))
+                                                (:objects page)
                                                 {}))
 
         file' (thf/apply-changes file changes)
 
         ;; ==== Get
-        frame1'         (ths/get-shape file' :frame1)
-        applied-tokens' (:applied-tokens frame1')]
+        frame1'              (ths/get-shape file' :frame1)
+        applied-tokens'      (:applied-tokens frame1')
+        text1'               (ths/get-shape file' :text1)
+        text1-applied-tokens (:applied-tokens text1')]
 
     ;; ==== Check
     (t/is (= (count applied-tokens') 11))
@@ -134,7 +150,9 @@
     (t/is (= (:stroke-color applied-tokens') "token-color"))
     (t/is (= (:fill applied-tokens') "token-color"))
     (t/is (= (:width applied-tokens') "token-dimensions"))
-    (t/is (= (:height applied-tokens') "token-dimensions"))))
+    (t/is (= (:height applied-tokens') "token-dimensions"))
+    (t/is (= (count text1-applied-tokens) 1))
+    (t/is (= (:font-size text1-applied-tokens) "token-font-size"))))
 
 (t/deftest unapply-tokens-from-shape
   (let [;; ==== Setup
@@ -142,6 +160,7 @@
                     (apply-all-tokens))
         page    (thf/current-page file)
         frame1  (ths/get-shape file :frame1)
+        text1   (ths/get-shape file :text1)
 
         ;; ==== Action
         changes (-> (-> (pcb/empty-changes nil)
@@ -158,16 +177,25 @@
                                                       (cto/unapply-token-id [:fill])
                                                       (cto/unapply-token-id [:width :height])))
                                                 (:objects page)
+                                                {})
+                    (cls/generate-update-shapes [(:id text1)]
+                                                (fn [shape]
+                                                  (-> shape
+                                                      (cto/unapply-token-id [:font-size])))
+                                                (:objects page)
                                                 {}))
 
         file' (thf/apply-changes file changes)
 
         ;; ==== Get
-        frame1'         (ths/get-shape file' :frame1)
-        applied-tokens' (:applied-tokens frame1')]
+        frame1'              (ths/get-shape file' :frame1)
+        applied-tokens'      (:applied-tokens frame1')
+        text1'               (ths/get-shape file' :text1)
+        text1-applied-tokens (:applied-tokens text1')]
 
     ;; ==== Check
-    (t/is (= (count applied-tokens') 0))))
+    (t/is (= (count applied-tokens') 0))
+    (t/is (= (count text1-applied-tokens) 0))))
 
 (t/deftest unapply-tokens-automatic
   (let [;; ==== Setup

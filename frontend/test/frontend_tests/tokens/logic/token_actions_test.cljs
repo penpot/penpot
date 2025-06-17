@@ -446,6 +446,40 @@
                (t/is (= (:stroke-width (:applied-tokens rect-without-stroke')) (:name token-target')))
                (t/is (empty? (:strokes rect-without-stroke')))))))))))
 
+(t/deftest test-apply-font-size
+  (t/testing "applies font-size token and updates the text font-size"
+    (t/async
+      done
+      (let [font-size-token {:name "heading-size"
+                             :value "24"
+                             :type :font-size}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token font-size-token))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:font-size}
+                                       :token (toht/get-token file "heading-size")
+                                       :on-update-shape dwta/update-font-size})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "heading-size")
+                 text-1' (cths/get-shape file' :text-1)
+                 style-text-blocks (->> (:content text-1')
+                                        (txt/content->text+styles)
+                                        (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                        (mapv (fn [[style text]]
+                                                {:styles (merge txt/default-text-attrs style)
+                                                 :text-content text}))
+                                        (first)
+                                        (:styles))]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:font-size (:applied-tokens text-1')) (:name token-target')))
+             (t/is (= (:font-size style-text-blocks) "24")))))))))
+
 (t/deftest test-apply-line-height
   (t/testing "applies line-height token and updates the text line-height"
     (t/async
