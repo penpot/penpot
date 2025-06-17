@@ -1,41 +1,23 @@
-FROM ubuntu:24.04
+FROM ubuntu:24.04 AS build
 LABEL maintainer="Penpot <docker@penpot.app>"
 
-ENV LANG='en_US.UTF-8' \
-    LC_ALL='en_US.UTF-8' \
+ENV LANG='C.UTF-8' \
+    LC_ALL='C.UTF-8' \
     JAVA_HOME="/opt/jdk" \
     PATH=/opt/jdk/bin:/opt/node/bin:$PATH \
     DEBIAN_FRONTEND=noninteractive \
-    NODE_VERSION=v20.18.0 \
+    NODE_VERSION=v22.16.0 \
     TZ=Etc/UTC
 
 RUN set -ex; \
-    useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
     apt-get -qq update; \
     apt-get -qq upgrade; \
     apt-get -qqy --no-install-recommends install \
-        nano \
         curl \
-        tzdata \
-        locales \
         ca-certificates \
-        imagemagick \
-        webp \
-        rlwrap \
-        fontconfig \
-        woff-tools \
-        woff2 \
-        python3 \
-        python3-tabulate \
-        fontforge \
+        binutils \
     ; \
-    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
-    locale-gen; \
-    mkdir -p /opt/data/assets; \
-    mkdir -p /opt/penpot; \
-    chown -R penpot:penpot /opt/penpot; \
-    chown -R penpot:penpot /opt/data; \
-    rm -rf /var/lib/apt/lists/*;
+    rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -62,12 +44,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='3ce6a2b357e2ef45fd6b53d6587aa05bfec7771e7fb982f2c964f6b771b7526a'; \
-         BINARY_URL='https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.2_13.tar.gz'; \
+         ESUM='18071047526ab4b53131f9bb323e8703485ae37fcb2f2c5ef0f1b7bab66d1b94'; \
+         BINARY_URL='https://github.com/adoptium/temurin24-binaries/releases/download/jdk-24%2B36/OpenJDK24U-jdk_aarch64_linux_hotspot_24_36.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='454bebb2c9fe48d981341461ffb6bf1017c7b7c6e15c6b0c29b959194ba3aaa5'; \
-         BINARY_URL='https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jdk_x64_linux_hotspot_21.0.2_13.tar.gz'; \
+         ESUM='c340dee97b6aa215d248bc196dcac5b56e7be9b5c5d45e691344d40d5d0b171d'; \
+         BINARY_URL='https://github.com/adoptium/temurin24-binaries/releases/download/jdk-24%2B36/OpenJDK24U-jdk_x64_linux_hotspot_24_36.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -79,8 +61,44 @@ RUN set -eux; \
     mkdir -p /opt/jdk; \
     cd /opt/jdk; \
     tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
-    rm -rf /tmp/openjdk.tar.gz;
+    rm -rf /tmp/openjdk.tar.gz; \
+    /opt/jdk/bin/jlink --no-header-files --no-man-pages --strip-debug --add-modules java.base,jdk.management.agent,java.se,jdk.compiler,jdk.javadoc,jdk.attach,jdk.unsupported --output /opt/jre;
 
+FROM ubuntu:24.04 AS image
+LABEL maintainer="Penpot <docker@penpot.app>"
+
+ENV LANG='C.UTF-8' \
+    LC_ALL='C.UTF-8' \
+    JAVA_HOME="/opt/jre" \
+    PATH=/opt/jre/bin:/opt/node/bin:$PATH \
+    DEBIAN_FRONTEND=noninteractive \
+    TZ=Etc/UTC
+
+RUN set -ex; \
+    useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
+    apt-get -qq update; \
+    apt-get -qq upgrade; \
+    apt-get -qqy --no-install-recommends install \
+        tzdata \
+        ca-certificates \
+        imagemagick \
+        webp \
+        rlwrap \
+        fontconfig \
+        woff-tools \
+        woff2 \
+        python3 \
+        python3-tabulate \
+        fontforge \
+    ; \
+    mkdir -p /opt/data/assets; \
+    mkdir -p /opt/penpot; \
+    chown -R penpot:penpot /opt/penpot; \
+    chown -R penpot:penpot /opt/data; \
+    rm -rf /var/lib/apt/lists/*;
+
+COPY --from=build /opt/jre /opt/jre
+COPY --from=build /opt/node /opt/node
 COPY --chown=penpot:penpot ./bundle-backend/ /opt/penpot/backend/
 
 USER penpot:penpot
