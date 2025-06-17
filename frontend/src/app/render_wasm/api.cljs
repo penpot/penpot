@@ -190,9 +190,10 @@
 (defn- get-string-length [string] (+ (count string) 1))
 
 (defn- fetch-image
-  [id]
-  (let [buffer (uuid/get-u32 id)
-        url    (cf/resolve-file-media {:id id})]
+  [shape-id image-id]
+  (let [buffer-shape-id (uuid/get-u32 shape-id)
+        buffer-image-id (uuid/get-u32 image-id)
+        url             (cf/resolve-file-media {:id image-id})]
     {:key url
      :callback #(->> (http/send! {:method :get
                                   :uri url
@@ -206,10 +207,14 @@
                                      data    (js/Uint8Array. image)]
                                  (.set heap data offset)
                                  (h/call wasm/internal-module "_store_image"
-                                         (aget buffer 0)
-                                         (aget buffer 1)
-                                         (aget buffer 2)
-                                         (aget buffer 3))
+                                         (aget buffer-shape-id 0)
+                                         (aget buffer-shape-id 1)
+                                         (aget buffer-shape-id 2)
+                                         (aget buffer-shape-id 3)
+                                         (aget buffer-image-id 0)
+                                         (aget buffer-image-id 1)
+                                         (aget buffer-image-id 2)
+                                         (aget buffer-image-id 3))
                                  true))))}))
 
 (defn- get-fill-images
@@ -217,7 +222,7 @@
   (filter :fill-image (:fills leaf)))
 
 (defn- process-fill-image
-  [fill]
+  [shape-id fill]
   (rx/from
    (when-let [image (:fill-image fill)]
      (let [id (dm/get-prop image :id)
@@ -228,19 +233,19 @@
                                  (aget buffer 2)
                                  (aget buffer 3))]
        (when (zero? cached-image?)
-         (fetch-image id))))))
+         (fetch-image shape-id id))))))
 
 (defn set-shape-text-images
-  [content]
+  [shape-id content]
   (let [paragraph-set (first (get content :children))
         paragraphs (get paragraph-set :children)]
     (->> paragraphs
          (mapcat :children)
          (mapcat get-fill-images)
-         (map process-fill-image))))
+         (map #(process-fill-image shape-id %)))))
 
 (defn set-shape-fills
-  [fills]
+  [shape-id fills]
   (when (not-empty? fills)
     (let [fills (take types.fill/MAX-FILLS fills)
           image-fills (filter :fill-image fills)
@@ -270,11 +275,11 @@
                                           (aget buffer 2)
                                           (aget buffer 3))]
                 (when (zero? cached-image?)
-                  (fetch-image id))))
+                  (fetch-image shape-id id))))
             image-fills))))
 
 (defn set-shape-strokes
-  [strokes]
+  [shape-id strokes]
   (h/call wasm/internal-module "_clear_shape_strokes")
   (keep (fn [stroke]
           (let [opacity   (or (:stroke-opacity stroke) 1.0)
@@ -301,15 +306,15 @@
                 (h/call wasm/internal-module "_add_shape_stroke_fill"))
 
               (some? image)
-              (let [id            (dm/get-prop image :id)
-                    buffer        (uuid/get-u32 id)
+              (let [image-id      (dm/get-prop image :id)
+                    buffer        (uuid/get-u32 image-id)
                     cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
-                (sr-fills/write-image-fill! offset dview id opacity
+                (sr-fills/write-image-fill! offset dview image-id opacity
                                             (dm/get-prop image :width)
                                             (dm/get-prop image :height))
                 (h/call wasm/internal-module "_add_shape_stroke_fill")
                 (when (== cached-image? 0)
-                  (fetch-image id)))
+                  (fetch-image shape-id image-id)))
 
               (some? color)
               (do
@@ -623,7 +628,7 @@
 (declare propagate-apply)
 
 (defn set-shape-text-content
-  [content]
+  [shape-id content]
   (h/call wasm/internal-module "_clear_shape_text")
   (let [paragraph-set (first (dm/get-prop content :children))
         paragraphs (dm/get-prop paragraph-set :children)
@@ -646,13 +651,13 @@
           (-> fonts
               (cond-> @emoji? (f/add-emoji-font))
               (f/add-noto-fonts @languages))]
-      (f/store-fonts updated-fonts))))
+      (f/store-fonts shape-id updated-fonts))))
 
 (defn set-shape-text
-  [content]
+  [shape-id content]
   (concat
-   (set-shape-text-images content)
-   (set-shape-text-content content)))
+   (set-shape-text-images shape-id content)
+   (set-shape-text-content shape-id content)))
 
 (defn set-shape-grow-type
   [grow-type]
@@ -759,9 +764,9 @@
       (set-grid-layout shape))
 
     (let [pending (into [] (concat
-                            (set-shape-text content)
-                            (set-shape-fills fills)
-                            (set-shape-strokes strokes)))]
+                            (set-shape-text id content)
+                            (set-shape-fills id fills)
+                            (set-shape-strokes id strokes)))]
       (perf/end-measure "set-object")
       pending)))
 
@@ -772,11 +777,10 @@
         pending (-> (d/index-by :key :callback pending) vals)]
     (if (not-empty? pending)
       (->> (rx/from pending)
-           (rx/mapcat (fn [callback] (callback)))
+           (rx/merge-map (fn [callback] (callback)))
+           (rx/tap (fn [_] (request-render "set-objects")))
            (rx/reduce conj [])
            (rx/subs! (fn [_]
-                       (clear-drawing-cache)
-                       (request-render "set-objects")
                        (.dispatchEvent ^js js/document event))))
       (.dispatchEvent ^js js/document event))))
 

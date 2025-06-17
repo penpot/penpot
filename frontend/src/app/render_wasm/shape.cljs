@@ -112,7 +112,8 @@
 
 (defn set-wasm-single-attr!
   [shape k]
-  (let [v (get shape k)]
+  (let [v  (get shape k)
+        id (get shape :id)]
     (case k
       :parent-id    (api/set-parent-id v)
       :type         (api/set-shape-type v)
@@ -123,8 +124,8 @@
                       (api/set-shape-clip-content false))
       :rotation     (api/set-shape-rotation v)
       :transform    (api/set-shape-transform v)
-      :fills        (into [] (api/set-shape-fills v))
-      :strokes      (into [] (api/set-shape-strokes v))
+      :fills        (into [] (api/set-shape-fills id v))
+      :strokes      (into [] (api/set-shape-strokes id v))
       :blend-mode   (api/set-shape-blend-mode v)
       :opacity      (api/set-shape-opacity v)
       :hidden       (api/set-shape-hidden v)
@@ -158,7 +159,7 @@
         (api/set-shape-svg-raw-content (api/get-static-markup shape))
 
         (= (:type shape) :text)
-        (api/set-shape-text v))
+        (api/set-shape-text id v))
 
       :grow-type
       (api/set-shape-grow-type v)

@@ -388,13 +388,13 @@ fn draw_image_stroke_in_container(
     image_fill: &ImageFill,
     antialias: bool,
 ) {
+    let scale = render_state.get_scale();
     let image = render_state.images.get(&image_fill.id());
     if image.is_none() {
         return;
     }
 
     let size = image_fill.size();
-    let scale = render_state.get_scale();
     let canvas = render_state.surfaces.canvas(SurfaceId::Strokes);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
