@@ -64,19 +64,19 @@
 
         Module._add_shape_center_stroke(10, 0,  0, 0);
         const argb2 = hexToU32ARGB(color, getRandomFloat(0.1, 1.0));
-        addShapeSolidStrokeFill(argb2);        
+        addShapeSolidStrokeFill(argb2);
       }
 
       useShape("00000000-0000-0000-0000-000000000000");
       setShapeChildren(children);
 
       performance.mark('render:begin');
-      Module._render(Date.now());
+      Module._render(Date.now(), false);
       performance.mark('render:end');
       const { duration } = performance.measure('render', 'render:begin', 'render:end');
       // alert(`render time: ${duration.toFixed(2)}ms`);
     });
-    
+
   </script>
 </body>
 </html>
