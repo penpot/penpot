@@ -8,6 +8,7 @@
   (:require-macros
    [app.main.style :as stl])
   (:require
+   [app.main.ui.ds.controls.shared.token-option :refer [token-option*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -34,7 +35,7 @@
   [:map
    [:ref {:optional true} fn?]
    [:on-click fn?]
-   [:options [:vector schema:option]]
+  ;;  [:options [:vector schema:option]]
    [:selected :any]
    [:focused {:optional true} :any]
    [:empty-to-end {:optional true} :boolean]])
@@ -101,24 +102,39 @@
         (mf/with-memo [empty-to-end options]
           (if ^boolean empty-to-end
             (into [] xf:filter-non-blank-id options)
-            options))]
+            options))
+        
+        
+        _ (prn "options" options)]
 
     [:> :ul props
      (for [option options]
        (let [id         (get option :id)
              label      (get option :label)
              aria-label (get option :aria-label)
-             icon       (get option :icon)]
-         [:> option* {:selected (= id selected)
-                      :key id
-                      :id id
-                      :label label
-                      :icon icon
-                      :aria-label aria-label
-                      :ref ref
-                      :focused (= id focused)
-                      :dimmed false
-                      :on-click on-click}]))
+             icon       (get option :icon)
+             resolved-value (get option :resolved)
+             _ (.log js/console (clj->js option))
+             _ (prn resolved-value)]
+         (if resolved-value
+           [:> token-option* {:selected (= id selected)
+                              :key id
+                              :id id
+                              :label label
+                              :resolved resolved-value
+                              :ref ref
+                              :focused (= id focused)
+                              :on-click on-click}]
+           [:> option* {:selected (= id selected)
+                        :key id
+                        :id id
+                        :label label
+                        :icon icon
+                        :aria-label aria-label
+                        :ref ref
+                        :focused (= id focused)
+                        :dimmed false
+                        :on-click on-click}])))
 
      (when (seq options-blank)
        [:*
@@ -129,14 +145,25 @@
           (let [id         (get option :id)
                 label      (get option :label)
                 aria-label (get option :aria-label)
-                icon       (get option :icon)]
-            [:> option* {:selected (= id selected)
-                         :key id
-                         :id id
-                         :label label
-                         :icon icon
-                         :aria-label aria-label
-                         :ref ref
-                         :focused (= id focused)
-                         :dimmed true
-                         :on-click on-click}]))])]))
+                icon       (get option :icon)
+                resolved-value (get option :resolved)]
+            (if resolved-value
+              [:> token-option* {:selected (= id selected)
+                                 :key id
+                                 :id id
+                                 :label label
+                                 :resolved resolved-value
+                                 :aria-label aria-label
+                                 :ref ref
+                                 :focused (= id focused)
+                                 :on-click on-click}]
+              [:> option* {:selected (= id selected)
+                           :key id
+                           :id id
+                           :label label
+                           :icon icon
+                           :aria-label aria-label
+                           :ref ref
+                           :focused (= id focused)
+                           :dimmed true
+                           :on-click on-click}])))])]))

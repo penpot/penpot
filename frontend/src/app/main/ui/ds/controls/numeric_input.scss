@@ -11,4 +11,32 @@
   flex-direction: column;
   gap: var(--sp-xs);
   inline-size: 100%;
+  position: relative;
+  --opacity-button: 0;
+  &:hover {
+    --opacity-button: 1;
+  }
+  &:focus-within {
+    --opacity-button: 1;
+  }
 }
+
+.icon {
+  color: var(--color-foreground-secondary);
+}
+
+// .invisible-button {
+//   svg {
+//     opacity: var(--opacity-button);
+//   }
+//   &:hover {
+//     svg {
+//           --opacity-button: 1;
+//     }
+//   }
+//   &:focus {
+//         svg {
+//          --opacity-button: 1; 
+//     }
+//   }
+// }
