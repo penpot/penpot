@@ -1845,9 +1845,16 @@
                ;; If the values are already equal, don't copy them
                (= (get previous-shape attr) (get current-shape attr))
 
-               ;; If the referenced shape on the original component doesn't
-               ;; have the same value, don't copy it
+               ;; If both variants (origin and destiny) don't have the same value
+               ;; for that attribute, don't copy it.
                ;; Exceptions: :points :selrect and :content can be different
+               ;;
+               ;; Sample:
+               ;; 1. We have a variant with C1 (bg red) and C2 (bg blue).
+               ;; 2. We make a copy of C1 called Copy.
+               ;; 3. We set Copy’s bg to green (so it it has an override on the bg).
+               ;; 4. We switch Copy to use C2 as base.
+               ;; 5. The bg of Copy now is blue (we ignore the override)
                (and
                 (not (contains? #{:points :selrect :content} attr))
                 (not= (get origin-ref-shape attr) (get current-shape attr)))
