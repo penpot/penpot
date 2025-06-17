@@ -117,6 +117,7 @@
     ;; Only for developtment.
     :tiered-file-data-storage
     :token-units
+    :token-typography-types
     :transit-readable-response
     :user-feedback
     ;; TODO: remove this flag.

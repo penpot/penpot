@@ -146,14 +146,15 @@
   tokens exist for that type. Sort each group alphabetically (by their type).
   If `:token-units` is not in cf/flags, number tokens are excluded."
   [tokens-by-type]
-  (let [all-types (-> dwta/token-properties keys seq)
-        token-units? (contains? cf/flags :token-units)
-        filtered-types (if token-units?
-                         all-types
-                         (remove #(= % :number) all-types))]
+  (let [token-units? (contains? cf/flags :token-units)
+        token-typography-types? (contains? cf/flags :token-typography-types)
+        all-types (cond-> dwta/token-properties
+                    (not token-units?) (dissoc :number)
+                    (not token-typography-types?) (dissoc :font-size))
+        all-types (-> all-types keys seq)]
     (loop [empty  #js []
            filled #js []
-           types  filtered-types]
+           types  all-types]
       (if-let [type (first types)]
         (if (not-empty (get tokens-by-type type))
           (recur empty
