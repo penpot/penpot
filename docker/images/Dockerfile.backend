@@ -4,9 +4,9 @@ LABEL maintainer="Penpot <docker@penpot.app>"
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
     JAVA_HOME="/opt/jdk" \
-    PATH=/opt/jdk/bin:/opt/node/bin:$PATH \
     DEBIAN_FRONTEND=noninteractive \
     NODE_VERSION=v22.16.0 \
+    IMAGEMAGICK_VERSION=7.1.1-47 \
     TZ=Etc/UTC
 
 RUN set -ex; \
@@ -16,16 +16,36 @@ RUN set -ex; \
         curl \
         ca-certificates \
         binutils \
+        build-essential autoconf libtool pkg-config \
+        libltdl-dev \
+        libpng-dev libjpeg-dev libtiff-dev libwebp-dev libopenexr-dev libfftw3-dev \
+        libzip-dev \
+        liblcms2-dev liblzma-dev libzstd-dev \
+        libheif-dev librsvg2-dev \
     ; \
     rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+    curl -LfsSo /tmp/magick.tar.gz https://github.com/ImageMagick/ImageMagick/archive/refs/tags/${IMAGEMAGICK_VERSION}.tar.gz; \
+    mkdir -p /tmp/magick; \
+    cd /tmp/magick; \
+    tar -xf /tmp/magick.tar.gz --strip-components=1; \
+    ./configure  --prefix=/opt/imagick; \
+    make -j 2; \
+    make install; \
+    rm -rf /opt/imagick/lib/libMagick++*; \
+    rm -rf /opt/imagick/include; \
+    rm -rf /opt/imagick/share;
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
+         OPENSSL_ARCH='linux-aarch64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
          ;; \
        amd64|x86_64) \
+         OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
          ;; \
        *) \
@@ -38,6 +58,7 @@ RUN set -eux; \
     cd /opt/node; \
     tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
     chown -R root /opt/node; \
+    find /opt/node/include/node/openssl/archs -mindepth 1 -maxdepth 1 ! -name "$OPENSSL_ARCH" -exec rm -rf {} \; ; \
     rm -rf /tmp/nodejs.tar.gz;
 
 RUN set -eux; \
@@ -62,7 +83,12 @@ RUN set -eux; \
     cd /opt/jdk; \
     tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
     rm -rf /tmp/openjdk.tar.gz; \
-    /opt/jdk/bin/jlink --no-header-files --no-man-pages --strip-debug --add-modules java.base,jdk.management.agent,java.se,jdk.compiler,jdk.javadoc,jdk.attach,jdk.unsupported --output /opt/jre;
+    /opt/jdk/bin/jlink \
+       --no-header-files \
+       --no-man-pages \
+       --strip-debug \
+       --add-modules java.base,jdk.management.agent,java.se,jdk.compiler,jdk.javadoc,jdk.attach,jdk.unsupported \
+       --output /opt/jre;
 
 FROM ubuntu:24.04 AS image
 LABEL maintainer="Penpot <docker@penpot.app>"
@@ -70,7 +96,7 @@ LABEL maintainer="Penpot <docker@penpot.app>"
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
     JAVA_HOME="/opt/jre" \
-    PATH=/opt/jre/bin:/opt/node/bin:$PATH \
+    PATH=/opt/jre/bin:/opt/node/bin:/opt/imagick/bin:$PATH \
     DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC
 
@@ -81,16 +107,35 @@ RUN set -ex; \
     apt-get -qqy --no-install-recommends install \
         tzdata \
         ca-certificates \
-        imagemagick \
-        webp \
-        rlwrap \
         fontconfig \
         woff-tools \
         woff2 \
         python3 \
         python3-tabulate \
         fontforge \
+        \
+        libpng16-16 \
+        libjpeg-turbo8 \
+        libtiff6 \
+        libwebp7 \
+        libopenexr-3-1-30 \
+        libfreetype6 \
+        libfontconfig1 \
+        libglib2.0-0 \
+        libxml2 \
+        liblcms2-2 \
+        libheif1 \
+        libopenjp2-7 \
+        libzstd1 \
+        librsvg2-2 \
+        libgomp1 \
+        libwebpmux3 \
+        libwebpdemux2 \
+        libzip4t64 \
     ; \
+    find tmp/usr/share/zoneinfo/* -type d ! -name 'Etc' |xargs rm -rf; \
+    rm -rf /var/lib /var/cache; \
+    rm -rf /usr/include; \
     mkdir -p /opt/data/assets; \
     mkdir -p /opt/penpot; \
     chown -R penpot:penpot /opt/penpot; \
@@ -99,6 +144,7 @@ RUN set -ex; \
 
 COPY --from=build /opt/jre /opt/jre
 COPY --from=build /opt/node /opt/node
+COPY --from=build /opt/imagick /opt/imagick
 COPY --chown=penpot:penpot ./bundle-backend/ /opt/penpot/backend/
 
 USER penpot:penpot
