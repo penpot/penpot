@@ -49,6 +49,10 @@ pub struct NodeRenderState {
 }
 
 impl NodeRenderState {
+    pub fn is_root(&self) -> bool {
+        self.id.is_nil()
+    }
+
     pub fn get_children_clip_bounds(
         &self,
         element: &Shape,
@@ -629,6 +633,7 @@ impl RenderState {
             && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS
     }
 
+    #[inline]
     pub fn render_shape_enter(&mut self, element: &mut Shape, mask: bool) {
         // Masked groups needs two rendering passes, the first one rendering
         // the content and the second one rendering the mask so we need to do
@@ -672,6 +677,7 @@ impl RenderState {
             .save_layer(&layer_rec);
     }
 
+    #[inline]
     pub fn render_shape_exit(&mut self, element: &mut Shape, visited_mask: bool) {
         if visited_mask {
             // Because masked groups needs two rendering passes (first drawing
@@ -680,6 +686,33 @@ impl RenderState {
             if let Type::Group(group) = element.shape_type {
                 if group.masked {
                     self.surfaces.canvas(SurfaceId::Current).restore();
+                }
+            }
+        } else {
+            // !visited_mask
+            if let Type::Group(group) = element.shape_type {
+                // When we're dealing with masked groups we need to
+                // do a separate extra step to draw the mask (the last
+                // element of a masked group) and blend (using
+                // the blend mode 'destination-in') the content
+                // of the group and the mask.
+                if group.masked {
+                    self.pending_nodes.push(NodeRenderState {
+                        id: element.id,
+                        visited_children: true,
+                        clip_bounds: None,
+                        visited_mask: true,
+                        mask: false,
+                    });
+                    if let Some(&mask_id) = element.mask_id() {
+                        self.pending_nodes.push(NodeRenderState {
+                            id: mask_id,
+                            visited_children: false,
+                            clip_bounds: None,
+                            visited_mask: false,
+                            mask: true,
+                        });
+                    }
                 }
             }
         }
@@ -757,38 +790,11 @@ impl RenderState {
             }
 
             if visited_children {
-                if !visited_mask {
-                    if let Type::Group(group) = element.shape_type {
-                        // When we're dealing with masked groups we need to
-                        // do a separate extra step to draw the mask (the last
-                        // element of a masked group) and blend (using
-                        // the blend mode 'destination-in') the content
-                        // of the group and the mask.
-                        if group.masked {
-                            self.pending_nodes.push(NodeRenderState {
-                                id: node_id,
-                                visited_children: true,
-                                clip_bounds: None,
-                                visited_mask: true,
-                                mask: false,
-                            });
-                            if let Some(&mask_id) = element.mask_id() {
-                                self.pending_nodes.push(NodeRenderState {
-                                    id: mask_id,
-                                    visited_children: false,
-                                    clip_bounds: None,
-                                    visited_mask: false,
-                                    mask: true,
-                                });
-                            }
-                        }
-                    }
-                }
                 self.render_shape_exit(element, visited_mask);
                 continue;
             }
 
-            if !node_render_state.id.is_nil() {
+            if !node_render_state.is_root() {
                 let mut transformed_element: Cow<Shape> = Cow::Borrowed(element);
 
                 if let Some(modifier) = modifiers.get(&node_id) {
@@ -809,14 +815,14 @@ impl RenderState {
             }
 
             self.render_shape_enter(element, mask);
-            if !node_render_state.id.is_nil() {
+            if !node_render_state.is_root() {
                 self.render_shape(
                     element,
                     modifiers.get(&element.id),
                     scale_content.get(&element.id),
                     clip_bounds,
                 );
-            } else {
+            } else if visited_children {
                 self.apply_drawing_to_render_canvas(Some(element));
             }
 
