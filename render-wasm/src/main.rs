@@ -162,6 +162,27 @@ pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
 }
 
 #[no_mangle]
+pub extern "C" fn clear_focus_mode() {
+    with_state!(state, {
+        state.clear_focus_mode();
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn set_focus_mode() {
+    let bytes = mem::bytes();
+
+    let entries: Vec<Uuid> = bytes
+        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
+        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    with_state!(state, {
+        state.set_focus_mode(entries);
+    });
+}
+
+#[no_mangle]
 pub extern "C" fn init_shapes_pool(capacity: usize) {
     with_state!(state, {
         state.init_shapes_pool(capacity);

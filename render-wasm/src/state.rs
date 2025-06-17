@@ -1,5 +1,5 @@
 use std::collections::{hash_map::Entry, HashMap};
-use std::iter;
+use std::{iter, vec};
 
 use skia_safe as skia;
 
@@ -133,6 +133,14 @@ impl<'a> State<'a> {
             timestamp,
         )?;
         Ok(())
+    }
+
+    pub fn clear_focus_mode(&mut self) {
+        self.render_state.clear_focus_mode();
+    }
+
+    pub fn set_focus_mode(&mut self, shapes: Vec<Uuid>) {
+        self.render_state.set_focus_mode(shapes);
     }
 
     pub fn init_shapes_pool(&mut self, capacity: usize) {

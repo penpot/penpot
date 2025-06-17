@@ -81,6 +81,73 @@ impl NodeRenderState {
     }
 }
 
+/// Represents the "focus mode" state used during rendering.
+///
+/// Focus mode allows selectively highlighting or isolating specific shapes (UUIDs)
+/// during the render pass. It maintains a list of shapes to focus and tracks
+/// whether the current rendering context is inside a focused element.
+///
+/// # Focus Propagation
+/// If a shape is in focus, all its nested content
+/// is also considered to be in focus for the duration of the render traversal. Focus
+/// state propagates *downward* through the tree while rendering.
+///
+/// # Usage
+/// - `set_shapes(...)` to activate focus mode for specific elements and their anidated content.
+/// - `clear()` to disable focus mode.
+/// - `reset()` should be called at the beginning of the render loop.
+/// - `enter(...)` / `exit(...)` should be called when entering and leaving shape
+///   render contexts.
+/// - `is_active()` returns whether the current shape is being rendered in focus.
+pub struct FocusMode {
+    shapes: Vec<Uuid>,
+    active: bool,
+}
+
+impl FocusMode {
+    pub fn new() -> Self {
+        FocusMode {
+            shapes: Vec::new(),
+            active: false,
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.shapes.clear();
+        self.active = false;
+    }
+
+    pub fn set_shapes(&mut self, shapes: Vec<Uuid>) {
+        self.shapes = shapes;
+    }
+
+    /// Returns `true` if the given shape ID should be focused.
+    /// If the `shapes` list is empty, focus applies to all shapes.
+    pub fn should_focus(&self, id: &Uuid) -> bool {
+        self.shapes.is_empty() || self.shapes.contains(id)
+    }
+
+    pub fn enter(&mut self, id: &Uuid) {
+        if !self.active && self.should_focus(id) {
+            self.active = true;
+        }
+    }
+
+    pub fn exit(&mut self, id: &Uuid) {
+        if self.active && self.should_focus(id) {
+            self.active = false;
+        }
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.active
+    }
+
+    pub fn reset(&mut self) {
+        self.active = false;
+    }
+}
+
 pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub options: RenderOptions,
@@ -109,6 +176,7 @@ pub(crate) struct RenderState {
     // migration to remove group-level fills is completed, this code should be removed.
     pub nested_fills: Vec<Vec<Fill>>,
     pub show_grid: Option<Uuid>,
+    pub focus_mode: FocusMode,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -176,6 +244,7 @@ impl RenderState {
             pending_tiles: PendingTiles::new_empty(),
             nested_fills: vec![],
             show_grid: None,
+            focus_mode: FocusMode::new(),
         }
     }
 
@@ -309,6 +378,14 @@ impl RenderState {
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().clear(skia::Color::TRANSPARENT);
         });
+    }
+
+    pub fn clear_focus_mode(&mut self) {
+        self.focus_mode.clear();
+    }
+
+    pub fn set_focus_mode(&mut self, shapes: Vec<Uuid>) {
+        self.focus_mode.set_shapes(shapes);
     }
 
     pub fn render_shape(
@@ -569,6 +646,8 @@ impl RenderState {
         let scale = self.get_scale();
         self.tile_viewbox.update(self.viewbox, scale);
 
+        self.focus_mode.reset();
+
         performance::begin_measure!("render");
         performance::begin_measure!("start_render_loop");
 
@@ -683,6 +762,8 @@ impl RenderState {
         self.surfaces
             .canvas(SurfaceId::Current)
             .save_layer(&layer_rec);
+
+        self.focus_mode.enter(&element.id);
     }
 
     #[inline]
@@ -728,6 +809,8 @@ impl RenderState {
             self.nested_fills.pop();
         }
         self.surfaces.canvas(SurfaceId::Current).restore();
+
+        self.focus_mode.exit(&element.id);
     }
 
     pub fn get_current_tile_bounds(&mut self) -> Rect {
@@ -823,7 +906,7 @@ impl RenderState {
             }
 
             self.render_shape_enter(element, mask);
-            if !node_render_state.is_root() {
+            if !node_render_state.is_root() && self.focus_mode.is_active() {
                 self.render_shape(
                     element,
                     modifiers.get(&element.id),
