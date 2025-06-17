@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cph]
+   [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
@@ -263,6 +264,9 @@
                (some-> (:colors data) (update-vals #(assoc % :file-id id))))
              workspace-data
              =))
+
+(def token-base-font-size
+  (l/derived ctf/get-base-font-size-int workspace-data))
 
 (def recent-colors
   "Recent colors for the currently selected file"

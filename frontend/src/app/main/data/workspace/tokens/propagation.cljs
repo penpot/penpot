@@ -8,6 +8,7 @@
   (:require
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
+   [app.common.types.file :as ctf]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
@@ -15,6 +16,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.prepare-value :as wtpv]
    [app.main.data.workspace.undo :as dwu]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
@@ -63,11 +65,11 @@
 ;; Data flows ------------------------------------------------------------------
 
 (defn- invert-collect-key-vals
-  [xs resolved-tokens shape]
+  [xs resolved-tokens shape base-font-size]
   (-> (reduce
        (fn [acc [k v]]
          (let [resolved-token (get resolved-tokens v)
-               resolved-value (get resolved-token :resolved-value)
+               resolved-value (wtpv/resolved-value-for-shape-update resolved-token base-font-size)
                skip? (or
                       (not (get resolved-tokens v))
                       (and filter-existing-values? (= (get shape k) resolved-value)))]
@@ -98,14 +100,14 @@
   (->> (map (fn [[value attrs]] [attrs {value #{object-id}}]) attrs-values-map)
        (into {})))
 
-(defn- collect-shapes-update-info [resolved-tokens objects]
+(defn- collect-shapes-update-info [resolved-tokens objects base-font-size]
   (loop [items (seq objects)
          frame-ids #{}
          text-ids []
          tokens {}]
     (if-let [[shape-id {:keys [applied-tokens] :as shape}] (first items)]
       (let [applied-tokens
-            (-> (invert-collect-key-vals applied-tokens resolved-tokens shape)
+            (-> (invert-collect-key-vals applied-tokens resolved-tokens shape base-font-size)
                 (shape-ids-by-values shape-id)
                 (split-attribute-groups))
 
@@ -135,7 +137,7 @@
 
 (defn propagate-tokens
   "Propagate tokens values to all shapes where they are applied"
-  [state resolved-tokens]
+  [state resolved-tokens base-font-size]
   (let [file-id         (get state :current-file-id)
         current-page-id (get state :current-page-id)
         fdata           (dsh/lookup-file-data state file-id)
@@ -152,7 +154,7 @@
                   (dsh/get-page fdata page-id)
 
                   [attrs frame-ids text-ids]
-                  (collect-shapes-update-info resolved-tokens (:objects page))
+                  (collect-shapes-update-info resolved-tokens (:objects page) base-font-size)
 
                   actions
                   (actionize-shapes-update-info page-id attrs)]
@@ -187,11 +189,12 @@
     (watch [_ state _]
       (when-let [tokens-lib (-> (dsh/lookup-file-data state)
                                 (get :tokens-lib))]
-        (->> (ctob/get-tokens-in-active-sets tokens-lib)
-             (sd/resolve-tokens)
-             (rx/mapcat (fn [sd-tokens]
-                          (let [undo-id (js/Symbol)]
-                            (rx/concat
-                             (rx/of (dwu/start-undo-transaction undo-id :timeout false))
-                             (propagate-tokens state sd-tokens)
-                             (rx/of (dwu/commit-undo-transaction undo-id)))))))))))
+        (let [base-font-size (-> (dsh/lookup-file-data state)
+                                 (ctf/get-base-font-size-int))]
+          (->> (sd/resolve-tokens (ctob/get-tokens-in-active-sets tokens-lib) {:base-font-size base-font-size})
+               (rx/mapcat (fn [sd-tokens]
+                            (let [undo-id (js/Symbol)]
+                              (rx/concat
+                               (rx/of (dwu/start-undo-transaction undo-id :timeout false))
+                               (propagate-tokens state sd-tokens base-font-size)
+                               (rx/of (dwu/commit-undo-transaction undo-id))))))))))))
