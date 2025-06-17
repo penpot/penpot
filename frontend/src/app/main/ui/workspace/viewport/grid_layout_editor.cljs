@@ -23,6 +23,7 @@
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
@@ -158,11 +159,13 @@
          (mf/deps on-drag-end)
          (fn [event]
            (let [raw-pt (mf/ref-val current-pos-ref)
-                 position (uwvv/point->viewport raw-pt)]
+                 position (uwvv/point->viewport raw-pt)
+                 start (mf/ref-val start-pos-ref)
+                 delta (gpt/to-vec start (dom/get-client-position event))]
              (dom/release-pointer event)
              (mf/set-ref-val! dragging-ref false)
              (mf/set-ref-val! start-pos-ref nil)
-             (when on-drag-end (on-drag-end event position)))))
+             (when on-drag-end (on-drag-end event position delta)))))
 
         handle-pointer-move
         (mf/use-fn
@@ -190,6 +193,9 @@
         height (unchecked-get props "height")
         handler (unchecked-get props "handler")
 
+        on-set-modifiers (unchecked-get props "on-set-modifiers")
+        on-clear-modifiers (unchecked-get props "on-clear-modifiers")
+
         objects (mf/deref refs/workspace-page-objects)
         {cell-id :id} (unchecked-get props "cell")
         {:keys [row column row-span column-span]} (get-in shape [:layout-grid-cells cell-id])
@@ -197,10 +203,10 @@
         direction (unchecked-get props "direction")
         layout-data (unchecked-get props "layout-data")
 
-        handle-drag-position
+        calculate-drag-modifiers
         (mf/use-fn
          (mf/deps shape row column row-span column-span)
-         (fn [_ position]
+         (fn [position]
            (let [[drag-row  drag-column] (gsg/get-position-grid-coord layout-data position)
 
                  [new-row new-column new-row-span new-column-span]
@@ -225,19 +231,34 @@
 
                  shape
                  (-> (ctl/resize-cell-area shape row column new-row new-column new-row-span new-column-span)
-                     (ctl/assign-cells objects))
+                     (ctl/assign-cells objects))]
+             (-> (ctm/empty)
+                 (ctm/change-property :layout-grid-rows (:layout-grid-rows shape))
+                 (ctm/change-property :layout-grid-columns (:layout-grid-columns shape))
+                 (ctm/change-property :layout-grid-cells (:layout-grid-cells shape))))))
 
-                 modifiers
-                 (-> (ctm/empty)
-                     (ctm/change-property :layout-grid-rows (:layout-grid-rows shape))
-                     (ctm/change-property :layout-grid-columns (:layout-grid-columns shape))
-                     (ctm/change-property :layout-grid-cells (:layout-grid-cells shape)))]
-             (st/emit! (dwm/set-modifiers (dwm/create-modif-tree [(:id shape)] modifiers))))))
+        handle-drag-position
+        (mf/use-fn
+         (mf/deps calculate-drag-modifiers on-set-modifiers)
+         (fn [_ position]
+           (let [modifiers (calculate-drag-modifiers position)
+                 modif-tree (dwm/create-modif-tree [(:id shape)] modifiers)]
+             (if (features/active-feature? @st/state "render-wasm/v1")
+               (do
+                 (when on-set-modifiers (on-set-modifiers modifiers))
+                 (st/emit! (dwm/set-wasm-modifiers modif-tree)))
+               (st/emit! (dwm/set-modifiers modif-tree))))))
 
         handle-drag-end
         (mf/use-fn
-         (fn []
-           (st/emit! (dwm/apply-modifiers))))
+         (mf/deps calculate-drag-modifiers on-clear-modifiers)
+         (fn [_ position]
+           (if (features/active-feature? @st/state "render-wasm/v1")
+             (let [modifiers (calculate-drag-modifiers position)
+                   modif-tree (dwm/create-modif-tree [(:id shape)] modifiers)]
+               (when on-clear-modifiers (on-clear-modifiers modifiers))
+               (st/emit! (dwm/apply-wasm-modifiers modif-tree)))
+             (st/emit! (dwm/apply-modifiers)))))
 
         {:keys [handle-pointer-down handle-lost-pointer-capture handle-pointer-move]}
         (use-drag {:on-drag-position handle-drag-position
@@ -291,9 +312,9 @@
       text]]))
 
 (mf/defc grid-cell
-  {::mf/memo #{:shape :cell :layout-data :zoom :hover? :selected?}
+  {::mf/memo #{:shape :cell :layout-data :zoom :hover? :selected? :on-set-modifiers :on-clear-modifiers}
    ::mf/props :obj}
-  [{:keys [shape cell layout-data zoom hover? selected?]}]
+  [{:keys [shape cell layout-data zoom hover? selected? on-set-modifiers on-clear-modifiers]}]
   (let [cell-bounds (gsg/cell-bounds layout-data cell)
         cell-origin (gpo/origin cell-bounds)
         cell-width  (gpo/width-points cell-bounds)
@@ -408,10 +429,12 @@
                                      :width width
                                      :height height
                                      :direction dir
-                                     :layout-data layout-data}])]))]))
+                                     :layout-data layout-data
+                                     :on-set-modifiers on-set-modifiers
+                                     :on-clear-modifiers on-clear-modifiers}])]))]))
 
 (defn use-resize-track
-  [type shape index track-before track-after zoom snap-pixel?]
+  [type shape index track-before track-after zoom snap-pixel? on-set-modifiers on-clear-modifiers]
 
   (let [start-size-before (mf/use-var nil)
         start-size-after (mf/use-var nil)
@@ -433,13 +456,18 @@
 
                  modifiers
                  (-> (ctm/empty)
-                     (ctm/change-property tracks-prop (get shape tracks-prop)))]
-             (st/emit! (dwm/set-modifiers (dwm/create-modif-tree [(:id shape)] modifiers))))))
+                     (ctm/change-property tracks-prop (get shape tracks-prop)))
 
-        handle-drag-position
+                 modif-tree
+                 (dwm/create-modif-tree [(:id shape)] modifiers)]
+             (if (features/active-feature? @st/state "render-wasm/v1")
+               (st/emit! (dwm/set-wasm-modifiers modif-tree))
+               (st/emit! (dwm/set-modifiers modif-tree))))))
+
+        calculate-modifiers
         (mf/use-fn
          (mf/deps shape track-before track-after)
-         (fn [_ position]
+         (fn [position]
            (let [[tracks-prop axis]
                  (if (= :column type) [:layout-grid-columns :x] [:layout-grid-rows :y])
 
@@ -454,20 +482,34 @@
                      (cond-> (some? track-before)
                        (update-in [tracks-prop (dec index)] merge {:type :fixed :value new-size-before}))
                      (cond-> (some? track-after)
-                       (update-in [tracks-prop index] merge {:type :fixed :value new-size-after})))
+                       (update-in [tracks-prop index] merge {:type :fixed :value new-size-after})))]
+             (-> (ctm/empty)
+                 (ctm/change-property tracks-prop (get shape tracks-prop))))))
 
-                 modifiers
-                 (-> (ctm/empty)
-                     (ctm/change-property tracks-prop (get shape tracks-prop)))]
-             (st/emit! (dwm/set-modifiers (dwm/create-modif-tree [(:id shape)] modifiers))))))
+        handle-drag-position
+        (mf/use-fn
+         (mf/deps calculate-modifiers on-set-modifiers)
+         (fn [_ position]
+           (let [modifiers (calculate-modifiers position)
+                 modif-tree (dwm/create-modif-tree [(:id shape)] modifiers)]
+             (if (features/active-feature? @st/state "render-wasm/v1")
+               (do
+                 (when on-set-modifiers (on-set-modifiers modifiers))
+                 (st/emit! (dwm/set-wasm-modifiers modif-tree)))
+               (st/emit! (dwm/set-modifiers modif-tree))))))
 
         handle-drag-end
         (mf/use-fn
-         (mf/deps track-before track-after)
-         (fn []
+         (mf/deps calculate-modifiers on-clear-modifiers)
+         (fn [_ _ position]
+           (if (features/active-feature? @st/state "render-wasm/v1")
+             (let [modifiers (calculate-modifiers position)
+                   modif-tree (dwm/create-modif-tree [(:id shape)] modifiers)]
+               (when on-clear-modifiers (on-clear-modifiers))
+               (st/emit! (dwm/apply-wasm-modifiers modif-tree)))
+             (st/emit! (dwm/apply-modifiers)))
            (reset! start-size-before nil)
-           (reset! start-size-after nil)
-           (st/emit! (dwm/apply-modifiers))))]
+           (reset! start-size-after nil)))]
 
     (use-drag {:on-drag-start handle-drag-start
                :on-drag-delta handle-drag-position
@@ -485,6 +527,9 @@
         track-after (unchecked-get props "track-after")
         snap-pixel? (unchecked-get props "snap-pixel?")
 
+        on-set-modifiers (unchecked-get props "on-set-modifiers")
+        on-clear-modifiers (unchecked-get props "on-clear-modifiers")
+
         {:keys [column-total-size column-total-gap row-total-size row-total-gap] :as layout-data}
         (unchecked-get props "layout-data")
 
@@ -499,7 +544,7 @@
         [layout-gap-row layout-gap-col] (ctl/gaps shape)
 
         {:keys [handle-pointer-down handle-lost-pointer-capture handle-pointer-move]}
-        (use-resize-track type shape index track-before track-after zoom snap-pixel?)
+        (use-resize-track type shape index track-before track-after zoom snap-pixel? on-set-modifiers on-clear-modifiers)
 
         [width height]
         (if (= type :column)
@@ -656,11 +701,14 @@
         track-after (unchecked-get props "track-after")
         snap-pixel? (unchecked-get props "snap-pixel?")
 
+        on-set-modifiers (unchecked-get props "on-set-modifiers")
+        on-clear-modifiers (unchecked-get props "on-clear-modifiers")
+
         text-x (:x center)
         text-y (:y center)
 
         {:keys [handle-pointer-down handle-lost-pointer-capture handle-pointer-move]}
-        (use-resize-track type shape index track-before track-after zoom snap-pixel?)]
+        (use-resize-track type shape index track-before track-after zoom snap-pixel? on-set-modifiers on-clear-modifiers)]
 
     [:g {:on-pointer-down handle-pointer-down
          :on-lost-pointer-capture handle-lost-pointer-capture
@@ -698,6 +746,9 @@
         on-start-reorder-track   (unchecked-get props "on-start-reorder-track")
         on-move-reorder-track   (unchecked-get props "on-move-reorder-track")
         on-end-reorder-track   (unchecked-get props "on-end-reorder-track")
+
+        on-set-modifiers (unchecked-get props "on-set-modifiers")
+        on-clear-modifiers (unchecked-get props "on-clear-modifiers")
 
         track-input-ref (mf/use-ref)
         [layout-gap-row layout-gap-col] (ctl/gaps shape)
@@ -876,7 +927,9 @@
         :track-before track-before
         :type type
         :value (dm/str (inc index))
-        :zoom zoom}]]
+        :zoom zoom
+        :on-set-modifiers on-set-modifiers
+        :on-clear-modifiers on-clear-modifiers}]]
 
      [:& resize-track-handler
       {:index index
@@ -888,7 +941,9 @@
        :track-after track-data
        :track-before track-before
        :type type
-       :zoom zoom}]]))
+       :zoom zoom
+       :on-set-modifiers on-set-modifiers
+       :on-clear-modifiers on-clear-modifiers}]]))
 
 (mf/defc editor
   {::mf/memo true
@@ -900,12 +955,18 @@
         zoom       (unchecked-get props "zoom")
         view-only  (unchecked-get props "view-only")
 
+        st-modif   (mf/use-state nil)
+
         shape
         (mf/use-memo
-         (mf/deps modifiers base-shape)
-         #(gsh/transform-shape
-           base-shape
-           (dm/get-in modifiers [(:id base-shape) :modifiers])))
+         (mf/deps base-shape modifiers @st-modif)
+         #(cond-> base-shape
+            (some? modifiers)
+            (gsh/transform-shape
+             (dm/get-in modifiers [(:id base-shape) :modifiers]))
+
+            (some? @st-modif)
+            (gsh/transform-shape @st-modif)))
 
         snap-pixel? (mf/deref refs/snap-pixel?)
 
@@ -1032,7 +1093,17 @@
 
            (mf/set-ref-val! target-tracks* nil)
            (reset! drop-track-type* nil)
-           (reset! drop-track-target* nil)))]
+           (reset! drop-track-target* nil)))
+
+        handle-set-modifiers
+        (mf/use-fn
+         (fn [modifier]
+           (reset! st-modif modifier)))
+
+        handle-clear-modifiers
+        (mf/use-fn
+         (fn []
+           (reset! st-modif nil)))]
 
     (mf/with-effect []
       #(st/emit! (dwge/stop-grid-layout-editing (:id shape))))
@@ -1048,7 +1119,9 @@
                          :cell cell
                          :zoom zoom
                          :hover? (contains? hover-cells (:id cell))
-                         :selected? (contains? selected-cells (:id cell))}])]
+                         :selected? (contains? selected-cells (:id cell))
+                         :on-set-modifiers handle-set-modifiers
+                         :on-clear-modifiers handle-clear-modifiers}])]
 
        (when-not ^boolean view-only
          [:*
@@ -1085,7 +1158,9 @@
                          :hovering? (contains? hover-columns idx)
                          :on-start-reorder-track handle-start-reorder-track
                          :on-move-reorder-track handle-move-reorder-track
-                         :on-end-reorder-track handle-end-reorder-track}]))
+                         :on-end-reorder-track handle-end-reorder-track
+                         :on-set-modifiers handle-set-modifiers
+                         :on-clear-modifiers handle-clear-modifiers}]))
 
           ;; Last track resize handler
           (when-not (empty? column-tracks)
@@ -1102,7 +1177,9 @@
                                  :track-before (last column-tracks)
                                  :type :column
                                  :value (dm/str (inc (count column-tracks)))
-                                 :zoom zoom}]
+                                 :zoom zoom
+                                 :on-set-modifiers handle-set-modifiers
+                                 :on-clear-modifiers handle-clear-modifiers}]
                (let [drop? (and (= :column @drop-track-type*)
                                 (= (count column-tracks) @drop-track-target*))]
                  [:& resize-track-handler
@@ -1115,7 +1192,9 @@
                    :start-p end-p
                    :type :column
                    :track-before (last column-tracks)
-                   :zoom zoom}])]))
+                   :zoom zoom
+                   :on-set-modifiers handle-set-modifiers
+                   :on-clear-modifiers handle-clear-modifiers}])]))
 
           (for [[idx row-data] (d/enumerate row-tracks)]
             (let [drop? (and (= :row @drop-track-type*)
@@ -1132,7 +1211,9 @@
                          :hovering? (contains? hover-rows idx)
                          :on-start-reorder-track handle-start-reorder-track
                          :on-move-reorder-track handle-move-reorder-track
-                         :on-end-reorder-track handle-end-reorder-track}]))
+                         :on-end-reorder-track handle-end-reorder-track
+                         :on-set-modifiers handle-set-modifiers
+                         :on-clear-modifiers handle-clear-modifiers}]))
           (when-not (empty? row-tracks)
             (let [last-track (last row-tracks)
                   start-p (:start-p last-track)
@@ -1148,7 +1229,9 @@
                                   :track-before (last row-tracks)
                                   :type :row
                                   :value (dm/str (inc (count row-tracks)))
-                                  :zoom zoom}]]
+                                  :zoom zoom
+                                  :on-set-modifiers handle-set-modifiers
+                                  :on-clear-modifiers handle-clear-modifiers}]]
                (let [drop? (and (= :row @drop-track-type*)
                                 (= (count row-tracks) @drop-track-target*))]
                  [:& resize-track-handler
@@ -1161,4 +1244,6 @@
                    :type :row
                    :track-before (last row-tracks)
                    :snap-pixel? snap-pixel?
-                   :zoom zoom}])]))])])))
+                   :zoom zoom
+                   :on-set-modifiers handle-set-modifiers
+                   :on-clear-modifiers handle-clear-modifiers}])]))])])))
