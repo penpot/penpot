@@ -22,7 +22,7 @@
    [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
    [beicon.v2.core :as rx]
@@ -238,8 +238,8 @@
      (watch [_ _ _]
        (when (number? value)
          (rx/of
-          (when (:width attributes) (dwt/update-dimensions shape-ids :width value {:ignore-touched true :page-id page-id}))
-          (when (:height attributes) (dwt/update-dimensions shape-ids :height value {:ignore-touched true :page-id page-id}))))))))
+          (when (:width attributes) (dwtr/update-dimensions shape-ids :width value {:ignore-touched true :page-id page-id}))
+          (when (:height attributes) (dwtr/update-dimensions shape-ids :height value {:ignore-touched true :page-id page-id}))))))))
 
 (defn- attributes->layout-gap [attributes value]
   (let [layout-gap (-> (set/intersection attributes #{:column-gap :row-gap})
@@ -311,9 +311,9 @@
        (when (number? value)
          (let [page-id (or page-id (get state :current-page-id))]
            (->> (rx/from shape-ids)
-                (rx/map #(dwt/update-position % (zipmap attributes (repeat value))
-                                              {:ignore-touched true
-                                               :page-id page-id})))))))))
+                (rx/map #(dwtr/update-position % (zipmap attributes (repeat value))
+                                               {:ignore-touched true
+                                                :page-id page-id})))))))))
 
 (defn update-layout-sizing-limits
   ([value shape-ids attributes] (update-layout-sizing-limits value shape-ids attributes nil))
@@ -346,6 +346,18 @@
                            {:ignore-touched true
                             :page-id page-id})))))
 
+(defn update-font-size
+  ([value shape-ids attributes] (update-font-size value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
+   (let [update-node? (fn [node]
+                        (or (txt/is-text-node? node)
+                            (txt/is-paragraph-node? node)))]
+     (when (number? value)
+       (dwsh/update-shapes shape-ids
+                           #(txt/update-text-content % update-node? d/txt-merge {:font-size (str value)})
+                           {:ignore-touched true
+                            :page-id page-id})))))
+
 ;; Map token types to different properties used along the cokde ---------------------------------------------
 
 ;; FIXME: the values should be lazy evaluated, probably a function,
@@ -370,6 +382,14 @@
     :on-update-shape update-fill-stroke
     :modal {:key :tokens/color
             :fields [{:label "Color" :key :color}]}}
+
+   :font-size
+   {:title "Font Size"
+    :attributes ctt/font-size-keys
+    :on-update-shape update-font-size
+    :modal {:key :tokens/font-size
+            :fields [{:label "Font Size"
+                      :key :font-size}]}}
 
    :stroke-width
    {:title "Stroke Width"

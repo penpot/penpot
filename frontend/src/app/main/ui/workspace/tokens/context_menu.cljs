@@ -233,7 +233,8 @@
    (dwta/update-shape-radius-for-corners value shape-ids attributes)))
 
 (def shape-attribute-actions-map
-  (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")]
+  (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")
+        font-size (partial generic-attribute-actions #{:font-size} "Font Size")]
     {:border-radius (partial all-or-separate-actions {:attribute-labels {:r1 "Top Left"
                                                                          :r2 "Top Right"
                                                                          :r4 "Bottom Left"
@@ -252,6 +253,7 @@
                [(generic-attribute-actions #{:rotation} "Rotation" (assoc context-data :on-update-shape dwta/update-rotation))
                 (generic-attribute-actions #{:line-height} "Line Height" (assoc context-data :on-update-shape dwta/update-line-height))])
      :stroke-width stroke-width
+     :font-size font-size
      :dimensions (fn [context-data]
                    (concat
                     [{:title "Sizing" :submenu :sizing}
