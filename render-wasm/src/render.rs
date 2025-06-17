@@ -449,7 +449,15 @@ impl RenderState {
                     s.canvas().concat(&matrix);
                 });
 
-                if shape.fills.is_empty() && !matches!(shape.shape_type, Type::Group(_)) {
+                let has_fill_none = matches!(
+                    shape.svg_attrs.get("fill").map(String::as_str),
+                    Some("none")
+                );
+
+                if shape.fills.is_empty()
+                    && !matches!(shape.shape_type, Type::Group(_))
+                    && !has_fill_none
+                {
                     if let Some(fills_to_render) = self.nested_fills.last() {
                         let fills_to_render = fills_to_render.clone();
                         for fill in fills_to_render.iter() {
