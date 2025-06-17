@@ -7,6 +7,10 @@ export DEVENV_PNAME="penpotdev";
 export CURRENT_USER_ID=$(id -u);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 
+
+# Safe directory to avoid ownership errors with Git
+git config --global --add safe.directory /home/penpot/penpot || true
+
 # Set default java options
 export JAVA_OPTS=${JAVA_OPTS:-"-Xmx1000m -Xms50m"};
 
