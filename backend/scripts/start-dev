@@ -61,10 +61,7 @@ export JAVA_OPTS="\
        -Djdk.attach.allowAttachSelf \
        -Dlog4j2.configurationFile=log4j2-devenv.xml \
        -Djdk.tracePinnedThreads=full \
-       -XX:+EnableDynamicAgentLoading \
-       -XX:-OmitStackTraceInFastThrow                    \
-       -XX:+UnlockDiagnosticVMOptions \
-       -XX:+DebugNonSafepoints \
+       -XX:-OmitStackTraceInFastThrow  \
        --sun-misc-unsafe-memory-access=allow \
        --enable-preview \
        --enable-native-access=ALL-UNNAMED";
