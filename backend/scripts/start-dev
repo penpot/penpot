@@ -36,9 +36,6 @@ export PENPOT_MEDIA_MAX_FILE_SIZE=104857600
 # Setup default multipart upload size to 300MiB
 export PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE=314572800
 
-# Enable ImageMagick v7.x support
-# export OPTIONS="-J-Dim4java.useV7=true $OPTIONS";
-
 # Initialize MINIO config
 mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin -q
 mc admin user add penpot-s3 penpot-devenv penpot-devenv -q
@@ -61,6 +58,7 @@ export JAVA_OPTS="\
        -Djdk.attach.allowAttachSelf \
        -Dlog4j2.configurationFile=log4j2-devenv.xml \
        -Djdk.tracePinnedThreads=full \
+       -Dim4java.useV7=true \
        -XX:-OmitStackTraceInFastThrow  \
        --sun-misc-unsafe-memory-access=allow \
        --enable-preview \
