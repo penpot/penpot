@@ -6,7 +6,7 @@ export CURRENT_VERSION=$1;
 export NODE_ENV=production;
 
 corepack enable;
-corepack up || exit 1;
+corepack install || exit 1;
 yarn install || exit 1;
 rm -rf target
 
