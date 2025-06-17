@@ -66,7 +66,8 @@
     (let [font-uuid (custom-font-id->uuid font-id)
           matching-font (d/seek (fn [[_ font]]
                                   (and (= (:font-id font) font-uuid)
-                                       (= (:font-variant-id font) font-variant-id)))
+                                       (or (nil? (:font-variant-id font))
+                                           (= (:font-variant-id font) font-variant-id))))
                                 (seq @fonts))]
       (when matching-font
         (:ttf-file-id (second matching-font))))
@@ -116,7 +117,7 @@
     :google
     (google-font-ttf-url font-id font-variant-id)
     :custom
-    (dm/str (u/join cf/public-uri "assets/by-id/" font-id))
+    (dm/str (u/join cf/public-uri "assets/by-id/" asset-id))
     :builtin
     (dm/str (u/join cf/public-uri "fonts/" asset-id))))
 
