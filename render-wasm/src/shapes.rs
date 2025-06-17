@@ -14,7 +14,7 @@ mod fonts;
 mod frames;
 mod groups;
 mod layouts;
-mod modifiers;
+pub mod modifiers;
 mod paths;
 mod rects;
 mod shadows;
@@ -424,22 +424,35 @@ impl Shape {
         padding_left: f32,
     ) {
         if let Type::Frame(data) = &mut self.shape_type {
-            let layout_data = LayoutData {
-                align_items,
-                align_content,
-                justify_items,
-                justify_content,
-                padding_top,
-                padding_right,
-                padding_bottom,
-                padding_left,
-                row_gap,
-                column_gap,
-            };
-
-            let mut grid_data = GridData::default();
-            grid_data.direction = direction;
-            data.layout = Some(Layout::GridLayout(layout_data, grid_data));
+            if let Some(Layout::GridLayout(layout_data, grid_data)) = &mut data.layout {
+                layout_data.align_items = align_items;
+                layout_data.align_content = align_content;
+                layout_data.justify_items = justify_items;
+                layout_data.justify_content = justify_content;
+                layout_data.padding_top = padding_top;
+                layout_data.padding_right = padding_right;
+                layout_data.padding_bottom = padding_bottom;
+                layout_data.padding_left = padding_left;
+                layout_data.row_gap = row_gap;
+                layout_data.column_gap = column_gap;
+                grid_data.direction = direction;
+            } else {
+                let layout_data = LayoutData {
+                    align_items,
+                    align_content,
+                    justify_items,
+                    justify_content,
+                    padding_top,
+                    padding_right,
+                    padding_bottom,
+                    padding_left,
+                    row_gap,
+                    column_gap,
+                };
+                let mut grid_data = GridData::default();
+                grid_data.direction = direction;
+                data.layout = Some(Layout::GridLayout(layout_data, grid_data));
+            }
         }
     }
 

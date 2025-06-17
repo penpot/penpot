@@ -14,28 +14,28 @@ const MIN_SIZE: f32 = 0.01;
 const MAX_SIZE: f32 = f32::INFINITY;
 
 #[derive(Debug)]
-struct CellData<'a> {
-    shape: &'a Shape,
-    anchor: Point,
-    width: f32,
-    height: f32,
-    align_self: Option<AlignSelf>,
-    justify_self: Option<JustifySelf>,
+pub struct CellData<'a> {
+    pub shape: Option<&'a Shape>,
+    pub anchor: Point,
+    pub width: f32,
+    pub height: f32,
+    pub align_self: Option<AlignSelf>,
+    pub justify_self: Option<JustifySelf>,
 }
 
 #[derive(Debug)]
-struct TrackData {
-    track_type: GridTrackType,
-    value: f32,
-    size: f32,
-    max_size: f32,
-    anchor_start: Point,
-    anchor_end: Point,
+pub struct TrackData {
+    pub track_type: GridTrackType,
+    pub value: f32,
+    pub size: f32,
+    pub max_size: f32,
+    pub anchor_start: Point,
+    pub anchor_end: Point,
 }
 
 // FIXME: We might be able to simplify these arguments
 #[allow(clippy::too_many_arguments)]
-fn calculate_tracks(
+pub fn calculate_tracks(
     is_column: bool,
     shape: &Shape,
     layout_data: &LayoutData,
@@ -513,28 +513,31 @@ fn cell_bounds(
     Some(Bounds::new(nw, ne, se, sw))
 }
 
-fn create_cell_data<'a>(
+pub fn create_cell_data<'a>(
     layout_bounds: &Bounds,
     children: &IndexSet<Uuid>,
     shapes: &'a HashMap<Uuid, &mut Shape>,
     cells: &Vec<GridCell>,
     column_tracks: &[TrackData],
     row_tracks: &[TrackData],
+    allow_empty: bool,
 ) -> Vec<CellData<'a>> {
     let mut result = Vec::<CellData<'a>>::new();
 
     for cell in cells {
-        let Some(shape_id) = cell.shape else {
-            continue;
+        let shape: Option<&Shape> = if let Some(shape_id) = cell.shape {
+            if !children.contains(&shape_id) {
+                None
+            } else {
+                shapes.get(&shape_id).map(|v| &**v)
+            }
+        } else {
+            None
         };
 
-        if !children.contains(&shape_id) {
+        if !allow_empty && shape.is_none() {
             continue;
         }
-
-        let Some(shape) = shapes.get(&shape_id) else {
-            continue;
-        };
 
         let column_start = (cell.column - 1) as usize;
         let column_end = (cell.column + cell.column_span - 2) as usize;
@@ -662,10 +665,11 @@ pub fn reflow_grid_layout(
         &grid_data.cells,
         &column_tracks,
         &row_tracks,
+        false,
     );
 
     for cell in cells.iter() {
-        let child = cell.shape;
+        let Some(child) = cell.shape else { continue };
         let child_bounds = bounds.find(child);
 
         let mut new_width = child_bounds.width();

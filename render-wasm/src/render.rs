@@ -3,12 +3,14 @@ mod debug;
 mod fills;
 mod fonts;
 mod gpu_state;
+pub mod grid_layout;
 mod images;
 mod options;
 mod shadows;
 mod strokes;
 mod surfaces;
 mod text;
+mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
@@ -102,6 +104,7 @@ pub(crate) struct RenderState {
     // can affect its child elements if they don't specify one themselves. If the planned
     // migration to remove group-level fills is completed, this code should be removed.
     pub nested_fills: Vec<Vec<Fill>>,
+    pub show_grid: Option<Uuid>,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -168,6 +171,7 @@ impl RenderState {
             ),
             pending_tiles: PendingTiles::new_empty(),
             nested_fills: vec![],
+            show_grid: None,
         }
     }
 
@@ -498,7 +502,12 @@ impl RenderState {
         }
     }
 
-    pub fn render_from_cache(&mut self) {
+    pub fn render_from_cache(
+        &mut self,
+        shapes: &HashMap<Uuid, &mut Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
+    ) {
         let scale = self.get_cached_scale();
         if let Some(snapshot) = &self.cached_target_snapshot {
             let canvas = self.surfaces.canvas(SurfaceId::Target);
@@ -529,6 +538,10 @@ impl RenderState {
             canvas.clear(self.background_color);
             canvas.draw_image(snapshot, (0, 0), Some(&skia::Paint::default()));
             canvas.restore();
+
+            ui::render(self, shapes, modifiers, structure);
+            debug::render_wasm_label(self);
+
             self.flush_and_submit();
         }
     }
@@ -953,6 +966,7 @@ impl RenderState {
             debug::render(self);
         }
 
+        ui::render(self, tree, modifiers, structure);
         debug::render_wasm_label(self);
 
         Ok(())
