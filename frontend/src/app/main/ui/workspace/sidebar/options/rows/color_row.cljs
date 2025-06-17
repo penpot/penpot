@@ -10,6 +10,7 @@
    [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.color :as types.color]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
@@ -125,7 +126,8 @@
          (fn [value]
            (let [color (-> color
                            (assoc :opacity (/ value 100))
-                           (dissoc :ref-id :ref-file))]
+                           (dissoc :ref-id :ref-file)
+                           (select-keys types.color/color-attrs))]
              (st/emit! (dwc/add-recent-color color)
                        (on-change color)))))
 

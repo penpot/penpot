@@ -22,7 +22,7 @@
 ;; SCHEMAS & TYPES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def valid-color-attrs
+(def ^:private required-color-attrs
   "A set used for proper check if color should contain only one of the
   attrs listed in this set."
   #{:image :gradient :color})
@@ -31,7 +31,7 @@
   "Check if color has correct color attrs"
   [color]
   (let [attrs (set (keys color))
-        result (set/intersection attrs valid-color-attrs)]
+        result (set/intersection attrs required-color-attrs)]
     (= 1 (count result))))
 
 (def ^:private hex-color-rx
@@ -125,6 +125,9 @@
     (sm/optional-keys schema:gradient-color)
     (sm/optional-keys schema:image-color)]
    [:fn has-valid-color-attrs?]])
+
+(def color-attrs
+  (into required-color-attrs (sm/keys schema:color-attrs)))
 
 (def schema:library-color-attrs
   [:map {:title "ColorAttrs" :closed true}
