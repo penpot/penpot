@@ -628,26 +628,37 @@
                    (rest content))))))))
 
 (defn join-nodes
-  "Creates new segments between points that weren't previously"
+  "Creates new segments between points that weren't previously.
+  Returns plain segments vector."
   [content points]
 
-  (let [segments-set (into #{}
-                           (map (juxt :start :end))
-                           (get-segments-with-points content points))
+  (let [;; Materialize the content to a vector (plain format)
+        content
+        (vec content)
 
-        create-line-command (fn [point other]
-                              [(helpers/make-move-to point)
-                               (helpers/make-line-to other)])
+        segments-set
+        (into #{}
+              (map (juxt :start :end))
+              (get-segments-with-points content points))
 
-        not-segment? (fn [point other] (and (not (contains? segments-set [point other]))
-                                            (not (contains? segments-set [other point]))))
+        create-line-segment
+        (fn [point other]
+          [(helpers/make-move-to point)
+           (helpers/make-line-to other)])
 
-        new-content (->> (d/map-perm create-line-command not-segment? points)
-                         (flatten)
-                         (into []))]
+        not-segment?
+        (fn [point other]
+          (and (not (contains? segments-set [point other]))
+               (not (contains? segments-set [other point]))))
+
+        ;; FIXME: implement map-perm in terms of transducer, will
+        ;; improve performance and remove the need to use flatten
+        new-content
+        (->> (d/map-perm create-line-segment not-segment? points)
+             (flatten)
+             (into []))]
 
     (into content new-content)))
-
 
 (defn separate-nodes
   "Removes the segments between the points given"
