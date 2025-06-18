@@ -179,14 +179,6 @@ RUN set -eux; \
     rustup target add wasm32-unknown-emscripten; \
     cargo install cargo-watch;
 
-
-# RUN set -eux; \
-#     echo "export RUSTUP_VERSION=${RUSTUP_VERSION};" > /opt/rustup/_env; \
-#     echo "export RUST_VERSION=${RUST_VERSION};" >> /opt/rustup/_env; \
-#     echo "export EMSCRIPTEN_VERSION=${EMSCRIPTEN_VERSION};" >> /opt/rustup/_env; \
-#     echo "export RUSTUP_HOME=${RUSTUP_HOME};" >> /opt/rustup/_env;
-
-
 ################################################################################
 ## UTILS SETUP
 ################################################################################
