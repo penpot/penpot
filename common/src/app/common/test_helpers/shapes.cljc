@@ -11,6 +11,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
+   [app.common.text :as txt]
    [app.common.types.color :as ctc]
    [app.common.types.container :as ctn]
    [app.common.types.pages-list :as ctpl]
@@ -80,6 +81,21 @@
               (ctpl/update-page file-data
                                 (:id page)
                                 #(ctst/set-shape % (ctn/set-shape-attr shape attr val)))))))
+
+(defn update-shape-text
+  [file shape-label attr val & {:keys [page-label]}]
+  (let [page (if page-label
+               (thf/get-page file page-label)
+               (thf/current-page file))
+        shape (ctst/get-shape page (thi/id shape-label))]
+    (update file :data
+            (fn [file-data]
+              (ctpl/update-page file-data
+                                (:id page)
+                                #(ctst/set-shape % (txt/update-text-content shape
+                                                                            txt/is-content-node?
+                                                                            d/txt-merge
+                                                                            {attr val})))))))
 
 (defn sample-library-color
   [label & {:keys [name path color opacity gradient image]}]

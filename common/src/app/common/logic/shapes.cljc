@@ -16,19 +16,30 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.text :as ctt]
    [app.common.types.token :as cto]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [clojure.set :as set]))
 
 (defn- generate-unapply-tokens
   "When updating attributes that have a token applied, we must unapply it, because the value
    of the attribute now has been given directly, and does not come from the token."
   [changes objects changed-sub-attr]
-  (let [mod-obj-changes (->> (:redo-changes changes)
+  (let [new-objects     (pcb/get-objects changes)
+        mod-obj-changes (->> (:redo-changes changes)
                              (filter #(= (:type %) :mod-obj)))
+
+        text-changed-attrs
+        (fn [shape]
+          (let [new-shape (get new-objects (:id shape))
+                attrs (ctt/get-diff-attrs (:content shape) (:content new-shape))]
+            (apply set/union (map cto/shape-attr->token-attrs attrs))))
 
         check-attr (fn [shape changes attr]
                      (let [tokens      (get shape :applied-tokens {})
-                           token-attrs (cto/shape-attr->token-attrs attr changed-sub-attr)]
+                           token-attrs (if (or (not= (:type shape) :text) (not= attr :content))
+                                         (cto/shape-attr->token-attrs attr changed-sub-attr)
+                                         (text-changed-attrs shape))]
                        (if (some #(contains? tokens %) token-attrs)
                          (pcb/update-shapes changes [(:id shape)] #(cto/unapply-token-id % token-attrs))
                          changes)))

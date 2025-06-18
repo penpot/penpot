@@ -6,6 +6,7 @@
 
 (ns common-tests.logic.token-apply-test
   (:require
+   [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.compositions :as tho]
@@ -13,6 +14,7 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.tokens :as tht]
+   [app.common.text :as txt]
    [app.common.types.container :as ctn]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
@@ -53,7 +55,8 @@
                                                          (ctob/make-token :name "token-dimensions"
                                                                           :type :dimensions
                                                                           :value 100))))
-      (tho/add-frame :frame1)))
+      (tho/add-frame :frame1)
+      (tho/add-text :text1 "Hello World")))
 
 (defn- apply-all-tokens
   [file]
@@ -64,7 +67,8 @@
       (tht/apply-token-to-shape :frame1 "token-stroke-width" [:stroke-width] [:stroke-width] 2)
       (tht/apply-token-to-shape :frame1 "token-color" [:stroke-color] [:stroke-color] "#00ff00")
       (tht/apply-token-to-shape :frame1 "token-color" [:fill] [:fill] "#00ff00")
-      (tht/apply-token-to-shape :frame1 "token-dimensions" [:width :height] [:width :height] 100)))
+      (tht/apply-token-to-shape :frame1 "token-dimensions" [:width :height] [:width :height] 100)
+      (tht/apply-token-to-shape :text1 "token-color" [:fill] [:fill] "#00ff00")))
 
 (t/deftest apply-tokens-to-shape
   (let [;; ==== Setup
@@ -171,6 +175,7 @@
                     (apply-all-tokens))
         page    (thf/current-page file)
         frame1  (ths/get-shape file :frame1)
+        text1   (ths/get-shape file :text1)
 
         ;; ==== Action
         changes (-> (-> (pcb/empty-changes nil)
@@ -190,13 +195,25 @@
                                                       (ctn/set-shape-attr :width 0)
                                                       (ctn/set-shape-attr :height 0)))
                                                 (:objects page)
+                                                {})
+                    (cls/generate-update-shapes [(:id text1)]
+                                                (fn [shape]
+                                                  (txt/update-text-content
+                                                   shape
+                                                   txt/is-content-node?
+                                                   d/txt-merge
+                                                   {:fills (ths/sample-fills-color :fill-color "#fabada")}))
+                                                (:objects page)
                                                 {}))
 
         file' (thf/apply-changes file changes)
 
         ;; ==== Get
-        frame1'         (ths/get-shape file' :frame1)
-        applied-tokens' (:applied-tokens frame1')]
+        frame1'               (ths/get-shape file' :frame1)
+        text1'                (ths/get-shape file' :text1)
+        applied-tokens-frame' (:applied-tokens frame1')
+        applied-tokens-text'  (:applied-tokens text1')]
 
     ;; ==== Check
-    (t/is (= (count applied-tokens') 0))))
+    (t/is (= (count applied-tokens-frame') 0))
+    (t/is (= (count applied-tokens-text') 0))))

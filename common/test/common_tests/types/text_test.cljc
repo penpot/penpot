@@ -29,16 +29,31 @@
                                                      #(conj % line)))
 
 (t/deftest test-get-diff-type
-  (let [diff-text (cttx/get-diff-type content-base content-changed-text)
-        diff-attr (cttx/get-diff-type content-base content-changed-attr)
-        diff-both (cttx/get-diff-type content-base content-changed-both)
-        diff-structure (cttx/get-diff-type content-base content-changed-structure)
+  (let [diff-text                 (cttx/get-diff-type content-base content-changed-text)
+        diff-attr                 (cttx/get-diff-type content-base content-changed-attr)
+        diff-both                 (cttx/get-diff-type content-base content-changed-both)
+        diff-structure            (cttx/get-diff-type content-base content-changed-structure)
         diff-structure-same-attrs (cttx/get-diff-type content-base content-changed-structure-same-attrs)]
+
     (t/is (= #{:text-content-text} diff-text))
     (t/is (= #{:text-content-attribute} diff-attr))
     (t/is (= #{:text-content-text :text-content-attribute} diff-both))
     (t/is (= #{:text-content-structure} diff-structure))
     (t/is (= #{:text-content-structure :text-content-structure-same-attrs} diff-structure-same-attrs))))
+
+
+(t/deftest test-get-diff-attrs
+  (let [attrs-text                 (cttx/get-diff-attrs content-base content-changed-text)
+        attrs-attr                 (cttx/get-diff-attrs content-base content-changed-attr)
+        attrs-both                 (cttx/get-diff-attrs content-base content-changed-both)
+        attrs-structure            (cttx/get-diff-attrs content-base content-changed-structure)
+        attrs-structure-same-attrs (cttx/get-diff-attrs content-base content-changed-structure-same-attrs)]
+
+    (t/is (= #{} attrs-text))
+    (t/is (= #{:font-size} attrs-attr))
+    (t/is (= #{:font-size} attrs-both))
+    (t/is (= #{} attrs-structure))
+    (t/is (= #{} attrs-structure-same-attrs))))
 
 
 (t/deftest test-equal-structure

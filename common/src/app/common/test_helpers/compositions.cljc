@@ -37,8 +37,6 @@
                           (merge shape
                                  text-params))))
 
-
-
 (defn add-frame
   [file frame-label & {:keys [] :as params}]
   ;; Generated shape tree:
