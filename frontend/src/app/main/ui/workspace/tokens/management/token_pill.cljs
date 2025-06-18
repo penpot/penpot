@@ -162,6 +162,13 @@
         shape-ids         (into #{} xf:map-id selected-shapes)]
     (cft/shapes-applied-all? ids-by-attributes shape-ids attributes)))
 
+(defn attributes-match-selection?
+  [selected-shapes attrs]
+  (some (fn [shape]
+          (let [shape-attrs (dwta/shape-type->attributes (:type shape))]
+            (some attrs shape-attrs)))
+        selected-shapes))
+
 (def token-types-with-status-icon
   #{:color :border-radius :rotation :sizing :dimensions :opacity :spacing :stroke-width})
 
@@ -174,21 +181,27 @@
         is-reference?  (cft/is-reference? token)
         contains-path? (str/includes? name ".")
 
-        {:keys [attributes all-attributes]}
-        (get dwta/token-properties type)
+        attributes (as-> (get dwta/token-properties type) $
+                     (d/nilv (:all-attributes $) (:attributes $)))
 
         full-applied?
         (if has-selected?
-          (applied-all-attributes? token selected-shapes (d/nilv all-attributes attributes))
+          (applied-all-attributes? token selected-shapes attributes)
           true)
 
         applied?
         (if has-selected?
-          (cft/shapes-token-applied? token selected-shapes (d/nilv all-attributes attributes))
+          (cft/shapes-token-applied? token selected-shapes attributes)
           false)
 
         half-applied?
         (and applied? (not full-applied?))
+
+        disabled? (and
+                   has-selected?
+                   (not applied?)
+                   (not half-applied?)
+                   (not (attributes-match-selection? selected-shapes attributes)))
 
         ;; FIXME: move to context or props
         can-edit? (:can-edit (deref refs/permissions))
@@ -260,6 +273,7 @@
                       :token-pill true
                       :token-pill-no-icon (and (not status-icon?) (not errors?))
                       :token-pill-default can-edit?
+                      :token-pill-disabled disabled?
                       :token-pill-applied (and can-edit? has-selected? (or half-applied? full-applied?))
                       :token-pill-invalid (and can-edit? errors?)
                       :token-pill-invalid-applied (and full-applied? errors? can-edit?)

@@ -360,6 +360,44 @@
 
 ;; Map token types to different properties used along the cokde ---------------------------------------------
 
+;; Match shape by attributes
+
+(def position-attributes #{:x :y})
+
+(def generic-attributes
+  (set/union ctt/color-keys
+             ctt/stroke-width-keys
+             ctt/rotation-keys
+             ctt/sizing-keys
+             ctt/opacity-keys
+             position-attributes))
+
+(def rect-attributes
+  (set/union generic-attributes
+             ctt/border-radius-keys))
+
+(def frame-attributes
+  (set/union rect-attributes
+             ctt/spacing-keys))
+
+(def text-attributes
+  (set/union generic-attributes
+             ctt/typography-keys))
+
+(defn shape-type->attributes
+  [type]
+  (case type
+    :bool    generic-attributes
+    :circle  generic-attributes
+    :rect    rect-attributes
+    :frame   frame-attributes
+    :group   generic-attributes
+    :image   rect-attributes
+    :path    generic-attributes
+    :svg-raw generic-attributes
+    :text    text-attributes
+    nil))
+
 ;; FIXME: the values should be lazy evaluated, probably a function,
 ;; becasue on future we will need to translate that labels and that
 ;; can not be done statically
