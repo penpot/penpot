@@ -260,6 +260,7 @@
 (def ^:icon-id text-auto-width "text-auto-width")
 (def ^:icon-id text-bottom "text-bottom")
 (def ^:icon-id text-fixed "text-fixed")
+(def ^:icon-id text-font-size "text-font-size")
 (def ^:icon-id text-justify "text-justify")
 (def ^:icon-id text-letterspacing "text-letterspacing")
 (def ^:icon-id text-lineheight "text-lineheight")

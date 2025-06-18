@@ -239,6 +239,7 @@
 (def ^:icon text-auto-width (icon-xref :text-auto-width))
 (def ^:icon text-bottom (icon-xref :text-bottom))
 (def ^:icon text-fixed (icon-xref :text-fixed))
+(def ^:icon text-font-size (icon-xref :text-font-size))
 (def ^:icon text-justify (icon-xref :text-justify))
 (def ^:icon text-letterspacing (icon-xref :text-letterspacing))
 (def ^:icon text-lineheight (icon-xref :text-lineheight))
