@@ -26,7 +26,9 @@
 
 (defn- fix-webkit-data-uri
   [duri]
-  (str/replace duri webkit-datauri-fix-re "$1$3"))
+  (cond-> duri
+    (string? duri)
+    (str/replace webkit-datauri-fix-re "$1$3")))
 
 (defn- file-reader
   [f]
