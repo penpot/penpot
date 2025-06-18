@@ -605,10 +605,7 @@ impl RenderState {
             // Scale and translate the target according to the cached data
             let navigate_zoom = self.viewbox.zoom / self.cached_viewbox.zoom;
 
-            canvas.scale((
-                navigate_zoom * self.options.dpr(),
-                navigate_zoom * self.options.dpr(),
-            ));
+            canvas.scale((navigate_zoom, navigate_zoom));
 
             let TileRect(start_tile_x, start_tile_y, _, _) =
                 tiles::get_tiles_for_viewbox_with_interest(
@@ -616,8 +613,8 @@ impl RenderState {
                     VIEWPORT_INTEREST_AREA_THRESHOLD,
                     scale,
                 );
-            let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom;
-            let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom;
+            let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom * self.options.dpr();
+            let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr();
 
             canvas.translate((
                 (start_tile_x as f32 * tiles::TILE_SIZE) - offset_x,
