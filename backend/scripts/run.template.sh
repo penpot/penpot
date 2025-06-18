@@ -18,9 +18,9 @@ if [ -f ./environ ]; then
     source ./environ
 fi
 
-export JVM_OPTS="-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j2.configurationFile=log4j2.xml -XX:-OmitStackTraceInFastThrow --enable-native-access=ALL-UNNAMED --enable-preview $JVM_OPTS"
+export JAVA_OPTS="-Dim4java.useV7=true -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j2.configurationFile=log4j2.xml -XX:-OmitStackTraceInFastThrow --sun-misc-unsafe-memory-access=allow --enable-native-access=ALL-UNNAMED --enable-preview $JVM_OPTS $JAVA_OPTS"
 
 ENTRYPOINT=${1:-app.main};
 
 set -ex
-exec $JAVA_CMD $JVM_OPTS -jar penpot.jar -m $ENTRYPOINT
+exec $JAVA_CMD $JAVA_OPTS -jar penpot.jar -m $ENTRYPOINT

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-EMSDK_QUIET=1 . /usr/local/emsdk/emsdk_env.sh;
+EMSDK_QUIET=1 . /opt/emsdk/emsdk_env.sh;
+
+export PATH="/home/penpot/.cargo/bin:/opt/jdk/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
+export CARGO_HOME="/home/penpot/.cargo"
 
 alias l='ls --color -GFlh'
 alias rm='rm -r'

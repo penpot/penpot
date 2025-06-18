@@ -3,7 +3,7 @@ LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    NODE_VERSION=v20.11.1 \
+    NODE_VERSION=v22.16.0 \
     DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/node/bin:$PATH
 
@@ -17,56 +17,50 @@ RUN set -ex; \
       tzdata \
       locales \
       ca-certificates \
-      fontconfig \
-      xz-utils \
     ; \
     rm -rf /var/lib/apt/lists/*; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
-    locale-gen;
+    locale-gen; \
+    find /usr/share/i18n/locales/ -type f ! -name "en_US" ! -name "POSIX" ! -name "C" -delete;
 
 RUN set -ex; \
     apt-get -qq update; \
     apt-get -qqy install \
-      imagemagick \
-      ghostscript \
-      netpbm \
-      poppler-utils \
-      potrace \
-      dconf-service \
-      libasound2t64 \
-      libatk1.0-0 \
-      libatk-bridge2.0-0 \
-      libatomic1 \
-      libcairo2 \
-      libcups2 \
-      libdbus-1-3 \
-      libexpat1 \
+      \
+      xvfb \
+      fonts-noto-color-emoji \
+      fonts-unifont \
       libfontconfig1 \
-      libgcc1 \
-      libgdk-pixbuf2.0-0 \
-      libglib2.0-0 \
-      libgtk-3-0 \
+      libfreetype6 \
+      xfonts-cyrillic \
+      xfonts-scalable \
+      fonts-liberation \
+      fonts-ipafont-gothic \
+      fonts-wqy-zenhei \
+      fonts-tlwg-loma-otf \
+      fonts-freefont-ttf \
+      \
+      libasound2t64 \
+      libatk-bridge2.0-0t64 \
+      libatk1.0-0t64 \
+      libatspi2.0-0t64 \
+      libcairo2 \
+      libcups2t64 \
+      libdbus-1-3 \
+      libdrm2 \
+      libgbm1 \
+      libglib2.0-0t64 \
       libnspr4 \
+      libnss3 \
       libpango-1.0-0 \
-      libpangocairo-1.0-0 \
       libx11-6 \
-      libx11-xcb1 \
       libxcb1 \
-      libxcb-dri3-0 \
       libxcomposite1 \
-      libxcursor1 \
       libxdamage1 \
       libxext6 \
       libxfixes3 \
-      libxi6 \
+      libxkbcommon0 \
       libxrandr2 \
-      libxrender1 \
-      libxshmfence1 \
-      libxss1 \
-      libxtst6 \
-      fonts-liberation \
-      libnss3 \
-      libgbm1 \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
@@ -89,8 +83,8 @@ RUN set -eux; \
     cd /opt/node; \
     tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
     chown -R root /opt/node; \
-    corepack enable; \
     rm -rf /tmp/nodejs.tar.gz; \
+    corepack enable; \
     mkdir -p /opt/penpot; \
     chown -R penpot:penpot /opt/penpot;
 
@@ -100,7 +94,9 @@ WORKDIR /opt/penpot/exporter
 USER penpot:penpot
 
 RUN set -ex; \
+    corepack install; \
     yarn install; \
-    yarn run playwright install chromium;
+    yarn run playwright install chromium; \
+    rm -rf /opt/penpot/.yarn
 
 CMD ["node", "app.js"]
