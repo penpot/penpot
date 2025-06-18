@@ -63,28 +63,57 @@
 
 
 (defn generate-keep-touched
+  "This is used as part of the switch process, when you switch from
+   an original-shape to a new-shape. It generate changes to
+   copy the touched attributes on the shapes children of the original-shape
+   into the related children of the new-shape.
+   This relation is tricky. The shapes are related if:
+   * On the main components, both have the same name (the name on the copies are ignored)
+   * Both has the same type of ancestors, on the same order (see generate-path for the
+     translation of the types)"
   [changes new-shape original-shape original-shapes page libraries]
   (let [objects            (pcb/get-objects changes)
-        orig-objects       (into {} (map (juxt :id identity) original-shapes))
-        orig-shapes-w-path (add-unique-path
-                            (reverse original-shapes)
-                            orig-objects
-                            (:id original-shape))
+        container          (ctn/make-container page :page)
+
+        ;; Get the touched children of the original-shape
+        orig-touched       (filter (comp seq :touched) original-shapes)
+
+        ;; Adds a :shape-path attribute to the children of the new-shape,
+        ;; that contains the type of its ancestors and its name
         new-shapes-w-path  (add-unique-path
                             (reverse (cfh/get-children-with-self objects (:id new-shape)))
                             objects
                             (:id new-shape))
-        new-shapes-map     (into {} (map (juxt :shape-path identity) new-shapes-w-path))
-        orig-touched       (filter (comp seq :touched) orig-shapes-w-path)
+        ;; Creates a map to quickly find a child of the new-shape by its shape-path
+        new-shapes-map     (into {} (map (juxt :shape-path identity)) new-shapes-w-path)
 
-        container          (ctn/make-container page :page)]
+        ;; The original-shape is in a copy. For the relation rules, we need the referenced
+        ;; shape on the main component
+        orig-ref-shape     (ctf/find-ref-shape nil container libraries original-shape)
+
+        ;; Adds a :shape-path attribute to the children of the orig-ref-shape,
+        ;; that contains the type of its ancestors and its name
+        o-ref-shapes-wp    (add-unique-path
+                            (reverse (cfh/get-children-with-self objects (:id orig-ref-shape)))
+                            objects
+                            (:id orig-ref-shape))
+
+        ;; Creates a map to quickly find a child of the orig-ref-shape by its shape-path
+        o-ref-shapes-p-map  (into {} (map (juxt :id :shape-path)) o-ref-shapes-wp)]
+    ;; Process each touched children of the original-shape
     (reduce
-     (fn [changes previous-shape]
-       (let [current-shape  (get new-shapes-map (:shape-path previous-shape))
-             orig-ref-shape (ctf/find-ref-shape nil container libraries previous-shape)]
-         (if current-shape
+     (fn [changes orig-child-touched]
+       (let [;; orig-child-touched is in a copy. Get the referenced shape on the main component
+             orig-ref-shape (ctf/find-ref-shape nil container libraries orig-child-touched)
+             ;; Get the shape path of the referenced main
+             shape-path     (get o-ref-shapes-p-map (:id orig-ref-shape))
+             ;; Get its related shape in the children of new-shape: the one that
+             ;; has the same shape-path
+             related-shape-in-new  (get new-shapes-map shape-path)]
+         (if related-shape-in-new
+           ;; If there is a related shape, copy the touched attributes into it
            (cll/update-attrs-on-switch
-            changes current-shape previous-shape new-shape original-shape orig-ref-shape container)
+            changes related-shape-in-new orig-child-touched new-shape original-shape orig-ref-shape container)
            changes)))
      changes
      orig-touched)))
