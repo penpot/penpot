@@ -75,10 +75,15 @@
           :has-dropdown true}])
 
       "enterprise"
-      [:> cta-power-up*
-       {:top-title (tr "subscription.dashboard.power-up.your-subscription")
-        :top-description (tr "subscription.dashboard.power-up.enterprise-plan")
-        :has-dropdown false}])))
+      (if subscription-is-trial
+        [:> cta-power-up*
+         {:top-title (tr "subscription.dashboard.power-up.your-subscription")
+          :top-description (tr "subscription.dashboard.power-up.enterprise-trial.top-title")
+          :has-dropdown false}]
+        [:> cta-power-up*
+         {:top-title (tr "subscription.dashboard.power-up.your-subscription")
+          :top-description (tr "subscription.dashboard.power-up.enterprise-plan")
+          :has-dropdown false}]))))
 
 (mf/defc team*
   [{:keys [is-owner team]}]
@@ -137,12 +142,13 @@
   [{:keys [banner-is-expanded team profile]}]
   (let [subscription          (:subscription team)
         subscription-name     (:type subscription)
-        subscription-is-trial (= "trialing" (:status subscription))
         is-owner              (:is-owner (:permissions team))
 
         email-owner           (:email (some #(when (:is-owner %) %) (:members team)))
         mail-to-owner         (str "<a href=\"" "mailto:" email-owner "\">" email-owner "</a>")
         go-to-subscription    (dm/str (u/join cf/public-uri "#/settings/subscriptions"))
+        seats                 (-> profile :props :subscription :quantity)
+        editors               (count (filter :can-edit (:members team)))
 
         link
         (if is-owner
@@ -151,30 +157,25 @@
 
         cta-title
         (cond
-          (= "professional" subscription-name)
+          (and (= "professional" subscription-name) (>= editors 8))
           (tr "subscription.dashboard.cta.professional-plan-designed")
 
-          subscription-is-trial
-          (tr "subscription.dashboard.cta.trial-plan-designed")
-
-          (= "unlimited" subscription-name)
-          (tr "subscription.dashboard.cta.unlimited-many-editors" (:quantity (:subscription (:props profile)))))
+          (and (= "unlimited" subscription-name) (< seats editors))
+          (tr "subscription.dashboard.cta.unlimited-many-editors" seats editors))
 
         cta-message
         (cond
-          (and (= "professional" subscription-name) is-owner)
+          (and (= "professional" subscription-name) (>= editors 8) is-owner)
           (tr "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner" link)
 
-          (and (= "professional" subscription-name) (not is-owner))
+          (and (= "professional" subscription-name) (>= editors 8) (not is-owner))
           (tr "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member" link)
 
-          (and subscription-is-trial is-owner)
-          (tr "subscription.dashboard.cta.upgrade-to-full-access-owner" link)
+          (and (= "unlimited" subscription-name) (< seats editors) is-owner)
+          (tr "subscription.dashboard.cta.upgrade-more-seats-owner" link)
 
-          (and subscription-is-trial (not is-owner))
-          (tr "subscription.dashboard.cta.upgrade-to-full-access-member" link)
-          (and (= "unlimited" subscription-name) (not subscription-is-trial))
-          (tr "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner-more-seats" link))]
+          (and (= "unlimited" subscription-name) (< seats editors) (not is-owner))
+          (tr "subscription.dashboard.cta.upgrade-more-seats-member" link))]
 
     [:> cta* {:class (stl/css-case ::members-cta-full-width banner-is-expanded :members-cta (not banner-is-expanded)) :title cta-title}
      [:> i18n/tr-html*
@@ -184,18 +185,24 @@
 
 (defn show-subscription-members-main-banner?
   [team profile]
-  (or
-   (and (= (:type (:subscription team)) "professional") (>= (count (:members team)) 8))
-   (and
-    (= (:type (:subscription team)) "unlimited")
-    (not (= (:status (:subscription team)) "trialing"))
-    (>= (count (:members team)) (:quantity (:subscription (:props profile))))
-    (:is-owner (:permissions team)))
-   (= (:status (:subscription team)) "paused")))
+  (let [seats   (-> profile :props :subscription :quantity)
+        editors (count (filter :can-edit (:members team)))]
+    (or
+     (and (= (:type (:subscription team)) "professional")
+          (> editors 8))
+     (and
+      (= (:type (:subscription team)) "unlimited")
+      (>= editors 8)
+      (< seats editors)))))
 
-(defn show-subscription-invitations-main-banner?
-  [team]
-  (or
-   (and (= (:type (:subscription team)) "professional")
-        (>= (count (:members team)) 8))
-   (= (:status (:subscription team)) "paused")))
+(defn show-subscription-members-small-banner?
+  [team profile]
+  (let [seats   (-> profile :props :subscription :quantity)
+        editors (count (filter :can-edit (:members team)))]
+    (or
+     (and (= (:type (:subscription team)) "professional")
+          (= editors 8))
+     (and (= (:type (:subscription team)) "unlimited")
+          (< editors 8)
+          (< seats editors)))))
+

@@ -4281,27 +4281,10 @@ msgstr ""
 "The Professional plan is designed for teams of up to 8 editors (owner, "
 "admin, and editor)."
 
-#: src/app/main/ui/dashboard/subscription.cljs:157
-msgid "subscription.dashboard.cta.trial-plan-designed"
-msgstr ""
-"The Unlimited (trial) plan is designed for teams of more than 8 editors "
-"(owner, admin, and editor)."
-
 #: src/app/main/ui/dashboard/subscription.cljs:160
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
-"Looks like your team has grown! Your plan includes %s seats, but you're now "
-"using more than that."
-
-#: src/app/main/ui/dashboard/subscription.cljs:174
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-member"
-msgstr "Unlock full access forever. Contact with the team owner: %s"
-
-#: src/app/main/ui/dashboard/subscription.cljs:171
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
-msgstr "Unlock full access forever. [Subscribe now.](%s)"
+"Looks like your team has grown! Your plan includes %s seats, but you're now using %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:168
 #, markdown
@@ -4315,12 +4298,16 @@ msgstr ""
 msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
 msgstr ""
 "Get more editors, more storage, and more autosaved versions with the "
-"Unlimited or Enterprise plan. [Subscribe now.](%s)"
+"Unlimited or Enterprise plan. [Subscribe now.|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:176
 #, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner-more-seats"
-msgstr "Please upgrade to match your usage. [Subscribe now.](%s)"
+msgid "subscription.dashboard.cta.upgrade-more-seats-owner"
+msgstr "Please upgrade to match your usage. [Subscribe now.|target:self](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-more-seats-member"
+msgstr "Please upgrade to match your usage. Contact with the team owner: %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:80
 msgid "subscription.dashboard.power-up.enterprise-plan"
@@ -4336,7 +4323,7 @@ msgstr "Advanced security, activity logs, dedicated support and more."
 msgid "subscription.dashboard.power-up.professional.bottom-description"
 msgstr ""
 "Get extra editors and storage, file backup and more with the Unlimited "
-"plan[Power up](%s)"
+"plan[Power up|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:59
 msgid "subscription.dashboard.power-up.professional.top-title"
@@ -4350,7 +4337,7 @@ msgstr "Subscribe"
 #: src/app/main/ui/dashboard/subscription.cljs:68
 #, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
-msgstr "Enjoying your trial? Unlock full access forever.[Subscribe](%s)"
+msgstr "Enjoying your trial? Unlock full access forever.[Subscribe|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:62
 #, unused
@@ -4365,12 +4352,15 @@ msgstr "Unlimited plan (trial)"
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Unlimited plan"
 
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "Enterprise plan (trial)"
+
 #: src/app/main/ui/dashboard/subscription.cljs:74
 #, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-description"
 msgstr ""
 "Get advanced security, activity logs, dedicated support and more. Take a "
-"look to the[Enterprise plan.](%s)"
+"look to the[Enterprise plan.|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4422,10 +4412,6 @@ msgstr "Enterprise"
 #: src/app/main/ui/settings/subscription.cljs:53
 msgid "subscription.settings.enterprise-trial"
 msgstr "Enterprise (trial)"
-
-#: src/app/main/ui/settings/subscription.cljs:228
-msgid "subscription.settings.enterprise-trial-modal"
-msgstr "Enterprise trial"
 
 #: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
 msgid "subscription.settings.enterprise.logs"
@@ -4479,7 +4465,7 @@ msgstr "Apply %s to your teams"
 
 #: src/app/main/ui/settings/subscription.cljs:282
 msgid "subscription.settings.member-since"
-msgstr "Penpot member since %s"
+msgstr "Penpot member since: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:295, src/app/main/ui/settings/subscription.cljs:309, src/app/main/ui/settings/subscription.cljs:323
 msgid "subscription.settings.more-information"
@@ -4517,6 +4503,9 @@ msgstr "Unlimited teams of up to 8 editors"
 msgid "subscription.settings.section-plan"
 msgstr "Your subscription"
 
+msgid "subscription.settings.editors"
+msgstr "(x %s editors)"
+
 #: src/app/main/ui/settings/subscription.cljs:145
 msgid "subscription.settings.start-trial"
 msgstr "Start free trial"
@@ -4542,7 +4531,7 @@ msgstr "You are %s!"
 #: src/app/main/ui/settings/subscription.cljs:278
 #, fuzzy
 msgid "subscription.settings.support-us-since"
-msgstr "You've been supporting us with this plan since %s"
+msgstr "You've been supporting us with this plan since: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
 msgid "subscription.settings.try-it-free"
@@ -4560,10 +4549,6 @@ msgstr "Unlimited"
 #: src/app/main/ui/dashboard/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:52, src/app/main/ui/settings/subscription.cljs:245
 msgid "subscription.settings.unlimited-trial"
 msgstr "Unlimited (trial)"
-
-#: src/app/main/ui/settings/subscription.cljs:227
-msgid "subscription.settings.unlimited-trial-modal"
-msgstr "Unlimited trial"
 
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
@@ -7829,6 +7814,18 @@ msgid "workspace.versions.warning.subtext"
 msgstr ""
 "If you'd like to increase this limit, write to us at "
 "[support@penpot.app](%s)"
+
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-owner"
+msgstr ""
+"If you'd like to increase this limit, "
+"[upgrade your plan|target:self](%s)"
+
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-member"
+msgstr ""
+"If you'd like to increase this limit, contact with the team owner: "
+"[%s](mailto)"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:368
 msgid "workspace.versions.warning.text"
