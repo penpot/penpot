@@ -11,9 +11,12 @@
 
 (defn- compare-text-content
   "Given two content text structures, conformed by maps and vectors,
-   compare them, and returns a set with the type of differences.
-   The possibilities are :text-content-text :text-content-attribute and :text-content-structure."
-  [a b]
+   compare them, and returns a set with the differences info.
+   If the structures are equal, it returns an empty set. If the structure
+   has changed, it returns :text-content-structure. There are two
+   callbacks to specify what to return when there is a text change with
+   the same structure, and when attributes change."
+  [a b {:keys [text-cb attribute-cb] :as callbacks}]
   (cond
     ;; If a and b are equal, there is no diff
     (= a b)
@@ -38,25 +41,24 @@
                #{:text-content-structure}
                (into acc
                      (apply set/union
-                            (map #(compare-text-content %1 %2) v1 v2))))
+                            (map #(compare-text-content %1 %2 callbacks) v1 v2))))
 
              ;; If the key is :text, and they are different, it is a text differece
              (= k :text)
              (if (not= v1 v2)
-               (conj acc :text-content-text)
+               (text-cb acc)
                acc)
 
              :else
              ;; If the key is not :text, and they are different, it is an attribute differece
              (if (not= v1 v2)
-               (conj acc :text-content-attribute)
+               (attribute-cb acc k)
                acc))))
        #{}
        keys))
 
     :else
     #{:text-content-structure}))
-
 
 (defn equal-attrs?
   "Given a text structure, and a map of attrs, check that all the internal attrs in
@@ -79,10 +81,15 @@
 (defn get-diff-type
   "Given two content text structures, conformed by maps and vectors,
    compare them, and returns a set with the type of differences.
-   The possibilities are :text-content-text :text-content-attribute,
-   :text-content-structure and :text-content-structure-same-attrs."
+   The possibilities are
+     :text-content-text
+     :text-content-attribute,
+     :text-content-structure
+     :text-content-structure-same-attrs."
   [a b]
-  (let [diff-type (compare-text-content a b)]
+  (let [diff-type (compare-text-content a b
+                                        {:text-cb      (fn [acc] (conj acc :text-content-text))
+                                         :attribute-cb (fn [acc _] (conj acc :text-content-attribute))})]
     (if-not (contains? diff-type :text-content-structure)
       diff-type
       (let [;; get attrs of the first paragraph of the first paragraph-set
@@ -91,6 +98,24 @@
                  (equal-attrs? b attrs))
           #{:text-content-structure :text-content-structure-same-attrs}
           diff-type)))))
+
+(defn get-diff-attrs
+  "Given two content text structures, conformed by maps and vectors,
+   compare them, and returns a set with the attributes that have changed.
+   This is independent of the text structure, so if the structure changes
+   but the attributes are the same, it will return an empty set."
+  [a b]
+  (let [diff-attrs (compare-text-content a b
+                                         {:text-cb      identity
+                                          :attribute-cb (fn [acc attr] (conj acc attr))})]
+    (if-not (contains? diff-attrs :text-content-structure)
+      diff-attrs
+      (let [;; get attrs of the first paragraph of the first paragraph-set
+            attrs (get-first-paragraph-text-attrs a)]
+        (if (and (equal-attrs? a attrs)
+                 (equal-attrs? b attrs))
+          #{}
+          (disj diff-attrs :text-content-structure))))))
 
 ;; TODO We know that there are cases that the blocks of texts are separated
 ;; differently: ["one" " " "two"], ["one " "two"], ["one" " two"]
@@ -115,7 +140,6 @@
 
     :else
     true))
-
 
 (defn copy-text-keys
   "Given two equal content text structures, deep copy all the keys :text
