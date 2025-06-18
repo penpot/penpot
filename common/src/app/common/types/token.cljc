@@ -66,13 +66,6 @@
    [:r3 {:optional true} token-name-ref]
    [:r4 {:optional true} token-name-ref]])
 
-(def ^:private schema:typography
-  [:map
-   [:line-height {:optional true} token-name-ref]
-   [:font-size {:optional true} token-name-ref]])
-
-(def typography-keys (schema-keys schema:typography))
-
 (def border-radius-keys (schema-keys schema:border-radius))
 
 (def ^:private schema:stroke-width

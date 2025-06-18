@@ -382,7 +382,8 @@
 
 (def text-attributes
   (set/union generic-attributes
-             ctt/typography-keys))
+             ctt/typography-keys
+             ctt/number-keys))
 
 (defn shape-type->attributes
   [type]

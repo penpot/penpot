@@ -27,6 +27,11 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
+;; Helpers ---------------------------------------------------------------------
+
+(defn- key-in-map? [ks m]
+  (some #(contains? m %) ks))
+
 ;; Actions ---------------------------------------------------------------------
 
 (defn attribute-actions [token selected-shapes attributes]
@@ -36,14 +41,15 @@
      :shape-ids shape-ids
      :selected-pred #(seq (% ids-by-attributes))}))
 
-(defn generic-attribute-actions [attributes title {:keys [token selected-shapes on-update-shape hint]}]
-  (let [on-update-shape-fn
+(defn generic-attribute-actions [attributes title {:keys [token selected-shapes on-update-shape hint allowed-shape-attributes]}]
+  (let [allowed-attributes (set/intersection attributes allowed-shape-attributes)
+        on-update-shape-fn
         (or on-update-shape
             (-> (dwta/get-token-properties token)
                 (:on-update-shape)))
 
         {:keys [selected-pred shape-ids]}
-        (attribute-actions token selected-shapes attributes)]
+        (attribute-actions token selected-shapes allowed-attributes)]
 
     (map (fn [attribute]
            (let [selected? (selected-pred attribute)
@@ -58,37 +64,38 @@
                         (if selected?
                           (st/emit! (dwta/unapply-token props))
                           (st/emit! (dwta/apply-token (assoc props :on-update-shape on-update-shape-fn)))))}))
-         attributes)))
+         allowed-attributes)))
 
 (defn all-or-separate-actions [{:keys [attribute-labels on-update-shape-all on-update-shape hint]}
-                               {:keys [token selected-shapes]}]
-  (let [attributes (set (keys attribute-labels))
-        {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)
-        all-action (let [props {:attributes attributes
-                                :token token
-                                :shape-ids shape-ids}]
-                     {:title (tr "labels.all")
-                      :selected? all-selected?
-                      :hint hint
-                      :action #(if all-selected?
-                                 (st/emit! (dwta/unapply-token props))
-                                 (st/emit! (dwta/apply-token (assoc props :on-update-shape (or on-update-shape-all on-update-shape)))))})
-        single-actions (map (fn [[attr title]]
-                              (let [selected? (selected-pred attr)]
-                                {:title title
-                                 :selected? (and (not all-selected?) selected?)
-                                 :action #(let [props {:attributes #{attr}
-                                                       :token token
-                                                       :shape-ids shape-ids}
-                                                event (cond
-                                                        all-selected? (-> (assoc props :attributes-to-remove attributes)
-                                                                          (dwta/apply-token))
-                                                        selected? (dwta/unapply-token props)
-                                                        :else (-> (assoc props :on-update-shape on-update-shape)
-                                                                  (dwta/apply-token)))]
-                                            (st/emit! event))}))
-                            attribute-labels)]
-    (concat [all-action] single-actions)))
+                               {:keys [token selected-shapes allowed-shape-attributes]}]
+  (when-let [attribute-labels (seq (select-keys attribute-labels allowed-shape-attributes))]
+    (let [attributes (-> (keys attribute-labels) (set))
+          {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)
+          all-action (let [props {:attributes attributes
+                                  :token token
+                                  :shape-ids shape-ids}]
+                       {:title (tr "labels.all")
+                        :selected? all-selected?
+                        :hint hint
+                        :action #(if all-selected?
+                                   (st/emit! (dwta/unapply-token props))
+                                   (st/emit! (dwta/apply-token (assoc props :on-update-shape (or on-update-shape-all on-update-shape)))))})
+          single-actions (map (fn [[attr title]]
+                                (let [selected? (selected-pred attr)]
+                                  {:title title
+                                   :selected? (and (not all-selected?) selected?)
+                                   :action #(let [props {:attributes #{attr}
+                                                         :token token
+                                                         :shape-ids shape-ids}
+                                                  event (cond
+                                                          all-selected? (-> (assoc props :attributes-to-remove attributes)
+                                                                            (dwta/apply-token))
+                                                          selected? (dwta/unapply-token props)
+                                                          :else (-> (assoc props :on-update-shape on-update-shape)
+                                                                    (dwta/apply-token)))]
+                                              (st/emit! event))}))
+                              attribute-labels)]
+      (concat (when all-action [all-action]) single-actions))))
 
 (defn layout-spacing-items [{:keys [token selected-shapes all-attr-labels horizontal-attr-labels vertical-attr-labels on-update-shape hint]}]
   (let [horizontal-attrs (into #{} (keys horizontal-attr-labels))
@@ -171,40 +178,46 @@
      (dwsl/update-layout shape-ids {:layout-item-margin-type :multiple}))
    (dwta/update-layout-item-margin value shape-ids attributes)))
 
-(defn spacing-attribute-actions [{:keys [token selected-shapes] :as context-data}]
-  (let [padding-items (layout-spacing-items {:token token
-                                             :selected-shapes selected-shapes
-                                             :all-attr-labels {:p1 "Padding top"
-                                                               :p2 "Padding right"
-                                                               :p3 "Padding bottom"
-                                                               :p4 "Padding left"}
-                                             :hint (tr "workspace.tokens.paddings")
-                                             :horizontal-attr-labels {:p2 "Padding right"
-                                                                      :p4 "Padding left"}
-                                             :vertical-attr-labels {:p1 "Padding top"
-                                                                    :p3 "Padding bottom"}
-                                             :on-update-shape update-shape-layout-padding})
-        margin-items (layout-spacing-items {:token token
-                                            :selected-shapes selected-shapes
-                                            :all-attr-labels {:m1 "Margin top"
-                                                              :m2 "Margin right"
-                                                              :m3 "Margin bottom"
-                                                              :m4 "Margin left"}
-                                            :hint (tr "workspace.tokens.margins")
-                                            :horizontal-attr-labels {:m2 "Margin right"
-                                                                     :m4 "Margin left"}
-                                            :vertical-attr-labels {:m1 "Margin top"
-                                                                   :m3 "Margin bottom"}
-                                            :on-update-shape update-shape-layout-margin})
+
+
+(defn spacing-attribute-actions [{:keys [token selected-shapes allowed-shape-attributes] :as context-data}]
+  (let [padding-attr-labels {:p1 "Padding top"
+                             :p2 "Padding right"
+                             :p3 "Padding bottom"
+                             :p4 "Padding left"}
+        padding-items (when (key-in-map? allowed-shape-attributes padding-attr-labels)
+                        (layout-spacing-items {:token token
+                                               :selected-shapes selected-shapes
+                                               :all-attr-labels padding-attr-labels
+                                               :hint (tr "workspace.tokens.paddings")
+                                               :horizontal-attr-labels {:p2 "Padding right"
+                                                                        :p4 "Padding left"}
+                                               :vertical-attr-labels {:p1 "Padding top"
+                                                                      :p3 "Padding bottom"}
+                                               :on-update-shape update-shape-layout-padding}))
+        margin-attr-labels {:m1 "Margin top"
+                            :m2 "Margin right"
+                            :m3 "Margin bottom"
+                            :m4 "Margin left"}
+        margin-items (when (key-in-map? allowed-shape-attributes margin-attr-labels)
+                       (layout-spacing-items {:token token
+                                              :selected-shapes selected-shapes
+                                              :all-attr-labels margin-attr-labels
+                                              :hint (tr "workspace.tokens.margins")
+                                              :horizontal-attr-labels {:m2 "Margin right"
+                                                                       :m4 "Margin left"}
+                                              :vertical-attr-labels {:m1 "Margin top"
+                                                                     :m3 "Margin bottom"}
+                                              :on-update-shape update-shape-layout-margin}))
         gap-items (all-or-separate-actions {:attribute-labels {:column-gap "Column Gap"
                                                                :row-gap "Row Gap"}
                                             :hint (tr "workspace.tokens.gaps")
                                             :on-update-shape dwta/update-layout-spacing}
                                            context-data)]
     (concat gap-items
-            [:separator]
+            (when padding-items [:separator])
             padding-items
-            [:separator]
+            (when margin-items [:separator])
             margin-items)))
 
 (defn sizing-attribute-actions [context-data]
@@ -234,37 +247,44 @@
 
 (def shape-attribute-actions-map
   (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")
-        font-size (partial generic-attribute-actions #{:font-size} "Font Size")]
-    {:border-radius (partial all-or-separate-actions {:attribute-labels {:r1 "Top Left"
-                                                                         :r2 "Top Right"
-                                                                         :r4 "Bottom Left"
-                                                                         :r3 "Bottom Right"}
-                                                      :hint (tr "workspace.tokens.radius")
-                                                      :on-update-shape-all dwta/update-shape-radius-all
-                                                      :on-update-shape update-shape-radius-for-corners})
+        font-size (partial generic-attribute-actions #{:font-size} "Font Size")
+        line-height #(generic-attribute-actions #{:line-height} "Line Height" (assoc % :on-update-shape dwta/update-line-height))
+        border-radius (partial all-or-separate-actions {:attribute-labels {:r1 "Top Left"
+                                                                           :r2 "Top Right"
+                                                                           :r4 "Bottom Left"
+                                                                           :r3 "Bottom Right"}
+                                                        :hint (tr "workspace.tokens.radius")
+                                                        :on-update-shape-all dwta/update-shape-radius-all
+                                                        :on-update-shape update-shape-radius-for-corners})]
+    {:border-radius border-radius
      :color (fn [context-data]
-              [(generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape dwta/update-fill :hint (tr "workspace.tokens.color")))
-               (generic-attribute-actions #{:stroke-color} "Stroke" (assoc context-data :on-update-shape dwta/update-stroke-color))])
+              (concat
+               (generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape dwta/update-fill :hint (tr "workspace.tokens.color")))
+               (generic-attribute-actions #{:stroke-color} "Stroke" (assoc context-data :on-update-shape dwta/update-stroke-color))))
      :spacing spacing-attribute-actions
      :sizing sizing-attribute-actions
      :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
      :opacity (partial generic-attribute-actions #{:opacity} "Opacity")
      :number (fn [context-data]
-               [(generic-attribute-actions #{:rotation} "Rotation" (assoc context-data :on-update-shape dwta/update-rotation))
-                (generic-attribute-actions #{:line-height} "Line Height" (assoc context-data :on-update-shape dwta/update-line-height))])
+               (concat
+                (generic-attribute-actions #{:rotation} "Rotation" (assoc context-data :on-update-shape dwta/update-rotation))
+                (let [line-height (line-height context-data)]
+                  (when (seq line-height) line-height))))
      :stroke-width stroke-width
      :font-size font-size
      :dimensions (fn [context-data]
-                   (concat
-                    [{:title "Sizing" :submenu :sizing}
-                     {:title "Spacing" :submenu :spacing}
-                     :separator
-                     {:title "Border Radius" :submenu :border-radius}]
-                    [:separator]
-                    (stroke-width (assoc context-data :on-update-shape dwta/update-stroke-width))
-                    [:separator]
-                    (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape dwta/update-shape-position :hint (tr "workspace.tokens.axis")))
-                    (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape dwta/update-shape-position))))}))
+                   (-> (concat
+                        (when (seq (sizing-attribute-actions context-data)) [{:title "Sizing" :submenu :sizing}])
+                        (when (seq (spacing-attribute-actions context-data)) [{:title "Spacing" :submenu :spacing}])
+                        [:separator]
+                        (when (seq (border-radius context-data))
+                          [{:title "Border Radius" :submenu :border-radius}])
+                        [:separator]
+                        (stroke-width (assoc context-data :on-update-shape dwta/update-stroke-width))
+                        [:separator]
+                        (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape dwta/update-shape-position :hint (tr "workspace.tokens.axis")))
+                        (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape dwta/update-shape-position)))
+                       (dedupe)))}))
 
 (defn default-actions [{:keys [token selected-token-set-name]}]
   (let [{:keys [modal]} (dwta/get-token-properties token)]
@@ -290,19 +310,24 @@
                           (ctob/prefixed-set-path-string->set-name-string selected-token-set-name)
                           (:name token)))}]))
 
-(defn selection-actions [{:keys [type token] :as context-data}]
-  (let [with-actions (get shape-attribute-actions-map (or type (:type token)))
+(defn- allowed-shape-attributes [shapes]
+  (reduce into #{} (map #(dwta/shape-type->attributes (:type %)) shapes)))
+
+(defn menu-actions [{:keys [type token selected-shapes] :as context-data}]
+  (let [context-data (assoc context-data :allowed-shape-attributes (allowed-shape-attributes selected-shapes))
+        with-actions (get shape-attribute-actions-map (or type (:type token)))
         attribute-actions (if with-actions (with-actions context-data) [])]
+    attribute-actions))
+
+(defn selection-actions [context-data]
+  (let [attribute-actions (menu-actions context-data)]
     (concat
      attribute-actions
      (when (seq attribute-actions) [:separator])
      (default-actions context-data))))
 
-(defn submenu-actions-selection-actions [{:keys [type token] :as context-data}]
-  (let [with-actions (get shape-attribute-actions-map (or type (:type token)))
-        attribute-actions (if with-actions (with-actions context-data) [])]
-    (concat
-     attribute-actions)))
+(defn submenu-actions-selection-actions [context-data]
+  (menu-actions context-data))
 
 ;; Components ------------------------------------------------------------------
 
