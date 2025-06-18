@@ -84,3 +84,16 @@ test("Renders a file with texts that use custom fonts", async ({ page }) => {
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Renders a file with styled texts", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-styles.json");
+
+  await workspace.goToWorkspace({
+    id: "6bd7c17d-4f59-815e-8006-5c2559af4939",
+    pageId: "6bd7c17d-4f59-815e-8006-5c2559af493a",
+  });
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
