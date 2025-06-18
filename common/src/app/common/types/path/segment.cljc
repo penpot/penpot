@@ -474,6 +474,8 @@
   "Given a content and a set of points return all the segments in the path
   that uses the points"
   [content points]
+  (assert (impl/path-data? content) "expected path data instance")
+
   (let [point-set (set points)]
     (loop [result      (transient [])
            prev-point  nil
