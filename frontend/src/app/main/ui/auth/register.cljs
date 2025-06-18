@@ -82,7 +82,7 @@
 
         on-error
         (mf/use-fn
-         (fn [form cause]
+         (fn [cause]
            (let [{:keys [type code] :as edata} (ex-data cause)]
              (condp = [type code]
                [:restriction :registration-disabled]
@@ -101,7 +101,10 @@
                (swap! form assoc-in [:errors :password]
                       {:message (tr "errors.email-as-password")})
 
-               (st/emit! (ntf/error (tr "errors.generic")))))))
+               (do
+                 (when-let [explain (get edata :explain)]
+                   (println explain))
+                 (st/emit! (ntf/error (tr "errors.generic"))))))))
 
         on-success
         (mf/use-fn
@@ -109,10 +112,9 @@
          (fn [params]
            (if (fn? on-success-callback)
              (on-success-callback (:email params))
-
              (cond
-               (some? (:token params))
-               (let [token (:token params)]
+               (some? (:invitation-token params))
+               (let [token (:invitation-token params)]
                  (st/emit! (rt/nav :auth-verify-token {:token token})))
 
                (:is-active params)
@@ -126,25 +128,25 @@
         on-register-profile
         (mf/use-fn
          (mf/deps on-success on-error)
-         (fn [form]
+         (fn [params]
            (reset! submitted? true)
-           (let [create-welcome-file?
-                 (cf/external-feature-flag "onboarding-03" "test")
-
-                 params
-                 (cond-> form
-                   create-welcome-file? (assoc :create-welcome-file true))]
-             (->> (rp/cmd! :register-profile params)
-                  (rx/subs! on-success on-error #(reset! submitted? false))))))
+           (->> (rp/cmd! :register-profile params)
+                (rx/subs! on-success on-error #(reset! submitted? false)))))
 
         on-submit
         (mf/use-fn
          (mf/deps on-success-callback)
          (fn [form _event]
            (reset! submitted? true)
-           (let [cdata      (:clean-data @form)]
+           (let [create-welcome-file?
+                 (cf/external-feature-flag "onboarding-03" "test")
+
+                 cdata
+                 (cond-> (:clean-data @form)
+                   create-welcome-file?
+                   (assoc :create-welcome-file true))]
+
              (->> (rp/cmd! :prepare-register-profile cdata)
-                  (rx/map #(merge % cdata))
                   (rx/finalize #(reset! submitted? false))
                   (rx/subs! on-register-profile)))))]
 

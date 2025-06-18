@@ -35,7 +35,7 @@
 
 .shape-row {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: $s-8;
   align-items: center;
   height: $s-32;

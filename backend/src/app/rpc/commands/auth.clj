@@ -231,13 +231,14 @@
               :hint "email has complaint reports")))
 
 (defn prepare-register
-  [{:keys [::db/pool] :as cfg} {:keys [email accept-newsletter-updates] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [fullname email accept-newsletter-updates] :as params}]
 
   (validate-register-attempt! cfg params)
 
   (let [email   (profile/clean-email email)
         profile (profile/get-profile-by-email pool email)
         params  {:email email
+                 :fullname fullname
                  :password (:password params)
                  :invitation-token (:invitation-token params)
                  :backend "penpot"
@@ -254,8 +255,10 @@
 
 (def schema:prepare-register-profile
   [:map {:title "prepare-register-profile"}
+   [:fullname ::sm/text]
    [:email ::sm/email]
    [:password schema:password]
+   [:create-welcome-file {:optional true} :boolean]
    [:invitation-token {:optional true} schema:token]])
 
 (sv/defmethod ::prepare-register-profile
@@ -359,13 +362,9 @@
                 :extra-data ptoken})))
 
 (defn register-profile
-  [{:keys [::db/conn ::wrk/executor] :as cfg} {:keys [token fullname theme] :as params}]
-  (let [theme      (when (= theme "light") theme)
-        claims     (tokens/verify (::setup/props cfg) {:token token :iss :prepared-register})
-        params     (-> claims
-                       (into params)
-                       (assoc :fullname fullname)
-                       (assoc :theme theme))
+  [{:keys [::db/conn ::wrk/executor] :as cfg} {:keys [token] :as params}]
+  (let [claims     (tokens/verify (::setup/props cfg) {:token token :iss :prepared-register})
+        params     (into claims params)
 
         profile    (if-let [profile-id (:profile-id claims)]
                      (profile/get-profile conn profile-id)
@@ -479,10 +478,7 @@
 
 (def schema:register-profile
   [:map {:title "register-profile"}
-   [:token schema:token]
-   [:fullname [::sm/word-string {:max 100}]]
-   [:theme {:optional true} [:string {:max 10}]]
-   [:create-welcome-file {:optional true} :boolean]])
+   [:token schema:token]])
 
 (sv/defmethod ::register-profile
   {::rpc/auth false

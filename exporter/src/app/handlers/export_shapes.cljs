@@ -141,8 +141,8 @@
 
         proc        (-> (p/do
                           (p/loop [exports (seq exports)]
-                            (when-let [export (-> (first exports)
-                                                  (assoc :skip-children skip-children))]
+                            (when-let [export (some-> (first exports)
+                                                      (assoc :skip-children skip-children))]
                               (p/do
                                 (rd/render export append)
                                 (p/recur (rest exports)))))
