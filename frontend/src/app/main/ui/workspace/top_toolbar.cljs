@@ -77,9 +77,8 @@
        hidden?))
    st/state))
 
-(mf/defc top-toolbar
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+(mf/defc top-toolbar*
+  {::mf/memo true}
   [{:keys [layout]}]
   (let [selected-drawtool    (mf/deref refs/selected-drawing-tool)
         edition              (mf/deref refs/selected-edition)

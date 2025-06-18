@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]
@@ -267,7 +266,6 @@
 
 (mf/defc path-editor*
   [{:keys [shape zoom]}]
-
   (let [shape-id      (dm/get-prop shape :id)
         edit-path-ref (mf/with-memo [shape-id]
                         (make-edit-path-ref shape-id))
@@ -292,12 +290,6 @@
 
         selected-points
         (or selected-points #{})
-
-        shape
-        (mf/with-memo [shape]
-          (cond-> shape
-            (not (cfh/path-shape? shape))
-            (path/convert-to-path)))
 
         base-content
         (get shape :content)

@@ -67,8 +67,8 @@
        :separate-nodes segments-selected?})))
 
 (mf/defc path-actions*
-  [{:keys [shape edit-path]}]
-  (let [{:keys [edit-mode selected-points snap-toggled]} edit-path
+  [{:keys [shape state]}]
+  (let [{:keys [edit-mode selected-points snap-toggled]} state
 
         content (:content shape)
 
