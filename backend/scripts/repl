@@ -77,8 +77,9 @@ export JAVA_OPTS="\
        -Djdk.attach.allowAttachSelf \
        -Dlog4j2.configurationFile=log4j2-devenv-repl.xml \
        -Djdk.tracePinnedThreads=full \
+       -Dim4java.useV7=true \
        -XX:+EnableDynamicAgentLoading \
-       -XX:-OmitStackTraceInFastThrow                    \
+       -XX:-OmitStackTraceInFastThrow  \
        -XX:+UnlockDiagnosticVMOptions \
        -XX:+DebugNonSafepoints \
        --sun-misc-unsafe-memory-access=allow \
@@ -105,9 +106,6 @@ export OPTIONS="-A:jmx-remote -A:dev"
 
 # Setup GC
 # export OPTIONS="$OPTIONS -J-XX:+UseZGC"
-
-# Enable ImageMagick v7.x support
-# export OPTIONS="-J-Dim4java.useV7=true $OPTIONS";
 
 export OPTIONS_EVAL="nil"
 # export OPTIONS_EVAL="(set! *warn-on-reflection* true)"
