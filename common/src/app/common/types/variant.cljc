@@ -160,35 +160,44 @@
     (filterv #(not (contains? prev-names (:name %))) upd-props)))
 
 
-(defn add-number-to-repeated-prop-names
-  "Adds an incremental number to each repeated property name"
+(defn- split-base-name-and-number
+  "Extract the number in parentheses from an item, if present, and return both the base name and the number"
+  [item]
+  (let [pattern-num-parens #"\(\d+\)$"
+        pattern-num        #"\d+"
+        base (-> item (str/replace pattern-num-parens "") (str/trim))
+        num  (some->> item (re-find pattern-num-parens) (re-find pattern-num) (d/parse-integer))]
+    [base (d/nilv num 0)]))
+
+(defn- group-numbers-by-base-name
+  "Return a map with a set of numbers associated to each base name"
+  [items]
+  (reduce (fn [acc item]
+            (let [[base num] (split-base-name-and-number item)]
+              (update acc base (fnil conj #{}) num)))
+          {}
+          items))
+
+(defn update-number-in-repeated-item
+  "Add, keep or update a number in parentheses for a given item, if necessary, depending on the items
+   already present in a list, to avoid repetitions"
+  [items item]
+  (let [names      (group-numbers-by-base-name items)
+        [base num] (split-base-name-and-number item)
+        nums-taken (get names base #{})]
+    (loop [n num]
+      (if (nums-taken n)
+        (recur (inc n))
+        (str base (when (pos? n) (str " (" n ")")))))))
+
+(defn update-number-in-repeated-prop-names
+  "Add, keep or update a number for each prop name depending on the previous ones"
   [props]
-  (->> (map-indexed vector props)
-       (mapv (fn [[idx prop]]
-               (->> (mapv :name props)
-                    (take idx)
-                    (filter #(= % (:name prop)))
-                    (count)
-                    (assoc prop :num))))
-       (mapv (fn [prop]
-               (let [num       (:num prop)
-                     name-base (:name prop)
-                     name      (if (= num 0) name-base (str name-base " (" num ")"))]
-                 (-> prop
-                     (dissoc :num)
-                     (assoc :name name)))))))
-
-
-(defn add-number-to-repeated-item
-  "Adds a number to an item if it already exists in a list"
-  ([prop-names name-base]
-   (add-number-to-repeated-item prop-names name-base 0))
-
-  ([prop-names name-base num]
-   (let [name (if (= num 0) name-base (str name-base " (" num ")"))]
-     (if (some #(= name %) prop-names)
-       (add-number-to-repeated-item prop-names name-base (inc num))
-       name))))
+  (->> props
+       (reduce (fn [acc prop]
+                 (conj acc {:name (update-number-in-repeated-item (mapv :name acc) (:name prop))
+                            :value (:value prop)}))
+               [])))
 
 
 (defn find-index-for-property-name

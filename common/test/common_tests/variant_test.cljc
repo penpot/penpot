@@ -15,13 +15,13 @@
         map-with-two-props-dashes    [{:name "border" :value "no"} {:name "color" :value "--"}]
         map-with-one-prop            [{:name "border" :value "no"}]
         map-with-equal               [{:name "border" :value "yes color=yes"}]
-        map-with-spaces              [{:name "border 1" :value "of course"}
-                                      {:name "color 2" :value "dark gray"}
-                                      {:name "background 3" :value "anoth€r co-lor"}]
+        map-with-spaces              [{:name "border (1)" :value "of course"}
+                                      {:name "color (2)" :value "dark gray"}
+                                      {:name "background (3)" :value "anoth€r co-lor"}]
 
         string-valid-with-two-props  "border=yes, color=gray"
         string-valid-with-one-prop   "border=no"
-        string-valid-with-spaces     "border 1=of course, color 2=dark gray, background 3=anoth€r co-lor"
+        string-valid-with-spaces     "border (1)=of course, color (2)=dark gray, background (3)=anoth€r co-lor"
         string-valid-with-no-value   "border=no, color="
         string-valid-with-dashes     "border=no, color=--"
         string-valid-with-equal      "border=yes color=yes"
@@ -133,24 +133,29 @@
       (t/is (= (ctv/same-variant? components-4) false)))))
 
 
-(t/deftest add-number-to-repeated-item
-  (let [names ["border" "color" "color (1)" "size"]]
+(t/deftest update-number-in-repeated-item
+  (let [names ["border" "color" "color 1" "color 2" "color (1)" "color (7)" "area 51"]]
 
-    (t/testing "add-number-to-repeated-item"
-      (t/is (= (ctv/add-number-to-repeated-item names "background") "background"))
-      (t/is (= (ctv/add-number-to-repeated-item names "border")     "border (1)"))
-      (t/is (= (ctv/add-number-to-repeated-item names "color")      "color (2)")))))
+    (t/testing "update-number-in-repeated-item"
+      (t/is (= (ctv/update-number-in-repeated-item names "background") "background"))
+      (t/is (= (ctv/update-number-in-repeated-item names "border")     "border (1)"))
+      (t/is (= (ctv/update-number-in-repeated-item names "color")      "color (2)"))
+      (t/is (= (ctv/update-number-in-repeated-item names "color 1")    "color 1 (1)"))
+      (t/is (= (ctv/update-number-in-repeated-item names "color (1)")  "color (2)"))
+      (t/is (= (ctv/update-number-in-repeated-item names "area 51")    "area 51 (1)")))))
 
 
-(t/deftest add-number-to-repeated-prop-names
-  (let [props          [{:name "color"     :value "yellow"}
-                        {:name "color"     :value "blue"}
-                        {:name "color"     :value "red"}
-                        {:name "border"    :value "yes"}]
-        numbered-props [{:name "color"     :value "yellow"}
-                        {:name "color (1)" :value "blue"}
-                        {:name "color (2)" :value "red"}
-                        {:name "border"    :value "yes"}]]
+(t/deftest update-number-in-repeated-prop-names
+  (let [props          [{:name "color"      :value "yellow"}
+                        {:name "color"      :value "blue"}
+                        {:name "color"      :value "red"}
+                        {:name "border (1)" :value "no"}
+                        {:name "border (1)" :value "yes"}]
+        numbered-props [{:name "color"      :value "yellow"}
+                        {:name "color (1)"  :value "blue"}
+                        {:name "color (2)"  :value "red"}
+                        {:name "border (1)" :value "no"}
+                        {:name "border (2)" :value "yes"}]]
 
-    (t/testing "add-number-to-repeated-prop-names"
-      (t/is (= (ctv/add-number-to-repeated-prop-names props) numbered-props)))))
+    (t/testing "update-number-in-repeated-prop-names"
+      (t/is (= (ctv/update-number-in-repeated-prop-names props) numbered-props)))))
