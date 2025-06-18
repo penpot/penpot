@@ -4,6 +4,7 @@
    [app.common.data.macros :as dm]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.profile :as du]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -18,12 +19,23 @@
 
 (mf/defc plan-card*
   {::mf/props :obj}
-  [{:keys [card-title card-title-icon price-value price-period benefits-title benefits cta-text cta-link cta-text-trial cta-link-trial cta-text-with-icon cta-link-with-icon]}]
+  [{:keys [card-title
+           card-title-icon
+           price-value price-period
+           benefits-title benefits
+           cta-text
+           cta-link
+           cta-text-trial
+           cta-link-trial
+           cta-text-with-icon
+           cta-link-with-icon
+           editors]}]
   [:div {:class (stl/css :plan-card)}
    [:div {:class (stl/css :plan-card-header)}
     [:div {:class (stl/css :plan-card-title-container)}
      (when card-title-icon [:span {:class (stl/css :plan-title-icon)} card-title-icon])
-     [:h4 {:class (stl/css :plan-card-title)}  card-title]]
+     [:h4 {:class (stl/css :plan-card-title)}  card-title]
+     (when editors [:span {:class (stl/css :plan-editors)} (tr "subscription.settings.editors" editors)])]
     (when (and price-value price-period)
       [:div {:class (stl/css :plan-price)}
        [:span {:class (stl/css :plan-price-value)} price-value]
@@ -178,6 +190,8 @@
   [{:keys [profile]}]
   (let [route                           (mf/deref refs/route)
         params                          (:params route)
+        params-subscription             (:subscription (:query params))
+        params-without-subscription     (dissoc (:query params) :subscription)
         show-subscription-success-modal (and (:query params)
                                              (or (= (:subscription (:query params)) "subscribed-to-penpot-unlimited")
                                                  (= (:subscription (:query params)) "subscribed-to-penpot-enterprise")))
@@ -223,9 +237,15 @@
 
     (when show-subscription-success-modal
       (st/emit! (modal/show :subscription-success
-                            {:subscription-name (if (= (:subscription (:query params)) "subscribed-to-penpot-unlimited")
-                                                  (tr "subscription.settings.unlimited-trial-modal")
-                                                  (tr "subscription.settings.enterprise-trial-modal"))})))
+                            {:subscription-name (if (= params-subscription "subscribed-to-penpot-unlimited")
+                                                  (tr "subscription.settings.unlimited-trial")
+                                                  (tr "subscription.settings.enterprise-trial"))}))
+      (rx/merge
+       (rx/of (du/update-profile-props {:subscription
+                                        {:type (if (= params-subscription "subscribed-to-penpot-unlimited")
+                                                 "unlimited"
+                                                 "enterprise")}}))
+       (rx/of (rt/nav :settings-subscriptions params-without-subscription {::rt/replace true}))))
     [:section {:class (stl/css :dashboard-section)}
      [:div {:class (stl/css :dashboard-content)}
       [:h2 {:class (stl/css :title-section)} (tr "subscription.labels")]
@@ -251,7 +271,8 @@
                            :cta-text (tr "subscription.settings.manage-your-subscription")
                            :cta-link go-to-payments
                            :cta-text-trial (tr "subscription.settings.add-payment-to-continue")
-                           :cta-link-trial go-to-payments}]
+                           :cta-link-trial go-to-payments
+                           :editors (-> profile :props :subscription :quantity)}]
 
            [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
                            :card-title-icon i/character-u
@@ -260,17 +281,27 @@
                                       (tr "subscription.settings.unlimited.bill"),
                                       (tr "subscription.settings.unlimited.storage")]
                            :cta-text (tr "subscription.settings.manage-your-subscription")
-                           :cta-link go-to-payments}])
+                           :cta-link go-to-payments
+                           :editors (-> profile :props :subscription :quantity)}])
 
          "enterprise"
-         [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
-                         :card-title-icon i/character-e
-                         :benefits-title (tr "subscription.settings.benefits.all-professional-benefits")
-                         :benefits [(tr "subscription.settings.enterprise.support"),
-                                    (tr "subscription.settings.enterprise.security"),
-                                    (tr "subscription.settings.enterprise.logs")]
-                         :cta-text (tr "subscription.settings.manage-your-subscription")
-                         :cta-link go-to-payments}])
+         (if subscription-is-trial
+           [:> plan-card* {:card-title (tr "subscription.settings.enterprise-trial")
+                           :card-title-icon i/character-e
+                           :benefits-title (tr "subscription.settings.benefits.all-professional-benefits")
+                           :benefits [(tr "subscription.settings.enterprise.support"),
+                                      (tr "subscription.settings.enterprise.security"),
+                                      (tr "subscription.settings.enterprise.logs")]
+                           :cta-text (tr "subscription.settings.manage-your-subscription")
+                           :cta-link go-to-payments}]
+           [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
+                           :card-title-icon i/character-e
+                           :benefits-title (tr "subscription.settings.benefits.all-professional-benefits")
+                           :benefits [(tr "subscription.settings.enterprise.support"),
+                                      (tr "subscription.settings.enterprise.security"),
+                                      (tr "subscription.settings.enterprise.logs")]
+                           :cta-text (tr "subscription.settings.manage-your-subscription")
+                           :cta-link go-to-payments}]))
 
        [:div {:class (stl/css :membership-container)}
         (when subscription-member [:div {:class (stl/css :membership)}

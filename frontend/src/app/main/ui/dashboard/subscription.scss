@@ -62,12 +62,12 @@
 }
 
 .cta-title {
-  @include t.use-typography("title-small");
+  @include t.use-typography("body-small");
   margin-block-end: var(--sp-xs);
 }
 
 .cta-text {
-  @include t.use-typography("body-small");
+  @include t.use-typography("title-small");
 }
 
 .cta-bottom-section .content a {
@@ -96,15 +96,16 @@
 }
 
 .team-text {
-  @include t.use-typography("body-large");
+  @include t.use-typography("title-medium");
   color: var(--color-foreground-primary);
 }
 
 .manage-subscription-link {
   @include buttonStyle;
-  @include t.use-typography("body-small");
+  @include t.use-typography("body-medium");
   color: var(--color-accent-tertiary);
   display: flex;
+  line-height: 0;
   padding: 0;
 }
 
@@ -114,6 +115,12 @@
   stroke: var(--color-foreground-secondary);
   border-radius: var(--sp-xs);
   border: $b-1 solid var(--color-foreground-secondary);
+  stroke-width: 2.5px;
+
+  svg {
+    block-size: 10px;
+    inline-size: 10px;
+  }
 }
 
 .menu-item {
@@ -136,6 +143,10 @@
   margin-block-start: var(--sp-s);
   margin-inline-start: $s-68;
   max-width: $s-200;
+
+  .cta-title {
+    line-height: 1.2;
+  }
 }
 
 .members-cta-full-width {
@@ -148,5 +159,6 @@
 
   a {
     color: var(--color-accent-primary);
+    overflow-wrap: break-word;
   }
 }
