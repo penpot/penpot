@@ -14,7 +14,7 @@
    [app.main.data.workspace.path.undo :as undo]))
 
 ;; Drawing
-(dm/export drawing/handle-new-shape)
+(dm/export drawing/handle-drawing)
 (dm/export drawing/start-path-from-point)
 (dm/export drawing/close-path-drag-start)
 (dm/export drawing/change-edit-mode)

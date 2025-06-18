@@ -22,9 +22,8 @@
 (defn initialize-viewport
   [{:keys [width height] :as size}]
 
-  (dm/assert!
-   "expected `size` to be a rect instance"
-   (gpr/rect? size))
+  (assert (gpr/rect? size)
+          "expected `size` to be a rect instance")
 
   (letfn [(update* [{:keys [vport] :as local}]
             (let [wprop (/ (:width vport) width)
