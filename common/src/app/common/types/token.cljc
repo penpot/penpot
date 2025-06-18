@@ -109,9 +109,7 @@
    [:m1 {:optional true} token-name-ref]
    [:m2 {:optional true} token-name-ref]
    [:m3 {:optional true} token-name-ref]
-   [:m4 {:optional true} token-name-ref]
-   [:x {:optional true} token-name-ref]
-   [:y {:optional true} token-name-ref]])
+   [:m4 {:optional true} token-name-ref]])
 
 (def spacing-keys (schema-keys schema:spacing))
 
