@@ -11,26 +11,26 @@ pub fn calculate_resize(
 ) -> Option<(f32, f32)> {
     let scale_width = match constraint_h {
         ConstraintH::Left | ConstraintH::Right | ConstraintH::Center => {
-            parent_before.width() / parent_after.width()
+            parent_before.width() / f32::max(0.01, parent_after.width())
         }
         ConstraintH::LeftRight => {
             let left = parent_before.left(child_before.nw);
             let right = parent_before.right(child_before.ne);
             let target_width = parent_after.width() - left - right;
-            target_width / child_after.width()
+            target_width / f32::max(0.01, child_after.width())
         }
         _ => 1.0,
     };
 
     let scale_height = match constraint_v {
         ConstraintV::Top | ConstraintV::Bottom | ConstraintV::Center => {
-            parent_before.height() / parent_after.height()
+            parent_before.height() / f32::max(0.01, parent_after.height())
         }
         ConstraintV::TopBottom => {
             let top = parent_before.top(child_before.nw);
             let bottom = parent_before.bottom(child_before.sw);
             let target_height = parent_after.height() - top - bottom;
-            target_height / child_after.height()
+            target_height / f32::max(0.01, child_after.height())
         }
         _ => 1.0,
     };
