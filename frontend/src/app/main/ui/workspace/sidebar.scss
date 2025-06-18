@@ -63,7 +63,7 @@ $width-settings-bar-max: $sz-500;
 .right-settings-bar {
   grid-area: right-sidebar;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
   height: 100vh;
   width: $width-settings-bar;
   background-color: var(--panel-background-color);
