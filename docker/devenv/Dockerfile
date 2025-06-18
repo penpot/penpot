@@ -302,7 +302,9 @@ RUN set -ex; \
       fonts-noto-color-emoji \
       fonts-unifont \
       libfontconfig1 \
+      libfontconfig-dev \
       libfreetype6 \
+      libfreetype-dev \
       xfonts-cyrillic \
       xfonts-scalable \
       fonts-liberation \
