@@ -902,26 +902,32 @@
               undo-id      (js/Symbol)]
 
           (rx/concat
-           (->> orig-shapes
-                (keep (fn [shape]
+           (->> (rx/from orig-shapes)
+                (rx/map (fn [shape]
+                          (let [parent-type   (cfh/get-shape-type all-objects (:parent-id shape))
+                                external-lib? (not= file-id (:component-file shape))
+                                origin        "workspace:paste"]
 
-                        (if (ctc/instance-head? shape)
-                          (ptk/event ::ev/event
-                                     {::ev/name "use-library-component"
-                                      ::ev/origin "paste"
-                                      :external-library (not= file-id (:component-file shape))
-                                      :parent-type (ev/get-shape-type all-objects (:parent-id shape))})
-                          (when (ev/get-shape-event-name shape)
-                            (if (ev/frame-has-layout all-objects (:parent-id shape))
-                              (ptk/event ::ev/event
-                                         {::ev/name "layout-add-element"
-                                          :element-type (:type shape)
-                                          :source "paste"
-                                          :parent-type (ev/get-shape-type all-objects (:parent-id shape))})
-                              (ptk/event ::ev/event
-                                         {::ev/name (ev/get-shape-event-name shape)
-                                          :parent-type (ev/get-shape-type all-objects (:parent-id shape))
-                                          :source "paste"})))))))
+                            ;; NOTE: we don't emit the create-shape event all the time for
+                            ;; avoid send a lot of events (that are not necessary); this
+                            ;; decision is made explicitly by the responsible team.
+                            (if (ctc/instance-head? shape)
+                              (ptk/data-event ::ev/event
+                                              {::ev/name "use-library-component"
+                                               ::ev/origin origin
+                                               :is-external-library external-lib?
+                                               :parent-shape-type parent-type})
+                              (if (cfh/has-layout? objects (:parent-id shape))
+                                (ptk/data-event ::ev/event
+                                                {::ev/name "layout-add-element"
+                                                 ::ev/origin origin
+                                                 :element-type (get shape :type)
+                                                 :parent-type parent-type})
+                                (ptk/data-event ::ev/event
+                                                {::ev/name "create-shape"
+                                                 ::ev/origin origin
+                                                 :shape-type (get shape :type)
+                                                 :parent-shape-type parent-type})))))))
 
            (rx/of (dwu/start-undo-transaction undo-id)
                   (dch/commit-changes changes)

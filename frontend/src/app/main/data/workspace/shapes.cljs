@@ -143,19 +143,18 @@
             (->> (rx/of (dwe/start-edition-mode (:id shape)))
                  (rx/observe-on :async)))
 
-          (when-let [event-name (ev/get-shape-event-name shape)]
-            (if (ev/frame-has-layout objects (:parent-id shape))
-              (rx/of
-               (ptk/event ::ev/event
-                          {::ev/name "layout-add-element"
-                           :element-type (:type shape)
-                           :source "new"}))
+          (rx/of (ptk/data-event ::ev/event
+                                 {::ev/name "create-shape"
+                                  ::ev/origin "workspace:add-shape"
+                                  :type (get shape :type)
+                                  :parent-type (cfh/get-shape-type objects (:parent-id shape))}))
 
-              (rx/of
-               (ptk/event ::ev/event
-                          {::ev/name event-name
-                           :parent-type (ev/get-shape-type objects (:parent-id shape))
-                           :source "new"}))))))))))
+          (when (cfh/has-layout? objects (:parent-id shape))
+            (rx/of (ptk/data-event ::ev/event
+                                   {::ev/name "layout-add-element"
+                                    ::ev/origin "workspace:add-shape"
+                                    :element-type (get shape :type)})))))))))
+
 
 (defn move-shapes-into-frame
   [frame-id shapes]
@@ -298,8 +297,8 @@
             (ptk/data-event :layout/update {:ids [(:id frame-shape)]})
             (ptk/event ::ev/event
                        {::ev/name "create-board"
-                        :converted-from (ev/get-selected-type objects selected)
-                        :parent-type (ev/get-shape-type objects (:parent-id frame-shape))})
+                        :converted-from (cfh/get-selected-type objects selected)
+                        :parent-type (cfh/get-shape-type objects (:parent-id frame-shape))})
             (dwu/commit-undo-transaction undo-id))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
