@@ -31,7 +31,22 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
+(declare close-path-drag-end)
+(declare check-changed-content)
 (declare change-edit-mode)
+
+(defn- end-path-event?
+  [event]
+  (let [type (ptk/type event)]
+    (or
+     (= type ::common/finish-path)
+     (= type :app.main.data.workspace.path.shortcuts/esc-pressed)
+     (= type :app.main.data.workspace.common/clear-edition-mode)
+     (= type :app.main.data.workspace.edition/clear-edition-mode)
+     (= type :app.main.data.workspace/finalize-page)
+     (= event :interrupt) ;; ESC
+     (and ^boolean (mse/mouse-event? event)
+          ^boolean (mse/mouse-double-click-event? event)))))
 
 (defn preview-next-point
   [{:keys [x y shift?]}]
@@ -126,8 +141,6 @@
         (rx/of (preview-next-point handler)
                (undo/merge-head))))))
 
-(declare close-path-drag-end)
-
 (defn close-path-drag-start
   [position]
   (ptk/reify ::close-path-drag-start
@@ -146,8 +159,7 @@
                  (rx/take-until
                   (rx/merge
                    (mse/drag-stopper stream)
-                   (->> stream
-                        (rx/filter helpers/end-path-event?)))))]
+                   (rx/filter end-path-event? stream))))]
 
         (rx/concat
          (rx/of (add-node position))
@@ -171,8 +183,7 @@
     (watch [_ state stream]
       (let [stopper (rx/merge
                      (mse/drag-stopper stream)
-                     (->> stream
-                          (rx/filter helpers/end-path-event?)))
+                     (rx/filter end-path-event? stream))
 
             drag-events (->> (streams/position-stream state)
                              (rx/map #(drag-handler %))
@@ -199,8 +210,7 @@
 
   (let [stopper (rx/merge
                  (mse/drag-stopper stream)
-                 (->> stream
-                      (rx/filter helpers/end-path-event?)))
+                 (rx/filter end-path-event? stream))
 
         drag-events
         (->> (streams/position-stream state)
@@ -230,7 +240,7 @@
 
             end-stream
             (->> stream
-                 (rx/filter helpers/end-path-event?)
+                 (rx/filter end-path-event?)
                  (rx/share))
 
             stoper-stream
@@ -241,8 +251,7 @@
             ;; Mouse move preview
             mousemove-events
             (->> (streams/position-stream state)
-                 (rx/map #(preview-next-point %))
-                 (rx/take-until end-stream))
+                 (rx/map #(preview-next-point %)))
 
             ;; From mouse down we can have: click, drag and double click
             mousedown-events
@@ -256,18 +265,15 @@
                             (make-drag-stream state stream %)))
                  (rx/take-until end-stream))]
 
-        (rx/concat
-         (rx/of (undo/start-path-undo))
-         (rx/of (common/init-path))
-         (->> (rx/merge mousemove-events
-                        mousedown-events)
-              (rx/take-until stoper-stream))
+        (->> (rx/concat
+              (rx/of (undo/start-path-undo))
+              (->> (rx/merge mousemove-events
+                             mousedown-events)
+                   (rx/take-until stoper-stream))
+              (rx/of (ptk/data-event ::end-edition))))))))
 
-         ;; This step implicitly finish path
-         (rx/of (common/finish-path)
-                (change-edit-mode :draw)))))))
-
-(defn setup-frame []
+(defn setup-frame
+  []
   (ptk/reify ::setup-frame
     ptk/UpdateEvent
     (update [_ state]
@@ -332,14 +338,15 @@
         (rx/concat
          (rx/of (start-edition shape-id))
          (->> stream
-              (rx/filter (ptk/type? ::common/finish-path))
+              (rx/filter (ptk/type? ::end-edition))
               (rx/take 1)
               (rx/observe-on :async)
               (rx/map (partial handle-drawing-end shape-id))))))))
 
-(declare check-changed-content)
+(declare start-draw-mode*)
 
-(defn start-draw-mode []
+(defn start-draw-mode
+  []
   (ptk/reify ::start-draw-mode
     ptk/UpdateEvent
     (update [_ state]
@@ -351,34 +358,29 @@
           state)))
 
     ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (start-draw-mode*)))))
+
+(defn start-draw-mode*
+  []
+  (ptk/reify ::start-draw-mode*
+    ptk/WatchEvent
     (watch [_ state stream]
-      (let [id (get-in state [:workspace-local :edition])
-            edit-mode (get-in state [:workspace-local :edit-path id :edit-mode])]
-        (if (= :draw edit-mode)
+      (let [local (get state :workspace-local)
+            id    (get local :edition)
+            mode  (dm/get-in local [:edit-path id :edit-mode])]
+
+        (if (= :draw mode)
           (rx/concat
            (rx/of (dwsh/update-shapes [id] path/convert-to-path))
            (rx/of (start-edition id))
            (->> stream
-                (rx/filter (ptk/type? ::common/finish-path))
+                (rx/filter (ptk/type? ::end-edition))
                 (rx/take 1)
-                (rx/map check-changed-content)))
+                (rx/mapcat (fn [_]
+                             (rx/of (check-changed-content)
+                                    (start-draw-mode*))))))
           (rx/empty))))))
-
-(defn check-changed-content []
-  (ptk/reify ::check-changed-content
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [id (st/get-path-id state)
-            content (st/get-path state :content)
-            old-content (get-in state [:workspace-local :edit-path id :old-content])
-            mode (get-in state [:workspace-local :edit-path id :edit-mode])
-            empty-content? (empty? content)]
-        (cond
-          (and (not= content old-content) (not empty-content?)) (rx/of (changes/save-path-content))
-          (= mode :draw) (rx/of :interrupt)
-          :else (rx/of
-                 (common/finish-path)
-                 (dwdc/clear-drawing)))))))
 
 (defn change-edit-mode
   [mode]
@@ -406,3 +408,25 @@
       (let [id (st/get-path-id state)]
         (assoc-in state [:workspace-local :edit-path id :prev-handler] nil)))))
 
+(defn check-changed-content
+  []
+  (ptk/reify ::check-changed-content
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [id (st/get-path-id state)
+            content (st/get-path state :content)
+            old-content (get-in state [:workspace-local :edit-path id :old-content])
+            mode (get-in state [:workspace-local :edit-path id :edit-mode])
+            empty-content? (empty? content)]
+
+        (cond
+          (and (not= content old-content) (not empty-content?))
+          (rx/of (changes/save-path-content))
+
+          (= mode :draw)
+          (rx/of :interrupt)
+
+          :else
+          (rx/of
+           (common/finish-path)
+           (dwdc/clear-drawing)))))))

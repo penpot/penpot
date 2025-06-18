@@ -51,7 +51,7 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
-   [app.main.ui.workspace.viewport.top-bar :refer [edition-bar*]]
+   [app.main.ui.workspace.viewport.top-bar :refer [path-edition-bar* grid-edition-bar* view-only-bar*]]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
@@ -302,17 +302,21 @@
 
     [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
      (when (:can-edit permissions)
-       [:*
-        (when-not hide-ui?
-          [:> top-toolbar* {:layout layout}])
+       (if read-only?
+         [:> view-only-bar* {}]
+         [:*
+          (when-not hide-ui?
+            [:> top-toolbar* {:layout layout}])
 
-        (when single-select?
-          [:> edition-bar* {:shape editing-shape
-                            :is-path-edition path-editing?
-                            :is-grid-edition grid-editing?
-                            :is-read-only read-only?
-                            :edit-path-state edit-path-state
-                            :layout layout}])])
+          (when (and ^boolean path-editing?
+                     ^boolean single-select?)
+            [:> path-edition-bar* {:shape editing-shape
+                                   :edit-path-state edit-path-state
+                                   :layout layout}])
+
+          (when (and ^boolean grid-editing?
+                     ^boolean single-select?)
+            [:> grid-edition-bar* {:shape editing-shape}])]))
 
      [:div {:class (stl/css :viewport-overlays)}
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
@@ -637,7 +641,7 @@
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}
           (when-not text-editing?
-            (if editing-shape
+            (if (and editing-shape path-editing?)
               [:> path-editor* {:shape editing-shape
                                 :state edit-path-state
                                 :zoom zoom}]
