@@ -13,6 +13,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.types.path :as path]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.modifiers :as dwm]
@@ -531,7 +532,8 @@
            :on-frame-leave on-frame-leave
            :on-frame-select on-frame-select}])
 
-       (when show-draw-area?
+       (when (and ^boolean show-draw-area?
+                  ^boolean (cts/shape? drawing-obj))
          [:> drawarea/draw-area*
           {:shape drawing-obj
            :zoom zoom
@@ -637,6 +639,7 @@
           (when-not text-editing?
             (if editing-shape
               [:> path-editor* {:shape editing-shape
+                                :state edit-path-state
                                 :zoom zoom}]
               (when selected-shapes
                 [:> selection/handlers*

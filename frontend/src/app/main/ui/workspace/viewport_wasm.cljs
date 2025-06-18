@@ -522,7 +522,8 @@
            :on-frame-leave on-frame-leave
            :on-frame-select on-frame-select}])
 
-       (when show-draw-area?
+       (when (and ^boolean show-draw-area?
+                  ^boolean (cts/shape? drawing-obj))
          [:> drawarea/draw-area*
           {:shape drawing-obj
            :zoom zoom
@@ -628,6 +629,7 @@
           (when-not text-editing?
             (if editing-shape
               [:> path-editor* {:shape editing-shape
+                                :state edit-path-state
                                 :zoom zoom}]
               (when selected-shapes
                 [:> selection/handlers*
