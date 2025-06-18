@@ -46,24 +46,25 @@
   (i/icon-xref :snap-nodes (stl/css :snap-nodes-icon :pathbar-icon)))
 
 (defn check-enabled [content selected-points]
-  (let [segments (path.segm/get-segments-with-points content selected-points)
-        num-segments (count segments)
-        num-points (count selected-points)
-        points-selected? (seq selected-points)
-        segments-selected? (seq segments)
-        ;; max segments for n points is (n × (n -1)) / 2
-        max-segments (-> num-points
-                         (* (- num-points 1))
-                         (/ 2))
-        is-curve? (some #(path.segm/is-curve? content %) selected-points)]
+  (when content
+    (let [segments (path.segm/get-segments-with-points content selected-points)
+          num-segments (count segments)
+          num-points (count selected-points)
+          points-selected? (seq selected-points)
+          segments-selected? (seq segments)
+          ;; max segments for n points is (n × (n -1)) / 2
+          max-segments (-> num-points
+                           (* (- num-points 1))
+                           (/ 2))
+          is-curve? (some #(path.segm/is-curve? content %) selected-points)]
 
-    {:make-corner (and points-selected? is-curve?)
-     :make-curve (and points-selected? (not is-curve?))
-     :add-node segments-selected?
-     :remove-node points-selected?
-     :merge-nodes segments-selected?
-     :join-nodes (and points-selected? (>= num-points 2) (< num-segments max-segments))
-     :separate-nodes segments-selected?}))
+      {:make-corner (and points-selected? is-curve?)
+       :make-curve (and points-selected? (not is-curve?))
+       :add-node segments-selected?
+       :remove-node points-selected?
+       :merge-nodes segments-selected?
+       :join-nodes (and points-selected? (>= num-points 2) (< num-segments max-segments))
+       :separate-nodes segments-selected?})))
 
 (mf/defc path-actions*
   [{:keys [shape edit-path]}]
