@@ -30,7 +30,7 @@ pub fn render_overlay(
     }
 
     let layout_bounds = shape.bounds();
-    let children = modified_children_ids(shape, structure.get(&shape.id));
+    let children = modified_children_ids(shape, structure.get(&shape.id), false);
 
     let column_tracks = calculate_tracks(
         true,

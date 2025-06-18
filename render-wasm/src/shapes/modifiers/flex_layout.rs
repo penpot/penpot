@@ -184,7 +184,7 @@ fn initialize_tracks(
 ) -> Vec<TrackData> {
     let mut tracks = Vec::<TrackData>::new();
     let mut current_track = TrackData::default();
-    let mut children = modified_children_ids(shape, structure.get(&shape.id));
+    let mut children = modified_children_ids(shape, structure.get(&shape.id), true);
     let mut first = true;
 
     if flex_data.is_reverse() {

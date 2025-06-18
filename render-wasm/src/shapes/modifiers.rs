@@ -25,7 +25,7 @@ fn propagate_children(
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
     scale_content: &HashMap<Uuid, f32>,
 ) -> VecDeque<Modifier> {
-    let children_ids = modified_children_ids(shape, structure.get(&shape.id));
+    let children_ids = modified_children_ids(shape, structure.get(&shape.id), true);
 
     if children_ids.is_empty() || identitish(transform) {
         return VecDeque::new();
@@ -95,7 +95,7 @@ fn calculate_group_bounds(
     let shape_bounds = bounds.find(shape);
     let mut result = Vec::<Point>::new();
 
-    let children_ids = modified_children_ids(shape, structure.get(&shape.id));
+    let children_ids = modified_children_ids(shape, structure.get(&shape.id), true);
     for child_id in children_ids.iter() {
         let Some(child) = shapes.get(child_id) else {
             continue;
@@ -272,7 +272,7 @@ pub fn propagate_modifiers(
                         }
                         Type::Group(Group { masked: true }) => {
                             let children_ids =
-                                modified_children_ids(shape, state.structure.get(&shape.id));
+                                modified_children_ids(shape, state.structure.get(&shape.id), true);
                             if let Some(child) = shapes.get(&children_ids[0]) {
                                 let child_bounds = bounds.find(child);
                                 bounds.insert(shape.id, child_bounds);

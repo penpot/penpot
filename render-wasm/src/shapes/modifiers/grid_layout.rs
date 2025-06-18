@@ -634,7 +634,7 @@ pub fn reflow_grid_layout(
 ) -> VecDeque<Modifier> {
     let mut result = VecDeque::new();
     let layout_bounds = bounds.find(shape);
-    let children = modified_children_ids(shape, structure.get(&shape.id));
+    let children = modified_children_ids(shape, structure.get(&shape.id), true);
 
     let column_tracks = calculate_tracks(
         true,
