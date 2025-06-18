@@ -98,7 +98,7 @@
 (defn segment->point
   ([segment] (segment->point segment :x))
   ([segment coord]
-   (let [params (get segment :params)]
+   (when-let [params (get segment :params)]
      (case coord
        :c1 (gpt/point (get params :c1x)
                       (get params :c1y))
