@@ -20,6 +20,7 @@ in future versions. Therefore, **migration from Redis to ValKey is recommended f
 on-premises instances** that want to keep up to date.
 
 ### :heart: Community contributions (Thank you!)
+- Add Serbian language [GitHub #5002](https://github.com/penpot/penpot/issues/5002) by [crnobog69](https://github.com/crnobog69)
 
 ### :sparkles: New features & Enhancements
 
@@ -38,7 +39,6 @@ on-premises instances** that want to keep up to date.
 - Update google fonts (at 2025/05/19) [Taiga 10792](https://tree.taiga.io/project/penpot/us/10792)
 - Add tooltip component to DS [Taiga 9220](https://tree.taiga.io/project/penpot/us/9220)
 - Allow multi file token export [Taiga #10144](https://tree.taiga.io/project/penpot/us/10144)
-- Add Serbian language
 
 ### :bug: Bugs fixed
 
