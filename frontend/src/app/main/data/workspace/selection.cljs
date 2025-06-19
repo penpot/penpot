@@ -486,26 +486,23 @@
                                   external-lib? (not= file-id (:component-file shape))
                                   origin        "workspace:duplicate-shapes"]
 
-                            ;; NOTE: we don't emit the create-shape event all the time for
-                            ;; avoid send a lot of events (that are not necessary); this
-                            ;; decision is made explicitly by the responsible team.
+                              ;; NOTE: we don't emit the create-shape event all the time for
+                              ;; avoid send a lot of events (that are not necessary); this
+                              ;; decision is made explicitly by the responsible team.
                               (if (ctk/instance-head? shape)
-                                (ptk/data-event ::ev/event
-                                                {::ev/name "use-library-component"
-                                                 ::ev/origin origin
-                                                 :is-external-library external-lib?
-                                                 :parent-shape-type parent-type})
+                                (ev/event {::ev/name "use-library-component"
+                                           ::ev/origin origin
+                                           :is-external-library external-lib?
+                                           :parent-shape-type parent-type})
                                 (if (cfh/has-layout? objects (:parent-id shape))
-                                  (ptk/data-event ::ev/event
-                                                  {::ev/name "layout-add-element"
-                                                   ::ev/origin origin
-                                                   :element-type (get shape :type)
-                                                   :parent-type parent-type})
-                                  (ptk/data-event ::ev/event
-                                                  {::ev/name "create-shape"
-                                                   ::ev/origin origin
-                                                   :shape-type (get shape :type)
-                                                   :parent-shape-type parent-type})))))))
+                                  (ev/event {::ev/name "layout-add-element"
+                                             ::ev/origin origin
+                                             :element-type (get shape :type)
+                                             :parent-type parent-type})
+                                  (ev/event {::ev/name "create-shape"
+                                             ::ev/origin origin
+                                             :shape-type (get shape :type)
+                                             :parent-shape-type parent-type})))))))
 
              ;; Warning: This order is important for the focus mode.
              (->> (rx/of

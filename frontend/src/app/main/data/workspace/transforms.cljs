@@ -1090,11 +1090,10 @@
                emit-layout-event? (and (cfh/has-layout? objects frame-id)
                                        (pos? moved-count))]
            (when emit-layout-event?
-             (rx/of (ptk/data-event ::ev/event
-                                    {::ev/name "layout-add-element"
-                                     :source "move-shapes-to-frame"
-                                     :element-type (cfh/get-selected-type objects ids)
-                                     :moved moved-count}))))
+             (rx/of (ev/event {::ev/name "layout-add-element"
+                               ::ev/origin "workspace:move-shapes-to-frame"
+                               :element-type (cfh/get-selected-type objects ids)
+                               :moved moved-count}))))
 
          (when (and (some? frame-id) (d/not-empty? changes))
            (rx/of (dch/commit-changes changes)

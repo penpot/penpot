@@ -191,8 +191,8 @@
             (rx/of (add-flow (:id frame))))
           (if first?
             ;; When the first interaction of the page is created we emit the event "create-prototype"
-            (rx/of (ptk/event ::ev/event {::ev/name "create-prototype"}))
-            (rx/of (ptk/event ::ev/event {::ev/name "add-prototype-interaction"})))))))))
+            (rx/of (ev/event {::ev/name "create-prototype"}))
+            (rx/of (ev/event {::ev/name "add-prototype-interaction"})))))))))
 
 (defn remove-interaction
   ([shape index]

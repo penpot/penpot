@@ -242,3 +242,7 @@
                            (l/error :hint "error on event batching stream" :cause cause))
                          (fn []
                            (l/debug :hitn "events batching stream terminated")))))))))
+
+(defn event
+  [props]
+  (ptk/data-event ::events props))
