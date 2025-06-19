@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.main.constants :refer [sidebar-default-width sidebar-default-max-width]]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
@@ -210,7 +211,7 @@
                  (= current-section :code)))
 
         {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move set-size size]}
-        (use-resize-hook :code 276 276 768 :x true :right)
+        (use-resize-hook :code sidebar-default-width sidebar-default-width sidebar-default-max-width :x true :right)
 
         on-change-section
         (mf/use-fn
@@ -224,7 +225,7 @@
         (mf/use-fn
          (mf/deps size)
          (fn []
-           (set-size (if (> size 276) 276 768))))
+           (set-size (if (> size sidebar-default-width) sidebar-default-width sidebar-default-max-width))))
 
         props
         (mf/spread-props props
@@ -235,12 +236,12 @@
      [:aside
       {:class (stl/css-case :right-settings-bar true
                             :not-expand (not can-be-expanded?)
-                            :expanded (> size 276))
+                            :expanded (> size sidebar-default-width))
 
        :id "right-sidebar-aside"
        :data-testid "right-sidebar"
        :data-size (str size)
-       :style {"--width" (if can-be-expanded? (dm/str size "px") "276px")}}
+       :style {"--width" (if can-be-expanded? (dm/str size "px") (dm/str sidebar-default-width "px"))}}
 
       (when can-be-expanded?
         [:div {:class (stl/css :resize-area)

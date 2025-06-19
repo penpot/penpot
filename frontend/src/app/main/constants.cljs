@@ -15,6 +15,9 @@
 (def grid-x-axis 10)
 (def grid-y-axis 10)
 
+(def sidebar-default-width 318)
+(def sidebar-default-max-width 768)
+
 (def page-metadata
   "Default data for page metadata."
   {:grid-x-axis grid-x-axis
