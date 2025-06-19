@@ -112,7 +112,10 @@
 (mf/defc right-header*
   [{:keys [file layout page-id]}]
   (let [file-id           (:id file)
-
+        threads-map       (mf/deref refs/comment-threads)
+        unread-threads    (->> (vals threads-map)
+                               (filter #(and (= (:file-id %) file-id)
+                                            (pos? (:count-unread-comments %)))))
         zoom              (mf/deref refs/selected-zoom)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
         selected-drawtool (mf/deref refs/selected-drawing-tool)
@@ -209,8 +212,11 @@
                 :class (stl/css-case :comments-btn true
                                      :selected (= selected-drawtool :comments))
                 :on-click toggle-comments
-                :data-tool "comments"}
-       i/comments]]
+                :data-tool "comments"
+                :style {:position "relative"}}
+       i/comments
+       (when (seq unread-threads)
+         [:div {:class (stl/css :unread)}])]]
 
      (when-not ^boolean read-only?
        [:div {:class (stl/css :history-section)}
