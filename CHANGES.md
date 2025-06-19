@@ -56,6 +56,7 @@ on-premises instances** that want to keep up to date.
 - Fix gap on radio-buttons component [Taiga #11360](https://tree.taiga.io/project/penpot/issue/11360)
 - Fix button width [Taiga #11394](https://tree.taiga.io/project/penpot/issue/11394)
 - Fix mixed letter spacing and line height [Taiga #11178](https://tree.taiga.io/project/penpot/issue/11178)
+- Fix snap nodes shortcut [Taiga #11054](https://tree.taiga.io/project/penpot/issue/11054)
 
 ## 2.7.2
 
