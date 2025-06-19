@@ -34,6 +34,7 @@
    [app.main.ui.releases.v2-5]
    [app.main.ui.releases.v2-6]
    [app.main.ui.releases.v2-7]
+   [app.main.ui.releases.v2-8]
    [app.util.object :as obj]
    [app.util.timers :as tm]
    [rumext.v2 :as mf]))
@@ -98,4 +99,4 @@
 
 (defmethod rc/render-release-notes "0.0"
   [params]
-  (rc/render-release-notes (assoc params :version "2.7")))
+  (rc/render-release-notes (assoc params :version "2.8")))
