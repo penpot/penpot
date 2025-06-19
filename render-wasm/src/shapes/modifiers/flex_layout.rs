@@ -421,7 +421,7 @@ fn calculate_track_positions(
 
     for track in tracks.iter_mut() {
         track.anchor = next_anchor;
-        next_anchor += layout_axis.across_v * real_gap;
+        next_anchor += layout_axis.across_v * (track.across_size + real_gap);
     }
 }
 
