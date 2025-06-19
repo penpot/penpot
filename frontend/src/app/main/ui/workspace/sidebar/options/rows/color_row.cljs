@@ -116,7 +116,8 @@
          (fn [value]
            (let [color (-> color
                            (assoc :color value)
-                           (dissoc :gradient))]
+                           (dissoc :gradient)
+                           (select-keys types.color/color-attrs))]
              (st/emit! (dwc/add-recent-color color)
                        (on-change color)))))
 
