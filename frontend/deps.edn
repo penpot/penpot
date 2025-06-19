@@ -22,7 +22,7 @@
   funcool/rumext
   {
    ;; :git/tag "v2.22"
-   :git/sha "3dca486b61cf13c520a5ac1a98b71b57682cb7fd"
+   :git/sha "390db6fa1eba5f4fc39f5ac7a7a058b432cf0a05"
    :git/url "https://github.com/funcool/rumext.git"}
 
   instaparse/instaparse {:mvn/version "1.5.0"}
@@ -43,7 +43,7 @@
   :dev
   {:extra-paths ["dev"]
    :extra-deps
-   {thheller/shadow-cljs {:mvn/version "3.1.5"}
+   {thheller/shadow-cljs {:mvn/version "3.1.7"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     org.clojure/tools.namespace {:mvn/version "RELEASE"}
     criterium/criterium {:mvn/version "RELEASE"}

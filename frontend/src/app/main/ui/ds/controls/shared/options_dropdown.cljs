@@ -39,7 +39,7 @@
    [:options schema:options]
    [:selected :any]
    [:focused :any]
-   [:empty-to-end {:optional true} :boolean]]
+   [:empty-to-end {:optional true} :boolean]])
 
 (def ^:private
   xf:filter-blank-id
