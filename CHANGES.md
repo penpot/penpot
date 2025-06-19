@@ -53,6 +53,8 @@ on-premises instances** that want to keep up to date.
 - Fix wrong color in the export progress bar [Taiga #11299](https://tree.taiga.io/project/penpot/issue/11299)
 - Fix right sidebar width overflow on long layer names [Taiga #11212](https://tree.taiga.io/project/penpot/issue/11212)
 - Fix comment icon fill [Taiga #11388](https://tree.taiga.io/project/penpot/issue/11388)
+- Fix gap on radio-buttons component [Taiga #11360](https://tree.taiga.io/project/penpot/issue/11360)
+
 ## 2.7.2
 
 ### :bug: Bugs fixed
