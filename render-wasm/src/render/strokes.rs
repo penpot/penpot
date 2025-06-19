@@ -3,10 +3,9 @@ use std::collections::HashMap;
 use crate::math::{Matrix, Point, Rect};
 
 use crate::shapes::{Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, Type};
-use skia_safe::{self as skia, textlayout::Paragraph, ImageFilter, RRect};
+use skia_safe::{self as skia, ImageFilter, RRect};
 
 use super::{RenderState, SurfaceId};
-use crate::render::text::{self};
 use crate::render::{get_dest_rect, get_source_rect};
 
 // FIXME: See if we can simplify these arguments
@@ -485,7 +484,6 @@ pub fn render(
     stroke: &Stroke,
     surface_id: Option<SurfaceId>,
     shadow: Option<&ImageFilter>,
-    paragraphs: Option<&[Vec<Paragraph>]>,
     antialias: bool,
 ) {
     let scale = render_state.get_scale();
@@ -521,14 +519,7 @@ pub fn render(
             Type::Circle => draw_stroke_on_circle(
                 canvas, stroke, &selrect, &selrect, svg_attrs, scale, shadow, antialias,
             ),
-            Type::Text(_) => {
-                text::render(
-                    render_state,
-                    shape,
-                    paragraphs.expect("Text shapes should have paragraphs"),
-                    Some(SurfaceId::Strokes),
-                );
-            }
+            Type::Text(_) => {}
             shape_type @ (Type::Path(_) | Type::Bool(_)) => {
                 if let Some(path) = shape_type.path() {
                     draw_stroke_on_path(
@@ -549,7 +540,6 @@ pub fn render(
     }
 }
 
-// Render text paths (unused)
 #[allow(dead_code)]
 pub fn render_text_paths(
     render_state: &mut RenderState,

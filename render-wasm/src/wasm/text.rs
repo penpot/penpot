@@ -1,8 +1,7 @@
 use crate::mem;
 use crate::shapes::{auto_height, auto_width, max_width, GrowType, RawTextData, Type};
-
 use crate::STATE;
-use crate::{with_current_shape, with_current_shape_mut, with_state_mut};
+use crate::with_current_shape_mut;
 
 #[no_mangle]
 pub extern "C" fn clear_shape_text() {
@@ -35,30 +34,25 @@ pub extern "C" fn set_shape_grow_type(grow_type: u8) {
 
 #[no_mangle]
 pub extern "C" fn get_text_dimensions() -> *mut u8 {
-    let font_col;
-    with_state_mut!(state, {
-        font_col = state.render_state.fonts.font_collection();
-    });
-
     let mut width = 0.01;
     let mut height = 0.01;
     let mut m_width = 0.01;
 
-    with_current_shape!(state, |shape: &Shape| {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
         width = shape.selrect.width();
         height = shape.selrect.height();
 
         if let Type::Text(content) = &shape.shape_type {
-            let paragraphs = content.get_skia_paragraphs(font_col);
-            m_width = max_width(&paragraphs);
+            let mut paragraphs = content.get_skia_paragraphs();
+            m_width = max_width(&mut paragraphs);
 
             match content.grow_type() {
                 GrowType::AutoHeight => {
-                    height = auto_height(&paragraphs).ceil();
+                    height = auto_height(&mut paragraphs).ceil();
                 }
                 GrowType::AutoWidth => {
-                    width = auto_width(&paragraphs).ceil();
-                    height = auto_height(&paragraphs).ceil();
+                    width = auto_width(&mut paragraphs).ceil();
+                    height = auto_height(&mut paragraphs).ceil();
                 }
                 GrowType::Fixed => {}
             }

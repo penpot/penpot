@@ -241,7 +241,6 @@ impl Stroke {
         paint
     }
 
-    // Render text paths (unused)
     #[allow(dead_code)]
     pub fn to_text_stroked_paint(
         &self,

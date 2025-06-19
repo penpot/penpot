@@ -2,7 +2,7 @@ use super::{RenderState, SurfaceId};
 use crate::render::strokes;
 use crate::render::text::{self};
 use crate::shapes::{Shadow, Shape, Stroke, Type};
-use skia_safe::{canvas::SaveLayerRec, textlayout::Paragraph, Paint, Path};
+use skia_safe::{Paint, Path};
 
 // Fill Shadows
 pub fn render_fill_drop_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
@@ -56,7 +56,6 @@ pub fn render_stroke_drop_shadows(
                 stroke,
                 None,
                 filter.as_ref(),
-                None,
                 antialias,
             )
         }
@@ -78,25 +77,12 @@ pub fn render_stroke_inner_shadows(
                 stroke,
                 None,
                 filter.as_ref(),
-                None,
                 antialias,
             )
         }
     }
 }
 
-pub fn render_text_drop_shadows(
-    render_state: &mut RenderState,
-    shape: &Shape,
-    paragraphs: &[Vec<Paragraph>],
-    antialias: bool,
-) {
-    for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
-        render_text_drop_shadow(render_state, shape, shadow, paragraphs, antialias);
-    }
-}
-
-// Render text paths (unused)
 #[allow(dead_code)]
 pub fn render_text_path_stroke_drop_shadows(
     render_state: &mut RenderState,
@@ -105,7 +91,7 @@ pub fn render_text_path_stroke_drop_shadows(
     stroke: &Stroke,
     antialias: bool,
 ) {
-    for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
+    for shadow in shape.drop_shadows().rev().filter(|s: &&Shadow| !s.hidden()) {
         let stroke_shadow = shadow.get_drop_shadow_filter();
         strokes::render_text_paths(
             render_state,
@@ -119,66 +105,44 @@ pub fn render_text_path_stroke_drop_shadows(
     }
 }
 
-pub fn render_text_drop_shadow(
+pub fn render_text_path_drop_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
-    shadow: &Shadow,
-    paragraphs: &[Vec<Paragraph>],
+    paths: &Vec<(Path, Paint)>,
     antialias: bool,
 ) {
-    let paint = shadow.get_drop_shadow_paint(antialias);
-    let mask_paint = paint.clone();
-    let mask = SaveLayerRec::default().paint(&mask_paint);
-    let canvas = render_state.get_canvas_at(SurfaceId::DropShadows);
-    canvas.save_layer(&mask);
-
-    text::render(
-        render_state,
-        shape,
-        paragraphs,
-        Some(SurfaceId::DropShadows),
-    );
-
-    render_state.restore_canvas(SurfaceId::DropShadows);
-}
-
-pub fn render_text_inner_shadows(
-    render_state: &mut RenderState,
-    shape: &Shape,
-    paragraphs: &[Vec<Paragraph>],
-    antialias: bool,
-) {
-    for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
-        render_text_inner_shadow(render_state, shape, shadow, paragraphs, antialias);
+    for shadow in shape.drop_shadows().rev().filter(|s: &&Shadow| !s.hidden()) {
+        let paint = shadow.get_drop_shadow_paint(antialias);
+        text::render_as_path(
+            render_state,
+            paths,
+            Some(SurfaceId::DropShadows),
+            Some(&paint),
+        );
     }
 }
 
-pub fn render_text_inner_shadow(
+pub fn render_text_path_inner_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
-    shadow: &Shadow,
-    paragraphs: &[Vec<Paragraph>],
+    paths: &Vec<(Path, Paint)>,
     antialias: bool,
 ) {
-    let paint = shadow.get_inner_shadow_paint(antialias);
-    let mask_paint = paint.clone();
-    let mask = SaveLayerRec::default().paint(&mask_paint);
-    let canvas = render_state.get_canvas_at(SurfaceId::InnerShadows);
-
-    canvas.save_layer(&mask);
-
-    text::render(
-        render_state,
-        shape,
-        paragraphs,
-        Some(SurfaceId::InnerShadows),
-    );
-
-    render_state.restore_canvas(SurfaceId::InnerShadows);
+    for shadow in shape
+        .inner_shadows()
+        .rev()
+        .filter(|s: &&Shadow| !s.hidden())
+    {
+        let paint = shadow.get_inner_shadow_paint(antialias);
+        text::render_as_path(
+            render_state,
+            paths,
+            Some(SurfaceId::InnerShadows),
+            Some(&paint),
+        );
+    }
 }
 
-// Render text paths (unused)
-#[allow(dead_code)]
 pub fn render_text_path_stroke_inner_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
