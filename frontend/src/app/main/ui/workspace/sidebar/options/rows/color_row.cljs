@@ -268,6 +268,7 @@
                              :on-focus on-focus
                              :on-blur on-blur
                              :on-change handle-opacity-change
+                             :data-testid "opacity-input"
                              :default 100
                              :min 0
                              :max 100}]])]
