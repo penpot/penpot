@@ -62,6 +62,8 @@
 (defn add-flow-selected-frame
   []
   (ptk/reify ::add-flow-selected-frame
+    ev/Event
+    (-data [_] {::ev/name "add-prototype-interaction"})
     ptk/WatchEvent
     (watch [_ state _]
       (let [selected (dsh/lookup-selected state)]
@@ -187,9 +189,10 @@
           (when (and (not (connected-frame? objects (:id frame)))
                      (nil? flow))
             (rx/of (add-flow (:id frame))))
-          (when first?
+          (if first?
             ;; When the first interaction of the page is created we emit the event "create-prototype"
-            (rx/of (ptk/event ::ev/event {::ev/name "create-prototype"})))))))))
+            (rx/of (ev/event {::ev/name "create-prototype"}))
+            (rx/of (ev/event {::ev/name "add-prototype-interaction"})))))))))
 
 (defn remove-interaction
   ([shape index]

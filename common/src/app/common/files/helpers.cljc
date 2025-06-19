@@ -117,6 +117,12 @@
   ([shape]
    (d/not-empty? (:shapes shape))))
 
+(defn has-layout?
+  "Returns true if the provided shape has a layout assigned"
+  [objects id]
+  (let [shape (get objects id)]
+    (boolean (and shape (:layout shape)))))
+
 (defn group-like-shape?
   ([objects id]
    (group-like-shape? (get objects id)))
@@ -126,6 +132,24 @@
        ^boolean (and (svg-raw-shape? shape) (has-children? shape)))))
 
 ;; ---- ACCESSORS
+
+(defn get-selected-type
+  "Returns the type of the shape if only one, or :multiple if more
+  than one"
+  [objects selected]
+  (if (= 1 (count selected))
+    (let [shape (get objects (first selected))]
+      (:type shape))
+    :multiple))
+
+(defn get-shape-type
+  "Returns the type of the shape, or 'root' if it's Root Frame, always
+  as string"
+  [objects id]
+  (let [shape (get objects id)]
+    (if (root? shape)
+      :root
+      (dm/get-prop shape :type))))
 
 (defn get-children-ids
   [objects id]

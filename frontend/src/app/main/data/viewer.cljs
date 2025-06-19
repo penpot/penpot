@@ -80,8 +80,9 @@
       (rx/of (fetch-bundle (d/without-nils params))
              ;; Only fetch threads for logged-in users
              (when (some? (:profile state))
-               (fetch-comment-threads params))))
-
+               (fetch-comment-threads params))
+             (when (:share-id params)
+               (rx/of (ptk/event ::ev/event {::ev/name "shared-prototipe-visited"})))))
     ptk/EffectEvent
     (effect [_ _ _]
       ;; Set the window name, the window name is used on inter-tab

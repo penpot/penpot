@@ -142,8 +142,16 @@
           (when (cfh/text-shape? shape)
             (->> (rx/of (dwe/start-edition-mode (:id shape)))
                  (rx/observe-on :async)))
-          (when (cfh/frame-shape? shape)
-            (rx/of (ptk/event ::ev/event {::ev/name "add-frame"})))))))))
+
+          (rx/of (ev/event {::ev/name "create-shape"
+                            ::ev/origin "workspace:add-shape"
+                            :type (get shape :type)
+                            :parent-type (cfh/get-shape-type objects (:parent-id shape))}))
+
+          (when (cfh/has-layout? objects (:parent-id shape))
+            (rx/of (ev/event {::ev/name "layout-add-element"
+                              ::ev/origin "workspace:add-shape"
+                              :element-type (get shape :type)})))))))))
 
 (defn move-shapes-into-frame
   [frame-id shapes]
@@ -284,6 +292,9 @@
             (dch/commit-changes changes)
             (dws/select-shapes (d/ordered-set (:id frame-shape)))
             (ptk/data-event :layout/update {:ids [(:id frame-shape)]})
+            (ev/event {::ev/name "create-board"
+                       :converted-from (cfh/get-selected-type objects selected)
+                       :parent-type (cfh/get-shape-type objects (:parent-id frame-shape))})
             (dwu/commit-undo-transaction undo-id))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
