@@ -344,14 +344,7 @@ impl TextLeaf {
     ) -> skia::textlayout::TextStyle {
         let mut style = skia::textlayout::TextStyle::default();
 
-        let bounding_box = Rect::from_xywh(
-            content_bounds.x(),
-            content_bounds.y(),
-            self.font_size * self.text.len() as f32,
-            self.font_size,
-        );
-
-        let paint = merge_fills(&self.fills, bounding_box);
+        let paint = merge_fills(&self.fills, *content_bounds);
         style.set_foreground_paint(&paint);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(paragraph.letter_spacing);
