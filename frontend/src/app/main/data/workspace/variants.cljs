@@ -49,6 +49,8 @@
             objects (-> (dsh/get-page data page-id)
                         (get :objects))
 
+            updated-properties   (ctv/update-number-in-repeated-prop-names updated-properties)
+
             properties-to-remove (ctv/find-properties-to-remove previous-properties updated-properties)
             properties-to-add    (ctv/find-properties-to-add previous-properties updated-properties)
             properties-to-update (ctv/find-properties-to-update previous-properties updated-properties)
