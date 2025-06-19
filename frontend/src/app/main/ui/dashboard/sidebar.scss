@@ -4,6 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../ds/typography.scss" as *;
+@use "../ds/colors.scss" as *;
+@use "../ds/spacing.scss" as *;
 @use "common/refactor/common-refactor.scss" as *;
 @use "common/refactor/common-dashboard";
 @use "../ds/typography.scss" as t;
@@ -44,6 +47,12 @@
 
 .overflow-separator {
   border-bottom: $b-1 solid var(--color-background-quaternary);
+}
+
+.sidebar-section-title {
+  @include use-typography("headline-small");
+  padding: 0 var(--sp-s) var(--sp-s) var(--sp-xxl);
+  color: var(--color-foreground-secondary);
 }
 
 // SIDEBAR TEAM SWITCH
@@ -268,7 +277,7 @@
 .element-title {
   @include textEllipsis;
   width: $s-256;
-  color: var(--sidebar-element-foreground-color);
+  color: var(--color-foreground-primary);
   font-size: $fs-14;
 }
 
