@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.modals.themes
+(ns app.main.ui.workspace.tokens.themes.create-modal
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
