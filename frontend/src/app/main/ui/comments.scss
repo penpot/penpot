@@ -301,11 +301,10 @@
 }
 
 .open-mentions-button {
-  stroke: none;
-  fill: var(--color-foreground-secondary);
+  color: var(--color-foreground-secondary);
 
   &.is-toggled {
-    fill: var(--color-accent-primary);
+    color: var(--color-accent-primary);
   }
 }
 

@@ -39,6 +39,7 @@
 
 .multiple-exports {
   @include flexRow;
+  grid-column: 1 / 9;
 }
 
 .label {

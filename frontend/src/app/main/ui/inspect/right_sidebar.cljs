@@ -110,7 +110,8 @@
     (mf/use-effect
      (mf/deps shapes handle-change-tab)
      (fn []
-       (when-not (seq shapes)
+       (if (seq shapes)
+         (st/emit! (ptk/event ::ev/event {::ev/name "inspect-mode-click-element"}))
          (handle-change-tab :info))))
 
     [:aside {:class (stl/css-case :settings-bar-right true

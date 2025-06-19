@@ -73,7 +73,8 @@
                      :fn #(st/emit! (drp/make-curve))}
 
    :snap-nodes      {:tooltip (ds/meta "'")
-                     :command (ds/c-mod "'")
+                     ;;https://github.com/ccampbell/mousetrap/issues/85
+                     :command [(ds/c-mod "'") (ds/c-mod "219")]
                      :subsections [:path-editor]
                      :fn #(st/emit! (drp/toggle-snap))}
 

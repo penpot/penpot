@@ -67,6 +67,11 @@ on-premises instances** that want to keep up to date.
 - Fix issue with importing files where flex/grid is used [Taiga #11334](https://tree.taiga.io/project/penpot/issue/11334)
 - Fix wrong color in the export progress bar [Taiga #11299](https://tree.taiga.io/project/penpot/issue/11299)
 - Fix right sidebar width overflow on long layer names [Taiga #11212](https://tree.taiga.io/project/penpot/issue/11212)
+- Fix comment icon fill [Taiga #11388](https://tree.taiga.io/project/penpot/issue/11388)
+- Fix gap on radio-buttons component [Taiga #11360](https://tree.taiga.io/project/penpot/issue/11360)
+- Fix button width [Taiga #11394](https://tree.taiga.io/project/penpot/issue/11394)
+- Fix mixed letter spacing and line height [Taiga #11178](https://tree.taiga.io/project/penpot/issue/11178)
+- Fix snap nodes shortcut [Taiga #11054](https://tree.taiga.io/project/penpot/issue/11054)
 
 ## 2.7.2
 
