@@ -54,6 +54,7 @@ on-premises instances** that want to keep up to date.
 - Fix right sidebar width overflow on long layer names [Taiga #11212](https://tree.taiga.io/project/penpot/issue/11212)
 - Fix comment icon fill [Taiga #11388](https://tree.taiga.io/project/penpot/issue/11388)
 - Fix gap on radio-buttons component [Taiga #11360](https://tree.taiga.io/project/penpot/issue/11360)
+- Fix button width [Taiga #11394](https://tree.taiga.io/project/penpot/issue/11394)
 
 ## 2.7.2
 
