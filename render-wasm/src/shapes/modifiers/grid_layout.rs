@@ -117,7 +117,7 @@ fn set_auto_base_size(
             (cell.row, cell.row_span)
         };
 
-        if prop_span != 1 || (prop as usize) >= tracks.len() {
+        if prop_span != 1 || (prop as usize) > tracks.len() {
             continue;
         }
 
