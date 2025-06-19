@@ -847,6 +847,8 @@
 
 
       [:div {:class (stl/css :sidebar-content-section)}
+       [:div {:class (stl/css :sidebar-section-title)}
+        (tr "labels.sources")]
        [:ul {:class (stl/css :sidebar-nav)}
         [:li {:class (stl/css-case :sidebar-nav-item true
                                    :current fonts?)}
@@ -859,6 +861,8 @@
 
       [:div {:class (stl/css :sidebar-content-section)
              :data-testid "pinned-projects"}
+       [:div {:class (stl/css :sidebar-section-title)}
+        (tr "labels.pinned-projects")]
        (if (seq pinned-projects)
          [:ul {:class (stl/css :sidebar-nav :pinned-projects)}
           (for [item pinned-projects]
