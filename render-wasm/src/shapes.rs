@@ -728,7 +728,11 @@ impl Shape {
         self.children.first()
     }
 
-    pub fn children_ids(&self) -> IndexSet<Uuid> {
+    pub fn children_ids(&self, include_hidden: bool) -> IndexSet<Uuid> {
+        if include_hidden {
+            return self.children.clone().into_iter().rev().collect();
+        }
+
         if let Type::Bool(_) = self.shape_type {
             IndexSet::<Uuid>::new()
         } else if let Type::Group(group) = self.shape_type {
@@ -747,14 +751,22 @@ impl Shape {
         }
     }
 
-    pub fn all_children_with_self(&self, shapes: &HashMap<Uuid, &mut Shape>) -> IndexSet<Uuid> {
+    pub fn all_children_with_self(
+        &self,
+        shapes: &HashMap<Uuid, &mut Shape>,
+        include_hidden: bool,
+    ) -> IndexSet<Uuid> {
         once(self.id)
-            .chain(self.children_ids().into_iter().flat_map(|id| {
-                shapes
-                    .get(&id)
-                    .map(|s| s.all_children_with_self(shapes))
-                    .unwrap_or_default()
-            }))
+            .chain(
+                self.children_ids(include_hidden)
+                    .into_iter()
+                    .flat_map(|id| {
+                        shapes
+                            .get(&id)
+                            .map(|s| s.all_children_with_self(shapes, include_hidden))
+                            .unwrap_or_default()
+                    }),
+            )
             .collect()
     }
 
@@ -935,9 +947,11 @@ impl Shape {
 pub fn modified_children_ids(
     element: &Shape,
     structure: Option<&Vec<StructureEntry>>,
+    include_hidden: bool,
 ) -> IndexSet<Uuid> {
     if let Some(structure) = structure {
-        let mut result: Vec<Uuid> = Vec::from_iter(element.children_ids().iter().copied());
+        let mut result: Vec<Uuid> =
+            Vec::from_iter(element.children_ids(include_hidden).iter().copied());
         let mut to_remove = HashSet::<&Uuid>::new();
 
         for st in structure {
@@ -960,7 +974,7 @@ pub fn modified_children_ids(
 
         ret
     } else {
-        element.children_ids()
+        element.children_ids(include_hidden)
     }
 }
 

@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet, VecDeque};
-mod common;
+pub mod common;
 mod constraints;
 mod flex_layout;
 pub mod grid_layout;
@@ -25,7 +25,7 @@ fn propagate_children(
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
     scale_content: &HashMap<Uuid, f32>,
 ) -> VecDeque<Modifier> {
-    let children_ids = modified_children_ids(shape, structure.get(&shape.id));
+    let children_ids = modified_children_ids(shape, structure.get(&shape.id), true);
 
     if children_ids.is_empty() || identitish(transform) {
         return VecDeque::new();
@@ -95,7 +95,7 @@ fn calculate_group_bounds(
     let shape_bounds = bounds.find(shape);
     let mut result = Vec::<Point>::new();
 
-    let children_ids = modified_children_ids(shape, structure.get(&shape.id));
+    let children_ids = modified_children_ids(shape, structure.get(&shape.id), true);
     for child_id in children_ids.iter() {
         let Some(child) = shapes.get(child_id) else {
             continue;
@@ -115,22 +115,28 @@ fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds) {
     let x = bounds.min_x().round();
     let y = bounds.min_y().round();
 
-    let mut round_transform = Matrix::scale((
-        bounds.width().round() / bounds.width(),
-        bounds.height().round() / bounds.height(),
-    ));
-    round_transform.post_concat(&tr);
-    round_transform.pre_concat(&tr_inv);
+    let scale_width = f32::max(0.01, bounds.width().round() / bounds.width());
+    let scale_height = f32::max(0.01, bounds.height().round() / bounds.height());
 
-    transform.post_concat(&round_transform);
-    bounds.transform_mut(&round_transform);
+    if f32::is_finite(scale_width)
+        && f32::is_finite(scale_height)
+        && (!math::is_close_to(scale_width, 1.0) || !math::is_close_to(scale_height, 1.0))
+    {
+        let mut round_transform = Matrix::scale((scale_width, scale_height));
+        round_transform.post_concat(&tr);
+        round_transform.pre_concat(&tr_inv);
+        transform.post_concat(&round_transform);
+        bounds.transform_mut(&round_transform);
+    }
 
     let dx = x - bounds.min_x();
     let dy = y - bounds.min_y();
 
-    let round_transform = Matrix::translate((dx, dy));
-    transform.post_concat(&round_transform);
-    bounds.transform_mut(&round_transform);
+    if f32::is_finite(dx) && f32::is_finite(dy) {
+        let round_transform = Matrix::translate((dx, dy));
+        transform.post_concat(&round_transform);
+        bounds.transform_mut(&round_transform);
+    }
 }
 
 pub fn propagate_modifiers(
@@ -266,7 +272,7 @@ pub fn propagate_modifiers(
                         }
                         Type::Group(Group { masked: true }) => {
                             let children_ids =
-                                modified_children_ids(shape, state.structure.get(&shape.id));
+                                modified_children_ids(shape, state.structure.get(&shape.id), true);
                             if let Some(child) = shapes.get(&children_ids[0]) {
                                 let child_bounds = bounds.find(child);
                                 bounds.insert(shape.id, child_bounds);

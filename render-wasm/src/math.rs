@@ -412,7 +412,7 @@ pub fn resize_matrix(
     parent_transform.post_translate(center);
     parent_transform.pre_translate(-center);
 
-    let parent_transform_inv = &parent_transform.invert().unwrap();
+    let parent_transform_inv = &parent_transform.invert().unwrap_or_default();
     let origin = parent_transform_inv.map_point(child_bounds.nw);
 
     let mut scale = Matrix::scale((scale_width, scale_height));

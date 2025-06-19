@@ -39,6 +39,43 @@
 (def ^:private xf:without-uuid-zero
   (remove #(= % uuid/zero)))
 
+(def ^:private transform-attrs
+  #{:selrect
+    :points
+    :x
+    :y
+    :r1
+    :r2
+    :r3
+    :r4
+    :shadow
+    :blur
+    :strokes
+    :width
+    :height
+    :content
+    :transform
+    :transform-inverse
+    :rotation
+    :flip-x
+    :flip-y
+    :grow-type
+    :position-data
+    :layout-gap
+    :layout-padding
+    :layout-item-h-sizing
+    :layout-item-max-h
+    :layout-item-max-w
+    :layout-item-min-h
+    :layout-item-min-w
+    :layout-item-v-sizing
+    :layout-padding-type
+    :layout-item-margin
+    :layout-item-margin-type
+    :layout-grid-cells
+    :layout-grid-columns
+    :layout-grid-rows})
+
 ;; -- temporary modifiers -------------------------------------------
 
 ;; During an interactive transformation of shapes (e.g. when resizing or rotating
@@ -598,6 +635,18 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects          (dsh/lookup-page-objects state)
+
+            ignore-tree
+            (calculate-ignore-tree modif-tree objects)
+
+            options
+            (-> params
+                (assoc :reg-objects? true)
+                (assoc :ignore-tree ignore-tree)
+                ;; Attributes that can change in the transform. This
+                ;; way we don't have to check all the attributes
+                (assoc :attrs transform-attrs))
+
             geometry-entries (parse-geometry-modifiers modif-tree)
 
             snap-pixel?
@@ -627,7 +676,7 @@
          (clear-local-transform)
          (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
          (ptk/event ::dwcm/move-frame-comment-threads transforms)
-         (dwsh/update-shapes ids update-shape))))))
+         (dwsh/update-shapes ids update-shape options))))))
 
 (def ^:private
   xf-rotation-shape
@@ -713,43 +762,6 @@
                 (gm/set-objects-modifiers objects))]
 
         (assoc state :workspace-modifiers modif-tree)))))
-
-(def ^:private transform-attrs
-  #{:selrect
-    :points
-    :x
-    :y
-    :r1
-    :r2
-    :r3
-    :r4
-    :shadow
-    :blur
-    :strokes
-    :width
-    :height
-    :content
-    :transform
-    :transform-inverse
-    :rotation
-    :flip-x
-    :flip-y
-    :grow-type
-    :position-data
-    :layout-gap
-    :layout-padding
-    :layout-item-h-sizing
-    :layout-item-max-h
-    :layout-item-max-w
-    :layout-item-min-h
-    :layout-item-min-w
-    :layout-item-v-sizing
-    :layout-padding-type
-    :layout-item-margin
-    :layout-item-margin-type
-    :layout-grid-cells
-    :layout-grid-columns
-    :layout-grid-rows})
 
 (defn apply-modifiers*
   "A lower-level version of apply-modifiers, that expects receive ready

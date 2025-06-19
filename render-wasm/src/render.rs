@@ -930,7 +930,8 @@ impl RenderState {
                 let children_clip_bounds =
                     node_render_state.get_children_clip_bounds(element, modifiers.get(&element.id));
 
-                let mut children_ids = modified_children_ids(element, structure.get(&element.id));
+                let mut children_ids =
+                    modified_children_ids(element, structure.get(&element.id), false);
 
                 // Z-index ordering on Layouts
                 if element.has_layout() {
@@ -1020,7 +1021,7 @@ impl RenderState {
             let Some(root) = tree.get(&Uuid::nil()) else {
                 return Err(String::from("Root shape not found"));
             };
-            let root_ids = modified_children_ids(root, structure.get(&root.id));
+            let root_ids = modified_children_ids(root, structure.get(&root.id), false);
 
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
@@ -1119,7 +1120,7 @@ impl RenderState {
                     self.update_tile_for(&shape);
                 } else {
                     // We only need to rebuild tiles from the first level.
-                    let children = modified_children_ids(&shape, structure.get(&shape.id));
+                    let children = modified_children_ids(&shape, structure.get(&shape.id), false);
                     for child_id in children.iter() {
                         nodes.push(*child_id);
                     }
@@ -1149,7 +1150,7 @@ impl RenderState {
                     self.update_tile_for(&shape);
                 }
 
-                let children = modified_children_ids(&shape, structure.get(&shape.id));
+                let children = modified_children_ids(&shape, structure.get(&shape.id), false);
                 for child_id in children.iter() {
                     nodes.push(*child_id);
                 }

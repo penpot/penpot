@@ -184,7 +184,7 @@ fn initialize_tracks(
 ) -> Vec<TrackData> {
     let mut tracks = Vec::<TrackData>::new();
     let mut current_track = TrackData::default();
-    let mut children = modified_children_ids(shape, structure.get(&shape.id));
+    let mut children = modified_children_ids(shape, structure.get(&shape.id), true);
     let mut first = true;
 
     if flex_data.is_reverse() {
@@ -269,7 +269,11 @@ fn initialize_tracks(
 // Resize main axis fill
 fn distribute_fill_main_space(layout_axis: &LayoutAxis, tracks: &mut [TrackData]) {
     for track in tracks.iter_mut() {
-        let mut left_space = layout_axis.main_space() - track.main_size;
+        let mut left_space = if layout_axis.is_auto_main {
+            0.0
+        } else {
+            layout_axis.main_space() - track.main_size
+        };
         let mut to_resize_children: Vec<&mut ChildAxis> = Vec::new();
 
         for child in track.shapes.iter_mut() {
@@ -299,7 +303,13 @@ fn distribute_fill_main_space(layout_axis: &LayoutAxis, tracks: &mut [TrackData]
 fn distribute_fill_across_space(layout_axis: &LayoutAxis, tracks: &mut [TrackData]) {
     let total_across_size = tracks.iter().map(|t| t.across_size).sum::<f32>()
         + (tracks.len() - 1) as f32 * layout_axis.gap_across;
-    let mut left_space = layout_axis.across_space() - total_across_size;
+
+    let mut left_space = if layout_axis.is_auto_across {
+        0.0
+    } else {
+        layout_axis.across_space() - total_across_size
+    };
+
     let mut to_resize_tracks: Vec<&mut TrackData> = Vec::new();
 
     for track in tracks.iter_mut() {
@@ -411,7 +421,7 @@ fn calculate_track_positions(
 
     for track in tracks.iter_mut() {
         track.anchor = next_anchor;
-        next_anchor += layout_axis.across_v * real_gap;
+        next_anchor += layout_axis.across_v * (track.across_size + real_gap);
     }
 }
 
@@ -435,13 +445,8 @@ fn calculate_track_data(
         structure,
     );
 
-    if !layout_axis.is_auto_main {
-        distribute_fill_main_space(&layout_axis, &mut tracks);
-    }
-
-    if !layout_axis.is_auto_across {
-        distribute_fill_across_space(&layout_axis, &mut tracks);
-    }
+    distribute_fill_main_space(&layout_axis, &mut tracks);
+    distribute_fill_across_space(&layout_axis, &mut tracks);
 
     let total_across_size = tracks.iter().map(|t| t.across_size).sum::<f32>();
 
