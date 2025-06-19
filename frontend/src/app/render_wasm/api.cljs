@@ -73,7 +73,7 @@
   (mem/get-list-size cells GRID-LAYOUT-CELL-ENTRY-SIZE))
 
 (def dpr
-  (if use-dpr? js/window.devicePixelRatio 1.0))
+  (if use-dpr? (if (exists? js/window) js/window.devicePixelRatio 1.0) 1.0))
 
 ;; Based on app.main.render/object-svg
 (mf/defc object-svg
