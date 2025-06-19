@@ -55,6 +55,7 @@ on-premises instances** that want to keep up to date.
 - Fix comment icon fill [Taiga #11388](https://tree.taiga.io/project/penpot/issue/11388)
 - Fix gap on radio-buttons component [Taiga #11360](https://tree.taiga.io/project/penpot/issue/11360)
 - Fix button width [Taiga #11394](https://tree.taiga.io/project/penpot/issue/11394)
+- Fix mixed letter spacing and line height [Taiga #11178](https://tree.taiga.io/project/penpot/issue/11178)
 
 ## 2.7.2
 
