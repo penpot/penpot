@@ -61,7 +61,7 @@ impl ImageStore {
                         None,
                         None,
                         None,
-                        None,
+                        true,
                         false,
                     )?;
 

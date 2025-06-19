@@ -223,17 +223,16 @@
 
 (defn- process-fill-image
   [shape-id fill]
-  (rx/from
-   (when-let [image (:fill-image fill)]
-     (let [id (dm/get-prop image :id)
-           buffer (uuid/get-u32 id)
-           cached-image? (h/call wasm/internal-module "_is_image_cached"
-                                 (aget buffer 0)
-                                 (aget buffer 1)
-                                 (aget buffer 2)
-                                 (aget buffer 3))]
-       (when (zero? cached-image?)
-         (fetch-image shape-id id))))))
+  (when-let [image (:fill-image fill)]
+    (let [id (dm/get-prop image :id)
+          buffer (uuid/get-u32 id)
+          cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                (aget buffer 0)
+                                (aget buffer 1)
+                                (aget buffer 2)
+                                (aget buffer 3))]
+      (when (zero? cached-image?)
+        (fetch-image shape-id id)))))
 
 (defn set-shape-text-images
   [shape-id content]
