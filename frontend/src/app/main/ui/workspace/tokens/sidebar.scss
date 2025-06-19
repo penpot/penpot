@@ -17,7 +17,7 @@
   overflow: hidden;
 }
 
-.sets-section-wrapper {
+.token-management-section-wrapper {
   position: relative;
   display: flex;
   flex: 1;
@@ -25,6 +25,8 @@
   flex-direction: column;
   overflow-y: auto;
   scrollbar-gutter: stable;
+  position: relative;
+  padding-block-end: var(--sp-l);
 }
 
 .tokens-section-wrapper {
@@ -32,11 +34,6 @@
   padding-left: var(--sp-m);
   overflow-y: auto;
   scrollbar-gutter: stable;
-}
-
-.sets-sidebar {
-  position: relative;
-  padding-block-end: var(--sp-l);
 }
 
 .sets-header-container {

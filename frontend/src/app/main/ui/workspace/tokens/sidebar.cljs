@@ -29,7 +29,8 @@
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.sets :as tsets]
-   [app.main.ui.workspace.tokens.sets-context-menu :refer [token-set-context-menu*]]
+   [app.main.ui.workspace.tokens.sets.context-menu :refer [token-set-context-menu*]]
+   [app.main.ui.workspace.tokens.sets.lists :as tsetslist]
    [app.main.ui.workspace.tokens.themes :refer [themes-header*]]
    [app.main.ui.workspace.tokens.token-pill :refer [token-pill*]]
    [app.util.array :as array]
@@ -186,7 +187,7 @@
              (not token-set-new-path))
 
       (when-not token-set-new-path
-        [:> tsets/inline-add-button*])
+        [:> tsetslist/inline-add-button*])
 
       [:> h/sortable-container {}
        [:> tsets/sets-list*
@@ -195,7 +196,7 @@
          :edition-id token-set-edition-id
          :selected selected-token-set-name}]])))
 
-(mf/defc token-sets-section*
+(mf/defc token-management-section*
   {::mf/private true}
   [{:keys [resize-height] :as props}]
 
@@ -204,17 +205,16 @@
 
     [:*
      [:> token-set-context-menu*]
-     [:article {:data-testid "token-themes-sets-sidebar"
-                :class (stl/css :sets-section-wrapper)
+     [:section {:data-testid "token-management-sidebar"
+                :class (stl/css :token-management-section-wrapper)
                 :style {"--resize-height" (str resize-height "px")}}
-      [:div {:class (stl/css :sets-sidebar)}
-       [:> themes-header*]
-       [:div {:class (stl/css :sidebar-header)}
-        [:& title-bar {:title (tr "labels.sets")}
-         (when can-edit?
-           [:> tsets/add-button*])]]
+      [:> themes-header*]
+      [:div {:class (stl/css :sidebar-header)}
+       [:& title-bar {:title (tr "labels.sets")}
+        (when can-edit?
+          [:> tsetslist/add-button*])]]
 
-       [:> token-sets-list* props]]]]))
+      [:> token-sets-list* props]]]))
 
 (mf/defc tokens-section*
   [{:keys [tokens-lib]}]
@@ -396,7 +396,7 @@
         (mf/deref refs/tokens-lib)]
 
     [:div {:class (stl/css :sidebar-wrapper)}
-     [:> token-sets-section*
+     [:> token-management-section*
       {:resize-height size-pages-opened
        :tokens-lib tokens-lib}]
      [:article {:class (stl/css :tokens-section-wrapper)
