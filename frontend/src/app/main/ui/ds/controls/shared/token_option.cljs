@@ -12,21 +12,16 @@
    [rumext.v2 :as mf]))
 
 ;; TODO: Review schema props
-(def ^:private schema:token-option
-  [:and
-   [:map {:title "token option"}
-    [:id :string]
-    [:resolved-value :string]
-    [:label :string]]
-   [:fn {:error/message "invalid data: missing required props"}
-    (fn [option]
-      (or (and (contains? option :icon)
-               (or (contains? option :label)
-                   (contains? option :aria-label)))
-          (contains? option :label)))]])
+(def schema:token-option
+  [:map {:title "token option"}
+   [:id :string]
+   [:resolved [:or
+               :int
+               :string]]
+   [:label :string]])
+
 (mf/defc token-option*
-  {::mf/schema schema:token-option}
-  [{:keys [id label on-click selected set-ref focused resolved-value] :rest props}]
+  [{:keys [id label on-click selected set-ref focused resolved] :rest props}]
 
   [:> :li {:value id
            :class (stl/css-case :option true
@@ -53,6 +48,6 @@
    [:span {:class (stl/css :option-text)}
     label]
 
-   (when resolved-value
+   (when resolved
      [:> :span {:class (stl/css :option-pill)}
-      resolved-value])])
+      resolved])])

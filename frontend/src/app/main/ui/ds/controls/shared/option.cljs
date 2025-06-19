@@ -12,7 +12,7 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list] :as i]
    [rumext.v2 :as mf]))
 
-(def ^:private schema:option
+(def schema:option
   [:and
    [:map {:title "option"}
     [:id :string]
@@ -28,7 +28,7 @@
           (contains? option :label)))]])
 
 (mf/defc option*
-  {::mf/schema schema:option}
+  ;; {::mf/schema schema:option}
   [{:keys [id label icon aria-label on-click selected set-ref focused dimmed] :rest props}]
 
   [:> :li {:value id

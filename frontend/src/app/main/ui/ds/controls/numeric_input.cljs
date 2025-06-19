@@ -11,9 +11,11 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.main.constants :refer [max-input-length]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
+   [app.main.ui.ds.controls.shared.token-option :refer [schema:token-option]]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
    [app.main.ui.formats :as fmt]
    [app.util.array :as array]
    [app.util.dom :as dom]
@@ -69,17 +71,46 @@
 
 (defn- get-option
   [options id]
-  (or (array/find #(= id (obj/get % "id")) options)
-      (aget options 0)))
+  (array/find #(= id (obj/get % "id")) options))
 
 (defn- get-selected-option-id
   [options default]
-  (let [option (get-option options default)]
-    (obj/get option "id")))
+  (when (some? options)
+    (let [option (get-option options default)]
+      (obj/get option "id"))))
 
-;; TODO: Add schema props
+(defn- handle-focus-change
+  [options focused* new-index options-nodes-refs]
+  (let [option (aget options new-index)
+        id     (obj/get option "id")
+        nodes  (mf/ref-val options-nodes-refs)
+        node   (obj/get nodes id)]
+    (reset! focused* id)
+    (dom/scroll-into-view-if-needed! node)))
+
+;; TODO: Review schema props
 (def ^:private schema:numeric-input
-  [:map])
+  [:map
+   [:id {:optional true} :string]
+   [:class {:optional true} :string]
+   [:value {:optional true} [:maybe :string]]
+   [:default {:optional true} [:maybe :string]]
+   [:placeholder {:optional true} :string]
+   [:icon {:optional true} [:maybe [:and :string [:fn #(contains? icon-list %)]]]]
+   [:min {:optional true} [:maybe :int]]
+   [:max {:optional true} [:maybe :int]]
+   [:max-length {:optional true} :int]
+   [:step {:optional true} [:maybe :int]]
+   [:is-selected-on-focus {:optional true} :boolean]
+   [:nillable {:optional true} :boolean]
+   [:options {:optional true}
+    [:vector {:min 1}
+     schema:token-option]]
+   [:default-selected {:optional true} :string]
+   [:empty-to-end {:optional true} :boolean]
+   [:on-change {:optional true} fn?]
+   [:on-blur {:optional true} fn?]
+   [:on-focus {:optional true} fn?]])
 
 (mf/defc numeric-input*
   {::mf/forward-ref true
@@ -92,9 +123,6 @@
 
   (let [;; Borrar
         on-change (d/nilv on-change #(prn "on-change value" %))
-        options #js[#js{:id "sizing-big-global" :key "asd" :label "sizing.big" :resolved-value "32"}
-                    #js{:id "sizing-medium-global" :key "qlkñjlkj" :label "sizing.medium" :resolved-value "23"}]
-
         ;; Defautl props
         nillable        (d/nilv nillable false)
         select-on-focus (d/nilv is-selected-on-focus true)
@@ -145,6 +173,7 @@
         options-ref        (mf/use-ref nil)
         ref                (or ref (mf/use-ref))
         dirty-ref          (mf/use-ref false)
+        open-dropdown-ref  (mf/use-ref nil)
         listbox-id         (mf/ref-val listbox-id-ref)
 
         set-option-ref
@@ -177,7 +206,6 @@
                (update-input (fmt/format-number parsed)))
 
              ;; Cuando falla el parseo, usaremos el valor anterior o el valor por defecto
-
              (if (and nillable (empty? raw-value))
                (do
                  (reset! last-value* nil)
@@ -201,7 +229,6 @@
              (reset! raw-value* text)
              (reset! is-token* false))))
 
-
         on-option-click
         (mf/use-fn
          (mf/deps options apply-value)
@@ -209,7 +236,7 @@
            (let [node   (dom/get-current-target event)
                  id     (dom/get-data node "id")
                  option (get-option options id)
-                 value  (obj/get option "resolved-value")]
+                 value  (obj/get option "resolved")]
 
              (reset! selected-value* id)
              (reset! focused-value* nil)
@@ -218,6 +245,19 @@
              (apply-value value)
              (reset! is-token* true))))
 
+        on-option-enter
+        (mf/use-fn
+         (mf/deps options focused-value apply-value)
+         (fn [_]
+           (let [option (get-option options focused-value)
+                 value  (obj/get option "resolved")]
+
+             (reset! selected-value* focused-value)
+             (reset! focused-value* nil)
+             (reset! is-open* false)
+
+             (apply-value value)
+             (reset! is-token* true))))
 
         on-blur
         (mf/use-fn
@@ -242,19 +282,24 @@
                  down?   (kbd/down-arrow? event)
                  enter?  (kbd/enter? event)
                  esc?    (kbd/esc? event)
+                 tab?    (kbd/tab? event)
                  node    (mf/ref-val ref)
                  tokens? (= (.-key event) "{")
                  parsed  (parse-value @raw-value* @last-value* min max nillable)
-                 current-value (or parsed default)]
+                 current-value (or parsed default)
+                 len     (when options (alength options))
+                 index   (when options (array/find-index #(= (deref focused-value*) (obj/get % "id")) options))]
 
              (cond
                (and (some? options) tokens?)
                (reset! is-open* true)
 
                enter?
-               (do
-                 (apply-value @raw-value*)
-                 (dom/blur! node))
+               (if is-open
+                 (on-option-enter event)
+                 (do
+                   (apply-value @raw-value*)
+                   (dom/blur! node)))
 
                esc?
                (do
@@ -264,7 +309,10 @@
 
                up?
                (if is-open
-                 (prn "Handle up arrow in options dropdown")
+                 (let [new-index (if (= index -1)
+                                   (dec len)
+                                   (mod (- index 1) len))]
+                   (handle-focus-change options focused-value* new-index options-nodes-refs))
 
                  (let [new-val (increment current-value step min max)]
                    (update-input (fmt/format-number new-val))
@@ -273,17 +321,30 @@
 
                down?
                (if is-open
-                 (prn "Handle up arrow in options dropdown")
+                 (let [new-index (if (= index -1)
+                                   0
+                                   (mod (+ index 1) len))]
+                   (handle-focus-change options focused-value* new-index options-nodes-refs))
 
                  (let [new-val (decrement current-value step min max)]
                    (update-input (fmt/format-number new-val))
                    (apply-value (dm/str new-val))
-                   (dom/prevent-default event)))))))
+                   (dom/prevent-default event)))
+
+               tab?
+               (if is-open
+                 (do
+                   (prn "index" index)
+                   (prn "tengo que targetear el primer elemento de la lista"))
+                 (->  (mf/ref-val open-dropdown-ref)
+                      (dom/set-attribute! "tabIndex" "0")
+                      (dom/focus!)))))))
 
         handle-focus
         (mf/use-fn
          (mf/deps on-focus select-on-focus)
          (fn [event]
+           (prn "handle-focus")
            (let [target (dom/get-target event)]
              (when (fn? on-focus)
                (mf/set-ref-val! dirty-ref true)
@@ -297,6 +358,7 @@
         handle-mouse-wheel
         (mf/use-fn
          (fn [event]
+           (prn "handle-mouse-wheel")
            (when-let [node (mf/ref-val ref)]
              (when (dom/active? node)
                (let [inc? (->> (dom/get-delta-position event)
@@ -311,6 +373,55 @@
                  (dom/stop-propagation event)
                  (update-input (fmt/format-number new-val))
                  (apply-value (dm/str new-val)))))))
+
+        open-dropdown
+        (mf/use-fn
+         (fn [event]
+           (dom/prevent-default event)
+           (reset! is-open* true)
+           (dom/focus! (mf/ref-val ref))))
+
+        handle-dropdown
+        (mf/use-fn
+         (mf/deps open-dropdown)
+         (fn [event]
+           (dom/prevent-default event)
+           (when (kbd/enter? event)
+             (dom/set-attribute! (mf/ref-val open-dropdown-ref) "tabIndex" "-1")
+             (open-dropdown))
+           (when (kbd/esc? event)
+             (do
+               (reset! is-open* false)
+               (dom/blur! (mf/ref-val open-dropdown-ref))
+               (dom/set-attribute! (mf/ref-val open-dropdown-ref) "tabIndex" "-1")))
+           (when (kbd/tab? event)
+             (dom/stop-propagation event)
+
+             (dom/blur! (mf/ref-val open-dropdown-ref))
+             (dom/set-attribute! (mf/ref-val open-dropdown-ref) "tabIndex" "-1"))))
+
+        detach-token
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [event]
+           (prn "entro en el detach-token")
+           (dom/prevent-default event)
+           (reset! is-token* false)
+           (reset! selected-value* nil)
+           (reset! focused-value* nil)
+           (dom/focus! (mf/ref-val ref))))
+
+        handle-detach
+        (mf/use-fn
+         (mf/deps detach-token)
+         (fn [event]
+           (prn "entro en el handle-detach")
+           (dom/prevent-default event)
+           (when (kbd/enter? event)
+             (detach-token))
+           (when (kbd/tab? event)
+             (dom/stop-propagation event)
+             (prn "debo focusear siguiente element0"))))
 
         props
         (mf/spread-props props {:ref ref
@@ -328,9 +439,23 @@
                                               (mf/html [:> icon* {:icon-id icon
                                                                   :class (stl/css :icon)}]))
 
-                                :slot-end (when is-token
-                                            (mf/html [:> icon* {:icon-id icon
-                                                                :class (stl/css :icon)}]))
+                                :slot-end (cond
+                                            is-token
+                                            (mf/html [:> icon-button* {:variant "action"
+                                                                       :class (stl/css :invisible-button)
+                                                                       :icon "broken-link"
+                                                                       :aria-label "Detach token"
+                                                                       :on-key-down handle-detach
+                                                                       :on-click detach-token}])
+                                            (some? options)
+                                            (mf/html [:> icon-button* {:variant "action"
+                                                                       :icon "component"
+                                                                       :class (stl/css :invisible-button)
+                                                                       :aria-label "Open dropdown"
+                                                                       :tab-index -1
+                                                                       :ref open-dropdown-ref
+                                                                       :on-key-down handle-dropdown
+                                                                       :on-click open-dropdown}]))
                                 :max-length max-length})]
 
     (mf/with-layout-effect [handle-mouse-wheel]

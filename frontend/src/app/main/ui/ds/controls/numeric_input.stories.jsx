@@ -49,3 +49,23 @@ export default {
 };
 
 export const Default = {};
+
+export const WithTokens = {
+  args: {
+    placeholder: "--",
+    disabled: false,
+    nillable: false,
+    icon: "search",
+    tokens: {
+      min: 0,
+      max: 100,
+      step: 1,
+    },
+    options: [
+      { id: "1", label: "Token 1", resolved: "10" },
+      { id: "2", label: "Token 2", resolved: "20" },
+      { id: "3", label: "Token 3", resolved: "30" },
+    ],
+  },
+  render: ({ ...args }) => <NumericInput {...args} />,
+};

@@ -15,7 +15,6 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-
 (mf/defc options-dropdown*
   {::mf/props :obj}
   [{:keys [set-ref on-click options selected focused empty-to-end] :rest props}]
@@ -36,14 +35,13 @@
              label      (obj/get option "label")
              aria-label (obj/get option "aria-label")
              icon       (obj/get option "icon")
-             resolved-value (obj/get option "resolved-value")]
+             resolved-value (obj/get option "resolved")]
          (if resolved-value
            [:> token-option* {:selected (= id selected)
                               :key id
                               :id id
                               :label label
-                              :resolved-value resolved-value
-                              :aria-label aria-label
+                              :resolved resolved-value
                               :set-ref set-ref
                               :focused (= id focused)
                               :on-click on-click}]
@@ -67,14 +65,25 @@
           (let [id    (obj/get option "id")
                 label (obj/get option "label")
                 aria-label (obj/get option "aria-label")
-                icon (obj/get option "icon")]
-            [:> option* {:selected (= id selected)
-                         :key id
-                         :id id
-                         :label label
-                         :icon icon
-                         :aria-label aria-label
-                         :set-ref set-ref
-                         :focused (= id focused)
-                         :dimmed true
-                         :on-click on-click}]))])]))
+                icon (obj/get option "icon")
+                resolved-value (obj/get option "resolved")]
+            (if resolved-value
+              [:> token-option* {:selected (= id selected)
+                                 :key id
+                                 :id id
+                                 :label label
+                                 :resolved resolved-value
+                                 :aria-label aria-label
+                                 :set-ref set-ref
+                                 :focused (= id focused)
+                                 :on-click on-click}]
+              [:> option* {:selected (= id selected)
+                           :key id
+                           :id id
+                           :label label
+                           :icon icon
+                           :aria-label aria-label
+                           :set-ref set-ref
+                           :focused (= id focused)
+                           :dimmed true
+                           :on-click on-click}])))])]))
