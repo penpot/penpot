@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.modals.settings
+(ns app.main.ui.workspace.tokens.settings.menu
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.types.file :as ctf]
@@ -25,8 +25,7 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-
-(mf/defc token-settings-modal*
+(mf/defc token-settings*
   {::mf/wrap-props false}
   []
   (let [file-data (deref refs/workspace-data)
@@ -107,10 +106,3 @@
                       :disabled (not is-valid)
                       :variant "primary"}
           (tr "labels.save")]]]]]]))
-
-
-(mf/defc base-font-size-modal
-  {::mf/register modal/components
-   ::mf/register-as :tokens/base-font-size}
-  []
-  [:> token-settings-modal*])

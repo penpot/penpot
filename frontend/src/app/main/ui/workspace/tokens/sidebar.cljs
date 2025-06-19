@@ -357,7 +357,7 @@
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (modal/show! :tokens/base-font-size {})))]
+           (modal/show! :tokens/settings {})))]
 
     [:div {:class (stl/css :import-export-button-wrapper)}
      [:> button* {:on-click open-menu
@@ -377,7 +377,7 @@
        (tr "labels.export")]]
 
 
-     (when (contains? cf/flags :token-units)
+     (when (and can-edit? (contains? cf/flags :token-units))
        [:> icon-button* {:variant "secondary"
                          :icon "settings"
                          :aria-label "Settings"
