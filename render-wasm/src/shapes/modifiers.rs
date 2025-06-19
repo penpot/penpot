@@ -140,7 +140,6 @@ pub fn propagate_modifiers(
 ) -> Vec<TransformEntry> {
     let shapes = &state.shapes;
 
-    let font_col = state.render_state.fonts.font_collection();
     let mut entries: VecDeque<_> = modifiers
         .iter()
         .map(|entry| Modifier::Transform(entry.clone()))
@@ -178,9 +177,9 @@ pub fn propagate_modifiers(
 
                     if let Type::Text(content) = &shape.shape_type {
                         if content.grow_type() == GrowType::AutoHeight {
-                            let mut paragraphs = content.get_skia_paragraphs(font_col);
+                            let mut paragraphs = content.get_skia_paragraphs();
                             set_paragraphs_width(shape_bounds_after.width(), &mut paragraphs);
-                            let height = auto_height(&paragraphs);
+                            let height = auto_height(&mut paragraphs);
                             let resize_transform = math::resize_matrix(
                                 &shape_bounds_after,
                                 &shape_bounds_after,
