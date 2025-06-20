@@ -275,6 +275,7 @@ impl RenderState {
                 self.viewbox.width.floor() as i32,
                 self.viewbox.height.floor() as i32,
             );
+            self.fonts.set_scale_debug_font(dpr);
         }
     }
 
