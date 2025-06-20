@@ -7,6 +7,7 @@ use skia_safe::{self as skia, textlayout::Paragraph, ImageFilter, RRect};
 
 use super::{RenderState, SurfaceId};
 use crate::render::text::{self};
+use crate::render::{get_dest_rect, get_source_rect};
 
 // FIXME: See if we can simplify these arguments
 #[allow(clippy::too_many_arguments)]
@@ -345,42 +346,6 @@ fn draw_triangle_cap(
     canvas.draw_path(&path, paint);
 }
 
-fn calculate_scaled_rect(
-    size: (i32, i32),
-    container: &Rect,
-    delta: f32,
-    keep_aspect_ratio: bool,
-) -> Rect {
-    let (width, height) = (size.0 as f32, size.1 as f32);
-
-    // Container size
-    let container_width = container.width();
-    let container_height = container.height();
-
-    let mut scaled_width = container_width;
-    let mut scaled_height = container_height;
-
-    if keep_aspect_ratio {
-        let image_aspect_ratio = width / height;
-        let container_aspect_ratio = container_width / container_height;
-        let scale = if image_aspect_ratio > container_aspect_ratio {
-            container_height / height
-        } else {
-            container_width / width
-        };
-
-        scaled_width = width * scale;
-        scaled_height = height * scale;
-    }
-
-    Rect::from_xywh(
-        container.left - delta - (scaled_width - container_width) / 2.0,
-        container.top - delta - (scaled_height - container_height) / 2.0,
-        scaled_width + (2. * delta) + (scaled_width - container_width),
-        scaled_height + (2. * delta) + (scaled_width - container_width),
-    )
-}
-
 fn draw_image_stroke_in_container(
     render_state: &mut RenderState,
     shape: &Shape,
@@ -394,7 +359,7 @@ fn draw_image_stroke_in_container(
         return;
     }
 
-    let size = image_fill.size();
+    let size = image.unwrap().dimensions();
     let canvas = render_state.surfaces.canvas(SurfaceId::Strokes);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
@@ -485,17 +450,13 @@ fn draw_image_stroke_in_container(
     image_paint.set_blend_mode(skia::BlendMode::SrcIn);
     image_paint.set_anti_alias(antialias);
 
-    // Compute scaled rect and clip to it
-    let dest_rect = calculate_scaled_rect(
-        size,
-        container,
-        stroke.delta(),
-        image_fill.keep_aspect_ratio(),
-    );
+    let src_rect = get_source_rect(size, container, image_fill);
+    let dest_rect = get_dest_rect(container, stroke.delta());
+
     canvas.clip_rect(dest_rect, skia::ClipOp::Intersect, antialias);
     canvas.draw_image_rect_with_sampling_options(
         image.unwrap(),
-        None,
+        Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
         dest_rect,
         render_state.sampling_options,
         &image_paint,
