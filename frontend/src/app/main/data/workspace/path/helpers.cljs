@@ -10,22 +10,7 @@
    [app.common.math :as mth]
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]
-   [app.common.types.path.segment :as path.segment]
-   [app.main.data.workspace.path.common :as common]
-   [app.util.mouse :as mse]
-   [potok.v2.core :as ptk]))
-
-(defn end-path-event?
-  [event]
-  (let [type (ptk/type event)]
-    (or (= type ::common/finish-path)
-        (= type :app.main.data.workspace.path.shortcuts/esc-pressed)
-        (= type :app.main.data.workspace.common/clear-edition-mode)
-        (= type :app.main.data.workspace.edition/clear-edition-mode)
-        (= type :app.main.data.workspace/finalize-page)
-        (= event :interrupt) ;; ESC
-        (and ^boolean (mse/mouse-event? event)
-             ^boolean (mse/mouse-double-click-event? event)))))
+   [app.common.types.path.segment :as path.segment]))
 
 (defn append-node
   "Creates a new node in the path. Usually used when drawing."

@@ -19,7 +19,7 @@
 ;; should also be renamed. But this should be done on development
 ;; branch.
 
-(mf/defc view-only-actions*
+(mf/defc view-only-bar*
   {::mf/private true}
   []
   (let [handle-close-view-mode
@@ -38,22 +38,15 @@
                 :on-click handle-close-view-mode}
        (tr "workspace.top-bar.read-only.done")]]]))
 
-(mf/defc edition-bar*
-  [{:keys [layout is-read-only  edit-path-state is-grid-edition is-path-edition shape]}]
-  (cond
-    ^boolean
-    is-read-only
-    [:> view-only-actions*]
+(mf/defc path-edition-bar*
+  [{:keys [layout edit-path-state shape]}]
+  (let [rulers? (contains? layout :rulers)
+        class   (stl/css-case
+                 :viewport-actions-path true
+                 :viewport-actions-no-rulers (not rulers?))]
+    [:div {:class class}
+     [:> path-actions* {:shape shape :state edit-path-state}]]))
 
-    ^boolean
-    is-path-edition
-
-    (let [rulers? (contains? layout :rulers)
-          class   (stl/css-case
-                   :viewport-actions-path true
-                   :viewport-actions-no-rulers (not rulers?))]
-      [:div {:class class}
-       [:> path-actions* {:shape shape :state edit-path-state}]])
-
-    is-grid-edition
-    [:& grid-edition-actions {:shape shape}]))
+(mf/defc grid-edition-bar*
+  [{:keys [shape]}]
+  [:& grid-edition-actions {:shape shape}])
