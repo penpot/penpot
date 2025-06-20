@@ -727,7 +727,6 @@
     (set-parent-id parent-id)
     (set-shape-type type)
     (set-shape-clip-content clip-content)
-    (set-shape-selrect selrect)
     (set-constraints-h constraint-h)
     (set-constraints-v constraint-v)
     (set-shape-rotation rotation)
@@ -761,6 +760,8 @@
 
     (when (ctl/grid-layout? shape)
       (set-grid-layout shape))
+
+    (set-shape-selrect selrect)
 
     (let [pending (into [] (concat
                             (set-shape-text id content)
