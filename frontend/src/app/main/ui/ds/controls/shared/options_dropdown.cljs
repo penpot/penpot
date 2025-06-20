@@ -36,10 +36,10 @@
   [:map
    [:ref {:optional true} fn?]
    [:on-click fn?]
-   [:options schema:options]
+   [:options [:vector schema:option]]
    [:selected :any]
    [:focused :any]
-   [:empty-to-end {:optional true} :boolean]])
+   #_[:empty-to-end {:optional true} :boolean]])
 
 (def ^:private
   xf:filter-blank-id
@@ -52,7 +52,6 @@
 (mf/defc option*
   {::mf/private true}
   [{:keys [id ref label icon aria-label on-click selected focused dimmed] :rest props}]
-
   (let [class (stl/css-case :option true
                             :option-with-icon (some? icon)
                             :option-selected selected
@@ -111,7 +110,7 @@
        (let [id         (get option :id)
              label      (get option :label)
              aria-label (get option :aria-label)
-             icon       (get op ion :icon)]
+             icon       (get option :icon)]
          [:> option* {:selected (= id selected)
                       :key id
                       :id id
