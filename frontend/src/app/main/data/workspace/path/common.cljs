@@ -11,7 +11,7 @@
    [potok.v2.core :as ptk]))
 
 (defn init-path []
-  (ptk/reify ::init-path))
+  (ptk/data-event ::init-path {}))
 
 (defn clean-edit-state
   [state]
