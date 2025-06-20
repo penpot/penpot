@@ -1,8 +1,8 @@
 use crate::math::Rect as MathRect;
 use crate::uuid::Uuid;
 
-use skia_safe as skia;
 use skia_safe::gpu::{surfaces, Budgeted, DirectContext};
+use skia_safe::{self as skia, Codec};
 use std::collections::HashMap;
 
 pub type Image = skia::Image;
@@ -47,12 +47,16 @@ impl ImageStore {
                 StoredImage::Raw(raw_data) => {
                     // Decode and upload to GPU
                     let data = unsafe { skia::Data::new_bytes(raw_data) };
-                    let image = Image::from_encoded(data)?;
+                    let codec = Codec::from_data(data.clone())?;
+                    let image = Image::from_encoded(data.clone())?;
 
-                    let width = image.width();
-                    let height = image.height();
+                    let mut dimensions = codec.dimensions();
+                    if codec.origin().swaps_width_height() {
+                        dimensions.width = codec.dimensions().height;
+                        dimensions.height = codec.dimensions().width;
+                    }
 
-                    let image_info = skia::ImageInfo::new_n32_premul((width, height), None);
+                    let image_info = skia::ImageInfo::new_n32_premul(dimensions, None);
 
                     let mut surface = surfaces::render_target(
                         &mut self.context,
@@ -65,7 +69,12 @@ impl ImageStore {
                         false,
                     )?;
 
-                    let dest_rect = MathRect::from_xywh(0.0, 0.0, width as f32, height as f32);
+                    let dest_rect: MathRect = MathRect::from_xywh(
+                        0.0,
+                        0.0,
+                        dimensions.width as f32,
+                        dimensions.height as f32,
+                    );
 
                     surface.canvas().draw_image_rect(
                         &image,

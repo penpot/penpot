@@ -16,43 +16,49 @@ fn draw_image_fill(
         return;
     }
 
-    let size = image_fill.size();
+    let size = image.unwrap().dimensions();
     let canvas = render_state.surfaces.canvas(SurfaceId::Fills);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
 
-    let width = size.0 as f32;
-    let height = size.1 as f32;
+    let image_width = size.width as f32;
+    let image_height = size.height as f32;
 
     // Container size
     let container_width = container.width();
     let container_height = container.height();
 
-    let mut scaled_width = container_width;
-    let mut scaled_height = container_height;
+    let mut source_width = image_width;
+    let mut source_height = image_height;
+    let mut source_x = 0.;
+    let mut source_y = 0.;
+
+    let source_scale_y = image_height / container_height;
+    let source_scale_x = image_width / container_width;
+
+    let dest_width = container_width;
+    let dest_height = container_height;
+    let dest_x = container.left;
+    let dest_y = container.top;
 
     if image_fill.keep_aspect_ratio() {
         // Calculate scale to ensure the image covers the container
-        let image_aspect_ratio = width / height;
+        let image_aspect_ratio = image_width / image_height;
         let container_aspect_ratio = container_width / container_height;
-        let scale = if image_aspect_ratio > container_aspect_ratio {
-            // Image is wider, scale based on height to cover container
-            container_height / height
-        } else {
+
+        if image_aspect_ratio > container_aspect_ratio {
             // Image is taller, scale based on width to cover container
-            container_width / width
+            source_width = container_width * source_scale_y;
+            source_x = (image_width - source_width) / 2.0;
+        } else {
+            // Image is wider, scale based on height to cover container
+            source_height = container_height * source_scale_x;
+            source_y = (image_height - source_height) / 2.0;
         };
-        // Scaled size of the image
-        scaled_width = width * scale;
-        scaled_height = height * scale;
     }
 
-    let dest_rect = MathRect::from_xywh(
-        container.left - (scaled_width - container_width) / 2.0,
-        container.top - (scaled_height - container_height) / 2.0,
-        scaled_width,
-        scaled_height,
-    );
+    let src_rect = MathRect::from_xywh(source_x, source_y, source_width, source_height);
+    let dest_rect = MathRect::from_xywh(dest_x, dest_y, dest_width, dest_height);
 
     // Save the current canvas state
     canvas.save();
@@ -99,7 +105,7 @@ fn draw_image_fill(
     if let Some(image) = image {
         canvas.draw_image_rect_with_sampling_options(
             image,
-            None,
+            Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
             dest_rect,
             render_state.sampling_options,
             paint,

@@ -203,7 +203,7 @@ impl RenderState {
         // This needs to be done once per WebGL context.
         let mut gpu_state = GpuState::new();
         let sampling_options =
-            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
+            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Linear);
 
         let fonts = FontStore::new();
         let surfaces = Surfaces::new(
