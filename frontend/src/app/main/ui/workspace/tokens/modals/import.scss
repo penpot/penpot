@@ -39,6 +39,7 @@
 }
 
 .import-actions {
+  @include t.use-typography("body-small");
   display: flex;
   justify-content: flex-end;
   gap: var(--sp-s);
