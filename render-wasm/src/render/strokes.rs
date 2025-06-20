@@ -534,7 +534,10 @@ pub fn render(
     let path_transform = shape.to_path_transform();
     let svg_attrs = &shape.svg_attrs;
 
-    if shadow.is_none() && matches!(stroke.fill, Fill::Image(_)) {
+    if !matches!(shape.shape_type, Type::Text(_))
+        && shadow.is_none()
+        && matches!(stroke.fill, Fill::Image(_))
+    {
         if let Fill::Image(image_fill) = &stroke.fill {
             draw_image_stroke_in_container(render_state, shape, stroke, image_fill, antialias);
         }
