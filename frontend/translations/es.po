@@ -7381,6 +7381,10 @@ msgstr "No hay temas."
 msgid "workspace.tokens.no-themes-currently"
 msgstr "Actualmente no existen temas."
 
+#: src/app/main/ui/workspace/tokens/modals/import.cljs
+msgid "workspace.tokens.no-tokens-found"
+msgstr "No se han encontrado tokens, sets o temas en este fichero."
+
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:148
 msgid "workspace.tokens.num-active-sets"
 msgstr "%s sets activos"
