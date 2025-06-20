@@ -149,7 +149,8 @@
    :enable-onboarding
    :enable-dashboard-templates-section
    :enable-google-fonts-provider
-   :enable-component-thumbnails])
+   :enable-component-thumbnails
+   :enable-render-wasm-dpr])
 
 (defn parse
   [& flags]
