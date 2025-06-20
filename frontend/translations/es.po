@@ -5507,6 +5507,14 @@ msgstr "Desvinculado"
 msgid "workspace.options.component.variant"
 msgstr "Variante"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:440
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr "Este componente tiene variantes en conflicto. Comprueba que cada variante tenga un conjunto único de propiedades y valores."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "Ir al componente principal"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
 msgid "workspace.options.component.variant.duplicated.group.locate"
 msgstr "Localizar variantes duplicadas"
