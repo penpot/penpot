@@ -9,6 +9,25 @@ test.beforeEach(async ({ page }) => {
   ]);
 });
 
+async function mockGetEmojiFont(workspace) {
+  await workspace.mockGetAsset(
+    /notocoloremoji.*\.ttf$/,
+    "render-wasm/assets/notocoloremojisubset.ttf"
+  );
+}
+
+async function mockGetJapaneseFont(workspace) {
+  await workspace.mockGetAsset(
+    /notosansjp.*\.ttf$/,
+    "render-wasm/assets/notosansjpsubset.ttf"
+  );
+  await workspace.mockGetAsset(
+    /notosanssc.*\.ttf$/,
+    "render-wasm/assets/notosansjpsubset.ttf"
+  );
+}
+
+
 test("Renders a file with texts", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
@@ -99,5 +118,47 @@ test("Renders a file with styled texts", async ({ page }) => {
     pageId: "6bd7c17d-4f59-815e-8006-5c2559af493a",
   });
   await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+
+test("Renders a file with texts with images", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockFileMediaAsset(
+    [
+      "6bd7c17d-4f59-815e-8006-5e9765e0fabd",
+      "6bd7c17d-4f59-815e-8006-5e97441071cc"
+    ],
+    "render-wasm/assets/pattern.png",
+  );
+  await mockGetEmojiFont(workspace);
+  await mockGetJapaneseFont(workspace);
+
+  await workspace.mockGetFile("render-wasm/get-file-text-images.json");
+
+  await workspace.goToWorkspace({
+    id: "6bd7c17d-4f59-815e-8006-5e96453952b0",
+    pageId: "6bd7c17d-4f59-815e-8006-5e96453952b1",
+  });
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with multiple emoji", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-emoji-board.json");
+
+  await mockGetEmojiFont(workspace);
+
+  await workspace.goToWorkspace({
+    id: "6bd7c17d-4f59-815e-8006-5e999f38f210",
+    pageId: "6bd7c17d-4f59-815e-8006-5e999f38f211",
+  });
+
+
+  await workspace.waitForFirstRender();  
   await expect(workspace.canvas).toHaveScreenshot();
 });

@@ -182,6 +182,10 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.mockRPC(/get\-file\?/, jsonFile);
   }
 
+  async mockGetAsset(regex, asset) {
+    await this.mockRPC(new RegExp(regex), asset);
+  }
+
   async setupFileWithComments() {
     await this.mockRPC(
       "get-comment-threads?file-id=*",
