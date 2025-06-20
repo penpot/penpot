@@ -12,6 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
@@ -27,6 +28,7 @@
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
    [app.main.ui.workspace.shapes.text.v2-editor :as editor-v2]
+   [app.main.ui.workspace.top-toolbar :refer [top-toolbar*]]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
    [app.main.ui.workspace.viewport.debug :as wvd]
@@ -45,7 +47,7 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
-   [app.main.ui.workspace.viewport.top-bar :as top-bar]
+   [app.main.ui.workspace.viewport.top-bar :refer [edition-bar*]]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
@@ -162,38 +164,45 @@
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
 
-
         selected-frames   (into #{} (map :frame-id) selected-shapes)
 
         ;; Only when we have all the selected shapes in one frame
         selected-frame    (when (= (count selected-frames) 1) (get base-objects (first selected-frames)))
 
-        editing-shape     (when edition (get base-objects edition))
+        edit-path-state   (get edit-path edition)
+        edit-path-mode    (get edit-path-state :edit-mode)
 
-        edit-path         (get edit-path edition)
-        edit-path-mode    (get edit-path :edit-mode)
+        path-editing?     (some? edit-path-state)
+        path-drawing?     (or (= edit-path-mode :draw)
+                              (and (= :path (get drawing-obj :type))
+                                   (not= :curve drawing-tool)))
+
+        editing-shape     (when edition
+                            (get base-objects edition))
+
+        editing-shape     (mf/with-memo [editing-shape path-editing? base-objects]
+                            (if path-editing?
+                              (path/convert-to-path editing-shape base-objects)
+                              editing-shape))
 
         create-comment?   (= :comments drawing-tool)
-        drawing-path?     (or (= edit-path-mode :draw)
-                              (= :path (get drawing-obj :type)))
 
-        node-editing?     (cfh/path-shape? editing-shape)
         text-editing?     (cfh/text-shape? editing-shape)
         grid-editing?     (and edition (ctl/grid-layout? base-objects edition))
 
         mode-inspect?     (= options-mode :inspect)
 
-        on-click          (actions/on-click hover selected edition drawing-path? drawing-tool space? selrect z?)
+        on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
-        on-double-click   (actions/on-double-click hover hover-ids hover-top-frame-id drawing-path? base-objects edition drawing-tool z? read-only?)
+        on-double-click   (actions/on-double-click hover hover-ids hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
 
         comp-inst-ref     (mf/use-ref false)
         on-drag-enter     (actions/on-drag-enter comp-inst-ref)
         on-drag-over      (actions/on-drag-over move-stream)
         on-drag-end       (actions/on-drag-over comp-inst-ref)
         on-drop           (actions/on-drop file comp-inst-ref)
-        on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? node-editing? grid-editing?
-                                                   drawing-path? create-comment? space? panning z? read-only?)
+        on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? path-editing? grid-editing?
+                                                   path-drawing? create-comment? space? panning z? read-only?)
 
         on-pointer-up     (actions/on-pointer-up disable-paste)
 
@@ -239,14 +248,14 @@
                                       (or drawing-obj transform))
         show-selrect?            (and selrect (empty? drawing) (not text-editing?))
         show-measures?           (and (not transform)
-                                      (not node-editing?)
+                                      (not path-editing?)
                                       (or show-distances? mode-inspect?))
         show-artboard-names?     (contains? layout :display-artboard-names)
         hide-ui?                 (contains? layout :hide-ui)
         show-rulers?             (and (contains? layout :rulers) (not hide-ui?))
 
 
-        disabled-guides?         (or drawing-tool transform drawing-path? node-editing?)
+        disabled-guides?         (or drawing-tool transform path-drawing? path-editing?)
 
         single-select?           (= (count selected-shapes) 1)
 
@@ -329,23 +338,27 @@
       (when (and @canvas-init? initialized?)
         (wasm.api/set-canvas-background background)))
 
-    (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
+    (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
-    (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? read-only?)
+    (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover measure-hover
                               hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures?)
-    (hooks/setup-shortcuts node-editing? drawing-path? text-editing? grid-editing?)
+    (hooks/setup-shortcuts path-editing? path-drawing? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
     [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
      (when (:can-edit permissions)
-       [:> top-bar/top-bar* {:layout layout
-                             :selected selected-shapes
-                             :edit-path edit-path
-                             :drawing drawing
-                             :edition edition
-                             :is-read-only read-only?}])
+       [:*
+        (when-not hide-ui?
+          [:> top-toolbar* {:layout layout}])
+
+        [:> edition-bar* {:layout layout
+                          :selected selected-shapes
+                          :edit-path edit-path-state
+                          :drawing drawing
+                          :edition edition
+                          :is-read-only read-only?}]])
      [:div {:class (stl/css :viewport-overlays)}
       (when show-comments?
         [:> comments/comments-layer* {:vbox vbox
@@ -509,7 +522,8 @@
            :on-frame-leave on-frame-leave
            :on-frame-select on-frame-select}])
 
-       (when show-draw-area?
+       (when (and ^boolean show-draw-area?
+                  ^boolean (cts/shape? drawing-obj))
          [:> drawarea/draw-area*
           {:shape drawing-obj
            :zoom zoom
@@ -615,6 +629,7 @@
           (when-not text-editing?
             (if editing-shape
               [:> path-editor* {:shape editing-shape
+                                :state edit-path-state
                                 :zoom zoom}]
               (when selected-shapes
                 [:> selection/handlers*

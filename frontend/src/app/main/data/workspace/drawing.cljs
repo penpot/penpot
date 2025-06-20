@@ -96,7 +96,7 @@
     (watch [_ _ _]
       (rx/of
        (case type
-         :path (path/handle-new-shape)
+         :path (path/handle-drawing)
          :curve (curve/handle-drawing)
          (box/handle-drawing type))))))
 
