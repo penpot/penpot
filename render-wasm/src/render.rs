@@ -17,7 +17,7 @@ use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
 use gpu_state::GpuState;
-use options::RenderOptions;
+use options::RenderStateOptions;
 use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
@@ -35,6 +35,100 @@ pub use images::*;
 const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
+
+pub struct PendingNodes {
+    pub list: Vec<NodeRenderState>,
+}
+
+impl PendingNodes {
+    pub fn new_empty() -> Self {
+        Self { list: vec![] }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.list.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.list.len()
+    }
+
+    pub fn extend(&mut self, valid_ids: Vec<Uuid>) {
+        self.list
+            .extend(valid_ids.into_iter().map(|id| NodeRenderState {
+                id,
+                visited_children: false,
+                clip_bounds: None,
+                visited_mask: false,
+                mask: false,
+            }));
+    }
+
+    pub fn next(&mut self) -> Option<NodeRenderState> {
+        self.list.pop()
+    }
+
+    pub fn prepare(&mut self, tree: &mut HashMap<Uuid, &mut Shape>) {
+        self.list.clear();
+        if self.list.capacity() < tree.len() {
+            self.list.reserve(tree.len() - self.list.capacity());
+        }
+    }
+
+    pub fn add_root(&mut self) {
+        self.list.push(NodeRenderState {
+            id: Uuid::nil(),
+            visited_children: false,
+            clip_bounds: None,
+            visited_mask: false,
+            mask: false,
+        });
+    }
+
+    pub fn add_child(
+        &mut self,
+        child_id: &Uuid,
+        children_clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
+    ) {
+        self.list.push(NodeRenderState {
+            id: *child_id,
+            visited_children: false,
+            clip_bounds: children_clip_bounds,
+            visited_mask: false,
+            mask: false,
+        });
+    }
+
+    pub fn add_children_safeguard(&mut self, element: &Shape, mask: bool) {
+        // Set the node as visited_children before processing children
+        self.list.push(NodeRenderState {
+            id: element.id,
+            visited_children: true,
+            clip_bounds: None,
+            visited_mask: false,
+            mask,
+        });
+    }
+
+    pub fn add_mask(&mut self, element: &Shape) {
+        self.list.push(NodeRenderState {
+            id: element.id,
+            visited_children: true,
+            clip_bounds: None,
+            visited_mask: true,
+            mask: false,
+        });
+        if let Some(&mask_id) = element.mask_id() {
+            self.list.push(NodeRenderState {
+                id: mask_id,
+                visited_children: false,
+                clip_bounds: None,
+                visited_mask: false,
+                mask: true,
+            });
+        }
+    }
+}
 
 pub struct NodeRenderState {
     pub id: Uuid,
@@ -150,7 +244,7 @@ impl FocusMode {
 
 pub(crate) struct RenderState {
     gpu_state: GpuState,
-    pub options: RenderOptions,
+    pub options: RenderStateOptions,
     pub surfaces: Surfaces,
     pub fonts: FontStore,
     pub viewbox: Viewbox,
@@ -162,8 +256,9 @@ pub(crate) struct RenderState {
     pub render_request_id: Option<i32>,
     // Indicates whether the rendering process has pending frames.
     pub render_in_progress: bool,
+    pub render_is_full: bool,
     // Stack of nodes pending to be rendered.
-    pending_nodes: Vec<NodeRenderState>,
+    pending_nodes: PendingNodes,
     pub current_tile: Option<tiles::Tile>,
     pub sampling_options: skia::SamplingOptions,
     pub render_area: Rect,
@@ -221,7 +316,7 @@ impl RenderState {
 
         RenderState {
             gpu_state,
-            options: RenderOptions::default(),
+            options: RenderStateOptions::default(),
             surfaces,
             fonts,
             viewbox,
@@ -231,7 +326,8 @@ impl RenderState {
             background_color: skia::Color::TRANSPARENT,
             render_request_id: None,
             render_in_progress: false,
-            pending_nodes: vec![],
+            render_is_full: false,
+            pending_nodes: PendingNodes::new_empty(),
             current_tile: None,
             sampling_options,
             render_area: Rect::new_empty(),
@@ -576,15 +672,20 @@ impl RenderState {
         });
     }
 
-    pub fn update_render_context(&mut self, tile: tiles::Tile) {
-        self.current_tile = Some(tile);
-        self.render_area = tiles::get_tile_rect(tile, self.get_scale());
+    pub fn get_tiles_of(&mut self, id: Uuid) -> Option<&HashSet<tiles::Tile>> {
+        self.tiles.get_tiles_of(id)
+    }
+
+    pub fn update_render_context(&mut self, tile: &tiles::Tile) {
+        self.current_tile = Some(*tile);
+        self.render_area = tiles::get_tile_rect(*tile, self.get_scale());
         self.surfaces
             .update_render_context(self.render_area, self.get_scale());
     }
 
     pub fn cancel_animation_frame(&mut self) {
         if self.render_in_progress {
+            self.render_in_progress = false;
             if let Some(frame_id) = self.render_request_id {
                 wapi::cancel_animation_frame!(frame_id);
             }
@@ -639,6 +740,7 @@ impl RenderState {
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
+        full: bool,
     ) -> Result<(), String> {
         let scale = self.get_scale();
         self.tile_viewbox.update(self.viewbox, scale);
@@ -673,14 +775,18 @@ impl RenderState {
         self.pending_tiles.update(&self.tile_viewbox);
         performance::end_measure!("tile_cache");
 
-        self.pending_nodes.clear();
-        if self.pending_nodes.capacity() < tree.len() {
-            self.pending_nodes
-                .reserve(tree.len() - self.pending_nodes.capacity());
-        }
-        // reorder by distance to the center.
+        self.pending_nodes.prepare(tree);
+
         self.current_tile = None;
+        if let Some(next_tile) = self.pending_tiles.pop() {
+            self.update_render_context(&next_tile);
+        }
+
         self.render_in_progress = true;
+        self.render_is_full = full;
+        if self.render_is_full {
+            self.pending_nodes.add_root();
+        }
         self.apply_drawing_to_render_canvas(None);
         self.process_animation_frame(tree, modifiers, structure, scale_content, timestamp)?;
         performance::end_measure!("start_render_loop");
@@ -697,7 +803,17 @@ impl RenderState {
     ) -> Result<(), String> {
         performance::begin_measure!("process_animation_frame");
         if self.render_in_progress {
-            self.render_shape_tree_partial(tree, modifiers, structure, scale_content, timestamp)?;
+            if self.render_is_full {
+                self.render_shape_tree_full(tree, modifiers, structure, scale_content, timestamp)?;
+            } else {
+                self.render_shape_tree_partial(
+                    tree,
+                    modifiers,
+                    structure,
+                    scale_content,
+                    timestamp,
+                )?;
+            }
             self.flush_and_submit();
 
             if self.render_in_progress {
@@ -783,22 +899,7 @@ impl RenderState {
                 // the blend mode 'destination-in') the content
                 // of the group and the mask.
                 if group.masked {
-                    self.pending_nodes.push(NodeRenderState {
-                        id: element.id,
-                        visited_children: true,
-                        clip_bounds: None,
-                        visited_mask: true,
-                        mask: false,
-                    });
-                    if let Some(&mask_id) = element.mask_id() {
-                        self.pending_nodes.push(NodeRenderState {
-                            id: mask_id,
-                            visited_children: false,
-                            clip_bounds: None,
-                            visited_mask: false,
-                            mask: true,
-                        });
-                    }
+                    self.pending_nodes.add_mask(element);
                 }
             }
         }
@@ -846,6 +947,204 @@ impl RenderState {
         )
     }
 
+    pub fn render_shape_tree_full(
+        &mut self,
+        tree: &mut HashMap<Uuid, &mut Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
+        scale_content: &HashMap<Uuid, f32>,
+        timestamp: i32,
+    ) -> Result<(bool, bool), String> {
+        let result = self.render_shape_tree_full_uncached(
+            tree,
+            modifiers,
+            structure,
+            scale_content,
+            timestamp,
+        );
+
+        let (is_empty, should_stop_rendering) = result?;
+        if should_stop_rendering {
+            self.render_in_progress = false;
+            self.render_is_full = false;
+        }
+
+        if self.options.is_debug_visible() {
+            debug::render(self);
+        }
+
+        debug::render_wasm_label(self);
+        Ok((is_empty, should_stop_rendering))
+    }
+
+    pub fn render_shape_tree_full_uncached_shape_tile(
+        &mut self,
+        element: &mut Shape,
+        node_render_state: &NodeRenderState,
+        tile: &tiles::Tile,
+        modifiers: &HashMap<Uuid, Matrix>,
+        _structure: &HashMap<Uuid, Vec<StructureEntry>>,
+        scale_content: &HashMap<Uuid, f32>,
+    ) -> bool {
+        let NodeRenderState {
+            id: _node_id,
+            visited_children,
+            clip_bounds,
+            visited_mask,
+            mask,
+        } = *node_render_state;
+
+        self.update_render_context(tile);
+
+        self.render_shape_enter(element, mask);
+        if !node_render_state.id.is_nil() {
+            self.render_shape(
+                element,
+                modifiers.get(&element.id),
+                scale_content.get(&element.id),
+                clip_bounds,
+            );
+        } else {
+            self.apply_drawing_to_render_canvas(Some(element));
+        }
+        if visited_children {
+            self.render_shape_exit(element, visited_mask);
+            return false;
+        }
+        true
+    }
+
+    pub fn render_shape_tree_full_uncached_shape_tiles(
+        &mut self,
+        element: &mut Shape,
+        node_render_state: &NodeRenderState,
+        tiles: &HashSet<tiles::Tile>,
+        modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
+        scale_content: &HashMap<Uuid, f32>,
+    ) {
+        // We need to iterate over every tile of the element.
+        for tile in tiles.iter() {
+            println!(
+                "render_shape_tree_full_uncached::for::start {} {}",
+                tile.0, tile.1
+            );
+            self.render_shape_tree_full_uncached_shape_tile(
+                element,
+                node_render_state,
+                tile,
+                modifiers,
+                structure,
+                scale_content,
+            );
+
+            println!("render_shape_tree_full_uncached::for::end");
+        }
+    }
+
+    pub fn render_shape_tree_full_uncached(
+        &mut self,
+        tree: &mut HashMap<Uuid, &mut Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
+        scale_content: &HashMap<Uuid, f32>,
+        timestamp: i32,
+    ) -> Result<(bool, bool), String> {
+        let mut iteration = 0;
+        let mut is_empty = true;
+        println!("render_shape_tree_full_uncached::while::start");
+        while let Some(node_render_state) = self.pending_nodes.next() {
+            println!(
+                "render_shape_tree_full_uncached::while::pop {}",
+                self.pending_nodes.len()
+            );
+            let NodeRenderState {
+                id: node_id,
+                visited_children: _visited_children,
+                clip_bounds: _clip_bounds,
+                visited_mask: _visited_mask,
+                mask,
+            } = node_render_state;
+
+            is_empty = false;
+            let element = tree.get_mut(&node_id).ok_or(
+                "Error: Element with root_id {node_render_state.id} not found in the tree."
+                    .to_string(),
+            )?;
+
+            if !node_render_state.id.is_nil() {
+                let mut transformed_element: Cow<Shape> = Cow::Borrowed(element);
+
+                if let Some(modifier) = modifiers.get(&node_id) {
+                    transformed_element.to_mut().apply_transform(modifier);
+                }
+
+                let is_visible = transformed_element.extrect().intersects(self.render_area)
+                    && !transformed_element.hidden
+                    && !transformed_element.visually_insignificant(self.get_scale_mut());
+
+                if self.options.is_debug_visible() {
+                    debug::render_debug_shape(self, &transformed_element, is_visible);
+                }
+
+                if !is_visible {
+                    continue;
+                }
+            }
+
+            // If the shape is not in the tile set, then we update
+            // it.
+            if self.get_tiles_of(node_id).is_none() {
+                println!("updating tiles for {}", element.id);
+                self.update_tile_for(element);
+            }
+
+            if !element.id.is_nil() {
+                let mut tiles_opt = self.get_tiles_of(element.id);
+                let tiles = tiles_opt.as_mut().unwrap().clone();
+                self.render_shape_tree_full_uncached_shape_tiles(
+                    element,
+                    &node_render_state,
+                    &tiles,
+                    modifiers,
+                    structure,
+                    scale_content,
+                );
+
+                self.pending_nodes.add_children_safeguard(element, mask);
+            }
+
+            if element.is_recursive() {
+                let children_clip_bounds =
+                    node_render_state.get_children_clip_bounds(element, modifiers.get(&element.id));
+
+                let mut children_ids = modified_children_ids(element, structure.get(&element.id));
+
+                // Z-index ordering on Layouts
+                if element.has_layout() {
+                    children_ids.sort_by(|id1, id2| {
+                        let z1 = tree.get(id1).map_or_else(|| 0, |s| s.z_index());
+                        let z2 = tree.get(id2).map_or_else(|| 0, |s| s.z_index());
+                        z1.cmp(&z2)
+                    });
+                }
+
+                for child_id in children_ids.iter() {
+                    println!("children id {}", child_id);
+                    self.pending_nodes.add_child(child_id, children_clip_bounds);
+                }
+            }
+
+            // We try to avoid doing too many calls to get_time
+            if self.should_stop_rendering(iteration, timestamp) {
+                return Ok((is_empty, true));
+            }
+            iteration += 1;
+        }
+        println!("render_shape_tree_full_uncached::while::end");
+        Ok((is_empty, self.pending_nodes.is_empty()))
+    }
+
     pub fn render_shape_tree_partial_uncached(
         &mut self,
         tree: &mut HashMap<Uuid, &mut Shape>,
@@ -856,7 +1155,8 @@ impl RenderState {
     ) -> Result<(bool, bool), String> {
         let mut iteration = 0;
         let mut is_empty = true;
-        while let Some(node_render_state) = self.pending_nodes.pop() {
+        let scale = self.get_scale();
+        while let Some(node_render_state) = self.pending_nodes.next() {
             let NodeRenderState {
                 id: node_id,
                 visited_children,
@@ -891,7 +1191,7 @@ impl RenderState {
 
                 let is_visible = transformed_element.extrect().intersects(self.render_area)
                     && !transformed_element.hidden
-                    && !transformed_element.visually_insignificant(self.get_scale());
+                    && !transformed_element.visually_insignificant(scale);
 
                 if self.options.is_debug_visible() {
                     debug::render_debug_shape(self, &transformed_element, is_visible);
@@ -915,13 +1215,7 @@ impl RenderState {
             }
 
             // Set the node as visited_children before processing children
-            self.pending_nodes.push(NodeRenderState {
-                id: node_id,
-                visited_children: true,
-                clip_bounds: None,
-                visited_mask: false,
-                mask,
-            });
+            self.pending_nodes.add_children_safeguard(element, mask);
 
             if element.is_recursive() {
                 let children_clip_bounds =
@@ -940,13 +1234,7 @@ impl RenderState {
                 }
 
                 for child_id in children_ids.iter() {
-                    self.pending_nodes.push(NodeRenderState {
-                        id: *child_id,
-                        visited_children: false,
-                        clip_bounds: children_clip_bounds,
-                        visited_mask: false,
-                        mask: false,
-                    });
+                    self.pending_nodes.add_child(child_id, children_clip_bounds);
                 }
             }
 
@@ -956,7 +1244,7 @@ impl RenderState {
             }
             iteration += 1;
         }
-        Ok((is_empty, false))
+        Ok((is_empty, self.pending_nodes.is_empty()))
     }
 
     pub fn render_shape_tree_partial(
@@ -1023,7 +1311,7 @@ impl RenderState {
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
             if let Some(next_tile) = self.pending_tiles.pop() {
-                self.update_render_context(next_tile);
+                self.update_render_context(&next_tile);
 
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
@@ -1032,19 +1320,9 @@ impl RenderState {
                             .iter()
                             .filter_map(|id| root_ids.get(id).map(|_| *id))
                             .collect();
-
                         // These shapes for the tile should be ordered as they are in the parent node
                         valid_ids.sort_by_key(|id| root_ids.get_index_of(id));
-
-                        self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
-                            NodeRenderState {
-                                id,
-                                visited_children: false,
-                                clip_bounds: None,
-                                visited_mask: false,
-                                mask: false,
-                            }
-                        }));
+                        self.pending_nodes.extend(valid_ids);
                     }
                 }
             } else {
@@ -1171,6 +1449,10 @@ impl RenderState {
     }
 
     pub fn get_scale(&self) -> f32 {
+        self.viewbox.zoom() * self.options.dpr()
+    }
+
+    pub fn get_scale_mut(&mut self) -> f32 {
         self.viewbox.zoom() * self.options.dpr()
     }
 
