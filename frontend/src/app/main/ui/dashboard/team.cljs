@@ -530,32 +530,32 @@
   {::mf/props :obj}
   [{:keys [team profile]}]
   (mf/with-effect [team]
-      (dom/set-html-title
-       (tr "title.team-members"
-           (if (:is-default team)
-             (tr "dashboard.your-penpot")
-             (:name team)))))
+    (dom/set-html-title
+     (tr "title.team-members"
+         (if (:is-default team)
+           (tr "dashboard.your-penpot")
+           (:name team)))))
 
-    (mf/with-effect []
-      (st/emit! (dtm/fetch-members)))
+  (mf/with-effect []
+    (st/emit! (dtm/fetch-members)))
 
-    [:*
-     [:& header {:section :dashboard-team-members :team team}]
-     [:section {:class (stl/css-case
-                        :dashboard-container true
-                        :dashboard-team-members true
-                        :dashboard-top-cta (show-subscription-members-main-banner? team profile))}
-      (when (and (contains? cfg/flags :subscriptions)
-                 (show-subscription-members-main-banner? team profile))
-        [:> members-cta* {:banner-is-expanded true :team team :profile profile}])
-      [:> team-members*
-       {:profile profile
-        :team team}]
+  [:*
+   [:& header {:section :dashboard-team-members :team team}]
+   [:section {:class (stl/css-case
+                      :dashboard-container true
+                      :dashboard-team-members true
+                      :dashboard-top-cta (show-subscription-members-main-banner? team profile))}
+    (when (and (contains? cfg/flags :subscriptions)
+               (show-subscription-members-main-banner? team profile))
+      [:> members-cta* {:banner-is-expanded true :team team :profile profile}])
+    [:> team-members*
+     {:profile profile
+      :team team}]
 
-      (when (and
-             (contains? cfg/flags :subscriptions)
-             (show-subscription-members-small-banner? team profile))
-        [:> members-cta* {:banner-is-expanded false :team team :profile profile}])]])
+    (when (and
+           (contains? cfg/flags :subscriptions)
+           (show-subscription-members-small-banner? team profile))
+      [:> members-cta* {:banner-is-expanded false :team team :profile profile}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INVITATIONS SECTION
@@ -823,11 +823,11 @@
                       :dashboard-top-cta (show-subscription-members-main-banner? team profile))}
     (when (and (contains? cfg/flags :subscriptions)
                (show-subscription-members-main-banner? team profile))
-      [:> members-cta* {:banner-is-expanded true :team team}])
+      [:> members-cta* {:banner-is-expanded true :team team :profile profile}])
     [:> invitation-section* {:team team}]
     (when (and (contains? cfg/flags :subscriptions)
-               show-subscription-members-small-banner?)
-      [:> members-cta* {:banner-is-expanded false :team team}])]])
+               (show-subscription-members-small-banner? team profile))
+      [:> members-cta* {:banner-is-expanded false :team team :profile profile}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WEBHOOKS SECTION

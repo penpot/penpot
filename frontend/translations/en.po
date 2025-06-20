@@ -4284,8 +4284,7 @@ msgstr ""
 #: src/app/main/ui/dashboard/subscription.cljs:160
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
-"Looks like your team has grown! Your plan includes %s seats, but you're now using %"
-"using more than that."
+"Looks like your team has grown! Your plan includes %s seats, but you're now using %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:168
 #, markdown

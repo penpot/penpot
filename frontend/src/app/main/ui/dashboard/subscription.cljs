@@ -77,13 +77,13 @@
       "enterprise"
       (if subscription-is-trial
         [:> cta-power-up*
-       {:top-title (tr "subscription.dashboard.power-up.your-subscription")
-        :top-description (tr "subscription.dashboard.power-up.enterprise-trial.top-title")
-        :has-dropdown false}]
+         {:top-title (tr "subscription.dashboard.power-up.your-subscription")
+          :top-description (tr "subscription.dashboard.power-up.enterprise-trial.top-title")
+          :has-dropdown false}]
         [:> cta-power-up*
-       {:top-title (tr "subscription.dashboard.power-up.your-subscription")
-        :top-description (tr "subscription.dashboard.power-up.enterprise-plan")
-        :has-dropdown false}]))))
+         {:top-title (tr "subscription.dashboard.power-up.your-subscription")
+          :top-description (tr "subscription.dashboard.power-up.enterprise-plan")
+          :has-dropdown false}]))))
 
 (mf/defc team*
   [{:keys [is-owner team]}]
@@ -173,7 +173,7 @@
 
           (and (= "unlimited" subscription-name) (< seats editors) is-owner)
           (tr "subscription.dashboard.cta.upgrade-more-seats-owner" link)
-          
+
           (and (= "unlimited" subscription-name) (< seats editors) (not is-owner))
           (tr "subscription.dashboard.cta.upgrade-more-seats-member" link))]
 

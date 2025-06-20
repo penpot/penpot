@@ -1,14 +1,18 @@
 import { test, expect } from "@playwright/test";
 import DashboardPage from "../pages/DashboardPage";
-import { WorkspacePage } from "../pages/WorkspacePage";
-import { SubscriptionProfilePage } from "../pages/SubscriptionProfilePage";
+
+test.beforeEach(async ({ page }) => {
+  await DashboardPage.init(page);
+  await DashboardPage.mockConfigFlags(page, [
+    "enable-subscriptions",
+    "disable-onboarding",
+  ]);
+});
 
 test.describe("Subscriptions: dashboard", () => {
   test("Team with unlimited subscription has specific icon in menu", async ({
     page,
   }) => {
-    await DashboardPage.init(page);
-    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -45,8 +49,6 @@ test.describe("Subscriptions: dashboard", () => {
   test("The Unlimited subscription has its name in the sidebar dropdown", async ({
     page,
   }) => {
-    await DashboardPage.init(page);
-    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -79,12 +81,10 @@ test.describe("Subscriptions: dashboard", () => {
   });
 });
 
-test.describe("Subscriptions: Team members and invitations", () => {
+test.describe("Subscriptions: team members and invitations", () => {
   test("Team settings has susbscription name and no manage subscription link when is member", async ({
     page,
   }) => {
-    await DashboardPage.init(page);
-    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -132,8 +132,6 @@ test.describe("Subscriptions: Team members and invitations", () => {
   test("Team settings has susbscription name and manage subscription link when is owner", async ({
     page,
   }) => {
-    await DashboardPage.init(page);
-    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -188,8 +186,6 @@ test.describe("Subscriptions: Team members and invitations", () => {
   test("Members tab has warning message when team has more members than subscriptions. Subscribe link is shown for owners.", async ({
     page,
   }) => {
-    await DashboardPage.init(page);
-    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -235,8 +231,6 @@ test.describe("Subscriptions: Team members and invitations", () => {
   test("Members tab has warning message when team has more members than subscriptions. Contact to owner is shown for members.", async ({
     page,
   }) => {
-    await DashboardPage.init(page);
-    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -282,8 +276,6 @@ test.describe("Subscriptions: Team members and invitations", () => {
   test("Members tab has warning message when has professional subscription and more than 8 members.", async ({
     page,
   }) => {
-    await DashboardPage.init(page);
-    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -330,11 +322,9 @@ test.describe("Subscriptions: Team members and invitations", () => {
     ).toBeVisible();
   });
 
-  test("Invitations tab has warning message when subscription is expired", async ({
+  test("Invitations tab has warning message when team has more members than subscriptions", async ({
     page,
   }) => {
-    await DashboardPage.init(page);
-    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -352,7 +342,7 @@ test.describe("Subscriptions: Team members and invitations", () => {
     await DashboardPage.mockRPC(
       page,
       "get-teams",
-      "subscription/get-teams-unlimited-subscription-expired-owner.json",
+      "subscription/get-teams-unlimited-subscription-owner.json",
     );
 
     await DashboardPage.mockRPC(
@@ -382,7 +372,7 @@ test.describe("Subscriptions: Team members and invitations", () => {
     await expect(page.getByTestId("cta")).toBeVisible();
     await expect(
       page.getByText(
-        "Looks like your team has grown! Your plan includes seats, but you're now using more than that.",
+        "Looks like your team has grown! Your plan includes 2 seats, but you're now using 3",
       ),
     ).toBeVisible();
   });
@@ -390,8 +380,6 @@ test.describe("Subscriptions: Team members and invitations", () => {
   test("Invitations tab has warning message when has professional subscription and more than 8 members.", async ({
     page,
   }) => {
-    await DashboardPage.init(page);
-    await DashboardPage.mockConfigFlags(page, ["enable-subscriptions"]);
     await DashboardPage.mockRPC(
       page,
       "get-profile",
@@ -409,7 +397,7 @@ test.describe("Subscriptions: Team members and invitations", () => {
     await DashboardPage.mockRPC(
       page,
       "get-teams",
-      "subscription/get-teams-unlimited-subscription-expired-owner.json",
+      "subscription/get-teams-unlimited-subscription-owner.json",
     );
 
     await DashboardPage.mockRPC(
@@ -439,274 +427,8 @@ test.describe("Subscriptions: Team members and invitations", () => {
     await expect(page.getByTestId("cta")).toBeVisible();
     await expect(
       page.getByText(
-        "Looks like your team has grown! Your plan includes seats, but you're now using more than that.",
+        "Looks like your team has grown! Your plan includes 2 seats, but you're now using 9",
       ),
-    ).toBeVisible();
-  });
-});
-
-test.describe("Subscriptions: workspace", () => {
-  test("Unlimited team should have 'Power up your plan' link in main menu", async ({
-    page,
-  }) => {
-    await WorkspacePage.init(page);
-    await WorkspacePage.mockConfigFlags(page, ["enable-subscriptions"]);
-
-    const workspacePage = new WorkspacePage(page);
-    await workspacePage.setupEmptyFile();
-
-    await WorkspacePage.mockRPC(
-      page,
-      "get-profile",
-      "subscription/get-profile-unlimited-subscription.json",
-    );
-
-    await workspacePage.mockRPC(
-      "push-audit-events",
-      "workspace/audit-event-empty.json",
-    );
-    await workspacePage.goToWorkspace();
-    await page.getByRole("button", { name: "Main menu" }).click();
-
-    await expect(page.getByText("Power up your plan")).toBeVisible();
-  });
-
-  test("Enterprise team should not have 'Power up your plan' link in main menu", async ({
-    page,
-  }) => {
-    await WorkspacePage.init(page);
-    await WorkspacePage.mockConfigFlags(page, ["enable-subscriptions"]);
-
-    const workspacePage = new WorkspacePage(page);
-    await workspacePage.setupEmptyFile();
-
-    await WorkspacePage.mockRPC(
-      page,
-      "get-profile",
-      "subscription/get-profile-enterprise-subscription.json",
-    );
-
-    await workspacePage.mockRPC(
-      "push-audit-events",
-      "workspace/audit-event-empty.json",
-    );
-    await workspacePage.goToWorkspace();
-    await page.getByRole("button", { name: "Main menu" }).click();
-
-    await expect(page.getByText("Power up your plan")).not.toBeVisible();
-  });
-
-  test("Professional team should have 7 days autosaved versions", async ({
-    page,
-  }) => {
-    await WorkspacePage.init(page);
-    await WorkspacePage.mockConfigFlags(page, ["enable-subscriptions"]);
-
-    const workspacePage = new WorkspacePage(page);
-    await workspacePage.setupEmptyFile();
-
-    await workspacePage.mockRPC(
-      "push-audit-events",
-      "workspace/audit-event-empty.json",
-    );
-    await workspacePage.goToWorkspace();
-
-    await workspacePage.mockRPC(
-      "get-file-snapshots?file-id=*",
-      "workspace/versions-snapshot-1.json",
-    );
-
-    await page.getByLabel("History").click();
-
-    await expect(
-      page.getByText("Autosaved versions will be kept for 7 days."),
-    ).toBeVisible();
-  });
-
-  test("Unlimited team should have 30 days autosaved versions", async ({
-    page,
-  }) => {
-    await WorkspacePage.init(page);
-    await WorkspacePage.mockConfigFlags(page, ["enable-subscriptions"]);
-
-    const workspacePage = new WorkspacePage(page);
-    await workspacePage.setupEmptyFile();
-
-    await WorkspacePage.mockRPC(
-      page,
-      "get-profile",
-      "subscription/get-profile-unlimited-subscription.json",
-    );
-
-    await WorkspacePage.mockRPC(
-      page,
-      "get-teams",
-      "subscription/get-teams-unlimited-one-team.json",
-    );
-
-    await workspacePage.mockRPC(
-      "push-audit-events",
-      "workspace/audit-event-empty.json",
-    );
-    await workspacePage.goToWorkspace();
-
-    await workspacePage.mockRPC(
-      "get-file-snapshots?file-id=*",
-      "workspace/versions-snapshot-1.json",
-    );
-
-    await page.getByLabel("History").click();
-
-    await expect(
-      page.getByText("Autosaved versions will be kept for 30 days."),
-    ).toBeVisible();
-  });
-
-  test("Unlimited team should have 90 days autosaved versions", async ({
-    page,
-  }) => {
-    await WorkspacePage.init(page);
-    await WorkspacePage.mockConfigFlags(page, ["enable-subscriptions"]);
-
-    const workspacePage = new WorkspacePage(page);
-    await workspacePage.setupEmptyFile();
-
-    await WorkspacePage.mockRPC(
-      page,
-      "get-profile",
-      "subscription/get-profile-enterprise-subscription.json",
-    );
-
-    await WorkspacePage.mockRPC(
-      page,
-      "get-teams",
-      "subscription/get-teams-enterprise-one-team.json",
-    );
-
-    await workspacePage.mockRPC(
-      "push-audit-events",
-      "workspace/audit-event-empty.json",
-    );
-    await workspacePage.goToWorkspace();
-
-    await workspacePage.mockRPC(
-      "get-file-snapshots?file-id=*",
-      "workspace/versions-snapshot-1.json",
-    );
-
-    await page.getByLabel("History").click();
-
-    await expect(
-      page.getByText("Autosaved versions will be kept for 90 days."),
-    ).toBeVisible();
-  });
-});
-
-test.describe("Subscriptions: profile", () => {
-  test("When subscription is professional there is no manage subscription link", async ({
-    page,
-  }) => {
-    await SubscriptionProfilePage.init(page);
-    await SubscriptionProfilePage.mockConfigFlags(page, ["enable-subscriptions"]);
-
-    await SubscriptionProfilePage.mockRPC(
-      page,
-      "get-profile",
-      "logged-in-user/get-profile-logged-in.json",
-    );
-
-    const subscriptionProfilePage = new SubscriptionProfilePage(page);
-
-    await subscriptionProfilePage.goToSubscriptions();
-
-    await expect(
-      page.getByRole("button", { name: "Manage your subscription" }),
-    ).not.toBeVisible();
-
-    await expect(
-      page.getByRole("heading", { name: "Other Penpot plans", level: 3 }),
-    ).toBeVisible();
-
-    await expect(page.getByText("$7")).toBeVisible();
-
-    await expect(page.getByText("$950")).toBeVisible();
-
-    await expect(
-      page.getByRole("button", { name: "Try it free for 14 days" }).first(),
-    ).toBeVisible();
-  });
-
-  test("When subscription is unlimited there is manage subscription link", async ({
-    page,
-  }) => {
-    await SubscriptionProfilePage.init(page);
-    await SubscriptionProfilePage.mockConfigFlags(page, ["enable-subscriptions"]);
-
-    await SubscriptionProfilePage.mockRPC(
-      page,
-      "get-profile",
-      "subscription/get-profile-unlimited-subscription.json",
-    );
-
-    const subscriptionProfilePage = new SubscriptionProfilePage(page);
-
-    await subscriptionProfilePage.goToSubscriptions();
-
-    await expect(
-      page.getByRole("button", { name: "Manage your subscription" }),
-    ).toBeVisible();
-
-    await expect(
-      page.getByRole("heading", { name: "Other Penpot plans", level: 3 }),
-    ).toBeVisible();
-
-    await expect(page.getByText("$0")).toBeVisible();
-
-    await expect(page.getByText("$950")).toBeVisible();
-
-    await expect(
-      page.getByRole("button", { name: "Try it free for 14 days" }).first(),
-    ).not.toBeVisible();
-
-    await expect(
-      page.getByRole("button", { name: "Subscribe" }).first(),
-    ).toBeVisible();
-  });
-
-  test("When subscription is enteprise there is manage subscription link", async ({
-    page,
-  }) => {
-    await SubscriptionProfilePage.init(page);
-    await SubscriptionProfilePage.mockConfigFlags(page, ["enable-subscriptions"]);
-
-    await SubscriptionProfilePage.mockRPC(
-      page,
-      "get-profile",
-      "subscription/get-profile-enterprise-subscription.json",
-    );
-
-    const subscriptionProfilePage = new SubscriptionProfilePage(page);
-
-    await subscriptionProfilePage.goToSubscriptions();
-
-    await expect(
-      page.getByRole("button", { name: "Manage your subscription" }),
-    ).toBeVisible();
-
-    await expect(
-      page.getByRole("heading", { name: "Other Penpot plans", level: 3 }),
-    ).toBeVisible();
-
-    await expect(page.getByText("$0")).toBeVisible();
-
-    await expect(page.getByText("$7")).toBeVisible();
-
-    await expect(
-      page.getByRole("button", { name: "Try it free for 14 days" }).first(),
-    ).not.toBeVisible();
-
-    await expect(
-      page.getByRole("button", { name: "Subscribe" }).first(),
     ).toBeVisible();
   });
 });

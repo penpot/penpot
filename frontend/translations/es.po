@@ -4310,8 +4310,7 @@ msgstr ""
 #: src/app/main/ui/dashboard/subscription.cljs:160
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
-"¡Parece que tu equipo ha crecido! Tu plan incluye %s asientos, pero ahora "
-"estás usando más que eso."
+"¡Parece que tu equipo ha crecido! Tu plan incluye %s asientos, pero ahora estás usando %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:168
 #, markdown
