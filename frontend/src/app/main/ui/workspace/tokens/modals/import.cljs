@@ -114,6 +114,23 @@
                              :on-click handle-option-click
                              :set-ref (fn [_] nil)}]]]))
 
+(defn- has-token-files?
+  [file-paths]
+  (and (seq file-paths)
+       (some #(str/ends-with? % ".json") file-paths)))
+
+(defn- validate-token-files
+  [file-stream]
+  (->> file-stream
+       (rx/reduce (fn [acc [file-path file-text]]
+                    (conj acc [file-path file-text]))
+                  [])
+       (rx/tap (fn [file-entries]
+                 (let [file-paths (map first file-entries)]
+                   (when-not (has-token-files? file-paths)
+                     (throw (dwte/error-ex-info :error.import/no-token-files-found file-paths nil))))))
+       (rx/mapcat identity)))
+
 (mf/defc import-modal-body*
   {::mf/private true}
   []
@@ -152,11 +169,15 @@
                                          (= type "application/json")
                                          (str/ends-with? name ".json"))))))]
              (->> (rx/from files)
-                  (rx/mapcat (fn [file]
-                               (->> (wapi/read-file-as-text file)
-                                    (rx/map (fn [file-text]
-                                              [(.-webkitRelativePath file)
-                                               file-text])))))
+                  (rx/map (fn [file]
+                            (->> (wapi/read-file-as-text file)
+                                 (rx/map (fn [file-text]
+                                           [(.-webkitRelativePath file)
+                                            file-text])))))
+                  (rx/mapcat (fn [entries]
+                               (prn "entries" entries)
+                               entries))
+                  (validate-token-files)
                   (dwti/import-directory-stream)
                   (on-stream-imported "multiple"))
 
@@ -171,23 +192,25 @@
                              (first))
                  zipfile-name (str/strip-suffix (.-name zipfile) ".zip")]
              (->> (wapi/read-file-as-array-buffer zipfile)
-                  (rx/mapcat (fn [file-content]
-                               (let [zip-reader (uz/reader file-content)]
-                                 (->> (rx/from (uz/get-entries zip-reader))
-                                      (rx/mapcat
-                                       (fn [entries]
-                                         (->> (rx/from entries)
-                                              (rx/filter (fn [entry]
-                                                           (let [filename (.-filename entry)]
-                                                             (str/ends-with? filename ".json"))))
-                                              (rx/merge-map (fn [entry]
-                                                              (let [filename (str/concat zipfile-name "/" (.-filename entry))
-                                                                    content-promise (uz/read-as-text entry)]
-                                                                (-> content-promise
-                                                                    (.then (fn [text]
-                                                                             [filename text]))
-                                                                    (rx/from))))))))
-                                      (rx/finalize (partial uz/close zip-reader))))))
+                  (rx/mapcat
+                   (fn [file-content]
+                     (let [zip-reader (uz/reader file-content)]
+                       (->> (rx/from (uz/get-entries zip-reader))
+                            (rx/mapcat
+                             (fn [entries]
+                               (->> (rx/from entries)
+                                    (rx/filter (fn [entry]
+                                                 (let [filename (.-filename entry)]
+                                                   (str/ends-with? filename ".json"))))
+                                    (rx/merge-map (fn [entry]
+                                                    (let [filename (str/concat zipfile-name "/" (.-filename entry))
+                                                          content-promise (uz/read-as-text entry)]
+                                                      (-> content-promise
+                                                          (.then (fn [text]
+                                                                   [filename text]))
+                                                          (rx/from))))))))
+                            (rx/finalize (partial uz/close zip-reader))))))
+                  (validate-token-files)
                   (dwti/import-directory-stream)
                   (on-stream-imported "zip"))
 
