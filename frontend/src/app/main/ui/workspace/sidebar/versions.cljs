@@ -27,6 +27,7 @@
    [app.util.keyboard :as kbd]
    [app.util.time :as dt]
    [cuerdas.core :as str]
+   [lambdaisland.uri :as u]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -40,6 +41,18 @@
       (= subscription-name "unlimited") 30
       (= subscription-name "enterprise") 90
       :else 7)))
+
+(defn get-versions-warning-subtext
+  [team]
+  (let [is-owner?           (-> team :permissions :is-owner)
+        email-owner         (:email (some #(when (:is-owner %) %) (:members team)))
+        go-to-subscription  (dm/str (u/join cfg/public-uri "#/settings/subscriptions"))]
+
+    (if (contains? cfg/flags :subscriptions)
+      (if is-owner?
+        (tr "subscription.workspace.versions.warning.subtext-owner" go-to-subscription)
+        (tr "subscription.workspace.versions.warning.subtext-member" email-owner email-owner))
+      (tr "workspace.versions.warning.subtext" "support@penpot.app"))))
 
 (defn group-snapshots
   [data]
@@ -369,5 +382,4 @@
          [:> i18n/tr-html*
           {:tag-name "div"
            :class (stl/css :cta)
-           :content (tr "workspace.versions.warning.subtext"
-                        "mailto:support@penpot.app")}]]])]))
+           :content (get-versions-warning-subtext team)}]]])]))
