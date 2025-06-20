@@ -119,11 +119,12 @@ pub fn draw_stroke_on_path(
     antialias: bool,
 ) {
     let mut skia_path = path.to_skia_path();
-    skia_path.transform(path_transform.unwrap());
+    skia_path.transform(path_transform.unwrap_or(&Matrix::default()));
 
     let is_open = path.is_open();
+
     let mut paint: skia_safe::Handle<_> =
-        stroke.to_stroked_paint(path.is_open(), selrect, svg_attrs, scale, antialias);
+        stroke.to_stroked_paint(is_open, selrect, svg_attrs, scale, antialias);
 
     if let Some(filter) = shadow {
         paint.set_image_filter(filter.clone());

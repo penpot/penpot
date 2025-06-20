@@ -164,7 +164,8 @@
       :grow-type
       (api/set-shape-grow-type v)
 
-      (:layout-item-margin
+      (:layout-item-align-self
+       :layout-item-margin
        :layout-item-margin-type
        :layout-item-h-sizing
        :layout-item-v-sizing
