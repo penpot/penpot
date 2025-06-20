@@ -3,7 +3,9 @@ use crate::{
     render::{default_font, DEFAULT_EMOJI_FONT},
 };
 use skia_safe::{
-    self as skia, sampling_options, textlayout::{Paragraph as SkiaParagraph, ParagraphBuilder, ParagraphStyle}, FontMetrics, Point, Shader, TextBlob
+    self as skia, sampling_options,
+    textlayout::{Paragraph as SkiaParagraph, ParagraphBuilder, ParagraphStyle},
+    FontMetrics, Point, Shader, TextBlob,
 };
 use std::collections::HashSet;
 
@@ -219,7 +221,8 @@ impl TextContent {
         // TextBlob might be empty and, in this case, we return None
         // This is used to avoid rendering empty paths, but we can
         // revisit this logic later
-        if let Some((text_blob_path, text_blob_bounds, pattern_paint)) = Self::get_text_blob_path(leaf_text, font, blob_offset_x, blob_offset_y, &bounds)
+        if let Some((text_blob_path, text_blob_bounds, pattern_paint)) =
+            Self::get_text_blob_path(leaf_text, font, blob_offset_x, blob_offset_y, &bounds)
         {
             let mut text_path = text_blob_path.clone();
             let text_width = font.measure_text(leaf_text, None).0;
@@ -293,18 +296,28 @@ impl TextContent {
     ) -> Option<(skia::Path, skia::Rect, skia::Paint)> {
         let utf16_text = leaf_text.encode_utf16().collect::<Vec<u16>>();
         let text = unsafe { skia_safe::as_utf16_unchecked(&utf16_text) };
-        println!("@@@ TextContent::get_text_blob_path: text={:?}", leaf_text);
 
-        // TODO: check emoji
-        let mut surface = create_emoji_surface(blob_bounds.width() as i32, blob_bounds.height() as i32)?;
+        let scale_factor = 5.0; // FIXME: improve emoji image resolution. This should be calculated taking into account the zoom level
+        let width = (blob_bounds.width() * scale_factor).ceil() as i32;
+        let height = (blob_bounds.height() * scale_factor).ceil() as i32;
+
+        let mut surface = create_emoji_surface(width, height)?;
         let canvas = surface.canvas();
         canvas.clear(skia::Color::TRANSPARENT);
 
+        let mut sampled_font = font.clone();
+        sampled_font.set_size(font.size() * scale_factor);
+
         let mut paint = skia::Paint::default();
         paint.set_anti_alias(true);
-        let (_, metrics) = font.metrics();
+        let (_, metrics) = sampled_font.metrics();
         let baseline = -metrics.ascent as f32;
-        canvas.draw_str(leaf_text, skia_safe::Point::new(0.0, baseline), font, &paint);
+        canvas.draw_str(
+            leaf_text,
+            skia_safe::Point::new(0.0, baseline),
+            &sampled_font,
+            &paint,
+        );
 
         let image = surface.image_snapshot();
 
@@ -320,7 +333,7 @@ impl TextContent {
 
         let mut pattern_paint = skia_safe::Paint::default();
         let shader = skia_safe::Image::to_raw_shader(
-            &image, 
+            &image,
             (skia_safe::TileMode::Clamp, skia_safe::TileMode::Clamp),
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
             &Some(skia_safe::Matrix::translate((rect.left, rect.top))),
@@ -789,7 +802,6 @@ pub fn auto_height(paragraphs: &mut [ParagraphBuilder]) -> f32 {
         auto_height + paragraph.height()
     })
 }
-
 
 fn create_emoji_surface(width: i32, height: i32) -> Option<skia_safe::Surface> {
     skia_safe::surfaces::raster_n32_premul(skia_safe::ISize::new(width, height))
