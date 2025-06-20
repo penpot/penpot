@@ -65,23 +65,27 @@
 (defn generate-keep-touched
   [changes new-shape original-shape original-shapes page libraries]
   (let [objects            (pcb/get-objects changes)
-        orig-objects       (into {} (map (juxt :id identity) original-shapes))
-        orig-shapes-w-path (add-unique-path
-                            (reverse original-shapes)
-                            orig-objects
-                            (:id original-shape))
+        container          (ctn/make-container page :page)
+
+        orig-touched       (filter (comp seq :touched) original-shapes)
+
         new-shapes-w-path  (add-unique-path
                             (reverse (cfh/get-children-with-self objects (:id new-shape)))
                             objects
                             (:id new-shape))
         new-shapes-map     (into {} (map (juxt :shape-path identity) new-shapes-w-path))
-        orig-touched       (filter (comp seq :touched) orig-shapes-w-path)
 
-        container          (ctn/make-container page :page)]
+        orig-ref-shape     (ctf/find-ref-shape nil container libraries original-shape)
+        o-ref-shapes-wp    (add-unique-path
+                            (reverse (cfh/get-children-with-self objects (:id orig-ref-shape)))
+                            objects
+                            (:id orig-ref-shape))
+        o-ref-shapes-p-map (into {} (map (juxt :id :shape-path) o-ref-shapes-wp))]
     (reduce
      (fn [changes previous-shape]
-       (let [current-shape  (get new-shapes-map (:shape-path previous-shape))
-             orig-ref-shape (ctf/find-ref-shape nil container libraries previous-shape)]
+       (let [orig-ref-shape (ctf/find-ref-shape nil container libraries previous-shape)
+             shape-path     (get o-ref-shapes-p-map (:id orig-ref-shape))
+             current-shape  (get new-shapes-map shape-path)]
          (if current-shape
            (cll/update-attrs-on-switch
             changes current-shape previous-shape new-shape original-shape orig-ref-shape container)
