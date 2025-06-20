@@ -313,3 +313,5 @@ export class WorkspacePage extends BaseWebSocketPage {
       .click(clickOptions);
   }
 }
+
+export default WorkspacePage;
