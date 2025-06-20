@@ -191,6 +191,12 @@ impl<'a> State<'a> {
         }
     }
 
+    pub fn update_tile_for_shape(&mut self, shape_id: Uuid) {
+        if let Some(shape) = self.shapes.get_mut(&shape_id) {
+            self.render_state.update_tile_for(shape);
+        }
+    }
+
     pub fn update_tile_for_current_shape(&mut self) {
         match self.current_shape.as_mut() {
             Some(shape) => {

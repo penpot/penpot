@@ -77,18 +77,23 @@
 
 ;; IMPORTANT: It should be noted that only TTF fonts can be stored.
 (defn- store-font-buffer
-  [font-data font-array-buffer emoji? fallback?]
-  (let [id-buffer (:family-id-buffer font-data)
+  [shape-id font-data font-array-buffer emoji? fallback?]
+  (let [font-id-buffer  (:family-id-buffer font-data)
+        shape-id-buffer (uuid/get-u32 shape-id)
         size (.-byteLength font-array-buffer)
         ptr  (h/call wasm/internal-module "_alloc_bytes" size)
         heap (gobj/get ^js wasm/internal-module "HEAPU8")
         mem  (js/Uint8Array. (.-buffer heap) ptr size)]
     (.set mem (js/Uint8Array. font-array-buffer))
     (h/call wasm/internal-module "_store_font"
-            (aget id-buffer 0)
-            (aget id-buffer 1)
-            (aget id-buffer 2)
-            (aget id-buffer 3)
+            (aget shape-id-buffer 0)
+            (aget shape-id-buffer 1)
+            (aget shape-id-buffer 2)
+            (aget shape-id-buffer 3)
+            (aget font-id-buffer 0)
+            (aget font-id-buffer 1)
+            (aget font-id-buffer 2)
+            (aget font-id-buffer 3)
             (:weight font-data)
             (:style font-data)
             emoji?
@@ -96,13 +101,13 @@
     true))
 
 (defn- fetch-font
-  [font-data font-url emoji? fallback?]
+  [shape-id font-data font-url emoji? fallback?]
   {:key font-url
    :callback #(->> (http/send! {:method :get
                                 :uri font-url
                                 :response-type :buffer})
                    (rx/map (fn [{:keys [body]}]
-                             (store-font-buffer font-data body emoji? fallback?))))})
+                             (store-font-buffer shape-id font-data body emoji? fallback?))))})
 
 (defn- google-font-ttf-url
   [font-id font-variant-id]
@@ -122,7 +127,7 @@
     (dm/str (u/join cf/public-uri "fonts/" asset-id))))
 
 (defn- store-font-id
-  [font-data asset-id emoji? fallback?]
+  [shape-id font-data asset-id emoji? fallback?]
   (when asset-id
     (let [uri (font-id->ttf-url (:font-id font-data) asset-id (:font-variant-id font-data))
           id-buffer (uuid/get-u32 (:wasm-id font-data))
@@ -136,7 +141,7 @@
                                        (:style font-data)
                                        emoji?))]
       (when-not font-stored?
-        (fetch-font font-data uri emoji? fallback?)))))
+        (fetch-font shape-id font-data uri emoji? fallback?)))))
 
 (defn serialize-font-style
   [font-style]
@@ -167,7 +172,7 @@
   (js/Number font-weight))
 
 (defn store-font
-  [font]
+  [shape-id font]
   (let [font-id (get font :font-id)
         font-variant-id (get font :font-variant-id)
         emoji? (get font :is-emoji false)
@@ -184,11 +189,11 @@
                    :font-variant-id font-variant-id
                    :style style
                    :weight weight}]
-    (store-font-id font-data asset-id emoji? fallback?)))
+    (store-font-id shape-id font-data asset-id emoji? fallback?)))
 
 (defn store-fonts
-  [fonts]
-  (keep (fn [font] (store-font font)) fonts))
+  [shape-id fonts]
+  (keep (fn [font] (store-font shape-id font)) fonts))
 
 
 (defn add-emoji-font

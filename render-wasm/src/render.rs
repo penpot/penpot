@@ -220,14 +220,14 @@ impl RenderState {
         let tiles = tiles::TileHashMap::new();
 
         RenderState {
-            gpu_state,
+            gpu_state: gpu_state.clone(),
             options: RenderOptions::default(),
             surfaces,
             fonts,
             viewbox,
             cached_viewbox: Viewbox::new(0., 0.),
             cached_target_snapshot: None,
-            images: ImageStore::new(),
+            images: ImageStore::new(gpu_state.context.clone()),
             background_color: skia::Color::TRANSPARENT,
             render_request_id: None,
             render_in_progress: false,
@@ -257,7 +257,7 @@ impl RenderState {
     }
 
     pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
-        self.images.add(id, image_data, &mut self.gpu_state.context)
+        self.images.add(id, image_data)
     }
 
     pub fn has_image(&mut self, id: &Uuid) -> bool {
