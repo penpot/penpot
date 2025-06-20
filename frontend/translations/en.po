@@ -7279,6 +7279,10 @@ msgstr "Token Set grouping is not supported yet."
 msgid "workspace.tokens.import-error"
 msgstr "Import Error:"
 
+#: src/app/main/ui/workspace/tokens/modals/import.cljs
+msgid "workspace.tokens.no-token-files-found"
+msgstr "No tokens, sets, or themes were found in this file."
+
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:99
 msgid "workspace.tokens.import-multiple-files"
 msgstr "In multiple files, the file name / path are the set names."
