@@ -541,23 +541,23 @@ fn child_position(
     child_axis: &ChildAxis,
     track: &TrackData,
 ) -> Point {
-    let delta = child_axis.margin_across_start
-        + match child.layout_item {
-            Some(LayoutItem {
-                align_self: Some(align_self),
-                ..
-            }) => match align_self {
-                AlignSelf::Center => (track.across_size - child_axis.across_size) / 2.0,
-                AlignSelf::End => track.across_size - child_axis.across_size,
-                _ => 0.0,
-            },
-            _ => match layout_data.align_items {
-                AlignItems::Center => (track.across_size - child_axis.across_size) / 2.0,
-                AlignItems::End => track.across_size - child_axis.across_size,
-                _ => 0.0,
-            },
-        };
-    shape_anchor + layout_axis.main_v * child_axis.margin_main_start + layout_axis.across_v * delta
+    let across_position =  match child.layout_item {
+        Some(LayoutItem {
+            align_self: Some(align_self),
+            ..
+        }) => match align_self {
+            AlignSelf::Center => (track.across_size - child_axis.across_size) / 2.0,
+            AlignSelf::End => track.across_size - child_axis.across_size - child_axis.margin_across_end,
+            _ => child_axis.margin_across_start,
+        },
+        _ => match layout_data.align_items {
+            AlignItems::Center => (track.across_size - child_axis.across_size) / 2.0,
+            AlignItems::End => track.across_size - child_axis.across_size - child_axis.margin_across_end,
+            _ => child_axis.margin_across_start,
+        },
+    };
+
+    shape_anchor + layout_axis.main_v * child_axis.margin_main_start + layout_axis.across_v * across_position
 }
 
 pub fn reflow_flex_layout(
