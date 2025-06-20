@@ -304,11 +304,8 @@
   (ptk/reify ::handle-drawing-end
     ptk/UpdateEvent
     (update [_ state]
-      (let [content (dm/get-in state [:workspace-drawing :object :content])]
-
-        (assert (path/check-path-content content)
-                "expected valid path content instance")
-
+      (let [content (some-> (dm/get-in state [:workspace-drawing :object :content])
+                            (path/check-path-content))]
         (if (> (count content) 1)
           (assoc-in state [:workspace-drawing :object :initialized?] true)
           state)))
