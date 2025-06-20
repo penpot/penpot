@@ -21,12 +21,22 @@ export class WasmWorkspacePage extends WorkspacePage {
     this.canvas = page.getByTestId("canvas-wasm-shapes");
   }
 
-  async waitForFirstRender() {
+  async waitForFirstRender(config = {}) {
+    const options = { hideUI: true, ...config };
+
     await expect(this.pageName).toHaveText("Page 1");
+    if (options.hideUI) {
+      await this.hideUI();
+    }
     await this.canvas.waitFor({ state: "visible" });
     await this.page.waitForFunction(() => {
       return window.wasmSetObjectsFinished;
     });
+  }
+
+  async hideUI() {
+    await this.page.keyboard.press("\\");
+    await expect(this.pageName).not.toBeVisible();
   }
 
   static async mockGoogleFont(page, fontSlug, assetFilename, options = {}) {
