@@ -220,6 +220,7 @@
            (when on-dispose (on-dispose))))))))
 
 ;; https://reactjs.org/docs/hooks-faq.html#how-to-get-the-previous-props-or-state
+;; FIXME: replace with rumext
 (defn use-previous
   "Returns the value from previous render cycle."
   [value]
@@ -238,6 +239,7 @@
       (reset! ptr value))
     ptr))
 
+;; FIXME: replace with rumext
 (defn use-update-ref
   [value]
   (let [ref (mf/use-ref value)]
@@ -245,6 +247,7 @@
       (mf/set-ref-val! ref value))
     ref))
 
+;; FIXME: replace with rumext
 (defn use-ref-callback
   "Returns a stable callback pointer what calls the interned
   callback. The interned callback will be automatically updated on
@@ -260,6 +263,7 @@
          (when ^boolean obj
            (apply (.-f obj) args)))))))
 
+;; FIXME: replace with rumext
 (defn use-ref-value
   "Returns a ref that will be automatically updated when the value is changed"
   [v]
@@ -268,6 +272,7 @@
       (mf/set-ref-val! ref v))
     ref))
 
+;; FIXME: replace with rumext
 (defn use-equal-memo
   [val]
   (let [ref (mf/use-ref nil)]
@@ -285,6 +290,7 @@
    (mf/with-memo [focus objects]
      (cpf/focus-objects objects focus))))
 
+;; FIXME: replace with rumext
 (defn use-debounce
   [ms value]
   (let [[state update-state-fn] (mf/useState value)
