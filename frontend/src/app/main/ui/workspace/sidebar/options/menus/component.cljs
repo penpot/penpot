@@ -387,7 +387,7 @@
            (str duplicated-msg " " "Adjust the values so they can be retrieved.")]]))]))
 
 
-(mf/defc component-variant*
+(mf/defc component-variant-copy*
   [{:keys [component shape data]}]
   (let [component-id (:id component)
         properties   (:variant-properties component)
@@ -397,6 +397,10 @@
 
         variant-components (cfv/find-variant-components data objects variant-id)
 
+        duplicated-ids     (->> (cfv/find-variant-components data objects variant-id)
+                                get-component-ids-with-duplicated-variant-props-and-values)
+        duplicated?        (d/not-empty? duplicated-ids)
+
         prop-vals          (mf/with-memo [data objects variant-id]
                              (cfv/extract-properties-values data objects variant-id))
 
@@ -405,6 +409,11 @@
          (mf/deps prop-vals)
          (fn [prop-name]
            (get-variant-options prop-name prop-vals)))
+
+        select-shapes-with-duplicated
+        (mf/use-fn
+         (mf/deps duplicated-ids)
+         #(st/emit! (dw/select-shapes (into (d/ordered-set) duplicated-ids))))
 
         switch-component
         (mf/use-fn
@@ -421,16 +430,27 @@
                (when nearest-comp
                  (st/emit! (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true)))))))]
 
-    [:div {:class (stl/css :variant-property-list)}
-     (for [[pos prop] (map vector (range) properties)]
-       [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-container)}
-        [:*
-         [:span {:class (stl/css :variant-property-name)}
-          (:name prop)]
-         [:> select* {:default-selected (:value prop)
-                      :options (clj->js (get-options (:name prop)))
-                      :empty-to-end true
-                      :on-change (partial switch-component pos)}]]])]))
+    [:*
+     [:div {:class (stl/css :variant-property-list)}
+      (for [[pos prop] (map vector (range) properties)]
+        [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-container)}
+         [:*
+          [:span {:class (stl/css :variant-property-name)}
+           (:name prop)]
+          [:> select* {:default-selected (:value prop)
+                       :options (clj->js (get-options (:name prop)))
+                       :empty-to-end true
+                       :on-change (partial switch-component pos)}]]])]
+
+     (when duplicated?
+       [:div {:class (stl/css :variant-warning-wrapper)}
+        [:> icon* {:icon-id "msg-neutral"
+                   :class (stl/css :variant-warning-darken)}]
+        [:div {:class (stl/css :variant-warning-highlight)}
+         (tr "workspace.options.component.variant.duplicated.copy.title")]
+        [:button {:class (stl/css :variant-warning-button)
+                  :on-click select-shapes-with-duplicated}
+         (tr "workspace.options.component.variant.duplicated.copy.locate")]])]))
 
 
 (mf/defc component-swap-item
@@ -879,9 +899,9 @@
                      (not (:deleted component))
                      (not swap-opened?)
                      (not multi))
-            [:> component-variant* {:component component
-                                    :shape shape
-                                    :data data}])
+            [:> component-variant-copy* {:component component
+                                         :shape shape
+                                         :data data}])
 
           (when (and is-variant? main-instance? same-variant? (not swap-opened?))
             [:> component-variant-main-instance* {:components components

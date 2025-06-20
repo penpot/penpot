@@ -5487,6 +5487,14 @@ msgstr "Variant"
 msgid "workspace.options.component.variant.duplicated.group.locate"
 msgstr "Locate duplicated variants"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:440
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr "This component has conflicting variants. Make sure each variation has a unique set of property values."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "Go to main component"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
 msgid "workspace.options.component.variant.duplicated.group.title"
 msgstr "Some variants have identical properties and values"
