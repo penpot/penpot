@@ -3,9 +3,7 @@ use crate::{
     render::{default_font, DEFAULT_EMOJI_FONT},
 };
 use skia_safe::{
-    self as skia,
-    textlayout::{Paragraph as SkiaParagraph, ParagraphBuilder, ParagraphStyle},
-    FontMetrics, Point, TextBlob,
+    self as skia, sampling_options, textlayout::{Paragraph as SkiaParagraph, ParagraphBuilder, ParagraphStyle}, FontMetrics, Point, Shader, TextBlob
 };
 use std::collections::HashSet;
 
@@ -191,6 +189,7 @@ impl TextContent {
                         &font,
                         blob_offset_x,
                         blob_offset_y,
+                        &self.bounds,
                         style_metric,
                         antialias,
                     ) {
@@ -212,6 +211,7 @@ impl TextContent {
         font: &skia::Font,
         blob_offset_x: f32,
         blob_offset_y: f32,
+        bounds: &skia::Rect,
         style_metric: &skia::textlayout::StyleMetrics,
         antialias: bool,
     ) -> Option<(skia::Path, skia::Paint)> {
@@ -219,8 +219,7 @@ impl TextContent {
         // TextBlob might be empty and, in this case, we return None
         // This is used to avoid rendering empty paths, but we can
         // revisit this logic later
-        if let Some((text_blob_path, text_blob_bounds)) =
-            Self::get_text_blob_path(leaf_text, font, blob_offset_x, blob_offset_y)
+        if let Some((text_blob_path, text_blob_bounds, pattern_paint)) = Self::get_text_blob_path(leaf_text, font, blob_offset_x, blob_offset_y, &bounds)
         {
             let mut text_path = text_blob_path.clone();
             let text_width = font.measure_text(leaf_text, None).0;
@@ -246,7 +245,7 @@ impl TextContent {
             let mut paint = style_metric.text_style.foreground();
             paint.set_anti_alias(antialias);
 
-            return Some((text_path, paint));
+            return Some((text_path, pattern_paint));
         }
         None
     }
@@ -290,19 +289,53 @@ impl TextContent {
         font: &skia::Font,
         blob_offset_x: f32,
         blob_offset_y: f32,
-    ) -> Option<(skia::Path, skia::Rect)> {
+        blob_bounds: &skia::Rect,
+    ) -> Option<(skia::Path, skia::Rect, skia::Paint)> {
         let utf16_text = leaf_text.encode_utf16().collect::<Vec<u16>>();
         let text = unsafe { skia_safe::as_utf16_unchecked(&utf16_text) };
+        println!("@@@ TextContent::get_text_blob_path: text={:?}", leaf_text);
 
         // TODO: check emoji
-        if let Some(mut text_blob) = TextBlob::from_text(text, font) {
-            let path = SkiaParagraph::get_path(&mut text_blob);
-            let d = Point::new(blob_offset_x, blob_offset_y);
-            let offset_path = path.with_offset(d);
-            let bounds = text_blob.bounds();
-            return Some((offset_path, *bounds));
-        }
-        None
+        let mut surface = create_emoji_surface(blob_bounds.width() as i32, blob_bounds.height() as i32)?;
+        let canvas = surface.canvas();
+        canvas.clear(skia::Color::TRANSPARENT);
+
+        let mut paint = skia::Paint::default();
+        paint.set_anti_alias(true);
+        let (_, metrics) = font.metrics();
+        let baseline = -metrics.ascent as f32;
+        canvas.draw_str(leaf_text, skia_safe::Point::new(0.0, baseline), font, &paint);
+
+        let image = surface.image_snapshot();
+
+        let mut rect = skia_safe::Rect::from_xywh(
+            blob_offset_x,
+            blob_offset_y,
+            blob_bounds.width(),
+            blob_bounds.height(),
+        );
+
+        let mut path = skia_safe::Path::new();
+        path.add_rect(&mut rect, None);
+
+        let mut pattern_paint = skia_safe::Paint::default();
+        let shader = skia_safe::Image::to_raw_shader(
+            &image, 
+            (skia_safe::TileMode::Clamp, skia_safe::TileMode::Clamp),
+            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
+            &Some(skia_safe::Matrix::translate((rect.left, rect.top))),
+        );
+        pattern_paint.set_shader(shader);
+        Some((path, *blob_bounds, pattern_paint))
+
+        // if let Some(mut text_blob) = TextBlob::from_text(text, font) {
+        //     let path = SkiaParagraph::get_path(&mut text_blob);
+        //     let d = Point::new(blob_offset_x, blob_offset_y);
+        //     let offset_path = path.with_offset(d);
+        //     let bounds = text_blob.bounds();
+        //     return Some((offset_path, *bounds, pattern_paint));
+        // }
+        // None
     }
 
     pub fn grow_type(&self) -> GrowType {
@@ -755,4 +788,9 @@ pub fn auto_height(paragraphs: &mut [ParagraphBuilder]) -> f32 {
         paragraph.layout(f32::MAX);
         auto_height + paragraph.height()
     })
+}
+
+
+fn create_emoji_surface(width: i32, height: i32) -> Option<skia_safe::Surface> {
+    skia_safe::surfaces::raster_n32_premul(skia_safe::ISize::new(width, height))
 }
