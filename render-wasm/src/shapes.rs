@@ -631,14 +631,15 @@ impl Shape {
 
     // TODO: Maybe store this inside the shape
     pub fn bounds(&self) -> Bounds {
+        let extrect = self.extrect();
         let mut bounds = Bounds::new(
-            Point::new(self.selrect.x(), self.selrect.y()),
-            Point::new(self.selrect.x() + self.selrect.width(), self.selrect.y()),
+            Point::new(extrect.x(), extrect.y()),
+            Point::new(extrect.x() + extrect.width(), extrect.y()),
             Point::new(
-                self.selrect.x() + self.selrect.width(),
-                self.selrect.y() + self.selrect.height(),
+                extrect.x() + extrect.width(),
+                extrect.y() + extrect.height(),
             ),
-            Point::new(self.selrect.x(), self.selrect.y() + self.selrect.height()),
+            Point::new(extrect.x(), extrect.y() + extrect.height()),
         );
 
         let center = self.center();
