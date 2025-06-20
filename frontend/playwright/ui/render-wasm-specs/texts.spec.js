@@ -101,3 +101,30 @@ test("Renders a file with styled texts", async ({ page }) => {
   await workspace.waitForFirstRender();
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+
+test("Renders a file with texts with images", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-images.json");
+
+  await workspace.goToWorkspace({
+    id: "6bd7c17d-4f59-815e-8006-5e96453952b0",
+    pageId: "6bd7c17d-4f59-815e-8006-5e96453952b1",
+  });
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with multiple emoji", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-emoji-board.json");
+
+  await workspace.goToWorkspace({
+    id: "6bd7c17d-4f59-815e-8006-5e999f38f210",
+    pageId: "6bd7c17d-4f59-815e-8006-5e999f38f211",
+  });
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
