@@ -935,10 +935,6 @@ impl Shape {
     pub fn has_fills(&self) -> bool {
         !self.fills.is_empty()
     }
-
-    pub fn has_inner_strokes(&self) -> bool {
-        self.strokes.iter().any(|s| s.kind == StrokeKind::Inner)
-    }
 }
 
 /*
