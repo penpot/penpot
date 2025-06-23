@@ -152,12 +152,3 @@
            (events/unlistenByKey key2))))
 
     [:> :input props]))
-
-;; FIXME: this causes some weird interactions because of using apply-value
-;; [:*
-;;  [:> :input props]
-;;  [:datalist {:id list-id}
-;;   (for [color-name cc/color-names]
-;;     [:option color-name])]
-;;  ]))
-
