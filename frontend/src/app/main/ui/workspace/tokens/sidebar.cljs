@@ -50,7 +50,7 @@
     :border-radius "corner-radius"
     :color "drop"
     :boolean "boolean-difference"
-    :font-size "percentage"
+    :font-size "text-font-size"
     :opacity "percentage"
     :number "number"
     :rotation "rotation"
