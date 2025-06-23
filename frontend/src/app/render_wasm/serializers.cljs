@@ -295,6 +295,10 @@
   [value enum-map]
   (get enum-map value 0))
 
+(defn serialize-vertical-align
+  [vertical-align]
+  (serialize-enum vertical-align {"top" 0 "center" 1 "bottom" 2}))
+
 (defn serialize-text-align
   [text-align]
   (serialize-enum text-align {"left" 0 "center" 1 "right" 2 "justify" 3}))

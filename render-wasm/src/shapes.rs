@@ -157,6 +157,24 @@ impl ConstraintH {
 }
 
 #[derive(Debug, Clone, PartialEq, Copy)]
+pub enum VerticalAlign {
+    Top,
+    Center,
+    Bottom,
+}
+
+impl VerticalAlign {
+    pub fn from(value: u8) -> Self {
+        match value {
+            0 => Self::Top,
+            1 => Self::Center,
+            2 => Self::Bottom,
+            _ => Self::Top,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum ConstraintV {
     Top,
     Bottom,
@@ -195,6 +213,7 @@ pub struct Shape {
     pub fills: Vec<Fill>,
     pub strokes: Vec<Stroke>,
     pub blend_mode: BlendMode,
+    pub vertical_align: VerticalAlign,
     pub blur: Blur,
     pub opacity: f32,
     pub hidden: bool,
@@ -221,6 +240,7 @@ impl Shape {
             fills: Vec::with_capacity(1),
             strokes: Vec::with_capacity(1),
             blend_mode: BlendMode::default(),
+            vertical_align: VerticalAlign::Top,
             opacity: 1.,
             hidden: false,
             blur: Blur::default(),
@@ -310,6 +330,14 @@ impl Shape {
 
     pub fn set_opacity(&mut self, opacity: f32) {
         self.opacity = opacity;
+    }
+
+    pub fn set_vertical_align(&mut self, align: VerticalAlign) {
+        self.vertical_align = align;
+    }
+
+    pub fn vertical_align(&self) -> VerticalAlign {
+        self.vertical_align
     }
 
     pub fn set_constraint_h(&mut self, constraint: Option<ConstraintH>) {

@@ -19,6 +19,7 @@ use math::{Bounds, Matrix};
 use mem::SerializableResult;
 use shapes::{
     BoolType, ConstraintH, ConstraintV, StructureEntry, StructureEntryType, TransformEntry, Type,
+    VerticalAlign,
 };
 use skia_safe as skia;
 use state::State;
@@ -343,6 +344,13 @@ pub extern "C" fn set_shape_svg_raw_content() {
 pub extern "C" fn set_shape_blend_mode(mode: i32) {
     with_current_shape!(state, |shape: &mut Shape| {
         shape.set_blend_mode(render::BlendMode::from(mode));
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn set_shape_vertical_align(align: u8) {
+    with_current_shape!(state, |shape: &mut Shape| {
+        shape.set_vertical_align(VerticalAlign::from(align));
     });
 }
 

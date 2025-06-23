@@ -1,4 +1,5 @@
 use super::{RenderState, Shape, SurfaceId};
+use crate::shapes::VerticalAlign;
 use skia_safe::{textlayout::Paragraph, Paint, Path};
 
 pub fn render(
@@ -11,8 +12,16 @@ pub fn render(
         .surfaces
         .canvas(surface_id.unwrap_or(SurfaceId::Fills));
 
+    let container_height = shape.selrect().height();
     for group in paragraphs {
-        let mut offset_y = 0.0;
+        let total_paragraphs_height: f32 = group.iter().map(|p| p.height()).sum();
+
+        let mut offset_y = match shape.vertical_align() {
+            VerticalAlign::Center => (container_height - total_paragraphs_height) / 2.0,
+            VerticalAlign::Bottom => container_height - total_paragraphs_height,
+            _ => 0.0,
+        };
+
         for skia_paragraph in group {
             let xy = (shape.selrect().x(), shape.selrect.y() + offset_y);
             skia_paragraph.paint(canvas, xy);

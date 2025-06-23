@@ -236,6 +236,7 @@
 
 (defn set-shape-text-images
   [shape-id content]
+
   (let [paragraph-set (first (get content :children))
         paragraphs (get paragraph-set :children)]
     (->> paragraphs
@@ -356,6 +357,10 @@
   ;; These values correspond to skia::BlendMode representation
   ;; https://rust-skia.github.io/doc/skia_safe/enum.BlendMode.html
   (h/call wasm/internal-module "_set_shape_blend_mode" (sr/translate-blend-mode blend-mode)))
+
+(defn set-shape-vertical-align
+  [vertical-align]
+  (h/call wasm/internal-module "_set_shape_vertical_align" (sr/serialize-vertical-align vertical-align)))
 
 (defn set-shape-opacity
   [opacity]
@@ -630,6 +635,8 @@
 (defn set-shape-text-content
   [shape-id content]
   (h/call wasm/internal-module "_clear_shape_text")
+  (set-shape-vertical-align (dm/get-prop content :vertical-align))
+
   (let [paragraph-set (first (dm/get-prop content :children))
         paragraphs (dm/get-prop paragraph-set :children)
         fonts (fonts/get-content-fonts content)
@@ -752,6 +759,7 @@
     (when (some? shadows) (set-shape-shadows shadows))
     (when (= type :text)
       (set-shape-grow-type grow-type))
+
     (when (or (ctl/any-layout? shape)
               (ctl/any-layout-immediate-child? objects shape))
       (set-layout-child shape))
