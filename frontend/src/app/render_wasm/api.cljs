@@ -245,7 +245,8 @@
 
 (defn set-shape-fills
   [shape-id fills]
-  (when (not-empty? fills)
+  (if (empty? fills)
+    (h/call wasm/internal-module "_clear_shape_fills")
     (let [fills (take types.fill/MAX-FILLS fills)
           image-fills (filter :fill-image fills)
           offset (mem/alloc-bytes (* (count fills) sr-fills/FILL-BYTE-SIZE))
