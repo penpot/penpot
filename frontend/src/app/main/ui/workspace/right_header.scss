@@ -232,3 +232,14 @@
     border: none;
   }
 }
+
+.unread {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--color-background-tertiary);
+  border-radius: 50%;
+  background: red;
+  top: 6px;
+  right: 6px;
+}

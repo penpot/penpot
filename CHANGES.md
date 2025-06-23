@@ -9,7 +9,7 @@
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features & Enhancements
-
+- Add visual indicator for new comments in the workspace [Taiga #11328](https://tree.taiga.io/project/penpot/issue/11328)
 - On components overrides, separate the content of the text from the rest of properties [Taiga #7434](https://tree.taiga.io/project/penpot/us/7434)
 - Improve dashboard's sidebar [Taiga #10700](https://tree.taiga.io/project/penpot/us/10700)
 
