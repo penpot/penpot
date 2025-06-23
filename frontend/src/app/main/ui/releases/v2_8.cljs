@@ -108,7 +108,7 @@
          [:div {:class (stl/css :feature)}
           [:p {:class (stl/css :feature-content)}
            "Continuing the development of our Design Tokens system, we keep launching new functionalities that will improve your workflow."]
-          
+
           [:p {:class (stl/css :feature-content)}
            "It is now possible to perform multi-file token import. This is perfect for handling more complex setups like separate JSON files for themes or metadata. The same goes for exporting. Now you can export tokens choosing between single or multi-file (check your team preference!), being able to preview both options before you decide."]
 
@@ -141,7 +141,7 @@
          [:div {:class (stl/css :feature)}
           [:p {:class (stl/css :feature-content)}
            "We know Penpot works perfectly for solo projects, but it’s always more fun and productive to work as a team. That's why we have made significant optimizations to the onboarding process to make your team mates getting started easier and faster."]
-          
+
           [:p {:class (stl/css :feature-content)}
            "- We have reduced the number of onboarding steps so new users can start designing sooner. Only essential data will be collected to help you set up your profile more efficiently."]
 
