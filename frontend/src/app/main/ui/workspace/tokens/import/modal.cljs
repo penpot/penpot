@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.modals.import
+(ns app.main.ui.workspace.tokens.import.modal
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.event :as ev]
@@ -16,7 +16,6 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.buttons.button :refer [button*]]
-   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
@@ -274,16 +273,3 @@
         :on-click handle-import-action
         :text-render render-button-text
         :default :zip}]]]))
-
-(mf/defc import-modal*
-  {::mf/register modal/components
-   ::mf/register-as :tokens/import}
-  []
-  [:div {:class (stl/css :modal-overlay)}
-   [:div {:class (stl/css :modal-dialog)}
-    [:> icon-button* {:class (stl/css :close-btn)
-                      :on-click modal/hide!
-                      :aria-label (tr "labels.close")
-                      :variant "ghost"
-                      :icon "close"}]
-    [:> import-modal-body*]]])
