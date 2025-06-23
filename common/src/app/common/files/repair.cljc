@@ -602,11 +602,6 @@
   (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
   file)
 
-(defmethod repair-error :variant-no-properties
-  [_ error file _]
-  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
-  file)
-
 (defmethod repair-error :variant-bad-variant-name
   [_ error file _]
   (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
