@@ -27,7 +27,7 @@
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
-   [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
+   [app.main.ui.workspace.tokens.common.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.sets :as tsets]
    [app.main.ui.workspace.tokens.sets-context-menu :refer [token-set-context-menu*]]
    [app.main.ui.workspace.tokens.themes :refer [themes-header*]]

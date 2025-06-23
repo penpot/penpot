@@ -9,15 +9,6 @@
 @use "../../../ds/_sizes.scss" as *;
 @import "refactor/common-refactor.scss";
 
-.modal-overlay {
-  @extend .modal-overlay-base;
-}
-
-.modal-dialog {
-  @extend .modal-container-base;
-  user-select: none;
-}
-
 .import-modal-wrapper {
   display: flex;
   flex-direction: column;
@@ -43,12 +34,6 @@
   display: flex;
   justify-content: flex-end;
   gap: var(--sp-s);
-}
-
-.close-btn {
-  position: absolute;
-  inset-block-start: var(--sp-s);
-  inset-inline-end: var(--sp-s);
 }
 
 .dropdown-trigger-btn {
