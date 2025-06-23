@@ -23,6 +23,7 @@
 
 .multiple-exports {
   @include flexRow;
+  grid-column: 1 / span 9;
   .label {
     @extend .mixed-bar;
   }
@@ -73,6 +74,6 @@
 .export-btn {
   @extend .button-secondary;
   @include uppercaseTitleTipography;
-  grid-column: 1 / span 8;
+  grid-column: 1 / span 9;
   height: $s-32;
 }
