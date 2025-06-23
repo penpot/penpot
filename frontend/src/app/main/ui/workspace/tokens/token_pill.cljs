@@ -162,6 +162,9 @@
         shape-ids         (into #{} xf:map-id selected-shapes)]
     (cft/shapes-applied-all? ids-by-attributes shape-ids attributes)))
 
+(def token-types-with-status-icon
+  #{:color :border-radius :rotation :sizing :dimensions :opacity :spacing :stroke-width})
+
 (mf/defc token-pill*
   {::mf/wrap [mf/memo]}
   [{:keys [on-click token on-context-menu selected-shapes active-theme-tokens]}]
@@ -208,7 +211,7 @@
             (or (dwtc/resolved-token-bullet-color theme-token)
                 (dwtc/resolved-token-bullet-color token))))
 
-        number-token (= type :number)
+        status-icon? (contains? token-types-with-status-icon type)
 
         on-click
         (mf/use-fn
@@ -255,7 +258,7 @@
 
     [:button {:class (stl/css-case
                       :token-pill true
-                      :token-pill-no-icon (and number-token (not errors?))
+                      :token-pill-no-icon (and (not status-icon?) (not errors?))
                       :token-pill-default can-edit?
                       :token-pill-applied (and can-edit? has-selected? (or half-applied? full-applied?))
                       :token-pill-invalid (and can-edit? errors?)
@@ -280,12 +283,13 @@
         {:icon-id "broken-link"
          :class (stl/css :token-pill-icon)}]
 
-       (not number-token)
-       (if color
-         [:& color-bullet {:color color :mini true}]
-         [:> token-status-icon*
-          {:icon-id token-status-id
-           :class (stl/css :token-pill-icon)}]))
+       color
+       [:& color-bullet {:color color :mini true}]
+
+       status-icon?
+       [:> token-status-icon*
+        {:icon-id token-status-id
+         :class (stl/css :token-pill-icon)}])
 
      (if contains-path?
        (let [[first-part last-part] (cfh/split-by-last-period name)]
