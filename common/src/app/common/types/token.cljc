@@ -186,6 +186,7 @@
        changed-sub-attr
        #{:m1 :m2 :m3 :m4})
 
+     (font-size-keys shape-attr) #{shape-attr}
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}

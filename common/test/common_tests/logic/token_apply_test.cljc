@@ -230,7 +230,8 @@
                                                    shape
                                                    txt/is-content-node?
                                                    d/txt-merge
-                                                   {:fills (ths/sample-fills-color :fill-color "#fabada")}))
+                                                   {:fills (ths/sample-fills-color :fill-color "#fabada")
+                                                    :font-size "1"}))
                                                 (:objects page)
                                                 {}))
 
