@@ -162,3 +162,16 @@ test("Renders a file with multiple emoji", async ({ page }) => {
   await workspace.waitForFirstRender();  
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Renders a file with texts with different alignments", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-align.json");
+
+  await workspace.goToWorkspace({
+    id: "692f368b-63ca-8141-8006-62925640b827",
+    pageId: "692f368b-63ca-8141-8006-62925640b828",
+  });
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
