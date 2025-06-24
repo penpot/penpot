@@ -185,3 +185,9 @@
    ::mf/register-as :tokens/font-size}
   [properties]
   [:& token-update-create-modal properties])
+
+(mf/defc line-height-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/line-height}
+  [properties]
+  [:& token-update-create-modal properties])

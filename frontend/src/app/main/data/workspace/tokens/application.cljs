@@ -391,6 +391,14 @@
             :fields [{:label "Font Size"
                       :key :font-size}]}}
 
+   :line-height
+   {:title "Line Height"
+    :attributes ctt/line-height-keys
+    :on-update-shape update-line-height
+    :modal {:key :tokens/line-height
+            :fields [{:label "Line Height"
+                      :key :line-height}]}}
+
    :stroke-width
    {:title "Stroke Width"
     :attributes ctt/stroke-width-keys

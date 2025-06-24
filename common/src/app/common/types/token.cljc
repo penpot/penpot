@@ -34,6 +34,7 @@
    :color         "color"
    :dimensions    "dimension"
    :font-size     "fontSizes"
+   :line-height   "lineHeights"
    :number        "number"
    :opacity       "opacity"
    :other         "other"
@@ -129,12 +130,18 @@
 
 (def font-size-keys (schema-keys schema:font-size))
 
-(def typography-keys (set/union font-size-keys))
+(def ^:private schema:line-height
+  [:map
+   [:line-height {:optional true} token-name-ref]])
+
+(def line-height-keys (schema-keys schema:line-height))
+
+(def typography-keys (set/union font-size-keys line-height-keys))
 
 (def ^:private schema:number
-  [:map
-   [:rotation {:optional true} token-name-ref]
-   [:line-height {:optional true} token-name-ref]])
+  [:merge
+   [:map [:rotation {:optional true} token-name-ref]]
+   schema:line-height])
 
 (def number-keys (schema-keys schema:number))
 
@@ -147,6 +154,7 @@
                          dimensions-keys
                          rotation-keys
                          typography-keys
+                         line-height-keys
                          number-keys))
 
 (def ^:private schema:tokens
@@ -161,6 +169,7 @@
    schema:rotation
    schema:number
    schema:font-size
+   schema:line-height
    schema:dimensions])
 
 (defn shape-attr->token-attrs
@@ -189,6 +198,7 @@
        #{:m1 :m2 :m3 :m4})
 
      (font-size-keys shape-attr) #{shape-attr}
+     (line-height-keys shape-attr) #{shape-attr}
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}

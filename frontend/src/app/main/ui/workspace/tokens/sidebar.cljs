@@ -52,6 +52,7 @@
     :color "drop"
     :boolean "boolean-difference"
     :font-size "text-font-size"
+    :line-height "drop"
     :opacity "percentage"
     :number "number"
     :rotation "rotation"
