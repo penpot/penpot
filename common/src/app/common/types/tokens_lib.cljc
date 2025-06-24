@@ -1498,26 +1498,29 @@ Will return a value that matches this schema:
 (defn get-tokens-of-unknown-type
   "Search for all tokens in the decoded json file that have a type that is not currently
    supported by Penpot. Returns a map token-path -> token type."
-  ([decoded-json]
-   (get-tokens-of-unknown-type decoded-json "" (get-json-format decoded-json)))
-  ([decoded-json parent-path json-format]
-   (let [type-key (if (= json-format :json-format/dtcg) "$type" "type")]
-     (reduce-kv
-      (fn [unknown-tokens k v]
-        (let [child-path (if (empty? parent-path)
-                           (name k)
-                           (str parent-path "." k))]
-          (if (and (map? v)
-                   (not (contains? v type-key)))
-            (let [nested-unknown-tokens (get-tokens-of-unknown-type v child-path json-format)]
-              (merge unknown-tokens nested-unknown-tokens))
-            (let [token-type-str (get v type-key)
-                  token-type (cto/dtcg-token-type->token-type token-type-str)]
-              (if (and (not (some? token-type)) (some? token-type-str))
-                (assoc unknown-tokens child-path token-type-str)
-                unknown-tokens)))))
-      nil
-      decoded-json))))
+  [decoded-json {:keys [json-format parent-path process-token-type]
+                 :or {json-format (get-json-format decoded-json)
+                      parent-path ""
+                      process-token-type identity}
+                 :as opts}]
+  (let [type-key (if (= json-format :json-format/dtcg) "$type" "type")]
+    (reduce-kv
+     (fn [unknown-tokens k v]
+       (let [child-path (if (empty? parent-path)
+                          (name k)
+                          (str parent-path "." k))]
+         (if (and (map? v)
+                  (not (contains? v type-key)))
+           (let [nested-unknown-tokens (get-tokens-of-unknown-type v (assoc opts :parent-path child-path))]
+             (merge unknown-tokens nested-unknown-tokens))
+           (let [token-type-str (get v type-key)
+                 token-type (-> (cto/dtcg-token-type->token-type token-type-str)
+                                (process-token-type))]
+             (if (and (not (some? token-type)) (some? token-type-str))
+               (assoc unknown-tokens child-path token-type-str)
+               unknown-tokens)))))
+     nil
+     decoded-json)))
 
 ;; === Serialization handlers for RPC API (transit) and database (fressian)
 

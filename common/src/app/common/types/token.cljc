@@ -129,6 +129,8 @@
 
 (def font-size-keys (schema-keys schema:font-size))
 
+(def typography-keys (set/union font-size-keys))
+
 (def ^:private schema:number
   [:map
    [:rotation {:optional true} token-name-ref]
@@ -144,7 +146,7 @@
                          spacing-keys
                          dimensions-keys
                          rotation-keys
-                         font-size-keys
+                         typography-keys
                          number-keys))
 
 (def ^:private schema:tokens
