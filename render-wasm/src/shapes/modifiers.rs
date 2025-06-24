@@ -115,8 +115,19 @@ fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds) {
     let x = bounds.min_x().round();
     let y = bounds.min_y().round();
 
-    let scale_width = f32::max(0.01, bounds.width().round() / bounds.width());
-    let scale_height = f32::max(0.01, bounds.height().round() / bounds.height());
+    let width = bounds.width();
+    let height = bounds.height();
+
+    let scale_width = if width > 0.1 {
+        f32::max(0.01, bounds.width().round() / bounds.width())
+    } else {
+        1.0
+    };
+    let scale_height = if height > 0.1 {
+        f32::max(0.01, bounds.height().round() / bounds.height())
+    } else {
+        1.0
+    };
 
     if f32::is_finite(scale_width)
         && f32::is_finite(scale_height)
