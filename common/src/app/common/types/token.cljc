@@ -33,7 +33,7 @@
    :border-radius "borderRadius"
    :color         "color"
    :dimensions    "dimension"
-   :font-size     "fontSize"
+   :font-size     "fontSizes"
    :number        "number"
    :opacity       "opacity"
    :other         "other"
