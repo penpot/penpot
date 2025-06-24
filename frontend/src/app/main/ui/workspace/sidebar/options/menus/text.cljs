@@ -324,6 +324,7 @@
          [:> grow-options opts]
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "labels.options")
+                           :data-testid "text-align-options-button"
                            :on-click toggle-more-options
                            :icon "menu"}]]
 

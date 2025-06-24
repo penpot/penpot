@@ -158,7 +158,6 @@ test("Renders a file with multiple emoji", async ({ page }) => {
     pageId: "6bd7c17d-4f59-815e-8006-5e999f38f211",
   });
 
-
   await workspace.waitForFirstRender();  
   await expect(workspace.canvas).toHaveScreenshot();
 });
@@ -174,4 +173,143 @@ test("Renders a file with texts with different alignments", async ({ page }) => 
   });
   await workspace.waitForFirstRender();
   await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Updates text alignment edition - part 1", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-multiple-texts-base.json");
+
+  await workspace.goToWorkspace({
+    id: "6bd7c17d-4f59-815e-8006-5c1f68846e43",
+    pageId: "f8b42814-8653-81cf-8006-638aacdc3ffb",
+  });
+  await workspace.waitForFirstRender({ hideUI: false });
+  await workspace.clickLeafLayer("Text 1");
+
+  const textOptionsButton = workspace.page.getByTestId("text-align-options-button");
+  const autoWidthButton = workspace.page.getByTitle("Auto width");
+  const autoHeightButton = workspace.page.getByTitle("Auto height");
+  const alignMiddleButton = workspace.page.getByTitle("Align middle");
+  const alignBottomButton = workspace.page.getByTitle("Align bottom");
+  const alignRightButton = workspace.page.getByTitle("Align right (Ctrl+Alt+R)");
+
+  await textOptionsButton.click();
+
+  await workspace.clickLeafLayer("Text 1");
+  await autoWidthButton.click();
+
+  await workspace.clickLeafLayer("Text 2");
+  await autoHeightButton.click();
+
+  await workspace.clickLeafLayer("Text 3");
+  await alignMiddleButton.click();
+  await alignRightButton.click();
+
+  await workspace.clickLeafLayer("Text 4");
+  await alignBottomButton.click();
+
+  await workspace.page.keyboard.press("Escape");
+  await workspace.hideUI();
+
+  await expect(workspace.canvas).toHaveScreenshot({timeout: 10000});
+});
+
+test("Updates text alignment edition - part 2", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-multiple-texts-base.json");
+
+  await workspace.goToWorkspace({
+    id: "6bd7c17d-4f59-815e-8006-5c1f68846e43",
+    pageId: "f8b42814-8653-81cf-8006-638aacdc3ffb",
+  });
+  await workspace.waitForFirstRender({ hideUI: false });
+  await workspace.clickLeafLayer("Text 1");
+
+  const textOptionsButton = workspace.page.getByTestId("text-align-options-button");
+  const alignTopButton = workspace.page.getByTitle("Align top");
+  const alignMiddleButton = workspace.page.getByTitle("Align middle");
+  const alignBottomButton = workspace.page.getByTitle("Align bottom");
+  const alignCenterButton = workspace.page.getByTitle("Align center (Ctrl+Alt+T)");
+  const alignJustifyButton = workspace.page.getByTitle("Justify (Ctrl+Alt+J)");
+  const LTRButton = workspace.page.getByTitle("LTR");
+  const RTLButton = workspace.page.getByTitle("RTL");
+
+  await textOptionsButton.click();
+
+  await workspace.clickLeafLayer("Text 5");
+  await alignBottomButton.click();
+  await alignTopButton.click();
+  await alignCenterButton.click();
+
+  await workspace.clickLeafLayer("Text 6");
+  await alignJustifyButton.click();
+  await RTLButton.click();
+
+  await workspace.clickLeafLayer("Text 7");
+  await alignJustifyButton.click();
+  await RTLButton.click();
+  await LTRButton.click();
+
+  await workspace.clickLeafLayer("Text 8");
+  await alignMiddleButton.click();
+  await alignJustifyButton.click();
+  await RTLButton.click();
+
+  await workspace.page.keyboard.press("Escape");
+  await workspace.hideUI();
+
+  await expect(workspace.canvas).toHaveScreenshot({timeout: 10000});
+});
+
+test("Updates text alignment edition - part 3", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-multiple-texts-base.json");
+
+  await workspace.goToWorkspace({
+    id: "6bd7c17d-4f59-815e-8006-5c1f68846e43",
+    pageId: "f8b42814-8653-81cf-8006-638aacdc3ffb",
+  });
+  await workspace.waitForFirstRender({ hideUI: false });
+  await workspace.clickLeafLayer("Text 1");
+
+  const textOptionsButton = workspace.page.getByTestId("text-align-options-button");
+  const autoWidthButton = workspace.page.getByTitle("Auto width");
+  const autoHeightButton = workspace.page.getByTitle("Auto height");
+  const alignMiddleButton = workspace.page.getByTitle("Align middle");
+  const alignBottomButton = workspace.page.getByTitle("Align bottom");
+  const alignLeftButton = workspace.page.getByTitle("Align left (Ctrl+Alt+L)");
+  const alignCenterButton = workspace.page.getByTitle("Align center (Ctrl+Alt+T)");
+  const alignJustifyButton = workspace.page.getByTitle("Justify (Ctrl+Alt+J)");
+  const RTLButton = workspace.page.getByTitle("RTL");
+
+  await textOptionsButton.click();
+
+  await workspace.clickLeafLayer("Text 9");
+  await autoHeightButton.click();
+  await alignBottomButton.click();
+  await alignJustifyButton.click();
+  await RTLButton.click();
+
+  await workspace.clickLeafLayer("Text 10");
+  await alignBottomButton.click();
+  await alignJustifyButton.click();
+  await RTLButton.click();
+  await autoWidthButton.click();
+
+  await workspace.clickLeafLayer("Text 11");
+  await alignCenterButton.click();
+  await alignBottomButton.click();
+
+  await workspace.clickLeafLayer("Text 12");
+  await alignCenterButton.click();
+  await alignLeftButton.click();
+  await alignMiddleButton.click();
+
+  await workspace.page.keyboard.press("Escape");
+  await workspace.hideUI();
+
+  await expect(workspace.canvas).toHaveScreenshot({timeout: 10000});
 });
