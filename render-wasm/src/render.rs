@@ -765,13 +765,11 @@ impl RenderState {
         self.pending_nodes.prepare(tree);
 
         self.current_tile = None;
-        // if let Some(next_tile) = self.pending_tiles.pop() {
-        //     self.update_render_context(&next_tile);
-        // }
 
         self.render_in_progress = true;
         self.render_is_full = full;
         if self.render_is_full {
+            println!("pending_nodes.add_root");
             self.pending_nodes.add_root();
         }
         self.apply_drawing_to_render_canvas(None);
@@ -979,6 +977,7 @@ impl RenderState {
         scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(bool, bool), String> {
+        println!("render_shape_tree_full:begin");
         let result = self.render_shape_tree_full_uncached(
             tree,
             modifiers,
@@ -998,6 +997,7 @@ impl RenderState {
         }
 
         debug::render_wasm_label(self);
+        println!("render_shape_tree_full:end");
         Ok((is_empty, should_stop_rendering))
     }
 
@@ -1096,6 +1096,7 @@ impl RenderState {
                     .to_string(),
             )?;
 
+            println!("a {} {}", element.id, node_render_state.id.is_nil());
             if !node_render_state.id.is_nil() {
                 let mut transformed_element: Cow<Shape> = Cow::Borrowed(element);
 
@@ -1103,9 +1104,11 @@ impl RenderState {
                     transformed_element.to_mut().apply_transform(modifier);
                 }
 
-                let is_visible = transformed_element.extrect().intersects(self.render_area)
-                    && !transformed_element.hidden
-                    && !transformed_element.visually_insignificant(self.get_scale_mut());
+                // let is_visible = transformed_element.extrect().intersects(self.render_area)
+                //     && !transformed_element.hidden
+                //     && !transformed_element.visually_insignificant(self.get_scale_mut());
+
+                let is_visible = true;
 
                 if self.options.is_debug_visible() {
                     debug::render_debug_shape(self, &transformed_element, is_visible);
@@ -1116,6 +1119,7 @@ impl RenderState {
                 }
             }
 
+            println!("b");
             // If the shape is not in the tile set, then we update
             // it.
             if self.get_tiles_of(node_id).is_none() {
@@ -1123,7 +1127,9 @@ impl RenderState {
                 self.update_tile_for(element);
             }
 
+            println!("c");
             if !element.id.is_nil() {
+                println!("render_shape_tree_full_uncached_shape_tiles");
                 let mut tiles_opt = self.get_tiles_of(element.id);
                 let tiles = tiles_opt.as_mut().unwrap().clone();
                 self.render_shape_tree_full_uncached_shape_tiles(
@@ -1138,7 +1144,8 @@ impl RenderState {
                 self.pending_nodes.add_children_safeguard(element, mask);
             }
 
-            if element.is_recursive() {
+            println!("d {}", element.is_recursive());
+            if element.is_recursive() || element.id.is_nil() {
                 let children_clip_bounds =
                     node_render_state.get_children_clip_bounds(element, modifiers.get(&element.id));
 
@@ -1153,12 +1160,14 @@ impl RenderState {
                     });
                 }
 
+                println!("children_ids {}", children_ids.len());
                 for child_id in children_ids.iter() {
                     println!("children id {}", child_id);
                     self.pending_nodes.add_child(child_id, children_clip_bounds);
                 }
             }
 
+            println!("e");
             // We try to avoid doing too many calls to get_time
             if self.should_stop_rendering(iteration, timestamp) {
                 return Ok((is_empty, true));
@@ -1283,10 +1292,12 @@ impl RenderState {
         scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(), String> {
+        println!("render_shape_tree_partial:begin");
         let mut should_stop = false;
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
                 if self.surfaces.has_cached_tile_surface(current_tile) {
+                    println!("cached");
                     performance::begin_measure!("render_shape_tree::cached");
                     let tile_rect = self.get_current_tile_bounds();
                     self.surfaces.draw_cached_tile_surface(
@@ -1305,6 +1316,7 @@ impl RenderState {
                         );
                     }
                 } else {
+                    println!("uncached");
                     performance::begin_measure!("render_shape_tree::uncached");
                     let (is_empty, early_return) = self.render_shape_tree_partial_uncached(
                         tree,
@@ -1373,7 +1385,7 @@ impl RenderState {
 
         ui::render(self, tree, modifiers, structure);
         debug::render_wasm_label(self);
-
+        println!("render_shape_tree_partial:end");
         Ok(())
     }
 
