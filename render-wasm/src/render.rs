@@ -672,7 +672,7 @@ impl RenderState {
 
     pub fn cancel_animation_frame(&mut self) {
         if self.render_in_progress {
-            self.render_in_progress = false;
+            // self.render_in_progress = false;
             if let Some(frame_id) = self.render_request_id {
                 wapi::cancel_animation_frame!(frame_id);
             }
@@ -765,9 +765,9 @@ impl RenderState {
         self.pending_nodes.prepare(tree);
 
         self.current_tile = None;
-        if let Some(next_tile) = self.pending_tiles.pop() {
-            self.update_render_context(&next_tile);
-        }
+        // if let Some(next_tile) = self.pending_tiles.pop() {
+        //     self.update_render_context(&next_tile);
+        // }
 
         self.render_in_progress = true;
         self.render_is_full = full;
@@ -1272,7 +1272,7 @@ impl RenderState {
             }
             iteration += 1;
         }
-        Ok((is_empty, self.pending_nodes.is_empty()))
+        Ok((is_empty, false))
     }
 
     pub fn render_shape_tree_partial(
