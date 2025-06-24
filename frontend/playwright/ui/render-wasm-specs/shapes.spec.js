@@ -113,3 +113,28 @@ test("Renders shapes taking into account blend modes", async ({ page }) => {
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Renders shapes with exif rotated images fills and strokes", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockFileMediaAsset(
+    [
+      "27270c45-35b4-80f3-8006-63a39cf292e7",
+      "27270c45-35b4-80f3-8006-63a41d147866",
+      "27270c45-35b4-80f3-8006-63a43dc4984b",
+      "27270c45-35b4-80f3-8006-63a3ea82557f"
+    ],
+    "render-wasm/assets/landscape.jpg",
+  );
+  await workspace.mockGetFile("render-wasm/get-file-shapes-exif-rotated-fills.json");
+
+  await workspace.goToWorkspace({
+    id: "27270c45-35b4-80f3-8006-63a3912bdce8",
+    pageId: "27270c45-35b4-80f3-8006-63a3912bdce9",
+  });
+  await workspace.waitForFirstRender();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
