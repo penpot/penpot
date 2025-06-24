@@ -77,6 +77,7 @@ impl PendingNodes {
     }
 
     pub fn add_root(&mut self) {
+        println!("add_root");
         self.list.push(NodeRenderState {
             id: Uuid::nil(),
             visited_children: false,
@@ -91,6 +92,7 @@ impl PendingNodes {
         child_id: &Uuid,
         children_clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
     ) {
+        println!("add_child");
         self.list.push(NodeRenderState {
             id: *child_id,
             visited_children: false,
@@ -101,6 +103,7 @@ impl PendingNodes {
     }
 
     pub fn add_children_safeguard(&mut self, element: &Shape, mask: bool) {
+        println!("add_children_safeguard");
         // Set the node as visited_children before processing children
         self.list.push(NodeRenderState {
             id: element.id,
@@ -112,6 +115,7 @@ impl PendingNodes {
     }
 
     pub fn add_mask(&mut self, element: &Shape) {
+        println!("add_mask");
         self.list.push(NodeRenderState {
             id: element.id,
             visited_children: true,
@@ -814,8 +818,9 @@ impl RenderState {
 
     #[inline]
     pub fn should_stop_rendering(&self, iteration: i32, timestamp: i32) -> bool {
-        iteration % NODE_BATCH_THRESHOLD == 0
-            && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS
+        self.pending_nodes.is_empty() ||
+        (iteration % NODE_BATCH_THRESHOLD == 0
+            && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS)
     }
 
     #[inline]
@@ -987,6 +992,7 @@ impl RenderState {
         );
 
         let (is_empty, should_stop_rendering) = result?;
+        println!("is_empty {} should_stop_rendering {}", is_empty, should_stop_rendering);
         if should_stop_rendering {
             self.render_in_progress = false;
             self.render_is_full = false;
@@ -1021,7 +1027,7 @@ impl RenderState {
         self.update_render_context(tile);
 
         self.render_shape_enter(element, mask);
-        if !node_render_state.id.is_nil() {
+        if !node_render_state.is_root() {
             self.render_shape(
                 element,
                 modifiers.get(&element.id),
@@ -1079,12 +1085,13 @@ impl RenderState {
         println!("render_shape_tree_full_uncached::while::start");
         while let Some(node_render_state) = self.pending_nodes.next() {
             println!(
-                "render_shape_tree_full_uncached::while::pop {}",
-                self.pending_nodes.len()
+                "render_shape_tree_full_uncached::while::pop {} {}",
+                self.pending_nodes.len(),
+                self.pending_nodes.is_empty()
             );
             let NodeRenderState {
                 id: node_id,
-                visited_children: _visited_children,
+                visited_children: visited_children,
                 clip_bounds: _clip_bounds,
                 visited_mask: _visited_mask,
                 mask,
@@ -1096,8 +1103,8 @@ impl RenderState {
                     .to_string(),
             )?;
 
-            println!("a {} {}", element.id, node_render_state.id.is_nil());
-            if !node_render_state.id.is_nil() {
+            println!("a {} {}", element.id, node_render_state.is_root());
+            if !node_render_state.is_root() {
                 let mut transformed_element: Cow<Shape> = Cow::Borrowed(element);
 
                 if let Some(modifier) = modifiers.get(&node_id) {
@@ -1128,7 +1135,7 @@ impl RenderState {
             }
 
             println!("c");
-            if !element.id.is_nil() {
+            if !element.is_root() {
                 println!("render_shape_tree_full_uncached_shape_tiles");
                 let mut tiles_opt = self.get_tiles_of(element.id);
                 let tiles = tiles_opt.as_mut().unwrap().clone();
@@ -1141,11 +1148,12 @@ impl RenderState {
                     scale_content,
                 );
 
-                self.pending_nodes.add_children_safeguard(element, mask);
             }
 
             println!("d {}", element.is_recursive());
-            if element.is_recursive() || element.id.is_nil() {
+            if !visited_children && element.is_recursive() {
+                self.pending_nodes.add_children_safeguard(element, mask);
+
                 let children_clip_bounds =
                     node_render_state.get_children_clip_bounds(element, modifiers.get(&element.id));
 
@@ -1170,7 +1178,11 @@ impl RenderState {
             println!("e");
             // We try to avoid doing too many calls to get_time
             if self.should_stop_rendering(iteration, timestamp) {
-                return Ok((is_empty, true));
+                println!("should_stop_rendering {} {}", self.pending_nodes.is_empty(), self.pending_nodes.len() == 0);
+                return Ok((is_empty, self.pending_nodes.is_empty()));
+            }
+            if (iteration == 100) {
+                return Ok((false, true));
             }
             iteration += 1;
         }

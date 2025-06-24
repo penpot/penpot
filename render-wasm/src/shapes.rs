@@ -816,11 +816,15 @@ impl Shape {
         }
     }
 
+    pub fn is_root(&self) -> bool {
+        self.id.is_nil()
+    }
+
     pub fn is_recursive(&self) -> bool {
         matches!(
             self.shape_type,
             Type::Frame(_) | Type::Group(_) | Type::Bool(_)
-        )
+        ) || self.id.is_nil()
     }
 
     pub fn add_shadow(&mut self, shadow: Shadow) {
