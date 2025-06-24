@@ -115,10 +115,6 @@ impl ImageFill {
         }
     }
 
-    pub fn size(&self) -> (i32, i32) {
-        (self.width, self.height)
-    }
-
     pub fn id(&self) -> Uuid {
         self.id
     }
