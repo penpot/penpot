@@ -127,7 +127,7 @@
         on-component-blur
         (mf/use-fn
          (fn [event]
-           (let [target (.-relatedTarget event)
+           (let [target (dom/get-related-target event)
                  outside? (not (.contains (mf/ref-val select-ref) target))]
              (when outside?
                (reset! focused-value* nil)

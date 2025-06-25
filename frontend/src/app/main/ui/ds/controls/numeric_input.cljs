@@ -106,7 +106,7 @@
    [:options {:optional true}
     [:vector {:min 1}
      schema:token-option]]
-   [:default-selected {:optional true} :string]
+   [:default-selected {:optional true} :string] ;; podria ser un id de token??
    [:empty-to-end {:optional true} :boolean]
    [:on-change {:optional true} fn?]
    [:on-blur {:optional true} fn?]
@@ -123,6 +123,7 @@
 
   (let [;; Borrar
         on-change (d/nilv on-change #(prn "on-change value" %))
+
         ;; Defautl props
         nillable        (d/nilv nillable false)
         select-on-focus (d/nilv is-selected-on-focus true)
@@ -143,16 +144,18 @@
         selected-value*    (mf/use-state  #(get-selected-option-id options default-selected))
         selected-value     (deref selected-value*)
 
-        focused-value*     (mf/use-state nil)
-        focused-value      (deref focused-value*)
+        focused-id*        (mf/use-state nil)
+        focused-id         (deref focused-id*)
 
         is-multiple?       (= :multiple value)
 
+        ;; El valor que llega de fuera la primera vez, de la shape
         value        (cond
                        is-multiple? nil
                        (and nillable (nil? value)) nil
                        :else (d/parse-double value default))
 
+        ;; El valor que el usuario escribe en el input
         raw-value*   (mf/use-var
                       (cond
                         is-multiple?
@@ -164,6 +167,7 @@
                         :else
                         (fmt/format-number (d/parse-double value default))))
 
+        ;; Este es el ultimo valor válido, que ha pasado por la verificación y se ha guardado
         last-value*  (mf/use-var (d/parse-double value default))
 
         ;; Refs
@@ -198,18 +202,24 @@
          (mf/deps on-change update-input value nillable)
          (fn [raw-value]
            (if-let [parsed (parse-value raw-value @last-value* min max nillable)]
-             (do
-               (reset! last-value* parsed)
-               (when (fn? on-change)
-                 (on-change parsed))
-               (reset! raw-value* (fmt/format-number parsed))
-               (update-input (fmt/format-number parsed)))
+
+             (when-not (= parsed @last-value*)
+               (do
+                 (reset! last-value* parsed)
+                ;;  Ojo cuidado a ver si esto es asi
+                 (reset! is-token* false)
+                 (when (fn? on-change)
+                   (on-change parsed))
+
+                 (reset! raw-value* (fmt/format-number parsed))
+                 (update-input (fmt/format-number parsed))))
 
              ;; Cuando falla el parseo, usaremos el valor anterior o el valor por defecto
              (if (and nillable (empty? raw-value))
                (do
                  (reset! last-value* nil)
                  (reset! raw-value* "")
+                 (reset! is-token* false)
                  (update-input "")
                  (when (fn? on-change)
                    (on-change nil)))
@@ -217,61 +227,59 @@
                ;; Si no es nillable, usamos el valor por defecto 
                (let [fallback-value (or @last-value* default)]
                  (reset! raw-value* (fmt/format-number fallback-value))
+                ;;  hay que resetear el last-value o el token value?
                  (update-input (fmt/format-number fallback-value))
                  (when (and (fn? on-change) (not= fallback-value value))
                    (on-change fallback-value)))))))
 
         store-raw-value
         (mf/use-fn
-         (mf/deps parse-value)
          (fn [event]
            (let [text (dom/get-target-val event)]
-             (reset! raw-value* text)
-             (reset! is-token* false))))
+             (reset! raw-value* text))))
+
+        on-token-apply
+        (fn [id value]
+          ;; ademas de aplicar valor, ¿deberiamos setear el token en las shapes?
+          (reset! selected-value* id)
+          (reset! focused-id* nil)
+          (reset! is-open* false)
+          (apply-value value)
+          (reset! is-token* true))
 
         on-option-click
         (mf/use-fn
-         (mf/deps options apply-value)
+         (mf/deps options)
          (fn [event]
            (let [node   (dom/get-current-target event)
                  id     (dom/get-data node "id")
                  option (get-option options id)
                  value  (obj/get option "resolved")]
-
-             (reset! selected-value* id)
-             (reset! focused-value* nil)
-             (reset! is-open* false)
-
-             (apply-value value)
-             (reset! is-token* true))))
+             (on-token-apply id value))))
 
         on-option-enter
         (mf/use-fn
-         (mf/deps options focused-value apply-value)
+         (mf/deps options focused-id)
          (fn [_]
-           (let [option (get-option options focused-value)
+           (let [option (get-option options focused-id)
                  value  (obj/get option "resolved")]
-
-             (reset! selected-value* focused-value)
-             (reset! focused-value* nil)
-             (reset! is-open* false)
-
-             (apply-value value)
-             (reset! is-token* true))))
+             (on-token-apply focused-id value))))
 
         on-blur
         (mf/use-fn
          (mf/deps parse-value)
          (fn [e]
-           (let [target (.-relatedTarget e)
+           (let [target (dom/get-related-target e)
                  outside? (not (.contains (mf/ref-val wrapper-ref) target))]
              (when outside?
-               (reset! focused-value* nil)
-               (reset! is-open* false)))
-           (when (mf/ref-val dirty-ref)
-             (apply-value @raw-value*)
-             (when (fn? on-blur)
-               (on-blur e)))))
+               (reset! focused-id* nil)
+               (reset! is-open* false))
+
+            ;;  solo se activa este dirty ref cuando el usuario ha editado el input
+             (when (mf/ref-val dirty-ref)
+               (apply-value @raw-value*)
+               (when (fn? on-blur)
+                 (on-blur e))))))
 
         handle-key-down
         (mf/use-fn
@@ -288,7 +296,7 @@
                  parsed  (parse-value @raw-value* @last-value* min max nillable)
                  current-value (or parsed default)
                  len     (when options (alength options))
-                 index   (when options (array/find-index #(= (deref focused-value*) (obj/get % "id")) options))]
+                 index   (when options (array/find-index #(= (deref focused-id*) (obj/get % "id")) options))]
 
              (cond
                (and (some? options) tokens?)
@@ -297,9 +305,7 @@
                enter?
                (if is-open
                  (on-option-enter event)
-                 (do
-                   (apply-value @raw-value*)
-                   (dom/blur! node)))
+                 (on-blur event))
 
                esc?
                (do
@@ -312,7 +318,7 @@
                  (let [new-index (if (= index -1)
                                    (dec len)
                                    (mod (- index 1) len))]
-                   (handle-focus-change options focused-value* new-index options-nodes-refs))
+                   (handle-focus-change options focused-id* new-index options-nodes-refs))
 
                  (let [new-val (increment current-value step min max)]
                    (update-input (fmt/format-number new-val))
@@ -324,32 +330,28 @@
                  (let [new-index (if (= index -1)
                                    0
                                    (mod (+ index 1) len))]
-                   (handle-focus-change options focused-value* new-index options-nodes-refs))
+                   (handle-focus-change options focused-id* new-index options-nodes-refs))
 
                  (let [new-val (decrement current-value step min max)]
                    (update-input (fmt/format-number new-val))
                    (apply-value (dm/str new-val))
                    (dom/prevent-default event)))
 
+              ;;  Revisar si esto es necesario, 
                tab?
-               (if is-open
-                 (do
-                   (prn "index" index)
-                   (prn "tengo que targetear el primer elemento de la lista"))
-                 (->  (mf/ref-val open-dropdown-ref)
-                      (dom/set-attribute! "tabIndex" "0")
-                      (dom/focus!)))))))
+               (when-not is-open
+                 (when-not is-token
+                   (->  (mf/ref-val open-dropdown-ref)
+                        (dom/set-attribute! "tabIndex" "0")
+                        (dom/focus!))))))))
 
         handle-focus
         (mf/use-fn
          (mf/deps on-focus select-on-focus)
          (fn [event]
-           (prn "handle-focus")
+           (when (fn? on-focus)
+             (on-focus event))
            (let [target (dom/get-target event)]
-             (when (fn? on-focus)
-               (mf/set-ref-val! dirty-ref true)
-               (on-focus event))
-
              (when select-on-focus
                (dom/select-text! target)
                ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
@@ -358,7 +360,6 @@
         handle-mouse-wheel
         (mf/use-fn
          (fn [event]
-           (prn "handle-mouse-wheel")
            (when-let [node (mf/ref-val ref)]
              (when (dom/active? node)
                (let [inc? (->> (dom/get-delta-position event)
@@ -371,7 +372,8 @@
                                (decrement current-value step min max))]
                  (dom/prevent-default event)
                  (dom/stop-propagation event)
-                 (update-input (fmt/format-number new-val))
+                ;;  Preguntar a Natacha por este comportamiento si es el esperado
+                 (reset! selected-value* nil)
                  (apply-value (dm/str new-val)))))))
 
         open-dropdown
@@ -381,47 +383,15 @@
            (reset! is-open* true)
            (dom/focus! (mf/ref-val ref))))
 
-        handle-dropdown
-        (mf/use-fn
-         (mf/deps open-dropdown)
-         (fn [event]
-           (dom/prevent-default event)
-           (when (kbd/enter? event)
-             (dom/set-attribute! (mf/ref-val open-dropdown-ref) "tabIndex" "-1")
-             (open-dropdown))
-           (when (kbd/esc? event)
-             (do
-               (reset! is-open* false)
-               (dom/blur! (mf/ref-val open-dropdown-ref))
-               (dom/set-attribute! (mf/ref-val open-dropdown-ref) "tabIndex" "-1")))
-           (when (kbd/tab? event)
-             (dom/stop-propagation event)
-
-             (dom/blur! (mf/ref-val open-dropdown-ref))
-             (dom/set-attribute! (mf/ref-val open-dropdown-ref) "tabIndex" "-1"))))
-
         detach-token
         (mf/use-fn
          (mf/deps on-change)
          (fn [event]
-           (prn "entro en el detach-token")
            (dom/prevent-default event)
            (reset! is-token* false)
            (reset! selected-value* nil)
-           (reset! focused-value* nil)
+           (reset! focused-id* nil)
            (dom/focus! (mf/ref-val ref))))
-
-        handle-detach
-        (mf/use-fn
-         (mf/deps detach-token)
-         (fn [event]
-           (prn "entro en el handle-detach")
-           (dom/prevent-default event)
-           (when (kbd/enter? event)
-             (detach-token))
-           (when (kbd/tab? event)
-             (dom/stop-propagation event)
-             (prn "debo focusear siguiente element0"))))
 
         props
         (mf/spread-props props {:ref ref
@@ -445,7 +415,6 @@
                                                                        :class (stl/css :invisible-button)
                                                                        :icon "broken-link"
                                                                        :aria-label "Detach token"
-                                                                       :on-key-down handle-detach
                                                                        :on-click detach-token}])
                                             (some? options)
                                             (mf/html [:> icon-button* {:variant "action"
@@ -454,7 +423,6 @@
                                                                        :aria-label "Open dropdown"
                                                                        :tab-index -1
                                                                        :ref open-dropdown-ref
-                                                                       :on-key-down handle-dropdown
                                                                        :on-click open-dropdown}]))
                                 :max-length max-length})]
 
@@ -475,6 +443,6 @@
                               :id listbox-id
                               :options options
                               :selected selected-value
-                              :focused focused-value
+                              :focused focused-id
                               :empty-to-end empty-to-end
                               :set-ref set-option-ref}])]))

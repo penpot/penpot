@@ -116,7 +116,7 @@
          (mf/deps on-change)
          (fn [event]
            (dom/stop-propagation event)
-           (let [target (.-relatedTarget event)
+           (let [target (dom/get-related-target event)
                  outside? (not (.contains (mf/ref-val combobox-ref) target))]
              (when outside?
                (reset! is-open* false)
