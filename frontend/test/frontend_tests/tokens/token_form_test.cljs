@@ -6,7 +6,7 @@
 
 (ns frontend-tests.tokens.token-form-test
   (:require
-   [app.main.ui.workspace.tokens.form :as wtf]
+   [app.main.ui.workspace.tokens.management.create.form :as wtf]
    [cljs.test :as t :include-macros true]
    [malli.core :as m]))
 

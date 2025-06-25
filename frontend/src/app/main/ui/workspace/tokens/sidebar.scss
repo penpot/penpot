@@ -36,38 +36,6 @@
   scrollbar-gutter: stable;
 }
 
-.sets-header-container {
-  @include use-typography("headline-small");
-  padding: var(--sp-s);
-  color: var(--title-foreground-color);
-  word-break: break-word;
-}
-
-.sets-header-container {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sp-xs);
-  margin-block-start: var(--sp-s);
-}
-
-.sets-header {
-  flex: 1;
-}
-
-.sets-header-status {
-  @include use-typography("body-small");
-  text-transform: none;
-  color: var(--color-foreground-secondary);
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-}
-
-.sets-header-status-text {
-  font-style: italic;
-}
-
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -75,12 +43,6 @@
   margin-left: var(--sp-m);
   padding-top: var(--sp-m);
   color: var(--layer-row-foreground-color);
-}
-
-.token-pills-wrapper {
-  display: flex;
-  gap: var(--sp-xs);
-  flex-wrap: wrap;
 }
 
 .section-text-icon {

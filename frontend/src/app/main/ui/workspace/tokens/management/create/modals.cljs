@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.modals
+(ns app.main.ui.workspace.tokens.management.create.modals
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
@@ -12,7 +12,7 @@
    [app.main.refs :as refs]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon  :as i]
-   [app.main.ui.workspace.tokens.form :refer [form]]
+   [app.main.ui.workspace.tokens.management.create.form :refer [form]]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -22,7 +22,7 @@
 (defn calculate-position
   "Calculates the style properties for the given coordinates and position"
   [{vh :height} position x y color?]
-  (let [;; picker height in pixels 
+  (let [;; picker height in pixels
         ;; TODO: Revisit these harcoded values
         h (if color? 610 510)
         ;; Checks for overflow outside the viewport height
