@@ -1284,7 +1284,8 @@
             ;; rollback, we still need to perform an other migration
             ;; for properly delete the bool-content prop from shapes
             ;; once the know the migration was OK
-            (if (cfh/bool-shape? object)
+            (if (and (cfh/bool-shape? object)
+                     (not (contains? object :content)))
               (if-let [content (:bool-content object)]
                 (assoc object :content content)
                 object)
