@@ -1480,7 +1480,7 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0008-fix-library-colors"
+(defmethod migrate-data "0008-fix-library-colors-v2"
   [data _]
   (letfn [(clear-color-opacity [color]
             (if (and (contains? color :opacity)
@@ -1490,6 +1490,7 @@
 
           (clear-color [color]
             (-> color
+                (select-keys types.color/library-color-attrs)
                 (d/without-nils)
                 (d/without-qualified)
                 (clear-color-opacity)))]
@@ -1559,4 +1560,4 @@
          "0005-deprecate-image-type"
          "0006-fix-old-texts-fills"
          "0007-clear-invalid-strokes-and-fills-v2"
-         "0008-fix-library-colors"]))
+         "0008-fix-library-colors-v2"]))
