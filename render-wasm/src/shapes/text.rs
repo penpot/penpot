@@ -7,6 +7,7 @@ use skia_safe::{
     textlayout::{Paragraph as SkiaParagraph, ParagraphBuilder, ParagraphStyle},
     FontMetrics, Point, Shader, TextBlob,
 };
+use crate::shapes::VerticalAlign;
 use std::collections::HashSet;
 
 use super::FontFamily;
@@ -41,6 +42,7 @@ pub struct TextContent {
     pub paragraphs: Vec<Paragraph>,
     pub bounds: Rect,
     pub grow_type: GrowType,
+    pub vertical_align: VerticalAlign,
 }
 
 pub fn set_paragraphs_width(width: f32, paragraphs: &mut [ParagraphBuilder]) {
@@ -52,21 +54,25 @@ pub fn set_paragraphs_width(width: f32, paragraphs: &mut [ParagraphBuilder]) {
 }
 
 impl TextContent {
-    pub fn new(bounds: Rect, grow_type: GrowType) -> Self {
+    pub fn new(bounds: Rect, grow_type: GrowType, vertical_align: VerticalAlign) -> Self {
         Self {
             paragraphs: Vec::new(),
             bounds,
             grow_type,
+            vertical_align,
         }
     }
 
     pub fn new_bounds(&self, bounds: Rect) -> Self {
         let paragraphs = self.paragraphs.clone();
         let grow_type = self.grow_type;
+        let vertical_align = self.vertical_align;
+
         Self {
             paragraphs,
             bounds,
             grow_type,
+            vertical_align
         }
     }
 
@@ -142,8 +148,24 @@ impl TextContent {
     pub fn get_paths(&self, antialias: bool) -> Vec<(skia::Path, skia::Paint)> {
         let mut paths = Vec::new();
 
-        let mut offset_y = self.bounds.y();
+        // let mut offset_y = self.bounds.y();
         let mut paragraphs = self.get_skia_paragraphs();
+
+        let total_paragraphs_height: f32 = paragraphs
+            .iter_mut()
+            .map(|p| {
+                let mut skia_paragraph = p.build();
+                skia_paragraph.layout(self.bounds.width());
+                skia_paragraph.height()
+            })
+            .sum();
+        let container_height = self.bounds.height();
+        let mut offset_y = match self.vertical_align {
+            VerticalAlign::Center => (container_height - total_paragraphs_height) / 2.0,
+            VerticalAlign::Bottom => container_height - total_paragraphs_height,
+            _ => 0.0,
+        } + self.bounds.y();
+
         for paragraph_builder in paragraphs.iter_mut() {
             // 1. Get paragraph and set the width layout
             let mut skia_paragraph = paragraph_builder.build();
@@ -158,6 +180,7 @@ impl TextContent {
                 let line_baseline = line_metrics.baseline as f32;
                 let start = line_metrics.start_index;
                 let end = line_metrics.end_index;
+
 
                 // 3. Get styles present in line for each text leaf
                 let style_metrics = line_metrics.get_style_metrics(start..end);
@@ -179,6 +202,7 @@ impl TextContent {
                         .unwrap_or(text.len());
 
                     let leaf_text = &text[start_byte..end_byte];
+                    println!("@@@ Leaf text: {}", leaf_text);
 
                     let font = skia_paragraph.get_font_at(*start_index);
 
@@ -222,6 +246,7 @@ impl TextContent {
         // This is used to avoid rendering empty paths, but we can
         // revisit this logic later
         if let Some((text_blob_path, text_blob_bounds, pattern_paint)) =
+            //Self::get_text_image_path(leaf_text, font, blob_offset_x, blob_offset_y, &bounds)
             Self::get_text_blob_path(leaf_text, font, blob_offset_x, blob_offset_y, &bounds)
         {
             let mut text_path = text_blob_path.clone();
@@ -287,17 +312,14 @@ impl TextContent {
         }
     }
 
-    fn get_text_blob_path(
+    fn get_text_image_path(
         leaf_text: &str,
         font: &skia::Font,
         blob_offset_x: f32,
         blob_offset_y: f32,
         blob_bounds: &skia::Rect,
     ) -> Option<(skia::Path, skia::Rect, skia::Paint)> {
-        let utf16_text = leaf_text.encode_utf16().collect::<Vec<u16>>();
-        let text = unsafe { skia_safe::as_utf16_unchecked(&utf16_text) };
-
-        let scale_factor = 5.0; // FIXME: improve emoji image resolution. This should be calculated taking into account the zoom level
+        let scale_factor = 1.0; // FIXME: improve emoji image resolution. This should be calculated taking into account the zoom level
         let width = (blob_bounds.width() * scale_factor).ceil() as i32;
         let height = (blob_bounds.height() * scale_factor).ceil() as i32;
 
@@ -339,16 +361,26 @@ impl TextContent {
             &Some(skia_safe::Matrix::translate((rect.left, rect.top))),
         );
         pattern_paint.set_shader(shader);
-        Some((path, *blob_bounds, pattern_paint))
+        Some((path, *blob_bounds, pattern_paint))    }
 
-        // if let Some(mut text_blob) = TextBlob::from_text(text, font) {
-        //     let path = SkiaParagraph::get_path(&mut text_blob);
-        //     let d = Point::new(blob_offset_x, blob_offset_y);
-        //     let offset_path = path.with_offset(d);
-        //     let bounds = text_blob.bounds();
-        //     return Some((offset_path, *bounds, pattern_paint));
-        // }
-        // None
+    fn get_text_blob_path(
+        leaf_text: &str,
+        font: &skia::Font,
+        blob_offset_x: f32,
+        blob_offset_y: f32,
+        _blob_bounds: &skia::Rect,
+    ) -> Option<(skia::Path, skia::Rect, skia::Paint)> {
+        let utf16_text = leaf_text.encode_utf16().collect::<Vec<u16>>();
+        let text = unsafe { skia_safe::as_utf16_unchecked(&utf16_text) };
+
+        if let Some(mut text_blob) = TextBlob::from_text(text, font) {
+            let path = SkiaParagraph::get_path(&mut text_blob);
+            let d = Point::new(blob_offset_x, blob_offset_y);
+            let offset_path = path.with_offset(d);
+            let bounds = text_blob.bounds();
+            return Some((offset_path, *bounds, skia::Paint::default()));
+        }
+        None
     }
 
     pub fn grow_type(&self) -> GrowType {
@@ -366,6 +398,7 @@ impl Default for TextContent {
             paragraphs: vec![],
             bounds: Rect::default(),
             grow_type: GrowType::Fixed,
+            vertical_align: VerticalAlign::Top,
         }
     }
 }
