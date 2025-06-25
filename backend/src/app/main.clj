@@ -40,7 +40,6 @@
    [app.svgo :as-alias svgo]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
-   [cider.nrepl :refer [cider-nrepl-handler]]
    [clojure.test :as test]
    [clojure.tools.namespace.repl :as repl]
    [cuerdas.core :as str]
@@ -605,7 +604,7 @@
     (let [p (promise)]
       (when (contains? cf/flags :nrepl-server)
         (l/inf :hint "start nrepl server" :port 6064)
-        (nrepl/start-server :bind "0.0.0.0" :port 6064 :handler cider-nrepl-handler))
+        (nrepl/start-server :bind "0.0.0.0" :port 6064))
 
       (start)
       (deref p))

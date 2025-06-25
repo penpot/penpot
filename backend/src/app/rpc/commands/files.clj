@@ -595,7 +595,11 @@
   (teams/check-read-permissions! conn profile-id team-id)
   (->> (db/exec! conn [sql:team-shared-files team-id])
        (into #{} (comp
-                  (map decode-row)
+                  ;; NOTE: this decode operation is a workaround for a
+                  ;; fast fix, this should be approached with a more
+                  ;; efficient implementation, for now it loads all
+                  ;; the files in memory.
+                  (map (partial bfc/decode-file cfg))
                   (map (fn [row]
                          (if-let [media-id (:media-id row)]
                            (-> row
