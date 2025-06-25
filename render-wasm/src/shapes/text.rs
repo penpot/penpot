@@ -245,8 +245,11 @@ impl TextContent {
         // TextBlob might be empty and, in this case, we return None
         // This is used to avoid rendering empty paths, but we can
         // revisit this logic later
-        if let Some((text_blob_path, text_blob_bounds, pattern_paint)) =
-            //Self::get_text_image_path(leaf_text, font, blob_offset_x, blob_offset_y, &bounds)
+        let mut foreground_paint = style_metric.text_style.foreground();
+        foreground_paint.set_anti_alias(antialias);
+
+        if let Some((text_blob_path, text_blob_bounds, paint)) =
+            // Self::get_text_image_path(leaf_text, font, blob_offset_x, blob_offset_y, &bounds, foreground_paint)
             Self::get_text_blob_path(leaf_text, font, blob_offset_x, blob_offset_y, &bounds)
         {
             let mut text_path = text_blob_path.clone();
@@ -270,10 +273,8 @@ impl TextContent {
                 text_path.add_rect(decoration_rect, None);
             }
 
-            let mut paint = style_metric.text_style.foreground();
-            paint.set_anti_alias(antialias);
-
-            return Some((text_path, pattern_paint));
+            return Some((text_path, foreground_paint));
+            // return Some((text_path, paint));
         }
         None
     }
@@ -318,6 +319,7 @@ impl TextContent {
         blob_offset_x: f32,
         blob_offset_y: f32,
         blob_bounds: &skia::Rect,
+        foreground_paint: skia::Paint,
     ) -> Option<(skia::Path, skia::Rect, skia::Paint)> {
         let scale_factor = 1.0; // FIXME: improve emoji image resolution. This should be calculated taking into account the zoom level
         let width = (blob_bounds.width() * scale_factor).ceil() as i32;
@@ -330,15 +332,13 @@ impl TextContent {
         let mut sampled_font = font.clone();
         sampled_font.set_size(font.size() * scale_factor);
 
-        let mut paint = skia::Paint::default();
-        paint.set_anti_alias(true);
         let (_, metrics) = sampled_font.metrics();
         let baseline = -metrics.ascent as f32;
         canvas.draw_str(
             leaf_text,
             skia_safe::Point::new(0.0, baseline),
             &sampled_font,
-            &paint,
+            &foreground_paint,
         );
 
         let image = surface.image_snapshot();
@@ -353,15 +353,15 @@ impl TextContent {
         let mut path = skia_safe::Path::new();
         path.add_rect(&mut rect, None);
 
-        let mut pattern_paint = skia_safe::Paint::default();
+        let mut image_paoint = skia_safe::Paint::default();
         let shader = skia_safe::Image::to_raw_shader(
             &image,
             (skia_safe::TileMode::Clamp, skia_safe::TileMode::Clamp),
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
             &Some(skia_safe::Matrix::translate((rect.left, rect.top))),
         );
-        pattern_paint.set_shader(shader);
-        Some((path, *blob_bounds, pattern_paint))    }
+        image_paoint.set_shader(shader);
+        Some((path, *blob_bounds, image_paoint))    }
 
     fn get_text_blob_path(
         leaf_text: &str,
