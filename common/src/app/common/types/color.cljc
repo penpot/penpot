@@ -150,6 +150,9 @@
     (sm/optional-keys schema:image-color)]
    [:fn has-valid-color-attrs?]])
 
+(def library-color-attrs
+  (sm/keys schema:library-color-attrs))
+
 (def valid-color?
   (sm/lazy-validator schema:color))
 
