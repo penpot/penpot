@@ -474,7 +474,8 @@
                      :index idx)
               (let [system (assoc main/system ::db/rollback rollback?)]
                 (db/tx-run! system (fn [system]
-                                     (binding [h/*system* system]
+                                     (binding [h/*system* system
+                                               db/*conn* (db/get-connection system)]
                                        (h/process-file! system file-id update-fn opts)))))
 
               (catch Throwable cause
