@@ -1682,13 +1682,12 @@ msgstr "Text Decoration"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "None"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Strikethrough"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Underline"
+
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "Strikethrough"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:151
 msgid "inspect.attributes.typography.text-transform"
