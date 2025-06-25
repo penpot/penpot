@@ -1,4 +1,7 @@
-[{:id "wireframing-kit"
+[{:id "tokens-starter-kit"
+  :name "Design tokens starter kit"
+  :file-uri "https://github.com/penpot/penpot-files/raw/refs/heads/main/Tokens%20starter%20kit.penpot"},
+ {:id "wireframing-kit"
   :name "Wireframe library"
   :file-uri "https://github.com/penpot/penpot-files/raw/refs/heads/main/Wireframing%20kit%20v1.1.penpot"}
  {:id "prototype-examples"

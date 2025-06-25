@@ -367,12 +367,97 @@ title: 10· Design Tokens
 
 <h2 id="design-tokens-import-export">Importing and Exporting Tokens</h2>
 <p>You can export Tokens from Penpot and import them from your computer to a Penpot file. Tokens can be imported from the <strong>Tools</strong> option at the bottom of the <strong>Tokens</strong> tab.</p>
-<p>The <strong>Import</strong> functionality allows you to upload and replace the global token set using a single file, while the <strong>Export</strong> functionality lets you download the current global token set using a single file to your system.</p>
+<p>The <strong>Import</strong> functionality allows you to upload and replace the global token set using a single file or a folder with multiple files in it.</p>
 <p>These features support JSON files formatted according to specific guidelines and preserve the ability to undo changes if needed.</p>
 <figure>
   <img src="/img/design-tokens/21-tokens-import-export.webp" alt="Tokens import export" />
 </figure>
 <ol>
-    <li><strong>Import:</strong> At the <strong>Tools</strong> option, select <strong>Import</strong>, then select your <code class="language-js">tokens.json</code> file. </li>
-    <li><strong>Export:</strong> At the <strong>Tools</strong> option, select <strong>Export</strong>. This will export all the tokens, including token sets and themes.</li>
+    <li><strong>Import:</strong> Click <strong>Tools</strong>, then select <strong>Import</strong> to view import options. </li>
+    <li><strong>Export:</strong> Click <strong>Tools</strong>, then select <strong>Export</strong> to view export options.</li>
 </ol>
+
+<h3 id="design-tokens-import-options">Import Options</h3>
+<h4>Single file</h4>
+
+<p>You can import a JSON file comprising all tokens, token sets and token themes.</p>
+<p>When importing a single file, the first-level keys of the json file will be interpreted as the set name.</p>
+
+<pre class="language-json">
+<code class="language-json">
+  {
+    "Global": {
+      // first-level key will be interpreted as set name
+      "color": {
+        "300": {
+          "$value": "red",
+          "$type": "color",
+          "$description": "my token description"
+        }
+      }
+    },
+    "Brands/A": {
+      // first-level key will be interpreted as set name
+      "color": {
+        "accent": {
+          "$value": "{red}",
+          "$type": "color",
+          "$description": "my token description"
+        }
+      }
+    },
+    "Brands/B": {
+      // first-level key will be interpreted as set name
+      "color": {
+        "accent": {
+          "$value": "#fabada",
+          "$type": "color",
+          "$description": "my token description"
+        }
+      }
+    }
+  }
+</code>
+</pre>
+
+<h4>Multifile</h4>
+<p>Imports a folder containing multiple JSON files (one per Token Set) and additional files like <code class="language-json">$themes.json</code> or <code class="language-json">$metadata.json</code> configurations. When importing multiple files, the name and path of the individual json files inside the folder will be interpreted as set names. These files should only contain tokens.</p>
+<p>Multifile folder structure example:</p>
+<code>
+  <pre>
+    folder/
+    ├── global/
+    │   ├── colors.json		  // can only contain tokens
+    │   └── dimension.json	// can only contain tokens
+    ├── mode/
+    │   ├── dark.json       // can only contain tokens
+    │   └── light.json      // can only contain tokens
+    ├── $themes.json        // themes config
+    └── $metadata.json      // other metadata config
+  </code>
+</pre>
+<figcaption>The main folder name won’t be used to build token set names, so in this example, <strong>folder</strong> will be ignored in the set names.</figcaption>
+
+<h3 id="design-tokens-export-options">Export Options</h3>
+<p>Just like with importing, you can export tokens, themes and sets either in a single JSON file or in multiple files. There is no difference in the content being exported; the choice depends on your team's preferences for file organization: a single file with all the tokens, sets and themes, or a folder structure with separated JSON files organized by sets.</p>
+<p>In both cases you can preview the result of the export options:</p>
+
+<figure>
+  <img src="/img/design-tokens/22-tokens-export-multiple.webp" alt="Tokens export with multiple files" />
+  <figcaption>Exporting tokens as multiple files.</figcaption>
+</figure>
+
+<figure>
+  <img src="/img/design-tokens/23-tokens-export-single.webp" alt="Tokens export with single file" />
+  <figcaption>Exporting tokens as a single file.</figcaption>
+</figure>
+
+
+
+
+
+
+
+
+
+

@@ -95,22 +95,33 @@
 (defn migrate-file
   [file libs]
   (binding [cfeat/*new* (atom #{})]
-    (let [version (or (:version file)
-                      (-> file :data :version))]
-      (-> file
-          (assoc :version cfd/version)
-          (update :migrations
-                  (fn [migrations]
-                    (if (nil? migrations)
-                      (generate-migrations-from-version version)
-                      migrations)))
-          ;; NOTE: in some future we can consider to apply
-          ;; a migration to the whole database and remove
-          ;; this code from this function that executes on
-          ;; each file migration operation
-          (update :features cfeat/migrate-legacy-features)
-          (migrate libs)
-          (update :features (fnil into #{}) (deref cfeat/*new*))))))
+    (let [version
+          (or (:version file) (-> file :data :version))
+
+          migrations
+          (not-empty (get file :migrations))
+
+          file
+          (-> file
+              (assoc :version cfd/version)
+              (assoc :migrations
+                     (if migrations
+                       migrations
+                       (generate-migrations-from-version version)))
+              ;; NOTE: in some future we can consider to apply a
+              ;; migration to the whole database and remove this code
+              ;; from this function that executes on each file
+              ;; migration operation
+              (update :features cfeat/migrate-legacy-features)
+              (migrate libs)
+              (update :features (fnil into #{}) (deref cfeat/*new*)))]
+
+      ;; NOTE: When we have no previous migrations, we report all
+      ;; migrations as migrated in order to correctly persist them all
+      ;; and not only the really applied migrations
+      (if (not migrations)
+        (vary-meta file assoc ::migrated (:migrations file))
+        file))))
 
 (defn migrated?
   [file]
@@ -1274,7 +1285,8 @@
             ;; rollback, we still need to perform an other migration
             ;; for properly delete the bool-content prop from shapes
             ;; once the know the migration was OK
-            (if (cfh/bool-shape? object)
+            (if (and (cfh/bool-shape? object)
+                     (not (contains? object :content)))
               (if-let [content (:bool-content object)]
                 (assoc object :content content)
                 object)
@@ -1469,14 +1481,22 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0008-fix-library-colors-opacity"
+(defmethod migrate-data "0008-fix-library-colors-v2"
   [data _]
-  (letfn [(update-color [color]
+  (letfn [(clear-color-opacity [color]
             (if (and (contains? color :opacity)
                      (nil? (get color :opacity)))
               (assoc color :opacity 1)
-              color))]
-    (d/update-when data :colors d/update-vals update-color)))
+              color))
+
+          (clear-color [color]
+            (-> color
+                (select-keys types.color/library-color-attrs)
+                (d/without-nils)
+                (d/without-qualified)
+                (clear-color-opacity)))]
+
+    (d/update-when data :colors d/update-vals clear-color)))
 
 (defmethod migrate-data "0009-add-partial-text-touched-flags"
   [data _]
@@ -1566,5 +1586,5 @@
          "0005-deprecate-image-type"
          "0006-fix-old-texts-fills"
          "0007-clear-invalid-strokes-and-fills-v2"
-         "0008-fix-library-colors-opacity"
+         "0008-fix-library-colors-v2"
          "0009-add-partial-text-touched-flags"]))

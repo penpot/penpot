@@ -679,14 +679,8 @@
                   mobj (get media-idx id)]
               (if mobj
                 (if (empty? attr-path)
-                  (-> mdata
-                      (assoc :id (:id mobj))
-                      (assoc :path (:path mobj)))
-                  (update-in mdata attr-path (fn [value]
-                                               (-> value
-                                                   (assoc :id (:id mobj))
-                                                   (assoc :path (:path mobj))))))
-
+                  (assoc mdata :id (:id mobj))
+                  (update-in mdata attr-path assoc :id (:id mobj)))
                 mdata)))
 
           (add-obj? [chg]
