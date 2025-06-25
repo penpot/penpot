@@ -15,6 +15,7 @@
 - Change "Save color" button to primary button [Taiga #9410](https://tree.taiga.io/project/penpot/issue/9410)
 
 ### :bug: Bugs fixed
+- Copying font size does not copy the unit [Taiga #11143](https://tree.taiga.io/project/penpot/issue/11143)
 
 ## 2.8.0 (Next / Unreleased)
 
