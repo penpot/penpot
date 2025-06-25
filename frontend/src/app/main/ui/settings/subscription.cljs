@@ -2,6 +2,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.profile :as du]
@@ -87,7 +88,7 @@
                                                returnUrl (js/encodeURIComponent current-href)
                                                href (dm/str "payments/subscriptions/create?type=enterprise&returnUrl=" returnUrl)]
                                            (st/emit! (rt/nav-raw :href href))))))
-        handle-accept-dialog       (mf/use-callback
+        handle-accept-dialog       (mf/use-fn
                                     (fn []
                                       (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
                                                                        ::ev/origin "profile"
@@ -97,7 +98,7 @@
                                             href (dm/str "payments/subscriptions/show?returnUrl=" returnUrl)]
                                         (st/emit! (rt/nav-raw :href href)))
                                       (modal/hide!)))
-        handle-close-dialog        (mf/use-callback
+        handle-close-dialog        (mf/use-fn
                                     (fn []
                                       (st/emit! (ptk/event ::ev/event {::ev/name "close-subscription-modal"}))
                                       (modal/hide!)))]
@@ -133,7 +134,7 @@
                      :on-change #(let [new-value (js/parseInt (.. % -target -value))]
                                    (reset! min-members*
                                            (let [v (cond
-                                                     (or (js/isNaN new-value) (zero? new-value)) 1
+                                                     (or (mth/nan? new-value) (zero? new-value)) 1
                                                      (> new-value 1000) 1000
                                                      :else (max 1 new-value))]
                                              v)))}]]
@@ -169,7 +170,7 @@
   [{:keys [subscription-name]}]
 
   (let [profile              (mf/deref refs/profile)
-        handle-close-dialog  (mf/use-callback
+        handle-close-dialog  (mf/use-fn
                               (fn []
                                 (st/emit! (ptk/event ::ev/event {::ev/name "subscription-success"}))
                                 (modal/hide!)))]

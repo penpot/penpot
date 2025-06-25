@@ -148,7 +148,7 @@
         mail-to-owner         (str "<a href=\"" "mailto:" email-owner "\">" email-owner "</a>")
         go-to-subscription    (dm/str (u/join cf/public-uri "#/settings/subscriptions"))
         seats                 (-> profile :props :subscription :quantity)
-        editors               (count (filter :can-edit (:members team)))
+        editors               (count (filterv :can-edit (:members team)))
 
         link
         (if is-owner
@@ -198,7 +198,7 @@
 (defn show-subscription-members-small-banner?
   [team profile]
   (let [seats   (-> profile :props :subscription :quantity)
-        editors (count (filter :can-edit (:members team)))]
+        editors (count (filterv :can-edit (:members team)))]
     (or
      (and (= (:type (:subscription team)) "professional")
           (= editors 8))
