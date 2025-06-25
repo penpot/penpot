@@ -148,13 +148,14 @@
   "Given the current layout flags, and updates them with the data
   stored in Storage."
   [layout]
-  (reduce (fn [layout [flag key]]
-            (condp = (get storage/user key ::none)
-              ::none layout
-              false  (disj layout flag)
-              true   (conj layout flag)))
-          layout
-          layout-flags-persistence-mapping))
+  (let [layout (set (or layout #{}))]
+    (reduce-kv (fn [layout flag key]
+                 (condp = (get storage/user key ::none)
+                   ::none layout
+                   false  (disj layout flag)
+                   true   (conj layout flag)))
+               layout
+               layout-flags-persistence-mapping)))
 
 (defn persist-layout-flags!
   "Given a set of layout flags, and persist a subset of them to the Storage."
