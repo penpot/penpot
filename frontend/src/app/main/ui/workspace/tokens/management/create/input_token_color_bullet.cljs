@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.components.controls.input-token-color-bullet
+(ns app.main.ui.workspace.tokens.management.create.input-token-color-bullet
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.workspace.tokens.color :as dwtc]

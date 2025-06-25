@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.token-pill
+(ns app.main.ui.workspace.tokens.management.token-pill
   (:require-macros
    [app.common.data.macros :as dm]
    [app.main.style :as stl])

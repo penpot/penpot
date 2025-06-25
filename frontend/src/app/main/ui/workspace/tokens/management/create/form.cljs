@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.form
+(ns app.main.ui.workspace.tokens.management.create.form
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.colors :as c]
@@ -31,7 +31,7 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
-   [app.main.ui.workspace.tokens.components.controls.input-tokens-value :refer [input-tokens-value*]]
+   [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-tokens-value*]]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
