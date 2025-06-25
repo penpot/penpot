@@ -101,7 +101,7 @@
         [:div {:class (stl/css :global/attr-label)}
          (tr "inspect.attributes.typography.font-size")]
         [:div  {:class (stl/css :global/attr-value)}
-         [:> copy-button* {:data (copy-style-data style :font-size)}
+         [:> copy-button* {:data (copy-style-data (assoc style :font-size (fmt/format-pixels (:font-size style))) :font-size)}
           [:div {:class (stl/css :button-children)}
            (fmt/format-pixels (:font-size style))]]]])
 
