@@ -57,7 +57,7 @@
 }
 
 .subscription-member {
-  stroke: #fdcd79ff;
+  stroke: var(--color-badge-premium);
 }
 
 .title-section {
@@ -106,6 +106,13 @@
   color: var(--color-foreground-primary);
 }
 
+.plan-editors {
+  @include t.use-typography("body-medium");
+  align-self: end;
+  color: var(--color-foreground-primary);
+  margin-block-end: 2px;
+}
+
 .plan-price-period {
   @include t.use-typography("body-small");
   color: var(--color-foreground-primary);
@@ -126,7 +133,7 @@
 }
 
 .cta-button {
-  @include t.use-typography("body-small");
+  @include t.use-typography("body-medium");
   @include buttonStyle;
   color: var(--color-accent-tertiary);
   display: flex;
