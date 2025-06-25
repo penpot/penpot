@@ -855,7 +855,7 @@
 
           (update-object [object]
             (if (cfh/text-shape? object)
-              (update object :content #(txt/transform-nodes identity update-text-node %))
+              (update object :content #(txt/transform-nodes txt/is-content-node? update-text-node %))
               object))
 
           (update-container [container]
@@ -1105,7 +1105,7 @@
                 ;; The text shape also can has fills on the text
                 ;; fragments so we need to fix fills there
                 (cond-> (cfh/text-shape? object)
-                  (update :content (partial txt/transform-nodes identity fix-fills)))))
+                  (update :content (partial txt/transform-nodes txt/is-content-node? fix-fills)))))
 
           (update-container [container]
             (d/update-when container :objects d/update-vals update-object))]
@@ -1407,7 +1407,7 @@
 
           (update-object [object]
             (if (cfh/text-shape? object)
-              (update object :content (partial txt/transform-nodes identity fix-fills))
+              (update object :content (partial txt/transform-nodes txt/is-content-node? fix-fills))
               object))
 
           (update-container [container]
