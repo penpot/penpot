@@ -1337,32 +1337,37 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0004-clean-shadow-and-colors"
+(defmethod migrate-data "0004-clean-shadow-color"
   [data _]
-  (letfn [(clean-shadow [shadow]
-            (update shadow :color (fn [color]
-                                    (let [ref-id   (get color :id)
-                                          ref-file (get color :file-id)]
-                                      (-> (d/without-qualified color)
-                                          (select-keys [:opacity :color :gradient :image :ref-id :ref-file])
-                                          (cond-> ref-id
-                                            (assoc :ref-id ref-id))
-                                          (cond-> ref-file
-                                            (assoc :ref-file ref-file)))))))
+  (let [decode-color (sm/decoder types.color/schema:color sm/json-transformer)
 
-          (update-object [object]
-            (d/update-when object :shadow #(mapv clean-shadow %)))
+        clean-shadow-color
+        (fn [color]
+          (let [ref-id   (get color :id)
+                ref-file (get color :file-id)]
+            (-> (d/without-qualified color)
+                (select-keys [:opacity :color :gradient :image :ref-id :ref-file])
+                (cond-> ref-id
+                  (assoc :ref-id ref-id))
+                (cond-> ref-file
+                  (assoc :ref-file ref-file))
+                (decode-color))))
 
-          (update-container [container]
-            (d/update-when container :objects d/update-vals update-object))
+        clean-shadow
+        (fn [shadow]
+          (update shadow :color clean-shadow-color))
 
-          (clean-library-color [color]
-            (dissoc color :file-id))]
+        update-object
+        (fn [object]
+          (d/update-when object :shadow #(mapv clean-shadow %)))
+
+        update-container
+        (fn [container]
+          (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
         (update :pages-index d/update-vals update-container)
-        (d/update-when :components d/update-vals update-container)
-        (d/update-when :colors d/update-vals clean-library-color))))
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "0005-deprecate-image-type"
   [data _]
@@ -1554,7 +1559,7 @@
          "0002-clean-shape-interactions"
          "0003-fix-root-shape"
          "0003-convert-path-content"
-         "0004-clean-shadow-and-colors"
+         "0004-clean-shadow-color"
          "0005-deprecate-image-type"
          "0006-fix-old-texts-fills"
          "0007-clear-invalid-strokes-and-fills-v2"
