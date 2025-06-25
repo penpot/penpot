@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.main.data.changes :as dch]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.store :as st]
@@ -144,8 +145,13 @@
     (watch [_ state _]
       (let [user-can-edit? (dm/get-in state [:permissions :can-edit])]
         (when-let [pid (::open-plugin state)]
-          (open-plugin! (preg/get-plugin pid) user-can-edit?)
-          (rx/of #(dissoc % ::open-plugin)))))))
+          (let [plugin (preg/get-plugin pid)]
+            (open-plugin! plugin user-can-edit?)
+            (rx/of (ev/event {::ev/name "start-plugin"
+                              ::ev/origin "workspace:try-out"
+                              :name (:name plugin)
+                              :host (:host plugin)})
+                   #(dissoc % ::open-plugin))))))))
 
 (defn- update-plugin-permissions-peek
   [{:keys [plugin-id url]}]
