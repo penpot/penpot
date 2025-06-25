@@ -94,22 +94,33 @@
 (defn migrate-file
   [file libs]
   (binding [cfeat/*new* (atom #{})]
-    (let [version (or (:version file)
-                      (-> file :data :version))]
-      (-> file
-          (assoc :version cfd/version)
-          (update :migrations
-                  (fn [migrations]
-                    (if (nil? migrations)
-                      (generate-migrations-from-version version)
-                      migrations)))
-          ;; NOTE: in some future we can consider to apply
-          ;; a migration to the whole database and remove
-          ;; this code from this function that executes on
-          ;; each file migration operation
-          (update :features cfeat/migrate-legacy-features)
-          (migrate libs)
-          (update :features (fnil into #{}) (deref cfeat/*new*))))))
+    (let [version
+          (or (:version file) (-> file :data :version))
+
+          migrations
+          (not-empty (get file :migrations))
+
+          file
+          (-> file
+              (assoc :version cfd/version)
+              (assoc :migrations
+                     (if migrations
+                       migrations
+                       (generate-migrations-from-version version)))
+              ;; NOTE: in some future we can consider to apply a
+              ;; migration to the whole database and remove this code
+              ;; from this function that executes on each file
+              ;; migration operation
+              (update :features cfeat/migrate-legacy-features)
+              (migrate libs)
+              (update :features (fnil into #{}) (deref cfeat/*new*)))]
+
+      ;; NOTE: When we have no previous migrations, we report all
+      ;; migrations as migrated in order to correctly persist them all
+      ;; and not only the really applied migrations
+      (if (not migrations)
+        (vary-meta file assoc ::migrated (:migrations file))
+        file))))
 
 (defn migrated?
   [file]
