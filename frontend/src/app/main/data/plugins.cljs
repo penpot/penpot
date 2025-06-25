@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.main.data.changes :as dch]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.store :as st]
@@ -133,6 +134,11 @@
 (defn delay-open-plugin
   [plugin]
   (ptk/reify ::delay-open-plugin
+    ev/Event
+    (-data [_] {::ev/name "start-plugin"
+                ::ev/origin "workspace:try-out"
+                :name (:name plugin)
+                :host (:host plugin)})
     ptk/UpdateEvent
     (update [_ state]
       (assoc state ::open-plugin (:plugin-id plugin)))))
