@@ -91,7 +91,8 @@
         on-change
         (fn [index]
           (fn [color]
-            (st/emit! (dc/change-fill ids color index))))
+            (let [color (select-keys color ctc/color-attrs)]
+              (st/emit! (dc/change-fill ids color index)))))
 
         on-reorder
         (fn [new-index]
