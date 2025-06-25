@@ -560,6 +560,7 @@
           f.created_at,
           f.modified_at,
           f.name,
+          f.version,
           f.is_shared,
           ft.media_id,
           p.team_id
