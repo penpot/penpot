@@ -184,6 +184,9 @@ impl TextContent {
 
                 // 3. Get styles present in line for each text leaf
                 let style_metrics = line_metrics.get_style_metrics(start..end);
+                println!("### metrics for text: {}", &text[start..end]);
+                println!("### line_metrics: {:?}", line_metrics);
+                println!("### style_metrics: {:?}", style_metrics);
 
                 let mut offset_x = 0.0;
 
