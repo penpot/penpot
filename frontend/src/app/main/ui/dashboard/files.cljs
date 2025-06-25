@@ -86,7 +86,8 @@
                        (when-not (str/empty? name)
                          (st/emit! (-> (dd/rename-project (assoc project :name name))
                                        (with-meta {::ev/origin "project"}))))
-                       (swap! local assoc :edition false)))}]
+                       (swap! local assoc :edition false)))
+           :max-length 250}]
          [:div {:class (stl/css :dashboard-title)}
           [:h1 {:on-double-click on-edit
                 :data-testid "project-title"

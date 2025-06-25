@@ -414,7 +414,8 @@
        [:div {:class (stl/css :item-info)}
         (if (and (= file-id (:file-id state)) (:edition state))
           [:& inline-edition {:content (:name file)
-                              :on-end edit}]
+                              :on-end edit
+                              :max-length 250}]
           [:h3 (:name file)])
         [:& grid-item-metadata {:modified-at (:modified-at file)}]]
 
