@@ -13,6 +13,7 @@
 - On components overrides, separate the content of the text from the rest of properties [Taiga #7434](https://tree.taiga.io/project/penpot/us/7434)
 - Improve dashboard's sidebar [Taiga #10700](https://tree.taiga.io/project/penpot/us/10700)
 - Change "Save color" button to primary button [Taiga #9410](https://tree.taiga.io/project/penpot/issue/9410)
+- Support for exif rotated images [GitHub #6767](https://github.com/penpot/penpot/issues/6767)
 
 ### :bug: Bugs fixed
 - Copying font size does not copy the unit [Taiga #11143](https://tree.taiga.io/project/penpot/issue/11143)
