@@ -195,10 +195,12 @@
             properties-empty-pos (->> variant-components
                                       (mapcat :variant-properties)
                                       (group-by :name)
-                                      (mapv (fn [[_ v]]
-                                              (->> v (mapv :value) (remove empty?))))
-                                      (mapv empty?)
-                                      (map-indexed vector)
+                                      (map-indexed
+                                       (fn [i [_ v]]
+                                         [i (->> v
+                                                 (map :value)
+                                                 (remove empty?)
+                                                 empty?)]))
                                       (reverse))
 
             changes (-> (pcb/empty-changes it page-id)
