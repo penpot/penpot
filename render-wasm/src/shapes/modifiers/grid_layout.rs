@@ -51,6 +51,12 @@ pub fn calculate_tracks(
         layout_bounds.height() - layout_data.padding_top - layout_data.padding_bottom
     };
 
+    let auto_layout = if is_column {
+        shape.is_layout_horizontal_auto()
+    } else {
+        shape.is_layout_vertical_auto()
+    };
+
     let grid_tracks = if is_column {
         &grid_data.columns
     } else {
@@ -60,8 +66,14 @@ pub fn calculate_tracks(
     let mut tracks = init_tracks(grid_tracks, layout_size);
     set_auto_base_size(is_column, &mut tracks, cells, shapes, bounds);
     set_auto_multi_span(is_column, &mut tracks, cells, shapes, bounds);
-    set_flex_multi_span(is_column, &mut tracks, cells, shapes, bounds);
-    set_fr_value(is_column, shape, layout_data, &mut tracks, layout_size);
+    set_flex_multi_span(is_column, layout_data, &mut tracks, cells, shapes, bounds);
+    set_fr_value(
+        is_column,
+        layout_data,
+        &mut tracks,
+        layout_size,
+        auto_layout,
+    );
     stretch_tracks(is_column, shape, layout_data, &mut tracks, layout_size);
     assign_anchors(is_column, layout_data, layout_bounds, &mut tracks);
     tracks
@@ -230,6 +242,7 @@ fn set_auto_multi_span(
 // Adjust multi-spaned cells with flex columns
 fn set_flex_multi_span(
     column: bool,
+    layout_data: &LayoutData,
     tracks: &mut [TrackData],
     cells: &[GridCell],
     shapes: &HashMap<Uuid, &mut Shape>,
@@ -257,6 +270,12 @@ fn set_flex_multi_span(
         }
     });
 
+    let gap_value = if column {
+        layout_data.column_gap
+    } else {
+        layout_data.row_gap
+    };
+
     // Retrieve the value that we need to distribute and the number of frs
     for cell in selected_cells {
         let Some(child) = cell.shape.and_then(|id| shapes.get(&id)) else {
@@ -264,25 +283,20 @@ fn set_flex_multi_span(
         };
 
         // Retrieve the value we need to distribute (fixed cell size minus gaps)
-        let mut dist = min_size(column, child, bounds);
-        let mut num_flex = 0.0;
-        let mut num_auto = 0;
-
         let (start, end) = track_index(column, cell);
+        let gaps = (end - start - 1) as f32 * gap_value;
+        let mut dist = min_size(column, child, bounds) - gaps;
+        let mut num_flex = 0.0;
 
         // Distribute the size between the tracks that already have a set value
         for track in tracks[start..end].iter() {
-            dist -= track.size;
-
             match track.track_type {
                 GridTrackType::Flex => {
                     num_flex += track.value;
-                    num_auto += 1;
                 }
-                GridTrackType::Auto => {
-                    num_auto += 1;
+                _ => {
+                    dist -= track.size;
                 }
-                _ => {}
             }
         }
 
@@ -291,37 +305,15 @@ fn set_flex_multi_span(
             continue;
         }
 
-        let rest = dist / num_flex;
+        let alloc = dist / num_flex;
 
         // Distribute the space between flex tracks in proportion to the division
         for track in tracks[start..end].iter_mut() {
             if track.track_type == GridTrackType::Flex {
-                let new_size = f32::min(track.size + rest, track.max_size);
+                let new_size = alloc.clamp(track.size, track.max_size);
                 let aloc = new_size - track.size;
                 dist -= aloc;
-                track.size += aloc;
-            }
-        }
-
-        // Distribute the space between auto tracks if any
-        while dist > MIN_SIZE && num_auto > 0 {
-            let rest = dist / num_auto as f32;
-
-            for track in tracks[start..end].iter_mut() {
-                if track.track_type == GridTrackType::Auto
-                    || track.track_type == GridTrackType::Flex
-                {
-                    let new_size = if track.size + rest < track.max_size {
-                        track.size + rest
-                    } else {
-                        num_auto -= 1;
-                        track.max_size
-                    };
-
-                    let aloc = new_size - track.size;
-                    dist -= aloc;
-                    track.size += aloc;
-                }
+                track.size = new_size;
             }
         }
     }
@@ -330,10 +322,10 @@ fn set_flex_multi_span(
 // Calculate the `fr` unit and adjust the size
 fn set_fr_value(
     column: bool,
-    shape: &Shape,
     layout_data: &LayoutData,
     tracks: &mut [TrackData],
     layout_size: f32,
+    auto_layout: bool,
 ) {
     let tot_gap: f32 = if column {
         layout_data.column_gap * (tracks.len() as f32 - 1.0)
@@ -341,41 +333,65 @@ fn set_fr_value(
         layout_data.row_gap * (tracks.len() as f32 - 1.0)
     };
 
-    // Total size already used
-    let tot_size: f32 = tracks
-        .iter()
-        .filter(|t| t.track_type != GridTrackType::Flex)
-        .map(|t| t.size)
-        .sum::<f32>()
-        + tot_gap;
+    let mut tot_size_nofr = tot_gap;
+    let mut tot_frs = 0.0;
+    let mut cur_fr_value = 0.0;
 
-    let tot_frs: f32 = tracks
-        .iter()
-        .filter(|t| t.track_type == GridTrackType::Flex)
-        .map(|t| t.value)
-        .sum();
+    for t in tracks.iter() {
+        if t.track_type == GridTrackType::Flex {
+            tot_frs += t.value;
+            cur_fr_value = f32::max(t.size / t.value, cur_fr_value);
+        } else {
+            tot_size_nofr += t.size;
+        }
+    }
 
-    let cur_fr_size = tracks
-        .iter()
-        .filter(|t| t.track_type == GridTrackType::Flex)
-        .map(|t| t.size / t.value)
-        .reduce(f32::max)
-        .unwrap_or(0.0);
+    let fr_space = f32::max(0.0, layout_size - tot_size_nofr);
 
-    // Divide the space between FRS
-    let fr = if column && shape.is_layout_horizontal_auto()
-        || !column && shape.is_layout_vertical_auto()
-    {
-        cur_fr_size
+    let mut fr_value = if auto_layout {
+        // If auto_layout we assign the max fr
+        cur_fr_value
     } else {
-        f32::max(cur_fr_size, (layout_size - tot_size) / tot_frs)
+        fr_space / tot_frs
     };
 
-    // Assign the space to the FRS
+    if !auto_layout {
+        loop {
+            // While there is still tracks that can take more size
+            let mut pending = fr_space;
+            let mut free_frs = 0;
+
+            for t in tracks.iter() {
+                if t.track_type == GridTrackType::Flex {
+                    // Use the current fr size
+                    let current = t.value * fr_value;
+
+                    if t.size > current {
+                        // If it's not enough psace to allocate, this is full. Cannot grow anymore.
+                        pending -= t.size;
+                    } else {
+                        // Otherwise, this track can still grow
+                        free_frs += 1;
+                        pending -= current;
+                    }
+                }
+            }
+
+            // We finish when we cannot reduce the tracks more or we've allocated all
+            // the space
+            if free_frs == 0 || pending >= 0.0 {
+                break;
+            }
+
+            fr_value += pending / free_frs as f32;
+        }
+    }
+
+    // Assign the fr_value to the flex tracks
     tracks
         .iter_mut()
         .filter(|t| t.track_type == GridTrackType::Flex)
-        .for_each(|t| t.size = f32::min(fr * t.value, t.max_size));
+        .for_each(|t| t.size = (fr_value * t.value).clamp(t.size, t.max_size));
 }
 
 fn stretch_tracks(
@@ -411,6 +427,11 @@ fn stretch_tracks(
         .count() as f32;
 
     let free_space = layout_size - tot_size;
+
+    if free_space <= 0.0 {
+        return;
+    }
+
     let add_size = free_space / auto_tracks;
 
     // Assign the space to the FRS
