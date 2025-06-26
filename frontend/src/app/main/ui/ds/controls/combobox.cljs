@@ -150,6 +150,7 @@
              (let [options (mf/ref-val options-ref)
                    len     (count options)
                    index   (d/index-of-pred options #(= focused-id (get % :id)))
+                   index   (d/nilv index -1)
                    nodes   (mf/ref-val nodes-ref)]
 
                (if is-open
