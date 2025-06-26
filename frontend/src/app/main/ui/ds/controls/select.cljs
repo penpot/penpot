@@ -51,7 +51,7 @@
    [:class {:optional true} :string]
    [:disabled {:optional true} :boolean]
    [:default-selected {:optional true} :string]
-   [:empty-to-end {:optional true} :boolean]
+   [:empty-to-end {:optional true} [:maybe :boolean]]
    [:on-change {:optional true} fn?]])
 
 (mf/defc select*
@@ -64,6 +64,7 @@
                        (mfu/bean options)
                        options)
 
+        empty-to-end (d/nilv empty-to-end false)
         is-open*     (mf/use-state false)
         is-open      (deref is-open*)
 

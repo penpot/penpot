@@ -30,7 +30,7 @@
    [:disabled {:optional true} :boolean]
    [:default-selected {:optional true} :string]
    [:on-change {:optional true} fn?]
-   [:empty-to-end {:optional true} :boolean]
+   [:empty-to-end {:optional true} [:maybe :boolean]]
    [:has-error {:optional true} :boolean]])
 
 (mf/defc combobox*
@@ -42,6 +42,7 @@
         options      (if (array? options)
                        (mfu/bean options)
                        options)
+        empty-to-end (d/nilv empty-to-end false)
 
         is-open*     (mf/use-state false)
         is-open      (deref is-open*)
