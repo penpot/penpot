@@ -130,8 +130,8 @@
 
 (defn is-text-node?
   [node]
-  (and (string? (:text node))
-       (not= (:text node) "")))
+  (and (nil? (:type node))
+       (string? (:text node))))
 
 (defn is-paragraph-set-node?
   [node]
