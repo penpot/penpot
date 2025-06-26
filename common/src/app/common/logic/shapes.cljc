@@ -99,7 +99,14 @@
                                (pcb/with-library-data file))
                            ids
                            options))
-  ([changes ids {:keys [ignore-touched component-swap]}]
+  ([changes ids {:keys [ignore-touched
+                        component-swap
+                        ;; We will delete the shapes and its descendants.
+                        ;; ignore-children-fn is used to ignore some descendants
+                        ;; on the deletion process. It should receive a shape and
+                        ;; return a boolean
+                        ignore-children-fn]
+                 :or {ignore-children-fn (constantly false)}}]
    (let [objects (pcb/get-objects changes)
          data    (pcb/get-library-data changes)
          page-id (pcb/get-page-id changes)
@@ -177,10 +184,15 @@
                  (d/ordered-set)
                  (concat ids-to-delete ids-to-hide))
 
-         all-children
-         (->> ids-to-delete ;; Children of deleted shapes must be also deleted.
+         ;; Descendants of deleted shapes must be also deleted,
+         ;; except the ignored ones by the function ignore-children-fn
+         descendants-to-delete
+         (->> ids-to-delete
               (reduce (fn [res id]
-                        (into res (cfh/get-children-ids objects id)))
+                        (into res (cfh/get-children-ids
+                                   objects
+                                   id
+                                   {:ignore-children-fn ignore-children-fn})))
                       [])
               (reverse)
               (into (d/ordered-set)))
@@ -214,7 +226,7 @@
                        (conj components (:component-id shape))
                        components)))
                  []
-                 (into ids-to-delete all-children))
+                 (into ids-to-delete descendants-to-delete))
 
 
          ids-set (set ids-to-delete)
@@ -241,7 +253,7 @@
 
          changes (-> changes
                      (generate-update-shape-flags ids-to-hide objects {:hidden true})
-                     (pcb/remove-objects all-children {:ignore-touched true})
+                     (pcb/remove-objects descendants-to-delete {:ignore-touched true})
                      (pcb/remove-objects ids-to-delete {:ignore-touched ignore-touched})
                      (pcb/remove-objects empty-parents)
                      (pcb/resize-parents all-parents)

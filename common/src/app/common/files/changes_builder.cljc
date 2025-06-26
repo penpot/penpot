@@ -473,12 +473,14 @@
          (fn [undo-changes shape]
            (let [prev-sibling (cfh/get-prev-sibling objects (:id shape))]
              (conj undo-changes
-                   {:type :mov-objects
-                    :page-id (::page-id (meta changes))
-                    :parent-id (:parent-id shape)
-                    :shapes [(:id shape)]
-                    :after-shape prev-sibling
-                    :index 0}))) ; index is used in case there is no after-shape (moving bottom shapes)
+                   (cond-> {:type :mov-objects
+                            :page-id (::page-id (meta changes))
+                            :parent-id (:parent-id shape)
+                            :shapes [(:id shape)]
+                            :after-shape prev-sibling
+                            :index 0} ; index is used in case there is no after-shape (moving bottom shapes)
+                     (:component-swap options)
+                     (assoc :component-swap true)))))
 
          restore-touched-change
          {:type :mod-obj
