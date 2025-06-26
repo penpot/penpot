@@ -1808,6 +1808,13 @@
                              :else
                              (get origin-shape attr)))
 
+                ;; On a text-partial-change, we want to force a position-data reset
+                ;; so it's calculated again
+                [roperations uoperations]
+                (if text-partial-change?
+                  (add-update-attr-operations :position-data dest-shape roperations uoperations nil)
+                  [roperations uoperations])
+
                 [roperations' uoperations']
                 (if skip-operations?
                   [roperations uoperations]
