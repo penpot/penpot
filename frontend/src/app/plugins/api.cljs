@@ -44,6 +44,7 @@
    [app.plugins.viewport :as viewport]
    [app.util.code-gen :as cg]
    [app.util.object :as obj]
+   [app.util.theme :as theme]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
@@ -216,9 +217,15 @@
     :getTheme
     (fn []
       (let [theme (get-in @st/state [:profile :theme])]
-        (if (or (not theme) (= theme "default"))
+        (cond
+          (or (not theme) (= theme "system"))
+          (theme/get-system-theme)
+
+          (= theme "default")
           "dark"
-          (get-in @st/state [:profile :theme]))))
+
+          :else
+          theme)))
 
     :getCurrentUser
     (fn []
