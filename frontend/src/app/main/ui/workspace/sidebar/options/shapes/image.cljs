@@ -11,7 +11,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
@@ -29,7 +29,6 @@
         measure-values (select-keys shape measure-attrs)
         layer-values (select-keys shape layer-attrs)
         constraint-values (select-keys shape constraint-attrs)
-        fill-values (select-keys shape fill-attrs)
         stroke-values (select-keys shape stroke-attrs)
         layout-item-values (select-keys shape layout-item-attrs)
         layout-container-values (select-keys shape layout-container-flex-attrs)
@@ -83,9 +82,10 @@
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
 
-     [:& fill-menu {:ids ids
-                    :type type
-                    :values fill-values}]
+     [:> fill/fill-menu*
+      {:ids ids
+       :type type
+       :values shape}]
 
      [:& stroke-menu {:ids ids
                       :type type
