@@ -59,6 +59,7 @@ on-premises instances** that want to keep up to date.
 - Fix snap nodes shortcut [Taiga #11054](https://tree.taiga.io/project/penpot/issue/11054)
 - Fix changing a text property in a text layer does not unapply the previously applied token in the same property [Taiga #11337}(https://tree.taiga.io/project/penpot/issue/11337)
 - Fix shortcut error pressing G+W from the View Mode [Taiga #11061](https://tree.taiga.io/project/penpot/issue/11061)
+- Fix entering long project name [Taiga #11417](https://tree.taiga.io/project/penpot/issue/11417)
 
 ## 2.7.2
 
