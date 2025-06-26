@@ -65,7 +65,7 @@
   --button-wrapper-outline-color: none;
   --button-wrapper-height: var(--sp-xxxl);
   --button-wrapper-margin: unset;
-  
+
   display: grid;
   grid-template-columns: auto 1fr auto;
   column-gap: var(--sp-xs);
@@ -81,7 +81,9 @@
     --button-wrapper-bg-color: var(--color-background-quaternary);
   }
 
-  &:focus-visible, &:focus-within, &:has(*:focus-visible) {
+  &:focus-visible,
+  &:focus-within,
+  &:has(*:focus-visible) {
     --button-wrapper-bg-color: var(--color-background-primary);
     --button-wrapper-outline-color: var(--color-accent-primary);
   }

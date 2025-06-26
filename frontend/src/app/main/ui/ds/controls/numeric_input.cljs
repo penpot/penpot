@@ -372,6 +372,13 @@
            (reset! is-open* true)
            (dom/focus! (mf/ref-val ref))))
 
+        open-dropdown-token
+        (mf/use-fn
+         (fn [event]
+           (dom/prevent-default event)
+           (reset! is-open* true)
+           (dom/focus! (mf/ref-val token-wrapper-ref))))
+
         detach-token
         (mf/use-fn
          (mf/deps on-change)
@@ -444,6 +451,16 @@
            (dom/prevent-default event)
            (dom/focus! (mf/ref-val token-wrapper-ref))))
 
+        on-wrapper-blur
+        (mf/use-fn
+         (mf/deps)
+         (fn [e]
+           (let [target (dom/get-related-target e)
+                 outside? (not (.contains (mf/ref-val wrapper-ref) target))]
+             (when outside?
+               (reset! focused-id* nil)
+               (reset! is-open* false)))))
+
         props
         (mf/spread-props props {:ref ref
                                 :type "text"
@@ -467,14 +484,14 @@
                                               (mf/html [:> icon-button* {:variant "action"
                                                                          :class (stl/css :invisible-button)
                                                                          :icon "broken-link"
-                                                                       ;;  TODO: add translation
+                                                                         ;; TODO: add translation
                                                                          :aria-label "Detach token"
                                                                          :on-click detach-token}])
                                               (some? options)
                                               (mf/html [:> icon-button* {:variant "action"
                                                                          :icon "component"
                                                                          :class (stl/css :invisible-button)
-                                                                      ;;  TODO: add translation
+                                                                         ;; TODO: add translation
                                                                          :aria-label "Open dropdown"
                                                                          :ref open-dropdown-ref
                                                                          :on-click open-dropdown}])))
@@ -498,12 +515,13 @@
                 :on-click focus-wrapper
                 :on-key-down handle-pill
                 :ref token-wrapper-ref
+                :on-blur on-wrapper-blur
                 :tab-index 0}
           [:> icon* {:icon-id icon
                      :class (stl/css :icon)}]
           [:> tooltip* {:content label
                         :id (dm/str id "-pill")}
-           [:button {:on-click open-dropdown
+           [:button {:on-click open-dropdown-token
                      :class (stl/css :pill)
                      :aria-labelledby (dm/str id "-pill")
                      :on-key-down handle-pill}
