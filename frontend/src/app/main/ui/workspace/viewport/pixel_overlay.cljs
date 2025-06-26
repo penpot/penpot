@@ -50,6 +50,41 @@
                                        (obj/set! internal-state "canvas" new-canvas)
                                        new-canvas))))))))
 
+(defn process-pointer-move [viewport-node canvas canvas-image-data zoom-view-context client-x client-y]
+  (when-let [image-data (mf/ref-val canvas-image-data)]
+    (when-let [zoom-view-node (dom/get-element "picker-detail")]
+      (when-not (mf/ref-val zoom-view-context)
+        (mf/set-ref-val! zoom-view-context (.getContext zoom-view-node "2d")))
+      (let [canvas-width 260
+            canvas-height 140
+            {brx :left bry :top} (dom/get-bounding-rect viewport-node)
+
+            x (mth/floor (- client-x brx))
+            y (mth/floor (- client-y bry))
+
+            zoom-context (mf/ref-val zoom-view-context)
+            offset (* (+ (* y (unchecked-get image-data "width")) x) 4)
+            rgba (unchecked-get image-data "data")
+
+            r (obj/get rgba (+ 0 offset))
+            g (obj/get rgba (+ 1 offset))
+            b (obj/get rgba (+ 2 offset))
+            a (obj/get rgba (+ 3 offset))
+
+            sx (- x 32)
+            sy (if (cfg/check-browser? :safari) y (- y 17))
+            sw 65
+            sh 35
+            dx 0
+            dy 0
+            dw canvas-width
+            dh canvas-height]
+        (when (obj/get zoom-context "imageSmoothingEnabled")
+          (obj/set! zoom-context "imageSmoothingEnabled" false))
+        (.clearRect zoom-context 0 0 canvas-width canvas-height)
+        (.drawImage zoom-context canvas sx sy sw sh dx dy dw dh)
+        (st/emit! (dwc/pick-color [r g b a]))))))
+
 (mf/defc pixel-overlay
   {::mf/wrap-props false}
   [props]
@@ -62,7 +97,8 @@
         canvas-context    (.getContext canvas "2d" #js {:willReadFrequently true})
         canvas-image-data (mf/use-ref nil)
         zoom-view-context (mf/use-ref nil)
-
+        canvas-ready      (mf/use-state false)
+        initial-mouse-pos (mf/use-state {:x 0 :y 0})
         update-str        (rx/subject)
 
         handle-keydown
@@ -73,49 +109,6 @@
              (dom/prevent-default event)
              (st/emit! (dwc/stop-picker))
              (modal/disallow-click-outside!))))
-
-        handle-pointer-move-picker
-        (mf/use-callback
-         (mf/deps viewport-node)
-         (fn [event]
-           (when-let [image-data (mf/ref-val canvas-image-data)]
-             (when-let [zoom-view-node (dom/get-element "picker-detail")]
-               (when-not (mf/ref-val zoom-view-context)
-                 (mf/set-ref-val! zoom-view-context (.getContext zoom-view-node "2d")))
-               (let [canvas-width 260
-                     canvas-height 140
-                     {brx :left bry :top} (dom/get-bounding-rect viewport-node)
-
-                     x (mth/floor (- (.-clientX event) brx))
-                     y (mth/floor (- (.-clientY event) bry))
-
-                     zoom-context (mf/ref-val zoom-view-context)
-
-                     offset (* (+ (* y (unchecked-get image-data "width")) x) 4)
-                     rgba (unchecked-get image-data "data")
-
-                     r (obj/get rgba (+ 0 offset))
-                     g (obj/get rgba (+ 1 offset))
-                     b (obj/get rgba (+ 2 offset))
-                     a (obj/get rgba (+ 3 offset))
-
-                     ;; I don't know why, but the zoom view is offset by 24px
-                     ;; instead of 25.
-                     sx (- x 32)
-
-                     ;; Safari has a different offset fro the y coord
-                     sy (if (cfg/check-browser? :safari) y (- y 17))
-                     sw 65
-                     sh 35
-                     dx 0
-                     dy 0
-                     dw canvas-width
-                     dh canvas-height]
-                 (when (obj/get zoom-context "imageSmoothingEnabled")
-                   (obj/set! zoom-context "imageSmoothingEnabled" false))
-                 (.clearRect zoom-context 0 0 canvas-width canvas-height)
-                 (.drawImage zoom-context canvas sx sy sw sh dx dy dw dh)
-                 (st/emit! (dwc/pick-color [r g b a])))))))
 
         handle-pointer-down-picker
         (mf/use-callback
@@ -152,12 +145,27 @@
                               (let [width (unchecked-get canvas "width")
                                     height (unchecked-get canvas "height")
                                     image-data (.getImageData canvas-context 0 0 width height)]
-                                (mf/set-ref-val! canvas-image-data image-data))))))))
+                                (mf/set-ref-val! canvas-image-data image-data)
+                                (reset! canvas-ready true))))))))
 
         handle-svg-change
         (mf/use-callback
          (fn []
-           (rx/push! update-str :update)))]
+           (rx/push! update-str :update)))
+
+        handle-mouse-enter
+        (mf/use-callback
+         (mf/deps viewport-node)
+         (fn [event]
+           (let [x (.-clientX event)
+                 y (.-clientY event)]
+             (reset! initial-mouse-pos {:x x
+                                        :y y}))))
+        handle-pointer-move-picker
+        (mf/use-callback
+         (mf/deps viewport-node)
+         (fn [event]
+           (process-pointer-move viewport-node canvas canvas-image-data zoom-view-context (.-clientX event) (.-clientY event))))]
 
     (when (obj/get canvas-context "imageSmoothingEnabled")
       (obj/set! canvas-context "imageSmoothingEnabled" false))
@@ -188,9 +196,17 @@
          ;; Disconnect on unmount
          #(.disconnect observer))))
 
+    (mf/use-effect
+     (mf/deps viewport-node @canvas-ready)
+     (fn []
+       (when canvas-ready
+         (let [{:keys [x y]} @initial-mouse-pos]
+           (process-pointer-move viewport-node canvas canvas-image-data zoom-view-context x y)))))
+
     [:div {:id "pixel-overlay"
            :tab-index 0
            :class (dm/str (cur/get-static "picker") " " (stl/css :pixel-overlay))
            :on-pointer-down handle-pointer-down-picker
            :on-pointer-up handle-pointer-up-picker
-           :on-pointer-move handle-pointer-move-picker}]))
+           :on-pointer-move handle-pointer-move-picker
+           :on-mouse-enter handle-mouse-enter}]))

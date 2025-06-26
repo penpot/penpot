@@ -220,7 +220,8 @@
       [:div {:class (stl/css :project-name-wrapper)}
        (if (:edition @local)
          [:& inline-edition {:content (:name project)
-                             :on-end on-edit}]
+                             :on-end on-edit
+                             :max-length 250}]
          [:h2 {:on-click on-nav
                :style {:max-width (str title-width "%")}
                :class (stl/css :project-name)
