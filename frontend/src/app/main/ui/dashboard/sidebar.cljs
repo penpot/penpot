@@ -834,16 +834,7 @@
          [:& link {:action go-drafts
                    :class (stl/css :sidebar-link)
                    :keyboard-action go-drafts-with-key}
-          [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]
-
-
-        [:li {:class (stl/css-case :current libs?
-                                   :sidebar-nav-item true)}
-         [:& link {:action go-libs
-                   :data-testid "libs-link-sidebar"
-                   :class (stl/css :sidebar-link)
-                   :keyboard-action go-libs-with-key}
-          [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
+          [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]]]
 
 
       [:div {:class (stl/css :sidebar-content-section)}
@@ -856,7 +847,14 @@
                    :class (stl/css :sidebar-link)
                    :keyboard-action go-fonts-with-key
                    :data-testid "fonts"}
-          [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]]]
+          [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]
+        [:li {:class (stl/css-case :current libs?
+                                   :sidebar-nav-item true)}
+         [:& link {:action go-libs
+                   :data-testid "libs-link-sidebar"
+                   :class (stl/css :sidebar-link)
+                   :keyboard-action go-libs-with-key}
+          [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
 
 
       [:div {:class (stl/css :sidebar-content-section)
