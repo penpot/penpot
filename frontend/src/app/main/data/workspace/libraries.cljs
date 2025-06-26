@@ -975,10 +975,11 @@
             [new-shape all-parents changes]
             (-> (pcb/empty-changes it (:id page))
                 (pcb/set-undo-group undo-group)
-                (cll/generate-component-swap objects shape ldata page libraries id-new-component index target-cell keep-props-values))
+                (cll/generate-component-swap objects shape ldata page libraries id-new-component
+                                             index target-cell keep-props-values keep-touched?))
 
             changes (if keep-touched?
-                      (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries)
+                      (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
                       changes)]
 
         (rx/of

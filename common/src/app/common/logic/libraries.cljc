@@ -2257,10 +2257,21 @@
                                    {}))]))
 
 (defn generate-component-swap
-  [changes objects shape file page libraries id-new-component index target-cell keep-props-values]
-  (let [[all-parents changes]
+  [changes objects shape file page libraries id-new-component
+   index target-cell keep-props-values keep-touched]
+  (let [;; When we keep the touched properties, we can't delete the
+        ;; swapped children (we will keep them too)
+        ignore-swapped-fn
+        (if keep-touched
+          #(-> (get objects %)
+               (ctk/get-swap-slot))
+          (constantly false))
+
+        [all-parents changes]
         (-> changes
-            (cls/generate-delete-shapes file page objects (d/ordered-set (:id shape)) {:component-swap true}))
+            (cls/generate-delete-shapes
+             file page objects (d/ordered-set (:id shape))
+             {:component-swap true :ignore-children-fn ignore-swapped-fn}))
         [new-shape changes]
         (-> changes
             (generate-new-shape-for-swap shape file page libraries id-new-component index target-cell keep-props-values))]
