@@ -17,6 +17,7 @@
    [app.common.files.validate :as cfv]
    [app.common.logging :as l]
    [app.common.pprint :as p]
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -394,6 +395,22 @@
                   (let [file (bfc/get-file system file-id)
                         libs (bfc/get-resolved-file-libraries system file)]
                     (cfv/validate-file file libs))))))
+
+(defn validate-file-schema
+  "Validate structure, referencial integrity and semantic coherence of
+  all contents of a file. Returns a list of errors."
+  [file-id]
+  (let [file-id (h/parse-uuid file-id)]
+    (db/tx-run! (assoc main/system ::db/rollback true)
+                (fn [system]
+                  (try
+                    (let [file (bfc/get-file system file-id)]
+                      (cfv/validate-file-schema! file)
+                      (println "OK"))
+                    (catch Exception cause
+                      (if-let [explain (-> cause ex-data ::sm/explain)]
+                        (println (sm/humanize-explain explain))
+                        (ex/print-throwable cause))))))))
 
 (defn repair-file!
   "Repair the list of errors detected by validation."

@@ -855,7 +855,7 @@
 
           (update-object [object]
             (if (cfh/text-shape? object)
-              (update object :content #(txt/transform-nodes identity update-text-node %))
+              (update object :content #(txt/transform-nodes txt/is-content-node? update-text-node %))
               object))
 
           (update-container [container]
@@ -1105,7 +1105,7 @@
                 ;; The text shape also can has fills on the text
                 ;; fragments so we need to fix fills there
                 (cond-> (cfh/text-shape? object)
-                  (update :content (partial txt/transform-nodes identity fix-fills)))))
+                  (update :content (partial txt/transform-nodes txt/is-content-node? fix-fills)))))
 
           (update-container [container]
             (d/update-when container :objects d/update-vals update-object))]
@@ -1277,22 +1277,21 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0002-normalize-bool-content"
+(defmethod migrate-data "0002-normalize-bool-content-v2"
   [data _]
   (letfn [(update-object [object]
-            ;; NOTE: we still preserve the previous value for possible
-            ;; rollback, we still need to perform an other migration
-            ;; for properly delete the bool-content prop from shapes
-            ;; once the know the migration was OK
-            (if (and (cfh/bool-shape? object)
-                     (not (contains? object :content)))
-              (if-let [content (:bool-content object)]
-                (assoc object :content content)
-                object)
+            (if (cfh/bool-shape? object)
+              (if (contains? object :content)
+                (dissoc object :bool-content)
+                (let [content (:bool-content object)]
+                  (-> object
+                      (assoc :content content)
+                      (dissoc :bool-content))))
+
               (dissoc object :bool-content :bool-type)))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
         (update :pages-index d/update-vals update-container)
@@ -1331,38 +1330,43 @@
               object))
 
           (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0004-clean-shadow-and-colors"
+(defmethod migrate-data "0004-clean-shadow-color"
   [data _]
-  (letfn [(clean-shadow [shadow]
-            (update shadow :color (fn [color]
-                                    (let [ref-id   (get color :id)
-                                          ref-file (get color :file-id)]
-                                      (-> (d/without-qualified color)
-                                          (select-keys [:opacity :color :gradient :image :ref-id :ref-file])
-                                          (cond-> ref-id
-                                            (assoc :ref-id ref-id))
-                                          (cond-> ref-file
-                                            (assoc :ref-file ref-file)))))))
+  (let [decode-color (sm/decoder types.color/schema:color sm/json-transformer)
 
-          (update-object [object]
-            (d/update-when object :shadow #(mapv clean-shadow %)))
+        clean-shadow-color
+        (fn [color]
+          (let [ref-id   (get color :id)
+                ref-file (get color :file-id)]
+            (-> (d/without-qualified color)
+                (select-keys [:opacity :color :gradient :image :ref-id :ref-file])
+                (cond-> ref-id
+                  (assoc :ref-id ref-id))
+                (cond-> ref-file
+                  (assoc :ref-file ref-file))
+                (decode-color))))
 
-          (update-container [container]
-            (d/update-when container :objects d/update-vals update-object))
+        clean-shadow
+        (fn [shadow]
+          (update shadow :color clean-shadow-color))
 
-          (clean-library-color [color]
-            (dissoc color :file-id))]
+        update-object
+        (fn [object]
+          (d/update-when object :shadow #(mapv clean-shadow %)))
+
+        update-container
+        (fn [container]
+          (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
         (update :pages-index d/update-vals update-container)
-        (d/update-when :components d/update-vals update-container)
-        (d/update-when :colors d/update-vals clean-library-color))))
+        (d/update-when :components d/update-vals update-container))))
 
 (defmethod migrate-data "0005-deprecate-image-type"
   [data _]
@@ -1402,7 +1406,7 @@
 
           (update-object [object]
             (if (cfh/text-shape? object)
-              (update object :content (partial txt/transform-nodes identity fix-fills))
+              (update object :content (partial txt/transform-nodes txt/is-content-node? fix-fills))
               object))
 
           (update-container [container]
@@ -1480,7 +1484,7 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0008-fix-library-colors-v3"
+(defmethod migrate-data "0008-fix-library-colors-v4"
   [data _]
   (letfn [(clear-color-opacity [color]
             (if (and (contains? color :opacity)
@@ -1491,7 +1495,8 @@
           (clear-color [color]
             (-> color
                 (select-keys types.color/library-color-attrs)
-                (clear-color-opacity)))]
+                (clear-color-opacity)
+                (d/without-nils)))]
 
     (d/update-when data :colors d/update-vals clear-color)))
 
@@ -1550,12 +1555,12 @@
          "legacy-66"
          "legacy-67"
          "0001-remove-tokens-from-groups"
-         "0002-normalize-bool-content"
+         "0002-normalize-bool-content-v2"
          "0002-clean-shape-interactions"
          "0003-fix-root-shape"
          "0003-convert-path-content"
-         "0004-clean-shadow-and-colors"
+         "0004-clean-shadow-color"
          "0005-deprecate-image-type"
          "0006-fix-old-texts-fills"
          "0007-clear-invalid-strokes-and-fills-v2"
-         "0008-fix-library-colors-v3"]))
+         "0008-fix-library-colors-v4"]))

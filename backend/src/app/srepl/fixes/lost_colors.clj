@@ -23,7 +23,7 @@
       AND label IS NOT NULL
       AND data IS NOT NULL
     ORDER BY created_at DESC
-    LIMIT 1")
+    LIMIT 2")
 
 (defn get-affected-migration
   [conn file-id]
@@ -33,11 +33,12 @@
 
 (defn get-last-valid-snapshot
   [conn migration]
-  (when-let [snapshot (db/exec-one! conn [sql:get-matching-snapshot
-                                          (:file-id migration)
-                                          (:created-at migration)])]
-    (let [snapshot (assoc snapshot :id (:file-id snapshot))]
-      (bfc/decode-file h/*system* snapshot))))
+  (let [[snapshot] (db/exec! conn [sql:get-matching-snapshot
+                                   (:file-id migration)
+                                   (:created-at migration)])]
+    (when snapshot
+      (let [snapshot (assoc snapshot :id (:file-id snapshot))]
+        (bfc/decode-file h/*system* snapshot)))))
 
 (defn restore-color
   [{:keys [data] :as snapshot} color]
@@ -47,25 +48,41 @@
 
 (defn restore-missing-colors
   [{:keys [id] :as file} & _opts]
-  (when-let [colors (-> file :data :colors not-empty)]
-    (when-let [migration (get-affected-migration h/*system* id)]
-      (when-let [snapshot (get-last-valid-snapshot h/*system* migration)]
-        (let [colors (reduce-kv (fn [colors color-id color]
-                                  (if-let [result (restore-color snapshot color)]
-                                    (do
-                                      (l/inf :hint "restored color" :file-id (str id) :color-id (str color-id))
-                                      (assoc colors color-id result))
-                                    (do
-                                      (l/wrn :hint "ignoring color" :file-id (str id) :color (pr-str color))
-                                      colors)))
-                                colors
-                                colors)
-              file   (-> file
-                         (update :data assoc :colors colors)
-                         (update :migrations disj "0008-fix-library-colors-v2"))]
+  (l/inf :hint "process file" :file-id (str id) :name (:name file) :has-colors (-> file :data :colors not-empty boolean))
+  (if-let [colors (-> file :data :colors not-empty)]
+    (let [migration (get-affected-migration h/*system* id)]
+      (if-let [snapshot (get-last-valid-snapshot h/*system* migration)]
+        (do
+          (l/inf :hint "using snapshot" :snapshot (:label snapshot))
+          (let [colors (reduce-kv (fn [colors color-id color]
+                                    (if-let [result (restore-color snapshot color)]
+                                      (do
+                                        (l/inf :hint "restored color" :file-id (str id) :color-id (str color-id))
+                                        (assoc colors color-id result))
+                                      (do
+                                        (l/wrn :hint "ignoring color" :file-id (str id) :color (pr-str color))
+                                        colors)))
+                                  colors
+                                  colors)
+                file   (-> file
+                           (update :data assoc :colors colors)
+                           (update :migrations disj "0008-fix-library-colors-v2"))]
 
+            (db/delete! h/*system* :file-migration
+                        {:name "0008-fix-library-colors-v2"
+                         :file-id (:id file)})
+            file))
+
+        (do
           (db/delete! h/*system* :file-migration
                       {:name "0008-fix-library-colors-v2"
                        :file-id (:id file)})
+          nil)))
 
-          file)))))
+    (do
+      (db/delete! h/*system* :file-migration
+                  {:name "0008-fix-library-colors-v2"
+                   :file-id (:id file)})
+      nil)))
+
+
