@@ -17,6 +17,7 @@
    [app.main.ui.ds.controls.shared.token-option :refer [schema:token-option]]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
+   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.formats :as fmt]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -98,7 +99,7 @@
 (mf/defc numeric-input*
   {::mf/forward-ref true
    ::mf/schema schema:numeric-input}
-  [{:keys [id class value default placeholder icon
+  [{:keys [id class value default placeholder icon disabled
            min max max-length step
            is-selected-on-focus nillable
            options default-selected empty-to-end
@@ -143,13 +144,11 @@
 
         is-multiple?       (= :multiple value)
 
-        ;; El valor que llega de fuera la primera vez, de la shape
         value        (cond
                        is-multiple? nil
                        (and nillable (nil? value)) nil
                        :else (d/parse-double value default))
-
-        ;; El valor que el usuario escribe en el input
+        ;; Raw value is used to store the raw input value
         raw-value*   (mf/use-var
                       (cond
                         is-multiple?
@@ -161,7 +160,7 @@
                         :else
                         (fmt/format-number (d/parse-double value default))))
 
-        ;; Este es el ultimo valor válido, que ha pasado por la verificación y se ha guardado
+        ;; Last value is used to store the last valid value
         last-value*  (mf/use-var (d/parse-double value default))
 
         ;; Refs
@@ -169,10 +168,12 @@
         listbox-id-ref     (mf/use-ref (dm/str "tokens-listbox-" (swap! listbox-id-index inc)))
         options-nodes-refs (mf/use-ref nil)
         options-ref        (mf/use-ref nil)
+        token-wrapper-ref  (mf/use-ref nil)
         ref                (or ref (mf/use-ref))
         dirty-ref          (mf/use-ref false)
         open-dropdown-ref  (mf/use-ref nil)
         listbox-id         (mf/ref-val listbox-id-ref)
+        token-detach-button-ref (mf/use-ref nil)
 
         set-option-ref
         (mf/use-fn
@@ -213,7 +214,6 @@
                  (reset! raw-value* (fmt/format-number parsed))
                  (update-input (fmt/format-number parsed))))
 
-             ;; Cuando falla el parseo, usaremos el valor anterior o el valor por defecto
              (if (and nillable (empty? raw-value))
                (do
                  (reset! last-value* nil)
@@ -223,10 +223,10 @@
                  (when (fn? on-change)
                    (on-change nil)))
 
-               ;; Si no es nillable, usamos el valor por defecto 
                (let [fallback-value (or @last-value* default)]
                  (reset! raw-value* (fmt/format-number fallback-value))
-                ;;  hay que resetear el last-value o el token value?
+                 (reset! last-value* (fmt/format-number fallback-value))
+                 (reset! is-token* false)
                  (update-input (fmt/format-number fallback-value))
                  (when (and (fn? on-change) (not= fallback-value value))
                    (on-change fallback-value)))))))
@@ -239,12 +239,11 @@
 
         on-token-apply
         (fn [id value]
-          ;; ademas de aplicar valor, ¿deberiamos setear el token en las shapes?
           (reset! selected-value* id)
           (reset! focused-id* nil)
           (reset! is-open* false)
           (apply-value value)
-          (reset! is-token* true))
+          (reset! is-token* id))
 
         on-option-click
         (mf/use-fn
@@ -269,16 +268,16 @@
         on-blur
         (mf/use-fn
          (mf/deps parse-value)
-         (fn [e]
-           (let [target (dom/get-related-target e)
-                 outside? (not (.contains (mf/ref-val wrapper-ref) target))]
-             (when outside?
+         (fn [event]
+           (let [target   (dom/get-related-target event)
+                 self-node (mf/ref-val wrapper-ref)]
+             (when-not (dom/is-child? self-node target)
                (reset! focused-id* nil)
                (reset! is-open* false)))
            (when (mf/ref-val dirty-ref)
              (apply-value @raw-value*)
              (when (fn? on-blur)
-               (on-blur e)))))
+               (on-blur event)))))
 
         handle-key-down
         (mf/use-fn
@@ -289,7 +288,6 @@
                  down?   (kbd/down-arrow? event)
                  enter?  (kbd/enter? event)
                  esc?    (kbd/esc? event)
-                 tab?    (kbd/tab? event)
                  node    (mf/ref-val ref)
                  tokens? (= (.-key event) "{")
                  parsed  (parse-value @raw-value* @last-value* min max nillable)
@@ -336,15 +334,7 @@
                  (let [new-val (decrement current-value step min max)]
                    (update-input (fmt/format-number new-val))
                    (apply-value (dm/str new-val))
-                   (dom/prevent-default event)))
-
-              ;;  Revisar si esto es necesario, 
-               tab?
-               (when-not is-open
-                 (when-not is-token
-                   (->  (mf/ref-val open-dropdown-ref)
-                        (dom/set-attribute! "tabIndex" "0")
-                        (dom/focus!))))))))
+                   (dom/prevent-default event)))))))
 
         handle-focus
         (mf/use-fn
@@ -373,8 +363,6 @@
                                (decrement current-value step min max))]
                  (dom/prevent-default event)
                  (dom/stop-propagation event)
-                ;;  Preguntar a Natacha por este comportamiento si es el esperado
-                 (reset! selected-value* nil)
                  (apply-value (dm/str new-val)))))))
 
         open-dropdown
@@ -389,22 +377,11 @@
          (mf/deps on-change)
          (fn [event]
            (dom/prevent-default event)
+           (dom/stop-propagation event)
            (reset! is-token* false)
            (reset! selected-value* nil)
            (reset! focused-id* nil)
            (dom/focus! (mf/ref-val ref))))
-
-        handle-detach
-        (mf/use-fn
-         (mf/deps detach-token)
-         (fn [event]
-           (prn "entro en el handle-detach")
-           (dom/prevent-default event)
-           (when (kbd/enter? event)
-             (detach-token))
-           (when (kbd/tab? event)
-             (dom/stop-propagation event)
-             (prn "debo focusear siguiente element0"))))
         
         dropdown-options
         (mf/with-memo [options filter-id]
@@ -415,6 +392,57 @@
                             (str/includes? option filter))))
                (not-empty)))
 
+        handle-pill
+        (mf/use-fn
+         (mf/deps detach-token)
+         (fn [event]
+           (let [esc?    (kbd/esc? event)
+                 delete? (kbd/delete? event)
+                 backspace? (kbd/backspace? event)
+                 enter? (kbd/enter? event)
+                 up?     (kbd/up-arrow? event)
+                 down?   (kbd/down-arrow? event)
+                 options (mf/ref-val options-ref)
+                 len     (count options)
+                 index   (d/index-of-pred options #(= focused-id (get % :id)))
+                 index   (d/nilv index -1)
+                 detach-btn (mf/ref-val token-detach-button-ref)
+                 target (dom/get-target event)]
+             (cond
+               (or delete? backspace?)
+               (do
+                 (dom/prevent-default event)
+                 (detach-token event))
+
+               enter?
+               (if is-open
+                 (on-option-enter event)
+                 (when (not= target detach-btn)
+                   (reset! is-open* true)))
+
+               esc?
+               (dom/blur! (mf/ref-val token-wrapper-ref))
+
+               up?
+               (when is-open
+                 (let [new-index (if (= index -1)
+                                   (dec len)
+                                   (mod (- index 1) len))]
+                   (handle-focus-change options focused-id* new-index options-nodes-refs)))
+
+               down?
+               (when is-open
+                 (let [new-index (if (= index -1)
+                                   0
+                                   (mod (+ index 1) len))]
+                   (handle-focus-change options focused-id* new-index options-nodes-refs)))))))
+
+        focus-wrapper
+        (mf/use-fn
+         (mf/deps token-wrapper-ref)
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/focus! (mf/ref-val token-wrapper-ref))))
 
         props
         (mf/spread-props props {:ref ref
@@ -428,25 +456,28 @@
                                 :on-key-down handle-key-down
                                 :on-focus handle-focus
                                 :on-change store-raw-value
+                                :disabled disabled
                                 :slot-start (when icon
                                               (mf/html [:> icon* {:icon-id icon
                                                                   :class (stl/css :icon)}]))
 
-                                :slot-end (cond
-                                            is-token
-                                            (mf/html [:> icon-button* {:variant "action"
-                                                                       :class (stl/css :invisible-button)
-                                                                       :icon "broken-link"
-                                                                       :aria-label "Detach token"
-                                                                       :on-click detach-token}])
-                                            (some? options)
-                                            (mf/html [:> icon-button* {:variant "action"
-                                                                       :icon "component"
-                                                                       :class (stl/css :invisible-button)
-                                                                       :aria-label "Open dropdown"
-                                                                       :tab-index -1
-                                                                       :ref open-dropdown-ref
-                                                                       :on-click open-dropdown}]))
+                                :slot-end (when-not disabled
+                                            (cond
+                                              is-token
+                                              (mf/html [:> icon-button* {:variant "action"
+                                                                         :class (stl/css :invisible-button)
+                                                                         :icon "broken-link"
+                                                                       ;;  TODO: add translation
+                                                                         :aria-label "Detach token"
+                                                                         :on-click detach-token}])
+                                              (some? options)
+                                              (mf/html [:> icon-button* {:variant "action"
+                                                                         :icon "component"
+                                                                         :class (stl/css :invisible-button)
+                                                                      ;;  TODO: add translation
+                                                                         :aria-label "Open dropdown"
+                                                                         :ref open-dropdown-ref
+                                                                         :on-click open-dropdown}])))
                                 :max-length max-length})]
 
     (mf/with-layout-effect [handle-mouse-wheel]
@@ -459,7 +490,34 @@
 
     [:div {:class (dm/str class " " (stl/css :input-wrapper))
            :ref wrapper-ref}
-     [:> input-field* props]
+     (if is-token
+       (let [token (get-option options is-token)
+             label (get token :label)
+             token-value (get token :resolved)]
+         [:div {:class (stl/css :button-wrapper)
+                :on-click focus-wrapper
+                :on-key-down handle-pill
+                :ref token-wrapper-ref
+                :tab-index 0}
+          [:> icon* {:icon-id icon
+                     :class (stl/css :icon)}]
+          [:> tooltip* {:content label
+                        :id (dm/str id "-pill")}
+           [:button {:on-click open-dropdown
+                     :class (stl/css :pill)
+                     :aria-labelledby (dm/str id "-pill")
+                     :on-key-down handle-pill}
+            token-value]]
+
+          [:> icon-button* {:variant "action"
+                            :class (stl/css :invisible-button)
+                            :icon "broken-link"
+                            ;; TODO: add translation
+                            :ref token-detach-button-ref
+                            :aria-label "Detach token"
+                            :on-click detach-token}]])
+
+       [:> input-field* props])
 
      (when is-open
        [:> options-dropdown* {:on-click on-option-click

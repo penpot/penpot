@@ -5,6 +5,9 @@
 // Copyright (c) KALEIDOS INC
 
 @use "../spacing.scss" as *;
+@use "../borders.scss" as *;
+@use "../sizes.scss" as *;
+@use "../typography.scss" as t;
 
 .input-wrapper {
   display: flex;
@@ -25,18 +28,82 @@
   color: var(--color-foreground-secondary);
 }
 
-// .invisible-button {
-//   svg {
-//     opacity: var(--opacity-button);
-//   }
-//   &:hover {
-//     svg {
-//           --opacity-button: 1;
-//     }
-//   }
-//   &:focus {
-//         svg {
-//          --opacity-button: 1; 
-//     }
-//   }
-// }
+.pill {
+  --pill-border-color: var(--color-token-border);
+  --pill-bg-color: var(--color-background-tertiary);
+  --pill-fg-color: var(--color-token-foreground);
+  @include t.use-typography("code-font");
+  height: var(--sp-xxl);
+  width: fit-content;
+  background: var(--pill-bg-color);
+  cursor: pointer;
+  border: $b-1 solid var(--pill-border-color);
+  color: var(--pill-fg-color);
+  border-radius: $br-6;
+  padding-inline: $sz-6;
+  &:hover {
+    --pill-bg-color: var(--color-token-background);
+    --pill-fg-color: var(--color-foreground-primary);
+    --pill-border-color: var(--color-token-foreground);
+  }
+  &:focus-visible {
+    --pill-bg-color: var(--color-token-background);
+    --pill-fg-color: var(--color-foreground-primary);
+    --pill-border-color: var(--color-accent-primary);
+    outline: none;
+  }
+}
+
+.icon {
+  color: var(--color-foreground-secondary);
+}
+
+.button-wrapper {
+  --button-wrapper-bg-color: var(--color-background-tertiary);
+  --button-wrapper-fg-color: var(--color-foreground-primary);
+  --button-wrapper-icon-color: var(--color-foreground-secondary);
+  --button-wrapper-outline-color: none;
+  --button-wrapper-height: var(--sp-xxxl);
+  --button-wrapper-margin: unset;
+  
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  column-gap: var(--sp-xs);
+  align-items: center;
+  position: relative;
+  inline-size: 100%;
+  background: var(--button-wrapper-bg-color);
+  border-radius: 0.5rem;
+  padding: var(--sp-xs) var(--sp-s);
+  outline: $b-1 solid var(--button-wrapper-outline-color);
+
+  &:hover {
+    --button-wrapper-bg-color: var(--color-background-quaternary);
+  }
+
+  &:focus-visible, &:focus-within, &:has(*:focus-visible) {
+    --button-wrapper-bg-color: var(--color-background-primary);
+    --button-wrapper-outline-color: var(--color-accent-primary);
+  }
+
+  &:disabled {
+    --button-wrapper-bg-color: var(--color-background-primary);
+    --button-wrapper-outline-color: var(--color-background-quaternary);
+  }
+}
+
+.invisible-button {
+  svg {
+    opacity: var(--opacity-button);
+  }
+  &:hover {
+    svg {
+      --opacity-button: 1;
+    }
+  }
+  &:focus {
+    svg {
+      --opacity-button: 1;
+    }
+  }
+}
