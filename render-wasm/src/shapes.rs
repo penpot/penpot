@@ -985,7 +985,7 @@ pub fn modified_children_ids(
         for st in structure {
             match st.entry_type {
                 StructureEntryType::AddChild => {
-                    result.insert(st.index as usize, st.id);
+                    result.insert(result.len() - st.index as usize, st.id);
                 }
                 StructureEntryType::RemoveChild => {
                     to_remove.insert(&st.id);
