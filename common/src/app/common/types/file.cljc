@@ -242,6 +242,13 @@
       (cfh/make-container component-page :page))
     (cfh/make-container component :component)))
 
+(defn get-component-container-from-head
+  [instance-head libraries & {:keys [include-deleted?] :or {include-deleted? true}}]
+  (let [library-data   (-> (get-component-library libraries instance-head)
+                           :data)
+        component (ctkl/get-component library-data (:component-id instance-head) include-deleted?)]
+    (get-component-container library-data component)))
+
 (defn get-component-root
   "Retrieve the root shape of the component."
   [file-data component]
