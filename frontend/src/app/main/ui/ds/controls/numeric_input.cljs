@@ -81,10 +81,10 @@
       (obj/get option "id"))))
 
 (defn- handle-focus-change
-  [options focused* new-index options-nodes-refs]
+  [options focused* new-index nodes-refs]
   (let [option (aget options new-index)
         id     (obj/get option "id")
-        nodes  (mf/ref-val options-nodes-refs)
+        nodes  (mf/ref-val nodes-refs)
         node   (obj/get nodes id)]
     (reset! focused* id)
     (dom/scroll-into-view-if-needed! node)))
@@ -129,6 +129,7 @@
         nillable        (d/nilv nillable false)
         select-on-focus (d/nilv is-selected-on-focus true)
         default         (d/parse-double default (when-not nillable 0))
+        empty-to-end    (d/nilv empty-to-end false)
         step            (d/parse-double step 1)
         min             (d/parse-double min sm/min-safe-int)
         max             (d/parse-double max sm/max-safe-int)
@@ -142,19 +143,21 @@
         is-token*          (mf/use-state false)
         is-token           (deref is-token*)
 
-        selected-value*    (mf/use-state  #(get-selected-option-id options default-selected))
-        selected-value     (deref selected-value*)
+        selected-id*       (mf/use-state  #(get-selected-option-id options default-selected)) ;; Default-selected podría ser una id??
+        selected-id        (deref selected-id*)
 
         focused-id*        (mf/use-state nil)
         focused-id         (deref focused-id*)
 
         is-multiple?       (= :multiple value)
 
+        ;; Is the value that comes from the shape, can be a number, null or :multiple
         value        (cond
                        is-multiple? nil
                        (and nillable (nil? value)) nil
                        :else (d/parse-double value default))
-        ;; Raw value is used to store the raw input value
+
+        ;; Raw value is used to store the raw input value, what the user types
         raw-value*   (mf/use-var
                       (cond
                         is-multiple?
@@ -166,36 +169,36 @@
                         :else
                         (fmt/format-number (d/parse-double value default))))
 
-        ;; Last value is used to store the last valid value
+        ;; Last value is used to store the last valid value after parsing
         last-value*  (mf/use-var (d/parse-double value default))
 
         ;; Refs
         wrapper-ref        (mf/use-ref nil)
         listbox-id-ref     (mf/use-ref (dm/str "tokens-listbox-" (swap! listbox-id-index inc)))
-        options-nodes-refs (mf/use-ref nil)
+        nodes-refs (mf/use-ref nil)
         options-ref        (mf/use-ref nil)
         token-wrapper-ref  (mf/use-ref nil)
-        ref                (or ref (mf/use-ref))
-        dirty-ref          (mf/use-ref false)
+        input-ref          (or ref (mf/use-ref))
+        dirty-ref          (mf/use-ref false) ;; We use this to track if the input has been modified
         open-dropdown-ref  (mf/use-ref nil)
         listbox-id         (mf/ref-val listbox-id-ref)
-        token-detach-button-ref (mf/use-ref nil)
+        detach-button-ref  (mf/use-ref nil)
 
         set-option-ref
         (mf/use-fn
-         (mf/deps options-nodes-refs)
+         (mf/deps nodes-refs)
          (fn [node id]
-           (let [refs (or (mf/ref-val options-nodes-refs) #js {})
+           (let [refs (or (mf/ref-val nodes-refs) #js {})
                  refs (if node
                         (obj/set! refs id node)
                         (obj/unset! refs id))]
-             (mf/set-ref-val! options-nodes-refs refs))))
+             (mf/set-ref-val! nodes-refs refs))))
 
         ;; Callbacks
         update-input
         (mf/use-fn
          (fn [new-value]
-           (when-let [node (mf/ref-val ref)]
+           (when-let [node (mf/ref-val input-ref)]
              (dom/set-value! node new-value))))
 
         apply-value
@@ -207,13 +210,11 @@
              (when-not (= parsed @last-value*)
                (do
                  (reset! last-value* parsed)
-                ;;  Ojo cuidado a ver si esto es asi
                  (reset! is-token* false)
-                 (when (fn? on-change)
-                   (on-change parsed))
-
                  (reset! raw-value* (fmt/format-number parsed))
-                 (update-input (fmt/format-number parsed))))
+                 (update-input (fmt/format-number parsed))
+                 (when (fn? on-change)
+                   (on-change parsed))))
 
              (if (and nillable (empty? raw-value))
                (do
@@ -225,8 +226,8 @@
                    (on-change nil)))
 
                (let [fallback-value (or @last-value* default)]
-                 (reset! raw-value* (fmt/format-number fallback-value))
                  (reset! last-value* (fmt/format-number fallback-value))
+                 (reset! raw-value* (fmt/format-number fallback-value))
                  (reset! is-token* false)
                  (update-input (fmt/format-number fallback-value))
                  (when (and (fn? on-change) (not= fallback-value value))
@@ -240,7 +241,7 @@
 
         on-token-apply
         (fn [id value]
-          (reset! selected-value* id)
+          (reset! selected-id* id)
           (reset! focused-id* nil)
           (reset! is-open* false)
           (apply-value value)
@@ -269,8 +270,8 @@
          (mf/deps apply-value)
          (fn [e]
            (let [target (dom/get-related-target e)
-                 outside? (not (.contains (mf/ref-val wrapper-ref) target))]
-             (when outside?
+                 self-node (mf/ref-val wrapper-ref)]
+             (when-not (dom/is-child? self-node target)
                (reset! focused-id* nil)
                (reset! is-open* false))
 
@@ -315,7 +316,7 @@
                  (let [new-index (if (= index -1)
                                    (dec len)
                                    (mod (- index 1) len))]
-                   (handle-focus-change options focused-id* new-index options-nodes-refs))
+                   (handle-focus-change options focused-id* new-index nodes-refs))
 
                  (let [new-val (increment current-value step min max)]
                    (update-input (fmt/format-number new-val))
@@ -327,7 +328,7 @@
                  (let [new-index (if (= index -1)
                                    0
                                    (mod (+ index 1) len))]
-                   (handle-focus-change options focused-id* new-index options-nodes-refs))
+                   (handle-focus-change options focused-id* new-index nodes-refs))
 
                  (let [new-val (decrement current-value step min max)]
                    (update-input (fmt/format-number new-val))
@@ -349,7 +350,7 @@
         handle-mouse-wheel
         (mf/use-fn
          (fn [event]
-           (when-let [node (mf/ref-val ref)]
+           (when-let [node (mf/ref-val input-ref)]
              (when (dom/active? node)
                (let [inc? (->> (dom/get-delta-position event)
                                :y
@@ -368,7 +369,7 @@
          (fn [event]
            (dom/prevent-default event)
            (reset! is-open* true)
-           (dom/focus! (mf/ref-val ref))))
+           (dom/focus! (mf/ref-val input-ref))))
 
         open-dropdown-token
         (mf/use-fn
@@ -384,9 +385,10 @@
            (dom/prevent-default event)
            (dom/stop-propagation event)
            (reset! is-token* false)
-           (reset! selected-value* nil)
+           (reset! selected-id* nil)
            (reset! focused-id* nil)
-           (dom/focus! (mf/ref-val ref))))
+           (reset! is-open* false)
+           (dom/focus! (mf/ref-val input-ref))))
 
         handle-pill
         (mf/use-fn
@@ -400,7 +402,7 @@
                  down?   (kbd/down-arrow? event)
                  len     (when options (alength options))
                  index   (when options (array/find-index #(= (deref focused-id*) (obj/get % "id")) options))
-                 detach-btn (mf/ref-val token-detach-button-ref)
+                 detach-btn (mf/ref-val detach-button-ref)
                  target (dom/get-target event)]
              (cond
                (or delete? backspace?)
@@ -422,14 +424,14 @@
                  (let [new-index (if (= index -1)
                                    (dec len)
                                    (mod (- index 1) len))]
-                   (handle-focus-change options focused-id* new-index options-nodes-refs)))
+                   (handle-focus-change options focused-id* new-index nodes-refs)))
 
                down?
                (when is-open
                  (let [new-index (if (= index -1)
                                    0
                                    (mod (+ index 1) len))]
-                   (handle-focus-change options focused-id* new-index options-nodes-refs)))))))
+                   (handle-focus-change options focused-id* new-index nodes-refs)))))))
 
         focus-wrapper
         (mf/use-fn
@@ -438,18 +440,9 @@
            (dom/prevent-default event)
            (dom/focus! (mf/ref-val token-wrapper-ref))))
 
-        on-wrapper-blur
-        (mf/use-fn
-         (mf/deps)
-         (fn [e]
-           (let [target (dom/get-related-target e)
-                 outside? (not (.contains (mf/ref-val wrapper-ref) target))]
-             (when outside?
-               (reset! focused-id* nil)
-               (reset! is-open* false)))))
 
         props
-        (mf/spread-props props {:ref ref
+        (mf/spread-props props {:ref input-ref
                                 :type "text"
                                 :id id
                                 :placeholder (if is-multiple?
@@ -485,7 +478,7 @@
                                 :max-length max-length})]
 
     (mf/with-layout-effect [handle-mouse-wheel]
-      (when-let [node (mf/ref-val ref)]
+      (when-let [node (mf/ref-val input-ref)]
         (let [key (events/listen node "wheel" handle-mouse-wheel #js {:passive false})]
           #(events/unlistenByKey key))))
 
@@ -502,7 +495,7 @@
                 :on-click focus-wrapper
                 :on-key-down handle-pill
                 :ref token-wrapper-ref
-                :on-blur on-wrapper-blur
+                :on-blur on-blur
                 :tab-index 0}
           [:> icon* {:icon-id icon
                      :class (stl/css :icon)}]
@@ -517,8 +510,8 @@
           [:> icon-button* {:variant "action"
                             :class (stl/css :invisible-button)
                             :icon "broken-link"
+                            :ref detach-button-ref
                             ;; TODO: add translation
-                            :ref token-detach-button-ref
                             :aria-label "Detach token"
                             :on-click detach-token}]])
 
@@ -528,7 +521,7 @@
        [:> options-dropdown* {:on-click on-option-click
                               :id listbox-id
                               :options options
-                              :selected selected-value
+                              :selected selected-id
                               :focused focused-id
                               :empty-to-end empty-to-end
                               :set-ref set-option-ref}])]))
