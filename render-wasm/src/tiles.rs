@@ -112,6 +112,38 @@ pub fn get_tile_rect(tile: Tile, scale: f32) -> skia::Rect {
     skia::Rect::from_xywh(tx, ty, ts, ts)
 }
 
+pub fn get_tile_bounds(viewbox: Viewbox, Tile(tile_x, tile_y): Tile, scale: f32) -> skia::Rect {
+    let offset_x = viewbox.area.left * scale;
+    let offset_y = viewbox.area.top * scale;
+    skia::Rect::from_xywh(
+        (tile_x as f32 * TILE_SIZE) - offset_x,
+        (tile_y as f32 * TILE_SIZE) - offset_y,
+        TILE_SIZE,
+        TILE_SIZE,
+    )
+}
+
+// Returns the bounds of the current tile relative to the viewbox,
+// aligned to the nearest tile grid origin.
+//
+// Unlike `get_current_tile_bounds`, which calculates bounds using the exact
+// scaled offset of the viewbox, this method snaps the origin to the nearest
+// lower multiple of `TILE_SIZE`. This ensures the tile bounds are aligned
+// with the global tile grid, which is useful for rendering tiles in a
+// consistent and predictable layout.
+pub fn get_tile_aligned_bounds(viewbox: Viewbox, Tile(tile_x, tile_y): Tile, scale: f32) -> skia::Rect {
+    let start_tile_x =
+        (viewbox.area.left * scale / TILE_SIZE).floor() * TILE_SIZE;
+    let start_tile_y =
+        (viewbox.area.top * scale / TILE_SIZE).floor() * TILE_SIZE;
+    skia::Rect::from_xywh(
+        (tile_x as f32 * TILE_SIZE) - start_tile_x,
+        (tile_y as f32 * TILE_SIZE) - start_tile_y,
+        TILE_SIZE,
+        TILE_SIZE,
+    )
+}
+
 // This structure is usseful to keep all the shape uuids by shape id.
 pub struct TileHashMap {
     grid: HashMap<Tile, IndexSet<Uuid>>,
@@ -174,6 +206,10 @@ impl PendingTiles {
         Self {
             list: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.list.len()
     }
 
     pub fn update(&mut self, tile_viewbox: &TileViewbox) {
