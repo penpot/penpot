@@ -1,8 +1,8 @@
 use crate::math::{self as math, intersect_rays, Bounds, Matrix, Point, Ray, Vector, VectorExt};
 use crate::shapes::{
-    modified_children_ids, AlignContent, AlignItems, AlignSelf, GridCell, GridData, GridTrack,
-    GridTrackType, JustifyContent, JustifyItems, JustifySelf, LayoutData, LayoutItem, Modifier,
-    Shape, StructureEntry,
+    AlignContent, AlignItems, AlignSelf, Frame, GridCell, GridData, GridTrack, GridTrackType,
+    JustifyContent, JustifyItems, JustifySelf, Layout, LayoutData, LayoutItem, Modifier, Shape,
+    StructureEntry, Type,
 };
 use crate::uuid::Uuid;
 use indexmap::IndexSet;
@@ -21,6 +21,8 @@ pub struct CellData<'a> {
     pub height: f32,
     pub align_self: Option<AlignSelf>,
     pub justify_self: Option<JustifySelf>,
+    pub row: usize,
+    pub column: usize,
 }
 
 #[derive(Debug)]
@@ -590,10 +592,82 @@ pub fn create_cell_data<'a>(
             height: cell_bounds.height(),
             align_self: cell.align_self,
             justify_self: cell.justify_self,
+            row: row_start,
+            column: column_start,
         });
     }
 
     result
+}
+
+pub fn grid_cell_data<'a>(
+    shape: Shape,
+    shapes: &'a HashMap<Uuid, &mut Shape>,
+    modifiers: &HashMap<Uuid, Matrix>,
+    structure: &HashMap<Uuid, Vec<StructureEntry>>,
+    allow_empty: bool,
+) -> Vec<CellData<'a>> {
+    let Type::Frame(Frame {
+        layout: Some(Layout::GridLayout(layout_data, grid_data)),
+        ..
+    }) = &shape.shape_type
+    else {
+        return vec![];
+    };
+
+    let bounds = &mut HashMap::<Uuid, Bounds>::new();
+
+    let shape = &mut shape.clone();
+    if let Some(modifiers) = modifiers.get(&shape.id) {
+        shape.apply_transform(modifiers);
+    }
+
+    let layout_bounds = shape.bounds();
+    let children = shape.modified_children_ids(structure.get(&shape.id), false);
+
+    for child_id in children.iter() {
+        let Some(child) = shapes.get(child_id) else {
+            continue;
+        };
+
+        if let Some(modifier) = modifiers.get(child_id) {
+            let mut b = bounds.find(child);
+            b.transform_mut(modifier);
+            bounds.insert(*child_id, b);
+        }
+    }
+
+    let column_tracks = calculate_tracks(
+        true,
+        shape,
+        layout_data,
+        grid_data,
+        &layout_bounds,
+        &grid_data.cells,
+        shapes,
+        bounds,
+    );
+
+    let row_tracks = calculate_tracks(
+        false,
+        shape,
+        layout_data,
+        grid_data,
+        &layout_bounds,
+        &grid_data.cells,
+        shapes,
+        bounds,
+    );
+
+    create_cell_data(
+        &layout_bounds,
+        &children,
+        shapes,
+        &grid_data.cells,
+        &column_tracks,
+        &row_tracks,
+        allow_empty,
+    )
 }
 
 fn child_position(
@@ -655,7 +729,7 @@ pub fn reflow_grid_layout(
 ) -> VecDeque<Modifier> {
     let mut result = VecDeque::new();
     let layout_bounds = bounds.find(shape);
-    let children = modified_children_ids(shape, structure.get(&shape.id), true);
+    let children = shape.modified_children_ids(structure.get(&shape.id), true);
 
     let column_tracks = calculate_tracks(
         true,

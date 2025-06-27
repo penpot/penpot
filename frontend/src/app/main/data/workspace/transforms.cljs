@@ -36,7 +36,9 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.snap :as snap]
+   [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.render-wasm.api :as wasm.api]
    [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -602,6 +604,15 @@
            (rx/take 1)
            (rx/map #(start-move from-position))))))
 
+(defn get-drop-cell
+  [target-frame objects position]
+  (if (features/active-feature? @st/state "render-wasm/v1")
+    (do
+      (wasm.api/use-shape target-frame)
+      (let [cell (wasm.api/get-grid-coords position)]
+        (when (not= cell [-1 -1]) cell)))
+    (gslg/get-drop-cell target-frame objects position)))
+
 (defn set-ghost-displacement
   [move-vector]
   (ptk/reify ::set-ghost-displacement
@@ -621,7 +632,8 @@
 
      ptk/WatchEvent
      (watch [_ state stream]
-       (let [page-id (:current-page-id state)
+       (let [prev-cell-data (volatile! nil)
+             page-id (:current-page-id state)
              objects (dsh/lookup-page-objects state page-id)
              selected (dsh/lookup-selected state {:omit-blocked? true})
              ids     (if (nil? ids) selected ids)
@@ -685,7 +697,7 @@
                                flex-layout?     (ctl/flex-layout? objects target-frame)
                                grid-layout?     (ctl/grid-layout? objects target-frame)
                                drop-index       (when flex-layout? (gslf/get-drop-index target-frame objects position))
-                               cell-data        (when (and grid-layout? (not mod?)) (gslg/get-drop-cell target-frame objects position))]
+                               cell-data        (when (and grid-layout? (not mod?)) (get-drop-cell target-frame objects position))]
                            (array move-vector target-frame drop-index cell-data))))
 
                       (rx/take-until stopper))
@@ -693,9 +705,15 @@
                  modifiers-stream
                  (->> move-stream
                       (rx/with-latest-from array/conj ms/mouse-position-shift)
+                      (rx/tap
+                       (fn [[_ _ _ cell-data _]]
+                         (when (some? cell-data)
+                           (vreset! prev-cell-data cell-data))))
+
                       (rx/map
                        (fn [[move-vector target-frame drop-index cell-data shift?]]
-                         (let [x-disp? (> (mth/abs (:x move-vector)) (mth/abs (:y move-vector)))
+                         (let [cell-data (or cell-data @prev-cell-data)
+                               x-disp? (> (mth/abs (:x move-vector)) (mth/abs (:y move-vector)))
                                [move-vector snap-ignore-axis]
                                (cond
                                  (and shift? x-disp?)

@@ -967,42 +967,42 @@ impl Shape {
     pub fn has_inner_strokes(&self) -> bool {
         self.strokes.iter().any(|s| s.kind == StrokeKind::Inner)
     }
-}
 
-/*
-  Returns the list of children taking into account the structure modifiers
-*/
-pub fn modified_children_ids(
-    element: &Shape,
-    structure: Option<&Vec<StructureEntry>>,
-    include_hidden: bool,
-) -> IndexSet<Uuid> {
-    if let Some(structure) = structure {
-        let mut result: Vec<Uuid> =
-            Vec::from_iter(element.children_ids(include_hidden).iter().copied());
-        let mut to_remove = HashSet::<&Uuid>::new();
+    /*
+      Returns the list of children taking into account the structure modifiers
+    */
+    pub fn modified_children_ids(
+        &self,
+        structure: Option<&Vec<StructureEntry>>,
+        include_hidden: bool,
+    ) -> IndexSet<Uuid> {
+        if let Some(structure) = structure {
+            let mut result: Vec<Uuid> =
+                Vec::from_iter(self.children_ids(include_hidden).iter().copied());
+            let mut to_remove = HashSet::<&Uuid>::new();
 
-        for st in structure {
-            match st.entry_type {
-                StructureEntryType::AddChild => {
-                    result.insert(result.len() - st.index as usize, st.id);
+            for st in structure {
+                match st.entry_type {
+                    StructureEntryType::AddChild => {
+                        result.insert(result.len() - st.index as usize, st.id);
+                    }
+                    StructureEntryType::RemoveChild => {
+                        to_remove.insert(&st.id);
+                    }
+                    _ => {}
                 }
-                StructureEntryType::RemoveChild => {
-                    to_remove.insert(&st.id);
-                }
-                _ => {}
             }
+
+            let ret: IndexSet<Uuid> = result
+                .iter()
+                .filter(|id| !to_remove.contains(id))
+                .copied()
+                .collect();
+
+            ret
+        } else {
+            self.children_ids(include_hidden)
         }
-
-        let ret: IndexSet<Uuid> = result
-            .iter()
-            .filter(|id| !to_remove.contains(id))
-            .copied()
-            .collect();
-
-        ret
-    } else {
-        element.children_ids(include_hidden)
     }
 }
 
