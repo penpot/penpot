@@ -11,8 +11,9 @@
   (:require
    [app.common.data :as d]
    [app.main.constants :refer [max-input-length]]
+   [app.main.ui.ds.controls.shared.option :refer [schema:option]]
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list] :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -34,25 +35,10 @@
     (reset! focused* id)
     (dom/scroll-into-view-if-needed! node)))
 
-(def ^:private schema:combobox-option
-  [:and
-   [:map {:title "option"}
-    [:id :string]
-    [:icon {:optional true}
-     [:and :string [:fn #(contains? icon-list %)]]]
-    [:label {:optional true} :string]
-    [:aria-label {:optional true} :string]]
-   [:fn {:error/message "invalid data: missing required props"}
-    (fn [option]
-      (or (and (contains? option :icon)
-               (or (contains? option :label)
-                   (contains? option :aria-label)))
-          (contains? option :label)))]])
-
 (def ^:private schema:combobox
   [:map
    [:id {:optional true} :string]
-   [:options [:vector schema:combobox-option]]
+   [:options [:vector schema:option]]
    [:class {:optional true} :string]
    [:max-length {:optional true} :int]
    [:placeholder {:optional true} :string]
@@ -83,7 +69,6 @@
         options-ref         (mf/use-ref nil)
         listbox-id-ref      (mf/use-ref (dm/str "listbox-" (swap! listbox-id-index inc)))
         listbox-id          (mf/ref-val listbox-id-ref)
-
         dropdown-options
         (mf/use-memo
          (mf/deps options filter-value)
@@ -131,7 +116,7 @@
          (mf/deps on-change)
          (fn [event]
            (dom/stop-propagation event)
-           (let [target (.-relatedTarget event)
+           (let [target (dom/get-related-target event)
                  outside? (not (.contains (mf/ref-val combobox-ref) target))]
              (when outside?
                (reset! is-open* false)
