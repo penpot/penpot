@@ -110,11 +110,10 @@
 (def spacing-keys (schema-keys schema:spacing))
 
 (def ^:private schema:dimensions
-  [:merge
-   schema:sizing
-   schema:spacing
-   schema:stroke-width
-   schema:border-radius])
+  (reduce mu/union [schema:sizing
+                    schema:spacing
+                    schema:stroke-width
+                    schema:border-radius]))
 
 (def dimensions-keys (schema-keys schema:dimensions))
 
@@ -139,9 +138,8 @@
 (def typography-keys (set/union font-size-keys line-height-keys))
 
 (def ^:private schema:number
-  [:merge
-   [:map [:rotation {:optional true} token-name-ref]]
-   schema:line-height])
+  (reduce mu/union [schema:line-height
+                    schema:rotation]))
 
 (def number-keys (schema-keys schema:number))
 

@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.data.modal :as modal]
@@ -143,6 +144,9 @@
               :on-click on-token-pill-click
               :on-context-menu on-context-menu}])]])]]))
 
+(defn- remove-keys [m ks]
+  (d/removem (comp ks key) m))
+
 (defn- get-sorted-token-groups
   "Separate token-types into groups of `empty` or `filled` depending if
   tokens exist for that type. Sort each group alphabetically (by their type).
@@ -152,7 +156,7 @@
         token-typography-types? (contains? cf/flags :token-typography-types)
         all-types (cond-> dwta/token-properties
                     (not token-units?) (dissoc :number)
-                    (not token-typography-types?) (dissoc :font-size))
+                    (not token-typography-types?) (remove-keys ctt/typography-keys))
         all-types (-> all-types keys seq)]
     (loop [empty  #js []
            filled #js []
