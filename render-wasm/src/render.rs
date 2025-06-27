@@ -803,12 +803,15 @@ impl RenderState {
                     timestamp,
                 )?;
             }
-            self.flush_and_submit();
 
             if self.render_in_progress {
                 self.cancel_animation_frame();
                 self.render_request_id = Some(wapi::request_animation_frame!());
             } else {
+                if self.render_is_full {
+                    self.apply_render_to_final_canvas(self.render_area);
+                }
+                self.flush_and_submit();
                 performance::end_measure!("render");
             }
         }
