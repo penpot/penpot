@@ -99,8 +99,6 @@
 (defn valid-value? [value]
   (seq (finalize-value value)))
 
-;; Validation ------------------------------------------------------------------
-
 (defn validate-empty-input [value]
   (if (sequential? value)
     (empty? value)
@@ -110,6 +108,25 @@
   (if (sequential? value)
     (some #(ctob/token-value-self-reference? token-name %) value)
     (ctob/token-value-self-reference? token-name value)))
+
+(defn valid-text-case-value? [value]
+  (when (string? value)
+    (let [normalized-value (str/lower (str/trim value))]
+      (contains? #{"none" "uppercase" "lowercase" "capitalize"} normalized-value))))
+
+(defn validate-text-case-value [value]
+  (let [trimmed-value (str/trim (str value))]
+    (cond
+      (str/empty? trimmed-value)
+      {:errors [(wte/get-error-code :error.token/empty-input)]}
+
+      (not (valid-text-case-value? trimmed-value))
+      {:errors [(tr "workspace.tokens.invalid-text-case-token-value")]}
+
+      :else
+      nil)))
+
+;; Component -------------------------------------------------------------------
 
 (defn validate-token-value
   "Validates token value by resolving the value `input` using `StyleDictionary`.
@@ -124,6 +141,31 @@
 
       (validate-self-reference? token-name value)
       (rx/throw {:errors [(wte/get-error-code :error.token/direct-self-reference)]})
+
+      ;; Pre-validate text-case tokens before StyleDictionary processing
+      (and (= (:type token) :text-case)
+           (not (cft/is-reference? {:value value})))
+      (if-let [validation-error (validate-text-case-value value)]
+        (rx/throw validation-error)
+        ;; For text-case tokens, bypass StyleDictionary and return the normalized value directly
+        (rx/of {:resolved-value (str/lower (str/trim value))}))
+
+      ;; Handle text-case token references through StyleDictionary
+      (= (:type token) :text-case)
+      (let [tokens' (cond-> tokens
+                      ;; Remove previous token when renaming a token
+                      (not= name-value (:name token)) (dissoc (:name token))
+                      :always (update token-name #(ctob/make-token (merge % {:value value
+                                                                             :name token-name
+                                                                             :type (:type token)}))))]
+        (->> tokens'
+             (sd/resolve-tokens-interactive)
+             (rx/mapcat
+              (fn [resolved-tokens]
+                (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
+                  (cond
+                    resolved-value (rx/of resolved-token)
+                    :else (rx/throw {:errors (or errors (wte/get-error-code :error/unknown-error))})))))))
 
       :else
       (let [tokens' (cond-> tokens
@@ -488,7 +530,10 @@
            {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
-       (let [placeholder (tr "workspace.tokens.token-value-enter")
+       (let [text-case-token? (= (:type token) :text-case)
+             placeholder (if text-case-token?
+                           (tr "workspace.tokens.text-case-value-enter")
+                           (tr "workspace.tokens.token-value-enter"))
              label (tr "workspace.tokens.token-value")
              default-value (mf/ref-val value-ref)
              ref value-input-ref

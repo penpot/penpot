@@ -197,3 +197,9 @@
    ::mf/register-as :tokens/font-family}
   [properties]
   [:& token-update-create-modal properties])
+
+(mf/defc text-case-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/text-case}
+  [properties]
+  [:& token-update-create-modal properties])

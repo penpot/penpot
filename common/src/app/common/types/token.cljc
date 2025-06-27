@@ -37,6 +37,7 @@
    :font-family    "fontFamilies"
    :font-size      "fontSizes"
    :letter-spacing "letterSpacing"
+   :text-case      "textCase"
    :number         "number"
    :opacity        "opacity"
    :other          "other"
@@ -141,7 +142,16 @@
 
 (def font-family-keys (schema-keys schema:font-family))
 
-(def typography-keys (set/union font-size-keys letter-spacing-keys font-family-keys))
+(def ^:private schema:text-case
+  [:map
+   [:text-case {:optional true} token-name-ref]])
+
+(def text-case-keys (schema-keys schema:text-case))
+
+(def typography-keys (set/union font-size-keys
+                                letter-spacing-keys
+                                font-family-keys
+                                text-case-keys))
 
 (def ^:private schema:number
   (reduce mu/union [[:map [:line-height {:optional true} token-name-ref]]
@@ -174,6 +184,7 @@
    schema:font-size
    schema:letter-spacing
    schema:font-family
+   schema:text-case
    schema:dimensions])
 
 (defn shape-attr->token-attrs
@@ -204,6 +215,7 @@
      (font-size-keys shape-attr) #{shape-attr}
      (letter-spacing-keys shape-attr) #{shape-attr}
      (font-family-keys shape-attr) #{shape-attr}
+     (text-case-keys shape-attr) #{shape-attr}
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}
