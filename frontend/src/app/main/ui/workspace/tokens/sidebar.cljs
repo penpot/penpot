@@ -30,7 +30,6 @@
    [shadow.resource]))
 
 ;; Components ------------------------------------------------------------------
-
 (mf/defc token-sets-list*
   {::mf/private true}
   [{:keys [tokens-lib]}]

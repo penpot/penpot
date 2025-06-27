@@ -29,6 +29,7 @@
     :boolean "boolean-difference"
     :font-size "text-font-size"
     :letter-spacing "text-letterspacing"
+    :text-case "text-mixed"
     :opacity "percentage"
     :number "number"
     :rotation "rotation"
