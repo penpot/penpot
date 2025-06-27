@@ -91,11 +91,14 @@
         ;; shape on the main component
         orig-ref-shape     (ctf/find-ref-shape nil container libraries original-shape)
 
+        orig-ref-objects   (-> (ctf/get-component-container-from-head orig-ref-shape libraries)
+                               :objects)
+
         ;; Adds a :shape-path attribute to the children of the orig-ref-shape,
         ;; that contains the type of its ancestors and its name
         o-ref-shapes-wp    (add-unique-path
-                            (reverse (cfh/get-children-with-self objects (:id orig-ref-shape)))
-                            objects
+                            (reverse (cfh/get-children-with-self orig-ref-objects (:id orig-ref-shape)))
+                            orig-ref-objects
                             (:id orig-ref-shape))
 
         ;; Creates a map to quickly find a child of the orig-ref-shape by its shape-path
