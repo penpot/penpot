@@ -37,6 +37,7 @@
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
+   [app.main.ui.workspace.sidebar.options.menus.variants-help-modal]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -963,6 +964,12 @@
          (mf/deps menu-open*)
          #(reset! menu-open* false))
 
+        on-click-variant-title-help
+        (mf/use-fn
+         (fn []
+           (modal/show! {:type :variants-help-modal})
+           (modal/allow-click-outside!)))
+
         update-property-name
         (mf/use-fn
          (mf/deps variant-id)
@@ -1001,8 +1008,15 @@
         [:& title-bar {:collapsable  false
                        :title        (tr "workspace.options.component")
                        :class        (stl/css :title-spacing-component)}
+
          [:span {:class (stl/css :copy-text)}
-          (tr "workspace.options.component.main")]]]
+          (tr "workspace.options.component.main")]
+
+         [:div {:class (stl/css :variants-help-modal-button)}
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.options.component.variants-help-modal.title")
+                            :on-click on-click-variant-title-help
+                            :icon "help"}]]]]
 
        [:div {:class (stl/css :element-content)}
         [:div {:class (stl/css-case :component-wrapper true

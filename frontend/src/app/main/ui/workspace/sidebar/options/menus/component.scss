@@ -32,6 +32,15 @@
   cursor: pointer;
 }
 
+.title-spacing-component {
+  justify-content: flex-start;
+  gap: $s-4;
+}
+
+.variants-help-modal-button {
+  margin-inline-start: auto;
+}
+
 .icon-back {
   @include flexCenter;
   width: $s-12;
@@ -163,7 +172,6 @@
   display: flex;
   align-items: center;
   color: var(--title-foreground-color);
-  margin-right: $s-8;
 }
 
 .swappeable {
