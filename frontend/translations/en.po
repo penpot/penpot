@@ -1248,6 +1248,9 @@ msgstr "The email «%s» has many permanent bounce reports."
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "The email «%s» has been reported as spam or permanently bounce."
 
+msgid "errors.email-does-not-match-invitation"
+msgstr "Email does not match the invitation."
+
 #: src/app/main/errors.cljs:241
 msgid "errors.feature-mismatch"
 msgstr ""
