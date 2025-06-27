@@ -2,7 +2,7 @@
 macro_rules! run_script {
     ($s:expr) => {{
         extern "C" {
-            pub fn emscripten_run_script(script: *const i8);
+            fn emscripten_run_script(script: *const i8);
         }
 
         match std::ffi::CString::new($s) {
@@ -16,7 +16,7 @@ macro_rules! run_script {
 macro_rules! run_script_int {
     ($s:expr) => {{
         extern "C" {
-            pub fn emscripten_run_script_int(script: *const i8) -> i32;
+            fn emscripten_run_script_int(script: *const i8) -> i32;
         }
 
         match std::ffi::CString::new($s) {
@@ -30,7 +30,7 @@ macro_rules! run_script_int {
 macro_rules! get_now {
     () => {{
         extern "C" {
-            pub fn emscripten_get_now() -> f64;
+            fn emscripten_get_now() -> f64;
         }
         unsafe { emscripten_get_now() }
     }};
@@ -54,6 +54,54 @@ macro_rules! init_gl {
     }};
 }
 
+#[macro_export]
+macro_rules! debugger {
+    () => {{
+        extern "C" {
+            fn emscripten_debugger();
+        }
+        unsafe { emscripten_debugger() }
+    }}
+}
+
+#[repr(u32)]
+#[allow(dead_code)]
+pub enum Log {
+    Default = 1,
+    Warn = 2,
+    Error = 4,
+    CStack = 8,
+    JSStack = 16,
+    Demangle = 32,
+    NoPaths = 64,
+    FuncParams = 128,
+}
+
+#[macro_export]
+macro_rules! log {
+    ($flags:expr, $($arg:tt)*) => {{
+        #[cfg(debug_assertions)]
+        {
+            extern "C" {
+                fn emscripten_log(flags: u32, message: *const std::os::raw::c_char);
+            }
+            use std::ffi::CString;
+            let msg = format!($($arg)*);
+            let c_msg = CString::new(msg).unwrap();
+            let flags = $flags as u32;
+            unsafe {
+                emscripten_log(flags, c_msg.as_ptr());
+            }
+        }
+    }}
+}
+
+#[allow(unused_imports)]
+pub use log;
+
+#[allow(unused_imports)]
+pub use debugger;
+
 #[allow(unused_imports)]
 pub use run_script;
 
@@ -65,3 +113,4 @@ pub use get_now;
 
 #[allow(unused_imports)]
 pub use init_gl;
+

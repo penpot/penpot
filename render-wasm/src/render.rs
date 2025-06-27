@@ -20,6 +20,7 @@ use gpu_state::GpuState;
 use options::RenderStateOptions;
 use surfaces::{SurfaceId, Surfaces};
 
+use crate::emscripten;
 use crate::performance;
 use crate::shapes::{Corners, Fill, Shape, SolidColor, StructureEntry, Type};
 use crate::state::ShapesPool;
@@ -77,7 +78,7 @@ impl PendingNodes {
     }
 
     pub fn add_root(&mut self) {
-        println!("add_root");
+        emscripten::log!(emscripten::Log::Default, "add_root");
         self.list.push(NodeRenderState {
             id: Uuid::nil(),
             visited_children: false,
@@ -92,7 +93,7 @@ impl PendingNodes {
         child_id: &Uuid,
         children_clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
     ) {
-        println!("add_child");
+        emscripten::log!(emscripten::Log::Default, "add_child");
         self.list.push(NodeRenderState {
             id: *child_id,
             visited_children: false,
@@ -103,7 +104,7 @@ impl PendingNodes {
     }
 
     pub fn add_children_safeguard(&mut self, element: &Shape, mask: bool) {
-        println!("add_children_safeguard");
+        emscripten::log!(emscripten::Log::Default, "add_children_safeguard");
         // Set the node as visited_children before processing children
         self.list.push(NodeRenderState {
             id: element.id,
@@ -115,7 +116,7 @@ impl PendingNodes {
     }
 
     pub fn add_mask(&mut self, element: &Shape) {
-        println!("add_mask");
+        emscripten::log!(emscripten::Log::Default, "add_mask");
         self.list.push(NodeRenderState {
             id: element.id,
             visited_children: true,
@@ -773,7 +774,7 @@ impl RenderState {
         self.render_in_progress = true;
         self.render_is_full = full;
         if self.render_is_full {
-            println!("pending_nodes.add_root");
+            emscripten::log!(emscripten::Log::Default, "pending_nodes.add_root");
             self.pending_nodes.add_root();
         }
         self.apply_drawing_to_render_canvas(None);
@@ -804,14 +805,19 @@ impl RenderState {
                 )?;
             }
 
+            self.flush_and_submit();
+
             if self.render_in_progress {
                 self.cancel_animation_frame();
                 self.render_request_id = Some(wapi::request_animation_frame!());
             } else {
                 if self.render_is_full {
-                    self.apply_render_to_final_canvas(self.render_area);
+                    // if let Some(next_tile) = self.pending_tiles.pop() {
+                    //     self.update_render_context(&next_tile);
+                    emscripten::log!(emscripten::Log::Default, "whatever {}", self.pending_tiles.len());
+                    let tile_rect = self.get_current_tile_bounds();
+                    self.apply_render_to_final_canvas(tile_rect);
                 }
-                self.flush_and_submit();
                 performance::end_measure!("render");
             }
         }
@@ -941,40 +947,19 @@ impl RenderState {
         self.focus_mode.exit(&element.id);
     }
 
-    pub fn get_current_tile_bounds(&mut self) -> Rect {
-        let tiles::Tile(tile_x, tile_y) = self.current_tile.unwrap();
-        let scale = self.get_scale();
-        let offset_x = self.viewbox.area.left * scale;
-        let offset_y = self.viewbox.area.top * scale;
-        Rect::from_xywh(
-            (tile_x as f32 * tiles::TILE_SIZE) - offset_x,
-            (tile_y as f32 * tiles::TILE_SIZE) - offset_y,
-            tiles::TILE_SIZE,
-            tiles::TILE_SIZE,
-        )
+    #[inline]
+    pub fn get_tile_bounds(&mut self, tile: tiles::Tile) -> Rect {
+        tiles::get_tile_bounds(self.viewbox, tile, self.get_scale())
     }
 
-    // Returns the bounds of the current tile relative to the viewbox,
-    // aligned to the nearest tile grid origin.
-    //
-    // Unlike `get_current_tile_bounds`, which calculates bounds using the exact
-    // scaled offset of the viewbox, this method snaps the origin to the nearest
-    // lower multiple of `TILE_SIZE`. This ensures the tile bounds are aligned
-    // with the global tile grid, which is useful for rendering tiles in a
-    /// consistent and predictable layout.
+    #[inline]
+    pub fn get_current_tile_bounds(&mut self) -> Rect {
+        self.get_tile_bounds(self.current_tile.unwrap())
+    }
+
+    #[inline]
     pub fn get_current_aligned_tile_bounds(&mut self) -> Rect {
-        let tiles::Tile(tile_x, tile_y) = self.current_tile.unwrap();
-        let scale = self.get_scale();
-        let start_tile_x =
-            (self.viewbox.area.left * scale / tiles::TILE_SIZE).floor() * tiles::TILE_SIZE;
-        let start_tile_y =
-            (self.viewbox.area.top * scale / tiles::TILE_SIZE).floor() * tiles::TILE_SIZE;
-        Rect::from_xywh(
-            (tile_x as f32 * tiles::TILE_SIZE) - start_tile_x,
-            (tile_y as f32 * tiles::TILE_SIZE) - start_tile_y,
-            tiles::TILE_SIZE,
-            tiles::TILE_SIZE,
-        )
+        tiles::get_tile_aligned_bounds(self.viewbox, self.current_tile.unwrap(), self.get_scale())
     }
 
     pub fn render_shape_tree_full(
@@ -985,7 +970,7 @@ impl RenderState {
         scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(bool, bool), String> {
-        println!("render_shape_tree_full:begin");
+        emscripten::log!(emscripten::Log::Default, "render_shape_tree_full:begin");
         let result = self.render_shape_tree_full_uncached(
             tree,
             modifiers,
@@ -995,7 +980,7 @@ impl RenderState {
         );
 
         let (is_empty, should_stop_rendering) = result?;
-        println!("is_empty {} should_stop_rendering {}", is_empty, should_stop_rendering);
+        emscripten::log!(emscripten::Log::Default, "is_empty {} should_stop_rendering {}", is_empty, should_stop_rendering);
         if should_stop_rendering {
             self.render_in_progress = false;
             self.render_is_full = false;
@@ -1006,7 +991,7 @@ impl RenderState {
         }
 
         debug::render_wasm_label(self);
-        println!("render_shape_tree_full:end");
+        emscripten::log!(emscripten::Log::Default, "render_shape_tree_full:end");
         Ok((is_empty, should_stop_rendering))
     }
 
@@ -1058,7 +1043,7 @@ impl RenderState {
     ) {
         // We need to iterate over every tile of the element.
         for tile in tiles.iter() {
-            println!(
+            emscripten::log!(emscripten::Log::Default,
                 "render_shape_tree_full_uncached::for::start {} {}",
                 tile.0, tile.1
             );
@@ -1071,7 +1056,7 @@ impl RenderState {
                 scale_content,
             );
 
-            println!("render_shape_tree_full_uncached::for::end");
+            emscripten::log!(emscripten::Log::Default, "render_shape_tree_full_uncached::for::end");
         }
     }
 
@@ -1085,9 +1070,9 @@ impl RenderState {
     ) -> Result<(bool, bool), String> {
         let mut iteration = 0;
         let mut is_empty = true;
-        println!("render_shape_tree_full_uncached::while::start");
+        emscripten::log!(emscripten::Log::Default, "render_shape_tree_full_uncached::while::start");
         while let Some(node_render_state) = self.pending_nodes.next() {
-            println!(
+            emscripten::log!(emscripten::Log::Default,
                 "render_shape_tree_full_uncached::while::pop {} {}",
                 self.pending_nodes.len(),
                 self.pending_nodes.is_empty()
@@ -1106,7 +1091,7 @@ impl RenderState {
                     .to_string(),
             )?;
 
-            println!("a {} {}", element.id, node_render_state.is_root());
+            emscripten::log!(emscripten::Log::Default, "a {} {}", element.id, node_render_state.is_root());
             if !node_render_state.is_root() {
                 let mut transformed_element: Cow<Shape> = Cow::Borrowed(element);
 
@@ -1129,17 +1114,17 @@ impl RenderState {
                 }
             }
 
-            println!("b");
+            emscripten::log!(emscripten::Log::Default, "b");
             // If the shape is not in the tile set, then we update
             // it.
             if self.get_tiles_of(node_id).is_none() {
-                println!("updating tiles for {}", element.id);
+                emscripten::log!(emscripten::Log::Default, "updating tiles for {}", element.id);
                 self.update_tile_for(element);
             }
 
-            println!("c");
+            emscripten::log!(emscripten::Log::Default, "c");
             if !element.is_root() {
-                println!("render_shape_tree_full_uncached_shape_tiles");
+                emscripten::log!(emscripten::Log::Default, "render_shape_tree_full_uncached_shape_tiles");
                 let mut tiles_opt = self.get_tiles_of(element.id);
                 let tiles = tiles_opt.as_mut().unwrap().clone();
                 self.render_shape_tree_full_uncached_shape_tiles(
@@ -1153,7 +1138,7 @@ impl RenderState {
 
             }
 
-            println!("d {}", element.is_recursive());
+            emscripten::log!(emscripten::Log::Default, "d {}", element.is_recursive());
             if !visited_children && element.is_recursive() {
                 self.pending_nodes.add_children_safeguard(element, mask);
 
@@ -1171,25 +1156,25 @@ impl RenderState {
                     });
                 }
 
-                println!("children_ids {}", children_ids.len());
+                emscripten::log!(emscripten::Log::Default, "children_ids {}", children_ids.len());
                 for child_id in children_ids.iter() {
-                    println!("children id {}", child_id);
+                    emscripten::log!(emscripten::Log::Default, "children id {}", child_id);
                     self.pending_nodes.add_child(child_id, children_clip_bounds);
                 }
             }
 
-            println!("e");
+            emscripten::log!(emscripten::Log::Default, "e");
             // We try to avoid doing too many calls to get_time
             if self.should_stop_rendering(iteration, timestamp) {
-                println!("should_stop_rendering {} {}", self.pending_nodes.is_empty(), self.pending_nodes.len() == 0);
+                emscripten::log!(emscripten::Log::Default, "should_stop_rendering {} {}", self.pending_nodes.is_empty(), self.pending_nodes.len() == 0);
                 return Ok((is_empty, self.pending_nodes.is_empty()));
             }
-            if (iteration == 100) {
+            if iteration == 100 {
                 return Ok((false, true));
             }
             iteration += 1;
         }
-        println!("render_shape_tree_full_uncached::while::end");
+        emscripten::log!(emscripten::Log::Default, "render_shape_tree_full_uncached::while::end");
         Ok((is_empty, self.pending_nodes.is_empty()))
     }
 
@@ -1307,12 +1292,12 @@ impl RenderState {
         scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(), String> {
-        println!("render_shape_tree_partial:begin");
+        emscripten::log!(emscripten::Log::Default, "render_shape_tree_partial:begin");
         let mut should_stop = false;
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
                 if self.surfaces.has_cached_tile_surface(current_tile) {
-                    println!("cached");
+                    emscripten::log!(emscripten::Log::Default, "cached");
                     performance::begin_measure!("render_shape_tree::cached");
                     let tile_rect = self.get_current_tile_bounds();
                     self.surfaces.draw_cached_tile_surface(
@@ -1331,7 +1316,7 @@ impl RenderState {
                         );
                     }
                 } else {
-                    println!("uncached");
+                    emscripten::log!(emscripten::Log::Default, "uncached");
                     performance::begin_measure!("render_shape_tree::uncached");
                     let (is_empty, early_return) = self.render_shape_tree_partial_uncached(
                         tree,
@@ -1400,7 +1385,7 @@ impl RenderState {
 
         ui::render(self, tree, modifiers, structure);
         debug::render_wasm_label(self);
-        println!("render_shape_tree_partial:end");
+        emscripten::log!(emscripten::Log::Default, "render_shape_tree_partial:end");
         Ok(())
     }
 
