@@ -156,7 +156,7 @@
 
         [new_shape _ changes]
         (-> (pcb/empty-changes nil (:id page))
-            (cll/generate-component-swap objects shape (:data file) page libraries id-new-component 0 nil keep-props-values))
+            (cll/generate-component-swap objects shape (:data file) page libraries id-new-component 0 nil keep-props-values false))
 
         file' (thf/apply-changes file changes)]
 
