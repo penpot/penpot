@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 use crate::math::{self as math, Bounds, Matrix, Point, Vector, VectorExt};
 use crate::shapes::{
-    modified_children_ids, AlignContent, AlignItems, AlignSelf, FlexData, JustifyContent,
-    LayoutData, LayoutItem, Modifier, Shape, StructureEntry,
+    AlignContent, AlignItems, AlignSelf, FlexData, JustifyContent, LayoutData, LayoutItem,
+    Modifier, Shape, StructureEntry,
 };
 use crate::uuid::Uuid;
 
@@ -184,7 +184,7 @@ fn initialize_tracks(
 ) -> Vec<TrackData> {
     let mut tracks = Vec::<TrackData>::new();
     let mut current_track = TrackData::default();
-    let mut children = modified_children_ids(shape, structure.get(&shape.id), true);
+    let mut children = shape.modified_children_ids(structure.get(&shape.id), true);
     let mut first = true;
 
     if flex_data.is_reverse() {

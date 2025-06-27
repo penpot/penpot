@@ -1045,6 +1045,18 @@
   (h/call wasm/internal-module "_hide_grid")
   (request-render "clear-grid"))
 
+(defn get-grid-coords
+  [position]
+  (let [offset  (h/call wasm/internal-module
+                        "_get_grid_coords"
+                        (get position :x)
+                        (get position :y))
+        heapi32 (mem/get-heap-i32)
+        row     (aget heapi32 (mem/ptr8->ptr32 (+ offset 0)))
+        column  (aget heapi32 (mem/ptr8->ptr32 (+ offset 4)))]
+    (h/call wasm/internal-module "_free_bytes")
+    [row column]))
+
 (defonce module
   (delay
     (if (exists? js/dynamicImport)

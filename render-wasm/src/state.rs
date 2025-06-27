@@ -1,7 +1,7 @@
 use std::collections::{hash_map::Entry, HashMap};
 use std::{iter, vec};
 
-use skia_safe as skia;
+use skia_safe::{self as skia, Path, Point};
 
 use crate::performance;
 use crate::render::RenderState;
@@ -9,6 +9,8 @@ use crate::shapes::Shape;
 use crate::shapes::StructureEntry;
 use crate::tiles;
 use crate::uuid::Uuid;
+
+use crate::shapes::modifiers::grid_layout::grid_cell_data;
 
 const SHAPES_POOL_ALLOC_MULTIPLIER: f32 = 1.3;
 
@@ -223,5 +225,39 @@ impl<'a> State<'a> {
     pub fn rebuild_modifier_tiles(&mut self) {
         self.render_state
             .rebuild_modifier_tiles(&mut self.shapes, &self.modifiers);
+    }
+
+    pub fn get_grid_coords(&mut self, pos_x: f32, pos_y: f32) -> (i32, i32) {
+        let Some(shape) = self.current_shape() else {
+            return (-1, -1);
+        };
+
+        let bounds = shape.bounds();
+        let position = Point::new(pos_x, pos_y);
+
+        let cells = grid_cell_data(
+            shape.clone(),
+            &self.shapes,
+            &self.modifiers,
+            &self.structure,
+            true,
+        );
+
+        for cell in cells {
+            let points = &[
+                cell.anchor,
+                cell.anchor + bounds.hv(cell.width),
+                cell.anchor + bounds.hv(cell.width) + bounds.vv(cell.height),
+                cell.anchor + bounds.vv(cell.height),
+            ];
+
+            let polygon = Path::polygon(points, true, None, None);
+
+            if polygon.contains(position) {
+                return (cell.row as i32 + 1, cell.column as i32 + 1);
+            }
+        }
+
+        (-1, -1)
     }
 }
