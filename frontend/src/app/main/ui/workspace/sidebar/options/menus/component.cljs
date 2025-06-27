@@ -963,6 +963,13 @@
          (mf/deps menu-open*)
          #(reset! menu-open* false))
 
+        on-click-variant-title-help
+        (mf/use-fn
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (st/emit! (modal/show {:type :variants-modal}))))
+
         update-property-name
         (mf/use-fn
          (mf/deps variant-id)
@@ -1001,6 +1008,11 @@
         [:& title-bar {:collapsable  false
                        :title        (tr "workspace.options.component")
                        :class        (stl/css :title-spacing-component)}
+
+         [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "workspace.options.component.variants-info")
+                         :on-click on-click-variant-title-help
+                         :icon "help"}]
          [:span {:class (stl/css :copy-text)}
           (tr "workspace.options.component.main")]]]
 
