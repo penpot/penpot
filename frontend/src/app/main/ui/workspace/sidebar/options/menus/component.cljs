@@ -365,7 +365,7 @@
             [:> combobox* {:id (str "variant-prop-" variant-id "-" pos)
                            :placeholder (if mixed-value? (tr "settings.multiple") "--")
                            :default-selected (if mixed-value? "" (:value prop))
-                           :options (clj->js (get-options (:name prop)))
+                           :options (get-options (:name prop))
                            :empty-to-end true
                            :max-length ctv/property-max-length
                            :on-change (partial update-property-value pos)}])]])]
@@ -438,7 +438,7 @@
           [:span {:class (stl/css :variant-property-name)}
            (:name prop)]
           [:> select* {:default-selected (:value prop)
-                       :options (clj->js (get-options (:name prop)))
+                       :options (get-options (:name prop))
                        :empty-to-end true
                        :on-change (partial switch-component pos)}]]])]
 
