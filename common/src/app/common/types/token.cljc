@@ -34,6 +34,7 @@
    :color         "color"
    :dimensions    "dimension"
    :font-size     "fontSizes"
+   :text-case     "textCase"
    :number        "number"
    :opacity       "opacity"
    :other         "other"
@@ -129,7 +130,13 @@
 
 (def font-size-keys (schema-keys schema:font-size))
 
-(def typography-keys (set/union font-size-keys))
+(def ^:private schema:text-case
+  [:map
+   [:text-transform {:optional true} token-name-ref]])
+
+(def text-case-keys (schema-keys schema:text-case))
+
+(def typography-keys (set/union font-size-keys text-case-keys))
 
 (def ^:private schema:number
   [:map
@@ -161,6 +168,7 @@
    schema:rotation
    schema:number
    schema:font-size
+   schema:text-case
    schema:dimensions])
 
 (defn shape-attr->token-attrs
@@ -189,6 +197,7 @@
        #{:m1 :m2 :m3 :m4})
 
      (font-size-keys shape-attr) #{shape-attr}
+     (text-case-keys shape-attr) #{shape-attr}
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}
@@ -239,4 +248,3 @@
 
 (defn unapply-token-id [shape attributes]
   (update shape :applied-tokens d/without-keys attributes))
-

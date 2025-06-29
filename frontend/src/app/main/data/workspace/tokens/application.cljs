@@ -358,6 +358,18 @@
                            {:ignore-touched true
                             :page-id page-id})))))
 
+(defn update-text-case
+  ([value shape-ids attributes] (update-text-case value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
+   (let [update-node? (fn [node]
+                        (or (txt/is-text-node? node)
+                            (txt/is-paragraph-node? node)))]
+     (when (string? value)
+       (dwsh/update-shapes shape-ids
+                           #(txt/update-text-content % update-node? d/txt-merge {:text-transform value})
+                           {:ignore-touched true
+                            :page-id page-id})))))
+
 ;; Map token types to different properties used along the cokde ---------------------------------------------
 
 ;; FIXME: the values should be lazy evaluated, probably a function,
@@ -390,6 +402,14 @@
     :modal {:key :tokens/font-size
             :fields [{:label "Font Size"
                       :key :font-size}]}}
+
+   :text-case
+   {:title "Text Case"
+    :attributes ctt/text-case-keys
+    :on-update-shape update-text-case
+    :modal {:key :tokens/text-case
+            :fields [{:label "Text Case"
+                      :key :text-case}]}}
 
    :stroke-width
    {:title "Stroke Width"
