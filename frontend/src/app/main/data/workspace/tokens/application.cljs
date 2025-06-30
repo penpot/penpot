@@ -333,10 +333,7 @@
 
 (defn update-line-height
   ([value shape-ids attributes] (update-line-height value shape-ids attributes nil))
-  ([value shape-ids _attributes page-id] ; The attributes param is
-                                         ; needed to have the same
-                                         ; arity that other update
-                                         ; functions
+  ([value shape-ids _attributes page-id]
    (let [update-node? (fn [node]
                         (or (txt/is-text-node? node)
                             (txt/is-paragraph-node? node)))]
@@ -348,7 +345,7 @@
 
 (defn update-letter-spacing
   ([value shape-ids attributes] (update-letter-spacing value shape-ids attributes nil))
-  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+  ([value shape-ids _attributes page-id]
    (let [update-node? (fn [node]
                         (or (txt/is-text-node? node)
                             (txt/is-paragraph-node? node)))]
