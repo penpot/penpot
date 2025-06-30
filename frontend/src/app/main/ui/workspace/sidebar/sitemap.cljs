@@ -213,9 +213,8 @@
 
 ;; --- Sitemap Toolbox
 
-(mf/defc sitemap
-  {::mf/wrap-props false}
-  [{:keys [size show-pages? toggle-pages]}]
+(mf/defc sitemap*
+  [{:keys [size show-pages toggle-pages]}]
   (let [file           (mf/deref ref:file-with-pages)
         file-id        (get file :id)
         project-id     (get file :project-id)
@@ -233,7 +232,7 @@
            :style #js {"--height" (str size "px")}}
 
      [:& title-bar {:collapsable   true
-                    :collapsed     (not show-pages?)
+                    :collapsed     (not show-pages)
                     :on-collapsed  toggle-pages
                     :all-clickable true
                     :title         (tr "workspace.sidebar.sitemap")

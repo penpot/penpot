@@ -30,7 +30,7 @@
    [app.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox*]]
    [app.main.ui.workspace.sidebar.shortcuts :refer [shortcuts-container]]
-   [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
+   [app.main.ui.workspace.sidebar.sitemap :refer [sitemap*]]
    [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox*]]
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab*]]
    [app.util.debug :as dbg]
@@ -104,10 +104,10 @@
          [:article {:class (stl/css :layers-tab)
                     :style #js {"--height" (str size-pages "px")}}
 
-          [:& sitemap {:layout layout
-                       :toggle-pages toggle-pages
-                       :show-pages? show-pages?
-                       :size size-pages}]
+          [:& sitemap* {:layout layout
+                        :toggle-pages toggle-pages
+                        :show-pages show-pages?
+                        :size size-pages}]
 
           (when show-pages?
             [:div {:class (stl/css :resize-area-horiz)
