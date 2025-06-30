@@ -105,31 +105,31 @@
 (mf/defc export-modal-body*
   {::mf/private true}
   []
-  (let [selected-tab (mf/use-state "single-file")
+  (let [selected-tab* (mf/use-state "single")
+        selected-tab  (deref selected-tab*)
 
         on-change-tab
-        (mf/use-fn
-         (fn [tab-id]
-           (reset! selected-tab tab-id)))
+        (mf/use-fn #(reset! selected-tab* %))
 
-        single-file-content
-        (mf/html [:> single-file-tab*])
-
-        multiple-files-content
-        (mf/html [:> multi-file-tab*])
-
-        tabs #js [#js {:label (tr "workspace.tokens.export.single-file")
-                       :id "single-file"
-                       :content single-file-content}
-                  #js {:label (tr "workspace.tokens.export.multiple-files")
-                       :id "multiple-files"
-                       :content multiple-files-content}]]
+        tabs
+        (mf/with-memo []
+          [{:label (tr "workspace.tokens.export.single-file")
+            :id "single"}
+           {:label (tr "workspace.tokens.export.multiple-files")
+            :id "multiple"}])]
 
     [:div {:class (stl/css :export-modal-wrapper)}
-     [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :export-modal-title)}
+     [:> heading* {:level 2
+                   :typography "headline-medium"
+                   :class (stl/css :export-modal-title)}
       (tr "workspace.tokens.export-tokens")]
 
-     [:> tab-switcher*
-      {:tabs tabs
-       :selected @selected-tab
-       :on-change-tab on-change-tab}]]))
+     [:> tab-switcher* {:tabs tabs
+                        :selected selected-tab
+                        :on-change on-change-tab}
+      (case selected-tab
+        "single"
+        [:> single-file-tab* {}]
+
+        "multiple"
+        [:> multi-file-tab* {}])]]))

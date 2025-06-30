@@ -1148,12 +1148,3 @@
                          :position :right})
                (ptk/event ::ev/event {::ev/name "add-asset-to-library"
                                       :asset-type "color"}))))))
-
-(defn get-active-color-tab
-  []
-  (let [tab (::tab storage/user)]
-    (or tab :ramp)))
-
-(defn set-active-color-tab!
-  [tab]
-  (swap! storage/user assoc ::tab tab))

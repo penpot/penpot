@@ -71,9 +71,8 @@
   [v [a b]]
   (if (= v a) b a))
 
-(mf/defc assets-toolbox
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+(mf/defc assets-toolbox*
+  {::mf/wrap [mf/memo]}
   [{:keys [size file-id]}]
   (let [read-only?     (mf/use-ctx ctx/workspace-read-only?)
         filters*       (mf/use-state

@@ -118,9 +118,9 @@
 
     [:div {:class (stl/css :attrs-container-value)} (str value)]))
 
-(mf/defc debug-shape-info
+(mf/defc debug-shape-info*
   []
-  (let [objects (mf/deref refs/workspace-page-objects)
+  (let [objects  (mf/deref refs/workspace-page-objects)
         selected (->> (mf/deref refs/selected-shapes)
                       (map (d/getf objects)))]
 
