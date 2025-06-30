@@ -195,7 +195,7 @@
             rect-1 (cths/get-shape file :rect-1)
             rect-2 (cths/get-shape file :rect-2)
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
-                                       :attributes #{:color}
+                                       :attributes #{:fill}
                                        :token (toht/get-token file "color.primary")
                                        :on-update-shape dwta/update-fill})
                     (dwta/apply-token {:shape-ids [(:id rect-1)]
@@ -203,7 +203,7 @@
                                        :token (toht/get-token file "color.primary")
                                        :on-update-shape dwta/update-stroke-color})
                     (dwta/apply-token {:shape-ids [(:id rect-2)]
-                                       :attributes #{:color}
+                                       :attributes #{:fill}
                                        :token (toht/get-token file "color.secondary")
                                        :on-update-shape dwta/update-fill})
                     (dwta/apply-token {:shape-ids [(:id rect-2)]
@@ -214,25 +214,25 @@
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)
-                 token-target' (toht/get-token file' "rotation.medium")
+                 primary-target (toht/get-token file' "color.primary")
+                 secondary-target (toht/get-token file' "color.secondary")
                  rect-1' (cths/get-shape file' :rect-1)
                  rect-2' (cths/get-shape file' :rect-2)]
              (t/testing "regular color"
                (t/is (some? (:applied-tokens rect-1')))
-
-               (t/is (= (:fill (:applied-tokens rect-1')) (:name token-target')))
+               (t/is (= (:fill (:applied-tokens rect-1')) (:name primary-target)))
                (t/is (= (get-in rect-1' [:fills 0 :fill-color]) "#ff0000"))
 
-               (t/is (= (:stroke (:applied-tokens rect-1')) (:name token-target')))
+               (t/is (= (:stroke-color (:applied-tokens rect-1')) (:name primary-target)))
                (t/is (= (get-in rect-1' [:strokes 0 :stroke-color]) "#ff0000")))
              (t/testing "color with alpha channel"
                (t/is (some? (:applied-tokens rect-2')))
 
-               (t/is (= (:fill (:applied-tokens rect-2')) (:name token-target')))
+               (t/is (= (:fill (:applied-tokens rect-2')) (:name secondary-target)))
                (t/is (= (get-in rect-2' [:fills 0 :fill-color]) "#ff0000"))
                (t/is (= (get-in rect-2' [:fills 0 :fill-opacity]) 0.5))
 
-               (t/is (= (:stroke (:applied-tokens rect-2')) (:name token-target')))
+               (t/is (= (:stroke-color (:applied-tokens rect-2')) (:name secondary-target)))
                (t/is (= (get-in rect-2' [:strokes 0 :stroke-color]) "#ff0000"))
                (t/is (= (get-in rect-2' [:strokes 0 :stroke-opacity]) 0.5))))))))))
 
@@ -270,33 +270,40 @@
   (t/testing "applies padding token to shapes with layout"
     (t/async
       done
-      (let [dimensions-token {:name "padding.sm"
-                              :value "100"
-                              :type :spacing}
+      (let [spacing-token {:name "padding.sm"
+                           :value "100"
+                           :type :spacing}
             file (-> (setup-file-with-tokens)
                      (ctho/add-frame :frame-1)
                      (ctho/add-frame :frame-2 {:layout :grid})
                      (update-in [:data :tokens-lib]
-                                #(ctob/add-token-in-set % "Set A" (ctob/make-token dimensions-token))))
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token spacing-token))))
             store (ths/setup-store file)
             frame-1 (cths/get-shape file :frame-1)
             frame-2 (cths/get-shape file :frame-2)
             events [(dwta/apply-token {:shape-ids [(:id frame-1) (:id frame-2)]
-                                       :attributes #{:padding}
+                                       :attributes #{:p1 :p2 :p3 :p4}
                                        :token (toht/get-token file "padding.sm")
                                        :on-update-shape dwta/update-layout-padding})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)
-                 token-target' (toht/get-token file' "dimensions.sm")
+                 token-target' (toht/get-token file' "padding.sm")
                  frame-1' (cths/get-shape file' :frame-1)
                  frame-2' (cths/get-shape file' :frame-2)]
              (t/testing "shape `:applied-tokens` got updated"
-               (t/is (= (:spacing (:applied-tokens frame-1')) (:name token-target')))
-               (t/is (= (:spacing (:applied-tokens frame-2')) (:name token-target'))))
+               (t/is (= (:p1 (:applied-tokens frame-1')) (:name token-target')))
+               (t/is (= (:p2 (:applied-tokens frame-1')) (:name token-target')))
+               (t/is (= (:p3 (:applied-tokens frame-1')) (:name token-target')))
+               (t/is (= (:p4 (:applied-tokens frame-1')) (:name token-target')))
+
+               (t/is (= (:p1 (:applied-tokens frame-2')) (:name token-target')))
+               (t/is (= (:p2 (:applied-tokens frame-2')) (:name token-target')))
+               (t/is (= (:p3 (:applied-tokens frame-2')) (:name token-target')))
+               (t/is (= (:p4 (:applied-tokens frame-2')) (:name token-target'))))
              (t/testing "shapes padding got updated"
-               (t/is (= (:layout-padding frame-2') {:padding 100})))
+               (t/is (= (:layout-padding frame-2') {:p1 100 :p2 100 :p3 100 :p4 100})))
              (t/testing "shapes without layout get ignored"
                (t/is (nil? (:layout-padding frame-1')))))))))))
 
