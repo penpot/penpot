@@ -107,11 +107,10 @@
 (def spacing-keys (schema-keys schema:spacing))
 
 (def ^:private schema:dimensions
-  [:merge
-   schema:sizing
-   schema:spacing
-   schema:stroke-width
-   schema:border-radius])
+  (reduce mu/union [schema:sizing
+                    schema:spacing
+                    schema:stroke-width
+                    schema:border-radius]))
 
 (def dimensions-keys (schema-keys schema:dimensions))
 
@@ -127,12 +126,18 @@
 
 (def font-size-keys (schema-keys schema:font-size))
 
+;; Not supported by penpot yet
+(def ^:private schema:line-height
+  [:map
+   [:line-height {:optional true} token-name-ref]])
+
+(def line-height-keys (schema-keys schema:line-height))
+
 (def typography-keys (set/union font-size-keys))
 
 (def ^:private schema:number
-  [:map
-   [:rotation {:optional true} token-name-ref]
-   [:line-height {:optional true} token-name-ref]])
+  (reduce mu/union [schema:line-height
+                    schema:rotation]))
 
 (def number-keys (schema-keys schema:number))
 
@@ -280,4 +285,3 @@
 
 (defn unapply-token-id [shape attributes]
   (update shape :applied-tokens d/without-keys attributes))
-
