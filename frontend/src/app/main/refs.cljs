@@ -295,10 +295,8 @@
   [page-id shape-id]
   (l/derived #(dsh/lookup-shape % page-id shape-id) st/state =))
 
-;; TODO: Looks like using the `=` comparator can be pretty expensive
-;; on large pages, we are using this for some reason?
 (def workspace-page-objects
-  (l/derived dsh/lookup-page-objects st/state =))
+  (l/derived dsh/lookup-page-objects st/state))
 
 (def workspace-read-only?
   (l/derived :read-only? workspace-global))

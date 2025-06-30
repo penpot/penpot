@@ -37,10 +37,6 @@ $width-settings-bar-max: $sz-500;
   overflow-x: hidden;
 }
 
-.left-header {
-  grid-area: header;
-}
-
 .settings-bar-content {
   grid-area: content;
   right: calc(-1 * $s-8);

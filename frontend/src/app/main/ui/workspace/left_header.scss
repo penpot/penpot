@@ -6,7 +6,8 @@
 
 @import "refactor/common-refactor.scss";
 
-.workspace-header-left {
+.left-header {
+  grid-area: header;
   display: flex;
   align-items: center;
   padding: $s-12 $s-12 $s-8 $s-12;

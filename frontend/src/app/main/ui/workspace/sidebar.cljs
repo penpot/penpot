@@ -98,7 +98,6 @@
   {::mf/memo true}
   [{:keys [layout file page-id] :as props}]
   (let [options-mode   (mf/deref refs/options-mode-global)
-        project        (mf/deref refs/project)
         file-id        (get file :id)
 
         design-tokens? (features/use-feature "design-tokens/v1")
@@ -164,9 +163,7 @@
       [:> left-header*
        {:file file
         :layout layout
-        :project project
-        :page-id page-id
-        :class (stl/css :left-header)}]
+        :page-id page-id}]
 
       [:div {:on-pointer-down on-pointer-down
              :on-lost-pointer-capture on-lost-pointer-capture
@@ -256,7 +253,7 @@
 
 (mf/defc right-sidebar*
   {::mf/memo true}
-  [{:keys [layout section file page-id drawing-tool] :as props}]
+  [{:keys [layout section file-id page-id drawing-tool] :as props}]
   (let [is-comments?     (= drawing-tool :comments)
         is-history?      (contains? layout :document-history)
         is-inspect?      (= section :inspect)
@@ -311,8 +308,8 @@
                :on-pointer-move on-pointer-move}])
 
       [:> right-header*
-       {:file file
-        :layout layout
+       {:layout layout
+        :file-id file-id
         :page-id page-id}]
 
       [:div {:class (stl/css :settings-bar-inside)}

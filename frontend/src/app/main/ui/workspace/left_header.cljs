@@ -27,13 +27,15 @@
 ;; --- Header Component
 
 (mf/defc left-header*
-  [{:keys [file layout project page-id class]}]
+  [{:keys [file layout page-id]}]
   (let [profile     (mf/deref refs/profile)
+        project     (mf/deref refs/project)
         file-id     (:id file)
         file-name   (:name file)
         project-id  (:id project)
         team-id     (:team-id project)
         shared?     (:is-shared file)
+
         persistence
         (mf/deref refs/persistence)
 
@@ -90,7 +92,7 @@
       (when ^boolean editing?
         (dom/select-text! (mf/ref-val input-ref))))
 
-    [:header {:class (dm/str class " " (stl/css :workspace-header-left))}
+    [:header {:class (stl/css :left-header)}
      [:a {:on-click go-back
           :class (stl/css :main-icon)} i/logo-icon]
      [:div {:alt (tr "workspace.sitemap")

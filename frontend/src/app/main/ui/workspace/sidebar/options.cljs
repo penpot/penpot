@@ -12,6 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
@@ -38,6 +39,7 @@
    [app.main.ui.workspace.sidebar.options.shapes.svg-raw :as svg-raw]
    [app.main.ui.workspace.sidebar.options.shapes.text :as text]
    [app.util.i18n :as i18n :refer [tr]]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 ;; --- Options
@@ -55,8 +57,8 @@
 
     [:*
      (case shape-type
-       :frame   [:> frame/options* props]
-       :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :libraries libraries}]
+       :frame   [:> frame/options* {:shape shape :shape-with-children @shapes-with-children :file-id file-id :libraries libraries}]
+       :group   [:& group/options {:shape shape :shape-with-children @shapes-with-children :file-id file-id :libraries libraries}]
        :text    [:& text/options {:shape shape  :file-id file-id :libraries libraries}]
        :rect    [:& rect/options {:shape shape}]
        :circle  [:& circle/options {:shape shape}]
@@ -90,8 +92,8 @@
                                   (map #(dm/get-in objects [edition :layout-grid-cells %])))]
 
     [:div {:class (stl/css :element-options :design-options)}
-     [:& align-options]
-     [:& bool-options]
+     ;; [:& align-options]
+     ;; [:& bool-options]
 
      (cond
        (and edit-grid? (d/not-empty? selected-cells))
@@ -127,26 +129,23 @@
 
        :else
        [:& multiple/options
-        {:shapes-with-children shapes-with-children
+        {:shapes-with-children @shapes-with-children
          :shapes shapes
          :page-id page-id
          :file-id file-id
          :libraries libraries}])]))
 
-;; FIXME: need optimizations
 (mf/defc options-content*
-  {::mf/memo true
-   ::mf/private true}
-  [{:keys [selected shapes shapes-with-children page-id file-id on-change-section on-expand]}]
-  (let [objects     (mf/deref refs/workspace-page-objects)
-        permissions (mf/use-ctx ctx/permissions)
+  {::mf/private true}
+  [{:keys [objects selected shapes shapes-with-children page-id file-id on-change-section on-expand]}]
+  (let [permissions (mf/use-ctx ctx/permissions)
         can-edit?   (get permissions :can-edit)
 
-        first-selected-shape
+        first-shape
         (first shapes)
 
         shape-parent-frame
-        (cfh/get-frame objects (:frame-id first-selected-shape))
+        (cfh/get-frame objects (:frame-id first-shape))
 
         options-mode
         (mf/deref refs/options-mode-global)
@@ -208,15 +207,41 @@
 ;; selected-objects-with-children are derefed always but they only
 ;; need on multiple selection in majority of cases
 
+
+(defn- make-objects-ref
+  [file-id page-id]
+  (l/derived (fn [state]
+               (dsh/lookup-page-objects state file-id page-id))
+             st/state))
+
+(defn- get-shapes-with-children
+  [objects selected]
+  (let [xform    (comp (remove nil?)
+                       (mapcat #(cfh/get-children-ids objects %)))
+        selected (into selected xform selected)]
+    (mapv (d/getf objects) selected)))
+
+
 (mf/defc options-toolbox*
   {::mf/memo true}
-  [{:keys [section selected on-change-section on-expand]}]
-  (let [page-id              (mf/use-ctx ctx/current-page-id)
-        file-id              (mf/use-ctx ctx/current-file-id)
-        shapes               (mf/deref refs/selected-objects)
-        shapes-with-children (mf/deref refs/selected-shapes-with-children)]
+  [{:keys [file-id page-id section selected on-change-section on-expand]}]
+  (let [objects-ref
+        (mf/with-memo [file-id page-id]
+          (make-objects-ref file-id page-id))
+
+        objects
+        (mf/deref objects-ref)
+
+        shapes
+        (mf/with-memo [objects selected]
+          (into [] (keep (d/getf objects)) selected))
+
+        shapes-with-children
+        (mf/with-memo [objects selected]
+          (delay (get-shapes-with-children objects selected)))]
 
     [:> options-content* {:shapes shapes
+                          :objects objects
                           :selected selected
                           :shapes-with-children shapes-with-children
                           :file-id file-id

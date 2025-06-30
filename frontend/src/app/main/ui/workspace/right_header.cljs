@@ -110,10 +110,8 @@
 ;; --- Header Component
 
 (mf/defc right-header*
-  [{:keys [file layout page-id]}]
-  (let [file-id           (:id file)
-
-        threads-map       (mf/deref refs/comment-threads)
+  [{:keys [file-id layout page-id]}]
+  (let [threads-map       (mf/deref refs/comment-threads)
 
         zoom              (mf/deref refs/selected-zoom)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)

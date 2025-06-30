@@ -50,7 +50,7 @@
 
 (mf/defc workspace-content*
   {::mf/private true}
-  [{:keys [file layout page wglobal]}]
+  [{:keys [file file-id layout page wglobal]}]
 
   (let [palete-size (mf/use-state nil)
         selected    (mf/deref refs/selected-shapes)
@@ -58,7 +58,6 @@
 
         {:keys [vport] :as wlocal} (mf/deref refs/workspace-local)
         {:keys [options-mode]} wglobal
-
 
         ;; FIXME: pass this down to viewport and reuse it from here
         ;; instead of making an other deref on viewport for the same
@@ -124,7 +123,7 @@
                             :selected selected
                             :drawing-tool (get drawing :tool)
                             :layout layout
-                            :file file
+                            :file-id file-id
                             :page-id page-id}]])]))
 
 (mf/defc workspace-loader*
@@ -189,6 +188,7 @@
 
     (if (some? page)
       [:> workspace-content* {:file file
+                              :file-id file-id
                               :page page
                               :wglobal wglobal
                               :layout layout}]
