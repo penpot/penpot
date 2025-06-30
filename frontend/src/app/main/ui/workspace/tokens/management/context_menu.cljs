@@ -32,6 +32,11 @@
 (defn- key-in-map? [ks m]
   (some #(contains? m %) ks))
 
+(defn clean-separators [items]
+  (let [items' (dedupe items)]
+    (when-not (every? #(= % :separator) items')
+      items')))
+
 ;; Actions ---------------------------------------------------------------------
 
 (defn attribute-actions [token selected-shapes attributes]
@@ -221,24 +226,26 @@
             margin-items)))
 
 (defn sizing-attribute-actions [context-data]
-  (concat
-   (all-or-separate-actions {:attribute-labels {:width "Width"
-                                                :height "Height"}
-                             :hint (tr "workspace.tokens.size")
-                             :on-update-shape dwta/update-shape-dimensions}
-                            context-data)
-   [:separator]
-   (all-or-separate-actions {:attribute-labels {:layout-item-min-w "Min Width"
-                                                :layout-item-min-h "Min Height"}
-                             :hint (tr "workspace.tokens.min-size")
-                             :on-update-shape dwta/update-layout-sizing-limits}
-                            context-data)
-   [:separator]
-   (all-or-separate-actions {:attribute-labels {:layout-item-max-w "Max Width"
-                                                :layout-item-max-h "Max Height"}
-                             :hint (tr "workspace.tokens.max-size")
-                             :on-update-shape dwta/update-layout-sizing-limits}
-                            context-data)))
+  (->>
+   (concat
+    (all-or-separate-actions {:attribute-labels {:width "Width"
+                                                 :height "Height"}
+                              :hint (tr "workspace.tokens.size")
+                              :on-update-shape dwta/update-shape-dimensions}
+                             context-data)
+    [:separator]
+    (all-or-separate-actions {:attribute-labels {:layout-item-min-w "Min Width"
+                                                 :layout-item-min-h "Min Height"}
+                              :hint (tr "workspace.tokens.min-size")
+                              :on-update-shape dwta/update-layout-sizing-limits}
+                             context-data)
+    [:separator]
+    (all-or-separate-actions {:attribute-labels {:layout-item-max-w "Max Width"
+                                                 :layout-item-max-h "Max Height"}
+                              :hint (tr "workspace.tokens.max-size")
+                              :on-update-shape dwta/update-layout-sizing-limits}
+                             context-data))
+   (clean-separators)))
 
 (defn update-shape-radius-for-corners [value shape-ids attributes]
   (st/emit!
@@ -284,7 +291,7 @@
                         [:separator]
                         (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape dwta/update-shape-position :hint (tr "workspace.tokens.axis")))
                         (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape dwta/update-shape-position)))
-                       (dedupe)))}))
+                       (clean-separators)))}))
 
 (defn default-actions [{:keys [token selected-token-set-name]}]
   (let [{:keys [modal]} (dwta/get-token-properties token)]

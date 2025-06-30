@@ -126,7 +126,11 @@
                               :separator
                               "All" "Min Width" "Min Height"
                               :separator
-                              "All" "Max Width" "Max Height"])))))
+                              "All" "Max Width" "Max Height"]))))
+
+  (t/testing "shows no sizing items for groups"
+    (let [actions (token-menu-actions [:group1] "token-sizing")]
+      (t/is (nil? actions)))))
 
 (t/deftest rotation-items
   (t/testing "shows color items for selection of all shapes"
@@ -135,16 +139,6 @@
       (t/is (= action-titles ["Rotation"])))))
 
 (t/deftest dimensions-items
-  (t/testing "shows `generic-attributes` dimension items for group"
-    (let [actions (token-menu-actions [:group1] "token-dimensions")
-          action-titles (mapv #(if (keyword? %) % (select-keys % [:title :submenu])) actions)]
-      (t/is (= action-titles [{:title "Sizing", :submenu :sizing}
-                              :separator
-                              {:title "Stroke Width"}
-                              :separator
-                              {:title "X"}
-                              {:title "Y"}]))))
-
   (t/testing "shows `rect-attributes` dimension items for rect"
     (let [actions (token-menu-actions [:rect1] "token-dimensions")
           action-titles (mapv #(if (keyword? %) % (select-keys % [:title :submenu])) actions)]
@@ -178,7 +172,11 @@
                               {:title "Stroke Width"}
                               :separator
                               {:title "X"}
-                              {:title "Y"}])))))
+                              {:title "Y"}]))))
+
+  (t/testing "not attributes for groups as they are not supported yet"
+    (let [actions (token-menu-actions [:group1] "token-dimensions")]
+      (t/is (nil? actions)))))
 
 (t/deftest number-items
   (t/testing "shows all number attribute items for text"
