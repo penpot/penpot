@@ -343,6 +343,7 @@
       (watch [it state _]
         (if-let [token-set (lookup-token-set state)]
           (let [data    (dsh/lookup-file-data state)
+                token-type (:type token)
                 changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
                             (pcb/set-token (:name token-set)
@@ -350,7 +351,7 @@
                                            token))]
 
             (rx/of (dch/commit-changes changes)
-                   (ptk/data-event ::ev/event {::ev/name "create-token"})))
+                   (ptk/data-event ::ev/event {::ev/name "create-token" :type token-type})))
 
           (rx/of (create-token-with-set token)))))))
 
@@ -367,14 +368,15 @@
             token'    (->> (merge token params)
                            (into {})
                            (ctob/make-token))
-
+            token-type (:type token)
             changes   (-> (pcb/empty-changes it)
                           (pcb/with-library-data data)
                           (pcb/set-token (:name token-set)
                                          (:name token)
                                          token'))]
 
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dch/commit-changes changes)
+               (ptk/data-event ::ev/event {::ev/name "edit-token" :type token-type}))))))
 
 (defn delete-token
   [set-name token-name]
