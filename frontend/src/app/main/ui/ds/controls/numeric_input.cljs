@@ -79,7 +79,6 @@
     (let [option (get-option options default)]
       (get option :id))))
 
-
 (def ^:private schema:token-field
   [:map
    [:id :string]
@@ -190,23 +189,24 @@
         max             (d/parse-double max sm/max-safe-int)
         max-length      (d/nilv max-length max-input-length)
         empty-to-end    (d/nilv empty-to-end false)
-        id              (or id (mf/use-id))
+        internal-id     (mf/use-id)
+        id              (or id internal-id)
 
         ;; State and values
         is-open*           (mf/use-state false)
         is-open            (deref is-open*)
 
-        is-token*          (mf/use-state false)
+        is-token*          (mf/use-state false) ;; Si llega un token seleccionado por defecto esto debe cambiar
         is-token           (deref is-token*)
 
         selected-id*       (mf/use-state  #(get-selected-option-id options default-selected))
         selected-id        (deref selected-id*)
 
-        focused-id*     (mf/use-state nil)
-        focused-id      (deref focused-id*)
+        focused-id*        (mf/use-state nil)
+        focused-id         (deref focused-id*)
 
-        filter-id*   (mf/use-state "")
-        filter-id    (deref filter-id*)
+        filter-id*         (mf/use-state "")
+        filter-id          (deref filter-id*)
 
         is-multiple?       (= :multiple value)
 
@@ -236,7 +236,8 @@
         options-nodes-refs (mf/use-ref nil)
         options-ref        (mf/use-ref nil)
         token-wrapper-ref  (mf/use-ref nil)
-        ref                (or ref (mf/use-ref))
+        internal-ref       (mf/use-ref nil)
+        ref                (or ref internal-ref)
         dirty-ref          (mf/use-ref false)
         open-dropdown-ref  (mf/use-ref nil)
         listbox-id         (mf/ref-val listbox-id-ref)
@@ -268,19 +269,18 @@
         (mf/use-fn
          (mf/deps on-change update-input value nillable)
          (fn [raw-value]
-           (prn "apply-value raw-value" raw-value)
            (if-let [parsed (parse-value raw-value @last-value* min max nillable)]
 
              (when-not (= parsed @last-value*)
-               (do
-                 (reset! last-value* parsed)
-                 ;; Ojo cuidado a ver si esto es asi
-                 (reset! is-token* false)
-                 (when (fn? on-change)
-                   (on-change parsed))
-
-                 (reset! raw-value* (fmt/format-number parsed))
-                 (update-input (fmt/format-number parsed))))
+               (reset! last-value* parsed)
+               ;; Ojo cuidado a ver si esto es asi
+               (reset! is-token* false)
+               (when (fn? on-change)
+                 (on-change parsed))
+               
+              ;; Comprar si es valor es necesario, sino borrar
+               (reset! raw-value* (fmt/format-number parsed))
+               (update-input (fmt/format-number parsed)))
 
              (if (and nillable (empty? raw-value))
                (do
@@ -346,7 +346,7 @@
            (let [option (get-option options focused-id)
                  value  (get option :resolved)]
 
-            (on-token-apply id value))))
+             (on-token-apply id value))))
 
         on-blur
         (mf/use-fn
@@ -484,6 +484,7 @@
                             (str/includes? option filter))))
                (not-empty)))
 
+        ;; Change this name for something more descriptive (on-tolken-key-down)
         handle-pill
         (mf/use-fn
          (mf/deps detach-token)

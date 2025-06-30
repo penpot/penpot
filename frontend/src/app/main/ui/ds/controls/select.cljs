@@ -9,7 +9,8 @@
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown* schema:option]]
+   [app.main.ui.ds.controls.shared.option :refer [schema:option]]
+   [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]

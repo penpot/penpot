@@ -16,7 +16,6 @@
   [:and :string
    [:fn {:error/message "invalid data: invalid icon"} #(contains? i/icon-list %)]])
 
-
 (def schema:option
   [:and
    [:map {:title "option"}
