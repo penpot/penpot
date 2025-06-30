@@ -32,7 +32,11 @@
 (defn- key-in-map? [ks m]
   (some #(contains? m %) ks))
 
-(defn clean-separators [items]
+(defn clean-separators
+  "Cleans up `:separator` inside of `items`
+  Will clean consecutive items like `[:separator :separator {}]`
+  And will return nil for lists consisting only of `:separator` items."
+  [items]
   (let [items' (dedupe items)]
     (when-not (every? #(= % :separator) items')
       items')))
