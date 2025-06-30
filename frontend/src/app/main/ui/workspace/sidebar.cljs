@@ -82,10 +82,12 @@
          size-pages-opened :size}
         (use-resize-hook :sitemap 200 38 "0.6" :y false nil)
 
-        show-pages?    (mf/use-state true)
-        toggle-pages   (mf/use-fn #(reset! show-pages? not))
+        show-pages*    (mf/use-state true)
+        show-pages?    (deref show-pages*)
+
+        toggle-pages   (mf/use-fn #(reset! show-pages* not))
         size-pages     (mf/with-memo [show-pages? size-pages-opened]
-                         (if @show-pages? size-pages-opened 32))
+                         (if show-pages? size-pages-opened 32))
 
         handle-collapse
         (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
@@ -104,10 +106,10 @@
 
           [:& sitemap {:layout layout
                        :toggle-pages toggle-pages
-                       :show-pages? @show-pages?
+                       :show-pages? show-pages?
                        :size size-pages}]
 
-          (when @show-pages?
+          (when show-pages?
             [:div {:class (stl/css :resize-area-horiz)
                    :on-pointer-down on-pointer-down-pages
                    :on-lost-pointer-capture on-lost-pointer-capture-pages
