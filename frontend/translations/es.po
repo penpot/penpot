@@ -7818,6 +7818,11 @@ msgstr ""
 "Si quieres aumentar este límite, "
 "[mejora tu plan|target:self](%s)"
 
+msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
+msgstr ""
+"Si quieres aumentar este límite, escríbenos a "
+"[%s](mailto)"
+
 #, markdown
 msgid "subscription.workspace.versions.warning.subtext-member"
 msgstr ""
