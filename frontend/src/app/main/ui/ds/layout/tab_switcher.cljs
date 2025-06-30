@@ -105,13 +105,14 @@
    [:class {:optional true} :string]
    [:on-change fn?]
    [:selected :string]
+   [:hide-nav {:optional true} :boolean]
    [:action-button {:optional true} some?]
    [:action-button-position {:optional true}
     [:maybe [:enum "start" "end"]]]])
 
 (mf/defc tab-switcher*
   {::mf/schema schema:tab-switcher}
-  [{:keys [tabs class on-change selected action-button-position action-button children] :rest props}]
+  [{:keys [tabs class on-change selected action-button-position action-button children hide-nav] :rest props}]
   (let [nodes-ref (mf/use-ref nil)
 
         tabs
@@ -177,14 +178,15 @@
         (mf/spread-props props {:class [class (stl/css :tabs)]})]
 
     [:> :article props
-     [:div {:class (stl/css :padding-wrapper)}
-      [:> tab-nav* {:button-position action-button-position
-                    :action-button action-button
-                    :tabs tabs
-                    :ref on-ref
-                    :selected selected
-                    :on-key-down on-key-down
-                    :on-click on-click}]]
+     (when-not hide-nav
+       [:div {:class (stl/css :padding-wrapper)}
+        [:> tab-nav* {:button-position action-button-position
+                      :action-button action-button
+                      :tabs tabs
+                      :ref on-ref
+                      :selected selected
+                      :on-key-down on-key-down
+                      :on-click on-click}]])
 
      [:section {:class (stl/css :tab-panel)
                 :tab-index 0

@@ -79,8 +79,7 @@
     [:& component-menu {:shapes (:shapes panel) :swap-opened? true}]))
 
 (mf/defc design-menu*
-  {::mf/wrap [mf/memo]}
-  [{:keys [selected objects page-id file-id selected-shapes shapes-with-children]}]
+  [{:keys [selected objects page-id file-id shapes shapes-with-children]}]
   (let [sp-panel             (mf/deref refs/specialized-panel)
         drawing              (mf/deref refs/workspace-drawing)
         libraries            (mf/deref refs/libraries)
@@ -120,7 +119,7 @@
 
        (= 1 (count selected))
        [:> shape-options*
-        {:shape (first selected-shapes)
+        {:shape (first shapes)
          :page-id page-id
          :file-id file-id
          :libraries libraries
@@ -129,7 +128,7 @@
        :else
        [:& multiple/options
         {:shapes-with-children shapes-with-children
-         :shapes selected-shapes
+         :shapes shapes
          :page-id page-id
          :file-id file-id
          :libraries libraries}])]))
@@ -139,22 +138,32 @@
   {::mf/memo true
    ::mf/private true}
   [{:keys [selected shapes shapes-with-children page-id file-id on-change-section on-expand]}]
-  (let [objects              (mf/deref refs/workspace-page-objects)
-        permissions          (mf/use-ctx ctx/permissions)
+  (let [objects     (mf/deref refs/workspace-page-objects)
+        permissions (mf/use-ctx ctx/permissions)
+        can-edit?   (get permissions :can-edit)
 
-        selected-shapes      (into [] (keep (d/getf objects)) selected)
-        first-selected-shape (first selected-shapes)
-        shape-parent-frame   (cfh/get-frame objects (:frame-id first-selected-shape))
+        first-selected-shape
+        (first shapes)
 
-        options-mode         (mf/deref refs/options-mode-global)
+        shape-parent-frame
+        (cfh/get-frame objects (:frame-id first-selected-shape))
+
+        options-mode
+        (mf/deref refs/options-mode-global)
+
+        options-mode
+        (if can-edit?
+          options-mode
+          :inspect)
 
         on-change-tab
-        (fn [options-mode]
-          (let [options-mode (keyword options-mode)]
-            (st/emit! (udw/set-options-mode options-mode))
-            (if (= options-mode :inspect)
-              (st/emit! :interrupt (dwc/set-workspace-read-only true))
-              (st/emit! :interrupt (dwc/set-workspace-read-only false)))))
+        (mf/use-fn
+         (fn [mode]
+           (let [mode (keyword mode)]
+             (st/emit! (udw/set-options-mode mode))
+             (if (= mode :inspect)
+               (st/emit! :interrupt (dwc/set-workspace-read-only true))
+               (st/emit! :interrupt (dwc/set-workspace-read-only false))))))
 
         tabs
         (mf/with-memo []
@@ -166,45 +175,34 @@
             :id "inspect"}])]
 
     [:div {:class (stl/css :tool-window)}
-     (if (:can-edit permissions)
-       [:> tab-switcher* {:tabs tabs
-                          :on-change on-change-tab
-                          :selected (name options-mode)
-                          :class (stl/css :options-tab-switcher)}
-        (case options-mode
-          :prototype
-          [:div {:class (stl/css :element-options :interaction-options)}
-           [:& interactions-menu {:shape (first shapes)}]]
+     [:> tab-switcher* {:tabs tabs
+                        :on-change on-change-tab
+                        :hide-nav (not can-edit?)
+                        :selected (name options-mode)
+                        :class (stl/css :options-tab-switcher)}
+      (case options-mode
+        :prototype
+        [:div {:class (stl/css :element-options :interaction-options)}
+         [:& interactions-menu {:shape (first shapes)}]]
 
-          :inspect
-          [:div {:class (stl/css :element-options :inspect-options)}
-           [:& hrs/right-sidebar {:page-id           page-id
-                                  :objects           objects
-                                  :file-id           file-id
-                                  :frame             shape-parent-frame
-                                  :shapes            selected-shapes
-                                  :on-change-section on-change-section
-                                  :on-expand         on-expand
-                                  :from              :workspace}]]
+        :inspect
+        [:div {:class (stl/css :element-options :inspect-options)}
+         [:& hrs/right-sidebar {:page-id           page-id
+                                :objects           objects
+                                :file-id           file-id
+                                :frame             shape-parent-frame
+                                :shapes            shapes
+                                :on-change-section on-change-section
+                                :on-expand         on-expand
+                                :from              :workspace}]]
 
-          :design
-          [:> design-menu* {:selected selected
-                            :objects objects
-                            :page-id page-id
-                            :file-id file-id
-                            :selected-shapes selected-shapes
-                            :shapes-with-children shapes-with-children}])]
-
-       ;; FIXME: Reuse tab???
-       [:div {:class (stl/css :element-options :inspect-options :read-only)}
-        [:& hrs/right-sidebar {:page-id           page-id
-                               :objects           objects
-                               :file-id           file-id
-                               :frame             shape-parent-frame
-                               :shapes            selected-shapes
-                               :on-change-section on-change-section
-                               :on-expand         on-expand
-                               :from              :workspace}]])]))
+        :design
+        [:> design-menu* {:selected selected
+                          :objects objects
+                          :page-id page-id
+                          :file-id file-id
+                          :shapes shapes
+                          :shapes-with-children shapes-with-children}])]]))
 
 ;; TODO: this need optimizations, selected-objects and
 ;; selected-objects-with-children are derefed always but they only
