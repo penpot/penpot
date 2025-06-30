@@ -748,6 +748,19 @@ pub extern "C" fn hide_grid() {
     });
 }
 
+#[no_mangle]
+pub extern "C" fn get_grid_coords(pos_x: f32, pos_y: f32) -> *mut u8 {
+    let row: i32;
+    let col: i32;
+    with_state!(state, {
+        (row, col) = state.get_grid_coords(pos_x, pos_y);
+    });
+    let mut bytes = vec![0; 8];
+    bytes[0..4].clone_from_slice(&row.to_le_bytes());
+    bytes[4..8].clone_from_slice(&col.to_le_bytes());
+    mem::write_bytes(bytes)
+}
+
 fn main() {
     #[cfg(target_arch = "wasm32")]
     init_gl!();
