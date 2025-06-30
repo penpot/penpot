@@ -53,47 +53,66 @@
     outline: none;
   }
 }
+.pill-disabled {
+  user-select: none;
+  --pill-bg-color: none;
+  --pill-fg-color: var(--color-foreground-secondary);
+  --pill-border-color: var(--color-token-border);
+  &:hover {
+    --pill-bg-color: none;
+    --pill-fg-color: var(--color-foreground-secondary);
+    --pill-border-color: var(--color-token-border);
+  }
+}
 
 .icon {
   color: var(--color-foreground-secondary);
 }
 
-.button-wrapper {
-  --button-wrapper-bg-color: var(--color-background-tertiary);
-  --button-wrapper-fg-color: var(--color-foreground-primary);
-  --button-wrapper-icon-color: var(--color-foreground-secondary);
-  --button-wrapper-outline-color: none;
-  --button-wrapper-height: var(--sp-xxxl);
-  --button-wrapper-margin: unset;
+.token-field {
+  --token-field-bg-color: var(--color-background-tertiary);
+  --token-field-fg-color: var(--color-foreground-primary);
+  --token-field-icon-color: var(--color-foreground-secondary);
+  --token-field-outline-color: none;
+  --token-field-height: var(--sp-xxxl);
+  --token-field-margin: unset;
 
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 1fr auto;
   column-gap: var(--sp-xs);
   align-items: center;
   position: relative;
   inline-size: 100%;
-  background: var(--button-wrapper-bg-color);
+  background: var(--token-field-bg-color);
   border-radius: 0.5rem;
   padding: var(--sp-xs) var(--sp-s);
-  outline: $b-1 solid var(--button-wrapper-outline-color);
+  outline: $b-1 solid var(--token-field-outline-color);
 
   &:hover {
-    --button-wrapper-bg-color: var(--color-background-quaternary);
+    --token-field-bg-color: var(--color-background-quaternary);
   }
 
-  &:focus-visible,
-  &:focus-within,
-  &:has(*:focus-visible) {
-    --button-wrapper-bg-color: var(--color-background-primary);
-    --button-wrapper-outline-color: var(--color-accent-primary);
-  }
-
-  &:disabled {
-    --button-wrapper-bg-color: var(--color-background-primary);
-    --button-wrapper-outline-color: var(--color-background-quaternary);
+  &:focus {
+    --token-field-bg-color: var(--color-background-primary);
+    --token-field-outline-color: var(--color-accent-primary);
   }
 }
 
+.with-icon {
+  grid-template-columns: auto 1fr auto;
+}
+
+.token-field-disabled {
+  user-select: none;
+  --token-field-bg-color: var(--color-background-primary);
+  --token-field-outline-color: var(--color-background-quaternary);
+  &:hover {
+    --token-field-bg-color: var(--color-background-primary);
+    --token-field-outline-color: var(--color-background-quaternary);
+  }
+}
+
+// Review this, better not to use svg
 .invisible-button {
   svg {
     opacity: var(--opacity-button);
