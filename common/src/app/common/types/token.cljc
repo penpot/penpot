@@ -34,6 +34,7 @@
    :color         "color"
    :dimensions    "dimension"
    :font-size     "fontSizes"
+   :letter-spacing "letterSpacing"
    :number        "number"
    :opacity       "opacity"
    :other         "other"
@@ -133,7 +134,13 @@
 
 (def line-height-keys (schema-keys schema:line-height))
 
-(def typography-keys (set/union font-size-keys))
+(def ^:private schema:letter-spacing
+  [:map
+   [:letter-spacing {:optional true} token-name-ref]])
+
+(def letter-spacing-keys (schema-keys schema:letter-spacing))
+
+(def typography-keys (set/union font-size-keys letter-spacing-keys))
 
 (def ^:private schema:number
   (reduce mu/union [schema:line-height
@@ -164,6 +171,7 @@
    schema:rotation
    schema:number
    schema:font-size
+   schema:letter-spacing
    schema:dimensions])
 
 (defn shape-attr->token-attrs
@@ -192,6 +200,7 @@
        #{:m1 :m2 :m3 :m4})
 
      (font-size-keys shape-attr) #{shape-attr}
+     (letter-spacing-keys shape-attr) #{shape-attr}
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}

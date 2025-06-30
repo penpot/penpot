@@ -346,6 +346,18 @@
                            {:ignore-touched true
                             :page-id page-id})))))
 
+(defn update-letter-spacing
+  ([value shape-ids attributes] (update-letter-spacing value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+   (let [update-node? (fn [node]
+                        (or (txt/is-text-node? node)
+                            (txt/is-paragraph-node? node)))]
+     (when (number? value)
+       (dwsh/update-shapes shape-ids
+                           #(txt/update-text-content % update-node? d/txt-merge {:letter-spacing (str value)})
+                           {:ignore-touched true
+                            :page-id page-id})))))
+
 (defn update-font-size
   ([value shape-ids attributes] (update-font-size value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
@@ -390,6 +402,14 @@
     :modal {:key :tokens/font-size
             :fields [{:label "Font Size"
                       :key :font-size}]}}
+
+   :letter-spacing
+   {:title "Letter Spacing"
+    :attributes ctt/letter-spacing-keys
+    :on-update-shape update-letter-spacing
+    :modal {:key :tokens/letter-spacing
+            :fields [{:label "Letter Spacing"
+                      :key :letter-spacing}]}}
 
    :stroke-width
    {:title "Stroke Width"

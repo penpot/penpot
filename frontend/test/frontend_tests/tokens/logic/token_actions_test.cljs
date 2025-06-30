@@ -521,6 +521,40 @@
              (t/is (= (:line-height (:applied-tokens text-1')) (:name token-target')))
              (t/is (= (:line-height style-text-blocks) 1.5)))))))))
 
+(t/deftest test-apply-letter-spacing
+  (t/testing "applies letter-spacing token and updates the text letter-spacing"
+    (t/async
+      done
+      (let [letter-spacing-token {:name "wide-spacing"
+                                  :value "2"
+                                  :type :letter-spacing}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token letter-spacing-token))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:letter-spacing}
+                                       :token (toht/get-token file "wide-spacing")
+                                       :on-update-shape dwta/update-letter-spacing})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "wide-spacing")
+                 text-1' (cths/get-shape file' :text-1)
+                 style-text-blocks (->> (:content text-1')
+                                        (txt/content->text+styles)
+                                        (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                        (mapv (fn [[style text]]
+                                                {:styles (merge txt/default-text-attrs style)
+                                                 :text-content text}))
+                                        (first)
+                                        (:styles))]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:letter-spacing (:applied-tokens text-1')) (:name token-target')))
+             (t/is (= (:letter-spacing style-text-blocks) "2")))))))))
+
 (t/deftest test-toggle-token-none
   (t/testing "should apply token to all selected items, where no item has the token applied"
     (t/async
