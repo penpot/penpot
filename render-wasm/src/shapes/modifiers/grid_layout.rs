@@ -601,7 +601,7 @@ pub fn create_cell_data<'a>(
 }
 
 pub fn grid_cell_data<'a>(
-    shape: Shape,
+    shape: &Shape,
     shapes: &'a HashMap<Uuid, &mut Shape>,
     modifiers: &HashMap<Uuid, Matrix>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,

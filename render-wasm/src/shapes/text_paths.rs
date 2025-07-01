@@ -171,7 +171,7 @@ impl TextPaths {
         blob_offset_x: f32,
         blob_offset_y: f32,
     ) -> Option<(skia::Path, skia::Rect)> {
-        with_state!(state, {
+        with_state_mut!(state, {
             let utf16_text = leaf_text.encode_utf16().collect::<Vec<u16>>();
             let text = unsafe { skia_safe::as_utf16_unchecked(&utf16_text) };
             let emoji_font = state.render_state.fonts().get_emoji_font(font.size());
