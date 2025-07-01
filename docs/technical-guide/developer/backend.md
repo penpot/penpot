@@ -4,14 +4,22 @@ title: 3.06. Backend Guide
 
 # Backend guide #
 
-This guide intends to explain the essential details of the backend
-application.
-
+This guide collects some basic information on the backend application.
 
 ## REPL ##
 
-In the devenv environment you can execute <code class="language-clojure">scripts/repl</code> to open a
-Clojure interactive shell ([REPL](https://codewith.mu/en/tutorials/1.0/repl)).
+_Note:_ When in development mode, the backend spins up a traditional nREPL socket on port 6064.
+If you are experimenting locally, you can connect to it using your Clojure editor or
+with `backend/scripts/nrepl`, which starts a [REPLy client](https://github.com/trptcolin/reply),
+[see here][1] for more information.
+
+[1]: /technical-guide/developer/devenv/#backend
+
+In the devenv environment you can execute `backend/scripts/repl` to open a
+Clojure interactive shell ([REPL](https://codewith.mu/en/tutorials/1.0/repl)) (this is not a socket-based
+REPL, but a local, in-process console (over stdin/stdout) with some fancy line-editing and colors). Note
+that the backend must be stopped before executing this script, otherwise it will fail with `Port already
+in use: 9090`.
 
 Once there, you can execute <code class="language-clojure">(restart)</code> to load and execute the backend
 process, or to reload it after making changes to the source code.
@@ -39,11 +47,11 @@ For example:
 
 ## Fixtures ##
 
-This is a development feature that allows populate the database with a
-good amount of content (usually used for just test the application or
-perform performance tweaks on queries).
+This is a development feature that allows populating the database with a
+good amount of content (typically used to test the application or to run
+performance tweaks on queries).
 
-In order to load fixtures, enter to the REPL environment with the <code class="language-clojure">scripts/repl</code>
+In order to load fixtures, enter the REPL environment with the <code class="language-clojure">backend/scripts/repl</code>
 script, and then execute <code class="language-clojure">(app.cli.fixtures/run {:preset :small})</code>.
 
 You also can execute this as a standalone script with:
@@ -52,11 +60,11 @@ You also can execute this as a standalone script with:
 clojure -Adev -X:fn-fixtures
 ```
 
-NOTE: It is an optional step because the application can start with an
+_NOTE:_ This is an optional step because the application can start with an
 empty database.
 
-This by default will create a bunch of users that can be used to login
-in the application. All users uses the following pattern:
+The above will create several users that can be used to login
+into the application. All of them follow the pattern:
 
 - Username: <code class="language-text">profileN@example.com</code>
 - Password: <code class="language-text">123123</code>
