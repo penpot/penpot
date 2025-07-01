@@ -172,6 +172,7 @@
                        {:label group
                         :id group})
                      theme-groups)
+
         on-update-group
         (mf/use-fn
          (mf/deps on-change-field)
