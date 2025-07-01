@@ -172,7 +172,9 @@
                                    current)]
                      (case current
                        "dark"   "light"
-                       "light"  "dark")))))
+                       "light"  "dark"
+                       ; Failsafe for missing data
+                       "dark")))))
 
     ptk/WatchEvent
     (watch [it state _]
