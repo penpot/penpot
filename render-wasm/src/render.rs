@@ -260,7 +260,7 @@ impl RenderState {
         self.images.add(id, image_data)
     }
 
-    pub fn has_image(&mut self, id: &Uuid) -> bool {
+    pub fn has_image(&self, id: &Uuid) -> bool {
         self.images.contains(id)
     }
 
@@ -635,7 +635,7 @@ impl RenderState {
 
     pub fn start_render_loop(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -690,7 +690,7 @@ impl RenderState {
 
     pub fn process_animation_frame(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -719,7 +719,7 @@ impl RenderState {
     }
 
     #[inline]
-    pub fn render_shape_enter(&mut self, element: &mut Shape, mask: bool) {
+    pub fn render_shape_enter(&mut self, element: &Shape, mask: bool) {
         // Masked groups needs two rendering passes, the first one rendering
         // the content and the second one rendering the mask so we need to do
         // an extra save_layer to keep all the masked group separate from
@@ -765,7 +765,7 @@ impl RenderState {
     }
 
     #[inline]
-    pub fn render_shape_exit(&mut self, element: &mut Shape, visited_mask: bool) {
+    pub fn render_shape_exit(&mut self, element: &Shape, visited_mask: bool) {
         if visited_mask {
             // Because masked groups needs two rendering passes (first drawing
             // the content and then drawing the mask), we need to do an
@@ -849,7 +849,7 @@ impl RenderState {
 
     pub fn render_shape_tree_partial_uncached(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -867,7 +867,7 @@ impl RenderState {
             } = node_render_state;
 
             is_empty = false;
-            let element = tree.get_mut(&node_id).ok_or(
+            let element = tree.get(&node_id).ok_or(
                 "Error: Element with root_id {node_render_state.id} not found in the tree."
                     .to_string(),
             )?;
@@ -962,7 +962,7 @@ impl RenderState {
 
     pub fn render_shape_tree_partial(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,

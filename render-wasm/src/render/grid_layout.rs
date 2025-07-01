@@ -14,7 +14,7 @@ pub fn render_overlay(
     modifiers: &HashMap<Uuid, Matrix>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) {
-    let cells = grid_cell_data(shape.clone(), shapes, modifiers, structure, true);
+    let cells = grid_cell_data(shape, shapes, modifiers, structure, true);
 
     let mut paint = skia::Paint::default();
     paint.set_style(skia::PaintStyle::Stroke);

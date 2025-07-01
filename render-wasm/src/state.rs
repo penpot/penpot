@@ -106,8 +106,12 @@ impl<'a> State<'a> {
         self.render_state.resize(width, height);
     }
 
-    pub fn render_state(&'a mut self) -> &'a mut RenderState {
+    pub fn render_state_mut(&'a mut self) -> &'a mut RenderState {
         &mut self.render_state
+    }
+
+    pub fn render_state(&'a self) -> &'a RenderState {
+        &self.render_state
     }
 
     pub fn render_from_cache(&mut self) {
@@ -117,7 +121,7 @@ impl<'a> State<'a> {
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
         self.render_state.start_render_loop(
-            &mut self.shapes,
+            &self.shapes,
             &self.modifiers,
             &self.structure,
             &self.scale_content,
@@ -128,7 +132,7 @@ impl<'a> State<'a> {
 
     pub fn process_animation_frame(&mut self, timestamp: i32) -> Result<(), String> {
         self.render_state.process_animation_frame(
-            &mut self.shapes,
+            &self.shapes,
             &self.modifiers,
             &self.structure,
             &self.scale_content,
@@ -172,8 +176,12 @@ impl<'a> State<'a> {
         }
     }
 
-    pub fn current_shape(&mut self) -> Option<&mut Shape> {
+    pub fn current_shape_mut(&mut self) -> Option<&mut Shape> {
         self.current_shape.as_deref_mut()
+    }
+
+    pub fn current_shape(&self) -> Option<&Shape> {
+        self.current_shape.as_deref()
     }
 
     pub fn set_background_color(&mut self, color: skia::Color) {
@@ -181,34 +189,29 @@ impl<'a> State<'a> {
     }
 
     pub fn set_selrect_for_current_shape(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
-        match self.current_shape.as_mut() {
-            Some(shape) => {
-                shape.set_selrect(left, top, right, bottom);
-                // We don't need to update the tile for the root shape.
-                if !shape.id.is_nil() {
-                    self.render_state.update_tile_for(shape);
-                }
-            }
-            None => panic!("Invalid current shape"),
+        let Some(shape) = self.current_shape.as_deref_mut() else {
+            panic!("Invalid current shape")
+        };
+
+        shape.set_selrect(left, top, right, bottom);
+        // We don't need to update the tile for the root shape.
+        if !shape.id.is_nil() {
+            self.render_state.update_tile_for(shape);
         }
     }
 
     pub fn update_tile_for_shape(&mut self, shape_id: Uuid) {
-        if let Some(shape) = self.shapes.get_mut(&shape_id) {
+        if let Some(shape) = self.shapes.get(&shape_id) {
             self.render_state.update_tile_for(shape);
         }
     }
 
     pub fn update_tile_for_current_shape(&mut self) {
-        match self.current_shape.as_mut() {
-            Some(shape) => {
-                // We don't need to update the tile for the root shape.
-                // We can also have deleted the selected shape
-                if !shape.id.is_nil() && self.shapes.contains_key(&shape.id) {
-                    self.render_state.update_tile_for(shape);
-                }
-            }
-            None => panic!("Invalid current shape"),
+        let Some(shape) = self.current_shape.as_deref() else {
+            panic!("Invalid current shape")
+        };
+        if !shape.id.is_nil() && self.shapes.contains_key(&shape.id) {
+            self.render_state.update_tile_for(shape);
         }
     }
 
@@ -227,7 +230,7 @@ impl<'a> State<'a> {
             .rebuild_modifier_tiles(&mut self.shapes, &self.modifiers);
     }
 
-    pub fn get_grid_coords(&mut self, pos_x: f32, pos_y: f32) -> (i32, i32) {
+    pub fn get_grid_coords(&self, pos_x: f32, pos_y: f32) -> (i32, i32) {
         let Some(shape) = self.current_shape() else {
             return (-1, -1);
         };
@@ -235,13 +238,7 @@ impl<'a> State<'a> {
         let bounds = shape.bounds();
         let position = Point::new(pos_x, pos_y);
 
-        let cells = grid_cell_data(
-            shape.clone(),
-            &self.shapes,
-            &self.modifiers,
-            &self.structure,
-            true,
-        );
+        let cells = grid_cell_data(shape, &self.shapes, &self.modifiers, &self.structure, true);
 
         for cell in cells {
             let points = &[
