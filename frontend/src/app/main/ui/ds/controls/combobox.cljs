@@ -206,10 +206,12 @@
 
         selected-option
         (mf/with-memo [options selected-id]
-          (get-option options selected-id))
+          (when (d/not-empty? options)
+            (get-option options selected-id)))
 
         icon
-        (get selected-option :icon)]
+        (when selected-option
+          (get selected-option :icon))]
 
     (mf/with-effect [dropdown-options]
       (mf/set-ref-val! options-ref dropdown-options))
