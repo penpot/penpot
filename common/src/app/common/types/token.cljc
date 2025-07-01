@@ -29,20 +29,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def token-type->dtcg-token-type
-  {:boolean       "boolean"
-   :border-radius "borderRadius"
-   :color         "color"
-   :dimensions    "dimension"
-   :font-size     "fontSizes"
+  {:boolean        "boolean"
+   :border-radius  "borderRadius"
+   :color          "color"
+   :dimensions     "dimension"
+   :font-family    "fontFamilies"
+   :font-size      "fontSizes"
    :letter-spacing "letterSpacing"
-   :number        "number"
-   :opacity       "opacity"
-   :other         "other"
-   :rotation      "rotation"
-   :sizing        "sizing"
-   :spacing       "spacing"
-   :string        "string"
-   :stroke-width  "strokeWidth"})
+   :number         "number"
+   :opacity        "opacity"
+   :other          "other"
+   :rotation       "rotation"
+   :sizing         "sizing"
+   :spacing        "spacing"
+   :string         "string"
+   :stroke-width   "strokeWidth"})
 
 (def dtcg-token-type->token-type
   (set/map-invert token-type->dtcg-token-type))
@@ -133,7 +134,13 @@
 
 (def letter-spacing-keys (schema-keys schema:letter-spacing))
 
-(def typography-keys (set/union font-size-keys letter-spacing-keys))
+(def ^:private schema:font-family
+  [:map
+   [:font-family {:optional true} token-name-ref]])
+
+(def font-family-keys (schema-keys schema:font-family))
+
+(def typography-keys (set/union font-size-keys letter-spacing-keys font-family-keys))
 
 (def ^:private schema:number
   (reduce mu/union [[:map [:line-height {:optional true} token-name-ref]]
@@ -165,6 +172,7 @@
    schema:number
    schema:font-size
    schema:letter-spacing
+   schema:font-family
    schema:dimensions])
 
 (defn shape-attr->token-attrs
@@ -194,6 +202,7 @@
 
      (font-size-keys shape-attr) #{shape-attr}
      (letter-spacing-keys shape-attr) #{shape-attr}
+     (font-family-keys shape-attr) #{shape-attr}
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}

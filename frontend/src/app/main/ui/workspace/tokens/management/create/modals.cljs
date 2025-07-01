@@ -191,3 +191,9 @@
    ::mf/register-as :tokens/letter-spacing}
   [properties]
   [:& token-update-create-modal properties])
+
+(mf/defc font-familiy-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/font-family}
+  [properties]
+  [:& token-update-create-modal properties])

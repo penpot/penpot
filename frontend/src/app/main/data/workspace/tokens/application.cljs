@@ -355,6 +355,18 @@
                            {:ignore-touched true
                             :page-id page-id})))))
 
+(defn update-font-family
+  ([value shape-ids attributes] (update-font-family value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
+   (let [update-node? (fn [node]
+                        (or (txt/is-text-node? node)
+                            (txt/is-paragraph-node? node)))]
+     (when (string? value)
+       (dwsh/update-shapes shape-ids
+                           #(txt/update-text-content % update-node? d/txt-merge {:font-id value})
+                           {:ignore-touched true
+                            :page-id page-id})))))
+
 (defn update-font-size
   ([value shape-ids attributes] (update-font-size value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
@@ -407,6 +419,14 @@
     :modal {:key :tokens/letter-spacing
             :fields [{:label "Letter Spacing"
                       :key :letter-spacing}]}}
+                      
+   :font-family
+   {:title "Font Family"
+    :attributes ctt/font-family-keys
+    :on-update-shape update-font-family
+    :modal {:key :tokens/font-family
+            :fields [{:label "Font Family"
+                      :key :font-family}]}}
 
    :stroke-width
    {:title "Stroke Width"
