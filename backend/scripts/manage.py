@@ -71,18 +71,26 @@ def run_cmd(params):
         print("EXC:", str(cause))
         sys.exit(-2)
 
-def create_profile(fullname, email, password):
+def create_profile(fullname, email, password, skip_tutorial=False, skip_walkthrough=False):
+    props = {}
+    if skip_tutorial:
+        props["viewed-tutorial?"] = True
+    if skip_walkthrough:
+        props["viewed-walkthrough?"] = True
+
     params = {
         "cmd": "create-profile",
         "params": {
             "fullname": fullname,
             "email": email,
-            "password": password
+            "password": password,
+            **props
         }
     }
 
     res = run_cmd(params)
     print(f"Created: {res['email']} / {res['id']}")
+
 
 def update_profile(email, fullname, password, is_active):
     params = {
@@ -170,6 +178,8 @@ parser.add_argument("-n", "--fullname", help="fullname", action="store")
 parser.add_argument("-e", "--email", help="email", action="store")
 parser.add_argument("-p", "--password", help="password", action="store")
 parser.add_argument("-c", "--connect", help="connect to PREPL", action="store", default="tcp://localhost:6063")
+parser.add_argument("--skip-tutorial", help="mark tutorial as viewed", action="store_true")
+parser.add_argument("--skip-walkthrough", help="mark walkthrough as viewed", action="store_true")
 
 args = parser.parse_args()
 
