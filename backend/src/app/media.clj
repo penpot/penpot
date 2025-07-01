@@ -220,16 +220,18 @@
 (defn- get-dimensions-with-orientation [^String path]
   ;; Image magick doesn't give info about exif rotation so we use the identify command
   ;; If we are processing an animated gif we use the first frame with -scene 0
-  (let [result (sh/sh "identify" "-auto-orient" "-format" "%w %h\n" path)]
-    (if (= 0 (:exit result))
-      (let [tokens (-> (:out result)
-                       str/trim
-                       clojure.string/split-lines
-                       first
-                       (str/split #"\s+"))
-            [w h] (mapv #(Integer/parseInt %) tokens)]
-        {:width w
-         :height h})
+  (let [dim-result (sh/sh "identify" "-format" "%w %h\n" path)
+        orient-result (sh/sh "identify" "-format" "%[EXIF:Orientation]\n" path)]
+    (if (and (= 0 (:exit dim-result))
+             (= 0 (:exit orient-result)))
+      (let [[w h] (-> (:out dim-result)
+                      str/trim
+                      (clojure.string/split #"\s+")
+                      (->> (mapv #(Integer/parseInt %))))
+            orientation (-> orient-result :out str/trim)]
+        (case orientation
+          ("6" "8") {:width h :height w} ; Rotated 90 or 270 degrees
+          {:width w :height h}))         ; Normal or unknown orientation
       nil)))
 
 (defmethod process :info
