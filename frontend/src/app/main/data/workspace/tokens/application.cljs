@@ -24,6 +24,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.fonts :as fonts]
    [app.main.store :as st]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
@@ -364,6 +365,22 @@
                            {:ignore-touched true
                             :page-id page-id})))))
 
+(defn update-font-family
+  ([value shape-ids attributes] (update-font-family value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
+   (let [font-id (some-> value
+                         (first)
+                         (#(fonts/find-font-data {:family %}))
+                         :id)
+         update-node? (fn [node]
+                        (or (txt/is-text-node? node)
+                            (txt/is-paragraph-node? node)))]
+     (when font-id
+       (dwsh/update-shapes shape-ids
+                           #(txt/update-text-content % update-node? d/txt-merge {:font-id font-id})
+                           {:ignore-touched true
+                            :page-id page-id})))))
+
 (defn update-font-size
   ([value shape-ids attributes] (update-font-size value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
@@ -420,6 +437,14 @@
     :modal {:key :tokens/letter-spacing
             :fields [{:label "Letter Spacing"
                       :key :letter-spacing}]}}
+
+   :font-family
+   {:title "Font Family"
+    :attributes ctt/font-family-keys
+    :on-update-shape update-font-family
+    :modal {:key :tokens/font-family
+            :fields [{:label "Font Family"
+                      :key :font-family}]}}
 
    :stroke-width
    {:title "Stroke Width"

@@ -1371,7 +1371,8 @@ Will return a value that matches this schema:
              (assoc tokens child-path (make-token
                                        :name child-path
                                        :type token-type
-                                       :value (get v "$value")
+                                       :value (cond-> (get v "$value")
+                                                (and (= :font-family token-type) (string? v)) cto/split-font-family)
                                        :description (get v "$description")))
              ;; Discard unknown type tokens
              tokens)))))

@@ -27,6 +27,7 @@
     :border-radius "corner-radius"
     :color "drop"
     :boolean "boolean-difference"
+    :font-family "text-font-family"
     :font-size "text-font-size"
     :letter-spacing "text-letterspacing"
     :opacity "percentage"

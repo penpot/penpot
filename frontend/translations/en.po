@@ -7535,9 +7535,21 @@ msgstr "Could not resolve reference token with the name: %s"
 msgid "workspace.tokens.token-value"
 msgstr "Value"
 
+#: src/app/main/ui/workspace/tokens/form.cljs:560
+msgid "workspace.tokens.token-font-family-value"
+msgstr "Font family"
+
 #: src/app/main/ui/workspace/tokens/form.cljs:559
 msgid "workspace.tokens.token-value-enter"
 msgstr "Enter a value or alias with {alias}"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:689
+msgid "workspace.tokens.token-font-family-value-enter"
+msgstr "Font family or list of fonts separated by comma (,)"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:688
+msgid "workspace.tokens.token-font-family-select"
+msgstr "Select font family"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:336
 msgid "workspace.tokens.tokens-section-title"

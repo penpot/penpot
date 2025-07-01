@@ -556,6 +556,40 @@
              (t/is (= (:letter-spacing (:applied-tokens text-1')) (:name token-target')))
              (t/is (= (:letter-spacing style-text-blocks) "2")))))))))
 
+(t/deftest test-apply-font-family
+  (t/testing "applies font-family token and updates the text font-family"
+    (t/async
+      done
+      (let [font-family-token {:name "primary-font"
+                               :value "Arial"
+                               :type :font-family}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token font-family-token))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:font-family}
+                                       :token (toht/get-token file "primary-font")
+                                       :on-update-shape dwta/update-font-family})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "primary-font")
+                 text-1' (cths/get-shape file' :text-1)
+                 style-text-blocks (->> (:content text-1')
+                                        (txt/content->text+styles)
+                                        (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                        (mapv (fn [[style text]]
+                                                {:styles (merge txt/default-text-attrs style)
+                                                 :text-content text}))
+                                        (first)
+                                        (:styles))]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:font-family (:applied-tokens text-1')) (:name token-target')))
+             (t/is (= (:font-family style-text-blocks) (:font-id txt/default-text-attrs))))))))))
+
 (t/deftest test-toggle-token-none
   (t/testing "should apply token to all selected items, where no item has the token applied"
     (t/async
