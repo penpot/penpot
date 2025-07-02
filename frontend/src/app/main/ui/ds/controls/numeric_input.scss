@@ -26,6 +26,7 @@
 
 .icon {
   color: var(--color-foreground-secondary);
+  min-width: 16px;
 }
 
 .pill {
@@ -53,6 +54,7 @@
     outline: none;
   }
 }
+
 .pill-disabled {
   user-select: none;
   --pill-bg-color: none;

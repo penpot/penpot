@@ -62,9 +62,10 @@ export const WithTokens = {
       step: 1,
     },
     options: [
-      { id: "1", label: "Token 1", resolved: "10" },
-      { id: "2", label: "Token 2", resolved: "20" },
-      { id: "3", label: "Token 3", resolved: "30" },
+      { group: true, name: "Dimensions"},
+      { id: "1", name: "Token 1", resolvedValue: "10" },
+      { id: "2", name: "Token 2", resolvedValue: "20" },
+      { id: "3", name: "Token 3", resolvedValue: "30" },
     ],
   },
   render: ({ ...args }) => <NumericInput {...args} />,

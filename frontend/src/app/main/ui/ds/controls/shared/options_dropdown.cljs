@@ -8,6 +8,7 @@
   (:require-macros
    [app.main.style :as stl])
   (:require
+   [app.common.uuid :as uuid]
    [app.main.ui.ds.controls.shared.option :refer [option* schema:option]]
    [app.main.ui.ds.controls.shared.token-option :refer [token-option* schema:token-option]]
    [cuerdas.core :as str]
@@ -17,10 +18,13 @@
   [:map
    [:ref {:optional true} fn?]
    [:on-click fn?]
+   ;; [:options [:vector schema:token-option]]
    [:options [:vector [:or
                        schema:option
                        schema:token-option]]]
-   [:selected :any]
+
+   [:token-option {:optional true} :boolean]
+    ;; [:selected :any]
    [:focused {:optional true} :any]
    [:empty-to-end {:optional true} :boolean]])
 
@@ -33,8 +37,8 @@
   (remove #(str/blank? (get % :id))))
 
 (mf/defc options-dropdown*
-  {::mf/schema schema:options-dropdown}
-  [{:keys [ref on-click options selected focused empty-to-end] :rest props}]
+  ;; {::mf/schema schema:options-dropdown}
+  [{:keys [ref on-click options selected focused empty-to-end token-option] :rest props}]
   (let [props
         (mf/spread-props props
                          {:class (stl/css :option-list)
@@ -58,14 +62,19 @@
              label      (get option :label)
              aria-label (get option :aria-label)
              icon       (get option :icon)
-             resolved-value (get option :resolved)]
-         (if resolved-value
+             name       (get option :name)
+             group      (get option :group)
+             resolved-value (get option :resolved-value)
+             separator (get option :separator)]
+         (if token-option
            [:> token-option* {:selected (= id selected)
-                              :key id
+                              :key (or id (uuid/next))
                               :id id
-                              :label label
+                              :name name
                               :resolved resolved-value
                               :ref ref
+                              :group group
+                              :separator separator
                               :focused (= id focused)
                               :on-click on-click}]
            [:> option* {:selected (= id selected)
@@ -87,14 +96,18 @@
         (for [option options-blank]
           (let [id         (get option :id)
                 label      (get option :label)
+                name       (get option :name)
                 aria-label (get option :aria-label)
                 icon       (get option :icon)
-                resolved-value (get option :resolved)]
-            (if resolved-value
-              [:> token-option* {:selected (= id selected)
+                group      (get option :group)
+                resolved-value (get option :resolved-value)]
+            (if token-option
+              [:> token-option* {:selected (= name selected)
                                  :key id
                                  :id id
                                  :label label
+                                 :name name
+                                 :group group
                                  :resolved resolved-value
                                  :aria-label aria-label
                                  :ref ref
