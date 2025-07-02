@@ -19,6 +19,12 @@ $arrow-side: 12px;
   block-size: fit-content;
 }
 
+.tooltip-content-wrapper {
+  display: grid;
+  inline-size: fit-content;
+  block-size: fit-content;
+}
+
 .tooltip-arrow {
   background-color: var(--color-background-primary);
   border-radius: var(--sp-xs);
