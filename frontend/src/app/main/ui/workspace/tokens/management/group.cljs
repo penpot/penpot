@@ -64,7 +64,7 @@
                       {:type :token
                        :position (dom/get-client-position event)
                        :errors (:errors token)
-                       :token-name (:name token)}))))
+                       :token-id (:id token)}))))
 
         on-toggle-open-click
         (mf/use-fn
