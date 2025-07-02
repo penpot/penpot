@@ -148,7 +148,7 @@
           (let [plugin (preg/get-plugin pid)]
             (open-plugin! plugin user-can-edit?)
             (rx/of (ev/event {::ev/name "start-plugin"
-                              ::ev/origin "workspace:try-out"
+                              ::ev/origin "workspace"
                               :name (:name plugin)
                               :host (:host plugin)})
                    #(dissoc % ::open-plugin))))))))
