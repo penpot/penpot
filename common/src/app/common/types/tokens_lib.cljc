@@ -1298,7 +1298,8 @@ Will return a value that matches this schema:
   "Searches through decoded token file and returns:
    - `:json-format/legacy` when first node satisfies `legacy-node?` predicate
    - `:json-format/dtcg` when first node satisfies `dtcg-node?` predicate
-   - `nil` if neither combination is found"
+   - If neither combination is found, return dtcg format by default (we assume that
+     the file does not contain any token, so the format is irrelevan)."
   ([decoded-json]
    (get-json-format decoded-json legacy-node? dtcg-node?))
   ([decoded-json legacy-node? dtcg-node?]
@@ -1316,9 +1317,10 @@ Will return a value that matches this schema:
                   (check-node node)
                   (when (branch? node)
                     (mapcat walk (children node))))))]
-     (->> (walk decoded-json)
-          (filter some?)
-          first)))) ;; TODO: throw error if format cannot be determined
+     (d/nilv (->> (walk decoded-json)
+                  (filter some?)
+                  first)
+             :json-format/dtcg))))
 
 (defn- legacy-json->dtcg-json
   "Converts a decoded json file in legacy format into DTCG format."
@@ -1377,9 +1379,17 @@ Will return a value that matches this schema:
   [set-name decoded-json-tokens]
   (assert (map? decoded-json-tokens) "expected a plain clojure map for `decoded-json-tokens`")
   (assert (= (get-json-format decoded-json-tokens) :json-format/dtcg) "expected a dtcg format for `decoded-json-tokens`")
-  (-> (make-tokens-lib)
-      (add-set (make-token-set :name (normalize-set-name set-name)
-                               :tokens (flatten-nested-tokens-json decoded-json-tokens "")))))
+
+  (let [set-name (normalize-set-name set-name)
+        tokens   (flatten-nested-tokens-json decoded-json-tokens "")]
+
+    (when (empty? tokens)
+      (throw (ex-info "the file doesn't contain any tokens"
+                      {:error/code :error.import/invalid-json-data})))
+
+    (-> (make-tokens-lib)
+        (add-set (make-token-set :name set-name
+                                 :tokens tokens)))))
 
 (defn- parse-single-set-legacy-json
   "Parse a decoded json file with a single set of tokens in legacy format into a TokensLib."
@@ -1470,6 +1480,10 @@ Will return a value that matches this schema:
                     (activate-theme library group name)))
                 library
                 active-theme-names)]
+
+    (when (and (empty? sets) (empty? themes))
+      (throw (ex-info "the file doesn't contain any tokens"
+                      {:error/code :error.import/invalid-json-data})))
 
     library))
 
