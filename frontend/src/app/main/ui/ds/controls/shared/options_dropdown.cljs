@@ -36,7 +36,7 @@
    [:on-click fn?]
    [:options [:vector schema:option]]
    [:selected :any]
-   [:focused :any]
+   [:focused {:optional true} :any]
    [:empty-to-end {:optional true} :boolean]])
 
 (def ^:private
