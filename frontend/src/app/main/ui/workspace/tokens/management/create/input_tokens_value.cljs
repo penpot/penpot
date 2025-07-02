@@ -22,7 +22,7 @@
    [:class {:optional true} :string]
    [:is-color-token {:optional true} :boolean]
    [:color {:optional true} [:maybe :string]]
-   [:display-colorpicker {:optional true} fn?]
+   [:display-colorpicker {:optional true} [:maybe fn?]]
    [:error {:optional true} :boolean]])
 
 

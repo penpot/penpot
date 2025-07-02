@@ -12,7 +12,7 @@
    [app.main.refs :as refs]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon  :as i]
-   [app.main.ui.workspace.tokens.management.create.form :refer [form]]
+   [app.main.ui.workspace.tokens.management.create.form :refer [form-wrapper*]]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -88,11 +88,11 @@
                        :icon i/close
                        :variant "action"
                        :aria-label (tr "labels.close")}]
-     [:& form {:token token
-               :action action
-               :selected-token-set-name selected-token-set-name
-               :token-type token-type
-               :on-display-colorpicker update-modal-size}]]))
+     [:> form-wrapper* {:token token
+                        :action action
+                        :selected-token-set-name selected-token-set-name
+                        :token-type token-type
+                        :on-display-colorpicker update-modal-size}]]))
 
 ;; Modals ----------------------------------------------------------------------
 

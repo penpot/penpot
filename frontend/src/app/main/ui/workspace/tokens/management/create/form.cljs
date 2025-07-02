@@ -156,60 +156,6 @@
 
 (defonce form-token-cache-atom (atom nil))
 
-;; FIXME: this function has confusing name
-(defn- hex->value
-  [hex]
-  (when-let [tc (tinycolor/valid-color hex)]
-    (let [hex (tinycolor/->hex-string tc)
-          alpha (tinycolor/alpha tc)
-          [r g b] (c/hex->rgb hex)
-          [h s v] (c/hex->hsv hex)]
-      {:hex hex
-       :r r :g g :b b
-       :h h :s s :v v
-       :alpha alpha})))
-
-(mf/defc ramp*
-  [{:keys [color on-change]}]
-  (let [wrapper-node-ref (mf/use-ref nil)
-        dragging-ref     (mf/use-ref false)
-
-        on-start-drag
-        (mf/use-fn #(mf/set-ref-val! dragging-ref true))
-
-        on-finish-drag
-        (mf/use-fn #(mf/set-ref-val! dragging-ref false))
-
-        internal-color*
-        (mf/use-state #(hex->value color))
-
-        internal-color
-        (deref internal-color*)
-
-        on-change'
-        (mf/use-fn
-         (mf/deps on-change)
-         (fn [{:keys [hex alpha] :as selector-color}]
-           (let [dragging? (mf/ref-val dragging-ref)]
-             (when-not (and dragging? hex)
-               (reset! internal-color* selector-color)
-               (on-change hex alpha)))))]
-    (mf/use-effect
-     (mf/deps color)
-     (fn []
-       ;; Update internal color when user changes input value
-       (when-let [color (tinycolor/valid-color color)]
-         (when-not (= (tinycolor/->hex-string color) (:hex internal-color))
-           (reset! internal-color* (hex->value color))))))
-
-    (colorpicker/use-color-picker-css-variables! wrapper-node-ref internal-color)
-    [:div {:ref wrapper-node-ref}
-     [:> ramp-selector*
-      {:color internal-color
-       :on-start-drag on-start-drag
-       :on-finish-drag on-finish-drag
-       :on-change on-change'}]]))
-
 (mf/defc token-value-hint
   [{:keys [result]}]
   (let [{:keys [errors warnings resolved-value]} result
@@ -232,9 +178,9 @@
       :class (stl/css-case :resolved-value (not (or empty-message? (seq warnings) (seq errors))))
       :type type}]))
 
-(mf/defc form
+(mf/defc form*
   {::mf/wrap-props false}
-  [{:keys [token token-type action selected-token-set-name on-display-colorpicker]}]
+  [{:keys [token token-type action selected-token-set-name transform-value on-value-resolve after-value-input-field on-click-color-icon color]}]
   (let [create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
         token-properties (dwta/get-token-properties token)
@@ -311,10 +257,6 @@
                            (valid-name? @token-name-ref))
 
         ;; Value
-        color* (mf/use-state (when is-color-token (:value token)))
-        color (deref color*)
-        color-ramp-open* (mf/use-state false)
-        color-ramp-open? (deref color-ramp-open*)
         value-input-ref (mf/use-ref nil)
         value-ref (mf/use-ref (:value token))
 
@@ -323,6 +265,7 @@
 
         set-resolve-value
         (mf/use-fn
+         (mf/deps on-value-resolve)
          (fn [token-or-err]
            (let [error? (:errors token-or-err)
                  warnings? (:warnings token-or-err)
@@ -335,56 +278,31 @@
 
                      :else
                      (:resolved-value token-or-err))]
-             (when is-color-token (reset! color* (if error? nil v)))
+             (when on-value-resolve (on-value-resolve (if error? nil v)))
              (reset! token-resolve-result* v))))
 
         on-update-value-debounced (use-debonced-resolve-callback token-name-ref token active-theme-tokens set-resolve-value)
-        on-update-value (mf/use-fn
-                         (mf/deps on-update-value-debounced)
-                         (fn [e]
-                           (let [value (dom/get-target-val e)
-                                 ;; Automatically add # for hex values
-                                 value' (if (and is-color-token (tinycolor/hex-without-hash-prefix? value))
-                                          (let [hex (dm/str "#" value)]
-                                            (dom/set-value! (mf/ref-val value-input-ref) hex)
-                                            hex)
-                                          value)]
-                             (mf/set-ref-val! value-ref value')
-                             (on-update-value-debounced value'))))
-        on-update-color (mf/use-fn
-                         (mf/deps color on-update-value-debounced)
-                         (fn [hex-value alpha]
-                           (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
-                                 prev-input-color (some-> (dom/get-value (mf/ref-val value-input-ref))
-                                                          (tinycolor/valid-color))
-                                 ;; If the input is a reference we will take the format from the computed value
-                                 prev-computed-color (when-not prev-input-color
-                                                       (some-> color (tinycolor/valid-color)))
-                                 prev-format (some-> (or prev-input-color prev-computed-color)
-                                                     (tinycolor/color-format))
-                                 to-rgba? (and
-                                           (< alpha 1)
-                                           (or (= prev-format "hex") (not prev-format)))
-                                 to-hex? (and (not prev-format) (= alpha 1))
-                                 format (cond
-                                          to-rgba? "rgba"
-                                          to-hex? "hex"
-                                          prev-format prev-format
-                                          :else "hex")
-                                 color-value (-> (tinycolor/valid-color hex-value)
-                                                 (tinycolor/set-alpha (or alpha 1))
-                                                 (tinycolor/->string format))]
-                             (mf/set-ref-val! value-ref color-value)
-                             (dom/set-value! (mf/ref-val value-input-ref) color-value)
-                             (on-update-value-debounced color-value))))
-
-        on-display-colorpicker'
+        on-update-value
         (mf/use-fn
-         (mf/deps color-ramp-open? on-display-colorpicker)
-         (fn []
-           (let [open? (not color-ramp-open?)]
-             (reset! color-ramp-open* open?)
-             (on-display-colorpicker open?))))
+         (mf/deps on-update-value-debounced transform-value)
+         (fn [e]
+           (let [value (dom/get-target-val e)
+                 value' (if (fn? transform-value)
+                          (transform-value value)
+                          value)]
+             ;; Value got updated in transform, update the dom node
+             (when (not= value value')
+               (dom/set-value! (mf/ref-val value-input-ref) value'))
+             (mf/set-ref-val! value-ref value)
+             (on-update-value-debounced value))))
+
+        on-external-update-value'
+        (mf/use-fn
+         (mf/deps on-update-value-debounced)
+         (fn [next-value]
+           (dom/set-value! (mf/ref-val value-input-ref) next-value)
+           (mf/set-ref-val! value-ref next-value)
+           (on-update-value-debounced next-value)))
 
         value-error? (seq (:errors token-resolve-result))
 
@@ -550,14 +468,15 @@
          :default-value (mf/ref-val value-ref)
          :ref value-input-ref
          :is-color-token is-color-token
+         :error (not (nil? (:errors token-resolve-result)))
+         :on-blur on-update-value
          :color color
          :on-change on-update-value
-         :error (not (nil? (:errors token-resolve-result)))
-         :display-colorpicker on-display-colorpicker'
-         :on-blur on-update-value}]
-       (when color-ramp-open?
-         [:> ramp* {:color (some-> color (tinycolor/valid-color))
-                    :on-change on-update-color}])
+         :display-colorpicker on-click-color-icon}]
+       (when (fn? after-value-input-field)
+         [:> after-value-input-field {:value-input-ref value-input-ref
+                                      :on-change on-external-update-value'
+                                      :color color}])
        [:& token-value-hint {:result token-resolve-result}]]
       [:div {:class (stl/css :input-row)}
        [:> input* {:label (tr "workspace.tokens.token-description")
@@ -590,3 +509,133 @@
                     :variant "primary"
                     :disabled disabled?}
         (tr "labels.save")]]]]))
+
+;; FIXME: this function has confusing name
+(defn- hex->value
+  [hex]
+  (when-let [tc (tinycolor/valid-color hex)]
+    (let [hex (tinycolor/->hex-string tc)
+          alpha (tinycolor/alpha tc)
+          [r g b] (c/hex->rgb hex)
+          [h s v] (c/hex->hsv hex)]
+      {:hex hex
+       :r r :g g :b b
+       :h h :s s :v v
+       :alpha alpha})))
+
+(mf/defc ramp*
+  [{:keys [color on-change]}]
+  (js/console.log "ramp color" color)
+  (let [wrapper-node-ref (mf/use-ref nil)
+        dragging-ref     (mf/use-ref false)
+
+        on-start-drag
+        (mf/use-fn #(mf/set-ref-val! dragging-ref true))
+
+        on-finish-drag
+        (mf/use-fn #(mf/set-ref-val! dragging-ref false))
+
+        internal-color*
+        (mf/use-state #(hex->value color))
+
+        internal-color
+        (deref internal-color*)
+
+        on-change'
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [{:keys [hex alpha] :as selector-color}]
+           (let [dragging? (mf/ref-val dragging-ref)]
+             (when-not (and dragging? hex)
+               (reset! internal-color* selector-color)
+               (on-change hex alpha)))))]
+    (mf/use-effect
+     (mf/deps color)
+     (fn []
+       ;; Update internal color when user changes input value
+       (when-let [color (tinycolor/valid-color color)]
+         (when-not (= (tinycolor/->hex-string color) (:hex internal-color))
+           (reset! internal-color* (hex->value color))))))
+
+    (colorpicker/use-color-picker-css-variables! wrapper-node-ref internal-color)
+    [:div {:ref wrapper-node-ref}
+     [:> ramp-selector*
+      {:color internal-color
+       :on-start-drag on-start-drag
+       :on-finish-drag on-finish-drag
+       :on-change on-change'}]]))
+
+(mf/defc color-ramp*
+  {::mf/wrap-props false}
+  [{:keys [color value-input-ref on-change]}]
+  (let [on-change'
+        (mf/use-fn
+         (mf/deps color on-change value-input-ref)
+         (fn [hex-value alpha]
+           (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
+                 prev-input-color (some-> (dom/get-value (mf/ref-val value-input-ref))
+                                          (tinycolor/valid-color))
+                  ;; If the input is a reference we will take the format from the computed value
+                 prev-computed-color (when-not prev-input-color
+                                       (some-> color (tinycolor/valid-color)))
+                 prev-format (some-> (or prev-input-color prev-computed-color)
+                                     (tinycolor/color-format))
+                 to-rgba? (and
+                           (< alpha 1)
+                           (or (= prev-format "hex") (not prev-format)))
+                 to-hex? (and (not prev-format) (= alpha 1))
+                 format (cond
+                          to-rgba? "rgba"
+                          to-hex? "hex"
+                          prev-format prev-format
+                          :else "hex")
+                 color-value (-> (tinycolor/valid-color hex-value)
+                                 (tinycolor/set-alpha (or alpha 1))
+                                 (tinycolor/->string format))]
+             (on-change color-value))))]
+    [:> ramp*
+     {:color (some-> color (tinycolor/valid-color))
+      :on-change on-change'}]))
+
+(mf/defc color-form*
+  {::mf/wrap-props false}
+  [{:keys [token on-display-colorpicker] :rest props}]
+  (let [color* (mf/use-state (:value token))
+        color (deref color*)
+        update-color (mf/use-fn
+                      (mf/deps color)
+                      #(reset! color* %))
+
+        color-ramp-open* (mf/use-state false)
+        color-ramp-open? (deref color-ramp-open*)
+
+        on-click-color-icon
+        (mf/use-fn
+         (mf/deps color-ramp-open? on-display-colorpicker)
+         (fn []
+           (let [open? (not color-ramp-open?)]
+             (reset! color-ramp-open* open?)
+             (on-display-colorpicker open?))))
+
+        transform-value
+        (mf/use-fn
+         (fn [value]
+           (if (tinycolor/hex-without-hash-prefix? value)
+             (dm/str "#" value)
+             value)))]
+    [:> form*
+     (mf/spread-props props {:token token
+                             :color color
+                             :transform-value transform-value
+                             :on-value-resolve update-color
+                             :after-value-input-field (when color-ramp-open? color-ramp*)
+                             :on-click-color-icon on-click-color-icon})]))
+
+(mf/defc form-wrapper*
+  {::mf/wrap-props false}
+  [{:keys [token token-type] :as props}]
+  (cond
+    (or (cft/color-token? token) (= token-type :color))
+    [:> color-form* props]
+    :else
+    [:> form* props]))
