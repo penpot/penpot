@@ -127,13 +127,6 @@
 
 (def font-size-keys (schema-keys schema:font-size))
 
-;; Not supported by penpot yet
-(def ^:private schema:line-height
-  [:map
-   [:line-height {:optional true} token-name-ref]])
-
-(def line-height-keys (schema-keys schema:line-height))
-
 (def ^:private schema:letter-spacing
   [:map
    [:letter-spacing {:optional true} token-name-ref]])
@@ -143,7 +136,7 @@
 (def typography-keys (set/union font-size-keys letter-spacing-keys))
 
 (def ^:private schema:number
-  (reduce mu/union [schema:line-height
+  (reduce mu/union [[:map [:line-height {:optional true} token-name-ref]]
                     schema:rotation]))
 
 (def number-keys (schema-keys schema:number))
