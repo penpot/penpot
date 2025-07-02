@@ -129,7 +129,10 @@
                (pcb/set-undo-group (:id shape)))
 
              undo-id
-             (js/Symbol)]
+             (js/Symbol)
+
+             parent-type
+             (cfh/get-shape-type objects (:parent-id shape))]
 
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id)
@@ -146,12 +149,13 @@
           (rx/of (ev/event {::ev/name "create-shape"
                             ::ev/origin "workspace:add-shape"
                             :type (get shape :type)
-                            :parent-type (cfh/get-shape-type objects (:parent-id shape))}))
+                            :parent-type parent-type}))
 
           (when (cfh/has-layout? objects (:parent-id shape))
             (rx/of (ev/event {::ev/name "layout-add-element"
                               ::ev/origin "workspace:add-shape"
-                              :element-type (get shape :type)})))))))))
+                              :type (get shape :type)
+                              :parent-type parent-type})))))))))
 
 (defn move-shapes-into-frame
   [frame-id shapes]
