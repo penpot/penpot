@@ -95,9 +95,15 @@
   stroke: var(--color-foreground-primary);
   height: var(--sp-xl);
   width: var(--sp-xl);
-  border-radius: var(--sp-xs);
-  border: $b-1 solid var(--color-foreground-primary);
+  border-radius: 6px;
+  border: 1.75px solid var(--color-foreground-primary);
+  stroke-width: 2.25px;
   padding: $s-1;
+
+  svg {
+    block-size: var(--sp-m);
+    inline-size: var(--sp-m);
+  }
 }
 
 .plan-card-title,
@@ -138,6 +144,7 @@
   color: var(--color-accent-tertiary);
   display: flex;
   margin-block-start: var(--sp-m);
+  text-align: left;
 }
 
 .cta-button svg {

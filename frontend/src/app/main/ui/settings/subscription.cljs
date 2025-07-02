@@ -252,9 +252,11 @@
                                            (tr "subscription.settings.unlimited-trial")
                                            (tr "subscription.settings.enterprise-trial"))})
          (du/update-profile-props {:subscription
-                                   (assoc subscription :type (if (= params-subscription "subscribed-to-penpot-unlimited")
-                                                               "unlimited"
-                                                               "enterprise"))})
+                                   (-> subscription
+                                       (assoc :type (if (= params-subscription "subscribed-to-penpot-unlimited")
+                                                      "unlimited"
+                                                      "enterprise"))
+                                       (assoc :status "trialing"))})
          (rt/nav :settings-subscription {} {::rt/replace true}))))
 
     [:section {:class (stl/css :dashboard-section)}

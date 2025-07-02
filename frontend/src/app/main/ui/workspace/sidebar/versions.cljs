@@ -44,13 +44,16 @@
 
 (defn get-versions-warning-subtext
   [team]
-  (let [is-owner?           (-> team :permissions :is-owner)
+  (let [subscription-name   (-> team :subscription :type)
+        is-owner?           (-> team :permissions :is-owner)
         email-owner         (:email (some #(when (:is-owner %) %) (:members team)))
         go-to-subscription  (dm/str (u/join cfg/public-uri "#/settings/subscriptions"))]
 
     (if (contains? cfg/flags :subscriptions)
       (if is-owner?
-        (tr "subscription.workspace.versions.warning.subtext-owner" go-to-subscription)
+        (if (= "enterprise" subscription-name)
+          (tr "subscription.workspace.versions.warning.enterprise.subtext-owner" "support@penpot.app")
+          (tr "subscription.workspace.versions.warning.subtext-owner" go-to-subscription))
         (tr "subscription.workspace.versions.warning.subtext-member" email-owner email-owner))
       (tr "workspace.versions.warning.subtext" "support@penpot.app"))))
 

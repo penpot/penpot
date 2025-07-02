@@ -7859,6 +7859,11 @@ msgstr ""
 "If you'd like to increase this limit, "
 "[upgrade your plan|target:self](%s)"
 
+msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
+msgstr ""
+"If you'd like to increase this limit, write to us at "
+"[%s](mailto)"
+
 #, markdown
 msgid "subscription.workspace.versions.warning.subtext-member"
 msgstr ""

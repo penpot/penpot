@@ -71,7 +71,7 @@
 }
 
 .cta-bottom-section .content a {
-  @include t.use-typography("body-small");
+  @include t.use-typography("body-medium");
   color: var(--color-accent-tertiary);
   margin-inline-start: var(--sp-xs);
 }
@@ -158,6 +158,7 @@
 .cta-message {
   @include t.use-typography("body-small");
   color: var(--color-foreground-secondary);
+  line-height: 1;
 
   a {
     color: var(--color-accent-primary);
