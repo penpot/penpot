@@ -26,6 +26,9 @@
 (def ^:const bool-style-properties bool/style-properties)
 (def ^:const default-bool-fills bool/default-fills)
 
+(def schema:content impl/schema:content)
+(def schema:segments impl/schema:segments)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TRANSFORMATIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -48,9 +51,9 @@
   [data]
   (impl/from-string data))
 
-(defn check-path-content
+(defn check-content
   [content]
-  (impl/check-content-like content))
+  (impl/check-content content))
 
 (defn get-byte-size
   "Get byte size of a path content"
@@ -76,7 +79,7 @@
 (defn apply-content-modifiers
   "Apply delta modifiers over the path content"
   [content modifiers]
-  (assert (impl/check-content-like content))
+  (assert (impl/check-content content))
 
   (letfn [(apply-to-index [content [index params]]
             (if (contains? content index)
