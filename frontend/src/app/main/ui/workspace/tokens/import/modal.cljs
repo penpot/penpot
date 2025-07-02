@@ -52,14 +52,14 @@
         selected-option @selected-option*
         show-dropdown? (mf/use-state false)
 
-        js-options (mf/use-memo
-                    (mf/deps options)
-                    #(clj->js
-                      (mapv (fn [option]
-                              {:id (str (:value option))
-                               :label (:label option)
-                               :aria-label (:label option)})
-                            options)))
+        file-type-options (mf/use-memo
+                           (mf/deps options)
+                           #(mapv (fn [option]
+                                    {:id (str (:value option))
+                                     :label (:label option)
+                                     :aria-label (:label option)})
+                                  options))
+
         button-text (if text-render
                       (text-render selected-option)
                       (:label selected-option))
@@ -108,7 +108,7 @@
                   :aria-label "Show options"}]
 
      [:& dropdown {:show @show-dropdown? :on-close close-dropdown}
-      [:> options-dropdown* {:options js-options
+      [:> options-dropdown* {:options file-type-options
                              :selected (str (:value selected-option))
                              :on-click handle-option-click
                              :set-ref (fn [_] nil)}]]]))
