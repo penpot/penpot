@@ -1769,7 +1769,7 @@ Will return a value that matches this schema:
             (fres/write-object! w (into {} o)))
      :rfn (fn [r]
             (let [obj (fres/read-object! r)]
-              (map->Token obj)))}
+              (make-token obj)))}
 
     {:name "penpot/token-set/v1"
      :class TokenSet
@@ -1787,7 +1787,7 @@ Will return a value that matches this schema:
             (fres/write-object! w (into {} o)))
      :rfn (fn [r]
             (let [obj (fres/read-object! r)]
-              (map->TokenTheme obj)))}
+              (make-token-theme obj)))}
 
     ;; LEGACY TOKENS LIB READERS (with migrations)
     {:name "penpot/tokens-lib/v1"
