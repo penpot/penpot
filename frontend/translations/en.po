@@ -2651,7 +2651,7 @@ msgstr "Big nudge"
 
 #: src/app/main/ui/settings/change_email.cljs:109
 msgid "modals.change-email.confirm-email"
-msgstr "Verify new email"
+msgstr "Confirm new email"
 
 #: src/app/main/ui/settings/change_email.cljs:97
 msgid "modals.change-email.info"
