@@ -322,12 +322,12 @@
                                              :token token}))))}
      {:title (tr "workspace.tokens.duplicate")
       :no-selectable true
-      :action #(st/emit! (dwtl/duplicate-token (:name token)))}
+      :action #(st/emit! (dwtl/duplicate-token (:id token)))}
      {:title (tr "workspace.tokens.delete")
       :no-selectable true
       :action #(st/emit! (dwtl/delete-token
                           (ctob/prefixed-set-path-string->set-name-string selected-token-set-name)
-                          (:name token)))}]))
+                          (:id token)))}]))
 
 (defn- allowed-shape-attributes [shapes]
   (reduce into #{} (map #(ctt/shape-type->attributes (:type %)) shapes)))
@@ -456,8 +456,8 @@
   (let [objects  (mf/deref refs/workspace-page-objects)
         selected (mf/deref refs/selected-shapes)
 
-        token-name (:token-name mdata)
-        token (mf/deref (refs/workspace-token-in-selected-set token-name))
+        token-id (:token-id mdata)
+        token (mf/deref (refs/workspace-token-in-selected-set token-id))
         token-type (:type token)
         selected-token-set-name (mf/deref refs/selected-token-set-name)
 

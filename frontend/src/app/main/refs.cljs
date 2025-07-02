@@ -505,9 +505,9 @@
   (l/derived #(or (some-> % ctob/get-tokens-in-active-sets) {}) tokens-lib))
 
 (def workspace-token-in-selected-set
-  (fn [token-name]
+  (fn [token-id]
     (l/derived
-     #(dwts/get-token-in-selected-set % token-name)
+     #(dwts/get-token-in-selected-set % token-id)
      st/state)))
 
 (def workspace-all-tokens-in-selected-set
