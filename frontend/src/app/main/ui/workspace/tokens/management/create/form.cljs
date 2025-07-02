@@ -260,13 +260,6 @@
                                        (-> (ctob/tokens-tree tokens-in-selected-set)
                                            ;; Allow setting editing token to it's own path
                                            (d/dissoc-in token-path))))
-        cancel-ref  (mf/use-ref nil)
-
-        on-cancel-ref
-        (mf/use-fn
-         (fn [node]
-           (mf/set-ref-val! cancel-ref node)))
-
         ;; Name
         touched-name* (mf/use-state false)
         touched-name? (deref touched-name*)
@@ -286,16 +279,13 @@
 
         on-blur-name
         (mf/use-fn
-         (mf/deps cancel-ref touched-name? warning-name-change?)
+         (mf/deps touched-name? warning-name-change?)
          (fn [e]
-           (let [node (dom/get-related-target e)
-                 on-cancel-btn (= node (mf/ref-val cancel-ref))]
-             (when-not on-cancel-btn
-               (let [value (dom/get-target-val e)
-                     errors (validate-name value)]
-                 (when touched-name?
-                   (reset! warning-name-change* true))
-                 (reset! name-errors errors))))))
+           (let [value (dom/get-target-val e)
+                 errors (validate-name value)]
+             (when touched-name?
+               (reset! warning-name-change* true))
+             (reset! name-errors errors))))
 
         on-update-name-debounced
         (mf/use-fn
@@ -431,7 +421,6 @@
          (mf/deps validate-name validate-descripion token active-theme-tokens)
          (fn [e]
            (dom/prevent-default e)
-           (mf/set-ref-val! cancel-ref nil)
            ;; We have to re-validate the current form values before submitting
            ;; because the validation is asynchronous/debounced
            ;; and the user might have edited a valid form to make it invalid,
@@ -479,9 +468,9 @@
         on-cancel
         (mf/use-fn
          (fn [e]
-           (mf/set-ref-val! cancel-ref nil)
            (dom/prevent-default e)
            (modal/hide!)))
+
         handle-key-down-delete
         (mf/use-fn
          (mf/deps on-delete-token)
@@ -593,7 +582,6 @@
        [:> button* {:on-click on-cancel
                     :on-key-down handle-key-down-cancel
                     :type "button"
-                    :on-ref  on-cancel-ref
                     :id "token-modal-cancel"
                     :variant "secondary"}
         (tr "labels.cancel")]
