@@ -390,7 +390,7 @@
                      (fn []
                        (st/emit!
                         (if (ctob/token? token)
-                          (dwtl/update-token (:name token)
+                          (dwtl/update-token (:id token)
                                              {:name final-name
                                               :value final-value
                                               :description final-description})
@@ -408,7 +408,9 @@
          (fn [e]
            (dom/prevent-default e)
            (modal/hide!)
-           (st/emit! (dwtl/delete-token (ctob/prefixed-set-path-string->set-name-string selected-token-set-name) (:name token)))))
+           (st/emit! (dwtl/delete-token
+                      (ctob/prefixed-set-path-string->set-name-string selected-token-set-name)
+                      (:id token)))))
 
         on-cancel
         (mf/use-fn
@@ -422,12 +424,14 @@
          (fn [e]
            (when (k/enter? e)
              (on-delete-token e))))
+
         handle-key-down-cancel
         (mf/use-fn
          (mf/deps on-cancel)
          (fn [e]
            (when (k/enter? e)
              (on-cancel e))))
+
         handle-key-down-save
         (mf/use-fn
          (fn [e]

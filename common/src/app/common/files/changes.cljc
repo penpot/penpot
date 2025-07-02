@@ -425,7 +425,7 @@
      [:map {:title "SetTokenChange"}
       [:type [:= :set-token]]
       [:set-name :string]
-      [:token-name :string]
+      [:token-id ::sm/uuid]
       [:token [:maybe ctob/schema:token-attrs]]]]
 
     [:set-base-font-size
@@ -1001,20 +1001,20 @@
   (assoc data :tokens-lib tokens-lib))
 
 (defmethod process-change :set-token
-  [data {:keys [set-name token-name token]}]
+  [data {:keys [set-name token-id token]}]
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
                 (not token)
-                (ctob/delete-token-from-set lib' set-name token-name)
+                (ctob/delete-token-from-set lib' set-name token-id)
 
-                (not (ctob/get-token-in-set lib' set-name token-name))
+                (not (ctob/get-token-in-set lib' set-name token-id))
                 (ctob/add-token-in-set lib' set-name (ctob/make-token token))
 
                 :else
-                (ctob/update-token-in-set lib' set-name token-name (fn [prev-token]
-                                                                     (ctob/make-token (merge prev-token token)))))))))
+                (ctob/update-token-in-set lib' set-name token-id (fn [prev-token]
+                                                                   (ctob/make-token (merge prev-token token)))))))))
 
 (defmethod process-change :set-token-set
   [data {:keys [set-name group? token-set]}]

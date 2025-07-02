@@ -32,39 +32,48 @@
                                                                          :sets #{"test-token-set"}))
                                   (ctob/set-active-themes #{"/test-theme"})
                                   (ctob/add-token-in-set "test-token-set"
-                                                         (ctob/make-token :name "token-radius"
+                                                         (ctob/make-token :id (thi/new-id! :token-radius)
+                                                                          :name "token-radius"
                                                                           :type :border-radius
                                                                           :value 10))
                                   (ctob/add-token-in-set "test-token-set"
-                                                         (ctob/make-token :name "token-rotation"
+                                                         (ctob/make-token :id (thi/new-id! :token-rotation)
+                                                                          :name "token-rotation"
                                                                           :type :rotation
                                                                           :value 30))
                                   (ctob/add-token-in-set "test-token-set"
-                                                         (ctob/make-token :name "token-opacity"
+                                                         (ctob/make-token :id (thi/new-id! :token-opacity)
+                                                                          :name "token-opacity"
                                                                           :type :opacity
                                                                           :value 0.7))
                                   (ctob/add-token-in-set "test-token-set"
-                                                         (ctob/make-token :name "token-stroke-width"
+                                                         (ctob/make-token :id (thi/new-id! :token-stroke-width)
+                                                                          :name "token-stroke-width"
                                                                           :type :stroke-width
                                                                           :value 2))
                                   (ctob/add-token-in-set "test-token-set"
-                                                         (ctob/make-token :name "token-color"
+                                                         (ctob/make-token :id (thi/new-id! :token-color)
+                                                                          :name "token-color"
                                                                           :type :color
                                                                           :value "#00ff00"))
                                   (ctob/add-token-in-set "test-token-set"
-                                                         (ctob/make-token :name "token-dimensions"
+                                                         (ctob/make-token :id (thi/new-id! :token-dimensions)
+                                                                          :name "token-dimensions"
                                                                           :type :dimensions
                                                                           :value 100))
                                   (ctob/add-token-in-set "test-token-set"
-                                                         (ctob/make-token :name "token-font-size"
+                                                         (ctob/make-token :id (thi/new-id! :token-font-size)
+                                                                          :name "token-font-size"
                                                                           :type :font-size
                                                                           :value 24))
                                   (ctob/add-token-in-set "test-token-set"
-                                                         (ctob/make-token :name "token-letter-spacing"
+                                                         (ctob/make-token :id (thi/new-id! :token-letter-spacing)
+                                                                          :name "token-letter-spacing"
                                                                           :type :letter-spacing
                                                                           :value 2))
                                   (ctob/add-token-in-set "test-token-set"
-                                                         (ctob/make-token :name "token-font-family"
+                                                         (ctob/make-token :id (thi/new-id! :token-font-family)
+                                                                          :name "token-font-family"
                                                                           :type :font-family
                                                                           :value ["Helvetica" "Arial" "sans-serif"]))))
       (tho/add-frame :frame1)
@@ -86,19 +95,19 @@
 
 (t/deftest apply-tokens-to-shape
   (let [;; ==== Setup
-        file               (setup-file)
-        page               (thf/current-page file)
-        frame1             (ths/get-shape file :frame1)
-        text1              (ths/get-shape file :text1)
-        token-radius       (tht/get-token file "test-token-set" "token-radius")
-        token-rotation     (tht/get-token file "test-token-set" "token-rotation")
-        token-opacity      (tht/get-token file "test-token-set" "token-opacity")
-        token-stroke-width (tht/get-token file "test-token-set" "token-stroke-width")
-        token-color        (tht/get-token file "test-token-set" "token-color")
-        token-dimensions   (tht/get-token file "test-token-set" "token-dimensions")
-        token-font-size    (tht/get-token file "test-token-set" "token-font-size")
-        token-letter-spacing (tht/get-token file "test-token-set" "token-letter-spacing")
-        token-font-family  (tht/get-token file "test-token-set" "token-font-family")
+        file                 (setup-file)
+        page                 (thf/current-page file)
+        frame1               (ths/get-shape file :frame1)
+        text1                (ths/get-shape file :text1)
+        token-radius         (tht/get-token file "test-token-set" (thi/id :token-radius))
+        token-rotation       (tht/get-token file "test-token-set" (thi/id :token-rotation))
+        token-opacity        (tht/get-token file "test-token-set" (thi/id :token-opacity))
+        token-stroke-width   (tht/get-token file "test-token-set" (thi/id :token-stroke-width))
+        token-color          (tht/get-token file "test-token-set" (thi/id :token-color))
+        token-dimensions     (tht/get-token file "test-token-set" (thi/id :token-dimensions))
+        token-font-size      (tht/get-token file "test-token-set" (thi/id :token-font-size))
+        token-letter-spacing (tht/get-token file "test-token-set" (thi/id :token-letter-spacing))
+        token-font-family    (tht/get-token file "test-token-set" (thi/id :token-font-family))
 
         ;; ==== Action
         changes (-> (-> (pcb/empty-changes nil)
