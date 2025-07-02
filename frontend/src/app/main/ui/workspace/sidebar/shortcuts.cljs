@@ -364,8 +364,8 @@
                                  :match-section?  match-section?
                                  :filter-term     filter-term}]]])))
 
-(mf/defc shortcuts-container
-  [{:keys [class] :as props}]
+(mf/defc shortcuts-container*
+  [{:keys [class]}]
   (let [workspace-shortcuts          app.main.data.workspace.shortcuts/shortcuts
         path-shortcuts               app.main.data.workspace.path.shortcuts/shortcuts
         all-workspace-shortcuts      (->> (d/deep-merge path-shortcuts workspace-shortcuts)

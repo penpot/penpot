@@ -324,6 +324,22 @@
 
     state*))
 
+(defn use-persisted-state
+  "A specialized hook that adds persistence to the default mf/use-state hook.
+
+  The state is automatically persisted under the provided key on
+  localStorage. And it will keep watching events with type equals to
+  `key` for new values."
+  [key default]
+  (let [id     (mf/use-id)
+        state* (mf/use-state #(get storage/user key default))
+        state  (deref state*)]
+
+    (mf/with-effect [state key id]
+      (swap! storage/user assoc key state))
+
+    state*))
+
 (defonce ^:private intersection-subject (rx/subject))
 (defonce ^:private intersection-observer
   (delay (js/IntersectionObserver.

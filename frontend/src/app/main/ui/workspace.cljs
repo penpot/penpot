@@ -59,6 +59,13 @@
         {:keys [vport] :as wlocal} (mf/deref refs/workspace-local)
         {:keys [options-mode]} wglobal
 
+
+        ;; FIXME: pass this down to viewport and reuse it from here
+        ;; instead of making an other deref on viewport for the same
+        ;; data
+        drawing
+        (mf/deref refs/workspace-drawing)
+
         colorpalette?  (:colorpalette layout)
         textpalette?   (:textpalette layout)
         hide-ui?       (:hide-ui layout)
@@ -77,7 +84,7 @@
 
         node-ref (use-resize-observer on-resize)]
     [:*
-     (when (not hide-ui?)
+     (when (not ^boolean hide-ui?)
        [:& palette {:layout layout
                     :on-change-palette-size on-resize-palette}])
 
@@ -115,6 +122,7 @@
                              :page-id page-id}])
         [:> right-sidebar* {:section options-mode
                             :selected selected
+                            :drawing-tool (get drawing :tool)
                             :layout layout
                             :file file
                             :page-id page-id}]])]))
@@ -147,7 +155,8 @@
                    (-> file
                        (dissoc :data)
                        (assoc ::has-data (contains? file :data))))))
-             st/state))
+             st/state
+             =))
 
 (defn- make-page-ref
   [file-id page-id]

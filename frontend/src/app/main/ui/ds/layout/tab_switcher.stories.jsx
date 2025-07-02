@@ -13,9 +13,30 @@ const Padded = ({ children }) => (
   <div style={{ padding: "10px" }}>{children}</div>
 );
 
+const TabSwitcherWrapper = ({tabs, ...props}) => {
+  const navTabs = tabs.map(({content, ...item}) => {
+    return item;
+  });
+
+  const [selected, setSelected] = React.useState(() => {
+    return props.default || tabs[0].id;
+  });
+
+  const content = tabs.reduce((result, tab) => {
+    result[tab.id] = tab.content;
+    return result;
+  }, {});
+
+  return (
+    <TabSwitcher tabs={navTabs} selected={selected} onChange={setSelected} {...props}>
+      {content[selected]}
+    </TabSwitcher>
+  );
+};
+
 export default {
   title: "Layout/Tab switcher",
-  component: TabSwitcher,
+  component: TabSwitcherWrapper,
   args: {
     tabs: [
       {
@@ -46,7 +67,7 @@ export default {
         ),
       },
     ],
-    defaultSelected: "tab-code",
+    default: "tab-code",
   },
   argTypes: {
     actionButtonPosition: {
@@ -59,12 +80,12 @@ export default {
       exclude: [
         "tabs",
         "actionButton",
-        "defaultSelected",
+        "default",
         "actionButtonPosition",
       ],
     },
   },
-  render: ({ ...args }) => <TabSwitcher {...args} />,
+  render: ({ ...args }) => <TabSwitcherWrapper {...args} />,
 };
 
 export const Default = {};
