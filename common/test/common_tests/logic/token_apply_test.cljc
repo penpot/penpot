@@ -58,7 +58,11 @@
                                   (ctob/add-token-in-set "test-token-set"
                                                          (ctob/make-token :name "token-font-size"
                                                                           :type :font-size
-                                                                          :value 24))))
+                                                                          :value 24))
+                                  (ctob/add-token-in-set "test-token-set"
+                                                         (ctob/make-token :name "token-letter-spacing"
+                                                                          :type :letter-spacing
+                                                                          :value 2))))
       (tho/add-frame :frame1)
       (tho/add-text :text1 "Hello World!")))
 
@@ -72,7 +76,8 @@
       (tht/apply-token-to-shape :frame1 "token-color" [:stroke-color] [:stroke-color] "#00ff00")
       (tht/apply-token-to-shape :frame1 "token-color" [:fill] [:fill] "#00ff00")
       (tht/apply-token-to-shape :frame1 "token-dimensions" [:width :height] [:width :height] 100)
-      (tht/apply-token-to-shape :text1 "token-font-size" [:font-size] [:font-size] 24)))
+      (tht/apply-token-to-shape :text1 "token-font-size" [:font-size] [:font-size] 24)
+      (tht/apply-token-to-shape :text1 "token-letter-spacing" [:letter-spacing] [:letter-spacing] 2)))
 
 (t/deftest apply-tokens-to-shape
   (let [;; ==== Setup
@@ -87,6 +92,7 @@
         token-color        (tht/get-token file "test-token-set" "token-color")
         token-dimensions   (tht/get-token file "test-token-set" "token-dimensions")
         token-font-size    (tht/get-token file "test-token-set" "token-font-size")
+        token-letter-spacing (tht/get-token file "test-token-set" "token-letter-spacing")
 
         ;; ==== Action
         changes (-> (-> (pcb/empty-changes nil)
@@ -123,7 +129,10 @@
                                                   (as-> shape $
                                                     (cto/apply-token-to-shape {:token token-font-size
                                                                                :shape $
-                                                                               :attributes [:font-size]})))
+                                                                               :attributes [:font-size]})
+                                                    (cto/apply-token-to-shape {:token token-letter-spacing
+                                                                               :shape $
+                                                                               :attributes [:letter-spacing]})))
                                                 (:objects page)
                                                 {}))
 
@@ -148,8 +157,9 @@
     (t/is (= (:fill applied-tokens') "token-color"))
     (t/is (= (:width applied-tokens') "token-dimensions"))
     (t/is (= (:height applied-tokens') "token-dimensions"))
-    (t/is (= (count text1-applied-tokens) 1))
-    (t/is (= (:font-size text1-applied-tokens) "token-font-size"))))
+    (t/is (= (count text1-applied-tokens) 2))
+    (t/is (= (:font-size text1-applied-tokens) "token-font-size"))
+    (t/is (= (:letter-spacing text1-applied-tokens) "token-letter-spacing"))))
 
 (t/deftest unapply-tokens-from-shape
   (let [;; ==== Setup
@@ -178,7 +188,8 @@
                     (cls/generate-update-shapes [(:id text1)]
                                                 (fn [shape]
                                                   (-> shape
-                                                      (cto/unapply-token-id [:font-size])))
+                                                      (cto/unapply-token-id [:font-size])
+                                                      (cto/unapply-token-id [:letter-spacing])))
                                                 (:objects page)
                                                 {}))
 
@@ -228,7 +239,8 @@
                                                    txt/is-content-node?
                                                    d/txt-merge
                                                    {:fills (ths/sample-fills-color :fill-color "#fabada")
-                                                    :font-size "1"}))
+                                                    :font-size "1"
+                                                    :letter-spacing "0"}))
                                                 (:objects page)
                                                 {}))
 

@@ -28,6 +28,7 @@
     :color "drop"
     :boolean "boolean-difference"
     :font-size "text-font-size"
+    :letter-spacing "text-letterspacing"
     :opacity "percentage"
     :number "number"
     :rotation "rotation"

@@ -34,6 +34,7 @@
    :color         "color"
    :dimensions    "dimension"
    :font-size     "fontSizes"
+   :letter-spacing "letterSpacing"
    :number        "number"
    :opacity       "opacity"
    :other         "other"
@@ -107,11 +108,10 @@
 (def spacing-keys (schema-keys schema:spacing))
 
 (def ^:private schema:dimensions
-  [:merge
-   schema:sizing
-   schema:spacing
-   schema:stroke-width
-   schema:border-radius])
+  (reduce mu/union [schema:sizing
+                    schema:spacing
+                    schema:stroke-width
+                    schema:border-radius]))
 
 (def dimensions-keys (schema-keys schema:dimensions))
 
@@ -127,12 +127,17 @@
 
 (def font-size-keys (schema-keys schema:font-size))
 
-(def typography-keys (set/union font-size-keys))
+(def ^:private schema:letter-spacing
+  [:map
+   [:letter-spacing {:optional true} token-name-ref]])
+
+(def letter-spacing-keys (schema-keys schema:letter-spacing))
+
+(def typography-keys (set/union font-size-keys letter-spacing-keys))
 
 (def ^:private schema:number
-  [:map
-   [:rotation {:optional true} token-name-ref]
-   [:line-height {:optional true} token-name-ref]])
+  (reduce mu/union [[:map [:line-height {:optional true} token-name-ref]]
+                    schema:rotation]))
 
 (def number-keys (schema-keys schema:number))
 
@@ -159,6 +164,7 @@
    schema:rotation
    schema:number
    schema:font-size
+   schema:letter-spacing
    schema:dimensions])
 
 (defn shape-attr->token-attrs
@@ -187,6 +193,7 @@
        #{:m1 :m2 :m3 :m4})
 
      (font-size-keys shape-attr) #{shape-attr}
+     (letter-spacing-keys shape-attr) #{shape-attr}
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}
@@ -280,4 +287,3 @@
 
 (defn unapply-token-id [shape attributes]
   (update shape :applied-tokens d/without-keys attributes))
-
