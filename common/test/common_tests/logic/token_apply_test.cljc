@@ -95,38 +95,35 @@
                     (cls/generate-update-shapes [(:id frame1)]
                                                 (fn [shape]
                                                   (as-> shape $
-                                                    (cto/maybe-apply-token-to-shape {:token nil ; test nil case
-                                                                                     :shape $
-                                                                                     :attributes []})
-                                                    (cto/maybe-apply-token-to-shape {:token token-radius
-                                                                                     :shape $
-                                                                                     :attributes [:r1 :r2 :r3 :r4]})
-                                                    (cto/maybe-apply-token-to-shape {:token token-rotation
-                                                                                     :shape $
-                                                                                     :attributes [:rotation]})
-                                                    (cto/maybe-apply-token-to-shape {:token token-opacity
-                                                                                     :shape $
-                                                                                     :attributes [:opacity]})
-                                                    (cto/maybe-apply-token-to-shape {:token token-stroke-width
-                                                                                     :shape $
-                                                                                     :attributes [:stroke-width]})
-                                                    (cto/maybe-apply-token-to-shape {:token token-color
-                                                                                     :shape $
-                                                                                     :attributes [:stroke-color]})
-                                                    (cto/maybe-apply-token-to-shape {:token token-color
-                                                                                     :shape $
-                                                                                     :attributes [:fill]})
-                                                    (cto/maybe-apply-token-to-shape {:token token-dimensions
-                                                                                     :shape $
-                                                                                     :attributes [:width :height]})))
+                                                    (cto/apply-token-to-shape {:token token-radius
+                                                                               :shape $
+                                                                               :attributes [:r1 :r2 :r3 :r4]})
+                                                    (cto/apply-token-to-shape {:token token-rotation
+                                                                               :shape $
+                                                                               :attributes [:rotation]})
+                                                    (cto/apply-token-to-shape {:token token-opacity
+                                                                               :shape $
+                                                                               :attributes [:opacity]})
+                                                    (cto/apply-token-to-shape {:token token-stroke-width
+                                                                               :shape $
+                                                                               :attributes [:stroke-width]})
+                                                    (cto/apply-token-to-shape {:token token-color
+                                                                               :shape $
+                                                                               :attributes [:stroke-color]})
+                                                    (cto/apply-token-to-shape {:token token-color
+                                                                               :shape $
+                                                                               :attributes [:fill]})
+                                                    (cto/apply-token-to-shape {:token token-dimensions
+                                                                               :shape $
+                                                                               :attributes [:width :height]})))
                                                 (:objects page)
                                                 {})
                     (cls/generate-update-shapes [(:id text1)]
                                                 (fn [shape]
                                                   (as-> shape $
-                                                    (cto/maybe-apply-token-to-shape {:token token-font-size
-                                                                                     :shape $
-                                                                                     :attributes [:font-size]})))
+                                                    (cto/apply-token-to-shape {:token token-font-size
+                                                                               :shape $
+                                                                               :attributes [:font-size]})))
                                                 (:objects page)
                                                 {}))
 

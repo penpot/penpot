@@ -228,13 +228,6 @@
                                                    :attributes attributes})]
     (update shape :applied-tokens #(merge % applied-tokens))))
 
-(defn maybe-apply-token-to-shape
-  "When the passed `:token` is non-nil apply it to the `:applied-tokens` on a shape."
-  [{:keys [shape token _attributes] :as props}]
-  (if token
-    (apply-token-to-shape props)
-    shape))
-
 (defn unapply-token-id [shape attributes]
   (update shape :applied-tokens d/without-keys attributes))
 
