@@ -610,13 +610,17 @@
 
 (defn make-token-theme
   [& {:as attrs}]
-  (let [id (uuid/next)]
+  (let [new-id (uuid/next)]
     (-> attrs
-        (update :id d/nilv id)
+        (update :id (fn [id]
+                      (-> (if (string? id)    ;; TODO: probably this may be deleted in some time, when we may be sure
+                            (uuid/parse* id)  ;;       that no file exists that has not been correctly migrated to
+                            id)               ;;       convert :id into :external-id
+                          (d/nilv new-id))))
         (update :group d/nilv top-level-theme-group-name)
         (update :description d/nilv "")
         (update :is-source d/nilv false)
-        (update :external-id #(or % (str id)))
+        (update :external-id #(or % (str new-id)))
         (update :modified-at #(or % (dt/now)))
         (update :sets set)
         (check-token-theme-attrs)
