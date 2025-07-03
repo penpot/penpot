@@ -126,18 +126,20 @@
           [:div {:class (stl/css :editors-wrapper)}
            [:div {:class (stl/css :input-wrapper)}
             [:input {:id "editors-subscription"
-                     :class (stl/css :input-field)
-                     :type "number"
-                     :value min-members
-                     :min 1
-                     :max 1000
-                     :on-change #(let [new-value (js/parseInt (.. % -target -value))]
-                                   (reset! min-members*
-                                           (let [v (cond
-                                                     (or (mth/nan? new-value) (zero? new-value)) 1
-                                                     (> new-value 1000) 1000
-                                                     :else (max 1 new-value))]
-                                             v)))}]]
+                 :class (stl/css :input-field)
+                 :type "number"
+                 :default-value min-members
+                 :min 1
+                 :max 9999
+                 :on-blur #(let [raw-value (.. % -target -value)
+                         new-value (js/parseInt raw-value)
+                         v (cond
+                           (or (mth/nan? new-value) (empty? raw-value)) 1
+                           (< new-value 1) 1
+                           (> new-value 9999) 9999
+                           :else new-value)]
+                       (reset! min-members* v)
+                       (set! (.. % -target -value) v))}]]
            [:div {:class (stl/css :editors-cost)}
             [:span {:class (stl/css :modal-text-small)}
              (tr "subscription.settings.management.dialog.price-month" min-members)]
