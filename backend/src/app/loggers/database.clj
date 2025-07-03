@@ -67,15 +67,15 @@
                      (some-> cause (ex/format-throwable :data? false :explain? false :header? false :summary? false)))}
 
        (when-let [params (or (:request/params context) (:params context))]
-         {:params (pp/pprint-str params :length 30 :level 13)})
+         {:params (pp/pprint-str params :length 20 :level 15)})
 
        (when-let [value (:value context)]
-         {:value (pp/pprint-str value :length 30 :level 12)})
+         {:value (pp/pprint-str value :length 30 :level 13)})
 
        (when-let [data (some-> data (dissoc ::s/problems ::s/value ::s/spec ::sm/explain :hint))]
-         {:data (pp/pprint-str data :length 30 :level 12)})
+         {:data (pp/pprint-str data :length 30 :level 13)})
 
-       (when-let [explain (ex/explain data :length 30 :level 12)]
+       (when-let [explain (ex/explain data :length 30 :level 13)]
          {:explain explain})))))
 
 (defn error-record?
