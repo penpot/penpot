@@ -94,7 +94,7 @@
 (defn valid-value? [value]
   (seq (finalize-value value)))
 
-;; Component -------------------------------------------------------------------
+;; Validation ------------------------------------------------------------------
 
 (defn validate-token-value
   "Validates token value by resolving the value `input` using `StyleDictionary`.
@@ -155,6 +155,8 @@
     debounced-resolver-callback))
 
 (defonce form-token-cache-atom (atom nil))
+
+;; Component -------------------------------------------------------------------
 
 (mf/defc token-value-hint
   [{:keys [result]}]
@@ -525,7 +527,6 @@
 
 (mf/defc ramp*
   [{:keys [color on-change]}]
-  (js/console.log "ramp color" color)
   (let [wrapper-node-ref (mf/use-ref nil)
         dragging-ref     (mf/use-ref false)
 
@@ -565,7 +566,7 @@
        :on-finish-drag on-finish-drag
        :on-change on-change'}]]))
 
-(mf/defc color-ramp*
+(mf/defc color-picker*
   {::mf/wrap-props false}
   [{:keys [color value-input-ref on-change]}]
   (let [on-change'
@@ -628,14 +629,23 @@
                              :color color
                              :transform-value transform-value
                              :on-value-resolve update-color
-                             :after-value-input-field (when color-ramp-open? color-ramp*)
+                             :after-value-input-field (when color-ramp-open? color-picker*)
                              :on-click-color-icon on-click-color-icon})]))
+
+(mf/defc font-family-form*
+  {::mf/wrap-props false}
+  [{:keys [token] :rest props}]
+  (let [foo 1]
+    [:*
+     [:p "FONT FAMILY"]
+     [:> form*
+      (mf/spread-props props {:token token})]]))
 
 (mf/defc form-wrapper*
   {::mf/wrap-props false}
   [{:keys [token token-type] :as props}]
-  (cond
-    (or (cft/color-token? token) (= token-type :color))
-    [:> color-form* props]
-    :else
-    [:> form* props]))
+  (let [token-type' (or (:type token) token-type)]
+    (case token-type'
+      :color [:> color-form* props]
+      :font-family [:> font-family-form* props]
+      [:> form* props])))
