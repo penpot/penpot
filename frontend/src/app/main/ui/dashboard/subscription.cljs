@@ -139,15 +139,15 @@
      [:span {:class (stl/css :item-name)} (tr "subscription.workspace.header.menu.option.power-up")]]))
 
 (mf/defc members-cta*
-  [{:keys [banner-is-expanded team profile]}]
+  [{:keys [banner-is-expanded team]}]
   (let [subscription          (:subscription team)
         subscription-name     (:type subscription)
-        is-owner              (:is-owner (:permissions team))
+        is-owner              (-> team :permissions :is-owner)
 
         email-owner           (:email (some #(when (:is-owner %) %) (:members team)))
         mail-to-owner         (str "<a href=\"" "mailto:" email-owner "\">" email-owner "</a>")
         go-to-subscription    (dm/str (u/join cf/public-uri "#/settings/subscriptions"))
-        seats                 (-> profile :props :subscription :quantity)
+        seats                 (or (:seats subscription) 0)
         editors               (count (filterv :can-edit (:members team)))
 
         link
@@ -184,25 +184,25 @@
        :content cta-message}]]))
 
 (defn show-subscription-members-main-banner?
-  [team profile]
-  (let [seats   (-> profile :props :subscription :quantity)
+  [team]
+  (let [seats   (-> team :subscription :seats)
         editors (count (filter :can-edit (:members team)))]
     (or
-     (and (= (:type (:subscription team)) "professional")
+     (and (= (-> team :subscription :type) "professional")
           (> editors 8))
      (and
-      (= (:type (:subscription team)) "unlimited")
+      (= (-> team :subscription :type) "unlimited")
       (>= editors 8)
       (< seats editors)))))
 
 (defn show-subscription-members-small-banner?
-  [team profile]
-  (let [seats   (-> profile :props :subscription :quantity)
+  [team]
+  (let [seats   (-> team :subscription :seats)
         editors (count (filterv :can-edit (:members team)))]
     (or
-     (and (= (:type (:subscription team)) "professional")
+     (and (= (-> team :subscription :type) "professional")
           (= editors 8))
-     (and (= (:type (:subscription team)) "unlimited")
+     (and (= (-> team :subscription :type) "unlimited")
           (< editors 8)
           (< seats editors)))))
 

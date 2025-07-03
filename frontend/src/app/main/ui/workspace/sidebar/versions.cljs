@@ -47,15 +47,16 @@
   (let [subscription-name   (-> team :subscription :type)
         is-owner?           (-> team :permissions :is-owner)
         email-owner         (:email (some #(when (:is-owner %) %) (:members team)))
+        support-email       "support@penpot.app"
         go-to-subscription  (dm/str (u/join cfg/public-uri "#/settings/subscriptions"))]
 
     (if (contains? cfg/flags :subscriptions)
       (if is-owner?
         (if (= "enterprise" subscription-name)
-          (tr "subscription.workspace.versions.warning.enterprise.subtext-owner" "support@penpot.app")
+          (tr "subscription.workspace.versions.warning.enterprise.subtext-owner" support-email support-email)
           (tr "subscription.workspace.versions.warning.subtext-owner" go-to-subscription))
         (tr "subscription.workspace.versions.warning.subtext-member" email-owner email-owner))
-      (tr "workspace.versions.warning.subtext" "support@penpot.app"))))
+      (tr "workspace.versions.warning.subtext" support-email))))
 
 (defn group-snapshots
   [data]

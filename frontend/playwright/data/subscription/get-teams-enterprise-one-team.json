@@ -17,7 +17,8 @@
   },
   "~:subscription": {
       "~:type": "enterprise",
-      "~:status": "trialing"
+      "~:status": "trialing",
+      "~:seats": null
     },
   "~:name": "Default",
   "~:modified-at": "~m1713533116375",

@@ -132,7 +132,7 @@
        [:> team-members-page* {:team team :profile profile}]
 
        :dashboard-invitations
-       [:> team-invitations-page* {:team team :profile profile}]
+       [:> team-invitations-page* {:team team}]
 
        :dashboard-webhooks
        [:> webhooks-page* {:team team}]

@@ -253,8 +253,8 @@
   margin-block: var(--sp-xxl);
 }
 
-.input-wrapper {
-  @extend .input-element;
+.input-field {
+  --input-icon-padding: var(--sp-s);
   width: $s-80;
 }
 

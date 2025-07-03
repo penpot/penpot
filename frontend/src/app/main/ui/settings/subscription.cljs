@@ -2,7 +2,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.math :as mth]
+   [app.common.schema :as sm]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.profile :as du]
@@ -10,6 +10,7 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -52,15 +53,16 @@
                                            :on-click cta-link} cta-text])
    (when (and cta-link-trial cta-text-trial) [:button {:class (stl/css :cta-button :bottom-link)
                                                        :on-click cta-link-trial} cta-text-trial])])
+(def ^:private schema:seats-form
+  [:map {:title "SeatsForm"}
+   [:min-members [::sm/number {:min 1 :max 9999}]]])
 
 (mf/defc subscribe-management-dialog
   {::mf/register modal/components
    ::mf/register-as :management-dialog}
   [{:keys [subscription-name teams subscribe-to-trial]}]
 
-  (let [min-members*                (mf/use-state (or (some->> teams (map :total-editors) (apply max)) 1))
-        min-members                 (deref min-members*)
-        formatted-subscription-name (if subscribe-to-trial
+  (let [formatted-subscription-name (if subscribe-to-trial
                                       (if (= subscription-name "unlimited")
                                         (tr "subscription.settings.unlimited-trial")
                                         (tr "subscription.settings.enterprise-trial"))
@@ -68,26 +70,30 @@
                                         "professional" (tr "subscription.settings.professional")
                                         "unlimited" (tr "subscription.settings.unlimited")
                                         "enterprise" (tr "subscription.settings.enterprise")))
-        handle-subscription-trial   (if (= subscription-name "unlimited")
-                                      (mf/use-fn
-                                       (mf/deps min-members)
-                                       (fn []
-                                         (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
-                                                                          :type "unlimited"
-                                                                          :quantity min-members}))
-                                         (let [current-href (rt/get-current-href)
-                                               returnUrl (js/encodeURIComponent current-href)
-                                               href (dm/str "payments/subscriptions/create?type=unlimited&quantity=" min-members "&returnUrl=" returnUrl)]
-                                           (st/emit! (rt/nav-raw :href href)))))
+        initial                    (mf/with-memo []
+                                     {:min-members (or (some->> teams (map :total-editors) (apply max)) 1)})
+        form                       (fm/use-form :schema schema:seats-form
+                                                :initial initial)
+        subscribe-to-unlimited     (mf/use-fn
+                                    (fn [form]
+                                      (let [data (:clean-data @form)
+                                            current-href (rt/get-current-href)
+                                            returnUrl (js/encodeURIComponent current-href)
+                                            href (dm/str "payments/subscriptions/create?type=unlimited&quantity=" (:min-members data) "&returnUrl=" returnUrl)]
+                                        (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
+                                                                         :type "unlimited"
+                                                                         :quantity (:min-members data)})
+                                                  (rt/nav-raw :href href)))))
 
-                                      (mf/use-fn
-                                       (fn []
-                                         (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
-                                                                          :type "enterprise"}))
-                                         (let [current-href (rt/get-current-href)
-                                               returnUrl (js/encodeURIComponent current-href)
-                                               href (dm/str "payments/subscriptions/create?type=enterprise&returnUrl=" returnUrl)]
-                                           (st/emit! (rt/nav-raw :href href))))))
+        subscribe-to-enterprise   (mf/use-fn
+                                   (fn []
+                                     (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
+                                                                      :type "enterprise"}))
+                                     (let [current-href (rt/get-current-href)
+                                           returnUrl (js/encodeURIComponent current-href)
+                                           href (dm/str "payments/subscriptions/create?type=enterprise&returnUrl=" returnUrl)]
+                                       (st/emit! (rt/nav-raw :href href)))))
+
         handle-accept-dialog       (mf/use-fn
                                     (fn []
                                       (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
@@ -111,38 +117,14 @@
 
       [:div {:class (stl/css :modal-content)}
        (if (seq teams)
-         [* [:div {:class (stl/css :modal-text)}
-             (tr "subscription.settings.management.dialog.choose-this-plan")]
+         [:* [:div {:class (stl/css :modal-text)}
+              (tr "subscription.settings.management.dialog.choose-this-plan")]
           [:ul {:class (stl/css :teams-list)}
-           (for [team (js->clj teams :keywordize-keys true)]
+           (for [team teams]
              [:li {:key (dm/str (:id team)) :class (stl/css :team-name)}
               (:name team) (tr "subscription.settings.management.dialog.members" (:total-editors team))])]]
          [:div {:class (stl/css :modal-text)}
           (tr "subscription.settings.management.dialog.no-teams")])
-
-       (when (and (= subscription-name "unlimited") subscribe-to-trial)
-         [[:label {:for "editors-subscription" :class (stl/css :modal-text :editors-label)}
-           (tr "subscription.settings.management.dialog.select-editors")]
-          [:div {:class (stl/css :editors-wrapper)}
-           [:div {:class (stl/css :input-wrapper)}
-            [:input {:id "editors-subscription"
-                     :class (stl/css :input-field)
-                     :type "number"
-                     :value min-members
-                     :min 1
-                     :max 1000
-                     :on-change #(let [new-value (js/parseInt (.. % -target -value))]
-                                   (reset! min-members*
-                                           (let [v (cond
-                                                     (or (mth/nan? new-value) (zero? new-value)) 1
-                                                     (> new-value 1000) 1000
-                                                     :else (max 1 new-value))]
-                                             v)))}]]
-           [:div {:class (stl/css :editors-cost)}
-            [:span {:class (stl/css :modal-text-small)}
-             (tr "subscription.settings.management.dialog.price-month" min-members)]
-            [:span {:class (stl/css :modal-text-small)}
-             (tr "subscription.settings.management.dialog.payment-explanation")]]]])
 
        (when (and
               (or (= subscription-name "professional") (= subscription-name "unlimited"))
@@ -150,19 +132,52 @@
          [:div {:class (stl/css :modal-text)}
           (tr "subscription.settings.management.dialog.downgrade")])
 
-       [:div {:class (stl/css :modal-footer)}
-        [:div {:class (stl/css :action-buttons)}
-         [:input
-          {:class (stl/css :cancel-button)
-           :type "button"
-           :value (tr "ds.confirm-cancel")
-           :on-click handle-close-dialog}]
+       (if (and (= subscription-name "unlimited") subscribe-to-trial)
+         [:& fm/form {:on-submit subscribe-to-unlimited
+                      :class (stl/css :seats-form)
+                      :form form}
+          [:label {:for "editors-subscription" :class (stl/css :modal-text :editors-label)}
+           (tr "subscription.settings.management.dialog.select-editors")]
 
-         [:input
-          {:class (stl/css :primary-button)
-           :type "button"
-           :value (if subscribe-to-trial (tr "subscription.settings.start-trial") (tr "labels.continue"))
-           :on-click (if subscribe-to-trial handle-subscription-trial handle-accept-dialog)}]]]]]]))
+          [:div {:class (stl/css :editors-wrapper)}
+           [:div {:class (stl/css :fields-row)}
+            [:& fm/input {:type "number"
+                          :name :min-members
+                          :show-error false
+                          :label ""
+                          :class (stl/css :input-field)}]]
+           [:div {:class (stl/css :editors-cost)}
+            [:span {:class (stl/css :modal-text-small)}
+             (tr "subscription.settings.management.dialog.price-month" (or (get-in @form [:clean-data :min-members]) 0))]
+            [:span {:class (stl/css :modal-text-small)}
+             (tr "subscription.settings.management.dialog.payment-explanation")]]]
+
+          [:div {:class (stl/css :modal-footer)}
+           [:div {:class (stl/css :action-buttons)}
+            [:input
+             {:class (stl/css :cancel-button)
+              :type "button"
+              :value (tr "ds.confirm-cancel")
+              :on-click handle-close-dialog}]
+
+            [:> fm/submit-button*
+             {:label (tr "subscription.settings.start-trial")
+              :class (stl/css :primary-button)}]]]]
+
+         [:div {:class (stl/css :modal-footer)}
+          [:div {:class (stl/css :action-buttons)}
+           [:input
+            {:class (stl/css :cancel-button)
+             :type "button"
+             :value (tr "ds.confirm-cancel")
+             :on-click handle-close-dialog}]
+
+           [:input
+            {:class (stl/css :primary-button)
+
+             :type "button"
+             :value (if subscribe-to-trial (tr "subscription.settings.start-trial") (tr "labels.continue"))
+             :on-click (if subscribe-to-trial subscribe-to-enterprise handle-accept-dialog)}]]])]]]))
 
 (mf/defc subscription-success-dialog
   {::mf/register modal/components
@@ -201,6 +216,9 @@
   (let [route                           (mf/deref refs/route)
         params                          (:params route)
         params-subscription             (:subscription (:query params))
+        show-trial-subscription-modal   (and (:query params)
+                                             (or (= (:subscription (:query params)) "subscription-to-penpot-unlimited")
+                                                 (= (:subscription (:query params)) "subscription-to-penpot-enterprise")))
         show-subscription-success-modal (and (:query params)
                                              (or (= (:subscription (:query params)) "subscribed-to-penpot-unlimited")
                                                  (= (:subscription (:query params)) "subscribed-to-penpot-enterprise")))
@@ -230,7 +248,8 @@
         open-subscription-modal         (mf/use-fn
                                          (mf/deps teams)
                                          (fn [subscription-name]
-                                           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-modal"}))
+                                           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-modal"
+                                                                            ::ev/origin "settings:in-app"}))
                                            (st/emit!
                                             (modal/show :management-dialog
                                                         {:subscription-name subscription-name
@@ -243,6 +262,19 @@
 
     (mf/with-effect []
       (dom/set-html-title (tr "subscription.labels")))
+
+    (mf/with-effect [show-trial-subscription-modal subscription]
+      (when show-trial-subscription-modal
+        (st/emit!
+         (ptk/event ::ev/event {::ev/name "open-subscription-modal"
+                                ::ev/origin "settings:from-pricing-page"})
+         (modal/show :management-dialog
+                     {:subscription-name (if (= params-subscription "subscription-to-penpot-unlimited")
+                                           "unlimited"
+                                           "enterprise")
+                      :teams teams
+                      :subscribe-to-trial (not subscription)})
+         (rt/nav :settings-subscription {} {::rt/replace true}))))
 
     (mf/with-effect [show-subscription-success-modal subscription]
       (when show-subscription-success-modal
