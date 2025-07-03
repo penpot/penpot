@@ -559,6 +559,8 @@
           f.project_id,
           f.created_at,
           f.modified_at,
+          f.data_backend,
+          f.data_ref_id,
           f.name,
           f.version,
           f.is_shared,

@@ -1320,18 +1320,35 @@
         (d/update-when :components d/update-vals update-container)
         (d/without-nils))))
 
-(defmethod migrate-data "0003-convert-path-content"
+(defmethod migrate-data "0003-convert-path-content-v2"
   [data _]
   (some-> cfeat/*new* (swap! conj "fdata/path-data"))
 
-  (letfn [(update-object [object]
-            (if (or (cfh/bool-shape? object)
-                    (cfh/path-shape? object))
-              (update object :content path/content)
-              object))
+  (let [decode-segments
+        (sm/decoder path/schema:segments sm/json-transformer)
 
-          (update-container [container]
-            (d/update-when container :objects d/update-vals update-object))]
+        update-object
+        (fn [object]
+          (if (or (cfh/bool-shape? object)
+                  (cfh/path-shape? object))
+            (let [content (get object :content)
+                  content (cond
+                            (path/content? content)
+                            content
+
+                            (nil? content)
+                            (path/content [])
+
+                            :else
+                            (-> content
+                                (decode-segments)
+                                (path/content)))]
+              (assoc object :content content))
+            object))
+
+        update-container
+        (fn [container]
+          (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
         (update :pages-index d/update-vals update-container)
@@ -1584,7 +1601,7 @@
          "0002-normalize-bool-content-v2"
          "0002-clean-shape-interactions"
          "0003-fix-root-shape"
-         "0003-convert-path-content"
+         "0003-convert-path-content-v2"
          "0004-clean-shadow-color"
          "0005-deprecate-image-type"
          "0006-fix-old-texts-fills"

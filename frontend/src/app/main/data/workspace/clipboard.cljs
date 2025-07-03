@@ -909,16 +909,17 @@
                               (ev/event {::ev/name "use-library-component"
                                          ::ev/origin origin
                                          :is-external-library external-lib?
-                                         :parent-shape-type parent-type})
+                                         :type (get shape :type)
+                                         :parent-type parent-type})
                               (if (cfh/has-layout? objects (:parent-id shape))
                                 (ev/event {::ev/name "layout-add-element"
                                            ::ev/origin origin
-                                           :element-type (get shape :type)
+                                           :type (get shape :type)
                                            :parent-type parent-type})
                                 (ev/event {::ev/name "create-shape"
                                            ::ev/origin origin
-                                           :shape-type (get shape :type)
-                                           :parent-shape-type parent-type})))))))
+                                           :type (get shape :type)
+                                           :parent-type parent-type})))))))
 
            (rx/of (dwu/start-undo-transaction undo-id)
                   (dch/commit-changes changes)

@@ -507,18 +507,6 @@
                                        (= (:command e1) :move-to))))}
    schema:segment])
 
-(def schema:content-like
-  [:sequential schema:segment])
-
-(def check-content-like
-  (sm/check-fn schema:content-like))
-
-(def check-segment
-  (sm/check-fn schema:segment))
-
-(def ^:private check-segments
-  (sm/check-fn schema:segments))
-
 (defn path-data?
   [o]
   (instance? PathData o))
@@ -526,37 +514,40 @@
 (declare from-string)
 (declare from-plain)
 
-;; Mainly used on backend: features/components_v2.clj
-(sm/register! ::path/segment schema:segment)
-(sm/register! ::path/segments schema:segments)
+(def schema:content
+  (sm/type-schema
+   {:type ::path/content
+    :compile
+    (fn [_ _ _]
+      (let [decoder   (delay (sm/decoder schema:segments sm/json-transformer))
+            generator (->> (sg/generator schema:segments)
+                           (sg/filter not-empty)
+                           (sg/fmap from-plain))]
+        {:pred path-data?
+         :type-properties
+         {:gen/gen generator
+          :encode/json identity
+          :decode/json (fn [s]
+                         (cond
+                           (string? s)
+                           (from-string s)
 
-(sm/register!
- {:type ::path/content
-  :compile
-  (fn [_ _ _]
-    (let [decoder   (delay (sm/decoder schema:segments sm/json-transformer))
-          generator (->> (sg/generator schema:segments)
-                         (sg/filter not-empty)
-                         (sg/fmap from-plain))]
-      {:pred path-data?
-       :type-properties
-       {:gen/gen generator
-        :encode/json identity
-        :decode/json (fn [s]
-                       (cond
-                         (string? s)
-                         (from-string s)
+                           (vector? s)
+                           (let [decode-fn (deref decoder)]
+                             (-> (decode-fn s)
+                                 (from-plain)))
 
-                         (vector? s)
-                         (let [decode-fn (deref decoder)]
-                           (-> (decode-fn s)
-                               (from-plain)))
+                           :else
+                           s))}}))}))
 
-                         :else
-                         s))}}))})
+(def check-plain-content
+  (sm/check-fn schema:segments))
 
-(def check-path-content
-  (sm/check-fn ::path/content))
+(def check-segment
+  (sm/check-fn schema:segment))
+
+(def check-content
+  (sm/check-fn schema:content))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONSTRUCTORS & PREDICATES
@@ -617,7 +608,7 @@
 (defn from-plain
   "Create a PathData instance from plain data structures"
   [segments]
-  (assert (check-segments segments))
+  (assert (check-plain-content segments))
 
   (let [total  (count segments)
         buffer (buf/allocate (* total SEGMENT-BYTE-SIZE))]

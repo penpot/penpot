@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.files.helpers :as cpf]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -25,6 +26,9 @@
 (def ^:cosnt bool-group-style-properties bool/group-style-properties)
 (def ^:const bool-style-properties bool/style-properties)
 (def ^:const default-bool-fills bool/default-fills)
+
+(def schema:content impl/schema:content)
+(def schema:segments impl/schema:segments)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TRANSFORMATIONS
@@ -48,9 +52,9 @@
   [data]
   (impl/from-string data))
 
-(defn check-path-content
+(defn check-content
   [content]
-  (impl/check-content-like content))
+  (impl/check-content content))
 
 (defn get-byte-size
   "Get byte size of a path content"
@@ -76,7 +80,7 @@
 (defn apply-content-modifiers
   "Apply delta modifiers over the path content"
   [content modifiers]
-  (assert (impl/check-content-like content))
+  (assert (impl/check-content content))
 
   (letfn [(apply-to-index [content [index params]]
             (if (contains? content index)
@@ -202,8 +206,18 @@
   "Calculate the boolean content from shape and objects. Returns a
   packed PathData instance"
   [shape objects]
-  (-> (calc-bool-content* shape objects)
-      (impl/path-data)))
+  (ex/try!
+   (-> (calc-bool-content* shape objects)
+       (impl/path-data))
+
+   :on-exception
+   (fn [cause]
+     (ex/raise :type :internal
+               :code :invalid-path-content
+               :hint (str "unable to create bool content for shape " (:id shape))
+               :content (str (:content shape))
+               :shape-id (:id shape)
+               :cause cause))))
 
 (defn update-bool-shape
   "Calculates the selrect+points for the boolean shape"

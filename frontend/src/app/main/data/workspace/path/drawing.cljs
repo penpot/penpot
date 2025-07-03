@@ -305,7 +305,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [content (some-> (dm/get-in state [:workspace-drawing :object :content])
-                            (path/check-path-content))]
+                            (path/check-content))]
         (if (> (count content) 1)
           (assoc-in state [:workspace-drawing :object :initialized?] true)
           state)))
