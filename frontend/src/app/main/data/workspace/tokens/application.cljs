@@ -63,8 +63,6 @@
     :circle  generic-attributes
     :rect    rect-attributes
     :frame   frame-attributes
-    ;; TODO: Groups dont accept tokens yet
-    ;; :group   generic-attributes
     :image   rect-attributes
     :path    generic-attributes
     :svg-raw generic-attributes
