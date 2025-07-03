@@ -41,7 +41,7 @@
   (if (or (instance? java.util.concurrent.CompletionException cause)
           (instance? java.util.concurrent.ExecutionException cause))
     (-> record
-        (assoc ::trace (ex/format-throwable cause :data? false :explain? false :header? false :summary? false))
+        (assoc ::trace (ex/format-throwable cause :data? true :explain? false :header? false :summary? false))
         (assoc ::l/cause (ex-cause cause))
         (record->report))
 
@@ -64,7 +64,7 @@
                          message))
                      @message)
         :trace   (or (::trace record)
-                     (some-> cause (ex/format-throwable :data? false :explain? false :header? false :summary? false)))}
+                     (some-> cause (ex/format-throwable :data? true :explain? false :header? false :summary? false)))}
 
        (when-let [params (or (:request/params context) (:params context))]
          {:params (pp/pprint-str params :length 20 :level 15)})
