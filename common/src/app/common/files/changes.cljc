@@ -487,7 +487,9 @@
                                (cts/shape? shape-new))
                   (ex/raise :type :assertion
                             :code :data-validation
-                            :hint "invalid shape found after applying changes"
+                            :hint (str "invalid shape found after applying changes on file "
+                                       (:id data-new))
+                            :file-id (:id data-new)
                             ::sm/explain (cts/explain-shape shape-new))))))]
 
     (->> (into #{} (map :page-id) items)

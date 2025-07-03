@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.files.helpers :as cpf]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -205,8 +206,18 @@
   "Calculate the boolean content from shape and objects. Returns a
   packed PathData instance"
   [shape objects]
-  (-> (calc-bool-content* shape objects)
-      (impl/path-data)))
+  (ex/try!
+   (-> (calc-bool-content* shape objects)
+       (impl/path-data))
+
+   :on-exception
+   (fn [cause]
+     (ex/raise :type :internal
+               :code :invalid-path-content
+               :hint (str "unable to create bool content for shape " (:id shape))
+               :content (str (:content shape))
+               :shape-id (:id shape)
+               :cause cause))))
 
 (defn update-bool-shape
   "Calculates the selrect+points for the boolean shape"
