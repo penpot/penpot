@@ -546,9 +546,6 @@
 (def check-segment
   (sm/check-fn schema:segment))
 
-(def ^:private check-segments
-  (sm/check-fn schema:segments))
-
 (def check-content
   (sm/check-fn schema:content))
 
@@ -611,7 +608,7 @@
 (defn from-plain
   "Create a PathData instance from plain data structures"
   [segments]
-  (assert (check-segments segments))
+  (assert (check-plain-content segments))
 
   (let [total  (count segments)
         buffer (buf/allocate (* total SEGMENT-BYTE-SIZE))]
