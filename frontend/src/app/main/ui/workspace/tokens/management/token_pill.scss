@@ -85,6 +85,11 @@
   }
 }
 
+.token-pill-disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .token-pill-applied {
   --token-pill-background: var(--color-token-background);
   --token-pill-foreground: var(--color-token-foreground);

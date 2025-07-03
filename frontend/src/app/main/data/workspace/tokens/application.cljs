@@ -7,7 +7,6 @@
 (ns app.main.data.workspace.tokens.application
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
    [app.common.text :as txt]
    [app.common.types.shape.layout :as ctsl]
@@ -55,7 +54,8 @@
                         objects (dsh/lookup-page-objects state)
 
                         shape-ids (or (->> (select-keys objects shape-ids)
-                                           (filter (fn [[_ shape]] (not= (:type shape) :group)))
+                                           (filter (fn [[_ shape]]
+                                                     (ctt/any-appliable-attr? attributes (:type shape))))
                                            (keys))
                                       [])
 
@@ -455,6 +455,3 @@
 
 (defn get-token-properties [token]
   (get token-properties (:type token)))
-
-(defn token-attributes [token-type]
-  (dm/get-in token-properties [token-type :attributes]))
