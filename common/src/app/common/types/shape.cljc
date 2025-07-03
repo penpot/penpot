@@ -246,7 +246,7 @@
   [:map {:title "BoolAttrs"}
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
    [:bool-type [::sm/one-of bool-types]]
-   [:content ::path/content]])
+   [:content path/schema:content]])
 
 (def ^:private schema:rect-attrs
   [:map {:title "RectAttrs"}])
@@ -271,7 +271,7 @@
 
 (def ^:private schema:path-attrs
   [:map {:title "PathAttrs"}
-   [:content ::path/content]])
+   [:content path/schema:content]])
 
 (def ^:private schema:text-attrs
   [:map {:title "TextAttrs"}
