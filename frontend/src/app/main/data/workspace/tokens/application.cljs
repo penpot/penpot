@@ -71,6 +71,16 @@
     :text    text-attributes
     nil))
 
+(defn appliable-attrs
+  "Returns intersection of shape `attributes` for `token-type`."
+  [attributes token-type]
+  (set/intersection attributes (shape-type->attributes token-type)))
+
+(defn any-appliable-attr?
+  "Checks if `token-type` supports given shape `attributes`."
+  [attributes token-type]
+  (seq (appliable-attrs attributes token-type)))
+
 ;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
 
 (defn apply-token
@@ -95,8 +105,8 @@
                         objects (dsh/lookup-page-objects state)
 
                         shape-ids (or (->> (select-keys objects shape-ids)
-                                           (filter (fn [[_ element]]
-                                                     (seq (set/intersection attributes (shape-type->attributes (:type element))))))
+                                           (filter (fn [[_ shape]]
+                                                     (any-appliable-attr? attributes (:type shape))))
                                            (keys))
                                       [])
 

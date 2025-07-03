@@ -165,8 +165,7 @@
 (defn attributes-match-selection?
   [selected-shapes attrs]
   (some (fn [shape]
-          (let [shape-attrs (dwta/shape-type->attributes (:type shape))]
-            (some attrs shape-attrs)))
+          (dwta/any-appliable-attr? attrs (:type shape)))
         selected-shapes))
 
 (def token-types-with-status-icon
