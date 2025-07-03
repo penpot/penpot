@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
+   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.shape-layout :as dwsl]
@@ -322,7 +323,7 @@
                           (:name token)))}]))
 
 (defn- allowed-shape-attributes [shapes]
-  (reduce into #{} (map #(dwta/shape-type->attributes (:type %)) shapes)))
+  (reduce into #{} (map #(ctt/shape-type->attributes (:type %)) shapes)))
 
 (defn menu-actions [{:keys [type token selected-shapes] :as context-data}]
   (let [context-data (assoc context-data :allowed-shape-attributes (allowed-shape-attributes selected-shapes))

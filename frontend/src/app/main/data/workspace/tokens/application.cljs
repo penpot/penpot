@@ -7,7 +7,6 @@
 (ns app.main.data.workspace.tokens.application
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
    [app.common.text :as txt]
    [app.common.types.shape.layout :as ctsl]
@@ -30,54 +29,6 @@
    [potok.v2.core :as ptk]))
 
 (declare token-properties)
-
-;; Match shape by attributes ---------------------------------------------------
-
-(def position-attributes #{:x :y})
-
-(def generic-attributes
-  (set/union ctt/color-keys
-             ctt/stroke-width-keys
-             ctt/rotation-keys
-             ctt/sizing-keys
-             ctt/opacity-keys
-             position-attributes))
-
-(def rect-attributes
-  (set/union generic-attributes
-             ctt/border-radius-keys))
-
-(def frame-attributes
-  (set/union rect-attributes
-             ctt/spacing-keys))
-
-(def text-attributes
-  (set/union generic-attributes
-             ctt/typography-keys
-             ctt/number-keys))
-
-(defn shape-type->attributes
-  [type]
-  (case type
-    :bool    generic-attributes
-    :circle  generic-attributes
-    :rect    rect-attributes
-    :frame   frame-attributes
-    :image   rect-attributes
-    :path    generic-attributes
-    :svg-raw generic-attributes
-    :text    text-attributes
-    nil))
-
-(defn appliable-attrs
-  "Returns intersection of shape `attributes` for `token-type`."
-  [attributes token-type]
-  (set/intersection attributes (shape-type->attributes token-type)))
-
-(defn any-appliable-attr?
-  "Checks if `token-type` supports given shape `attributes`."
-  [attributes token-type]
-  (seq (appliable-attrs attributes token-type)))
 
 ;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
 
@@ -104,7 +55,7 @@
 
                         shape-ids (or (->> (select-keys objects shape-ids)
                                            (filter (fn [[_ shape]]
-                                                     (any-appliable-attr? attributes (:type shape))))
+                                                     (ctt/any-appliable-attr? attributes (:type shape))))
                                            (keys))
                                       [])
 
@@ -504,6 +455,3 @@
 
 (defn get-token-properties [token]
   (get token-properties (:type token)))
-
-(defn token-attributes [token-type]
-  (dm/get-in token-properties [token-type :attributes]))

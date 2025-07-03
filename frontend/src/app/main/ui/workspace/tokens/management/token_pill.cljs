@@ -12,6 +12,7 @@
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.files.tokens :as cft]
+   [app.common.types.token :as ctt]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.color :as dwtc]
    [app.main.refs :as refs]
@@ -165,7 +166,7 @@
 (defn attributes-match-selection?
   [selected-shapes attrs]
   (some (fn [shape]
-          (dwta/any-appliable-attr? attrs (:type shape)))
+          (ctt/any-appliable-attr? attrs (:type shape)))
         selected-shapes))
 
 (def token-types-with-status-icon

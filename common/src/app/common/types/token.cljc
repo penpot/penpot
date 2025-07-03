@@ -203,6 +203,56 @@
     token-attr))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKEN SHAPE ATTRIBUTES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def position-attributes #{:x :y})
+
+(def generic-attributes
+  (set/union color-keys
+             stroke-width-keys
+             rotation-keys
+             sizing-keys
+             opacity-keys
+             position-attributes))
+
+(def rect-attributes
+  (set/union generic-attributes
+             border-radius-keys))
+
+(def frame-attributes
+  (set/union rect-attributes
+             spacing-keys))
+
+(def text-attributes
+  (set/union generic-attributes
+             typography-keys
+             number-keys))
+
+(defn shape-type->attributes
+  [type]
+  (case type
+    :bool    generic-attributes
+    :circle  generic-attributes
+    :rect    rect-attributes
+    :frame   frame-attributes
+    :image   rect-attributes
+    :path    generic-attributes
+    :svg-raw generic-attributes
+    :text    text-attributes
+    nil))
+
+(defn appliable-attrs
+  "Returns intersection of shape `attributes` for `token-type`."
+  [attributes token-type]
+  (set/intersection attributes (shape-type->attributes token-type)))
+
+(defn any-appliable-attr?
+  "Checks if `token-type` supports given shape `attributes`."
+  [attributes token-type]
+  (seq (appliable-attrs attributes token-type)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS IN SHAPES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
