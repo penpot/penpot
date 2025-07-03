@@ -83,24 +83,6 @@
           (assoc-in [:workspace-global :picked-color-select] value)
           (assoc-in [:workspace-global :picked-shift?] shift?)))))
 
-
-(defn- split-text-shapes
-  "Split text shapes from non-text shapes"
-  [objects ids]
-  (loop [ids (seq ids)
-         text-ids []
-         shape-ids []]
-    (if-let [id (first ids)]
-      (let [shape (get objects id)]
-        (if (cfh/text-shape? shape)
-          (recur (rest ids)
-                 (conj text-ids id)
-                 shape-ids)
-          (recur (rest ids)
-                 text-ids
-                 (conj shape-ids id))))
-      [text-ids shape-ids])))
-
 (defn assoc-shape-fill
   [shape position fill]
   (update shape :fills
@@ -111,13 +93,13 @@
 
 (defn transform-fill*
   "A lower-level companion function for `transform-fill`"
-  [state ids  transform options]
+  [state ids transform options]
   (let [page-id (or (get options :page-id)
                     (get state :current-page-id))
         objects (dsh/lookup-page-objects state page-id)
 
         [text-ids shape-ids]
-        (split-text-shapes objects ids)]
+        (dsh/split-text-shapes objects ids)]
 
     (rx/concat
      (->> (rx/from text-ids)

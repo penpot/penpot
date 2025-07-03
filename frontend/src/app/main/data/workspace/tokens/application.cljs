@@ -153,6 +153,8 @@
 ;; options here for pass optional value and preserve the correct and
 ;; uniform api across all functions (?)
 
+
+
 (defn update-rotation
   ([value shape-ids attributes] (update-rotation value shape-ids attributes nil))
   ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
@@ -358,6 +360,22 @@
                            {:ignore-touched true
                             :page-id page-id})))))
 
+(defn update-numeric
+  ([value shape-ids attributes] (update-numeric value shape-ids attributes nil))
+  ([value shape-ids attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+   (ptk/reify ::update-numeric
+     ptk/WatchEvent
+     (watch [_ state _]
+       (when (number? value)
+         (let [page-id (or page-id (get state :current-page-id))
+               objects (dsh/lookup-page-objects state page-id)
+               [text-ids non-text-ids] (dsh/split-text-shapes objects shape-ids)]
+           (rx/of
+            (when (seq non-text-ids)
+              (update-rotation value non-text-ids attributes page-id))
+            (when (seq text-ids)
+              (update-line-height value text-ids attributes page-id)))))))))
+
 ;; Map token types to different properties used along the cokde ---------------------------------------------
 
 ;; FIXME: the values should be lazy evaluated, probably a function,
@@ -432,7 +450,7 @@
    {:title "Number"
     :attributes ctt/rotation-keys
     :all-attributes ctt/number-keys
-    :on-update-shape update-rotation
+    :on-update-shape update-numeric
     :modal {:key :tokens/number
             :fields [{:label "Number"
                       :key :number}]}}
