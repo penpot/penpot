@@ -22,6 +22,7 @@ use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
 use crate::shapes::{Corners, Fill, Shape, StructureEntry, Type};
+use crate::state::ShapesPool;
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
@@ -594,7 +595,7 @@ impl RenderState {
 
     pub fn render_from_cache(
         &mut self,
-        shapes: &HashMap<Uuid, &mut Shape>,
+        shapes: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) {
@@ -635,7 +636,7 @@ impl RenderState {
 
     pub fn start_render_loop(
         &mut self,
-        tree: &HashMap<Uuid, &mut Shape>,
+        tree: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -690,7 +691,7 @@ impl RenderState {
 
     pub fn process_animation_frame(
         &mut self,
-        tree: &HashMap<Uuid, &mut Shape>,
+        tree: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -849,7 +850,7 @@ impl RenderState {
 
     pub fn render_shape_tree_partial_uncached(
         &mut self,
-        tree: &HashMap<Uuid, &mut Shape>,
+        tree: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -962,7 +963,7 @@ impl RenderState {
 
     pub fn render_shape_tree_partial(
         &mut self,
-        tree: &HashMap<Uuid, &mut Shape>,
+        tree: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -1100,7 +1101,7 @@ impl RenderState {
 
     pub fn rebuild_tiles_shallow(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) {
@@ -1109,7 +1110,7 @@ impl RenderState {
         self.surfaces.remove_cached_tiles();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
-            if let Some(shape) = tree.get_mut(&shape_id) {
+            if let Some(shape) = tree.get(&shape_id) {
                 let mut shape: Cow<Shape> = Cow::Borrowed(shape);
                 if shape_id != Uuid::nil() {
                     if let Some(modifier) = modifiers.get(&shape_id) {
@@ -1130,7 +1131,7 @@ impl RenderState {
 
     pub fn rebuild_tiles(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) {
@@ -1139,7 +1140,7 @@ impl RenderState {
         self.surfaces.remove_cached_tiles();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
-            if let Some(shape) = tree.get_mut(&shape_id) {
+            if let Some(shape) = tree.get(&shape_id) {
                 let mut shape: Cow<Shape> = Cow::Borrowed(shape);
                 if shape_id != Uuid::nil() {
                     if let Some(modifier) = modifiers.get(&shape_id) {
@@ -1157,13 +1158,9 @@ impl RenderState {
         performance::end_measure!("rebuild_tiles");
     }
 
-    pub fn rebuild_modifier_tiles(
-        &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) {
+    pub fn rebuild_modifier_tiles(&mut self, tree: &ShapesPool, modifiers: &HashMap<Uuid, Matrix>) {
         for (uuid, matrix) in modifiers {
-            if let Some(shape) = tree.get_mut(uuid) {
+            if let Some(shape) = tree.get(uuid) {
                 let mut shape: Cow<Shape> = Cow::Borrowed(shape);
                 shape.to_mut().apply_transform(matrix);
                 self.update_tile_for(&shape);
