@@ -412,7 +412,7 @@
 
 (defn calculate-content
   "Create a bool content from a collection of contents and specified
-  type."
+  type. Returns plain segments"
   [bool-type contents]
   ;; We apply the boolean operation in to each pair and the result to the next
   ;; element
