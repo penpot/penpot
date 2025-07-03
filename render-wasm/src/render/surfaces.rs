@@ -307,8 +307,14 @@ impl Surfaces {
         self.tiles.remove(tile)
     }
 
-    pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect) {
+    pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect, color: skia::Color) {
         let image = self.tiles.get(tile).unwrap();
+
+        let mut paint = skia::Paint::default();
+        paint.set_color(color);
+
+        self.target.canvas().draw_rect(rect, &paint);
+
         self.target
             .canvas()
             .draw_image_rect(&image, None, rect, &skia::Paint::default());
