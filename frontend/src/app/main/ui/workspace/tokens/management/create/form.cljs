@@ -21,9 +21,11 @@
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.tokens.warnings :as wtw]
+   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
@@ -31,6 +33,7 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [font-selector*]]
    [app.main.ui.workspace.tokens.management.create.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-tokens-value*]]
    [app.util.dom :as dom]
@@ -668,14 +671,82 @@
                              :token-value-input color-picker*
                              :token-value-input-props token-value-input-props})]))
 
+(mf/defc font-picker*
+  {::mf/wrap-props false}
+  [{:keys [default-value input-ref error on-blur on-update-value on-external-update-value token-value-input-props]}]
+  (let [font* (mf/use-state (fonts/find-font-data {:family default-value}))
+        font (deref font*)
+        set-font (mf/use-fn
+                  (mf/deps font)
+                  #(reset! font* %))
+
+        font-selector-open* (mf/use-state false)
+        font-selector-open? (deref font-selector-open*)
+
+        on-close-font-selector
+        (mf/use-fn
+         (fn []
+           (reset! font-selector-open* false)))
+
+        on-click-dropdown-button
+        (mf/use-fn
+         (mf/deps font-selector-open?)
+         (fn [e]
+           (dom/prevent-default e)
+           (reset! font-selector-open* (not font-selector-open?))))
+
+        on-select-font
+        (mf/use-fn
+         (mf/deps on-external-update-value set-font)
+         (fn [{:keys [family] :as font}]
+           (when font
+             (set-font font)
+             (on-external-update-value family))))
+
+        on-update-value'
+        (mf/use-fn
+         (mf/deps on-update-value set-font)
+         (fn [value]
+           (set-font nil)
+           (on-update-value value)))
+
+        font-selector-button
+        (mf/html
+         [:> icon-button*
+          {:on-click on-click-dropdown-button
+           :aria-label (tr "workspace.tokens.token-font-family-select")
+           :icon "arrow-down"
+           :variant "action"}])]
+    [:*
+     [:> input-tokens-value*
+      {:placeholder (tr "workspace.tokens.token-font-family-value-enter")
+       :label (tr "workspace.tokens.token-font-family-value")
+       :default-value default-value
+       :ref input-ref
+       :error error
+       :on-blur on-blur
+       :on-change on-update-value'
+       :icon "text-font-family"
+       :slot-end font-selector-button}]
+     (when font-selector-open?
+       (let [font (or font
+                      (some-> (mf/ref-val input-ref)
+                              (dom/get-value)
+                              (str/split ",")
+                              (first)
+                              (str/trim)
+                              (#(fonts/find-font-data {:family %}))))]
+         [:> font-selector* {:current-font font
+                             :on-select on-select-font
+                             :on-close on-close-font-selector
+                             :full-size true}]))]))
+
 (mf/defc font-family-form*
   {::mf/wrap-props false}
   [{:keys [token] :rest props}]
-  (let [foo 1]
-    [:*
-     [:p "FONT FAMILY"]
-     [:> form*
-      (mf/spread-props props {:token token})]]))
+  [:> form*
+   (mf/spread-props props {:token token
+                           :token-value-input font-picker*})])
 
 (mf/defc form-wrapper*
   {::mf/wrap-props false}
