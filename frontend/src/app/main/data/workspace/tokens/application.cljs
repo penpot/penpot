@@ -23,6 +23,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.fonts :as fonts]
    [app.main.store :as st]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
@@ -358,12 +359,16 @@
 (defn update-font-family
   ([value shape-ids attributes] (update-font-family value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
-   (let [update-node? (fn [node]
+   (let [font-id (some-> value
+                         (first)
+                         (#(fonts/find-font-data {:family %}))
+                         :id)
+         update-node? (fn [node]
                         (or (txt/is-text-node? node)
                             (txt/is-paragraph-node? node)))]
-     (when (string? value)
+     (when font-id
        (dwsh/update-shapes shape-ids
-                           #(txt/update-text-content % update-node? d/txt-merge {:font-id value})
+                           #(txt/update-text-content % update-node? d/txt-merge {:font-id font-id})
                            {:ignore-touched true
                             :page-id page-id})))))
 

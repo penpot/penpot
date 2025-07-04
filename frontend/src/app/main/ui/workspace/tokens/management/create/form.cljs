@@ -91,6 +91,12 @@
 (defn valid-name? [name]
   (seq (finalize-name (str name))))
 
+(defn finalize-font-family [value]
+  (->> (str/split value ",")
+       (map str/trim)
+       (remove str/empty?)
+       (into [])))
+
 (defn finalize-value [value]
   (-> (str value)
       (str/trim)))
@@ -100,6 +106,16 @@
 
 ;; Validation ------------------------------------------------------------------
 
+(defn validate-empty-input [value]
+  (if (sequential? value)
+    (empty? value)
+    (empty? (str/trim value))))
+
+(defn validate-self-reference? [token-name value]
+  (if (sequential? value)
+    (some #(ctob/token-value-self-reference? token-name %) value)
+    (ctob/token-value-self-reference? token-name value)))
+
 (defn validate-token-value
   "Validates token value by resolving the value `input` using `StyleDictionary`.
   Returns a promise of either resolved tokens or rejects with an error state."
@@ -108,10 +124,10 @@
         ;; so we use a temporary token name that hopefully doesn't clash with any of the users token names
         token-name (if (str/empty? name-value) "__TOKEN_STUDIO_SYSTEM.TEMP" name-value)]
     (cond
-      (empty? (str/trim value))
+      (validate-empty-input value)
       (rx/throw {:errors [(wte/get-error-code :error.token/empty-input)]})
 
-      (ctob/token-value-self-reference? token-name value)
+      (validate-self-reference? token-name value)
       (rx/throw {:errors [(wte/get-error-code :error.token/direct-self-reference)]})
 
       :else
@@ -352,7 +368,11 @@
                  valid-name? (try
                                (not (:errors (validate-name final-name)))
                                (catch js/Error _ nil))
-                 final-value (finalize-value (mf/ref-val value-ref))
+                 final-value (let [value (mf/ref-val value-ref)
+                                   font-family? (= :font-family (or (:type token) token-type))]
+                               (if font-family?
+                                 (finalize-font-family value)
+                                 (finalize-value value)))
                  final-description @description-ref
                  valid-description? (if final-description
                                       (try
@@ -673,7 +693,7 @@
 
 (mf/defc font-picker*
   {::mf/wrap-props false}
-  [{:keys [default-value input-ref error on-blur on-update-value on-external-update-value token-value-input-props]}]
+  [{:keys [default-value input-ref error on-blur on-update-value on-external-update-value]}]
   (let [font* (mf/use-state (fonts/find-font-data {:family default-value}))
         font (deref font*)
         set-font (mf/use-fn
@@ -738,15 +758,15 @@
                               (#(fonts/find-font-data {:family %}))))]
          [:div {:class (stl/css :font-select-wrapper)}
           [:> font-selector* {:current-font font
-                               :on-select on-select-font
-                               :on-close on-close-font-selector
+                              :on-select on-select-font
+                              :on-close on-close-font-selector
                               :full-size true}]]))]))
 
 (mf/defc font-family-form*
   {::mf/wrap-props false}
   [{:keys [token] :rest props}]
   [:> form*
-   (mf/spread-props props {:token token
+   (mf/spread-props props {:token (when token (update token :value #(str/join ", " %)))
                            :token-value-input font-picker*})])
 
 (mf/defc form-wrapper*
