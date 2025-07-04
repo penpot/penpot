@@ -63,6 +63,7 @@ on-premises instances** that want to keep up to date.
 - Fix entering long project name [Taiga #11417](https://tree.taiga.io/project/penpot/issue/11417)
 - Fix slow color picker [Taiga #11019](https://tree.taiga.io/project/penpot/issue/11019)
 - Fix tooltip position after click [Taiga #11405](https://tree.taiga.io/project/penpot/issue/11405)
+- Fix incorrect media translation on paste text with fill images [Github #6845](https://github.com/penpot/penpot/pull/6845)
 
 ## 2.7.2
 
