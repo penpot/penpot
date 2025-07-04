@@ -123,9 +123,9 @@
                      (and selected-token-set-name
                           (not (ctob/get-set tokens-lib selected-token-set-name)))))
         (let [match (->> (ctob/get-sets tokens-lib)
-                         (first)
-                         (ctob/get-name))]
-          (st/emit! (dwtl/set-selected-token-set-name match)))))
+                         (first))]
+          (when match
+            (st/emit! (dwtl/set-selected-token-set-name (ctob/get-name match)))))))
 
     [:*
      [:& token-context-menu]
