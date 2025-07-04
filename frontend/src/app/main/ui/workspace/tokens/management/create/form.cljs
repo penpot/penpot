@@ -736,7 +736,8 @@
           {:on-click on-click-dropdown-button
            :aria-label (tr "workspace.tokens.token-font-family-select")
            :icon "arrow-down"
-           :variant "action"}])]
+           :variant "action"
+           :type "button"}])]
     [:*
      [:> input-tokens-value*
       {:placeholder (tr "workspace.tokens.token-font-family-value-enter")
