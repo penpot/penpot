@@ -27,13 +27,11 @@
 
 (defn make-move-to [to]
   {:command :move-to
-   :relative false
    :params {:x (:x to)
             :y (:y to)}})
 
 (defn make-line-to [to]
   {:command :line-to
-   :relative false
    :params {:x (:x to)
             :y (:y to)}})
 
@@ -65,7 +63,6 @@
 (defn make-curve-to
   [to h1 h2]
   {:command :curve-to
-   :relative false
    :params (make-curve-params to h1 h2)})
 
 (defn prefix->coords [prefix]
@@ -98,7 +95,7 @@
 (defn segment->point
   ([segment] (segment->point segment :x))
   ([segment coord]
-   (when-let [params (get segment :params)]
+   (when-let [params (not-empty (get segment :params))]
      (case coord
        :c1 (gpt/point (get params :c1x)
                       (get params :c1y))

@@ -209,25 +209,16 @@
                  :code :invalid-path-content
                  :hint (str "unable to calculate bool content for shape " (:id shape))
                  :shapes (:shapes shape)
-                 :content (mapv str contents)
+                 :type (:bool-type shape)
+                 :content (vec contents)
                  :cause cause)))))
 
 (defn calc-bool-content
   "Calculate the boolean content from shape and objects. Returns a
   packed PathData instance"
   [shape objects]
-  (ex/try!
-   (-> (calc-bool-content* shape objects)
-       (impl/path-data))
-
-   :on-exception
-   (fn [cause]
-     (ex/raise :type :internal
-               :code :invalid-path-content
-               :hint (str "unable to create bool content for shape " (:id shape))
-               :content (str (:content shape))
-               :shape-id (:id shape)
-               :cause cause))))
+  (-> (calc-bool-content* shape objects)
+      (impl/path-data)))
 
 (defn update-bool-shape
   "Calculates the selrect+points for the boolean shape"
