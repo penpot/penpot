@@ -200,7 +200,17 @@
         contents
         (sequence extract-content-xf (:shapes shape))]
 
-    (bool/calculate-content (:bool-type shape) contents)))
+    (ex/try!
+     (bool/calculate-content (:bool-type shape) contents)
+
+     :on-exception
+     (fn [cause]
+       (ex/raise :type :internal
+                 :code :invalid-path-content
+                 :hint (str "unable to calculate bool content for shape " (:id shape))
+                 :shapes (:shapes shape)
+                 :content (mapv str contents)
+                 :cause cause)))))
 
 (defn calc-bool-content
   "Calculate the boolean content from shape and objects. Returns a
