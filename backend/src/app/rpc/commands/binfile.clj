@@ -134,11 +134,18 @@
    ::webhooks/event? true
    ::sse/stream? true
    ::sm/params schema:import-binfile}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id version] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id version file] :as params}]
   (projects/check-edition-permissions! pool profile-id project-id)
-  (let [params (-> params
-                   (assoc :profile-id profile-id)
-                   (assoc :version (or version 1)))]
+  (let [version  (or version 1)
+        params   (-> params
+                     (assoc :profile-id profile-id)
+                     (assoc :version version))
+        manifest (case (int version)
+                   1 nil
+                   3 (bf.v3/get-manifest (:path file)))]
+
     (with-meta
       (sse/response (partial import-binfile cfg params))
-      {::audit/props {:file nil}})))
+      {::audit/props {:file nil
+                      :generated-by (:generated-by manifest)
+                      :referer (:referer manifest)}})))
