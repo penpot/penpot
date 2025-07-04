@@ -35,6 +35,7 @@
    :dimensions    "dimension"
    :font-size     "fontSizes"
    :letter-spacing "letterSpacing"
+   :text-decoration "textDecoration"
    :number        "number"
    :opacity       "opacity"
    :other         "other"
@@ -133,7 +134,13 @@
 
 (def letter-spacing-keys (schema-keys schema:letter-spacing))
 
-(def typography-keys (set/union font-size-keys letter-spacing-keys))
+(def ^:private schema:text-decoration
+  [:map
+   [:text-decoration {:optional true} token-name-ref]])
+
+(def text-decoration-keys (schema-keys schema:text-decoration))
+
+(def typography-keys (set/union font-size-keys letter-spacing-keys text-decoration-keys))
 
 (def ^:private schema:number
   (reduce mu/union [[:map [:line-height {:optional true} token-name-ref]]
@@ -165,6 +172,7 @@
    schema:number
    schema:font-size
    schema:letter-spacing
+   schema:text-decoration
    schema:dimensions])
 
 (defn shape-attr->token-attrs
@@ -194,6 +202,7 @@
 
      (font-size-keys shape-attr) #{shape-attr}
      (letter-spacing-keys shape-attr) #{shape-attr}
+     (text-decoration-keys shape-attr) #{shape-attr}
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}
