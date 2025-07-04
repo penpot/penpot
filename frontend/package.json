@@ -103,6 +103,7 @@
     "@penpot/draft-js": "portal:./vendor/draft-js",
     "@penpot/hljs": "portal:./vendor/hljs",
     "@penpot/mousetrap": "portal:./vendor/mousetrap",
+    "@penpot/plugins-runtime": "1.3.2",
     "@penpot/svgo": "penpot/svgo#v3.1",
     "@penpot/text-editor": "portal:./text-editor",
     "@tokens-studio/sd-transforms": "1.2.11",

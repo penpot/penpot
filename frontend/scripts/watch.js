@@ -79,7 +79,7 @@ h.watch("translations", null, async function (path) {
 
 log.info("watch: assets (~)");
 h.watch(
-  ["resources/images", "resources/fonts", "resources/plugins-runtime"],
+  ["resources/images", "resources/fonts"],
   null,
   async function (path) {
     log.info("changed:", path);
