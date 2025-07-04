@@ -8,9 +8,11 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [sidebar-default-width sidebar-default-max-width]]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
+   [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace :as dw]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -289,10 +291,25 @@
          (fn []
            (set-width (if (> width sidebar-default-width)
                         sidebar-default-width
-                        sidebar-default-max-width))))]
+                        sidebar-default-max-width))))
+                tokens-lib (deref refs/tokens-lib)
+        active-theme-tokens
+        (mf/with-memo [tokens-lib]
+          (if tokens-lib
+            (ctob/get-tokens-in-active-sets tokens-lib)
+            {}))
+        
+        active-theme-tokens'
+        (sd/use-resolved-tokens* active-theme-tokens)
+        
+        ordered-tokens
+        (mf/with-memo [active-theme-tokens']
+          (ctob/group-by-type active-theme-tokens'))]
 
     [:> (mf/provider muc/sidebar) {:value :right}
-     [:aside
+     [:> (mf/provider muc/tokens-by-type) {:value ordered-tokens}
+      
+      [:aside
       {:class (stl/css-case :right-settings-bar true
                             :not-expand (not can-be-expanded?)
                             :expanded (> width sidebar-default-width))
@@ -330,4 +347,4 @@
          (let [props (mf/spread-props props
                                       {:on-change-section on-change-section
                                        :on-expand on-expand})]
-           [:> options-toolbox* props]))]]]))
+           [:> options-toolbox* props]))]]]]))

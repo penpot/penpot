@@ -8,34 +8,23 @@
   (:require-macros
    [app.main.style :as stl])
   (:require
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.common.uuid :as uuid]
+   [app.main.ui.ds.controls.shared.option :refer [option* schema:option]]
+   [app.main.ui.ds.controls.shared.token-option :refer [token-option* schema:token-option]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
-(def ^:private schema:icon-list
-  [:and :string
-   [:fn {:error/message "invalid data: invalid icon"} #(contains? i/icon-list %)]])
-
-(def schema:option
-  [:and
-   [:map {:title "option"}
-    [:id :string]
-    [:icon {:optional true} schema:icon-list]
-    [:label {:optional true} :string]
-    [:aria-label {:optional true} :string]]
-   [:fn {:error/message "invalid data: missing required props"}
-    (fn [option]
-      (or (and (contains? option :icon)
-               (or (contains? option :label)
-                   (contains? option :aria-label)))
-          (contains? option :label)))]])
 
 (def ^:private schema:options-dropdown
   [:map
    [:ref {:optional true} fn?]
    [:on-click fn?]
-   [:options [:vector schema:option]]
-   [:selected :any]
+   ;; [:options [:vector schema:token-option]]
+   [:options [:vector [:or
+                       schema:option
+                       schema:token-option]]]
+
+   [:token-option {:optional true} :boolean]
+    ;; [:selected :any]
    [:focused {:optional true} :any]
    [:empty-to-end {:optional true} :boolean]])
 
@@ -47,46 +36,11 @@
   xf:filter-non-blank-id
   (remove #(str/blank? (get % :id))))
 
-(mf/defc option*
-  {::mf/private true}
-  [{:keys [id ref label icon aria-label on-click selected focused dimmed] :rest props}]
-  (let [class (stl/css-case :option true
-                            :option-with-icon (some? icon)
-                            :option-selected selected
-                            :option-current focused)]
-    [:li {:value id
-          :class class
-          :aria-selected selected
-          :ref ref
-          :role "option"
-          :id id
-          :on-click on-click
-          :data-id id
-          :data-testid "dropdown-option"}
-
-     (when (some? icon)
-       [:> i/icon*
-        {:icon-id icon
-         :size "s"
-         :class (stl/css :option-icon)
-         :aria-hidden (when label true)
-         :aria-label  (when (not label) aria-label)}])
-
-     [:span {:class (stl/css-case :option-text true
-                                  :option-text-dimmed dimmed)}
-      label]
-
-     (when selected
-       [:> i/icon*
-        {:icon-id i/tick
-         :size "s"
-         :class (stl/css :option-check)
-         :aria-hidden (when label true)}])]))
-
 (mf/defc options-dropdown*
   {::mf/schema schema:options-dropdown}
-  [{:keys [ref on-click options selected focused empty-to-end] :rest props}]
-  (let [props
+  [{:keys [ref on-click options selected focused empty-to-end token-option] :rest props}]
+  (let [_ (prn "carga options-dropdown")
+        props
         (mf/spread-props props
                          {:class (stl/css :option-list)
                           :tab-index "-1"
@@ -108,17 +62,33 @@
        (let [id         (get option :id)
              label      (get option :label)
              aria-label (get option :aria-label)
-             icon       (get option :icon)]
-         [:> option* {:selected (= id selected)
-                      :key id
-                      :id id
-                      :label label
-                      :icon icon
-                      :aria-label aria-label
-                      :ref ref
-                      :focused (= id focused)
-                      :dimmed false
-                      :on-click on-click}]))
+             icon       (get option :icon)
+             name       (get option :name)
+             group      (get option :group)
+             resolved-value (get option :resolved-value)
+             separator (get option :separator)
+             _ (prn "selected" selected)]
+         (if token-option
+           [:> token-option* {:selected (= id selected)
+                              :key (or id (uuid/next))
+                              :id id
+                              :name name
+                              :resolved resolved-value
+                              :ref ref
+                              :group group
+                              :separator separator
+                              :focused (= id focused)
+                              :on-click on-click}]
+           [:> option* {:selected (= id selected)
+                        :key id
+                        :id id
+                        :label label
+                        :icon icon
+                        :aria-label aria-label
+                        :ref ref
+                        :focused (= id focused)
+                        :dimmed false
+                        :on-click on-click}])))
 
      (when (seq options-blank)
        [:*
@@ -128,15 +98,30 @@
         (for [option options-blank]
           (let [id         (get option :id)
                 label      (get option :label)
+                name       (get option :name)
                 aria-label (get option :aria-label)
-                icon       (get option :icon)]
-            [:> option* {:selected (= id selected)
-                         :key id
-                         :id id
-                         :label label
-                         :icon icon
-                         :aria-label aria-label
-                         :ref ref
-                         :focused (= id focused)
-                         :dimmed true
-                         :on-click on-click}]))])]))
+                icon       (get option :icon)
+                group      (get option :group)
+                resolved-value (get option :resolved-value)]
+            (if token-option
+              [:> token-option* {:selected (= name selected)
+                                 :key id
+                                 :id id
+                                 :label label
+                                 :name name
+                                 :group group
+                                 :resolved resolved-value
+                                 :aria-label aria-label
+                                 :ref ref
+                                 :focused (= id focused)
+                                 :on-click on-click}]
+              [:> option* {:selected (= id selected)
+                           :key id
+                           :id id
+                           :label label
+                           :icon icon
+                           :aria-label aria-label
+                           :ref ref
+                           :focused (= id focused)
+                           :dimmed true
+                           :on-click on-click}])))])]))
