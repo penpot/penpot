@@ -869,7 +869,7 @@ impl Shape {
 
     pub fn clear_text(&mut self) {
         if let Type::Text(old_text_content) = &self.shape_type {
-            let new_text_content = TextContent::new(self.selrect, old_text_content.grow_type());
+            let new_text_content = TextContent::new(self.selrect, old_text_content.grow_type(), self.vertical_align);
             self.shape_type = Type::Text(new_text_content);
         }
     }
@@ -962,10 +962,6 @@ impl Shape {
 
     pub fn has_fills(&self) -> bool {
         !self.fills.is_empty()
-    }
-
-    pub fn has_inner_strokes(&self) -> bool {
-        self.strokes.iter().any(|s| s.kind == StrokeKind::Inner)
     }
 
     /*
