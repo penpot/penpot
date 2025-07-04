@@ -7260,6 +7260,15 @@ msgstr "Multiple files"
 msgid "workspace.tokens.export.no-tokens-themes-sets"
 msgstr "There are no tokens, themes or sets to export."
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:602
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "Enter text decoration: none | underline | strike-through"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:109
+msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgstr "Invalid token value: only none, underline and strike-through are accepted"
+
+
 #: src/app/main/ui/workspace/tokens/modals/export.cljs:33
 msgid "workspace.tokens.export.preview"
 msgstr "Preview:"

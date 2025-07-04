@@ -191,3 +191,9 @@
    ::mf/register-as :tokens/letter-spacing}
   [properties]
   [:& token-update-create-modal properties])
+
+(mf/defc text-decoration-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/text-decoration}
+  [properties]
+  [:& token-update-create-modal properties])

@@ -7232,6 +7232,10 @@ msgstr "Múltiples ficheros"
 msgid "workspace.tokens.export.no-tokens-themes-sets"
 msgstr "No existen tokens, temas o sets para exportar."
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:602
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "Introduce text decoration: none | underline | strike-through"
+
 #: src/app/main/ui/workspace/tokens/modals/export.cljs:33
 msgid "workspace.tokens.export.preview"
 msgstr "Previsualizar:"

@@ -94,6 +94,23 @@
 (defn valid-value? [value]
   (seq (finalize-value value)))
 
+(defn valid-text-decoration-value? [value]
+  (when (string? value)
+    (let [normalized-value (str/lower (str/trim value))]
+      (contains? #{"none" "strike-through" "underline"} normalized-value))))
+
+(defn validate-text-decoration-value [value]
+  (let [trimmed-value (str/trim (str value))]
+    (cond
+      (str/empty? trimmed-value)
+      {:errors [(wte/get-error-code :error.token/empty-input)]}
+
+      (not (valid-text-decoration-value? trimmed-value))
+      {:errors [(tr "workspace.tokens.invalid-text-decoration-token-value")]}
+
+      :else
+      nil)))
+
 ;; Component -------------------------------------------------------------------
 
 (defn validate-token-value
@@ -109,6 +126,31 @@
 
       (ctob/token-value-self-reference? token-name value)
       (rx/throw {:errors [(wte/get-error-code :error.token/direct-self-reference)]})
+
+      ;; Pre-validate text-case tokens before StyleDictionary processing
+      (and (= (:type token) :text-decoration)
+           (not (cft/is-reference? {:value value})))
+      (if-let [validation-error (validate-text-decoration-value value)]
+        (rx/throw validation-error)
+        ;; For text-case tokens, bypass StyleDictionary and return the normalized value directly
+        (rx/of {:resolved-value (str/lower (str/trim value))}))
+
+      ;; Handle text-case token references through StyleDictionary
+      (= (:type token) :text-decoration)
+      (let [tokens' (cond-> tokens
+                      ;; Remove previous token when renaming a token
+                      (not= name-value (:name token)) (dissoc (:name token))
+                      :always (update token-name #(ctob/make-token (merge % {:value value
+                                                                             :name token-name
+                                                                             :type (:type token)}))))]
+        (->> tokens'
+             (sd/resolve-tokens-interactive)
+             (rx/mapcat
+              (fn [resolved-tokens]
+                (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
+                  (cond
+                    resolved-value (rx/of resolved-token)
+                    :else (rx/throw {:errors (or errors (wte/get-error-code :error/unknown-error))})))))))
 
       :else
       (let [tokens' (cond-> tokens
@@ -555,17 +597,21 @@
            {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
-       [:> input-tokens-value*
-        {:placeholder (tr "workspace.tokens.token-value-enter")
-         :label (tr "workspace.tokens.token-value")
-         :default-value (mf/ref-val value-ref)
-         :ref value-input-ref
-         :is-color-token is-color-token
-         :color color
-         :on-change on-update-value
-         :error (not (nil? (:errors token-resolve-result)))
-         :display-colorpicker on-display-colorpicker'
-         :on-blur on-update-value}]
+       (let [text-decoration-token? (= (:type token) :text-case)
+             placeholder (if text-decoration-token?
+                           (tr "workspace.tokens.text-decoration-value-enter")
+                           (tr "workspace.tokens.token-value-enter"))]
+         [:> input-tokens-value*
+          {:placeholder placeholder
+           :label (tr "workspace.tokens.token-value")
+           :default-value (mf/ref-val value-ref)
+           :ref value-input-ref
+           :is-color-token is-color-token
+           :color color
+           :on-change on-update-value
+           :error (not (nil? (:errors token-resolve-result)))
+           :display-colorpicker on-display-colorpicker'
+           :on-blur on-update-value}])
        (when color-ramp-open?
          [:> ramp* {:color (some-> color (tinycolor/valid-color))
                     :on-change on-update-color}])
