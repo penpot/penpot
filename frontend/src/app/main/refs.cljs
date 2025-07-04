@@ -402,6 +402,9 @@
   [frame-id]
   (l/derived #(get % frame-id) workspace-frame-modifiers =))
 
+(def workspace-clipboard-style
+  (l/derived :clipboard-style workspace-global))
+
 (defn select-bool-children [id]
   (l/derived #(dsh/select-bool-children % id) st/state =))
 
