@@ -15,6 +15,7 @@ on:
         # zip_mode defines how the build artifacts are packaged:
         # - 'individual': creates one ZIP file per component (frontend, backend, exporter)
         # - 'all': creates a single ZIP containing all components
+        # - null: for the rest of cases (non-manual events)
         description: 'Bundle packaging mode'
         required: false
         default: 'individual'
@@ -62,8 +63,8 @@ jobs:
           echo "📦 Packaging Penpot 'all' bundles..."
           zip -r zips/penpot-all-bundles.zip penpot
 
-      - name: Create zip bundles for zip_mode == 'individual'
-        if: ${{ github.event.inputs.zip_mode == 'individual' }}
+      - name: Create zip bundles for zip_mode != 'all'
+        if: ${{ github.event.inputs.zip_mode != 'all' }}
         run: |
           echo "📦 Packaging Penpot 'individual' bundles..."
           zip -r zips/penpot-frontend.zip penpot/frontend
@@ -78,7 +79,7 @@ jobs:
           path: zips/penpot-all-bundles.zip
 
       - name: Upload individual bundles
-        if: ${{ github.event.inputs.zip_mode == 'individual' }}
+        if: ${{ github.event.inputs.zip_mode != 'all' }}
         uses: actions/upload-artifact@v4
         with:
           name: penpot-individual-bundles
@@ -94,7 +95,7 @@ jobs:
           aws s3 cp zips/penpot-all-bundles.zip s3://${{ secrets.S3_BUCKET }}/penpot-all-bundles-${{ steps.vars.outputs.commit_hash }}.zip
 
       - name: Upload 'individual' bundles to S3
-        if: ${{ github.event.inputs.zip_mode == 'individual' }}
+        if: ${{ github.event.inputs.zip_mode != 'all' }}
         run: |
             for name in penpot-frontend penpot-backend penpot-exporter; do
               aws s3 cp zips/${name}.zip s3://${{ secrets.S3_BUCKET }}/${name}-${{ steps.vars.outputs.gh_branch }}-latest.zip
