@@ -691,6 +691,23 @@
                              :token-value-input color-picker*
                              :token-value-input-props token-value-input-props})]))
 
+(mf/defc font-selector-wrapper*
+  {::mf/wrap-props false}
+  [{:keys [font input-ref on-select-font on-close-font-selector]}]
+  (let [current-font* (mf/use-state (or font
+                                        (some-> (mf/ref-val input-ref)
+                                                (dom/get-value)
+                                                (str/split ",")
+                                                (first)
+                                                (str/trim)
+                                                (#(fonts/find-font-data {:family %})))))
+        current-font (deref current-font*)]
+    [:div {:class (stl/css :font-select-wrapper)}
+     [:> font-selector* {:current-font current-font
+                         :on-select on-select-font
+                         :on-close on-close-font-selector
+                         :full-size true}]]))
+
 (mf/defc font-picker*
   {::mf/wrap-props false}
   [{:keys [default-value input-ref error on-blur on-update-value on-external-update-value]}]
@@ -750,18 +767,10 @@
        :icon "text-font-family"
        :slot-end font-selector-button}]
      (when font-selector-open?
-       (let [font (or font
-                      (some-> (mf/ref-val input-ref)
-                              (dom/get-value)
-                              (str/split ",")
-                              (first)
-                              (str/trim)
-                              (#(fonts/find-font-data {:family %}))))]
-         [:div {:class (stl/css :font-select-wrapper)}
-          [:> font-selector* {:current-font font
-                              :on-select on-select-font
-                              :on-close on-close-font-selector
-                              :full-size true}]]))]))
+       [:> font-selector-wrapper* {:font font
+                                   :input-ref input-ref
+                                   :on-select-font on-select-font
+                                   :on-close-font-selector on-close-font-selector}])]))
 
 (mf/defc font-family-form*
   {::mf/wrap-props false}
