@@ -260,10 +260,6 @@
         ;; Value
         value-input-ref (mf/use-ref nil)
         value-ref (mf/use-ref (:value token))
-        get-input-element-value
-        (mf/use-fn
-         (mf/deps value-ref)
-         #(dom/get-value (mf/ref-val value-input-ref)))
 
         token-resolve-result* (mf/use-state (get resolved-tokens (cft/token-identifier token)))
         token-resolve-result (deref token-resolve-result*)
@@ -483,7 +479,6 @@
              :on-blur on-blur
              :on-update-value on-update-value
              :on-external-update-value on-external-update-value
-             :get-input-element-value get-input-element-value
              :token-value-input-props token-value-input-props}]
            [:> input-tokens-value*
             {:placeholder placeholder
@@ -582,7 +577,7 @@
 
 (mf/defc color-picker*
   {::mf/wrap-props false}
-  [{:keys [placeholder label default-value input-ref error on-blur on-update-value get-input-element-value on-external-update-value token-value-input-props]}]
+  [{:keys [placeholder label default-value input-ref error on-blur on-update-value on-external-update-value token-value-input-props]}]
   (let [{:keys [color on-display-colorpicker]} token-value-input-props
         color-ramp-open* (mf/use-state false)
         color-ramp-open? (deref color-ramp-open*)
@@ -597,10 +592,10 @@
 
         on-change'
         (mf/use-fn
-         (mf/deps color on-external-update-value get-input-element-value)
+         (mf/deps color on-external-update-value)
          (fn [hex-value alpha]
            (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
-                 prev-input-color (some-> (get-input-element-value)
+                 prev-input-color (some-> (dom/get-value (mf/ref-val input-ref))
                                           (tinycolor/valid-color))
                   ;; If the input is a reference we will take the format from the computed value
                  prev-computed-color (when-not prev-input-color
