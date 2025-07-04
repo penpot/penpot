@@ -54,7 +54,7 @@
   [:map {:title "Manifest"}
    [:version ::sm/int]
    [:type :string]
-
+   [:referer {:optional true} :string]
    [:generated-by {:optional true} :string]
 
    [:files
