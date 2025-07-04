@@ -31,6 +31,7 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
+   [app.main.ui.workspace.tokens.management.create.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-tokens-value*]]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
@@ -582,13 +583,20 @@
         color-ramp-open* (mf/use-state false)
         color-ramp-open? (deref color-ramp-open*)
 
-        on-click-color-icon
+        on-click-swatch
         (mf/use-fn
          (mf/deps color-ramp-open? on-display-colorpicker)
          (fn []
            (let [open? (not color-ramp-open?)]
              (reset! color-ramp-open* open?)
              (on-display-colorpicker open?))))
+
+        swatch
+        (mf/html
+         [:> input-token-color-bullet*
+          {:color color
+           :class (stl/css :slot-start)
+           :on-click on-click-swatch}])
 
         on-change'
         (mf/use-fn
@@ -615,6 +623,7 @@
                                  (tinycolor/set-alpha (or alpha 1))
                                  (tinycolor/->string format))]
              (on-external-update-value color-value))))]
+
     [:*
      [:> input-tokens-value*
       {:placeholder placeholder
@@ -624,10 +633,7 @@
        :error error
        :on-blur on-blur
        :on-change on-update-value
-
-       :is-color-token true
-       :color color
-       :display-colorpicker on-click-color-icon}]
+       :slot-start swatch}]
      (when color-ramp-open?
        [:> ramp*
         {:color (some-> color (tinycolor/valid-color))
