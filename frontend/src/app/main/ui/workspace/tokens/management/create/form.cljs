@@ -182,11 +182,10 @@
 
 (mf/defc form*
   {::mf/wrap-props false}
-  [{:keys [token token-type action selected-token-set-name transform-value on-value-resolve after-value-input-field on-click-color-icon color]}]
+  [{:keys [token token-type action selected-token-set-name transform-value on-value-resolve token-value-input token-value-input-props]}]
   (let [create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
         token-properties (dwta/get-token-properties token)
-        is-color-token (cft/color-token? token)
         tokens-in-selected-set (mf/deref refs/workspace-all-tokens-in-selected-set)
 
         active-theme-tokens (cond-> (mf/deref refs/workspace-active-theme-sets-tokens)
@@ -261,6 +260,10 @@
         ;; Value
         value-input-ref (mf/use-ref nil)
         value-ref (mf/use-ref (:value token))
+        get-input-element-value
+        (mf/use-fn
+         (mf/deps value-ref)
+         #(dom/get-value (mf/ref-val value-input-ref)))
 
         token-resolve-result* (mf/use-state (get resolved-tokens (cft/token-identifier token)))
         token-resolve-result (deref token-resolve-result*)
@@ -298,7 +301,7 @@
              (mf/set-ref-val! value-ref value)
              (on-update-value-debounced value))))
 
-        on-external-update-value'
+        on-external-update-value
         (mf/use-fn
          (mf/deps on-update-value-debounced)
          (fn [next-value]
@@ -464,21 +467,32 @@
            {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
-       [:> input-tokens-value*
-        {:placeholder (tr "workspace.tokens.token-value-enter")
-         :label (tr "workspace.tokens.token-value")
-         :default-value (mf/ref-val value-ref)
-         :ref value-input-ref
-         :is-color-token is-color-token
-         :error (not (nil? (:errors token-resolve-result)))
-         :on-blur on-update-value
-         :color color
-         :on-change on-update-value
-         :display-colorpicker on-click-color-icon}]
-       (when (fn? after-value-input-field)
-         [:> after-value-input-field {:value-input-ref value-input-ref
-                                      :on-change on-external-update-value'
-                                      :color color}])
+       (let [placeholder (tr "workspace.tokens.token-value-enter")
+             label (tr "workspace.tokens.token-value")
+             default-value (mf/ref-val value-ref)
+             ref value-input-ref
+             error (not (nil? (:errors token-resolve-result)))
+             on-blur on-update-value]
+         (if (fn? token-value-input)
+           [:> token-value-input
+            {:placeholder placeholder
+             :label label
+             :default-value default-value
+             :input-ref ref
+             :error error
+             :on-blur on-blur
+             :on-update-value on-update-value
+             :on-external-update-value on-external-update-value
+             :get-input-element-value get-input-element-value
+             :token-value-input-props token-value-input-props}]
+           [:> input-tokens-value*
+            {:placeholder placeholder
+             :label label
+             :default-value default-value
+             :ref ref
+             :error error
+             :on-blur on-blur
+             :on-change on-update-value}]))
        [:& token-value-hint {:result token-resolve-result}]]
       [:div {:class (stl/css :input-row)}
        [:> input* {:label (tr "workspace.tokens.token-description")
@@ -568,13 +582,25 @@
 
 (mf/defc color-picker*
   {::mf/wrap-props false}
-  [{:keys [color value-input-ref on-change]}]
-  (let [on-change'
+  [{:keys [placeholder label default-value input-ref error on-blur on-update-value get-input-element-value on-external-update-value token-value-input-props]}]
+  (let [{:keys [color on-display-colorpicker]} token-value-input-props
+        color-ramp-open* (mf/use-state false)
+        color-ramp-open? (deref color-ramp-open*)
+
+        on-click-color-icon
         (mf/use-fn
-         (mf/deps color on-change value-input-ref)
+         (mf/deps color-ramp-open? on-display-colorpicker)
+         (fn []
+           (let [open? (not color-ramp-open?)]
+             (reset! color-ramp-open* open?)
+             (on-display-colorpicker open?))))
+
+        on-change'
+        (mf/use-fn
+         (mf/deps color on-external-update-value get-input-element-value)
          (fn [hex-value alpha]
            (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
-                 prev-input-color (some-> (dom/get-value (mf/ref-val value-input-ref))
+                 prev-input-color (some-> (get-input-element-value)
                                           (tinycolor/valid-color))
                   ;; If the input is a reference we will take the format from the computed value
                  prev-computed-color (when-not prev-input-color
@@ -593,10 +619,24 @@
                  color-value (-> (tinycolor/valid-color hex-value)
                                  (tinycolor/set-alpha (or alpha 1))
                                  (tinycolor/->string format))]
-             (on-change color-value))))]
-    [:> ramp*
-     {:color (some-> color (tinycolor/valid-color))
-      :on-change on-change'}]))
+             (on-external-update-value color-value))))]
+    [:*
+     [:> input-tokens-value*
+      {:placeholder placeholder
+       :label label
+       :default-value default-value
+       :ref input-ref
+       :error error
+       :on-blur on-blur
+       :on-change on-update-value
+
+       :is-color-token true
+       :color color
+       :display-colorpicker on-click-color-icon}]
+     (when color-ramp-open?
+       [:> ramp*
+        {:color (some-> color (tinycolor/valid-color))
+         :on-change on-change'}])]))
 
 (mf/defc color-form*
   {::mf/wrap-props false}
@@ -607,16 +647,12 @@
                       (mf/deps color)
                       #(reset! color* %))
 
-        color-ramp-open* (mf/use-state false)
-        color-ramp-open? (deref color-ramp-open*)
-
-        on-click-color-icon
-        (mf/use-fn
-         (mf/deps color-ramp-open? on-display-colorpicker)
+        token-value-input-props
+        (mf/use-memo
+         (mf/deps color on-display-colorpicker)
          (fn []
-           (let [open? (not color-ramp-open?)]
-             (reset! color-ramp-open* open?)
-             (on-display-colorpicker open?))))
+           {:color color
+            :on-display-colorpicker on-display-colorpicker}))
 
         transform-value
         (mf/use-fn
@@ -626,11 +662,10 @@
              value)))]
     [:> form*
      (mf/spread-props props {:token token
-                             :color color
                              :transform-value transform-value
                              :on-value-resolve update-color
-                             :after-value-input-field (when color-ramp-open? color-picker*)
-                             :on-click-color-icon on-click-color-icon})]))
+                             :token-value-input color-picker*
+                             :token-value-input-props token-value-input-props})]))
 
 (mf/defc font-family-form*
   {::mf/wrap-props false}
