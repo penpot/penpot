@@ -529,6 +529,14 @@ test.describe("Tokens: Sets Tab", () => {
     await changeSetInput(sidebar, setName, (finalKey = "Enter"));
   };
 
+  const assertEmptySetsList = async (el) => {
+    const buttons = await el.getByRole("button").allTextContents();
+    const filteredButtons = buttons.filter(
+      (text) => text === "Create one.",
+    );
+    await expect(filteredButtons.length).toEqual(2); // We assume there are no themes, so we have two "Create one" buttons.
+  };
+
   const assertSetsList = async (el, sets) => {
     const buttons = await el.getByRole("button").allTextContents();
     const filteredButtons = buttons.filter(
@@ -623,6 +631,15 @@ test.describe("Tokens: Sets Tab", () => {
       "sizes",
       "small",
     ]);
+
+    // User deletes all sets
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "core" })
+      .click({ button: "right" });
+    await expect(tokenContextMenuForSet).toBeVisible();
+    await tokenContextMenuForSet.getByText("Delete").click();
+
+    await assertEmptySetsList(tokenThemesSetsSidebar);
   });
 
   test("User can create & edit sets and set groups with an identical name", async ({
