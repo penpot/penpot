@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-sudo chown penpot:users /home/penpot
-
 cd ~;
 
 source ~/.bashrc

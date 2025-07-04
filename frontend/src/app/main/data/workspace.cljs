@@ -1272,6 +1272,13 @@
         (js/console.log "Copies no ref" (count copies-no-ref) (clj->js copies-no-ref))
         (js/console.log "Childs no ref" (count childs-no-ref) (clj->js childs-no-ref))))))
 
+(defn set-clipboard-style
+  [style]
+  (ptk/reify ::set-clipboard-style
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :clipboard-style] style))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
