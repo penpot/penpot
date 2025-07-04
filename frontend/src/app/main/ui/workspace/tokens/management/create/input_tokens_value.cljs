@@ -22,7 +22,7 @@
    [:error {:optional true} :boolean]
    [:slot-start {:optional true} [:maybe some?]]
    [:icon {:optional true}
-    [:and :string [:fn #(contains? icon-list %)]]]])
+    [:maybe [:and :string [:fn #(contains? icon-list %)]]]]])
 
 (mf/defc input-tokens-value*
   {::mf/props :obj
