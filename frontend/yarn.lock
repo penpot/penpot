@@ -540,6 +540,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@endo/env-options@npm:^1.1.10":
+  version: 1.1.10
+  resolution: "@endo/env-options@npm:1.1.10"
+  checksum: 10c0/80624b9d6e2dc8faf6b58813d0ecddf0bac1d4e94abfa0de4db3a0cd7f2a678a7632ca6837cbd90bffb87223e2c8330eb0996e22a6cbd445c90a31f9e078aaee
+  languageName: node
+  linkType: hard
+
+"@endo/immutable-arraybuffer@npm:^1.1.1":
+  version: 1.1.1
+  resolution: "@endo/immutable-arraybuffer@npm:1.1.1"
+  checksum: 10c0/7670c3dbaa3b6b996eb528ae9736fd3d3582879efdeb3483ae88ed1a04248537da35ecdf2e5937c5528ea79fe1cebfb04e130b735a45b357ad45792cc778c653
+  languageName: node
+  linkType: hard
+
 "@esbuild/aix-ppc64@npm:0.25.5":
   version: 0.25.5
   resolution: "@esbuild/aix-ppc64@npm:0.25.5"
@@ -1352,6 +1366,24 @@ __metadata:
   resolution: "@penpot/mousetrap@portal:./vendor/mousetrap::locator=frontend%40workspace%3A."
   languageName: node
   linkType: soft
+
+"@penpot/plugin-types@npm:^1.3.2":
+  version: 1.3.2
+  resolution: "@penpot/plugin-types@npm:1.3.2"
+  checksum: 10c0/3f624472c260721ad89bf8d944e75acf6a9c9577271a757acb77574102213914051d1a32d5ab16e6ba16ae077fff78cf7a0f6d11d18351dfc214426677a67468
+  languageName: node
+  linkType: hard
+
+"@penpot/plugins-runtime@npm:1.3.2":
+  version: 1.3.2
+  resolution: "@penpot/plugins-runtime@npm:1.3.2"
+  dependencies:
+    "@penpot/plugin-types": "npm:^1.3.2"
+    ses: "npm:^1.1.0"
+    zod: "npm:^3.22.4"
+  checksum: 10c0/b6d2cb3a57bcbe58232db52b8224d1817495e96b34997bfa72421629b5f34a8c9cc71357c315dcab9d52ea036ed632a5efe0ac50f52e730901c02d498dfa1313
+  languageName: node
+  linkType: hard
 
 "@penpot/svgo@penpot/svgo#v3.1":
   version: 4.0.0
@@ -5464,6 +5496,7 @@ __metadata:
     "@penpot/draft-js": "portal:./vendor/draft-js"
     "@penpot/hljs": "portal:./vendor/hljs"
     "@penpot/mousetrap": "portal:./vendor/mousetrap"
+    "@penpot/plugins-runtime": "npm:1.3.2"
     "@penpot/svgo": "penpot/svgo#v3.1"
     "@penpot/text-editor": "portal:./text-editor"
     "@playwright/test": "npm:1.52.0"
@@ -10146,6 +10179,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ses@npm:^1.1.0":
+  version: 1.13.1
+  resolution: "ses@npm:1.13.1"
+  dependencies:
+    "@endo/env-options": "npm:^1.1.10"
+    "@endo/immutable-arraybuffer": "npm:^1.1.1"
+  checksum: 10c0/bc76ed5fe446ab82f77a1b4341c378126586f1d3c52bb234edc88144edb5263fc7d8a2f3e2d74b13228a418b2a4b9ebe489fba5f2a44882e38278f2f7afa6fbf
+  languageName: node
+  linkType: hard
+
 "set-blocking@npm:^2.0.0":
   version: 2.0.0
   resolution: "set-blocking@npm:2.0.0"
@@ -12323,5 +12366,12 @@ __metadata:
   version: 1.2.1
   resolution: "yocto-queue@npm:1.2.1"
   checksum: 10c0/5762caa3d0b421f4bdb7a1926b2ae2189fc6e4a14469258f183600028eb16db3e9e0306f46e8ebf5a52ff4b81a881f22637afefbef5399d6ad440824e9b27f9f
+  languageName: node
+  linkType: hard
+
+"zod@npm:^3.22.4":
+  version: 3.25.71
+  resolution: "zod@npm:3.25.71"
+  checksum: 10c0/ccb251859609e6eed04b83f96ad7b2b7a189ca78b47176cde2c368102a5416b9c472e91b3fd96ceaa5043b2e513b3aec39fd99c36686ad2ad84f6c440afca53a
   languageName: node
   linkType: hard
