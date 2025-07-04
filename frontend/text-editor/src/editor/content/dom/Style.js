@@ -26,7 +26,7 @@ export function mergeStyleDeclarations(target, source) {
     const styleValue = source.getPropertyValue(styleName);
     target.setProperty(styleName, styleValue);
   }
-  return target
+  return target;
 }
 
 /**
@@ -40,7 +40,7 @@ function resetStyleDeclaration(styleDeclaration) {
     const styleName = styleDeclaration.item(index);
     styleDeclaration.removeProperty(styleName);
   }
-  return styleDeclaration
+  return styleDeclaration;
 }
 
 /**
@@ -49,14 +49,14 @@ function resetStyleDeclaration(styleDeclaration) {
  *
  * @type {HTMLDivElement|null}
  */
-let inertElement = null
+let inertElement = null;
 
 /**
  * Resets the style declaration of the inert
  * element.
  */
 function resetInertElement() {
-  if (!inertElement) throw new Error('Invalid inert element');
+  if (!inertElement) throw new Error("Invalid inert element");
   resetStyleDeclaration(inertElement.style);
   return inertElement;
 }
@@ -110,10 +110,7 @@ export function getComputedStyle(element) {
         }
       } else {
         const newValue = currentElement.style.getPropertyValue(styleName);
-        inertElement.style.setProperty(
-          styleName,
-          newValue
-        );
+        inertElement.style.setProperty(styleName, newValue);
       }
     }
     currentElement = currentElement.parentElement;
@@ -131,12 +128,12 @@ export function getComputedStyle(element) {
  * @param {CSSStyleDeclaration} [styleDefaults]
  * @returns {CSSStyleDeclaration}
  */
-export function normalizeStyles(node, styleDefaults = getStyleDefaultsDeclaration()) {
+export function normalizeStyles(
+  node,
+  styleDefaults = getStyleDefaultsDeclaration(),
+) {
   const computedStyle = getComputedStyle(node.parentElement);
-  const styleDeclaration = mergeStyleDeclarations(
-    styleDefaults,
-    computedStyle
-  );
+  const styleDeclaration = mergeStyleDeclarations(styleDefaults, computedStyle);
 
   // If there's a color property, we should convert it to
   // a --fills CSS variable property.
@@ -173,7 +170,7 @@ export function normalizeStyles(node, styleDefaults = getStyleDefaultsDeclaratio
       parseFloat(lineHeight) / parseFloat(fontSize),
     );
   }
-  return styleDeclaration
+  return styleDeclaration;
 }
 
 /**
@@ -237,7 +234,7 @@ export function getStyleFromDeclaration(style, styleName, styleUnit) {
   if (styleName === "font-size") {
     return getStyleFontSize(styleValueAsNumber, styleValue);
   } else if (styleName === "line-height") {
-    return styleValue
+    return styleValue;
   }
   if (Number.isNaN(styleValueAsNumber)) {
     return styleValue;
@@ -291,10 +288,14 @@ export function setStylesFromObject(element, allowedStyles, styleObject) {
 export function setStylesFromDeclaration(
   element,
   allowedStyles,
-  styleDeclaration
+  styleDeclaration,
 ) {
   for (const [styleName, styleUnit] of allowedStyles) {
-    const styleValue = getStyleFromDeclaration(styleDeclaration, styleName, styleUnit);
+    const styleValue = getStyleFromDeclaration(
+      styleDeclaration,
+      styleName,
+      styleUnit,
+    );
     if (styleValue) {
       setStyle(element, styleName, styleValue, styleUnit);
     }
@@ -316,7 +317,7 @@ export function setStyles(element, allowedStyles, styleObjectOrDeclaration) {
     return setStylesFromDeclaration(
       element,
       allowedStyles,
-      styleObjectOrDeclaration
+      styleObjectOrDeclaration,
     );
   }
   return setStylesFromObject(element, allowedStyles, styleObjectOrDeclaration);
@@ -354,7 +355,11 @@ export function mergeStyles(allowedStyles, styleDeclaration, newStyles) {
     if (styleName in newStyles) {
       mergedStyles[styleName] = newStyles[styleName];
     } else {
-      mergedStyles[styleName] = getStyleFromDeclaration(styleDeclaration, styleName, styleUnit);
+      mergedStyles[styleName] = getStyleFromDeclaration(
+        styleDeclaration,
+        styleName,
+        styleUnit,
+      );
     }
   }
   return mergedStyles;

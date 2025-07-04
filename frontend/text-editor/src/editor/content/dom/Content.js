@@ -48,10 +48,7 @@ function isContentFragmentFromDocumentInline(document) {
  * @returns {DocumentFragment}
  */
 export function mapContentFragmentFromDocument(document, root, styleDefaults) {
-  const nodeIterator = document.createNodeIterator(
-    root,
-    NodeFilter.SHOW_TEXT
-  );
+  const nodeIterator = document.createNodeIterator(root, NodeFilter.SHOW_TEXT);
   const fragment = document.createDocumentFragment();
 
   let currentParagraph = null;
@@ -110,7 +107,7 @@ export function mapContentFragmentFromHTML(html, styleDefaults) {
   return mapContentFragmentFromDocument(
     htmlDocument,
     htmlDocument.documentElement,
-    styleDefaults
+    styleDefaults,
   );
 }
 
@@ -129,9 +126,10 @@ export function mapContentFragmentFromString(string, styleDefaults) {
       fragment.appendChild(createEmptyParagraph(styleDefaults));
     } else {
       fragment.appendChild(
-        createParagraph([
-          createInline(new Text(line), styleDefaults)
-        ], styleDefaults)
+        createParagraph(
+          [createInline(new Text(line), styleDefaults)],
+          styleDefaults,
+        ),
       );
     }
   }
