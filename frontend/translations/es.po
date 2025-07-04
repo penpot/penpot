@@ -7483,10 +7483,8 @@ msgid "workspace.tokens.tools"
 msgstr "Herramientas"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:45
-msgid "workspace.tokens.unknown-token-type"
-msgstr ""
-"La importación se ha realizado correctamente pero se omitieron algunos "
-"tokens."
+msgid "workspace.tokens.unknown-token-type-message"
+msgstr "La importación se ha realizado correctamente. Es posible que no se incluyan algunos tokens."
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:47
 msgid "workspace.tokens.unknown-token-type-section"
