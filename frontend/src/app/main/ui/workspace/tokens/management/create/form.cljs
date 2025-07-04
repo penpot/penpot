@@ -736,10 +736,11 @@
                               (first)
                               (str/trim)
                               (#(fonts/find-font-data {:family %}))))]
-         [:> font-selector* {:current-font font
-                             :on-select on-select-font
-                             :on-close on-close-font-selector
-                             :full-size true}]))]))
+         [:div {:class (stl/css :font-select-wrapper)}
+          [:> font-selector* {:current-font font
+                               :on-select on-select-font
+                               :on-close on-close-font-selector
+                              :full-size true}]]))]))
 
 (mf/defc font-family-form*
   {::mf/wrap-props false}
