@@ -116,7 +116,12 @@
         on-change
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content :update-name? true))))]
+            (st/emit! (dwt/v2-update-text-shape-content shape-id content :update-name? true))))
+
+        on-clipboard-change
+        (fn [event]
+          (let [style (.-detail event)]
+            (st/emit! (dw/set-clipboard-style style))))]
 
     (.addEventListener ^js global/document "keyup" on-key-up)
     (.addEventListener ^js instance "blur" on-blur)
@@ -124,6 +129,7 @@
     (.addEventListener ^js instance "needslayout" on-needs-layout)
     (.addEventListener ^js instance "stylechange" on-style-change)
     (.addEventListener ^js instance "change" on-change)
+    (.addEventListener ^js instance "clipboardchange" on-clipboard-change)
 
     (st/emit! (dwt/update-editor instance))
     (when (some? content)
@@ -138,6 +144,7 @@
       (.removeEventListener ^js instance "needslayout" on-needs-layout)
       (.removeEventListener ^js instance "stylechange" on-style-change)
       (.removeEventListener ^js instance "change" on-change)
+      (.removeEventListener ^js instance "clipboardchange" on-clipboard-change)
       (dwt/dispose! instance)
       (st/emit! (dwt/update-editor nil)))))
 

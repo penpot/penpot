@@ -16,4 +16,4 @@
  * @param {ClipboardEvent} event
  * @param {TextEditor} editor
  */
-export function copy(event, editor) {}
+export function copy(event, editor, selectionController) {}

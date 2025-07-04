@@ -34,15 +34,16 @@ export function createRandomId() {
  * @returns {HTMLElement}
  */
 export function createElement(tag, options) {
+  console.log("createElement", options);
   const element = document.createElement(tag);
   if (options?.attributes) {
     Object.entries(options.attributes).forEach(([name, value]) =>
-      element.setAttribute(name, value)
+      element.setAttribute(name, value),
     );
   }
   if (options?.data) {
     Object.entries(options.data).forEach(
-      ([name, value]) => (element.dataset[name] = value)
+      ([name, value]) => (element.dataset[name] = value),
     );
   }
   if (options?.styles && options?.allowedStyles) {
