@@ -44,6 +44,8 @@ use crate::math;
 use crate::math::{Bounds, Matrix, Point};
 use indexmap::IndexSet;
 
+use crate::state::ShapesPool;
+
 const MIN_VISIBLE_SIZE: f32 = 2.0;
 const ANTIALIAS_THRESHOLD: f32 = 15.0;
 
@@ -781,7 +783,7 @@ impl Shape {
 
     pub fn all_children_with_self(
         &self,
-        shapes: &HashMap<Uuid, &mut Shape>,
+        shapes: &ShapesPool,
         include_hidden: bool,
     ) -> IndexSet<Uuid> {
         once(self.id)

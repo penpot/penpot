@@ -11,13 +11,14 @@ use crate::shapes::{
     auto_height, set_paragraphs_width, ConstraintH, ConstraintV, Frame, Group, GrowType, Layout,
     Modifier, Shape, StructureEntry, TransformEntry, Type,
 };
+use crate::state::ShapesPool;
 use crate::state::State;
 use crate::uuid::Uuid;
 
 #[allow(clippy::too_many_arguments)]
 fn propagate_children(
     shape: &Shape,
-    shapes: &HashMap<Uuid, &mut Shape>,
+    shapes: &ShapesPool,
     parent_bounds_before: &Bounds,
     parent_bounds_after: &Bounds,
     transform: Matrix,
@@ -88,7 +89,7 @@ fn propagate_children(
 
 fn calculate_group_bounds(
     shape: &Shape,
-    shapes: &HashMap<Uuid, &mut Shape>,
+    shapes: &ShapesPool,
     bounds: &HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Option<Bounds> {
@@ -420,21 +421,25 @@ mod tests {
 
     #[test]
     fn test_propagate_shape() {
-        let mut shapes = HashMap::<Uuid, &mut Shape>::new();
-
-        let child_id = Uuid::new_v4();
-        let mut child = Shape::new(child_id);
-        child.set_selrect(3.0, 3.0, 2.0, 2.0);
-        shapes.insert(child_id, &mut child);
-
         let parent_id = Uuid::new_v4();
-        let mut parent = Shape::new(parent_id);
-        parent.set_shape_type(Type::Group(Group::default()));
-        parent.add_child(child_id);
-        parent.set_selrect(1.0, 1.0, 5.0, 5.0);
-        let mut parent_clone = parent.clone();
-        shapes.insert(parent_id, &mut parent_clone);
 
+        let shapes = {
+            let mut shapes = ShapesPool::new();
+            shapes.initialize(10);
+
+            let child_id = Uuid::new_v4();
+            let child = shapes.add_shape(child_id);
+            child.set_selrect(3.0, 3.0, 2.0, 2.0);
+
+            let parent = shapes.add_shape(parent_id);
+            parent.set_shape_type(Type::Group(Group::default()));
+            parent.add_child(child_id);
+            parent.set_selrect(1.0, 1.0, 5.0, 5.0);
+
+            shapes
+        };
+
+        let parent = shapes.get(&parent_id).unwrap();
         let mut transform = Matrix::scale((2.0, 1.5));
         let x = parent.selrect.x();
         let y = parent.selrect.y();
@@ -445,7 +450,7 @@ mod tests {
         let bounds_after = bounds_before.transform(&transform);
 
         let result = propagate_children(
-            &parent,
+            parent,
             &shapes,
             &bounds_before,
             &bounds_after,
@@ -460,29 +465,31 @@ mod tests {
 
     #[test]
     fn test_group_bounds() {
-        let mut shapes = HashMap::<Uuid, &mut Shape>::new();
-
-        let child1_id = Uuid::new_v4();
-        let mut child1 = Shape::new(child1_id);
-        child1.set_selrect(3.0, 3.0, 2.0, 2.0);
-        shapes.insert(child1_id, &mut child1);
-
-        let child2_id = Uuid::new_v4();
-        let mut child2 = Shape::new(child2_id);
-        child2.set_selrect(0.0, 0.0, 1.0, 1.0);
-        shapes.insert(child2_id, &mut child2);
-
         let parent_id = Uuid::new_v4();
-        let mut parent = Shape::new(parent_id);
-        parent.set_shape_type(Type::Group(Group::default()));
-        parent.add_child(child1_id);
-        parent.add_child(child2_id);
-        parent.set_selrect(0.0, 0.0, 3.0, 3.0);
-        let mut parent_clone = parent.clone();
-        shapes.insert(parent_id, &mut parent_clone);
+        let shapes = {
+            let mut shapes = ShapesPool::new();
+            shapes.initialize(10);
+
+            let child1_id = Uuid::new_v4();
+            let child1 = shapes.add_shape(child1_id);
+            child1.set_selrect(3.0, 3.0, 2.0, 2.0);
+
+            let child2_id = Uuid::new_v4();
+            let child2 = shapes.add_shape(child2_id);
+            child2.set_selrect(0.0, 0.0, 1.0, 1.0);
+
+            let parent = shapes.add_shape(parent_id);
+            parent.set_shape_type(Type::Group(Group::default()));
+            parent.add_child(child1_id);
+            parent.add_child(child2_id);
+            parent.set_selrect(0.0, 0.0, 3.0, 3.0);
+            shapes
+        };
+
+        let parent = shapes.get(&parent_id).unwrap();
 
         let bounds =
-            calculate_group_bounds(&parent, &shapes, &HashMap::new(), &HashMap::new()).unwrap();
+            calculate_group_bounds(parent, &shapes, &HashMap::new(), &HashMap::new()).unwrap();
 
         assert_eq!(bounds.width(), 3.0);
         assert_eq!(bounds.height(), 3.0);

@@ -1,16 +1,15 @@
 use skia_safe::{self as skia, Color4f};
 use std::collections::HashMap;
 
+use super::{RenderState, ShapesPool, SurfaceId};
 use crate::math::Matrix;
 use crate::render::grid_layout;
-use crate::shapes::{Shape, StructureEntry};
+use crate::shapes::StructureEntry;
 use crate::uuid::Uuid;
-
-use super::{RenderState, SurfaceId};
 
 pub fn render(
     render_state: &mut RenderState,
-    shapes: &HashMap<Uuid, &mut Shape>,
+    shapes: &ShapesPool,
     modifiers: &HashMap<Uuid, Matrix>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) {
