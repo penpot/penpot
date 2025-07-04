@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.0.7
+
+- Add the ability to provide refereron creating build context
+
+```js
+const context = penpot.createBuildContext({referer:"my-referer"});
+```
+
+The referer will be added as an additional field on the manifest.json
+
+
 ## 1.0.6
 
 - Fix unexpected issue on library color decoding

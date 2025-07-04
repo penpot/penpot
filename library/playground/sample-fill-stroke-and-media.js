@@ -6,7 +6,7 @@ import { Writable } from "stream";
 // console.log(penpot);
 
 (async function () {
-  const context = penpot.createBuildContext();
+  const context = penpot.createBuildContext({referer:"playground"});
 
   {
     context.addFile({ name: "Test File 1" });
