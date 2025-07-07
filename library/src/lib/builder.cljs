@@ -271,11 +271,19 @@
     (fn []
       (json/->js @state))))
 
+(def ^:private schema:context-options
+  [:map {:title "ContextOptions"}
+   [:referer {:optional true} ::sm/text]])
+
+(def ^:private decode-context-options
+  (sm/decoder schema:context-options sm/json-transformer))
+
 (defn create-build-context
   "Create an empty builder state context."
-  []
-  (let [state (atom {})
-        api   (create-builder-api state)]
+  [options]
+  (let [options (some-> options decode-params decode-context-options)
+        state   (atom {:options options})
+        api     (create-builder-api state)]
 
     (specify! api
       cljs.core/IDeref
