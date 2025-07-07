@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2.8.1 (Unreleased)
+
+### :bug: Bugs fixed
+
+- Add missing migration information to file snapshots [Github #686](https://github.com/penpot/penpot/pull/6864)
+
+
 ## 2.8.0
 
 ### :rocket: Epics and highlights

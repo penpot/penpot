@@ -80,7 +80,7 @@
         (update :migrations set/union diff)
         (vary-meta assoc ::migrated (not-empty diff)))))
 
-(defn- generate-migrations-from-version
+(defn generate-migrations-from-version
   "A function that generates new format migration from the old,
   version based migration system"
   [version]
