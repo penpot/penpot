@@ -2249,7 +2249,7 @@
                    (pcb/update-shapes [(:id new-shape)] #(d/patch-object % keep-props-values))
 
                    ;; We need to set the same index as the original shape
-                   (pcb/change-parent (:parent-id shape) [new-shape] index {:component-swap true
+                   (pcb/change-parent (:parent-id shape) [new-shape] index {:allow-altering-copies true
                                                                             :ignore-touched true})
                    (change-touched new-shape
                                    shape
@@ -2258,11 +2258,11 @@
 
 (defn generate-component-swap
   [changes objects shape file page libraries id-new-component
-   index target-cell keep-props-values keep-touched]
+   index target-cell keep-props-values ignore-swapped?]
   (let [;; When we keep the touched properties, we can't delete the
         ;; swapped children (we will keep them too)
         ignore-swapped-fn
-        (if keep-touched
+        (if ignore-swapped?
           #(-> (get objects %)
                (ctk/get-swap-slot))
           (constantly false))
@@ -2271,7 +2271,7 @@
         (-> changes
             (cls/generate-delete-shapes
              file page objects (d/ordered-set (:id shape))
-             {:component-swap true :ignore-children-fn ignore-swapped-fn}))
+             {:allow-altering-copies true :ignore-children-fn ignore-swapped-fn}))
         [new-shape changes]
         (-> changes
             (generate-new-shape-for-swap shape file page libraries id-new-component index target-cell keep-props-values))]

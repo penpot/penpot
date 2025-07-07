@@ -100,7 +100,7 @@
                            ids
                            options))
   ([changes ids {:keys [ignore-touched
-                        component-swap
+                        allow-altering-copies
                         ;; We will delete the shapes and its descendants.
                         ;; ignore-children-fn is used to ignore some descendants
                         ;; on the deletion process. It should receive a shape and
@@ -119,11 +119,12 @@
           ;; Look for shapes that are inside a component copy, but are
           ;; not the root. In this case, they must not be deleted,
           ;; but hidden (to be able to recover them more easily).
-          ;; Unless we are doing a component swap, in which case we want
+          ;; If we want to specifically allow altering the copies, this is
+          ;; a special case, like a component swap, in which case we want
           ;; to delete the old shape
            (let [shape           (get objects shape-id)]
              (and (ctn/has-any-copy-parent? objects shape)
-                  (not component-swap))))
+                  (not allow-altering-copies))))
 
          [ids-to-delete ids-to-hide]
          (loop [ids-seq       (seq ids)
@@ -212,9 +213,10 @@
 
          empty-parents
         ;; Any parent whose children are all deleted, must be deleted too.
-        ;; Unless we are during a component swap: in this case we are replacing a shape by
+        ;; If we want to specifically allow altering the copies, this is a special case,
+        ;; for example during a component swap. in this case we are replacing a shape by
         ;; other one, so must not delete empty parents.
-         (if-not component-swap
+         (if-not allow-altering-copies
            (into (d/ordered-set) (find-all-empty-parents #{}))
            #{})
 
