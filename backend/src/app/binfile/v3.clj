@@ -12,7 +12,6 @@
    [app.binfile.common :as bfc]
    [app.binfile.migrations :as bfm]
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.files.migrations :as-alias fmg]
@@ -54,7 +53,7 @@
   [:map {:title "Manifest"}
    [:version ::sm/int]
    [:type :string]
-
+   [:referer {:optional true} :string]
    [:generated-by {:optional true} :string]
 
    [:files
@@ -373,6 +372,7 @@
           params {:type "penpot/export-files"
                   :version 1
                   :generated-by (str "penpot/" (:full cf/version))
+                  :refer "penpot"
                   :files (vec (vals files))
                   :relations rels}]
       (write-entry! output "manifest.json" params))))
@@ -878,13 +878,8 @@
 (defn- import-files
   [{:keys [::bfc/timestamp ::bfc/input ::bfc/name] :or {timestamp (dt/now)} :as cfg}]
 
-  (dm/assert!
-   "expected zip file"
-   (instance? ZipFile input))
-
-  (dm/assert!
-   "expected valid instant"
-   (dt/instant? timestamp))
+  (assert (instance? ZipFile input) "expected zip file")
+  (assert (dt/instant? timestamp) "expected valid instant")
 
   (let [manifest (-> (read-manifest input)
                      (validate-manifest))
@@ -895,6 +890,7 @@
                 :code :invalid-binfile-v3-manifest
                 :hint "unexpected type on manifest"
                 :manifest manifest))
+
 
     ;; Check if all files referenced on manifest are present
     (doseq [{file-id :id features :features} (:files manifest)]
@@ -956,14 +952,13 @@
 
   [{:keys [::bfc/ids] :as cfg} output]
 
-  (dm/assert!
-   "expected a set of uuid's for `::bfc/ids` parameter"
-   (and (set? ids)
-        (every? uuid? ids)))
+  (assert
+   (and (set? ids) (every? uuid? ids))
+   "expected a set of uuid's for `::bfc/ids` parameter")
 
-  (dm/assert!
-   "expected instance of jio/IOFactory for `input`"
-   (satisfies? jio/IOFactory output))
+  (assert
+   (satisfies? jio/IOFactory output)
+   "expected instance of jio/IOFactory for `input`")
 
   (let [id (uuid/next)
         tp (dt/tpoint)
@@ -1002,14 +997,14 @@
 (defn import-files!
   [{:keys [::bfc/input] :as cfg}]
 
-  (dm/assert!
-   "expected valid profile-id and project-id on `cfg`"
+  (assert
    (and (uuid? (::bfc/profile-id cfg))
-        (uuid? (::bfc/project-id cfg))))
+        (uuid? (::bfc/project-id cfg)))
+   "expected valid profile-id and project-id on `cfg`")
 
-  (dm/assert!
-   "expected instance of jio/IOFactory for `input`"
-   (io/coercible? input))
+  (assert
+   (io/coercible? input)
+   "expected instance of jio/IOFactory for `input`")
 
   (let [id (uuid/next)
         tp (dt/tpoint)
@@ -1029,3 +1024,9 @@
                 :id (str id)
                 :elapsed (dt/format-duration (tp))
                 :error? (some? @cs))))))
+
+(defn get-manifest
+  [path]
+  (with-open [input (ZipFile. (fs/file path))]
+    (-> (read-manifest input)
+        (validate-manifest))))
