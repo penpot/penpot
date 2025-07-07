@@ -241,7 +241,7 @@
       [:shapes ::sm/any]
       [:index {:optional true} [:maybe :int]]
       [:after-shape {:optional true} ::sm/any]
-      [:component-swap {:optional true} :boolean]]]
+      [:allow-altering-copies {:optional true} :boolean]]]
 
     [:reorder-children
      [:map {:title "ReorderChildrenChange"}
@@ -761,7 +761,7 @@
       (d/update-in-when data [:components component-id :objects] reg-objects))))
 
 (defmethod process-change :mov-objects
-  [data {:keys [parent-id shapes index page-id component-id ignore-touched after-shape component-swap syncing]}]
+  [data {:keys [parent-id shapes index page-id component-id ignore-touched after-shape allow-altering-copies syncing]}]
   (letfn [(calculate-invalid-targets [objects shape-id]
             (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
               (->> (get-in objects [shape-id :shapes])
@@ -776,7 +776,7 @@
               (and shape
                    (not (invalid-targets parent-id))
                    (not (cfh/components-nesting-loop? objects shape-id parent-id))
-                   (or component-swap ;; On a component swap it's allowed to change the structure of a copy
+                   (or allow-altering-copies ;; In some cases (like a component swap) it's allowed to change the structure of a copy
                        syncing ;; If we are syncing the changes of a main component, it's allowed to change the structure of a copy
                        (and
                         (not (ctk/in-component-copy? (get objects (:parent-id shape)))) ;; We don't want to change the structure of component copies

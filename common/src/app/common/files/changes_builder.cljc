@@ -464,8 +464,8 @@
 
            (some? index)
            (assoc :index index)
-           (:component-swap options)
-           (assoc :component-swap true)
+           (:allow-altering-copies options)
+           (assoc :allow-altering-copies true)
            (:ignore-touched options)
            (assoc :ignore-touched true))
 
@@ -479,8 +479,8 @@
                             :shapes [(:id shape)]
                             :after-shape prev-sibling
                             :index 0} ; index is used in case there is no after-shape (moving bottom shapes)
-                     (:component-swap options)
-                     (assoc :component-swap true)))))
+                     (:allow-altering-copies options)
+                     (assoc :allow-altering-copies true)))))
 
          restore-touched-change
          {:type :mod-obj

@@ -79,7 +79,7 @@
         before-changes (-> (pcb/empty-changes)
                            (pcb/with-page page)
                            (pcb/with-objects (:objects page))
-                           (pcb/change-parent uuid/zero [orig-swapped-child] 0 {:component-swap true}))
+                           (pcb/change-parent uuid/zero [orig-swapped-child] 0 {:allow-altering-copies true}))
 
         objects         (pcb/get-objects changes)
         prev-swap-slot  (ctk/get-swap-slot orig-swapped-child)
@@ -90,7 +90,7 @@
     (-> (pcb/concat-changes before-changes changes)
 
         ;; Move the previous shape to the new parent
-        (pcb/change-parent (:parent-id related-shape-in-new) [orig-swapped-child] pos {:component-swap true})
+        (pcb/change-parent (:parent-id related-shape-in-new) [orig-swapped-child] pos {:allow-altering-copies true})
 
         ;; We need to update the swap slot only when it pointed
         ;; to the swap-ref-id. Oterwise this is a swapped item
@@ -102,7 +102,7 @@
            #(ctk/set-swap-slot % (:shape-ref related-shape-in-new))))
 
         ;; Delete new non-swapped item
-        (cls/generate-delete-shapes ldata page objects (d/ordered-set (:id related-shape-in-new)) {:component-swap true})
+        (cls/generate-delete-shapes ldata page objects (d/ordered-set (:id related-shape-in-new)) {:allow-altering-copies true})
         second)))
 
 (defn- child-of-swapped?
