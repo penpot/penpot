@@ -71,7 +71,7 @@
       setShapeChildren(children);
 
       performance.mark('render:begin');
-      Module._render(performance.now(), true);
+      Module._render(Date.now(), false);
       performance.mark('render:end');
       const { duration } = performance.measure('render', 'render:begin', 'render:end');
       // alert(`render time: ${duration.toFixed(2)}ms`);
