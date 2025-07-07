@@ -13,6 +13,7 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.typography :as cty]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.style-dictionary :as sd]
@@ -336,10 +337,14 @@
   ([value shape-ids _attributes page-id]
    (let [update-node? (fn [node]
                         (or (txt/is-text-node? node)
-                            (txt/is-paragraph-node? node)))]
+                            (txt/is-paragraph-node? node)))
+         update-fn (fn [node _]
+                     (-> node
+                         (d/txt-merge {:line-height value})
+                         (cty/remove-typography-from-node)))]
      (when (number? value)
        (dwsh/update-shapes shape-ids
-                           #(txt/update-text-content % update-node? d/txt-merge {:line-height value})
+                           #(txt/update-text-content % update-node? update-fn nil)
                            {:ignore-touched true
                             :page-id page-id})))))
 
@@ -348,10 +353,14 @@
   ([value shape-ids _attributes page-id]
    (let [update-node? (fn [node]
                         (or (txt/is-text-node? node)
-                            (txt/is-paragraph-node? node)))]
+                            (txt/is-paragraph-node? node)))
+         update-fn (fn [node _]
+                     (-> node
+                         (d/txt-merge {:letter-spacing (str value)})
+                         (cty/remove-typography-from-node)))]
      (when (number? value)
        (dwsh/update-shapes shape-ids
-                           #(txt/update-text-content % update-node? d/txt-merge {:letter-spacing (str value)})
+                           #(txt/update-text-content % update-node? update-fn nil)
                            {:ignore-touched true
                             :page-id page-id})))))
 
@@ -360,10 +369,14 @@
   ([value shape-ids _attributes page-id]
    (let [update-node? (fn [node]
                         (or (txt/is-text-node? node)
-                            (txt/is-paragraph-node? node)))]
+                            (txt/is-paragraph-node? node)))
+         update-fn (fn [node _]
+                     (-> node
+                         (d/txt-merge {:font-size (str value)})
+                         (cty/remove-typography-from-node)))]
      (when (number? value)
        (dwsh/update-shapes shape-ids
-                           #(txt/update-text-content % update-node? d/txt-merge {:font-size (str value)})
+                           #(txt/update-text-content % update-node? update-fn nil)
                            {:ignore-touched true
                             :page-id page-id})))))
 
