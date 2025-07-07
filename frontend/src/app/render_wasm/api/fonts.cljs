@@ -169,7 +169,31 @@
 
 (defn serialize-font-weight
   [font-weight]
-  (js/Number font-weight))
+  (if (number? font-weight)
+    font-weight
+    (let [font-weight-str (str font-weight)]
+      (cond
+        (re-matches #"\d+" font-weight-str)
+        (js/Number font-weight-str)
+
+        (str/includes? font-weight-str "bold")
+        700
+        (str/includes? font-weight-str "black")
+        900
+        (str/includes? font-weight-str "extrabold")
+        800
+        (str/includes? font-weight-str "extralight")
+        200
+        (str/includes? font-weight-str "light")
+        300
+        (str/includes? font-weight-str "medium")
+        500
+        (str/includes? font-weight-str "semibold")
+        600
+        (str/includes? font-weight-str "thin")
+        100
+        :else
+        400))))
 
 (defn store-font
   [shape-id font]
@@ -182,6 +206,7 @@
         weight (serialize-font-weight raw-weight)
         style (serialize-font-style (cond
                                       (str/includes? font-variant-id "italic") "italic"
+                                      (str/includes? raw-weight "italic") "italic"
                                       :else "normal"))
         asset-id (font-id->asset-id font-id font-variant-id)
         font-data {:wasm-id wasm-id
@@ -189,6 +214,7 @@
                    :font-variant-id font-variant-id
                    :style style
                    :weight weight}]
+
     (store-font-id shape-id font-data asset-id emoji? fallback?)))
 
 (defn store-fonts

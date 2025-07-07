@@ -520,7 +520,6 @@ export function createRootFromHTML(html, style) {
   const fragment = mapContentFragmentFromHTML(html, style);
   const root = createRoot([], style);
   root.replaceChildren(fragment);
-  console.log("ROOT", root);
   return root;
 }
 
