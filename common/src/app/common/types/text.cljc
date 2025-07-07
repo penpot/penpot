@@ -148,7 +148,7 @@
   (cond
     (map? origin)
     (into {}
-          (for [k (keys origin) :when (not= k :key)] ;; We ignore :key because it is a draft artifact
+          (for [k (keys destiny) :when (not= k :key)] ;; We ignore :key because it is a draft artifact
             (cond
               (= :children k)
               [k (vec (map #(copy-text-keys %1 %2) (get origin k) (get destiny k)))]
