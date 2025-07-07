@@ -15,7 +15,6 @@
    [app.main.ui.inspect.attributes.blur :refer [blur-panel]]
    [app.main.ui.inspect.attributes.fill :refer [fill-panel]]
    [app.main.ui.inspect.attributes.geometry :refer [geometry-panel]]
-   [app.main.ui.inspect.attributes.image :refer [image-panel]]
    [app.main.ui.inspect.attributes.layout :refer [layout-panel]]
    [app.main.ui.inspect.attributes.layout-element :refer [layout-element-panel]]
    [app.main.ui.inspect.attributes.shadow :refer [shadow-panel]]
@@ -69,7 +68,6 @@
              :stroke           stroke-panel
              :shadow           shadow-panel
              :blur             blur-panel
-             :image            image-panel
              :text             text-panel
              :svg              svg-panel
              :variant          variant-panel*)
