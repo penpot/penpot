@@ -90,12 +90,13 @@
             (update shape :applied-tokens remove-token))))))))
 
 (defn toggle-token
-  [{:keys [token shapes]}]
+  [{:keys [token shapes attrs]}]
   (ptk/reify ::on-toggle-token
     ptk/WatchEvent
     (watch [_ _ _]
       (let [{:keys [attributes all-attributes on-update-shape]}
             (get token-properties (:type token))
+            attributes (or attrs attributes)
 
             unapply-tokens?
             (cft/shapes-token-applied? token shapes (or all-attributes attributes))

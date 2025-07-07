@@ -1,0 +1,131 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../spacing.scss" as *;
+@use "../borders.scss" as *;
+@use "../sizes.scss" as *;
+@use "../typography.scss" as t;
+
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  inline-size: 100%;
+  position: relative;
+  --opacity-button: 0;
+  &:hover {
+    --opacity-button: 1;
+  }
+  &:focus-within {
+    --opacity-button: 1;
+  }
+}
+
+.icon {
+  color: var(--color-foreground-secondary);
+  min-width: 16px;
+}
+
+.pill {
+  --pill-border-color: var(--color-token-border);
+  --pill-bg-color: var(--color-background-tertiary);
+  --pill-fg-color: var(--color-token-foreground);
+  @include t.use-typography("code-font");
+  height: var(--sp-xxl);
+  width: fit-content;
+  background: var(--pill-bg-color);
+  cursor: pointer;
+  border: $b-1 solid var(--pill-border-color);
+  color: var(--pill-fg-color);
+  border-radius: $br-6;
+  padding-inline: $sz-6;
+  &:hover {
+    --pill-bg-color: var(--color-token-background);
+    --pill-fg-color: var(--color-foreground-primary);
+    --pill-border-color: var(--color-token-foreground);
+  }
+  &:focus-visible {
+    --pill-bg-color: var(--color-token-background);
+    --pill-fg-color: var(--color-foreground-primary);
+    --pill-border-color: var(--color-accent-primary);
+    outline: none;
+  }
+}
+.pill-disabled {
+  user-select: none;
+  --pill-bg-color: none;
+  --pill-fg-color: var(--color-foreground-secondary);
+  --pill-border-color: var(--color-token-border);
+  &:hover {
+    --pill-bg-color: none;
+    --pill-fg-color: var(--color-foreground-secondary);
+    --pill-border-color: var(--color-token-border);
+  }
+}
+
+.icon {
+  color: var(--color-foreground-secondary);
+}
+
+.token-field {
+  --token-field-bg-color: var(--color-background-tertiary);
+  --token-field-fg-color: var(--color-foreground-primary);
+  --token-field-icon-color: var(--color-foreground-secondary);
+  --token-field-outline-color: none;
+  --token-field-height: var(--sp-xxxl);
+  --token-field-margin: unset;
+
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: var(--sp-xs);
+  align-items: center;
+  position: relative;
+  inline-size: 100%;
+  background: var(--token-field-bg-color);
+  border-radius: 0.5rem;
+  padding: var(--sp-xs) var(--sp-s);
+  outline: $b-1 solid var(--token-field-outline-color);
+
+  &:hover {
+    --token-field-bg-color: var(--color-background-quaternary);
+  }
+
+  &:focus {
+    --token-field-bg-color: var(--color-background-primary);
+    --token-field-outline-color: var(--color-accent-primary);
+  }
+}
+
+.with-icon {
+  grid-template-columns: auto 1fr auto;
+}
+
+.token-field-disabled {
+  user-select: none;
+  --token-field-bg-color: var(--color-background-primary);
+  --token-field-outline-color: var(--color-background-quaternary);
+  &:hover {
+    --token-field-bg-color: var(--color-background-primary);
+    --token-field-outline-color: var(--color-background-quaternary);
+  }
+}
+
+// Review this, better not to use svg
+.invisible-button {
+  svg {
+    opacity: var(--opacity-button);
+  }
+  &:hover {
+    svg {
+      --opacity-button: 1;
+    }
+  }
+  &:focus {
+    svg {
+      --opacity-button: 1;
+    }
+  }
+}
