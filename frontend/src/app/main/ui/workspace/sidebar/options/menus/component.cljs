@@ -292,8 +292,8 @@
   (->> (filter #(= (:name %) prop-name) prop-vals)
        first
        :value
-       (map (fn [val] {:id val
-                       :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
+       (mapv (fn [val] {:id val
+                        :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
 
 
 (mf/defc component-variant-main-instance*
