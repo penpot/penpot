@@ -1019,8 +1019,8 @@
   [data _]
   (let [update-colors
         (fn [colors]
-          (into {} (filter #(-> % val types.color/valid-color?) colors)))]
-    (update data :colors update-colors)))
+          (into {} (filter #(-> % val types.color/valid-library-color?) colors)))]
+    (d/update-when data :colors update-colors)))
 
 (defmethod migrate-data "legacy-52"
   [data _]
@@ -1033,7 +1033,6 @@
             (d/update-when page :objects d/update-vals update-shape))]
 
     (update data :pages-index d/update-vals update-page)))
-
 
 (defmethod migrate-data "legacy-53"
   [data _]
@@ -1517,6 +1516,17 @@
 
     (d/update-when data :colors d/update-vals clear-color)))
 
+(defmethod migrate-data "0009-clean-library-colors"
+  [data _]
+  (d/update-when data :colors
+                 (fn [colors]
+                   (reduce-kv (fn [colors id color]
+                                (if (types.color/valid-library-color? color)
+                                  colors
+                                  (dissoc colors id)))
+                              colors
+                              colors))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1580,4 +1590,5 @@
          "0005-deprecate-image-type"
          "0006-fix-old-texts-fills"
          "0007-clear-invalid-strokes-and-fills-v2"
-         "0008-fix-library-colors-v4"]))
+         "0008-fix-library-colors-v4"
+         "0009-clean-library-colors"]))

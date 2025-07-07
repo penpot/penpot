@@ -20,7 +20,8 @@
    [app.common.schema.generators :as sg]
    [app.common.svg.path :as svg.path]
    [app.common.transit :as t]
-   [app.common.types.path :as-alias path])
+   [app.common.types.path :as-alias path]
+   [cuerdas.core :as str])
   (:import
    #?(:cljs [goog.string StringBuffer]
       :clj  [java.nio ByteBuffer ByteOrder])))
@@ -530,7 +531,9 @@
           :decode/json (fn [s]
                          (cond
                            (string? s)
-                           (from-string s)
+                           (if (str/empty? s)
+                             (from-plain [])
+                             (from-string s))
 
                            (vector? s)
                            (let [decode-fn (deref decoder)]
