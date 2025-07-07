@@ -7,8 +7,9 @@ use skia_safe::{
     textlayout::{Paragraph as SkiaParagraph, ParagraphBuilder, ParagraphStyle},
     FontMetrics, Point, Shader, TextBlob,
 };
+use unicode_segmentation::UnicodeSegmentation;
 use crate::shapes::VerticalAlign;
-use std::collections::HashSet;
+use std::{collections::HashSet, thread::current};
 
 use super::FontFamily;
 use crate::shapes::{self, merge_fills};
@@ -175,61 +176,114 @@ impl TextContent {
 
             let mut line_offset_y = offset_y;
 
-            // 2. Iterate through each line in the paragraph
+            let lines = skia_paragraph.get_line_metrics().len();
+            println!("### Text {}", text);
+            let graphemes: Vec<&str> = UnicodeSegmentation::graphemes(text, true).collect();
+            println!("### Graphemes: {:?}", graphemes);
+
+            let mut index = 0;
             for line_metrics in skia_paragraph.get_line_metrics() {
+                let mut start = line_metrics.start_index;
+                let end = line_metrics.end_index - 1;
                 let line_baseline = line_metrics.baseline as f32;
-                let start = line_metrics.start_index;
-                let end = line_metrics.end_index;
-
-
-                // 3. Get styles present in line for each text leaf
-                let style_metrics = line_metrics.get_style_metrics(start..end);
-                println!("### metrics for text: {}", &text[start..end]);
-                println!("### line_metrics: {:?}", line_metrics);
-                println!("### style_metrics: {:?}", style_metrics);
-
+                println!("### Line metrics: start: {}, end: {}", start, end);
                 let mut offset_x = 0.0;
+                let mut current_text_width = 0.0;
+                start = if start == 0 { start } else { start - 1 };
 
-                for (i, (start_index, style_metric)) in style_metrics.iter().enumerate() {
-                    let end_index = style_metrics.get(i + 1).map_or(end, |next| next.0);
+                let line_text = graphemes[start..end].concat();
+                let line_str = line_text.as_str();
+                println!("### Line text: '{}'", line_text);
 
-                    let start_byte = text
-                        .char_indices()
-                        .nth(*start_index)
-                        .map(|(i, _)| i)
-                        .unwrap_or(0);
-                    let end_byte = text
-                        .char_indices()
-                        .nth(end_index)
-                        .map(|(i, _)| i)
-                        .unwrap_or(text.len());
+                let line_graphemes = UnicodeSegmentation::graphemes(line_str, true).collect::<Vec<&str>>();
+                let line_style_metrics = line_metrics.get_style_metrics(start..end);
+                // println!("### Style metrics: {:?}", line_style_metrics);
+                
 
-                    let leaf_text = &text[start_byte..end_byte];
-                    println!("@@@ Leaf text: {}", leaf_text);
-
-                    let font = skia_paragraph.get_font_at(*start_index);
-
+                for (grapheme_index, grapheme) in line_graphemes.iter().enumerate() {
+                    println!("### Grapheme {}: '{}', len: {}", grapheme_index, grapheme, grapheme.len());
+                    
+                    // Find the style that applies to this grapheme_index
+                    // We want the style with the highest start index that is <= grapheme_index
+                    let style_metric = line_style_metrics
+                        .iter()
+                        .filter(|(start_idx, _)| *start_idx <= grapheme_index)
+                        .last()
+                        .map(|(_, metrics)| metrics)
+                        .unwrap_or(&line_style_metrics[0].1);
+                    // println!("### Style metrics: {:?}", style_metric);
+                    println!("### index: {}", index);
+                    let font = skia_paragraph.get_font_at(index);
+                    index += grapheme.len();
+                    println!("### Font: {:?}", font.typeface());
                     let blob_offset_x = self.bounds.x() + line_metrics.left as f32 + offset_x;
                     let blob_offset_y = line_offset_y;
 
                     // 4. Get the path for each text leaf
                     if let Some((text_path, paint)) = self.generate_text_path(
-                        leaf_text,
+                        &grapheme,
                         &font,
                         blob_offset_x,
                         blob_offset_y,
                         &self.bounds,
-                        style_metric,
+                        &style_metric,
                         antialias,
                     ) {
-                        let text_width = font.measure_text(leaf_text, None).0;
+                        let text_width = font.measure_text(grapheme, None).0;
                         offset_x += text_width;
+                        current_text_width = text_width;
                         paths.push((text_path, paint));
                     }
                 }
                 line_offset_y = offset_y + line_baseline;
             }
             offset_y += skia_paragraph.height();
+
+            // 2. Iterate through each line in the paragraph
+            // for line_metrics in skia_paragraph.get_line_metrics() {
+            //     let line_baseline = line_metrics.baseline as f32;
+            //     let start = line_metrics.start_index;
+            //     let end = line_metrics.end_index - 1;
+            //     // let line_text: String = text.chars().skip(start).take(end - start).collect();
+            //     let line_text = graphemes[start..end].concat();
+            //     // println!("### Line text: '{}'", line_text);
+            //     // 3. Get styles present in line for each text leaf
+            //     let style_metrics = line_metrics.get_style_metrics(start..end);
+            //     let mut offset_x = 0.0;
+
+            //     for (i, (start_index, style_metric)) in style_metrics.iter().enumerate() {
+            //         let mut end_index = 0;
+            //         if i < style_metrics.len() - 1 {
+            //             end_index = style_metrics[i + 1].0;
+            //         } else {
+            //             end_index = line_text.len();
+            //         }
+
+            //         let leaf_text = graphemes[*start_index..end_index].concat();
+            //         println!("### Leaf text: '{}'", leaf_text);
+            //         let font = skia_paragraph.get_font_at(*start_index);
+
+            //         let blob_offset_x = self.bounds.x() + line_metrics.left as f32 + offset_x;
+            //         let blob_offset_y = line_offset_y;
+
+            //         // 4. Get the path for each text leaf
+            //         if let Some((text_path, paint)) = self.generate_text_path(
+            //             &leaf_text,
+            //             &font,
+            //             blob_offset_x,
+            //             blob_offset_y,
+            //             &self.bounds,
+            //             style_metric,
+            //             antialias,
+            //         ) {
+            //             let text_width = font.measure_text(leaf_text, None).0;
+            //             offset_x += text_width;
+            //             paths.push((text_path, paint));
+            //         }
+            //     }
+            //     line_offset_y = offset_y + line_baseline;
+            // }
+            // offset_y += skia_paragraph.height();
         }
         paths
     }
