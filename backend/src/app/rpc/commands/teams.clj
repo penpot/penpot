@@ -139,7 +139,8 @@
             '~:status', CASE COALESCE(p.props->'~:subscription'->>'~:type', 'professional')
                           WHEN 'professional' THEN 'active'
                           ELSE COALESCE(p.props->'~:subscription'->>'~:status', 'incomplete')
-                       END
+                       END,
+            '~:seats', p.props->'~:quantity'
           ) AS subscription
      FROM team_profile_rel AS tp
      JOIN team AS t ON (t.id = tp.team_id)
